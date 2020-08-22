@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
     QApplication::setApplicationName("akashi");
     QApplication::setApplicationVersion("0.0.1");
 
-    QString language = QLocale("es_ES").bcp47Name();
+    QString language = QLocale().bcp47Name();
 
     QTranslator qt_translator;
     qt_translator.load("qt_" + language, QLibraryInfo::location(QLibraryInfo::TranslationsPath));
