@@ -1,9 +1,10 @@
 #include "include/akashimain.h"
 
 #include <QApplication>
-#include <QDebug>
 #include <QCommandLineParser>
 #include <QCommandLineOption>
+#include <QDebug>
+#include <QLibraryInfo>
 #include <QTranslator>
 
 int main(int argc, char *argv[])
@@ -12,8 +13,13 @@ int main(int argc, char *argv[])
     QApplication::setApplicationName("akashi");
     QApplication::setApplicationVersion("0.0.1");
 
+    QString language = QLocale("es_ES").bcp47Name();
+
+    QTranslator qt_translator;
+    qt_translator.load("qt_" + language, QLibraryInfo::location(QLibraryInfo::TranslationsPath));
+    app.installTranslator(&qt_translator);
+
     QTranslator translator;
-    QString language = QLocale().bcp47Name();
     translator.load("akashi_" + language, ":/resource/translation/");
     app.installTranslator(&translator);
 
