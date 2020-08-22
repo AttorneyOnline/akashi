@@ -14,7 +14,7 @@
     <message>
         <location filename="../../src/main.cpp" line="20"/>
         <source>A server for Attorney Online 2</source>
-        <translation type="unfinished"></translation>
+        <translation>Un servidor para Attorney Online 2</translation>
     </message>
     <message>
         <location filename="../../src/main.cpp" line="24"/>
