@@ -20,6 +20,7 @@ signals:
 public slots:
     void readData();
     void socketConnected();
+    void socketDisconnected();
 
 private:
     QString ip;

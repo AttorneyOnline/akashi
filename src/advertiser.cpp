@@ -14,19 +14,16 @@ void Advertiser::contactMasterServer() {
     socket = new QTcpSocket(this);
     connect(socket, SIGNAL(readyRead()), this, SLOT(readData()));
     connect(socket, SIGNAL(connected()), this, SLOT(socketConnected()));
+    connect(socket, SIGNAL(disconnected()), this, SLOT(socketDisconnected()));
 
+    socket->setSocketOption(QAbstractSocket::KeepAliveOption, 1);
     socket->connectToHost(ip, port);
-
-    if(socket->waitForConnected(1000)) {
-        qDebug("Connected to master server");
-    } else {
-        qDebug() << "Master server socket error: " << socket->errorString();
-    }
 }
 
 void Advertiser::readData() {
     // The master server should never really send data back to us
     // But we handle it anyways, just in case this ever ends up being implemented
+    qDebug() << socket->readAll();
 }
 
 void Advertiser::socketConnected() {
@@ -42,4 +39,8 @@ void Advertiser::socketConnected() {
     socket->write(data);
     socket->flush();
     qDebug("Advertisement sent to master server");
+}
+
+void Advertiser::socketDisconnected() {
+    qDebug("Socket disconnected");
 }

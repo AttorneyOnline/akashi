@@ -29,8 +29,8 @@ AkashiMain::AkashiMain(QWidget *parent)
         } else {
             if(config.value("advertise", "true").toString() != "true")
                 ws_port = -1;
-            Advertiser advertiser(ms_ip, port, ws_port, local_port, name, description);
-            advertiser.contactMasterServer();
+            advertiser = new Advertiser(ms_ip, port, ws_port, local_port, name, description);
+            advertiser->contactMasterServer();
         }
     }
 }

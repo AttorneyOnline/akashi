@@ -30,5 +30,6 @@ public:
     void updateConfig(int current_version);
 private:
     Ui::AkashiMain *ui;
+    Advertiser *advertiser;
 };
 #endif // AKASHIMAIN_H
