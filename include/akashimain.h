@@ -3,6 +3,8 @@
 
 #define CONFIG_VERSION 1
 
+#include <include/advertiser.h>
+
 #include <QMainWindow>
 #include <QSettings>
 #include <QDebug>
