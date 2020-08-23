@@ -6,11 +6,20 @@
 #include <QString>
 #include <QTcpSocket>
 #include <QApplication>
+#include <QHostAddress>
 
 class Advertiser : public QObject{
+    Q_OBJECT
+
 public:
     Advertiser(QString p_ip, int p_port, int p_ws_port, int p_local_port, QString p_name, QString p_description);
     void contactMasterServer();
+
+signals:
+
+public slots:
+    void readData();
+    void socketConnected();
 
 private:
     QString ip;
@@ -20,7 +29,7 @@ private:
     QString name;
     QString description;
 
-    void readData();
+    QTcpSocket *socket;
 };
 
 #endif // MASTER_H
