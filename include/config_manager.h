@@ -15,7 +15,7 @@ public:
     void generateDefaultConfig(bool backup_old);
     void updateConfig(int current_version);
 
-    bool loadAdvertiserSettings(QString* ms_ip, int* port, int* ws_port, int* local_port, QString* name, QString* description, bool* advertise_server);
+    bool loadServerSettings(QString* ms_ip, int* port, int* ws_port, int* local_port, QString* name, QString* description, bool* advertise_server);
 
 private:
     QSettings* config;

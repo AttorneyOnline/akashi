@@ -3,6 +3,7 @@
 
 #include <include/advertiser.h>
 #include <include/config_manager.h>
+#include <include/server.h>
 
 #include <QMainWindow>
 #include <QSettings>
@@ -28,5 +29,6 @@ public:
 private:
     Ui::AkashiMain *ui;
     Advertiser *advertiser;
+    Server *server;
 };
 #endif // AKASHIMAIN_H

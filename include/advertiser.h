@@ -8,7 +8,7 @@
 #include <QApplication>
 #include <QHostAddress>
 
-class Advertiser : public QObject{
+class Advertiser : public QObject {
     Q_OBJECT
 
 public:

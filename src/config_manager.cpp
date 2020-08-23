@@ -103,9 +103,8 @@ void ConfigManager::updateConfig(int current_version)
 }
 
 // Validate and retriever settings related to advertising and the server
-bool ConfigManager::loadAdvertiserSettings(QString* ms_ip, int* port, int* ws_port, int* local_port, QString* name, QString* description, bool* advertise_server)
+bool ConfigManager::loadServerSettings(QString* ms_ip, int* port, int* ws_port, int* local_port, QString* name, QString* description, bool* advertise_server)
 {
-    // TODO: Move this logic into config_manager.cpp
     bool port_conversion_success;
     bool ws_port_conversion_success;
     bool local_port_conversion_success;
