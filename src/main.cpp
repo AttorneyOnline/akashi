@@ -6,6 +6,7 @@
 #include <QDebug>
 #include <QLibraryInfo>
 #include <QTranslator>
+#include <QSettings>
 
 int main(int argc, char *argv[])
 {
@@ -13,7 +14,9 @@ int main(int argc, char *argv[])
     QApplication::setApplicationName("akashi");
     QApplication::setApplicationVersion("0.0.1");
 
-    QString language = QLocale().bcp47Name();
+    QSettings config("config.ini", QSettings::IniFormat);
+    config.beginGroup("Options");
+    QString language = config.value("language", QLocale().bcp47Name()).toString();
 
     QTranslator qt_translator;
     qt_translator.load("qt_" + language, QLibraryInfo::location(QLibraryInfo::TranslationsPath));

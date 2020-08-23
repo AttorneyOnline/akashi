@@ -1,7 +1,13 @@
 #ifndef AKASHIMAIN_H
 #define AKASHIMAIN_H
 
+#define CONFIG_VERSION 1
+
 #include <QMainWindow>
+#include <QSettings>
+#include <QDebug>
+#include <QFileInfo>
+#include <QDir>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class AkashiMain; }
@@ -15,6 +21,11 @@ public:
     AkashiMain(QWidget *parent = nullptr);
     ~AkashiMain();
 
+    QSettings config;
+
+    bool initConfig();
+    void generateDefaultConfig(bool backup_old);
+    void updateConfig(int current_version);
 private:
     Ui::AkashiMain *ui;
 };
