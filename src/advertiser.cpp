@@ -21,12 +21,14 @@ void Advertiser::contactMasterServer() {
 }
 
 void Advertiser::readData() {
-    // The master server should never really send data back to us
-    // But we handle it anyways, just in case this ever ends up being implemented
-    qDebug() << socket->readAll();
+    // The information coming back from the MS isn't very useful
+    // However, it can be useful to see it when debugging
+    // qDebug() << socket->readAll();
 }
 
 void Advertiser::socketConnected() {
+    // TODO: fire a signal here, i18n
+    qDebug("Connected to the master server");
     QString concat_ports;
     if(ws_port == -1)
         concat_ports = QString::number(local_port);
@@ -38,9 +40,9 @@ void Advertiser::socketConnected() {
 
     socket->write(data);
     socket->flush();
-    qDebug("Advertisement sent to master server");
 }
 
 void Advertiser::socketDisconnected() {
-    qDebug("Socket disconnected");
+    // TODO: fire a signal here, i18n
+    qDebug("Connection to master server lost");
 }
