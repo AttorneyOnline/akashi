@@ -23,6 +23,7 @@ void Advertiser::contactMasterServer() {
 void Advertiser::readData() {
     // The information coming back from the MS isn't very useful
     // However, it can be useful to see it when debugging
+    // TODO: master network debug switch
     // qDebug() << socket->readAll();
 }
 

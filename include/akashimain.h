@@ -1,15 +1,12 @@
 #ifndef AKASHIMAIN_H
 #define AKASHIMAIN_H
 
-#define CONFIG_VERSION 1
-
 #include <include/advertiser.h>
+#include <include/config_manager.h>
 
 #include <QMainWindow>
 #include <QSettings>
 #include <QDebug>
-#include <QFileInfo>
-#include <QDir>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class AkashiMain; }
@@ -24,8 +21,8 @@ public:
     ~AkashiMain();
 
     QSettings config;
+    ConfigManager config_manager;
 
-    bool initConfig();
     void generateDefaultConfig(bool backup_old);
     void updateConfig(int current_version);
 private:
