@@ -27,7 +27,7 @@ void Advertiser::readData()
   // The information coming back from the MS isn't very useful
   // However, it can be useful to see it when debugging
   // TODO: master network debug switch
-  // qDebug() << socket->readAll();
+  qDebug() << "From MS:" << socket->readAll();
 }
 
 void Advertiser::socketConnected()
@@ -40,12 +40,13 @@ void Advertiser::socketConnected()
   else
     concat_ports = QString::number(local_port) + "&" + QString::number(ws_port);
 
-  QString ao_packet = PacketManager::buildPacket(
-      "SCC", {concat_ports, name, description,
-              "akashi v" + QApplication::applicationVersion()});
+  AOPacket ao_packet("SCC", {concat_ports, name, description,
+                     "akashi v" + QApplication::applicationVersion()});
   QByteArray data = ao_packet.toUtf8();
 
   socket->write(data);
+  // TODO: master network debug switch
+  qDebug() << "To MS:" << data;
   socket->flush();
 }
 

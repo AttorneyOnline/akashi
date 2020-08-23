@@ -36,8 +36,13 @@ int main(int argc, char *argv[])
   QCommandLineOption headlessOption(
       QStringList() << "l"
                     << "headless",
-      app.translate("main", "Run the server without a GUI"));
+      app.translate("main", "Run the server without a GUI."));
+  QCommandLineOption verboseNetworkOption(
+      QStringList() << "nv"
+                    << "verbose-network",
+      app.translate("main", "Write all network traffic to the console."));
   parser.addOption(headlessOption);
+  parser.addOption(verboseNetworkOption);
 
   parser.process(app);
   bool headless = parser.isSet(headlessOption);
