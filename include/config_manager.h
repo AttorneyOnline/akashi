@@ -3,22 +3,24 @@
 
 #define CONFIG_VERSION 1
 
-#include <QSettings>
-#include <QFileInfo>
-#include <QDir>
 #include <QDebug>
+#include <QDir>
+#include <QFileInfo>
+#include <QSettings>
 
-class ConfigManager{
+class ConfigManager {
 public:
-    ConfigManager(QSettings*);
-    bool initConfig();
-    void generateDefaultConfig(bool backup_old);
-    void updateConfig(int current_version);
+  ConfigManager(QSettings *);
+  bool initConfig();
+  void generateDefaultConfig(bool backup_old);
+  void updateConfig(int current_version);
 
-    bool loadServerSettings(QString* ms_ip, int* port, int* ws_port, int* local_port, QString* name, QString* description, bool* advertise_server);
+  bool loadServerSettings(QString *ms_ip, int *port, int *ws_port,
+                          int *local_port, QString *name, QString *description,
+                          bool *advertise_server);
 
 private:
-    QSettings* config;
+  QSettings *config;
 };
 
 #endif // CONFIG_MANAGER_H

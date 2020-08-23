@@ -4,9 +4,9 @@
 #include <QString>
 #include <QStringList>
 
-class PacketManager{
+class PacketManager {
 public:
-    static QString buildPacket(QString header, QStringList contents);
+  static QString buildPacket(QString header, QStringList contents);
 };
 
 #endif // PACKET_MANAGER_H

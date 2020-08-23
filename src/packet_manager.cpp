@@ -2,11 +2,11 @@
 
 QString PacketManager::buildPacket(QString header, QStringList contents)
 {
-    QString ao_packet = header;
-    for(int i = 0; i < contents.length(); i++){
-        ao_packet += "#" + contents[i];
-    }
-    ao_packet += "#%";
+  QString ao_packet = header;
+  for (int i = 0; i < contents.length(); i++) {
+    ao_packet += "#" + contents[i];
+  }
+  ao_packet += "#%";
 
-    return ao_packet;
+  return ao_packet;
 }
