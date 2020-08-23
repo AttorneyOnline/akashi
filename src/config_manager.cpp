@@ -5,6 +5,7 @@ ConfigManager::ConfigManager(QSettings* p_config)
     config = p_config;
 }
 
+// Validate and set up the config
 bool ConfigManager::initConfig()
 {
     config->beginGroup("Info");
@@ -98,5 +99,35 @@ void ConfigManager::updateConfig(int current_version)
             config->endGroup();
             break; // This is the newest version, and nothing more needs to be done
         }
+    }
+}
+
+// Validate and retriever settings related to advertising and the server
+bool ConfigManager::loadAdvertiserSettings(QString* ms_ip, int* port, int* ws_port, int* local_port, QString* name, QString* description, bool* advertise_server)
+{
+    // TODO: Move this logic into config_manager.cpp
+    bool port_conversion_success;
+    bool ws_port_conversion_success;
+    bool local_port_conversion_success;
+    config->beginGroup("Options");
+        *ms_ip = config->value("ms_ip", "master.aceattorneyonline.com").toString();
+        *port = config->value("ms_port", "27016").toInt(&port_conversion_success);
+        *ws_port = config->value("webao_port", "27017").toInt(&ws_port_conversion_success);
+        *local_port = config->value("port", "27016").toInt(&local_port_conversion_success);
+        *name = config->value("server_name", "My First Server").toString();
+        *description = config->value("server_description", "This is my flashy new server").toString();
+    config->endGroup();
+    if(!port_conversion_success || !ws_port_conversion_success || !local_port_conversion_success) {
+        return false;
+    } else {
+        if(config->value("advertise", "true").toString() != "true")
+            *advertise_server = false;
+        else
+            *advertise_server = true;
+
+        if(config->value("webao_enable", "true").toString() != "true")
+            *ws_port = -1;
+
+        return true;
     }
 }
