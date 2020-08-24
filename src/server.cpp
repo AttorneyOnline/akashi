@@ -8,6 +8,8 @@ Server::Server(int p_port, int p_ws_port, QObject* parent)
 
   port = p_port;
   ws_port = p_ws_port;
+
+  player_count = 0;
 }
 
 void Server::start()
@@ -34,7 +36,7 @@ void Server::start()
 void Server::clientConnected()
 {
     QTcpSocket* client = server->nextPendingConnection();
-    AOClient ao_client;
+    AOClient ao_client(client->peerAddress().toString());
     clients.insert(client, ao_client);
     connect(client, SIGNAL(disconnected()), this, SLOT(clientDisconnected()));
     connect(client, SIGNAL(readyRead()), this, SLOT(clientData()));
@@ -43,6 +45,8 @@ void Server::clientConnected()
     client->write(decryptor.toUtf8());
 
     qDebug() << client->peerAddress().toString() << "connected";
+    // TODO: only increment this once someone actually enters the coutroom
+    player_count++;
 }
 
 void Server::clientDisconnected()
@@ -50,11 +54,13 @@ void Server::clientDisconnected()
     if(QTcpSocket* client = dynamic_cast<QTcpSocket*>(sender())){
         qDebug() << client->peerAddress() << "disconnected";
         clients.remove(client);
+        player_count--;
     }
 }
 
 void Server::clientData()
 {
+    // TODO: deal with more than one packet on wire
     if(QTcpSocket* client = dynamic_cast<QTcpSocket*>(sender())){
         QString data = QString::fromUtf8(client->readAll());
         qDebug() << "From" << client->peerAddress() << ":" << data;
@@ -67,5 +73,31 @@ void Server::clientData()
         }
 
         AOPacket packet(data);
+        handlePacket(packet, client);
     }
+}
+
+void Server::handlePacket(AOPacket packet, QTcpSocket* socket)
+{
+    // Lord forgive me
+    if(packet.header == "HI"){
+        AOPacket response("ID", {"271828", "akashi", QApplication::applicationVersion()});
+        socket->write(response.toUtf8());
+    } else if (packet.header == "ID"){
+        QSettings config("config.ini", QSettings::IniFormat);
+        config.beginGroup("Options");
+        QString max_players = config.value("max_players").toString();
+        config.endGroup();
+
+        QStringList feature_list = {"noencryption"};
+
+        AOPacket response_pn("PN", {QString::number(player_count), max_players});
+        AOPacket response_fl("FL", feature_list);
+        socket->write(response_pn.toUtf8());
+        socket->write(response_fl.toUtf8());
+    } else {
+        qDebug() << "Unimplemented packet:" << packet.header;
+        qDebug() << packet.contents;
+    }
+    socket->flush();
 }

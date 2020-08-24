@@ -6,7 +6,10 @@
 class AOClient
 {
 public:
-    AOClient();
+    AOClient(QString p_remote_ip);
+
+    QString hdid;
+    QString remote_ip;
 
 private:
 

@@ -4,7 +4,9 @@
 #include "include/aopacket.h"
 #include "include/aoclient.h"
 
+#include <QApplication>
 #include <QString>
+#include <QSettings>
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QMap>
@@ -24,6 +26,8 @@ public slots:
   void clientData();
 
 private:
+  void handlePacket(AOPacket packet, QTcpSocket* socket);
+
   QTcpServer* server;
 
   int port;
@@ -32,6 +36,8 @@ private:
   QMap<QTcpSocket*, AOClient> clients;
   QString partial_packet;
   bool is_partial;
+
+  int player_count;
 };
 
 #endif // SERVER_H

@@ -16,6 +16,10 @@ AOPacket::AOPacket(QString p_packet)
         packet_contents.removeFirst();
         if(packet_contents[0] == "48E0")
             header = "HI";
+        else if(packet_contents[0] == "493F")
+            header = "ID";
+        else
+            header = packet_contents[0]; // If no known decryption exists, just leave the packet as-is
     }
     else {
         header = packet_contents[0];
