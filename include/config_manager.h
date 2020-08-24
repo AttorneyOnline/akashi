@@ -10,14 +10,22 @@
 
 class ConfigManager {
 public:
-  ConfigManager(QSettings *);
+  ConfigManager();
   bool initConfig();
   void generateDefaultConfig(bool backup_old);
   void updateConfig(int current_version);
 
-  bool loadServerSettings(QString *ms_ip, int *port, int *ws_port,
-                          int *local_port, QString *name, QString *description,
-                          bool *advertise_server);
+  struct server_settings {
+    QString ms_ip;
+    int port;
+    int ws_port;
+    int local_port;
+    QString name;
+    QString description;
+    bool advertise_server;
+  };
+
+  bool loadServerSettings(server_settings *settings);
 
 private:
   QSettings *config;

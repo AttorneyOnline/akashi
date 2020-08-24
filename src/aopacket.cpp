@@ -19,6 +19,6 @@ QString AOPacket::toString()
 
 QByteArray AOPacket::toUtf8()
 {
-    QString packet_string = toString();
-    return packet_string.toUtf8();
+  QString packet_string = toString();
+  return packet_string.toUtf8();
 }

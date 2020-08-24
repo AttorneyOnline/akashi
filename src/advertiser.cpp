@@ -1,7 +1,9 @@
 #include "include/advertiser.h"
 
 Advertiser::Advertiser(QString p_ip, int p_port, int p_ws_port,
-                       int p_local_port, QString p_name, QString p_description)
+                       int p_local_port, QString p_name, QString p_description,
+                       QObject *parent)
+    : QObject(parent)
 {
   ip = p_ip;
   port = p_port;
@@ -41,7 +43,7 @@ void Advertiser::socketConnected()
     concat_ports = QString::number(local_port) + "&" + QString::number(ws_port);
 
   AOPacket ao_packet("SCC", {concat_ports, name, description,
-                     "akashi v" + QApplication::applicationVersion()});
+                             "akashi v" + QApplication::applicationVersion()});
   QByteArray data = ao_packet.toUtf8();
 
   socket->write(data);

@@ -6,7 +6,4 @@ Server::Server(int p_port, int p_ws_port)
   ws_port = p_ws_port;
 }
 
-void Server::start()
-{
-
-}
+void Server::start() {}

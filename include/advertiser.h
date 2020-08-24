@@ -13,7 +13,7 @@ class Advertiser : public QObject {
 
 public:
   Advertiser(QString p_ip, int p_port, int p_ws_port, int p_local_port,
-             QString p_name, QString p_description);
+             QString p_name, QString p_description, QObject *parent = nullptr);
   void contactMasterServer();
 
 signals:

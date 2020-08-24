@@ -1,6 +1,9 @@
 #include <include/config_manager.h>
 
-ConfigManager::ConfigManager(QSettings *p_config) { config = p_config; }
+ConfigManager::ConfigManager()
+{
+  config = new QSettings("config.ini", QSettings::IniFormat);
+}
 
 // Validate and set up the config
 bool ConfigManager::initConfig()
@@ -106,23 +109,22 @@ void ConfigManager::updateConfig(int current_version)
 }
 
 // Validate and retriever settings related to advertising and the server
-bool ConfigManager::loadServerSettings(QString *ms_ip, int *port, int *ws_port,
-                                       int *local_port, QString *name,
-                                       QString *description,
-                                       bool *advertise_server)
+bool ConfigManager::loadServerSettings(server_settings *settings)
 {
   bool port_conversion_success;
   bool ws_port_conversion_success;
   bool local_port_conversion_success;
   config->beginGroup("Options");
-  *ms_ip = config->value("ms_ip", "master.aceattorneyonline.com").toString();
-  *port = config->value("ms_port", "27016").toInt(&port_conversion_success);
-  *ws_port =
+  settings->ms_ip =
+      config->value("ms_ip", "master.aceattorneyonline.com").toString();
+  settings->port =
+      config->value("ms_port", "27016").toInt(&port_conversion_success);
+  settings->ws_port =
       config->value("webao_port", "27017").toInt(&ws_port_conversion_success);
-  *local_port =
+  settings->local_port =
       config->value("port", "27016").toInt(&local_port_conversion_success);
-  *name = config->value("server_name", "My First Server").toString();
-  *description =
+  settings->name = config->value("server_name", "My First Server").toString();
+  settings->description =
       config->value("server_description", "This is my flashy new server")
           .toString();
   config->endGroup();
@@ -132,12 +134,12 @@ bool ConfigManager::loadServerSettings(QString *ms_ip, int *port, int *ws_port,
   }
   else {
     if (config->value("advertise", "true").toString() != "true")
-      *advertise_server = false;
+      settings->advertise_server = false;
     else
-      *advertise_server = true;
+      settings->advertise_server = true;
 
     if (config->value("webao_enable", "true").toString() != "true")
-      *ws_port = -1;
+      settings->ws_port = -1;
 
     return true;
   }

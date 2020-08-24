@@ -22,7 +22,6 @@ public:
   AkashiMain(QWidget *parent = nullptr);
   ~AkashiMain();
 
-  QSettings config;
   ConfigManager config_manager;
 
   void generateDefaultConfig(bool backup_old);
