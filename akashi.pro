@@ -17,7 +17,8 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += $$files($$PWD/src/*.cpp)
 
-HEADERS += $$files($$PWD/include/*.h)
+HEADERS += $$files($$PWD/include/*.h) \
+    include/aoclient.h
 
 FORMS += $$files($$PWD/resource/forms/*.ui)
 

@@ -1,9 +1,27 @@
-#include <include/aopacket.h>
+#include "include/aopacket.h"
 
 AOPacket::AOPacket(QString p_header, QStringList p_contents)
 {
   header = p_header;
   contents = p_contents;
+}
+
+AOPacket::AOPacket(QString p_packet)
+{
+    QStringList packet_contents = p_packet.split("#");
+    if(p_packet.at(0) == '#') {
+        // The header is encrypted with FantaCrypt
+        // The server always uses the same key for FantaCrypt
+        // That way, we can just hardcode FantaCrypted headers
+        packet_contents.removeFirst();
+        if(packet_contents[0] == "48E0")
+            header = "HI";
+    }
+    else {
+        header = packet_contents[0];
+    }
+    packet_contents.removeFirst();
+    contents = packet_contents;
 }
 
 QString AOPacket::toString()

@@ -1,7 +1,7 @@
 #ifndef MASTER_H
 #define MASTER_H
 
-#include <include/aopacket.h>
+#include "include/aopacket.h"
 
 #include <QApplication>
 #include <QHostAddress>

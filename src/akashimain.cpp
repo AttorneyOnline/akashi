@@ -19,6 +19,7 @@ AkashiMain::AkashiMain(QWidget *parent)
     }
     else {
       if (settings.advertise_server) {
+        // TODO: send signal advertiser started
         advertiser = new Advertiser(settings.ms_ip, settings.port,
                                     settings.ws_port, settings.local_port,
                                     settings.name, settings.description, this);

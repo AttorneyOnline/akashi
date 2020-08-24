@@ -1,9 +1,9 @@
 #ifndef AKASHIMAIN_H
 #define AKASHIMAIN_H
 
-#include <include/advertiser.h>
-#include <include/config_manager.h>
-#include <include/server.h>
+#include "include/advertiser.h"
+#include "include/config_manager.h"
+#include "include/server.h"
 
 #include <QDebug>
 #include <QMainWindow>
