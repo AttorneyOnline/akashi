@@ -88,9 +88,7 @@ void Server::handlePacket(AOPacket packet, QTcpSocket* socket)
     // Lord forgive me
     if(packet.header == "HI"){
         AOClient* client = clients.value(socket);
-        qDebug() << packet.contents[0];
         client->setHwid(packet.contents[0]);
-        qDebug() << client->getIpid();
 
         AOPacket response("ID", {"271828", "akashi", QApplication::applicationVersion()});
         socket->write(response.toUtf8());
@@ -100,15 +98,46 @@ void Server::handlePacket(AOPacket packet, QTcpSocket* socket)
         QString max_players = config.value("max_players").toString();
         config.endGroup();
 
-        QStringList feature_list = {"noencryption"};
+        // Full feature list as of AO 2.8.5
+        // The only ones that are critical to ensuring the server works are "noencryption" and "fastloading"
+        // TODO: make the rest of these user configurable
+        QStringList feature_list = {"noencryption", "yellowtext", "prezoom", "flipping", "customobjections", "fastloading", "deskmod", "evidence", "cccc_ic_support", "arup", "casing_alserts", "modcall_reason", "looping_sfx", "additive", "effects"};
 
         AOPacket response_pn("PN", {QString::number(player_count), max_players});
         AOPacket response_fl("FL", feature_list);
         socket->write(response_pn.toUtf8());
         socket->write(response_fl.toUtf8());
+    } else if(packet.header == "askchaa"){
+        // TODO: add user configurable content
+        // For testing purposes, we will just send enough to get things working
+        AOPacket response("SI", {"2", "0", "1"});
+        socket->write(response.toUtf8());
+    } else if(packet.header == "RC") {
+        AOPacket response("SC", {"Phoenix", "Edgeworth"});
+        socket->write(response.toUtf8());
+    } else if(packet.header == "RM") {
+        AOPacket response("SM", {"~stop.mp3"});
+        socket->write(response.toUtf8());
+    } else if(packet.header == "RD") {
+        AOPacket response_cc("CharsCheck", {"0", "0"});
+        AOPacket response_op("OPPASS", {"DEADBEEF"});
+        AOPacket response_done("DONE", {});
+        socket->write(response_cc.toUtf8());
+        socket->write(response_op.toUtf8());
+        socket->write(response_done.toUtf8());
     } else {
         qDebug() << "Unimplemented packet:" << packet.header;
         qDebug() << packet.contents;
     }
     socket->flush();
+}
+
+QTcpSocket* Server::getClient(QString ipid)
+{
+    for(QTcpSocket* client : clients.keys())
+    {
+        if(clients.value(client)->getIpid() == ipid)
+            return client;
+    }
+    return nullptr;
 }

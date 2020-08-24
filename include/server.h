@@ -27,6 +27,7 @@ public slots:
 
 private:
   void handlePacket(AOPacket packet, QTcpSocket* socket);
+  QTcpSocket* getClient(QString ipid);
 
   QTcpServer* server;
 
