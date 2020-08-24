@@ -21,6 +21,11 @@ void Server::start()
     // The main issue with this is that it will cause problems with bans, ipids, etc
     // But perhaps this can be negotiated by sending some extra data over?
     // No idea. I'll wait for long to read this massive comment and DM me on discord
+    //
+    // Upon thinking about this a bit more, I realized basically all of the
+    // communication only happens via QTcpSocket* pointers.
+    // If the Qt WebSocket server gives me QTcpSockets to work with,
+    // then they can all go into the same object. I doubt this is the case, though
     if(!server->listen(QHostAddress::Any, port))
     {
         // TODO: signal server start failed
@@ -36,7 +41,7 @@ void Server::start()
 void Server::clientConnected()
 {
     QTcpSocket* client = server->nextPendingConnection();
-    AOClient ao_client(client->peerAddress().toString());
+    AOClient* ao_client = new AOClient(client->peerAddress());
     clients.insert(client, ao_client);
     connect(client, SIGNAL(disconnected()), this, SLOT(clientDisconnected()));
     connect(client, SIGNAL(readyRead()), this, SLOT(clientData()));
@@ -53,6 +58,7 @@ void Server::clientDisconnected()
 {
     if(QTcpSocket* client = dynamic_cast<QTcpSocket*>(sender())){
         qDebug() << client->peerAddress() << "disconnected";
+        delete clients.value(client);
         clients.remove(client);
         player_count--;
     }
@@ -81,6 +87,11 @@ void Server::handlePacket(AOPacket packet, QTcpSocket* socket)
 {
     // Lord forgive me
     if(packet.header == "HI"){
+        AOClient* client = clients.value(socket);
+        qDebug() << packet.contents[0];
+        client->setHwid(packet.contents[0]);
+        qDebug() << client->getIpid();
+
         AOPacket response("ID", {"271828", "akashi", QApplication::applicationVersion()});
         socket->write(response.toUtf8());
     } else if (packet.header == "ID"){

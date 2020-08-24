@@ -33,7 +33,7 @@ private:
   int port;
   int ws_port;
 
-  QMap<QTcpSocket*, AOClient> clients;
+  QMap<QTcpSocket*, AOClient*> clients;
   QString partial_packet;
   bool is_partial;
 
