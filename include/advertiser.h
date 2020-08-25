@@ -9,29 +9,30 @@
 #include <QTcpSocket>
 
 class Advertiser : public QObject {
-  Q_OBJECT
+    Q_OBJECT
 
-public:
-  Advertiser(QString p_ip, int p_port, int p_ws_port, int p_local_port,
-             QString p_name, QString p_description, QObject *parent = nullptr);
-  void contactMasterServer();
+  public:
+    Advertiser(QString p_ip, int p_port, int p_ws_port, int p_local_port,
+               QString p_name, QString p_description,
+               QObject* parent = nullptr);
+    void contactMasterServer();
 
-signals:
+  signals:
 
-public slots:
-  void readData();
-  void socketConnected();
-  void socketDisconnected();
+  public slots:
+    void readData();
+    void socketConnected();
+    void socketDisconnected();
 
-private:
-  QString ip;
-  int port;
-  int ws_port;
-  int local_port;
-  QString name;
-  QString description;
+  private:
+    QString ip;
+    int port;
+    int ws_port;
+    int local_port;
+    QString name;
+    QString description;
 
-  QTcpSocket *socket;
+    QTcpSocket* socket;
 };
 
 #endif // MASTER_H

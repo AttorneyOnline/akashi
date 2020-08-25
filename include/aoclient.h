@@ -6,24 +6,24 @@
 #include <QTcpSocket>
 
 class AOClient {
-public:
-  AOClient(QHostAddress p_remote_ip);
-  ~AOClient();
+  public:
+    AOClient(QHostAddress p_remote_ip);
+    ~AOClient();
 
-  QString getHwid();
-  void setHwid(QString p_hwid);
+    QString getHwid();
+    void setHwid(QString p_hwid);
 
-  QString getIpid();
+    QString getIpid();
 
-  QHostAddress remote_ip;
-  QString password;
-  bool joined;
-  int current_area;
-  QString current_char;
+    QHostAddress remote_ip;
+    QString password;
+    bool joined;
+    int current_area;
+    QString current_char;
 
-private:
-  QString hwid;
-  QString ipid;
+  private:
+    QString hwid;
+    QString ipid;
 };
 
 #endif // AOCLIENT_H

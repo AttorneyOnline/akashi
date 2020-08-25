@@ -7,14 +7,14 @@
 #include <QStringList>
 
 class AOPacket {
-public:
-  AOPacket(QString p_header, QStringList p_contents);
-  AOPacket(QString packet);
-  QString toString();
-  QByteArray toUtf8();
+  public:
+    AOPacket(QString p_header, QStringList p_contents);
+    AOPacket(QString packet);
+    QString toString();
+    QByteArray toUtf8();
 
-  QString header;
-  QStringList contents;
+    QString header;
+    QStringList contents;
 };
 
 #endif // PACKET_MANAGER_H

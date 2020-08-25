@@ -16,20 +16,20 @@ class AkashiMain;
 QT_END_NAMESPACE
 
 class AkashiMain : public QMainWindow {
-  Q_OBJECT
+    Q_OBJECT
 
-public:
-  AkashiMain(QWidget *parent = nullptr);
-  ~AkashiMain();
+  public:
+    AkashiMain(QWidget* parent = nullptr);
+    ~AkashiMain();
 
-  ConfigManager config_manager;
+    ConfigManager config_manager;
 
-  void generateDefaultConfig(bool backup_old);
-  void updateConfig(int current_version);
+    void generateDefaultConfig(bool backup_old);
+    void updateConfig(int current_version);
 
-private:
-  Ui::AkashiMain *ui;
-  Advertiser *advertiser;
-  Server *server;
+  private:
+    Ui::AkashiMain* ui;
+    Advertiser* advertiser;
+    Server* server;
 };
 #endif // AKASHIMAIN_H

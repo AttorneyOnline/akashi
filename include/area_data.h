@@ -1,11 +1,11 @@
 #ifndef AREA_DATA_H
 #define AREA_DATA_H
 
-#include <QString>
 #include <QMap>
+#include <QString>
 
 class AreaData {
-public:
+  public:
     AreaData(QStringList characters);
 
     QString name;

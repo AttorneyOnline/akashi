@@ -5,31 +5,31 @@
 
 #include <QDebug>
 #include <QDir>
-#include <QFileInfo>
 #include <QFile>
+#include <QFileInfo>
 #include <QSettings>
 
 class ConfigManager {
-public:
-  ConfigManager();
-  bool initConfig();
-  void generateDefaultConfig(bool backup_old);
-  void updateConfig(int current_version);
+  public:
+    ConfigManager();
+    bool initConfig();
+    void generateDefaultConfig(bool backup_old);
+    void updateConfig(int current_version);
 
-  struct server_settings {
-    QString ms_ip;
-    int port;
-    int ws_port;
-    int local_port;
-    QString name;
-    QString description;
-    bool advertise_server;
-  };
+    struct server_settings {
+        QString ms_ip;
+        int port;
+        int ws_port;
+        int local_port;
+        QString name;
+        QString description;
+        bool advertise_server;
+    };
 
-  bool loadServerSettings(server_settings *settings);
+    bool loadServerSettings(server_settings* settings);
 
-private:
-  QSettings *config;
+  private:
+    QSettings* config;
 };
 
 #endif // CONFIG_MANAGER_H
