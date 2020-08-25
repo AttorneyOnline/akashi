@@ -2,6 +2,8 @@
 
 AOClient::AOClient(QHostAddress p_remote_ip)
 {
+    joined = false;
+    password = "";
     remote_ip = p_remote_ip;
 }
 

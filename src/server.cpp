@@ -50,26 +50,25 @@ void Server::clientConnected()
     client->write(decryptor.toUtf8());
 
     qDebug() << client->peerAddress().toString() << "connected";
-    // TODO: only increment this once someone actually enters the coutroom
-    player_count++;
 }
 
 void Server::clientDisconnected()
 {
     if(QTcpSocket* client = dynamic_cast<QTcpSocket*>(sender())){
         qDebug() << client->peerAddress() << "disconnected";
+        if(clients.value(client)->joined)
+            player_count--;
+
         delete clients.value(client);
         clients.remove(client);
-        player_count--;
     }
 }
 
 void Server::clientData()
 {
-    // TODO: deal with more than one packet on wire
     if(QTcpSocket* client = dynamic_cast<QTcpSocket*>(sender())){
         QString data = QString::fromUtf8(client->readAll());
-        qDebug() << "From" << client->peerAddress() << ":" << data;
+        //qDebug() << "From" << client->peerAddress() << ":" << data;
 
         if(is_partial) {
             data = partial_packet + data;
@@ -78,13 +77,21 @@ void Server::clientData()
             is_partial = true;
         }
 
-        AOPacket packet(data);
-        handlePacket(packet, client);
+        QStringList all_packets = data.split("%");
+        all_packets.removeLast(); // Remove the entry after the last delimiter
+
+        for(QString single_packet : all_packets)
+        {
+            AOPacket packet(single_packet);
+            handlePacket(packet, client);
+        }
     }
 }
 
 void Server::handlePacket(AOPacket packet, QTcpSocket* socket)
 {
+    qDebug() << "Received packet:" << packet.header << ":" << packet.contents;
+    AOClient* client = clients.value(socket);
     // Lord forgive me
     if(packet.header == "HI"){
         AOClient* client = clients.value(socket);
@@ -119,17 +126,50 @@ void Server::handlePacket(AOPacket packet, QTcpSocket* socket)
         AOPacket response("SM", {"~stop.mp3"});
         socket->write(response.toUtf8());
     } else if(packet.header == "RD") {
+        player_count++;
+        client->joined = true;
+
         AOPacket response_cc("CharsCheck", {"0", "0"});
         AOPacket response_op("OPPASS", {"DEADBEEF"});
         AOPacket response_done("DONE", {});
         socket->write(response_cc.toUtf8());
         socket->write(response_op.toUtf8());
         socket->write(response_done.toUtf8());
+    } else if(packet.header == "PW") {
+        client->password = packet.contents[0];
+    } else if(packet.header == "CC") {
+        // TODO: properly implement this when adding characters
+        qDebug() << client->getIpid() << "chose character" << packet.contents[1] << "using password" << client->password;
+
+        AOPacket response("PV", {"271828", "CID", packet.contents[1]});
+        socket->write(response.toUtf8());
+    } else if(packet.header == "MS") {
+        // TODO: validate, validate, validate
+        broadcast(packet);
+    } else if(packet.header == "CT") {
+        // TODO: commands
+        // TODO: zalgo strip
+        broadcast(packet);
+    } else if(packet.header == "CH") {
+        // Why does this packet exist
+        AOPacket response("CHECK", {});
+        socket->write(response.toUtf8());
+    } else if(packet.header == "what") {
+        AOPacket response("CT", {"Made with love", "by scatterflower and windrammer"});
     } else {
         qDebug() << "Unimplemented packet:" << packet.header;
         qDebug() << packet.contents;
     }
     socket->flush();
+}
+
+void Server::broadcast(AOPacket packet)
+{
+    for(QTcpSocket* client : clients.keys())
+    {
+        client->write(packet.toUtf8());
+        client->flush();
+    }
 }
 
 QTcpSocket* Server::getClient(QString ipid)

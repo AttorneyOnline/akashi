@@ -29,7 +29,7 @@ void Advertiser::readData()
   // The information coming back from the MS isn't very useful
   // However, it can be useful to see it when debugging
   // TODO: master network debug switch
-  qDebug() << "From MS:" << socket->readAll();
+  // qDebug() << "From MS:" << socket->readAll();
 }
 
 void Advertiser::socketConnected()
@@ -48,7 +48,8 @@ void Advertiser::socketConnected()
 
   socket->write(data);
   // TODO: master network debug switch
-  qDebug() << "To MS:" << data;
+  // should be a separate one for MS as well
+  // qDebug() << "To MS:" << data;
   socket->flush();
 }
 

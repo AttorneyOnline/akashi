@@ -4,6 +4,7 @@
 #include "include/aopacket.h"
 #include "include/aoclient.h"
 
+#include <QDebug>
 #include <QApplication>
 #include <QString>
 #include <QSettings>
@@ -28,6 +29,7 @@ public slots:
 private:
   void handlePacket(AOPacket packet, QTcpSocket* socket);
   QTcpSocket* getClient(QString ipid);
+  void broadcast(AOPacket packet);
 
   QTcpServer* server;
 

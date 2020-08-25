@@ -17,6 +17,8 @@ public:
     QString getIpid();
 
     QHostAddress remote_ip;
+    QString password;
+    bool joined;
 
 private:
     QString hwid;
