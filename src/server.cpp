@@ -70,8 +70,9 @@ void Server::clientDisconnected()
         AOClient* ao_client = clients.value(client);
         if (ao_client->joined)
             player_count--;
-        areas.value(ao_client->current_area)
-            ->characters_taken[ao_client->current_char] = false;
+        if(ao_client->current_char != "")
+            areas.value(ao_client->current_area)
+                ->characters_taken[ao_client->current_char] = false;
 
         delete ao_client;
         clients.remove(client);
@@ -132,9 +133,9 @@ void Server::handlePacket(AOPacket packet, QTcpSocket* socket)
             "deskmod",      "evidence",         "cccc_ic_support",
             "arup",         "casing_alserts",   "modcall_reason",
             "looping_sfx",  "additive",         "effects"};
-
-        AOPacket response_pn("PN",
-                             {QString::number(player_count), max_players});
+        AOPacket response_pn("PN", {"72", "120"});
+        //AOPacket response_pn("PN",
+        //                     {QString::number(player_count), max_players});
         AOPacket response_fl("FL", feature_list);
         socket->write(response_pn.toUtf8());
         socket->write(response_fl.toUtf8());
@@ -169,7 +170,7 @@ void Server::handlePacket(AOPacket packet, QTcpSocket* socket)
         AOPacket response_cc("CharsCheck", chars_taken);
         AOPacket response_op("OPPASS", {"DEADBEEF"});
         AOPacket response_done("DONE", {});
-        socket->write(response_cc.toUtf8());
+        broadcast(response_cc);
         socket->write(response_op.toUtf8());
         socket->write(response_done.toUtf8());
     }
@@ -182,17 +183,21 @@ void Server::handlePacket(AOPacket packet, QTcpSocket* socket)
         if (!argument_ok)
             return;
 
-        QString char_selected = characters[char_id];
-        bool taken = area->characters_taken.value(char_selected);
-        if (taken || char_selected == "")
-            return;
-
         if (client->current_char != "") {
             area->characters_taken[client->current_char] = false;
         }
 
-        area->characters_taken[char_selected] = true;
-        client->current_char = char_selected;
+        if(char_id >= 0) {
+            QString char_selected = characters[char_id];
+            bool taken = area->characters_taken.value(char_selected);
+            if (taken || char_selected == "")
+                return;
+
+            area->characters_taken[char_selected] = true;
+            client->current_char = char_selected;
+        } else {
+            client->current_char = "";
+        }
 
         QStringList chars_taken;
         for (QString cur_char : area->characters_taken.keys()) {
@@ -204,7 +209,7 @@ void Server::handlePacket(AOPacket packet, QTcpSocket* socket)
         AOPacket response_cc("CharsCheck", chars_taken);
         AOPacket response_pv("PV", {"271828", "CID", packet.contents[1]});
         socket->write(response_pv.toUtf8());
-        socket->write(response_cc.toUtf8());
+        broadcast(response_cc);
     }
     else if (packet.header == "MS") {
         // TODO: validate, validate, validate
@@ -233,6 +238,7 @@ void Server::handlePacket(AOPacket packet, QTcpSocket* socket)
 
 void Server::broadcast(AOPacket packet)
 {
+    // TODO: make this selective to the current area only
     for (QTcpSocket* client : clients.keys()) {
         client->write(packet.toUtf8());
         client->flush();
