@@ -3,6 +3,7 @@
 
 #include "include/aoclient.h"
 #include "include/aopacket.h"
+#include "include/area_data.h"
 
 #include <QApplication>
 #include <QDebug>
@@ -11,6 +12,7 @@
 #include <QString>
 #include <QTcpServer>
 #include <QTcpSocket>
+#include <QFile>
 
 class Server : public QObject {
   Q_OBJECT
@@ -41,6 +43,8 @@ private:
   bool is_partial;
 
   int player_count;
+  QStringList characters;
+  QVector<AreaData*> areas;
 };
 
 #endif // SERVER_H

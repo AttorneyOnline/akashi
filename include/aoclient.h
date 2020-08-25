@@ -18,6 +18,8 @@ public:
   QHostAddress remote_ip;
   QString password;
   bool joined;
+  int current_area;
+  QString current_char;
 
 private:
   QString hwid;

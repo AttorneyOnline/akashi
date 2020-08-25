@@ -33,6 +33,17 @@ void Server::start()
     // TODO: signal server start success
     qDebug() << "Server listening on" << port;
   }
+
+  QFile char_list("characters.txt");
+  char_list.open(QIODevice::ReadOnly | QIODevice::Text);
+  while(!char_list.atEnd())
+  {
+      characters.append(char_list.readLine().trimmed());
+  }
+
+  // TODO: actually read areas from config
+  areas.append(new AreaData(characters));
+  areas[0]->name = "basement lol";
 }
 
 void Server::clientConnected()
@@ -43,7 +54,8 @@ void Server::clientConnected()
   connect(client, SIGNAL(disconnected()), this, SLOT(clientDisconnected()));
   connect(client, SIGNAL(readyRead()), this, SLOT(clientData()));
 
-  AOPacket decryptor("decryptor", {"34"});
+  AOPacket decryptor("decryptor", {"NOENCRYPT"}); // This is the infamous workaround for tsuserver4
+                                                  // It should disable fantacrypt completely in any client 2.4.3 or newer
   client->write(decryptor.toUtf8());
 
   qDebug() << client->peerAddress().toString() << "connected";
@@ -53,10 +65,12 @@ void Server::clientDisconnected()
 {
   if (QTcpSocket *client = dynamic_cast<QTcpSocket *>(sender())) {
     qDebug() << client->peerAddress() << "disconnected";
-    if (clients.value(client)->joined)
+    AOClient* ao_client = clients.value(client);
+    if (ao_client->joined)
       player_count--;
+    areas.value(ao_client->current_area)->characters_taken[ao_client->current_char] = false;
 
-    delete clients.value(client);
+    delete ao_client;
     clients.remove(client);
   }
 }
@@ -86,8 +100,10 @@ void Server::clientData()
 
 void Server::handlePacket(AOPacket packet, QTcpSocket *socket)
 {
+  // TODO: like everything here should send a signal
   qDebug() << "Received packet:" << packet.header << ":" << packet.contents;
   AOClient *client = clients.value(socket);
+  AreaData *area = areas.value(client->current_area);
   // Lord forgive me
   if (packet.header == "HI") {
     AOClient *client = clients.value(socket);
@@ -121,11 +137,12 @@ void Server::handlePacket(AOPacket packet, QTcpSocket *socket)
   else if (packet.header == "askchaa") {
     // TODO: add user configurable content
     // For testing purposes, we will just send enough to get things working
-    AOPacket response("SI", {"2", "0", "1"});
+    AOPacket response("SI", {QString::number(characters.length()), "0", "1"});
+    qDebug() << response.toString();
     socket->write(response.toUtf8());
   }
   else if (packet.header == "RC") {
-    AOPacket response("SC", {"Phoenix", "Edgeworth"});
+    AOPacket response("SC", characters);
     socket->write(response.toUtf8());
   }
   else if (packet.header == "RM") {
@@ -136,7 +153,13 @@ void Server::handlePacket(AOPacket packet, QTcpSocket *socket)
     player_count++;
     client->joined = true;
 
-    AOPacket response_cc("CharsCheck", {"0", "0"});
+    QStringList chars_taken;
+    for(QString cur_char : area->characters_taken.keys())
+    {
+        chars_taken.append(area->characters_taken.value(cur_char) ? QStringLiteral("-1") : QStringLiteral("0"));
+    }
+
+    AOPacket response_cc("CharsCheck", chars_taken);
     AOPacket response_op("OPPASS", {"DEADBEEF"});
     AOPacket response_done("DONE", {});
     socket->write(response_cc.toUtf8());
@@ -147,12 +170,33 @@ void Server::handlePacket(AOPacket packet, QTcpSocket *socket)
     client->password = packet.contents[0];
   }
   else if (packet.header == "CC") {
-    // TODO: properly implement this when adding characters
-    qDebug() << client->getIpid() << "chose character" << packet.contents[1]
-             << "using password" << client->password;
+    bool argument_ok;
+    int char_id = packet.contents[1].toInt(&argument_ok);
+    if(!argument_ok)
+        return;
 
-    AOPacket response("PV", {"271828", "CID", packet.contents[1]});
-    socket->write(response.toUtf8());
+    QString char_selected = characters[char_id];
+    bool taken = area->characters_taken.value(char_selected);
+    if(taken || char_selected == "")
+        return;
+
+    if(client->current_char != "") {
+        area->characters_taken[client->current_char] = false;
+    }
+
+    area->characters_taken[char_selected] = true;
+    client->current_char = char_selected;
+
+    QStringList chars_taken;
+    for(QString cur_char : area->characters_taken.keys())
+    {
+        chars_taken.append(area->characters_taken.value(cur_char) ? QStringLiteral("-1") : QStringLiteral("0"));
+    }
+
+    AOPacket response_cc("CharsCheck", chars_taken);
+    AOPacket response_pv("PV", {"271828", "CID", packet.contents[1]});
+    socket->write(response_pv.toUtf8());
+    socket->write(response_cc.toUtf8());
   }
   else if (packet.header == "MS") {
     // TODO: validate, validate, validate

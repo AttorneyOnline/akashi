@@ -11,19 +11,9 @@ AOPacket::AOPacket(QString p_packet)
   QStringList packet_contents = p_packet.split("#");
   if (p_packet.at(0) == '#') {
     // The header is encrypted with FantaCrypt
-    // The server always uses the same key for FantaCrypt
-    // That way, we can just hardcode FantaCrypted headers
-    // TODO: replace this with a key/value map?
-    packet_contents.removeFirst();
-    if (packet_contents[0] == "48E0")
-      header = "HI";
-    else if (packet_contents[0] == "493F")
-      header = "ID";
-    else if (packet_contents[0] == "615810BC07D12A5A")
-      header = "askchaa";
-    else
-      header = packet_contents[0]; // If no known decryption exists, just leave
-                                   // the packet as-is
+    // This should never happen with AO2 2.4.3 or newer
+    // TODO: implement fantacrypt? maybe?
+    qDebug() << "FantaCrypt packet received";
   }
   else {
     header = packet_contents[0];

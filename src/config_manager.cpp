@@ -8,6 +8,73 @@ ConfigManager::ConfigManager()
 // Validate and set up the config
 bool ConfigManager::initConfig()
 {
+  QFileInfo char_list_info("characters.txt");
+  if(!(char_list_info.exists() && char_list_info.isFile()))
+  {
+    // TODO: signals go here
+    QFile char_list("characters.txt");
+    if (!char_list.open(QIODevice::WriteOnly | QIODevice::Text))
+            qDebug() << "Couldn't create character list";
+    QTextStream file_stream(&char_list);
+
+    qDebug() << "Creating vanilla character list";
+
+    file_stream << "Adrian\n";
+    file_stream << "Apollo\n";
+    file_stream << "April\n";
+    file_stream << "Armstrong\n";
+    file_stream << "Atmey\n";
+    file_stream << "Butz\n";
+    file_stream << "Diego\n";
+    file_stream << "Edgeworth\n";
+    file_stream << "Edgeworthw\n";
+    file_stream << "Ema\n";
+    file_stream << "EmaSkye\n";
+    file_stream << "Franny\n";
+    file_stream << "Franziska\n";
+    file_stream << "Gant\n";
+    file_stream << "Gavin\n";
+    file_stream << "Gavin K\n";
+    file_stream << "Godot\n";
+    file_stream << "Gregory\n";
+    file_stream << "Grossberg\n";
+    file_stream << "Gumshoe\n";
+    file_stream << "Gumshoey\n";
+    file_stream << "Hawk\n";
+    file_stream << "Hobo_Phoenix\n";
+    file_stream << "Ini\n";
+    file_stream << "Judge\n";
+    file_stream << "Judge's Bro\n";
+    file_stream << "Klav\n";
+    file_stream << "Klavier\n";
+    file_stream << "Kristoph\n";
+    file_stream << "Lana\n";
+    file_stream << "Layton\n";
+    file_stream << "Lotta\n";
+    file_stream << "Luis\n";
+    file_stream << "Maggey\n";
+    file_stream << "Manfred\n";
+    file_stream << "Marshall\n";
+    file_stream << "Matt\n";
+    file_stream << "Maya\n";
+    file_stream << "Mia\n";
+    file_stream << "Miles\n";
+    file_stream << "Oldbag\n";
+    file_stream << "Payne\n";
+    file_stream << "Pearl\n";
+    file_stream << "Phoenix\n";
+    file_stream << "Valant\n";
+    file_stream << "Vasquez\n";
+    file_stream << "Wellington\n";
+    file_stream << "Winston\n";
+    file_stream << "WinstonPayne\n";
+    file_stream << "Young Mia\n";
+    file_stream << "Zak\n";
+
+    char_list.flush();
+    char_list.close();
+  }
+
   config->beginGroup("Info");
   QString config_version = config->value("version", "none").toString();
   config->endGroup();

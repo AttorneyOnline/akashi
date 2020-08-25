@@ -6,6 +6,7 @@
 #include <QDebug>
 #include <QDir>
 #include <QFileInfo>
+#include <QFile>
 #include <QSettings>
 
 class ConfigManager {
