@@ -133,9 +133,8 @@ void Server::handlePacket(AOPacket packet, QTcpSocket* socket)
             "deskmod",      "evidence",         "cccc_ic_support",
             "arup",         "casing_alserts",   "modcall_reason",
             "looping_sfx",  "additive",         "effects"};
-        AOPacket response_pn("PN", {"72", "120"});
-        //AOPacket response_pn("PN",
-        //                     {QString::number(player_count), max_players});
+        AOPacket response_pn("PN",
+                             {QString::number(player_count), max_players});
         AOPacket response_fl("FL", feature_list);
         socket->write(response_pn.toUtf8());
         socket->write(response_fl.toUtf8());
