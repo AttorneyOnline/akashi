@@ -1,28 +1,27 @@
 #ifndef AOCLIENT_H
 #define AOCLIENT_H
 
-#include <QTcpSocket>
-#include <QHostAddress>
 #include <QCryptographicHash>
+#include <QHostAddress>
+#include <QTcpSocket>
 
-class AOClient
-{
+class AOClient {
 public:
-    AOClient(QHostAddress p_remote_ip);
-    ~AOClient();
+  AOClient(QHostAddress p_remote_ip);
+  ~AOClient();
 
-    QString getHwid();
-    void setHwid(QString p_hwid);
+  QString getHwid();
+  void setHwid(QString p_hwid);
 
-    QString getIpid();
+  QString getIpid();
 
-    QHostAddress remote_ip;
-    QString password;
-    bool joined;
+  QHostAddress remote_ip;
+  QString password;
+  bool joined;
 
 private:
-    QString hwid;
-    QString ipid;
+  QString hwid;
+  QString ipid;
 };
 
 #endif // AOCLIENT_H

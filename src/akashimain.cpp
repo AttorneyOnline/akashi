@@ -36,7 +36,7 @@ AkashiMain::AkashiMain(QWidget *parent)
 
 AkashiMain::~AkashiMain()
 {
-    delete ui;
-    delete advertiser;
-    delete server;
+  delete ui;
+  delete advertiser;
+  delete server;
 }
