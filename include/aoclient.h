@@ -1,9 +1,3 @@
-#ifndef AOCLIENT_H
-#define AOCLIENT_H
-
-#include "include/aopacket.h"
-#include "include/server.h"
-
 //////////////////////////////////////////////////////////////////////////////////////
 //    akashi - a server for Attorney Online 2                                       //
 //    Copyright (C) 2020  scatterflower                                             //
@@ -21,7 +15,12 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
-#include <QCryptographicHash>
+#ifndef AOCLIENT_H
+#define AOCLIENT_H
+
+#include "include/aopacket.h"
+#include "include/server.h"
+
 #include <QHostAddress>
 #include <QTcpSocket>
 
