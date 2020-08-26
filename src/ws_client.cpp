@@ -15,31 +15,39 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
-#ifndef WS_PROXY_H
-#define WS_PROXY_H
-
 #include "include/ws_client.h"
 
-#include <QMap>
-#include <QTcpSocket>
-#include <QtWebSockets/QtWebSockets>
-#include <QHostAddress>
+WSClient::WSClient(QTcpSocket* p_tcp_socket, QWebSocket* p_web_socket, QObject* parent)
+    : QObject(parent)
+{
+    tcp_socket = p_tcp_socket;
+    web_socket = p_web_socket;
+}
 
-class WSProxy : public QObject {
-    Q_OBJECT
-  public:
-    WSProxy(int p_local_port, int p_ws_port, QObject* parent);
-    void start();
+void WSClient::onWsData(QString message)
+{
+    tcp_socket->write(message.toUtf8());
+    tcp_socket->flush();
+}
 
-  public slots:
-    void wsConnected();
+void WSClient::onTcpData()
+{
+    QByteArray tcp_message = tcp_socket->readAll();
+    // Workaround for WebAO bug needing every packet in its own message
+    QStringList all_packets = QString::fromUtf8(tcp_message).split("%");
+    all_packets.removeLast(); // Remove empty space after final delimiter
+    for(QString packet : all_packets) {
+        web_socket->sendTextMessage(packet + "%");
+    }
+}
 
-  private:
-    QWebSocketServer* server;
-    QVector<WSClient*> clients;
+void WSClient::onWsDisconnect()
+{
+    tcp_socket->disconnectFromHost();
+    tcp_socket->close();
+}
 
-    int local_port;
-    int ws_port;
-};
-
-#endif // WS_PROXY_H
+void WSClient::onTcpDisconnect()
+{
+    web_socket->close();
+}

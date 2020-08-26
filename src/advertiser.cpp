@@ -33,9 +33,9 @@ Advertiser::Advertiser(QString p_ip, int p_port, int p_ws_port,
 void Advertiser::contactMasterServer()
 {
     socket = new QTcpSocket(this);
-    connect(socket, SIGNAL(readyRead()), this, SLOT(readData()));
-    connect(socket, SIGNAL(connected()), this, SLOT(socketConnected()));
-    connect(socket, SIGNAL(disconnected()), this, SLOT(socketDisconnected()));
+    connect(socket, &QTcpSocket::readyRead, this, &Advertiser::readData);
+    connect(socket, &QTcpSocket::connected, this, &Advertiser::socketConnected);
+    connect(socket, &QTcpSocket::disconnected, this, &Advertiser::socketDisconnected);
 
     socket->setSocketOption(QAbstractSocket::KeepAliveOption, 1);
     socket->connectToHost(ip, port);

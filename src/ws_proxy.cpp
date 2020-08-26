@@ -17,11 +17,44 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/ws_proxy.h"
 
-WSProxy::WSProxy(QObject* parent) : QObject(parent)
+WSProxy::WSProxy(int p_local_port, int p_ws_port, QObject* parent) : QObject(parent)
 {
+    local_port = p_local_port;
+    ws_port = p_ws_port;
     server = new QWebSocketServer(QStringLiteral(""),
                                   QWebSocketServer::NonSecureMode, this);
-    connect(server, SIGNAL(newConnection()), this, SLOT(wsConnected()));
+    connect(server, &QWebSocketServer::newConnection, this,
+            &WSProxy::wsConnected);
 }
 
-void WSProxy::wsConnected() {}
+void WSProxy::start()
+{
+    if(!server->listen(QHostAddress::Any, ws_port)) {
+        qDebug() << "WebSocket proxy failed to start: " << server->errorString();
+    } else {
+        qDebug() << "WebSocket proxy listening";
+    }
+}
+
+void WSProxy::wsConnected()
+{
+    QWebSocket* new_ws = server->nextPendingConnection();
+    QTcpSocket* new_tcp = new QTcpSocket(this);
+    WSClient* client = new WSClient(new_tcp, new_ws, this);
+    clients.append(client);
+
+    connect(new_ws, &QWebSocket::textMessageReceived, client, &WSClient::onWsData);
+    connect(new_tcp, &QTcpSocket::readyRead, client, &WSClient::onTcpData);
+    connect(new_ws, &QWebSocket::disconnected, client, &WSClient::onWsDisconnect);
+    connect(new_tcp, &QTcpSocket::disconnected, client, &WSClient::onTcpDisconnect);
+    connect(new_ws, &QWebSocket::disconnected, this, [=] {
+        clients.removeAll(client);
+        client->deleteLater();
+    });
+    connect(new_tcp, &QTcpSocket::disconnected, this, [=] {
+        clients.removeAll(client);
+        client->deleteLater();
+    });
+
+    new_tcp->connectToHost(QHostAddress::LocalHost, local_port);
+}

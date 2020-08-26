@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //    akashi - a server for Attorney Online 2                                       //
-//    Copyright (C) 2020  scatterflower                                             //
+//    Copyright (C) 2020  scatterflower                                           //
 //                                                                                  //
 //    This program is free software: you can redistribute it and/or modify          //
 //    it under the terms of the GNU Affero General Public License as                //
@@ -15,31 +15,29 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
-#ifndef WS_PROXY_H
-#define WS_PROXY_H
+#ifndef WS_CLIENT_H
+#define WS_CLIENT_H
 
-#include "include/ws_client.h"
-
-#include <QMap>
-#include <QTcpSocket>
+#include <QObject>
 #include <QtWebSockets/QtWebSockets>
-#include <QHostAddress>
+#include <QTcpSocket>
+#include <QString>
 
-class WSProxy : public QObject {
+class WSClient : public QObject {
     Q_OBJECT
-  public:
-    WSProxy(int p_local_port, int p_ws_port, QObject* parent);
-    void start();
+public:
+    WSClient(QTcpSocket* p_tcp_socket, QWebSocket* p_web_socket, QObject* parent = nullptr);
 
-  public slots:
-    void wsConnected();
+public slots:
+    void onTcpData();
+    void onWsData(QString message);
+    void onWsDisconnect();
+    void onTcpDisconnect();
 
-  private:
-    QWebSocketServer* server;
-    QVector<WSClient*> clients;
 
-    int local_port;
-    int ws_port;
+private:
+    QTcpSocket* tcp_socket;
+    QWebSocket* web_socket;
 };
 
-#endif // WS_PROXY_H
+#endif // WS_CLIENT_H

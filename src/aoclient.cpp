@@ -55,16 +55,17 @@ void AOClient::clientDisconnected()
     qDebug() << remote_ip << "disconnected";
     if (joined)
         server->player_count--;
-    if (current_char != "")
+    if (current_char != "") {
         server->areas.value(current_area)->characters_taken[current_char] =
             false;
-    server->updateCharsTaken(server->areas.value(current_area));
+        server->updateCharsTaken(server->areas.value(current_area));
+    }
 }
 
 void AOClient::handlePacket(AOPacket packet)
 {
     // TODO: like everything here should send a signal
-    qDebug() << "Received packet:" << packet.header << ":" << packet.contents;
+    //qDebug() << "Received packet:" << packet.header << ":" << packet.contents;
     AreaData* area = server->areas.value(current_area);
     // Lord forgive me
     if (packet.header == "HI") {
@@ -90,8 +91,9 @@ void AOClient::handlePacket(AOPacket packet)
             "deskmod",      "evidence",         "cccc_ic_support",
             "arup",         "casing_alserts",   "modcall_reason",
             "looping_sfx",  "additive",         "effects"};
-        AOPacket response_pn(
-            "PN", {QString::number(server->player_count), max_players});
+        //AOPacket response_pn(
+        //    "PN", {QString::number(server->player_count), max_players});
+        AOPacket response_pn("PN", {"69", "420"});
         AOPacket response_fl("FL", feature_list);
         sendPacket(response_pn);
         sendPacket(response_fl);
@@ -133,6 +135,9 @@ void AOClient::handlePacket(AOPacket packet)
         if (current_char != "") {
             area->characters_taken[current_char] = false;
         }
+
+        if(char_id > server->characters.length())
+            return;
 
         if (char_id >= 0) {
             QString char_selected = server->characters[char_id];
@@ -179,7 +184,7 @@ void AOClient::handlePacket(AOPacket packet)
 
 void AOClient::sendPacket(AOPacket packet)
 {
-    qDebug() << "Sent packet:" << packet.header << ":" << packet.contents;
+    //qDebug() << "Sent packet:" << packet.header << ":" << packet.contents;
     socket->write(packet.toUtf8());
     socket->flush();
 }

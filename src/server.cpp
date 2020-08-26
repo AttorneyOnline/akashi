@@ -52,6 +52,10 @@ void Server::start()
         qDebug() << "Server listening on" << port;
     }
 
+    proxy = new WSProxy(port, ws_port, this);
+    if(ws_port != -1)
+        proxy->start();
+
     QFile char_list("characters.txt");
     char_list.open(QIODevice::ReadOnly | QIODevice::Text);
     while (!char_list.atEnd()) {
