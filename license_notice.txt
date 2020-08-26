@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //    akashi - a server for Attorney Online 2                                       //
-//    Copyright (C) 2020  scatterflower                                             //
+//    Copyright (C) %YEAR%  scatterflower                                           //
 //                                                                                  //
 //    This program is free software: you can redistribute it and/or modify          //
 //    it under the terms of the GNU Affero General Public License as                //
@@ -15,38 +15,3 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
-#ifndef CONFIG_MANAGER_H
-#define CONFIG_MANAGER_H
-
-#define CONFIG_VERSION 1
-
-#include <QDebug>
-#include <QDir>
-#include <QFile>
-#include <QFileInfo>
-#include <QSettings>
-
-class ConfigManager {
-  public:
-    ConfigManager();
-    bool initConfig();
-    void generateDefaultConfig(bool backup_old);
-    void updateConfig(int current_version);
-
-    struct server_settings {
-        QString ms_ip;
-        int port;
-        int ws_port;
-        int local_port;
-        QString name;
-        QString description;
-        bool advertise_server;
-    };
-
-    bool loadServerSettings(server_settings* settings);
-
-  private:
-    QSettings* config;
-};
-
-#endif // CONFIG_MANAGER_H
