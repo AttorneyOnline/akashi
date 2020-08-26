@@ -4,6 +4,7 @@
 #include "include/aoclient.h"
 #include "include/aopacket.h"
 #include "include/area_data.h"
+#include "include/ws_proxy.h"
 
 #include <QApplication>
 #include <QDebug>
@@ -14,37 +15,35 @@
 #include <QTcpServer>
 #include <QTcpSocket>
 
+class AOClient;
+
 class Server : public QObject {
     Q_OBJECT
 
   public:
     Server(int p_port, int p_ws_port, QObject* parent = nullptr);
     void start();
+    AOClient* getClient(QString ipid);
+    void updateCharsTaken(AreaData* area);
+    void broadcast(AOPacket packet);
+
+    int player_count;
+    QStringList characters;
+    QVector<AreaData*> areas;
 
   signals:
 
   public slots:
     void clientConnected();
-    void clientDisconnected();
-    void clientData();
 
   private:
-    void handlePacket(AOPacket packet, QTcpSocket* socket);
-    QTcpSocket* getClient(QString ipid);
-    void broadcast(AOPacket packet);
-
+    WSProxy* proxy;
     QTcpServer* server;
 
     int port;
     int ws_port;
 
-    QMap<QTcpSocket*, AOClient*> clients;
-    QString partial_packet;
-    bool is_partial;
-
-    int player_count;
-    QStringList characters;
-    QVector<AreaData*> areas;
+    QVector<AOClient*> clients;
 };
 
 #endif // SERVER_H

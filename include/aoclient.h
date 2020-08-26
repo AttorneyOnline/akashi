@@ -1,13 +1,19 @@
 #ifndef AOCLIENT_H
 #define AOCLIENT_H
 
+#include "include/aopacket.h"
+#include "include/server.h"
+
 #include <QCryptographicHash>
 #include <QHostAddress>
 #include <QTcpSocket>
 
-class AOClient {
+class Server;
+
+class AOClient : public QObject {
+    Q_OBJECT
   public:
-    AOClient(QHostAddress p_remote_ip);
+    AOClient(Server* p_server, QTcpSocket* p_socket, QObject* parent = nullptr);
     ~AOClient();
 
     QString getHwid();
@@ -21,7 +27,20 @@ class AOClient {
     int current_area;
     QString current_char;
 
+  public slots:
+    void clientDisconnected();
+    void clientData();
+    void sendPacket(AOPacket packet);
+
   private:
+    Server* server;
+    QTcpSocket* socket;
+
+    void handlePacket(AOPacket packet);
+
+    QString partial_packet;
+    bool is_partial;
+
     QString hwid;
     QString ipid;
 };
