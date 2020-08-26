@@ -91,9 +91,8 @@ void AOClient::handlePacket(AOPacket packet)
             "deskmod",      "evidence",         "cccc_ic_support",
             "arup",         "casing_alserts",   "modcall_reason",
             "looping_sfx",  "additive",         "effects"};
-        //AOPacket response_pn(
-        //    "PN", {QString::number(server->player_count), max_players});
-        AOPacket response_pn("PN", {"69", "420"});
+        AOPacket response_pn(
+            "PN", {QString::number(server->player_count), max_players});
         AOPacket response_fl("FL", feature_list);
         sendPacket(response_pn);
         sendPacket(response_fl);
