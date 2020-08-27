@@ -17,6 +17,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/akashimain.h"
 
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+
 #include <QApplication>
 #include <QCommandLineOption>
 #include <QCommandLineParser>
@@ -27,6 +31,12 @@
 
 int main(int argc, char* argv[])
 {
+    #ifdef _WIN32
+    if (AttachConsole(ATTACH_PARENT_PROCESS)) {
+        freopen("CONOUT$", "w", stdout);
+        freopen("CONOUT$", "w", stderr);
+    }
+    #endif
     QApplication app(argc, argv);
     QApplication::setApplicationName("akashi");
     QApplication::setApplicationVersion("0.0.1");
