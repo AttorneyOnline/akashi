@@ -1,4 +1,4 @@
-# akashi <img src="https://github.com/AttorneyOnline/akashi/blob/master/resource/icon.png" width=30 height=30>
+# akashi <img src="https://github.com/AttorneyOnline/akashi/blob/master/resource/icon/256.png" width=30 height=30>
 A C++ server for Attorney Online 2
 
 Copyright © scatterflower 2020
