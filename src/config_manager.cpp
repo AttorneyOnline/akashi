@@ -218,6 +218,7 @@ bool ConfigManager::loadServerSettings(server_settings* settings)
         return false;
     }
     else {
+        config->beginGroup("Options");
         if (config->value("advertise", "true").toString() != "true")
             settings->advertise_server = false;
         else
@@ -225,6 +226,7 @@ bool ConfigManager::loadServerSettings(server_settings* settings)
 
         if (config->value("webao_enable", "true").toString() != "true")
             settings->ws_port = -1;
+        config->endGroup();
 
         return true;
     }
