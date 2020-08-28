@@ -31,7 +31,7 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE
           qmake
-          build
+          make
           
       - name: Upload binary
         uses: actions/upload-artifact@v2
