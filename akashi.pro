@@ -19,6 +19,8 @@ DESTDIR = $$PWD/bin
 OBJECTS_DIR = $$PWD/build
 MOC_DIR = $$PWD/build
 
+RC_ICONS = resource/icon/akashi.ico
+
 SOURCES += $$files($$PWD/src/*.cpp)
 
 HEADERS += $$files($$PWD/include/*.h)
