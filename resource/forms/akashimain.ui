@@ -1,4 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+//////////////////////////////////////////////////////////////////////////////////////
+//    akashi - a server for Attorney Online 2                                       //
+//    Copyright (C) 2020  windrammer                                                //
+//                                                                                  //
+//    This program is free software: you can redistribute it and/or modify          //
+//    it under the terms of the GNU Affero General Public License as                //
+//    published by the Free Software Foundation, either version 3 of the            //
+//    License, or (at your option) any later version.                               //
+//                                                                                  //
+//    This program is distributed in the hope that it will be useful,               //
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of                //
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                 //
+//    GNU Affero General Public License for more details.                           //
+//                                                                                  //
+//    You should have received a copy of the GNU Affero General Public License      //
+//    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
+//////////////////////////////////////////////////////////////////////////////////////
+-->
 <ui version="4.0">
  <class>AkashiMain</class>
  <widget class="QMainWindow" name="AkashiMain">
@@ -25,7 +44,8 @@
    <enum>Qt::LeftToRight</enum>
   </property>
   <property name="styleSheet">
-   <string notr="true">background-color: rgb(240, 240, 240);</string>
+   <string notr="true">/*background-color: rgb(240, 240, 240);*/
+background-color: rgb(53, 53, 53);</string>
   </property>
   <property name="tabShape">
    <enum>QTabWidget::Rounded</enum>
@@ -37,10 +57,16 @@
     </font>
    </property>
    <layout class="QHBoxLayout" name="horizontalLayout">
+    <property name="spacing">
+     <number>0</number>
+    </property>
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="autoFillBackground">
        <bool>false</bool>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">color: rgb(243, 243, 243);</string>
       </property>
       <property name="currentIndex">
        <number>0</number>
@@ -68,6 +94,15 @@
         <property name="leftMargin">
          <number>9</number>
         </property>
+        <property name="topMargin">
+         <number>9</number>
+        </property>
+        <property name="rightMargin">
+         <number>9</number>
+        </property>
+        <property name="bottomMargin">
+         <number>9</number>
+        </property>
         <item>
          <widget class="QLabel" name="label_ServerName">
           <property name="enabled">
@@ -91,11 +126,12 @@
            <bool>false</bool>
           </property>
           <property name="styleSheet">
-           <string notr="true">background-color: rgb(45, 57, 67);
+           <string notr="true">/*background-color: rgb(45, 57, 67);*/
+background-color: rgba(191, 64, 64, 0);
 color: rgb(240, 240, 240);
 padding: 16px 3px 16px 3px;
-border-top-left-radius: 3px;
-border-top-right-radius: 3px;</string>
+border-radius: 4px;
+/*background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(11, 24, 35, 255), stop:1 rgba(61, 73, 82, 255));*/</string>
           </property>
           <property name="text">
            <string>Server name</string>
@@ -104,6 +140,22 @@ border-top-right-radius: 3px;</string>
            <set>Qt::AlignCenter</set>
           </property>
          </widget>
+        </item>
+        <item>
+         <spacer name="verticalSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeType">
+           <enum>QSizePolicy::Fixed</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>2</width>
+            <height>2</height>
+           </size>
+          </property>
+         </spacer>
         </item>
         <item>
          <widget class="QLabel" name="label_ServerStatus">
@@ -122,8 +174,8 @@ border-top-right-radius: 3px;</string>
            <string notr="true">color: rgb(240, 240, 240);
 background-color: rgb(246, 36, 81);
 padding: 12px 18px 12px 18px;
-border-bottom-left-radius: 3px;
-border-bottom-right-radius: 3px;</string>
+border-radius: 4px;
+/*background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(202, 0, 43, 255), stop:1 rgba(255, 43, 89, 255));*/</string>
           </property>
           <property name="text">
            <string>Offline</string>
@@ -194,8 +246,9 @@ border-bottom-right-radius: 3px;</string>
             <property name="styleSheet">
              <string notr="true">QPushButton {
     border: none;
-    border-radius: 2px;
+    border-radius: 4px;
 	background-color: rgb(31, 215, 141);
+	/*background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(0, 193, 115, 255), stop:1 rgba(33, 251, 163, 255));*/
 	color: rgb(240, 240, 240);
     padding: 20px 30px 20px 30px;
 }
@@ -237,7 +290,7 @@ QPushButton:flat {
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_MS">
           <property name="spacing">
-           <number>0</number>
+           <number>2</number>
           </property>
           <item>
            <spacer name="horizontalSpacer_MS_L">
@@ -267,11 +320,12 @@ QPushButton:flat {
             </property>
             <property name="styleSheet">
              <string notr="true">background-color: rgb(45, 57, 67);
+background-color: rgb(45, 57, 67, 0);
 color: rgb(240, 240, 240);
 /*padding: 16px 3px 16px 3px;*/
 padding: 3px 8px 3px 8px;
-border-top-left-radius: 3px;
-border-bottom-left-radius: 3px;</string>
+border-radius: 4px;
+/*background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(11, 24, 35, 255), stop:1 rgba(61, 73, 82, 255));*/</string>
             </property>
             <property name="text">
              <string>Master Server connection status:</string>
@@ -294,9 +348,9 @@ border-bottom-left-radius: 3px;</string>
             <property name="styleSheet">
              <string notr="true">color: rgb(240, 240, 240);
 background-color: rgb(246, 36, 81);
-border-top-right-radius: 3px;
-border-bottom-right-radius: 3px;
-padding: 3px 8px 3px 8px;</string>
+border-radius: 4px;
+padding: 3px 8px 3px 8px;
+/*background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(202, 0, 43, 255), stop:1 rgba(255, 43, 89, 255));*/</string>
             </property>
             <property name="text">
              <string>Not connected</string>
@@ -354,7 +408,7 @@ padding: 3px 8px 3px 8px;</string>
           <item>
            <layout class="QVBoxLayout" name="verticalLayout_Players" stretch="0,0">
             <property name="spacing">
-             <number>0</number>
+             <number>2</number>
             </property>
             <property name="sizeConstraint">
              <enum>QLayout::SetDefaultConstraint</enum>
@@ -362,7 +416,7 @@ padding: 3px 8px 3px 8px;</string>
             <item>
              <widget class="QLabel" name="label_Players">
               <property name="sizePolicy">
-               <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                 <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
@@ -372,12 +426,15 @@ padding: 3px 8px 3px 8px;</string>
                 <pointsize>12</pointsize>
                </font>
               </property>
+              <property name="layoutDirection">
+               <enum>Qt::LeftToRight</enum>
+              </property>
               <property name="styleSheet">
                <string notr="true">color: rgb(240, 240, 240);
 background-color: rgb(43, 135, 211);
 padding: 3px 8px 3px 8px;
-border-top-left-radius: 2px;
-border-top-right-radius: 2px;</string>
+border-radius: 4px;
+/*background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(36, 128, 204, 255), stop:1 rgba(78, 175, 255, 255));*/</string>
               </property>
               <property name="frameShape">
                <enum>QFrame::NoFrame</enum>
@@ -411,11 +468,12 @@ border-top-right-radius: 2px;</string>
               </property>
               <property name="styleSheet">
                <string notr="true">color: rgb(240, 240, 240);
-background-color: rgb(45, 57, 67);
+/*background-color: rgb(45, 57, 67);*/
+background-color: rgb(45, 57, 67, 0);
 padding: 4px 8px 4px 8px;
 border-top-right-radius: 2px;
-border-bottom-left-radius: 2px;
-border-bottom-right-radius: 2px;</string>
+border-radius: 4px;
+/*background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(11, 24, 35, 255), stop:1 rgba(61, 73, 82, 255));*/</string>
               </property>
               <property name="text">
                <string>0/100</string>
@@ -430,12 +488,12 @@ border-bottom-right-radius: 2px;</string>
           <item>
            <layout class="QVBoxLayout" name="verticalLayout_Software">
             <property name="spacing">
-             <number>0</number>
+             <number>2</number>
             </property>
             <item>
              <widget class="QLabel" name="label_Software">
               <property name="sizePolicy">
-               <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                 <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
@@ -449,8 +507,8 @@ border-bottom-right-radius: 2px;</string>
                <string notr="true">color: rgb(240, 240, 240);
 background-color: rgb(43, 135, 211);
 padding: 3px 8px 3px 8px;
-border-top-left-radius: 2px;
-border-top-right-radius: 2px;</string>
+border-radius: 4px;
+/*background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(36, 128, 204, 255), stop:1 rgba(78, 175, 255, 255));*/</string>
               </property>
               <property name="text">
                <string>Software</string>
@@ -469,11 +527,11 @@ border-top-right-radius: 2px;</string>
               </property>
               <property name="styleSheet">
                <string notr="true">color: rgb(240, 240, 240);
-background-color: rgb(45, 57, 67);
+/*background-color: rgb(45, 57, 67);*/
+background-color: rgb(45, 57, 67, 0);
 padding: 4px 8px 4px 8px;
-border-top-right-radius: 2px;
-border-bottom-left-radius: 2px;
-border-bottom-right-radius: 2px;</string>
+border-radius: 4px;
+/*background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(11, 24, 35, 255), stop:1 rgba(61, 73, 82, 255));*/</string>
               </property>
               <property name="text">
                <string>Akashi</string>
@@ -488,12 +546,12 @@ border-bottom-right-radius: 2px;</string>
           <item>
            <layout class="QVBoxLayout" name="verticalLayout_Version">
             <property name="spacing">
-             <number>0</number>
+             <number>2</number>
             </property>
             <item>
              <widget class="QLabel" name="label_Version">
               <property name="sizePolicy">
-               <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                 <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
@@ -507,8 +565,8 @@ border-bottom-right-radius: 2px;</string>
                <string notr="true">color: rgb(240, 240, 240);
 background-color: rgb(43, 135, 211);
 padding: 3px 8px 3px 8px;
-border-top-left-radius: 2px;
-border-top-right-radius: 2px;</string>
+border-radius: 4px;
+/*background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(36, 128, 204, 255), stop:1 rgba(78, 175, 255, 255));*/</string>
               </property>
               <property name="text">
                <string>Version</string>
@@ -527,11 +585,11 @@ border-top-right-radius: 2px;</string>
               </property>
               <property name="styleSheet">
                <string notr="true">color: rgb(240, 240, 240);
-background-color: rgb(45, 57, 67);
+/*background-color: rgb(45, 57, 67);*/
+background-color: rgb(45, 57, 67, 0);
 padding: 4px 8px 4px 8px;
-border-top-right-radius: 2px;
-border-bottom-left-radius: 2px;
-border-bottom-right-radius: 2px;</string>
+border-radius: 4px;
+/*background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(11, 24, 35, 255), stop:1 rgba(61, 73, 82, 255));*/</string>
               </property>
               <property name="text">
                <string>0.0.1</string>
