@@ -203,7 +203,7 @@ bool ConfigManager::loadServerSettings(server_settings* settings)
     settings->ms_ip =
         config->value("ms_ip", "master.aceattorneyonline.com").toString();
     settings->port =
-        config->value("ms_port", "27016").toInt(&port_conversion_success);
+        config->value("port", "27016").toInt(&port_conversion_success);
     settings->ws_port =
         config->value("webao_port", "27017").toInt(&ws_port_conversion_success);
     settings->local_port =
