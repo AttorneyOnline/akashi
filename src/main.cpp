@@ -31,12 +31,21 @@
 
 int main(int argc, char* argv[])
 {
-    #ifdef _WIN32
+#ifdef _WIN32
     if (AttachConsole(ATTACH_PARENT_PROCESS)) {
         freopen("CONOUT$", "w", stdout);
         freopen("CONOUT$", "w", stderr);
     }
-    #endif
+#endif
+#ifdef __linux__
+    // We have to do this before the QApplication is instantiated
+    // As a result, we can't use QCommandLineParser
+    for(int i; i < argc; i++) {
+        if(strcmp("-l", argv[i]) == 0 || strcmp("--headless", argv[i]) == 0){
+            setenv("QT_QPA_PLATFORM", "minimal");
+        }
+    }
+#endif
     QApplication app(argc, argv);
     QApplication::setApplicationName("akashi");
     QApplication::setApplicationVersion("0.0.1");
