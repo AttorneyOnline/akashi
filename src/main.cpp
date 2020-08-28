@@ -40,9 +40,9 @@ int main(int argc, char* argv[])
 #ifdef __linux__
     // We have to do this before the QApplication is instantiated
     // As a result, we can't use QCommandLineParser
-    for(int i; i < argc; i++) {
+    for(int i = 0; i < argc; i++) {
         if(strcmp("-l", argv[i]) == 0 || strcmp("--headless", argv[i]) == 0){
-            setenv("QT_QPA_PLATFORM", "minimal");
+            setenv("QT_QPA_PLATFORM", "minimal", 1);
         }
     }
 #endif
