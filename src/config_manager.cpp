@@ -219,10 +219,9 @@ bool ConfigManager::loadServerSettings(server_settings* settings)
     }
     else {
         config->beginGroup("Options");
-        if (config->value("advertise", "true").toString() != "true")
-            settings->advertise_server = false;
-        else
-            settings->advertise_server = true;
+        // Will be true of false depending on the key
+        settings->advertise_server =
+            (config->value("advertise", "true").toString() == "true");
 
         if (config->value("webao_enable", "true").toString() != "true")
             settings->ws_port = -1;
