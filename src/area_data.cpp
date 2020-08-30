@@ -17,9 +17,15 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/area_data.h"
 
-AreaData::AreaData(QStringList characters)
+AreaData::AreaData(QStringList characters, QString p_name, int p_index)
 {
+    name = p_name;
+    index = p_index;
     for (QString cur_char : characters) {
         characters_taken.insert(cur_char, false);
     }
+    QSettings areas_ini("areas.ini", QSettings::IniFormat);
+    areas_ini.beginGroup(p_name);
+    background = areas_ini.value("background", "gs4").toString();
+    areas_ini.endGroup();
 }

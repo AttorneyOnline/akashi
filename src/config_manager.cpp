@@ -91,6 +91,69 @@ bool ConfigManager::initConfig()
         char_list.close();
     }
 
+    QFileInfo music_list_info("music.txt");
+    if (!(music_list_info.exists() && music_list_info.isFile())) {
+        QFile music_list("music.txt");
+        if (!music_list.open(QIODevice::WriteOnly | QIODevice::Text))
+            qDebug() << "Couldn't create music list";
+        QTextStream file_stream(&music_list);
+
+        qDebug() << "Creating vanilla music list";
+
+        file_stream << "Announce The Truth (AA).opus\n";
+        file_stream << "Announce The Truth (AJ).opus\n";
+        file_stream << "Announce The Truth (JFA).opus\n";
+        file_stream << "Announce The Truth (Miles).opus\n";
+        file_stream << "Announce The Truth (T&T).opus\n";
+        file_stream << "Confrontation ~ Presto 2009.opus\n";
+        file_stream << "Crises of Fate.opus\n";
+        file_stream << "Forgotten Legend.opus\n";
+        file_stream << "Godot - The Fragrance of Dark Coffee.opus\n";
+        file_stream << "Great Revival ~ Franziska von Karma.opus\n";
+        file_stream << "Great Revival ~ Miles Edgeworth.opus\n";
+        file_stream << "Hotline of Fate.opus\n";
+        file_stream << "Interesting People.opus\n";
+        file_stream << "Logic and Trick.opus\n";
+        file_stream << "Luke Atmey ~ I Just Want Love.opus\n";
+        file_stream << "Noisy People.opus\n";
+        file_stream << "OBJECTION (AA).opus\n";
+        file_stream << "Objection (AJ).opus\n";
+        file_stream << "OBJECTION (JFA).opus\n";
+        file_stream << "Objection (Miles).opus\n";
+        file_stream << "OBJECTION (T&T).opus\n";
+        file_stream << "Others ~ Guilty love.opus\n";
+        file_stream << "Prelude (AA).opus\n";
+        file_stream << "Prelude (AJ).opus\n";
+        file_stream << "Prologue (AA).opus\n";
+        file_stream << "Pursuit (AA) - variation.opus\n";
+        file_stream << "Pursuit (AA).opus\n";
+        file_stream << "Pursuit (AJ).opus\n";
+        file_stream << "Pursuit (DS).opus\n";
+        file_stream << "Pursuit (JFA) - variation.opus\n";
+        file_stream << "Pursuit (JFA).opus\n";
+        file_stream << "Pursuit (Miles).opus\n";
+        file_stream << "Pursuit (T&T) - variation.opus\n";
+        file_stream << "Pursuit (T&T).opus\n";
+        file_stream << "Pursuit ~ I Want to Find the Truth (Orchestra).opus\n";
+        file_stream << "Questioning AA (Allegro).opus\n";
+        file_stream << "Questioning AA (Moderato).opus\n";
+        file_stream << "Questioning AJ (Allegro).opus\n";
+        file_stream << "Questioning AJ (Moderato).opus\n";
+        file_stream << "Questioning JFA (Allegro).opus\n";
+        file_stream << "Questioning JFA (Moderato).opus\n";
+        file_stream << "Questioning T&T (Allegro).opus\n";
+        file_stream << "Questioning T&T (Moderato).opus\n";
+        file_stream << "Speak up Pup.opus\n";
+        file_stream << "Suspense (AA).opus\n";
+        file_stream << "The Great Truth Burglar.opus\n";
+        file_stream << "Trial (AA).opus\n";
+        file_stream << "Trial (AJ).opus\n";
+        file_stream << "Trial (Miles).opus\n";
+
+        music_list.flush();
+        music_list.close();
+    }
+
     config->beginGroup("Info");
     QString config_version = config->value("version", "none").toString();
     config->endGroup();

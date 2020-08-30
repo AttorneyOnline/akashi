@@ -20,14 +20,22 @@
 
 #include <QMap>
 #include <QString>
+#include <QSettings>
+#include <QDebug>
 
 class AreaData {
   public:
-    AreaData(QStringList characters);
+    AreaData(QStringList p_characters, QString p_name, int p_index);
 
     QString name;
+    int index;
     QMap<QString, bool> characters_taken;
     int player_count;
+
+    QString background;
+    bool showname_allowed;
+    bool locking_allowed;
+    bool iniswap_allowed;
 };
 
 #endif // AREA_DATA_H

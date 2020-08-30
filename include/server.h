@@ -42,11 +42,13 @@ class Server : public QObject {
     void start();
     AOClient* getClient(QString ipid);
     void updateCharsTaken(AreaData* area);
-    void broadcast(AOPacket packet);
+    void broadcast(AOPacket packet, int area_index);
 
     int player_count;
     QStringList characters;
     QVector<AreaData*> areas;
+    QStringList area_names;
+    QStringList music_list;
 
   signals:
 

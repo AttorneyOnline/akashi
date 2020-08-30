@@ -30,19 +30,6 @@ Server::Server(int p_port, int p_ws_port, QObject* parent) : QObject(parent)
 
 void Server::start()
 {
-    // TODO: websockets lul
-    // Maybe websockets should be handled by a separate intermediate part of the
-    // code? The idea being that it is a websocket server, and all it does is
-    // create a local connection to the raw tcp server. The main issue with this
-    // is that it will cause problems with bans, ipids, etc But perhaps this can
-    // be negotiated by sending some extra data over? No idea. I'll wait for
-    // long to read this massive comment and DM me on discord
-    //
-    // Upon thinking about this a bit more, I realized basically all of the
-    // communication only happens via QTcpSocket* pointers.
-    // If the Qt WebSocket server gives me QTcpSockets to work with,
-    // then they can all go into the same object. I doubt this is the case,
-    // though
     if (!server->listen(QHostAddress::Any, port)) {
         // TODO: signal server start failed
         qDebug() << "Server error:" << server->errorString();
@@ -61,10 +48,25 @@ void Server::start()
     while (!char_list.atEnd()) {
         characters.append(char_list.readLine().trimmed());
     }
+    char_list.close();
 
-    // TODO: actually read areas from config
-    areas.append(new AreaData(characters));
-    areas[0]->name = "basement lol";
+    QFile music_file("music.txt");
+    music_file.open(QIODevice::ReadOnly | QIODevice::Text);
+    while (!music_file.atEnd()) {
+        music_list.append(music_file.readLine().trimmed());
+    }
+    music_file.close();
+    if(music_list[0].contains(".")) // Add a default category if none exists
+        music_list.insert(0, "Music");
+
+    // TODO: add verification that this exists
+    QSettings areas_ini("areas.ini", QSettings::IniFormat);
+    area_names = areas_ini.childGroups();
+    for (int i = 0; i < area_names.length(); i++) {
+        QString area_name = area_names[i];
+        areas.insert(i, new AreaData(characters, area_name, i));
+        qDebug() << "Added area" << area_name;
+    }
 }
 
 void Server::clientConnected()
@@ -100,14 +102,15 @@ void Server::updateCharsTaken(AreaData* area)
     }
 
     AOPacket response_cc("CharsCheck", chars_taken);
-    broadcast(response_cc);
+    broadcast(response_cc, area->index);
 }
 
-void Server::broadcast(AOPacket packet)
+void Server::broadcast(AOPacket packet, int area_index)
 {
     // TODO: make this selective to the current area only
     for (AOClient* client : clients) {
-        client->sendPacket(packet);
+        if (client->current_area == area_index)
+            client->sendPacket(packet);
     }
 }
 
