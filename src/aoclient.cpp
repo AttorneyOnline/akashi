@@ -195,6 +195,11 @@ void AOClient::handlePacket(AOPacket packet)
 
 void AOClient::changeArea(int new_area)
 {
+    // TODO: function to send chat messages with hostname automatically
+    if (current_area == new_area) {
+        sendPacket("CT", {"Server", "You are already in area " + server->area_names[current_area], "1"});
+        return;
+    }
     if (current_char != "") {
         server->areas.value(current_area)->characters_taken[current_char] =
             false;
@@ -202,7 +207,7 @@ void AOClient::changeArea(int new_area)
     }
     current_area = new_area;
     // send hp, bn, le, arup
-    if(server->areas.value(current_area)->characters_taken[current_char]) {
+    if (server->areas.value(current_area)->characters_taken[current_char]) {
         server->updateCharsTaken(server->areas.value(current_area));
         current_char = "";
         sendPacket("DONE");
