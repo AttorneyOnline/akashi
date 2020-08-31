@@ -70,10 +70,7 @@ void AOClient::handlePacket(AOPacket packet)
     // Lord forgive me
     if (packet.header == "HI") {
         setHwid(packet.contents[0]);
-
-        AOPacket response(
-            "ID", {"271828", "akashi", QApplication::applicationVersion()});
-        sendPacket(response);
+        sendPacket("ID", {"271828", "akashi", QApplication::applicationVersion()});
     }
     else if (packet.header == "ID") {
         QSettings config("config.ini", QSettings::IniFormat);
@@ -91,26 +88,20 @@ void AOClient::handlePacket(AOPacket packet)
             "deskmod",      "evidence",         "cccc_ic_support",
             "arup",         "casing_alerts",    "modcall_reason",
             "looping_sfx",  "additive",         "effects"};
-        AOPacket response_pn(
-            "PN", {QString::number(server->player_count), max_players});
-        AOPacket response_fl("FL", feature_list);
-        sendPacket(response_pn);
-        sendPacket(response_fl);
+
+        sendPacket("PN", {QString::number(server->player_count), max_players});
+        sendPacket("FL", feature_list);
     }
     else if (packet.header == "askchaa") {
         // TODO: add user configurable content
         // For testing purposes, we will just send enough to get things working
-        AOPacket response(
-            "SI", {QString::number(server->characters.length()), "0", QString::number(server->area_names.length() + server->music_list.length())});
-        sendPacket(response);
+        sendPacket("SI", {QString::number(server->characters.length()), "0", QString::number(server->area_names.length() + server->music_list.length())});
     }
     else if (packet.header == "RC") {
-        AOPacket response("SC", server->characters);
-        sendPacket(response);
+        sendPacket("SC", server->characters);
     }
     else if (packet.header == "RM") {
-        AOPacket response("SM", server->area_names + server->music_list);
-        sendPacket(response);
+        sendPacket("SM", server->area_names + server->music_list);
     }
     else if (packet.header == "RD") {
         server->player_count++;
@@ -120,12 +111,9 @@ void AOClient::handlePacket(AOPacket packet)
         QSettings areas_ini("areas.ini", QSettings::IniFormat);
         QStringList areas = areas_ini.childGroups();
 
-        AOPacket response_fa("FA", areas);
-        AOPacket response_op("OPPASS", {"DEADBEEF"});
-        AOPacket response_done("DONE", {});
-        sendPacket(response_fa);
-        sendPacket(response_op);
-        sendPacket(response_done);
+        sendPacket("FA", areas);
+        sendPacket("OPPASS", {"DEADBEEF"});
+        sendPacket("DONE");
     }
     else if (packet.header == "PW") {
         password = packet.contents[0];
@@ -157,8 +145,7 @@ void AOClient::handlePacket(AOPacket packet)
         }
 
         server->updateCharsTaken(server->areas.value(current_area));
-        AOPacket response_pv("PV", {"271828", "CID", packet.contents[1]});
-        sendPacket(response_pv);
+        sendPacket("PV", {"271828", "CID", packet.contents[1]});
     }
     else if (packet.header == "MS") {
         // TODO: validate, validate, validate
@@ -173,13 +160,7 @@ void AOClient::handlePacket(AOPacket packet)
         // Why does this packet exist
         // At least Crystal made it useful
         // It is now used for ping measurement
-        AOPacket response("CHECK", {});
-        sendPacket(response);
-    }
-    else if (packet.header == "whoami") {
-        AOPacket response(
-            "CT", {"Made with love", "by scatterflower and windrammer"});
-        sendPacket(response);
+        sendPacket("CHECK");
     }
     else if (packet.header == "MC") {
         // Due to historical reasons, this
@@ -190,33 +171,20 @@ void AOClient::handlePacket(AOPacket packet)
         // argument is a valid song
         QString argument = packet.contents[0];
 
-        bool is_song = false;
         for (QString song : server->music_list) {
             if (song == argument) {
-                is_song = true;
-                break;
+                // If we have a song, retransmit as-is
+                server->broadcast(packet, current_area);
+                return;
             }
         }
 
-        if (is_song) {
-            // If we have a song, retransmit as-is
-            server->broadcast(packet, current_area);
-            return;
-        }
-
-        bool is_area = false;
-        for (QString area : server->area_names) {
+        for (int i = 0; i < server->area_names.length(); i++) {
+            QString area = server->area_names[i];
             if(area == argument) {
-                is_area = true;
+                changeArea(i);
                 break;
             }
-        }
-
-        if (is_area) {
-            // TODO: change area function that resends all area data and sets user stuff
-            // For now, we pretend
-            AOPacket user_message("CT", {"Server", "Changed to area " + argument});
-            sendPacket(user_message);
         }
     }
     else {
@@ -225,11 +193,42 @@ void AOClient::handlePacket(AOPacket packet)
     }
 }
 
+void AOClient::changeArea(int new_area)
+{
+    if (current_char != "") {
+        server->areas.value(current_area)->characters_taken[current_char] =
+            false;
+        server->updateCharsTaken(server->areas.value(current_area));
+    }
+    current_area = new_area;
+    // send hp, bn, le, arup
+    if(server->areas.value(current_area)->characters_taken[current_char]) {
+        server->updateCharsTaken(server->areas.value(current_area));
+        current_char = "";
+        sendPacket("DONE");
+    }
+    else {
+        server->areas.value(current_area)->characters_taken[current_char] = true;
+        server->updateCharsTaken(server->areas.value(current_area));
+    }
+    sendPacket("CT", {"Server", "You have been moved to area " + server->area_names[current_area], "1"});
+}
+
 void AOClient::sendPacket(AOPacket packet)
 {
     qDebug() << "Sent packet:" << packet.header << ":" << packet.contents;
     socket->write(packet.toUtf8());
     socket->flush();
+}
+
+void AOClient::sendPacket(QString header, QStringList contents)
+{
+    sendPacket(AOPacket(header, contents));
+}
+
+void AOClient::sendPacket(QString header)
+{
+    sendPacket(AOPacket(header, {}));
 }
 
 QString AOClient::getHwid() { return hwid; }

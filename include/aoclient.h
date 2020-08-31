@@ -47,12 +47,16 @@ class AOClient : public QObject {
     void clientDisconnected();
     void clientData();
     void sendPacket(AOPacket packet);
+    void sendPacket(QString header, QStringList contents);
+    void sendPacket(QString header);
+
 
   private:
     Server* server;
     QTcpSocket* socket;
 
     void handlePacket(AOPacket packet);
+    void changeArea(int new_area);
 
     QString partial_packet;
     bool is_partial;
