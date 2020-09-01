@@ -23,7 +23,7 @@
 #include "include/area_data.h"
 #include "include/ws_proxy.h"
 
-#include <QApplication>
+#include <QCoreApplication>
 #include <QDebug>
 #include <QFile>
 #include <QMap>

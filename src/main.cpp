@@ -15,19 +15,23 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
-#include "include/akashimain.h"
-
+#include "include/advertiser.h"
+#include "include/server.h"
+#include "include/config_manager.h"
 #ifdef _WIN32
 #include <Windows.h>
 #endif
 
-#include <QApplication>
+#include <QCoreApplication>
 #include <QCommandLineOption>
 #include <QCommandLineParser>
 #include <QDebug>
 #include <QLibraryInfo>
 #include <QSettings>
 #include <QTranslator>
+
+Advertiser* advertiser;
+Server* server;
 
 int main(int argc, char* argv[])
 {
@@ -46,9 +50,9 @@ int main(int argc, char* argv[])
         }
     }
 #endif
-    QApplication app(argc, argv);
-    QApplication::setApplicationName("akashi");
-    QApplication::setApplicationVersion("0.0.1");
+    QCoreApplication app(argc, argv);
+    QCoreApplication::setApplicationName("akashi");
+    QCoreApplication::setApplicationVersion("0.0.1");
 
     QSettings config("config.ini", QSettings::IniFormat);
     config.beginGroup("Options");
@@ -70,23 +74,43 @@ int main(int argc, char* argv[])
     parser.addHelpOption();
     parser.addVersionOption();
 
-    QCommandLineOption headlessOption(
-        QStringList() << "l"
-                      << "headless",
-        app.translate("main", "Run the server without a GUI."));
     QCommandLineOption verboseNetworkOption(
         QStringList() << "nv"
                       << "verbose-network",
         app.translate("main", "Write all network traffic to the console."));
-    parser.addOption(headlessOption);
     parser.addOption(verboseNetworkOption);
 
     parser.process(app);
-    bool headless = parser.isSet(headlessOption);
 
-    AkashiMain w;
-    if (!headless)
-        w.show();
+    qDebug("Main application started");
+
+    ConfigManager config_manager;
+    if (config_manager.initConfig()) {
+        // Config is sound, so proceed with starting the server
+        // Validate some of the config before passing it on
+        ConfigManager::server_settings settings;
+        bool config_valid = config_manager.loadServerSettings(&settings);
+
+        if (!config_valid) {
+            // TODO: send signal config invalid
+            config_manager.generateDefaultConfig(true);
+        }
+        else {
+            if (settings.advertise_server) {
+                // TODO: send signal advertiser started
+                advertiser =
+                    new Advertiser(settings.ms_ip, settings.port,
+                                   settings.ws_port, settings.local_port,
+                                   settings.name, settings.description);
+                advertiser->contactMasterServer();
+            }
+
+            // TODO: start the server here
+            // TODO: send signal server starting.
+            server = new Server(settings.port, settings.ws_port);
+            server->start();
+        }
+    }
 
     return app.exec();
 }

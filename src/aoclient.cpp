@@ -73,7 +73,7 @@ void AOClient::handlePacket(AOPacket packet)
     // Lord forgive me
     if (packet.header == "HI") {
         setHwid(packet.contents[0]);
-        sendPacket("ID", {"271828", "akashi", QApplication::applicationVersion()});
+        sendPacket("ID", {"271828", "akashi", QCoreApplication::applicationVersion()});
     }
     else if (packet.header == "ID") {
         QSettings config("config.ini", QSettings::IniFormat);

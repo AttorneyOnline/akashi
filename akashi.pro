@@ -1,6 +1,7 @@
-QT       += core gui network websockets
-
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+QT       += network websockets core
+QT       -= gui
+TEMPLATE = app
+# greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG += c++11
 

@@ -20,7 +20,7 @@
 
 #include "include/aopacket.h"
 
-#include <QApplication>
+#include <QCoreApplication>
 #include <QHostAddress>
 #include <QString>
 #include <QTcpSocket>
