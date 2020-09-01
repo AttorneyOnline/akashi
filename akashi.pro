@@ -26,15 +26,7 @@ SOURCES += $$files($$PWD/src/*.cpp)
 
 HEADERS += $$files($$PWD/include/*.h)
 
-FORMS += $$files($$PWD/resource/forms/*.ui)
-
-TRANSLATIONS += \
-    resource/translation/akashi_es.ts
-
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
-
-RESOURCES += \
-    resources.qrc

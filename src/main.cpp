@@ -28,7 +28,6 @@
 #include <QDebug>
 #include <QLibraryInfo>
 #include <QSettings>
-#include <QTranslator>
 
 Advertiser* advertiser;
 Server* server;
@@ -53,20 +52,6 @@ int main(int argc, char* argv[])
     QCoreApplication app(argc, argv);
     QCoreApplication::setApplicationName("akashi");
     QCoreApplication::setApplicationVersion("0.0.1");
-
-    QSettings config("config.ini", QSettings::IniFormat);
-    config.beginGroup("Options");
-    QString language =
-        config.value("language", QLocale().bcp47Name()).toString();
-
-    QTranslator qt_translator;
-    qt_translator.load("qt_" + language,
-                       QLibraryInfo::location(QLibraryInfo::TranslationsPath));
-    app.installTranslator(&qt_translator);
-
-    QTranslator translator;
-    translator.load("akashi_" + language, ":/resource/translation/");
-    app.installTranslator(&translator);
 
     QCommandLineParser parser;
     parser.setApplicationDescription(
