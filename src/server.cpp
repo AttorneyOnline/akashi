@@ -107,10 +107,16 @@ void Server::updateCharsTaken(AreaData* area)
 
 void Server::broadcast(AOPacket packet, int area_index)
 {
-    // TODO: make this selective to the current area only
     for (AOClient* client : clients) {
         if (client->current_area == area_index)
             client->sendPacket(packet);
+    }
+}
+
+void Server::broadcast(AOPacket packet)
+{
+    for (AOClient* client : clients) {
+        client->sendPacket(packet);
     }
 }
 

@@ -28,4 +28,8 @@ AreaData::AreaData(QStringList characters, QString p_name, int p_index)
     areas_ini.beginGroup(p_name);
     background = areas_ini.value("background", "gs4").toString();
     areas_ini.endGroup();
+    player_count = 0;
+    current_cm = "FREE";
+    locked = false;
+    status = "FREE";
 }

@@ -31,6 +31,9 @@ class AreaData {
     int index;
     QMap<QString, bool> characters_taken;
     int player_count;
+    QString status;
+    QString current_cm;
+    bool locked;
 
     QString background;
     bool showname_allowed;

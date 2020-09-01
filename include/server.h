@@ -43,6 +43,7 @@ class Server : public QObject {
     AOClient* getClient(QString ipid);
     void updateCharsTaken(AreaData* area);
     void broadcast(AOPacket packet, int area_index);
+    void broadcast(AOPacket packet);
 
     int player_count;
     QStringList characters;

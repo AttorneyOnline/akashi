@@ -53,12 +53,15 @@ void AOClient::clientData()
 void AOClient::clientDisconnected()
 {
     qDebug() << remote_ip << "disconnected";
-    if (joined)
+    if (joined) {
         server->player_count--;
+        server->areas[current_area]->player_count--;
+        arup(ARUPType::PLAYER_COUNT, true);
+    }
     if (current_char != "") {
-        server->areas.value(current_area)->characters_taken[current_char] =
+        server->areas[current_area]->characters_taken[current_char] =
             false;
-        server->updateCharsTaken(server->areas.value(current_area));
+        server->updateCharsTaken(server->areas[current_area]);
     }
 }
 
@@ -66,7 +69,7 @@ void AOClient::handlePacket(AOPacket packet)
 {
     // TODO: like everything here should send a signal
     //qDebug() << "Received packet:" << packet.header << ":" << packet.contents;
-    AreaData* area = server->areas.value(current_area);
+    AreaData* area = server->areas[current_area];
     // Lord forgive me
     if (packet.header == "HI") {
         setHwid(packet.contents[0]);
@@ -105,8 +108,11 @@ void AOClient::handlePacket(AOPacket packet)
     }
     else if (packet.header == "RD") {
         server->player_count++;
+        area->player_count++;
         joined = true;
         server->updateCharsTaken(area);
+        fullArup(); // Give client all the area data
+        arup(ARUPType::PLAYER_COUNT, true); // Tell everyone there is a new player
 
         QSettings areas_ini("areas.ini", QSettings::IniFormat);
         QStringList areas = areas_ini.childGroups();
@@ -144,7 +150,7 @@ void AOClient::handlePacket(AOPacket packet)
             current_char = "";
         }
 
-        server->updateCharsTaken(server->areas.value(current_area));
+        server->updateCharsTaken(area);
         sendPacket("PV", {"271828", "CID", packet.contents[1]});
     }
     else if (packet.header == "MS") {
@@ -200,23 +206,62 @@ void AOClient::changeArea(int new_area)
         sendPacket("CT", {"Server", "You are already in area " + server->area_names[current_area], "1"});
         return;
     }
-    if (current_char != "") {
-        server->areas.value(current_area)->characters_taken[current_char] =
-            false;
-        server->updateCharsTaken(server->areas.value(current_area));
+    if (server->areas[new_area]->locked) {
+        sendPacket("CT", {"Server", "Area " + server->area_names[new_area] + " is locked.", "1"});
+        return;
     }
+    if (current_char != "") {
+        server->areas[current_area]->characters_taken[current_char] =
+            false;
+        server->updateCharsTaken(server->areas[current_area]);
+    }
+    server->areas[new_area]->player_count++;
+    server->areas[current_area]->player_count--;
     current_area = new_area;
+    arup(ARUPType::PLAYER_COUNT, true);
     // send hp, bn, le, arup
-    if (server->areas.value(current_area)->characters_taken[current_char]) {
-        server->updateCharsTaken(server->areas.value(current_area));
+    if (server->areas[current_area]->characters_taken[current_char]) {
+        server->updateCharsTaken(server->areas[current_area]);
         current_char = "";
         sendPacket("DONE");
     }
     else {
-        server->areas.value(current_area)->characters_taken[current_char] = true;
-        server->updateCharsTaken(server->areas.value(current_area));
+        server->areas[current_area]->characters_taken[current_char] = true;
+        server->updateCharsTaken(server->areas[current_area]);
     }
     sendPacket("CT", {"Server", "You have been moved to area " + server->area_names[current_area], "1"});
+}
+
+void AOClient::arup(ARUPType type, bool broadcast)
+{
+    QStringList arup_data;
+    arup_data.append(QString::number(type));
+    for (AreaData* area : server->areas) {
+        if (type == ARUPType::PLAYER_COUNT) {
+            arup_data.append(QString::number(area->player_count));
+        }
+        else if (type == ARUPType::STATUS) {
+            arup_data.append(area->status);
+        }
+        else if (type == ARUPType::CM) {
+            arup_data.append(area->current_cm);
+        }
+        else if (type == ARUPType::LOCKED) {
+            arup_data.append(area->locked ? "LOCKED" : "FREE");
+        }
+        else return;
+    }
+    if (broadcast)
+        server->broadcast(AOPacket("ARUP", arup_data));
+    else
+        sendPacket("ARUP", arup_data);
+}
+
+void AOClient::fullArup() {
+    arup(ARUPType::PLAYER_COUNT, false);
+    arup(ARUPType::STATUS, false);
+    arup(ARUPType::CM, false);
+    arup(ARUPType::LOCKED, false);
 }
 
 void AOClient::sendPacket(AOPacket packet)

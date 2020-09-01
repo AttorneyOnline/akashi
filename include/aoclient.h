@@ -55,8 +55,17 @@ class AOClient : public QObject {
     Server* server;
     QTcpSocket* socket;
 
+    enum ARUPType {
+        PLAYER_COUNT,
+        STATUS,
+        CM,
+        LOCKED
+    };
+
     void handlePacket(AOPacket packet);
     void changeArea(int new_area);
+    void arup(ARUPType type, bool broadcast);
+    void fullArup();
 
     QString partial_packet;
     bool is_partial;
