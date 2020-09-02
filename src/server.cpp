@@ -57,7 +57,7 @@ void Server::start()
     }
     music_file.close();
     if(music_list[0].contains(".")) // Add a default category if none exists
-        music_list.insert(0, "Music");
+        music_list.insert(0, "==Music==");
 
     // TODO: add verification that this exists
     QSettings areas_ini("config/areas.ini", QSettings::IniFormat);
