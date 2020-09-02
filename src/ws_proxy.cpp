@@ -47,10 +47,6 @@ void WSProxy::wsConnected()
     connect(new_tcp, &QTcpSocket::readyRead, client, &WSClient::onTcpData);
     connect(new_ws, &QWebSocket::disconnected, client, &WSClient::onWsDisconnect);
     connect(new_tcp, &QTcpSocket::disconnected, client, &WSClient::onTcpDisconnect);
-    connect(new_ws, &QWebSocket::disconnected, this, [=] {
-        clients.removeAll(client);
-        client->deleteLater();
-    });
     connect(new_tcp, &QTcpSocket::disconnected, this, [=] {
         clients.removeAll(client);
         client->deleteLater();

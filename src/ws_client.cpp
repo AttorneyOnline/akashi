@@ -44,7 +44,6 @@ void WSClient::onTcpData()
 void WSClient::onWsDisconnect()
 {
     tcp_socket->disconnectFromHost();
-    tcp_socket->close();
 }
 
 void WSClient::onTcpDisconnect()
