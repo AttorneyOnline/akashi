@@ -70,6 +70,6 @@ Thumbs.db
 *.dll
 *.exe
 
-bin/
 build/
-
+bin/akashi
+bin/config/

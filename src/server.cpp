@@ -43,28 +43,32 @@ void Server::start()
     if(ws_port != -1)
         proxy->start();
 
-    QFile char_list("characters.txt");
+    QFile char_list("config/characters.txt");
     char_list.open(QIODevice::ReadOnly | QIODevice::Text);
     while (!char_list.atEnd()) {
         characters.append(char_list.readLine().trimmed());
     }
     char_list.close();
 
-    QFile music_file("music.txt");
+    QFile music_file("config/music.txt");
     music_file.open(QIODevice::ReadOnly | QIODevice::Text);
     while (!music_file.atEnd()) {
         music_list.append(music_file.readLine().trimmed());
     }
     music_file.close();
     if(music_list[0].contains(".")) // Add a default category if none exists
-        music_list.insert(0, "Music");
+        music_list.insert(0, "==Music==");
 
     // TODO: add verification that this exists
-    QSettings areas_ini("areas.ini", QSettings::IniFormat);
+    QSettings areas_ini("config/areas.ini", QSettings::IniFormat);
     area_names = areas_ini.childGroups();
     for (int i = 0; i < area_names.length(); i++) {
         QString area_name = area_names[i];
         areas.insert(i, new AreaData(characters, area_name, i));
+        areas_ini.beginGroup(area_name);
+        // TODO: more area config
+        areas[i]->background = areas_ini.value("background", "gs4").toString();
+        areas_ini.endGroup();
         qDebug() << "Added area" << area_name;
     }
 }

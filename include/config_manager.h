@@ -30,8 +30,7 @@ class ConfigManager {
   public:
     ConfigManager();
     bool initConfig();
-    void generateDefaultConfig(bool backup_old);
-    void updateConfig(int current_version);
+    bool updateConfig(int current_version);
 
     struct server_settings {
         QString ms_ip;
@@ -47,6 +46,7 @@ class ConfigManager {
 
   private:
     QSettings* config;
+    bool fileExists(QFileInfo *file);
 };
 
 #endif // CONFIG_MANAGER_H
