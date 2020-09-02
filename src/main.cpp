@@ -39,11 +39,12 @@ int main(int argc, char* argv[])
         // Validate some of the config before passing it on
         ConfigManager::server_settings settings;
         bool config_valid = config_manager.loadServerSettings(&settings);
-
         if (!config_valid) {
-            // TODO: send signal config invalid
-            config_manager.generateDefaultConfig(true);
+            qCritical() << "config.ini is invalid!";
+            qCritical() << "Exiting server due to configuration issue.";
+            return EXIT_FAILURE;
         }
+
         else {
             if (settings.advertise_server) {
                 // TODO: send signal advertiser started
@@ -59,6 +60,9 @@ int main(int argc, char* argv[])
             server = new Server(settings.port, settings.ws_port);
             server->start();
         }
+    } else {
+        qCritical() << "Exiting server due to configuration issue.";
+        return EXIT_FAILURE;
     }
 
     return app.exec();
