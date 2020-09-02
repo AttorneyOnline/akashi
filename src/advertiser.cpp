@@ -77,3 +77,8 @@ void Advertiser::socketDisconnected()
     // TODO: fire a signal here, i18n
     qDebug("Connection to master server lost");
 }
+
+Advertiser::~Advertiser()
+{
+    socket->deleteLater();
+}

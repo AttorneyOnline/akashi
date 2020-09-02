@@ -54,3 +54,8 @@ void WSProxy::wsConnected()
 
     new_tcp->connectToHost(QHostAddress::LocalHost, local_port);
 }
+
+WSProxy::~WSProxy()
+{
+    server->deleteLater();
+}

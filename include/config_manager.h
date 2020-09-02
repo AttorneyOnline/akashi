@@ -45,7 +45,6 @@ class ConfigManager {
     bool loadServerSettings(server_settings* settings);
 
   private:
-    QSettings* config;
     bool fileExists(QFileInfo *file);
 };
 

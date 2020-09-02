@@ -301,4 +301,9 @@ void AOClient::setHwid(QString p_hwid)
 
 QString AOClient::getIpid() { return ipid; }
 
+void AOClient::cleanup() {
+    socket->disconnectFromHost();
+    socket->deleteLater();
+}
+
 AOClient::~AOClient() {}

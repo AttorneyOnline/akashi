@@ -29,9 +29,10 @@ class WSProxy : public QObject {
     Q_OBJECT
   public:
     WSProxy(int p_local_port, int p_ws_port, QObject* parent);
-    void start();
+    ~WSProxy();
 
-  public slots:
+    void start();
+public slots:
     void wsConnected();
 
   private:

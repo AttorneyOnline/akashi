@@ -17,14 +17,12 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/config_manager.h"
 
-ConfigManager::ConfigManager()
-{
-    config = new QSettings("config/config.ini", QSettings::IniFormat);
-}
+ConfigManager::ConfigManager() { }
 
 // Validate and set up the config
 bool ConfigManager::initConfig()
 {
+    QSettings config("config/config.ini", QSettings::IniFormat);
     QFileInfo config_dir_info("config/");
     if (!config_dir_info.exists() || !config_dir_info.isDir()) {
         qCritical() << "Config directory doesn't exist!";
@@ -56,9 +54,9 @@ bool ConfigManager::initConfig()
         return false;
     }
 
-    config->beginGroup("Info");
-    QString config_version = config->value("version", "none").toString();
-    config->endGroup();
+    config.beginGroup("Info");
+    QString config_version = config.value("version", "none").toString();
+    config.endGroup();
     if (config_version == "none") {
         QFileInfo check_file("config/config.ini");
         if (!fileExists(&check_file)) {
@@ -92,6 +90,7 @@ bool ConfigManager::initConfig()
 // Ensure version continuity with config versions
 bool ConfigManager::updateConfig(int current_version)
 {
+    QSettings config("config/config.ini", QSettings::IniFormat);
     if (current_version > CONFIG_VERSION) {
         // Config version is newer than the latest version, and the config is
         // invalid This could also mean the server is out of date, and the user
@@ -111,9 +110,9 @@ bool ConfigManager::updateConfig(int current_version)
         case 0: // Version 0 doesn't actually exist, but we should check for it
                 // just in case
         case 1:
-            config->beginGroup("Info");
-            config->setValue("version", CONFIG_VERSION);
-            config->endGroup();
+            config.beginGroup("Info");
+            config.setValue("version", CONFIG_VERSION);
+            config.endGroup();
             break; // This is the newest version, and nothing more needs to be
                    // done
         }
@@ -124,36 +123,37 @@ bool ConfigManager::updateConfig(int current_version)
 // Validate and retriever settings related to advertising and the server
 bool ConfigManager::loadServerSettings(server_settings* settings)
 {
+    QSettings config("config/config.ini", QSettings::IniFormat);
     bool port_conversion_success;
     bool ws_port_conversion_success;
     bool local_port_conversion_success;
-    config->beginGroup("Options");
+    config.beginGroup("Options");
     settings->ms_ip =
-        config->value("ms_ip", "master.aceattorneyonline.com").toString();
+        config.value("ms_ip", "master.aceattorneyonline.com").toString();
     settings->port =
-        config->value("port", "27016").toInt(&port_conversion_success);
+        config.value("port", "27016").toInt(&port_conversion_success);
     settings->ws_port =
-        config->value("webao_port", "27017").toInt(&ws_port_conversion_success);
+        config.value("webao_port", "27017").toInt(&ws_port_conversion_success);
     settings->local_port =
-        config->value("port", "27016").toInt(&local_port_conversion_success);
-    settings->name = config->value("server_name", "My First Server").toString();
+        config.value("port", "27016").toInt(&local_port_conversion_success);
+    settings->name = config.value("server_name", "My First Server").toString();
     settings->description =
-        config->value("server_description", "This is my flashy new server")
+        config.value("server_description", "This is my flashy new server")
             .toString();
-    config->endGroup();
+    config.endGroup();
     if (!port_conversion_success || !ws_port_conversion_success ||
         !local_port_conversion_success) {
         return false;
     }
     else {
-        config->beginGroup("Options");
+        config.beginGroup("Options");
         // Will be true of false depending on the key
         settings->advertise_server =
-            (config->value("advertise", "true").toString() == "true");
+            (config.value("advertise", "true").toString() == "true");
 
-        if (config->value("webao_enable", "true").toString() != "true")
+        if (config.value("webao_enable", "true").toString() != "true")
             settings->ws_port = -1;
-        config->endGroup();
+        config.endGroup();
 
         return true;
     }

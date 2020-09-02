@@ -39,6 +39,8 @@ class Server : public QObject {
 
   public:
     Server(int p_port, int p_ws_port, QObject* parent = nullptr);
+    ~Server();
+
     void start();
     AOClient* getClient(QString ipid);
     void updateCharsTaken(AreaData* area);

@@ -31,6 +31,7 @@ class AOClient : public QObject {
   public:
     AOClient(Server* p_server, QTcpSocket* p_socket, QObject* parent = nullptr);
     ~AOClient();
+    void cleanup();
 
     QString getHwid();
     void setHwid(QString p_hwid);

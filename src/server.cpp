@@ -132,3 +132,13 @@ AOClient* Server::getClient(QString ipid)
     }
     return nullptr;
 }
+
+Server::~Server()
+{
+    for (AOClient* client : clients) {
+        client->cleanup();
+        client->deleteLater();
+    }
+    server->deleteLater();
+    proxy->deleteLater();
+}

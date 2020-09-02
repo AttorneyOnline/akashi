@@ -27,7 +27,7 @@ class WSClient : public QObject {
     Q_OBJECT
 public:
     WSClient(QTcpSocket* p_tcp_socket, QWebSocket* p_web_socket, QObject* parent = nullptr);
-
+    ~WSClient();
 public slots:
     void onTcpData();
     void onWsData(QString message);

@@ -19,17 +19,25 @@
 #include "include/server.h"
 #include "include/config_manager.h"
 
+#include <cstdlib>
+
 #include <QCoreApplication>
 #include <QDebug>
 
 Advertiser* advertiser;
 Server* server;
 
+void cleanup() {
+    server->deleteLater();
+    advertiser->deleteLater();
+}
+
 int main(int argc, char* argv[])
 {
     QCoreApplication app(argc, argv);
     QCoreApplication::setApplicationName("akashi");
     QCoreApplication::setApplicationVersion("0.0.1");
+    std::atexit(cleanup);
 
     qDebug("Main application started");
 
@@ -42,7 +50,8 @@ int main(int argc, char* argv[])
         if (!config_valid) {
             qCritical() << "config.ini is invalid!";
             qCritical() << "Exiting server due to configuration issue.";
-            return EXIT_FAILURE;
+            exit(EXIT_FAILURE);
+            QCoreApplication::quit();
         }
 
         else {
@@ -62,7 +71,8 @@ int main(int argc, char* argv[])
         }
     } else {
         qCritical() << "Exiting server due to configuration issue.";
-        return EXIT_FAILURE;
+        exit(EXIT_FAILURE);
+        QCoreApplication::quit();
     }
 
     return app.exec();

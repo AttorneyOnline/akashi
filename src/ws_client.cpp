@@ -49,8 +49,11 @@ void WSClient::onWsDisconnect()
 
 void WSClient::onTcpDisconnect()
 {
-    qDebug() << "deleted";
     web_socket->close();
+}
+
+WSClient::~WSClient()
+{
     tcp_socket->deleteLater();
     web_socket->deleteLater();
 }

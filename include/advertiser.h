@@ -32,9 +32,10 @@ class Advertiser : public QObject {
     Advertiser(QString p_ip, int p_port, int p_ws_port, int p_local_port,
                QString p_name, QString p_description,
                QObject* parent = nullptr);
+    ~Advertiser();
     void contactMasterServer();
 
-  signals:
+signals:
 
   public slots:
     void readData();
