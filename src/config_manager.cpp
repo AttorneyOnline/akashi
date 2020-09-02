@@ -31,12 +31,37 @@ bool ConfigManager::initConfig()
         return false;
     }
 
+    // Check that areas, characters, and music lists all exist
+    QFileInfo areas_info("config/areas.ini");
+    QFileInfo characters_info("config/characters.txt");
+    QFileInfo music_info("config/music.txt");
+
+    if (!fileExists(&areas_info)) {
+        qCritical() << "areas.ini doesn't exist!";
+        return false;
+    }
+    else {
+        QSettings areas_ini("config/areas.ini", QSettings::IniFormat);
+        if (areas_ini.childGroups().length() < 1) {
+            qCritical() << "areas.ini is invalid!";
+            return false;
+        }
+    }
+    if (!fileExists(&characters_info)) {
+        qCritical() << "characters.txt doesn't exist!";
+        return false;
+    }
+    if (!fileExists(&music_info)) {
+        qCritical() << "music.txt doesn't exist!";
+        return false;
+    }
+
     config->beginGroup("Info");
     QString config_version = config->value("version", "none").toString();
     config->endGroup();
     if (config_version == "none") {
         QFileInfo check_file("config/config.ini");
-        if (!(check_file.exists() && check_file.isFile())) {
+        if (!fileExists(&check_file)) {
             qCritical() << "config.ini doesn't exist!";
         }
         else {
@@ -132,4 +157,9 @@ bool ConfigManager::loadServerSettings(server_settings* settings)
 
         return true;
     }
+}
+
+bool ConfigManager::fileExists(QFileInfo* file)
+{
+    return (file->exists() && file->isFile());
 }

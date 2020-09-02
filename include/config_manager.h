@@ -46,6 +46,7 @@ class ConfigManager {
 
   private:
     QSettings* config;
+    bool fileExists(QFileInfo *file);
 };
 
 #endif // CONFIG_MANAGER_H
