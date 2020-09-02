@@ -18,54 +18,18 @@
 #include "include/advertiser.h"
 #include "include/server.h"
 #include "include/config_manager.h"
-#ifdef _WIN32
-#include <Windows.h>
-#endif
 
 #include <QCoreApplication>
-#include <QCommandLineOption>
-#include <QCommandLineParser>
 #include <QDebug>
-#include <QLibraryInfo>
-#include <QSettings>
 
 Advertiser* advertiser;
 Server* server;
 
 int main(int argc, char* argv[])
 {
-#ifdef _WIN32
-    if (AttachConsole(ATTACH_PARENT_PROCESS)) {
-        freopen("CONOUT$", "w", stdout);
-        freopen("CONOUT$", "w", stderr);
-    }
-#endif
-#ifdef __linux__
-    // We have to do this before the QApplication is instantiated
-    // As a result, we can't use QCommandLineParser
-    for(int i = 0; i < argc; i++) {
-        if(strcmp("-l", argv[i]) == 0 || strcmp("--headless", argv[i]) == 0){
-            setenv("QT_QPA_PLATFORM", "minimal", 1);
-        }
-    }
-#endif
     QCoreApplication app(argc, argv);
     QCoreApplication::setApplicationName("akashi");
     QCoreApplication::setApplicationVersion("0.0.1");
-
-    QCommandLineParser parser;
-    parser.setApplicationDescription(
-        app.translate("main", "A server for Attorney Online 2"));
-    parser.addHelpOption();
-    parser.addVersionOption();
-
-    QCommandLineOption verboseNetworkOption(
-        QStringList() << "nv"
-                      << "verbose-network",
-        app.translate("main", "Write all network traffic to the console."));
-    parser.addOption(verboseNetworkOption);
-
-    parser.process(app);
 
     qDebug("Main application started");
 
