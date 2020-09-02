@@ -43,14 +43,14 @@ void Server::start()
     if(ws_port != -1)
         proxy->start();
 
-    QFile char_list("characters.txt");
+    QFile char_list("config/characters.txt");
     char_list.open(QIODevice::ReadOnly | QIODevice::Text);
     while (!char_list.atEnd()) {
         characters.append(char_list.readLine().trimmed());
     }
     char_list.close();
 
-    QFile music_file("music.txt");
+    QFile music_file("config/music.txt");
     music_file.open(QIODevice::ReadOnly | QIODevice::Text);
     while (!music_file.atEnd()) {
         music_list.append(music_file.readLine().trimmed());
