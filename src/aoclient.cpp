@@ -76,7 +76,7 @@ void AOClient::handlePacket(AOPacket packet)
         sendPacket("ID", {"271828", "akashi", QCoreApplication::applicationVersion()});
     }
     else if (packet.header == "ID") {
-        QSettings config("config.ini", QSettings::IniFormat);
+        QSettings config("config/config.ini", QSettings::IniFormat);
         config.beginGroup("Options");
         QString max_players = config.value("max_players").toString();
         config.endGroup();
@@ -114,10 +114,7 @@ void AOClient::handlePacket(AOPacket packet)
         fullArup(); // Give client all the area data
         arup(ARUPType::PLAYER_COUNT, true); // Tell everyone there is a new player
 
-        QSettings areas_ini("areas.ini", QSettings::IniFormat);
-        QStringList areas = areas_ini.childGroups();
-
-        sendPacket("FA", areas);
+        sendPacket("FA", server->area_names);
         sendPacket("OPPASS", {"DEADBEEF"});
         sendPacket("DONE");
     }

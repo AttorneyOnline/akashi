@@ -60,7 +60,7 @@ void Server::start()
         music_list.insert(0, "Music");
 
     // TODO: add verification that this exists
-    QSettings areas_ini("areas.ini", QSettings::IniFormat);
+    QSettings areas_ini("config/areas.ini", QSettings::IniFormat);
     area_names = areas_ini.childGroups();
     for (int i = 0; i < area_names.length(); i++) {
         QString area_name = area_names[i];
