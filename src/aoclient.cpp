@@ -27,6 +27,7 @@ AOClient::AOClient(Server* p_server, QTcpSocket* p_socket, QObject* parent)
     current_area = 0;
     current_char = "";
     remote_ip = p_socket->peerAddress();
+    is_partial = false;
 }
 
 void AOClient::clientData()

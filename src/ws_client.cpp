@@ -43,10 +43,14 @@ void WSClient::onTcpData()
 
 void WSClient::onWsDisconnect()
 {
-    tcp_socket->disconnectFromHost();
+    if (tcp_socket != nullptr)
+        tcp_socket->disconnectFromHost();
 }
 
 void WSClient::onTcpDisconnect()
 {
+    qDebug() << "deleted";
     web_socket->close();
+    tcp_socket->deleteLater();
+    web_socket->deleteLater();
 }
