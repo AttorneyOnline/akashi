@@ -207,7 +207,6 @@ void ConfigManager::generateDefaultConfig(bool backup_old)
     // Group: Options
     // This contains general configuration
     config->beginGroup("Options");
-    config->setValue("language", "en");
     config->setValue("hostname", "$H");
     config->setValue("max_players", "100");
     config->setValue("port", "27016");
