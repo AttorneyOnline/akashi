@@ -83,7 +83,7 @@ void Server::clientConnected()
     connect(socket, &QTcpSocket::disconnected, this, [=] {
         qDebug() << "removed client" << client->getIpid();
         clients.removeAll(client);
-        delete client;
+        client->deleteLater();
     });
     connect(socket, &QTcpSocket::readyRead, client, &AOClient::clientData);
 

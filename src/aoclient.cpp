@@ -64,6 +64,7 @@ void AOClient::clientDisconnected()
             false;
         server->updateCharsTaken(server->areas[current_area]);
     }
+    cleanup();
 }
 
 void AOClient::handlePacket(AOPacket packet)
