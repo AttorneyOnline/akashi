@@ -136,7 +136,6 @@ AOClient* Server::getClient(QString ipid)
 Server::~Server()
 {
     for (AOClient* client : clients) {
-        client->cleanup();
         client->deleteLater();
     }
     server->deleteLater();

@@ -64,7 +64,6 @@ void AOClient::clientDisconnected()
             false;
         server->updateCharsTaken(server->areas[current_area]);
     }
-    cleanup();
 }
 
 void AOClient::handlePacket(AOPacket packet)
@@ -302,9 +301,6 @@ void AOClient::setHwid(QString p_hwid)
 
 QString AOClient::getIpid() { return ipid; }
 
-void AOClient::cleanup() {
-    socket->disconnectFromHost();
+AOClient::~AOClient() {
     socket->deleteLater();
 }
-
-AOClient::~AOClient() {}
