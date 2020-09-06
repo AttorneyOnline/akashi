@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //    akashi - a server for Attorney Online 2                                       //
-//    Copyright (C) 2020  scatterflower                                             //
+//    Copyright (C) 2020  scatterflower                                           //
 //                                                                                  //
 //    This program is free software: you can redistribute it and/or modify          //
 //    it under the terms of the GNU Affero General Public License as                //
@@ -15,67 +15,51 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
-#ifndef AOCLIENT_H
-#define AOCLIENT_H
+#ifndef ICCHATPACKET_H
+#define ICCHATPACKET_H
+
+#endif // ICCHATPACKET_H
 
 #include "include/aopacket.h"
-#include "include/server.h"
-#include "include/icchatpacket.h"
 
-#include <QHostAddress>
-#include <QTcpSocket>
-#include <QDateTime>
+class ICChatPacket : public AOPacket
+{
+public:
+    ICChatPacket(AOPacket packet);
 
-class Server;
+    const int MIN_FIELDS = 15;
+    const int MAX_FIELDS = 30;
 
-class AOClient : public QObject {
-    Q_OBJECT
-  public:
-    AOClient(Server* p_server, QTcpSocket* p_socket, QObject* parent = nullptr);
-    ~AOClient();
+    bool is_valid;
 
-    QString getHwid();
-    void setHwid(QString p_hwid);
-
-    QString getIpid();
-
-    QHostAddress remote_ip;
-    QString password;
-    bool joined;
-    int current_area;
-    QString current_char;
-
-  public slots:
-    void clientDisconnected();
-    void clientData();
-    void sendPacket(AOPacket packet);
-    void sendPacket(QString header, QStringList contents);
-    void sendPacket(QString header);
-
-
-  private:
-    Server* server;
-    QTcpSocket* socket;
-
-    enum ARUPType {
-        PLAYER_COUNT,
-        STATUS,
-        CM,
-        LOCKED
-    };
-
-    void handlePacket(AOPacket packet);
-    void changeArea(int new_area);
-    void arup(ARUPType type, bool broadcast);
-    void fullArup();
-
-    QString partial_packet;
-    bool is_partial;
-
-    QString hwid;
-    QString ipid;
-    long last_wtce_time;
-    QString last_message;
+    QString desk_override;
+    QString preanim;
+    QString character;
+    QString emote;
+    QString message;
+    QString side;
+    QString sfx_name;
+    int emote_modifier;
+    int char_id;
+    QString sfx_delay;
+    int objection_modifier;
+    QString evidence;
+    bool flip;
+    bool realization;
+    int text_color;
+    QString showname;
+    int other_charid;
+    QString other_name;
+    QString other_emote;
+    int self_offset;
+    int other_offset;
+    bool other_flip;
+    bool noninterrupting_preanim;
+    bool sfx_looping;
+    bool screenshake;
+    QString frames_shake;
+    QString frames_realization;
+    QString frames_sfx;
+    bool additive;
+    QString effect;
 };
-
-#endif // AOCLIENT_H

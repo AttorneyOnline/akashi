@@ -28,6 +28,8 @@ AOClient::AOClient(Server* p_server, QTcpSocket* p_socket, QObject* parent)
     current_char = "";
     remote_ip = p_socket->peerAddress();
     is_partial = false;
+    last_wtce_time = 0;
+    last_message = "";
 }
 
 void AOClient::clientData()
@@ -153,7 +155,9 @@ void AOClient::handlePacket(AOPacket packet)
     }
     else if (packet.header == "MS") {
         // TODO: validate, validate, validate
-        server->broadcast(packet, current_area);
+        ICChatPacket ic_packet(packet);
+        if (ic_packet.is_valid)
+            server->broadcast(ic_packet, current_area);
     }
     else if (packet.header == "CT") {
         // TODO: commands
@@ -190,6 +194,12 @@ void AOClient::handlePacket(AOPacket packet)
                 break;
             }
         }
+    }
+    else if (packet.header == "RT") {
+        if (QDateTime::currentDateTime().toSecsSinceEpoch() - last_wtce_time <= 5)
+            return;
+        last_wtce_time = QDateTime::currentDateTime().toSecsSinceEpoch();
+        server->broadcast(packet, current_area);
     }
     else {
         qDebug() << "Unimplemented packet:" << packet.header;
