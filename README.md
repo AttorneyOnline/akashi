@@ -2,7 +2,8 @@
 A C++ server for Attorney Online 2
 
 # Build instructions
-```git clone https://github.com/AttorneyOnline/akashi
+```
+   git clone https://github.com/AttorneyOnline/akashi
    cd akashi
    qmake
    make
