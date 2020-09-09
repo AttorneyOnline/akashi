@@ -39,6 +39,9 @@ class AreaData {
     bool showname_allowed;
     bool locking_allowed;
     bool iniswap_allowed;
+
+    int def_hp;
+    int pro_hp;
 };
 
 #endif // AREA_DATA_H

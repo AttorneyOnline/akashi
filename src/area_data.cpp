@@ -32,4 +32,6 @@ AreaData::AreaData(QStringList characters, QString p_name, int p_index)
     current_cm = "FREE";
     locked = false;
     status = "FREE";
+    def_hp = 10;
+    pro_hp = 10;
 }

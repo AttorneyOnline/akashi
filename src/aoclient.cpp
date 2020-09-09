@@ -117,6 +117,8 @@ void AOClient::handlePacket(AOPacket packet)
         fullArup(); // Give client all the area data
         arup(ARUPType::PLAYER_COUNT, true); // Tell everyone there is a new player
 
+        sendPacket("HP", {"1", QString::number(area->def_hp)});
+        sendPacket("HP", {"2", QString::number(area->pro_hp)});
         sendPacket("FA", server->area_names);
         sendPacket("OPPASS", {"DEADBEEF"});
         sendPacket("DONE");
@@ -201,6 +203,16 @@ void AOClient::handlePacket(AOPacket packet)
         last_wtce_time = QDateTime::currentDateTime().toSecsSinceEpoch();
         server->broadcast(packet, current_area);
     }
+    else if (packet.header == "HP") {
+        if (packet.contents[0] == "1") {
+            area->def_hp = std::min(std::max(0, packet.contents[1].toInt()), 10);
+        }
+        else if (packet.contents[0] == "2") {
+            area->pro_hp = std::min(std::max(0, packet.contents[1].toInt()), 10);
+        }
+        server->broadcast(AOPacket("HP", {"1", QString::number(area->def_hp)}), area->index);
+        server->broadcast(AOPacket("HP", {"2", QString::number(area->pro_hp)}), area->index);
+    }
     else {
         qDebug() << "Unimplemented packet:" << packet.header;
         qDebug() << packet.contents;
@@ -227,7 +239,9 @@ void AOClient::changeArea(int new_area)
     server->areas[current_area]->player_count--;
     current_area = new_area;
     arup(ARUPType::PLAYER_COUNT, true);
-    // send hp, bn, le, arup
+    // send hp, bn, le
+    sendPacket("HP", {"1", QString::number(server->areas[new_area]->def_hp)});
+    sendPacket("HP", {"2", QString::number(server->areas[new_area]->pro_hp)});
     if (server->areas[current_area]->characters_taken[current_char]) {
         server->updateCharsTaken(server->areas[current_area]);
         current_char = "";

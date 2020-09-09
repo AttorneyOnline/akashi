@@ -22,6 +22,8 @@
 #include "include/server.h"
 #include "include/icchatpacket.h"
 
+#include <algorithm>
+
 #include <QHostAddress>
 #include <QTcpSocket>
 #include <QDateTime>
