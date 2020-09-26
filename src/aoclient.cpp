@@ -162,7 +162,16 @@ void AOClient::handlePacket(AOPacket packet)
             server->broadcast(ic_packet, current_area);
     }
     else if (packet.header == "CT") {
-        // TODO: commands
+        ooc_name = packet.contents[0];
+        if(packet.contents[1].at(0) == '/') {
+            QStringList argv = packet.contents[1].split(" ", QString::SplitBehavior::SkipEmptyParts);
+            QString command = argv[0].trimmed().toLower();
+            command = command.right(command.length() - 1);
+            argv.removeFirst();
+            int argc = argv.length();
+            handleCommand(command, argc, argv);
+            return;
+        }
         // TODO: zalgo strip
         server->broadcast(packet, current_area);
     }
@@ -223,11 +232,11 @@ void AOClient::changeArea(int new_area)
 {
     // TODO: function to send chat messages with hostname automatically
     if (current_area == new_area) {
-        sendPacket("CT", {"Server", "You are already in area " + server->area_names[current_area], "1"});
+        sendServerMessage("You are already in area " + server->area_names[current_area]);
         return;
     }
     if (server->areas[new_area]->locked) {
-        sendPacket("CT", {"Server", "Area " + server->area_names[new_area] + " is locked.", "1"});
+        sendServerMessage("Area " + server->area_names[new_area] + " is locked.");
         return;
     }
     if (current_char != "") {
@@ -251,7 +260,78 @@ void AOClient::changeArea(int new_area)
         server->areas[current_area]->characters_taken[current_char] = true;
         server->updateCharsTaken(server->areas[current_area]);
     }
-    sendPacket("CT", {"Server", "You have been moved to area " + server->area_names[current_area], "1"});
+    sendServerMessage("You have been moved to area " + server->area_names[current_area]);
+}
+
+void AOClient::handleCommand(QString command, int argc, QStringList argv)
+{
+    // Be sure to register the command in the header before adding it here!
+    CommandInfo info = commands.value(command, {false, -1});
+
+    if (info.minArgs == -1) {
+        sendServerMessage("Invalid command.");
+        return;
+    }
+
+    if (info.privileged && !authenticated) {
+        sendServerMessage("You do not have permission to use that command.");
+        return;
+    }
+
+    if (argc < info.minArgs) {
+        sendServerMessage("Invalid command syntax.");
+        return;
+    }
+
+    if (command == "login") {
+        QSettings config("config/config.ini", QSettings::IniFormat);
+        config.beginGroup("Options");
+        QString modpass = config.value("modpass", "default").toString();;
+        // TODO: tell the user if no modpass is set
+        if(argv[0] == modpass) {
+            sendServerMessage("Logged in as a moderator."); // This string has to be exactly this, because it is hardcoded in the client
+            authenticated = true;
+        } else {
+            sendServerMessage("Incorrect password.");
+            return;
+        }
+    }
+    else if (command == "getareas") {
+        QStringList entries;
+        entries.append("== Area List ==");
+        for (int i = 0; i < server->area_names.length(); i++) {
+            QString area_name = server->area_names[i];
+            AreaData* area = server->areas[i];
+            entries.append("=== " + area_name + " ===");
+            entries.append("[" + QString::number(area->player_count) + " users][" + area->status + "]");
+            for (QString char_name : server->characters) {
+                if (area->characters_taken.value(char_name)) {
+                    QString char_entry = char_name;
+                    if (authenticated)
+                        char_entry += " (" + getIpid() + "): " + ooc_name;
+                    entries.append(char_entry);
+                }
+            }
+        }
+        sendServerMessage(entries.join("\n"));
+    }
+    else if (command == "getarea") {
+        // TODO: get rid of copy-pasted code
+        QStringList entries;
+        QString area_name = server->area_names[current_area];
+        AreaData* area = server->areas[current_area];
+        entries.append("=== " + area_name + " ===");
+        entries.append("[" + QString::number(area->player_count) + " users][" + area->status + "]");
+        for (QString char_name : server->characters) {
+            if (area->characters_taken.value(char_name)) {
+                QString char_entry = char_name;
+                if (authenticated)
+                    char_entry += " (" + getIpid() + "): " + ooc_name;
+                entries.append(char_entry);
+            }
+        }
+        sendServerMessage(entries.join("\n"));
+    }
 }
 
 void AOClient::arup(ARUPType type, bool broadcast)
@@ -320,7 +400,12 @@ void AOClient::setHwid(QString p_hwid)
     QString concat_ip_id = remote_ip.toString() + p_hwid;
     hash.addData(concat_ip_id.toUtf8());
 
-    ipid = hash.result().toHex().right(8);
+    ipid = hash.result().toHex().right(8); // Use the last 8 characters (4 bytes)
+}
+
+void AOClient::sendServerMessage(QString message)
+{
+    sendPacket("CT", {"Server", message, "1"});
 }
 
 QString AOClient::getIpid() { return ipid; }

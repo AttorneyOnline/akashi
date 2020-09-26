@@ -66,10 +66,23 @@ class AOClient : public QObject {
         LOCKED
     };
 
+    struct CommandInfo {
+        bool privileged;
+        int minArgs;
+    };
+
+    const QMap<QString, CommandInfo> commands {
+        {"login", {false, 1}},
+        {"getareas", {false, 0 }},
+        {"getarea", {false, 0}}
+    };
+
     void handlePacket(AOPacket packet);
+    void handleCommand(QString command, int argc, QStringList argv);
     void changeArea(int new_area);
     void arup(ARUPType type, bool broadcast);
     void fullArup();
+    void sendServerMessage(QString message);
 
     QString partial_packet;
     bool is_partial;
@@ -78,6 +91,9 @@ class AOClient : public QObject {
     QString ipid;
     long last_wtce_time;
     QString last_message;
+
+    bool authenticated = false;
+    QString ooc_name = "";
 };
 
 #endif // AOCLIENT_H
