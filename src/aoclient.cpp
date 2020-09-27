@@ -350,6 +350,33 @@ void AOClient::handleCommand(QString command, int argc, QStringList argv)
         }
         sendServerMessage(entries.join("\n"));
     }
+    else if (command == "ban") {
+        QString ipid = argv[0];
+        QHostAddress ip;
+        QString hdid;
+        unsigned long time = QDateTime::currentDateTime().toTime_t();
+        QString reason = argv[1];
+
+        if (argc > 2) {
+            for (int i = 2; i < argv.length(); i++) {
+                reason += argv[i];
+            }
+        }
+
+        for (AOClient* client : server->clients) {
+            if (client->getIpid() == ipid) {
+                ip = client->remote_ip;
+                hdid = client->hwid;
+                server->ban_manager->addBan(ipid, ip, hdid, time, reason);
+                sendServerMessage("Banned user with ipid " + ipid + " for reason: " + reason);
+                sendPacket("KB", {reason});
+                socket->close();
+                return;
+            }
+        }
+
+        sendServerMessage("User with ipid not found!");
+    }
 }
 
 void AOClient::arup(ARUPType type, bool broadcast)

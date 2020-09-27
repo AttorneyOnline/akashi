@@ -37,6 +37,8 @@ public:
     QString getBanReason(QHostAddress ip);
     QString getBanReason(QString hdid);
 
+    void addBan(QString ipid, QHostAddress ip, QString hdid, unsigned long time, QString reason);
+
 private:
     const QString DRIVER;
     QSqlDatabase db;

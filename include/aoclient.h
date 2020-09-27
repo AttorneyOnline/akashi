@@ -74,7 +74,8 @@ class AOClient : public QObject {
     const QMap<QString, CommandInfo> commands {
         {"login", {false, 1}},
         {"getareas", {false, 0 }},
-        {"getarea", {false, 0}}
+        {"getarea", {false, 0}},
+        {"ban", {true, 2}}
     };
 
     void handlePacket(AOPacket packet);

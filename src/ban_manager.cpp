@@ -69,6 +69,18 @@ QString BanManager::getBanReason(QString hdid)
     }
 }
 
+void BanManager::addBan(QString ipid, QHostAddress ip, QString hdid, unsigned long time, QString reason)
+{
+    QSqlQuery query;
+    query.prepare("INSERT INTO BANS(IPID, HDID, IP, TIME, REASON) VALUES(?, ?, ?, ?, ?)");
+    query.addBindValue(ipid);
+    query.addBindValue(hdid);
+    query.addBindValue(ip.toString());
+    query.addBindValue(QString::number(time));
+    query.addBindValue(reason);
+    query.exec();
+}
+
 BanManager::~BanManager()
 {
     db.close();

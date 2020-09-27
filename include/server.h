@@ -48,6 +48,8 @@ class Server : public QObject {
     void broadcast(AOPacket packet, int area_index);
     void broadcast(AOPacket packet);
 
+    QVector<AOClient*> clients;
+
     int player_count;
     QStringList characters;
     QVector<AreaData*> areas;
@@ -66,8 +68,6 @@ class Server : public QObject {
 
     int port;
     int ws_port;
-
-    QVector<AOClient*> clients;
 };
 
 #endif // SERVER_H
