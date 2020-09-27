@@ -51,6 +51,7 @@ void WSProxy::wsConnected()
         clients.removeAll(client);
         client->deleteLater();
     });
+    connect(new_tcp, &QTcpSocket::connected, client, &WSClient::onTcpConnect);
 
     new_tcp->connectToHost(QHostAddress::LocalHost, local_port);
 }

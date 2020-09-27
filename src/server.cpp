@@ -26,6 +26,8 @@ Server::Server(int p_port, int p_ws_port, QObject* parent) : QObject(parent)
     ws_port = p_ws_port;
 
     player_count = 0;
+
+    ban_manager = new BanManager();
 }
 
 void Server::start()
@@ -77,11 +79,18 @@ void Server::clientConnected()
 {
     QTcpSocket* socket = server->nextPendingConnection();
     AOClient* client = new AOClient(this, socket, this);
+    if (ban_manager->isIPBanned(socket->peerAddress())) {
+        AOPacket ban_reason("BD", {ban_manager->getBanReason(socket->peerAddress())});
+        socket->write(ban_reason.toUtf8());
+        socket->flush();
+        client->deleteLater();
+        socket->close();
+        return;
+    }
     clients.append(client);
     connect(socket, &QTcpSocket::disconnected, client,
             &AOClient::clientDisconnected);
     connect(socket, &QTcpSocket::disconnected, this, [=] {
-        qDebug() << "removed client" << client->getIpid();
         clients.removeAll(client);
         client->deleteLater();
     });

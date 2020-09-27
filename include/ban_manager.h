@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //    akashi - a server for Attorney Online 2                                       //
-//    Copyright (C) 2020  scatterflower                                             //
+//    Copyright (C) 2020  scatterflower                                           //
 //                                                                                  //
 //    This program is free software: you can redistribute it and/or modify          //
 //    it under the terms of the GNU Affero General Public License as                //
@@ -15,51 +15,31 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
-#include "include/ws_client.h"
+#ifndef BAN_MANAGER_H
+#define BAN_MANAGER_H
 
-WSClient::WSClient(QTcpSocket* p_tcp_socket, QWebSocket* p_web_socket, QObject* parent)
-    : QObject(parent)
-{
-    tcp_socket = p_tcp_socket;
-    web_socket = p_web_socket;
-}
+#include <QDebug>
+#include <QHostAddress>
+#include <QString>
+#include <QSqlDatabase>
+#include <QSqlDriver>
+#include <QSqlError>
+#include <QSqlQuery>
 
-void WSClient::onWsData(QString message)
-{
-    tcp_socket->write(message.toUtf8());
-    tcp_socket->flush();
-}
+class BanManager{
+public:
+    BanManager();
+    ~BanManager();
 
-void WSClient::onTcpData()
-{
-    QByteArray tcp_message = tcp_socket->readAll();
-    // Workaround for WebAO bug needing every packet in its own message
-    QStringList all_packets = QString::fromUtf8(tcp_message).split("%");
-    all_packets.removeLast(); // Remove empty space after final delimiter
-    for(QString packet : all_packets) {
-        web_socket->sendTextMessage(packet + "%");
-    }
-}
+    bool isIPBanned(QHostAddress ip);
+    bool isHDIDBanned(QString hdid);
 
-void WSClient::onWsDisconnect()
-{
-    if (tcp_socket != nullptr)
-        tcp_socket->disconnectFromHost();
-}
+    QString getBanReason(QHostAddress ip);
+    QString getBanReason(QString hdid);
 
-void WSClient::onTcpDisconnect()
-{
-    web_socket->close();
-}
+private:
+    const QString DRIVER;
+    QSqlDatabase db;
+};
 
-void WSClient::onTcpConnect()
-{
-    tcp_socket->write(QString("WSIP#" + web_socket->peerAddress().toString() + "#%").toUtf8());
-    tcp_socket->flush();
-}
-
-WSClient::~WSClient()
-{
-    tcp_socket->deleteLater();
-    web_socket->deleteLater();
-}
+#endif // BAN_MANAGER_H

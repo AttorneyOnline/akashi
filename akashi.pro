@@ -1,4 +1,4 @@
-QT       += network websockets core
+QT       += network websockets core sql
 QT       -= gui
 TEMPLATE = app
 
@@ -21,6 +21,26 @@ MOC_DIR = $$PWD/build
 
 RC_ICONS = resource/icon/akashi.ico
 
-SOURCES += $$files($$PWD/src/*.cpp)
+SOURCES += src/advertiser.cpp \
+    src/aoclient.cpp \
+    src/aopacket.cpp \
+    src/area_data.cpp \
+    src/ban_manager.cpp \
+    src/config_manager.cpp \
+    src/icchatpacket.cpp \
+    src/main.cpp \
+    src/server.cpp \
+    src/ws_client.cpp \
+    src/ws_proxy.cpp
 
-HEADERS += $$files($$PWD/include/*.h)
+
+HEADERS += include/advertiser.h \
+    include/aoclient.h \
+    include/aopacket.h \
+    include/area_data.h \
+    include/ban_manager.h \
+    include/config_manager.h \
+    include/icchatpacket.h \
+    include/server.h \
+    include/ws_client.h \
+    include/ws_proxy.h

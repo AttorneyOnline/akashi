@@ -15,30 +15,61 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
-#ifndef WS_CLIENT_H
-#define WS_CLIENT_H
+#include "include/ban_manager.h"
 
-#include <QObject>
-#include <QtWebSockets/QtWebSockets>
-#include <QTcpSocket>
-#include <QString>
+BanManager::BanManager() :
+    DRIVER("QSQLITE")
+{
+    db = QSqlDatabase::addDatabase(DRIVER);
+    db.setDatabaseName("config/bans.db");
+    if (!db.open())
+        qCritical() << "Database Error:" << db.lastError();
+    QSqlQuery create_table_query("CREATE TABLE IF NOT EXISTS bans ('ID' INTEGER, 'IPID' TEXT, 'HDID' TEXT, 'IP' TEXT, 'TIME' INTEGER, 'REASON' TEXT, PRIMARY KEY('ID' AUTOINCREMENT));");
+}
 
-class WSClient : public QObject {
-    Q_OBJECT
-public:
-    WSClient(QTcpSocket* p_tcp_socket, QWebSocket* p_web_socket, QObject* parent = nullptr);
-    ~WSClient();
-public slots:
-    void onTcpData();
-    void onWsData(QString message);
-    void onWsDisconnect();
-    void onTcpDisconnect();
-    void onTcpConnect();
+bool BanManager::isIPBanned(QHostAddress ip)
+{
+    QSqlQuery query;
+    query.prepare("SELECT ID FROM BANS WHERE IP = ?");
+    query.addBindValue(ip.toString());
+    return query.first();
+}
 
+bool BanManager::isHDIDBanned(QString hdid)
+{
+    QSqlQuery query;
+    query.prepare("SELECT ID FROM BANS WHERE HDID = ?");
+    query.addBindValue(hdid);
+    return query.first();
+}
 
-private:
-    QTcpSocket* tcp_socket;
-    QWebSocket* web_socket;
-};
+QString BanManager::getBanReason(QHostAddress ip)
+{
+    QSqlQuery query;
+    query.prepare("SELECT ID FROM BANS WHERE IP = ?");
+    query.addBindValue(ip.toString());
+    if (query.first()) {
+        return query.value(0).toString();
+    }
+    else {
+        return "Ban reason not found.";
+    }
+}
 
-#endif // WS_CLIENT_H
+QString BanManager::getBanReason(QString hdid)
+{
+    QSqlQuery query;
+    query.prepare("SELECT ID FROM BANS WHERE HDID = ?");
+    query.addBindValue(hdid);
+    if (query.first()) {
+        return query.value(0).toString();
+    }
+    else {
+        return "Ban reason not found.";
+    }
+}
+
+BanManager::~BanManager()
+{
+    db.close();
+}

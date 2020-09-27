@@ -22,6 +22,7 @@
 #include "include/aopacket.h"
 #include "include/area_data.h"
 #include "include/ws_proxy.h"
+#include "include/ban_manager.h"
 
 #include <QCoreApplication>
 #include <QDebug>
@@ -52,6 +53,7 @@ class Server : public QObject {
     QVector<AreaData*> areas;
     QStringList area_names;
     QStringList music_list;
+    BanManager* ban_manager;
 
   signals:
 

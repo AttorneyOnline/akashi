@@ -35,7 +35,7 @@ AOClient::AOClient(Server* p_server, QTcpSocket* p_socket, QObject* parent)
 void AOClient::clientData()
 {
     QString data = QString::fromUtf8(socket->readAll());
-    qDebug() << "From" << remote_ip << ":" << data;
+    // qDebug() << "From" << remote_ip << ":" << data;
 
     if (is_partial) {
         data = partial_packet + data;
@@ -55,7 +55,7 @@ void AOClient::clientData()
 
 void AOClient::clientDisconnected()
 {
-    qDebug() << remote_ip << "disconnected";
+    qDebug() << remote_ip.toString() << "disconnected";
     if (joined) {
         server->player_count--;
         server->areas[current_area]->player_count--;
@@ -76,6 +76,11 @@ void AOClient::handlePacket(AOPacket packet)
     // Lord forgive me
     if (packet.header == "HI") {
         setHwid(packet.contents[0]);
+        if(server->ban_manager->isHDIDBanned(getHwid())) {
+            sendPacket("BD", {server->ban_manager->getBanReason(getHwid())});
+            socket->close();
+            return;
+        }
         sendPacket("ID", {"271828", "akashi", QCoreApplication::applicationVersion()});
     }
     else if (packet.header == "ID") {
@@ -221,6 +226,19 @@ void AOClient::handlePacket(AOPacket packet)
         }
         server->broadcast(AOPacket("HP", {"1", QString::number(area->def_hp)}), area->index);
         server->broadcast(AOPacket("HP", {"2", QString::number(area->pro_hp)}), area->index);
+    }
+    else if (packet.header == "WSIP") {
+        // Special packet to set remote IP from the webao proxy
+        // Only valid if from a local ip
+        if (remote_ip.isLoopback()) {
+            if(server->ban_manager->isIPBanned(QHostAddress(packet.contents[0]))) {
+                sendPacket("BD", {server->ban_manager->getBanReason(QHostAddress(packet.contents[0]))});
+                socket->close();
+                return;
+            }
+            qDebug() << "ws ip set to" << packet.contents[0];
+            remote_ip = QHostAddress(packet.contents[0]);
+        }
     }
     else {
         qDebug() << "Unimplemented packet:" << packet.header;
@@ -368,7 +386,7 @@ void AOClient::fullArup() {
 
 void AOClient::sendPacket(AOPacket packet)
 {
-    qDebug() << "Sent packet:" << packet.header << ":" << packet.contents;
+    // qDebug() << "Sent packet:" << packet.header << ":" << packet.contents;
     socket->write(packet.toUtf8());
     socket->flush();
 }
@@ -401,6 +419,7 @@ void AOClient::setHwid(QString p_hwid)
     hash.addData(concat_ip_id.toUtf8());
 
     ipid = hash.result().toHex().right(8); // Use the last 8 characters (4 bytes)
+    qDebug() << "IP:" << remote_ip.toString() << "HDID:" << p_hwid << "IPID:" << ipid;
 }
 
 void AOClient::sendServerMessage(QString message)
