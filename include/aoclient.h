@@ -75,7 +75,8 @@ class AOClient : public QObject {
         {"login", {false, 1}},
         {"getareas", {false, 0 }},
         {"getarea", {false, 0}},
-        {"ban", {true, 2}}
+        {"ban", {true, 2}},
+        {"kick", {true, 2}}
     };
 
     void handlePacket(AOPacket packet);

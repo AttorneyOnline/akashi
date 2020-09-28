@@ -322,11 +322,11 @@ void AOClient::handleCommand(QString command, int argc, QStringList argv)
             AreaData* area = server->areas[i];
             entries.append("=== " + area_name + " ===");
             entries.append("[" + QString::number(area->player_count) + " users][" + area->status + "]");
-            for (QString char_name : server->characters) {
-                if (area->characters_taken.value(char_name)) {
-                    QString char_entry = char_name;
+            for (AOClient* client : server->clients) {
+                if (client->current_area == i) {
+                    QString char_entry = client->current_char;
                     if (authenticated)
-                        char_entry += " (" + getIpid() + "): " + ooc_name;
+                        char_entry += " (" + client->getIpid() + "): " + ooc_name;
                     entries.append(char_entry);
                 }
             }
@@ -340,42 +340,70 @@ void AOClient::handleCommand(QString command, int argc, QStringList argv)
         AreaData* area = server->areas[current_area];
         entries.append("=== " + area_name + " ===");
         entries.append("[" + QString::number(area->player_count) + " users][" + area->status + "]");
-        for (QString char_name : server->characters) {
-            if (area->characters_taken.value(char_name)) {
-                QString char_entry = char_name;
+        for (AOClient* client : server->clients) {
+            if (client->current_area == current_area) {
+                QString char_entry = client->current_char;
                 if (authenticated)
-                    char_entry += " (" + getIpid() + "): " + ooc_name;
+                    char_entry += " (" + client->getIpid() + "): " + ooc_name;
                 entries.append(char_entry);
             }
         }
         sendServerMessage(entries.join("\n"));
     }
     else if (command == "ban") {
-        QString ipid = argv[0];
+        QString target_ipid = argv[0];
         QHostAddress ip;
         QString hdid;
         unsigned long time = QDateTime::currentDateTime().toTime_t();
         QString reason = argv[1];
+        bool ban_logged = false;
 
         if (argc > 2) {
             for (int i = 2; i < argv.length(); i++) {
-                reason += argv[i];
+                reason += " " + argv[i];
             }
         }
 
         for (AOClient* client : server->clients) {
-            if (client->getIpid() == ipid) {
-                ip = client->remote_ip;
-                hdid = client->hwid;
-                server->ban_manager->addBan(ipid, ip, hdid, time, reason);
-                sendServerMessage("Banned user with ipid " + ipid + " for reason: " + reason);
-                sendPacket("KB", {reason});
-                socket->close();
-                return;
+            if (client->getIpid() == target_ipid) {
+                if (!ban_logged) {
+                    ip = client->remote_ip;
+                    hdid = client->hwid;
+                    server->ban_manager->addBan(target_ipid, ip, hdid, time, reason);
+                    sendServerMessage("Banned user with ipid " + target_ipid + " for reason: " + reason);
+                    ban_logged = true;
+                }
+                client->sendPacket("KB", {reason});
+                client->socket->close();
             }
         }
 
-        sendServerMessage("User with ipid not found!");
+        if (!ban_logged)
+            sendServerMessage("User with ipid not found!");
+    }
+    else if (command == "kick") {
+        QString target_ipid = argv[0];
+        QString reason = argv[1];
+        bool did_kick = false;
+
+        if (argc > 2) {
+            for (int i = 2; i < argv.length(); i++) {
+                reason += " " + argv[i];
+            }
+        }
+
+        for (AOClient* client : server->clients) {
+            if (client->getIpid() == target_ipid) {
+                client->sendPacket("KK", {reason});
+                client->socket->close();
+                did_kick = true;
+            }
+        }
+
+        if (did_kick)
+            sendServerMessage("Banned user with ipid " + target_ipid + " for reason: " + reason);
+        else
+            sendServerMessage("User with ipid not found!");
     }
 }
 

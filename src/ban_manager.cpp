@@ -32,6 +32,7 @@ bool BanManager::isIPBanned(QHostAddress ip)
     QSqlQuery query;
     query.prepare("SELECT ID FROM BANS WHERE IP = ?");
     query.addBindValue(ip.toString());
+    query.exec();
     return query.first();
 }
 
@@ -40,14 +41,16 @@ bool BanManager::isHDIDBanned(QString hdid)
     QSqlQuery query;
     query.prepare("SELECT ID FROM BANS WHERE HDID = ?");
     query.addBindValue(hdid);
+    query.exec();
     return query.first();
 }
 
 QString BanManager::getBanReason(QHostAddress ip)
 {
     QSqlQuery query;
-    query.prepare("SELECT ID FROM BANS WHERE IP = ?");
+    query.prepare("SELECT REASON FROM BANS WHERE IP = ?");
     query.addBindValue(ip.toString());
+    query.exec();
     if (query.first()) {
         return query.value(0).toString();
     }
@@ -59,8 +62,9 @@ QString BanManager::getBanReason(QHostAddress ip)
 QString BanManager::getBanReason(QString hdid)
 {
     QSqlQuery query;
-    query.prepare("SELECT ID FROM BANS WHERE HDID = ?");
+    query.prepare("SELECT REASON FROM BANS WHERE HDID = ?");
     query.addBindValue(hdid);
+    query.exec();
     if (query.first()) {
         return query.value(0).toString();
     }
@@ -78,7 +82,8 @@ void BanManager::addBan(QString ipid, QHostAddress ip, QString hdid, unsigned lo
     query.addBindValue(ip.toString());
     query.addBindValue(QString::number(time));
     query.addBindValue(reason);
-    query.exec();
+    if (!query.exec())
+        qDebug() << "SQL Error:" << query.lastError().text();
 }
 
 BanManager::~BanManager()
