@@ -57,6 +57,7 @@ class AOClient : public QObject {
         NONE = 0ULL,
         KICK = 1ULL << 0,
         BAN = 1ULL << 1,
+        BGLOCK = 1ULL << 2,
         SUPER = ~0ULL
     };
 
@@ -137,6 +138,9 @@ class AOClient : public QObject {
     void cmdKick(int argc, QStringList argv);
     void cmdChangeAuth(int argc, QStringList argv);
     void cmdSetRootPass(int argc, QStringList argv);
+    void cmdSetBackground(int argc, QStringList argv);
+    void cmdBgLock(int argc, QStringList argv);
+    void cmdBgUnlock(int argc, QStringList argv);
 
     // Command helper functions
     QStringList buildAreaList(int area_idx);
@@ -157,7 +161,11 @@ class AOClient : public QObject {
         {"ban", {ACLFlags::BAN, 2, &AOClient::cmdBan}},
         {"kick", {ACLFlags::KICK, 2, &AOClient::cmdKick}},
         {"changeauth", {ACLFlags::SUPER, 0, &AOClient::cmdChangeAuth}},
-        {"rootpass", {ACLFlags::SUPER, 1, &AOClient::cmdSetRootPass}}
+        {"rootpass", {ACLFlags::SUPER, 1, &AOClient::cmdSetRootPass}},
+        {"background", {ACLFlags::NONE, 1, &AOClient::cmdSetBackground}},
+        {"bg", {ACLFlags::NONE, 1, &AOClient::cmdSetBackground}},
+        {"bglock", {ACLFlags::BGLOCK, 0, &AOClient::cmdBgLock}},
+        {"bgunlock", {ACLFlags::BGLOCK, 0, &AOClient::cmdBgUnlock}}
     };
 
     QString partial_packet;

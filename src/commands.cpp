@@ -165,6 +165,40 @@ void AOClient::cmdSetRootPass(int argc, QStringList argv)
     server->db_manager->createUser("root", salt, argv[0], ACLFlags::SUPER);
 }
 
+void AOClient::cmdSetBackground(int argc, QStringList argv)
+{
+    // TODO: area locks in areas.ini
+    // TODO: sendServerMessage but area broadcast
+    AreaData* area = server->areas[current_area];
+    if (authenticated || !area->bg_locked) {
+        if (server->backgrounds.contains(argv[0])) {
+            area->background = argv[0];
+            server->broadcast(AOPacket("BN", {argv[0]}), current_area);
+            server->broadcast(AOPacket("CT", {"Server", current_char + " changed the background to " + argv[0], "1"}), current_area);
+        }
+        else {
+            sendServerMessage("Invalid background name.");
+        }
+    }
+    else {
+        sendServerMessage("This area's background is locked.");
+    }
+}
+
+void AOClient::cmdBgLock(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    area->bg_locked = true;
+    server->broadcast(AOPacket("CT", {"Server", current_char + " locked the background.", "1"}), current_area);
+}
+
+void AOClient::cmdBgUnlock(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    area->bg_locked = false;
+    server->broadcast(AOPacket("CT", {"Server", current_char + " unlocked the background.", "1"}), current_area);
+}
+
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;

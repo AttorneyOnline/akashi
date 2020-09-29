@@ -39,6 +39,7 @@ class AreaData {
     bool showname_allowed;
     bool locking_allowed;
     bool iniswap_allowed;
+    bool bg_locked;
 
     int def_hp;
     int pro_hp;

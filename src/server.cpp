@@ -61,6 +61,13 @@ void Server::start()
     if(music_list[0].contains(".")) // Add a default category if none exists
         music_list.insert(0, "==Music==");
 
+    QFile bg_file("config/backgrounds.txt");
+    bg_file.open(QIODevice::ReadOnly | QIODevice::Text);
+    while (!bg_file.atEnd()) {
+        backgrounds.append(bg_file.readLine().trimmed());
+    }
+    bg_file.close();
+
     // TODO: add verification that this exists
     QSettings areas_ini("config/areas.ini", QSettings::IniFormat);
     area_names = areas_ini.childGroups();

@@ -33,6 +33,7 @@ bool ConfigManager::initConfig()
     QFileInfo areas_info("config/areas.ini");
     QFileInfo characters_info("config/characters.txt");
     QFileInfo music_info("config/music.txt");
+    QFileInfo backgrounds_info("config/backgrounds.txt");
 
     if (!fileExists(&areas_info)) {
         qCritical() << "areas.ini doesn't exist!";
@@ -51,6 +52,10 @@ bool ConfigManager::initConfig()
     }
     if (!fileExists(&music_info)) {
         qCritical() << "music.txt doesn't exist!";
+        return false;
+    }
+    if (!fileExists(&backgrounds_info)) {
+        qCritical() << "backgrounds.txt doesn't exist!";
         return false;
     }
 

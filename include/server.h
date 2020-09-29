@@ -56,6 +56,7 @@ class Server : public QObject {
     QVector<AreaData*> areas;
     QStringList area_names;
     QStringList music_list;
+    QStringList backgrounds;
     DBManager* db_manager;
 
   signals:
