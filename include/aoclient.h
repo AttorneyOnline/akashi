@@ -22,12 +22,14 @@
 #include "include/server.h"
 #include "include/icchatpacket.h"
 #include "include/area_data.h"
+#include "include/db_manager.h"
 
 #include <algorithm>
 
 #include <QHostAddress>
 #include <QTcpSocket>
 #include <QDateTime>
+#include <QRandomGenerator>
 
 class Server;
 
@@ -48,7 +50,15 @@ class AOClient : public QObject {
     int current_area;
     QString current_char;
     bool authenticated = false;
+    QString moderator_name = "";
     QString ooc_name = "";
+
+    enum ACLFlags {
+        NONE = 0ULL,
+        KICK = 1ULL << 0,
+        BAN = 1ULL << 1,
+        SUPER = ~0ULL
+    };
 
   public slots:
     void clientDisconnected();
@@ -74,6 +84,7 @@ class AOClient : public QObject {
     void arup(ARUPType type, bool broadcast);
     void fullArup();
     void sendServerMessage(QString message);
+    bool checkAuth(unsigned long long acl_mask);
 
     // Packet headers
     void pktDefault(AreaData* area, int argc, QStringList argv, AOPacket packet);
@@ -94,26 +105,27 @@ class AOClient : public QObject {
     void pktWebSocketIp(AreaData* area, int argc, QStringList argv, AOPacket packet);
 
     struct PacketInfo {
+        unsigned long long acl_mask;
         int minArgs;
         void (AOClient::*action)(AreaData*, int, QStringList, AOPacket);
     };
 
     const QMap<QString, PacketInfo> packets {
-        {"HI", {1, &AOClient::pktHardwareId}},
-        {"ID", {2, &AOClient::pktSoftwareId}},
-        {"askchaa", {0, &AOClient::pktBeginLoad}},
-        {"RC", {0, &AOClient::pktRequestChars}},
-        {"RM", {0, &AOClient::pktRequestMusic}},
-        {"RD", {0, &AOClient::pktLoadingDone}},
-        {"PW", {1, &AOClient::pktCharPassword}},
-        {"CC", {3, &AOClient::pktSelectChar}},
-        {"MS", {1, &AOClient::pktIcChat}}, // TODO: doublecheck
-        {"CT", {2, &AOClient::pktOocChat}},
-        {"CH", {1, &AOClient::pktPing}},
-        {"MC", {2, &AOClient::pktChangeMusic}},
-        {"RT", {1, &AOClient::pktWtCe}},
-        {"HP", {2, &AOClient::pktHpBar}},
-        {"WSIP", {1, &AOClient::pktWebSocketIp}}
+        {"HI", {ACLFlags::NONE, 1, &AOClient::pktHardwareId}},
+        {"ID", {ACLFlags::NONE, 2, &AOClient::pktSoftwareId}},
+        {"askchaa", {ACLFlags::NONE, 0, &AOClient::pktBeginLoad}},
+        {"RC", {ACLFlags::NONE, 0, &AOClient::pktRequestChars}},
+        {"RM", {ACLFlags::NONE, 0, &AOClient::pktRequestMusic}},
+        {"RD", {ACLFlags::NONE, 0, &AOClient::pktLoadingDone}},
+        {"PW", {ACLFlags::NONE, 1, &AOClient::pktCharPassword}},
+        {"CC", {ACLFlags::NONE, 3, &AOClient::pktSelectChar}},
+        {"MS", {ACLFlags::NONE, 1, &AOClient::pktIcChat}}, // TODO: doublecheck
+        {"CT", {ACLFlags::NONE, 2, &AOClient::pktOocChat}},
+        {"CH", {ACLFlags::NONE, 1, &AOClient::pktPing}},
+        {"MC", {ACLFlags::NONE, 2, &AOClient::pktChangeMusic}},
+        {"RT", {ACLFlags::NONE, 1, &AOClient::pktWtCe}},
+        {"HP", {ACLFlags::NONE, 2, &AOClient::pktHpBar}},
+        {"WSIP", {ACLFlags::NONE, 1, &AOClient::pktWebSocketIp}}
     };
 
     // Commands
@@ -123,22 +135,29 @@ class AOClient : public QObject {
     void cmdGetArea(int argc, QStringList argv);
     void cmdBan(int argc, QStringList argv);
     void cmdKick(int argc, QStringList argv);
+    void cmdChangeAuth(int argc, QStringList argv);
+    void cmdSetRootPass(int argc, QStringList argv);
 
     // Command helper functions
     QStringList buildAreaList(int area_idx);
 
+    // Command function global variables
+    bool change_auth_started = false;
+
     struct CommandInfo {
-        bool privileged;
+        unsigned long long acl_mask;
         int minArgs;
         void (AOClient::*action)(int, QStringList);
     };
 
     const QMap<QString, CommandInfo> commands {
-        {"login", {false, 1, &AOClient::cmdLogin}},
-        {"getareas", {false, 0 , &AOClient::cmdGetAreas}},
-        {"getarea", {false, 0, &AOClient::cmdGetArea}},
-        {"ban", {true, 2, &AOClient::cmdBan}},
-        {"kick", {true, 2, &AOClient::cmdKick}}
+        {"login", {ACLFlags::NONE, 1, &AOClient::cmdLogin}},
+        {"getareas", {ACLFlags::NONE, 0 , &AOClient::cmdGetAreas}},
+        {"getarea", {ACLFlags::NONE, 0, &AOClient::cmdGetArea}},
+        {"ban", {ACLFlags::BAN, 2, &AOClient::cmdBan}},
+        {"kick", {ACLFlags::KICK, 2, &AOClient::cmdKick}},
+        {"changeauth", {ACLFlags::SUPER, 0, &AOClient::cmdChangeAuth}},
+        {"rootpass", {ACLFlags::SUPER, 1, &AOClient::cmdSetRootPass}}
     };
 
     QString partial_packet;

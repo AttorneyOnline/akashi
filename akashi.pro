@@ -25,9 +25,9 @@ SOURCES += src/advertiser.cpp \
     src/aoclient.cpp \
     src/aopacket.cpp \
     src/area_data.cpp \
-    src/ban_manager.cpp \
     src/commands.cpp \
     src/config_manager.cpp \
+    src/db_manager.cpp \
     src/icchatpacket.cpp \
     src/main.cpp \
     src/packets.cpp \
@@ -40,8 +40,8 @@ HEADERS += include/advertiser.h \
     include/aoclient.h \
     include/aopacket.h \
     include/area_data.h \
-    include/ban_manager.h \
     include/config_manager.h \
+    include/db_manager.h \
     include/icchatpacket.h \
     include/server.h \
     include/ws_client.h \

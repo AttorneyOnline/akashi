@@ -73,7 +73,12 @@ void AOClient::handlePacket(AOPacket packet)
     // TODO: like everything here should send a signal
     // qDebug() << "Received packet:" << packet.header << ":" << packet.contents;
     AreaData* area = server->areas[current_area];
-    PacketInfo info = packets.value(packet.header, {0, &AOClient::pktDefault});
+    PacketInfo info = packets.value(packet.header, {false, 0, &AOClient::pktDefault});
+
+    if (!checkAuth(info.acl_mask)) {
+        qDebug() << "Unauthenticated client" << getIpid() << "attempted to use privileged packet" << packet.header;
+        return;
+    }
 
     if (packet.contents.length() < info.minArgs) {
         qDebug() << "Invalid packet args length. Minimum is" << info.minArgs << "but only" << packet.contents.length() << "were given.";
@@ -122,7 +127,7 @@ void AOClient::handleCommand(QString command, int argc, QStringList argv)
 {
     CommandInfo info = commands.value(command, {false, -1, &AOClient::cmdDefault});
 
-    if (info.privileged && !authenticated) {
+    if (!checkAuth(info.acl_mask)) {
         sendServerMessage("You do not have permission to use that command.");
         return;
     }
@@ -208,6 +213,30 @@ void AOClient::setHwid(QString p_hwid)
 void AOClient::sendServerMessage(QString message)
 {
     sendPacket("CT", {"Server", message, "1"});
+}
+
+bool AOClient::checkAuth(unsigned long long acl_mask)
+{
+    if (acl_mask != ACLFlags::NONE) {
+        if (!authenticated) {
+            return false;
+        }
+
+        QSettings settings("config/config.ini", QSettings::IniFormat);
+        settings.beginGroup("Options");
+        QString auth_type = settings.value("auth", "simple").toString();
+        qDebug() << "auth type" << auth_type;
+        if (auth_type == "advanced") {
+            unsigned long long user_acl = server->db_manager->getACL(moderator_name);
+            qDebug() << "checking with advanced auth";
+            qDebug() << "got acl" << QString::number(user_acl, 16).toUpper() << "for user" << moderator_name;
+            return (user_acl & acl_mask) != 0;
+        }
+        else if (auth_type == "simple") {
+            return authenticated;
+        }
+    }
+    return true;
 }
 
 QString AOClient::getIpid() { return ipid; }

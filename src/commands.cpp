@@ -29,14 +29,34 @@ void AOClient::cmdLogin(int argc, QStringList argv)
 {
     QSettings config("config/config.ini", QSettings::IniFormat);
     config.beginGroup("Options");
-    QString modpass = config.value("modpass", "default").toString();;
+    QString modpass = config.value("modpass", "default").toString();
+    QString auth_type = config.value("auth", "simple").toString();
+
     // TODO: tell the user if no modpass is set
-    if(argv[0] == modpass) {
-        sendServerMessage("Logged in as a moderator."); // This string has to be exactly this, because it is hardcoded in the client
-        authenticated = true;
-    } else {
-        sendServerMessage("Incorrect password.");
-        return;
+    if (auth_type == "simple") {
+        if(argv[0] == modpass) {
+            sendServerMessage("Logged in as a moderator."); // This string has to be exactly this, because it is hardcoded in the client
+            authenticated = true;
+        } else {
+            sendServerMessage("Incorrect password.");
+            return;
+        }
+    }
+    else {
+        if (argc < 2) {
+            sendServerMessage("You must specify a username and a password");
+            return;
+        }
+        QString username = argv[0];
+        QString password = argv[1];
+        if (server->db_manager->authenticate(username, password)) {
+            moderator_name = username;
+            authenticated = true;
+            sendServerMessage("Logged in as " + username);
+        }
+        else {
+            sendServerMessage("Incorrect password.");
+        }
     }
 }
 
@@ -77,7 +97,7 @@ void AOClient::cmdBan(int argc, QStringList argv)
             if (!ban_logged) {
                 ip = client->remote_ip;
                 hdid = client->hwid;
-                server->ban_manager->addBan(target_ipid, ip, hdid, time, reason);
+                server->db_manager->addBan(target_ipid, ip, hdid, time, reason);
                 sendServerMessage("Banned user with ipid " + target_ipid + " for reason: " + reason);
                 ban_logged = true;
             }
@@ -114,6 +134,35 @@ void AOClient::cmdKick(int argc, QStringList argv)
         sendServerMessage("Banned user with ipid " + target_ipid + " for reason: " + reason);
     else
         sendServerMessage("User with ipid not found!");
+}
+
+void AOClient::cmdChangeAuth(int argc, QStringList argv)
+{
+    QSettings settings("config/config.ini", QSettings::IniFormat);
+    settings.beginGroup("Options");
+    QString auth_type = settings.value("auth", "simple").toString();
+
+    if (auth_type == "simple") {
+        change_auth_started = true;
+        sendServerMessage("WARNING!\nThis command will change how logging in as a moderator works.\nOnly proceed if you know what you are doing\nUse the command /rootpass to set the password for your root account.");
+    }
+}
+
+void AOClient::cmdSetRootPass(int argc, QStringList argv)
+{
+    if (!change_auth_started)
+        return;
+
+    sendServerMessage("Changing auth type and setting root password.\nLogin again with /login root [password]");
+    authenticated = false;
+    QSettings settings("config/config.ini", QSettings::IniFormat);
+    settings.beginGroup("Options");
+    settings.setValue("auth", "advanced");
+
+    quint64 salt_number = QRandomGenerator::system()->generate64();
+    QString salt = QStringLiteral("%1").arg(salt_number, 16, 16, QLatin1Char('0'));
+
+    server->db_manager->createUser("root", salt, argv[0], ACLFlags::SUPER);
 }
 
 QStringList AOClient::buildAreaList(int area_idx)

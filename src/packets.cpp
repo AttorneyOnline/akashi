@@ -26,8 +26,8 @@ void AOClient::pktDefault(AreaData* area, int argc, QStringList argv, AOPacket p
 void AOClient::pktHardwareId(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
     setHwid(argv[0]);
-    if(server->ban_manager->isHDIDBanned(getHwid())) {
-        sendPacket("BD", {server->ban_manager->getBanReason(getHwid())});
+    if(server->db_manager->isHDIDBanned(getHwid())) {
+        sendPacket("BD", {server->db_manager->getBanReason(getHwid())});
         socket->close();
         return;
     }
@@ -141,7 +141,7 @@ void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket p
         QString command = cmd_argv[0].trimmed().toLower();
         command = command.right(command.length() - 1);
         cmd_argv.removeFirst();
-        int cmd_argc = argv.length();
+        int cmd_argc = cmd_argv.length();
         handleCommand(command, cmd_argc, cmd_argv);
         return;
     }
@@ -209,8 +209,8 @@ void AOClient::pktWebSocketIp(AreaData* area, int argc, QStringList argv, AOPack
     // Special packet to set remote IP from the webao proxy
     // Only valid if from a local ip
     if (remote_ip.isLoopback()) {
-        if(server->ban_manager->isIPBanned(QHostAddress(argv[0]))) {
-            sendPacket("BD", {server->ban_manager->getBanReason(QHostAddress(argv[0]))});
+        if(server->db_manager->isIPBanned(QHostAddress(argv[0]))) {
+            sendPacket("BD", {server->db_manager->getBanReason(QHostAddress(argv[0]))});
             socket->close();
             return;
         }

@@ -22,7 +22,7 @@
 #include "include/aopacket.h"
 #include "include/area_data.h"
 #include "include/ws_proxy.h"
-#include "include/ban_manager.h"
+#include "include/db_manager.h"
 
 #include <QCoreApplication>
 #include <QDebug>
@@ -34,6 +34,7 @@
 #include <QTcpSocket>
 
 class AOClient;
+class DBManager;
 
 class Server : public QObject {
     Q_OBJECT
@@ -55,7 +56,7 @@ class Server : public QObject {
     QVector<AreaData*> areas;
     QStringList area_names;
     QStringList music_list;
-    BanManager* ban_manager;
+    DBManager* db_manager;
 
   signals:
 

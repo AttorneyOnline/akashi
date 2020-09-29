@@ -15,19 +15,20 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
-#include "include/ban_manager.h"
+#include "include/db_manager.h"
 
-BanManager::BanManager() :
+DBManager::DBManager() :
     DRIVER("QSQLITE")
 {
     db = QSqlDatabase::addDatabase(DRIVER);
-    db.setDatabaseName("config/bans.db");
+    db.setDatabaseName("config/akashi.db");
     if (!db.open())
         qCritical() << "Database Error:" << db.lastError();
-    QSqlQuery create_table_query("CREATE TABLE IF NOT EXISTS bans ('ID' INTEGER, 'IPID' TEXT, 'HDID' TEXT, 'IP' TEXT, 'TIME' INTEGER, 'REASON' TEXT, PRIMARY KEY('ID' AUTOINCREMENT));");
+    QSqlQuery create_ban_table("CREATE TABLE IF NOT EXISTS bans ('ID' INTEGER, 'IPID' TEXT, 'HDID' TEXT, 'IP' TEXT, 'TIME' INTEGER, 'REASON' TEXT, PRIMARY KEY('ID' AUTOINCREMENT))");
+    QSqlQuery create_user_table("CREATE TABLE IF NOT EXISTS users ('ID' INTEGER, 'USERNAME' TEXT, 'SALT' TEXT, 'PASSWORD' TEXT, 'ACL' TEXT, PRIMARY KEY('ID' AUTOINCREMENT))");
 }
 
-bool BanManager::isIPBanned(QHostAddress ip)
+bool DBManager::isIPBanned(QHostAddress ip)
 {
     QSqlQuery query;
     query.prepare("SELECT ID FROM BANS WHERE IP = ?");
@@ -36,7 +37,7 @@ bool BanManager::isIPBanned(QHostAddress ip)
     return query.first();
 }
 
-bool BanManager::isHDIDBanned(QString hdid)
+bool DBManager::isHDIDBanned(QString hdid)
 {
     QSqlQuery query;
     query.prepare("SELECT ID FROM BANS WHERE HDID = ?");
@@ -45,7 +46,7 @@ bool BanManager::isHDIDBanned(QString hdid)
     return query.first();
 }
 
-QString BanManager::getBanReason(QHostAddress ip)
+QString DBManager::getBanReason(QHostAddress ip)
 {
     QSqlQuery query;
     query.prepare("SELECT REASON FROM BANS WHERE IP = ?");
@@ -59,7 +60,7 @@ QString BanManager::getBanReason(QHostAddress ip)
     }
 }
 
-QString BanManager::getBanReason(QString hdid)
+QString DBManager::getBanReason(QString hdid)
 {
     QSqlQuery query;
     query.prepare("SELECT REASON FROM BANS WHERE HDID = ?");
@@ -73,7 +74,7 @@ QString BanManager::getBanReason(QString hdid)
     }
 }
 
-void BanManager::addBan(QString ipid, QHostAddress ip, QString hdid, unsigned long time, QString reason)
+void DBManager::addBan(QString ipid, QHostAddress ip, QString hdid, unsigned long time, QString reason)
 {
     QSqlQuery query;
     query.prepare("INSERT INTO BANS(IPID, HDID, IP, TIME, REASON) VALUES(?, ?, ?, ?, ?)");
@@ -86,7 +87,66 @@ void BanManager::addBan(QString ipid, QHostAddress ip, QString hdid, unsigned lo
         qDebug() << "SQL Error:" << query.lastError().text();
 }
 
-BanManager::~BanManager()
+void DBManager::createUser(QString username, QString salt, QString password, unsigned long long acl)
+{
+    QSqlQuery query;
+
+    QString salted_password;
+    QMessageAuthenticationCode hmac(QCryptographicHash::Sha256);
+    hmac.setKey(salt.toUtf8());
+    hmac.addData(password.toUtf8());
+    salted_password = hmac.result().toHex();
+
+    query.prepare("INSERT INTO users(USERNAME, SALT, PASSWORD, ACL) VALUES(?, ?, ?, ?)");
+    query.addBindValue(username);
+    query.addBindValue(salt);
+    query.addBindValue(salted_password);
+    query.addBindValue(acl);
+    query.exec();
+
+    qDebug() << "Created user" << username << "with password" << password << "and salted with value" << salt << ": stored as" << salted_password;
+}
+
+unsigned long long DBManager::getACL(QString moderator_name)
+{
+    if (moderator_name == "")
+        return AOClient::ACLFlags::NONE;
+    QSqlQuery query("SELECT ACL FROM users WHERE USERNAME = ?");
+    query.addBindValue(moderator_name);
+    query.exec();
+    if (!query.first())
+        return AOClient::ACLFlags::NONE;
+    return query.value(0).toULongLong();
+}
+
+bool DBManager::authenticate(QString username, QString password)
+{
+    QSqlQuery query_salt("SELECT SALT FROM users WHERE USERNAME = ?");
+    query_salt.addBindValue(username);
+    query_salt.exec();
+    if (!query_salt.first())
+        return false;
+    QString salt = query_salt.value(0).toString();
+
+    QString salted_password;
+    QMessageAuthenticationCode hmac(QCryptographicHash::Sha256);
+    hmac.setKey(salt.toUtf8());
+    hmac.addData(password.toUtf8());
+    salted_password = hmac.result().toHex();
+
+    QSqlQuery query_pass("SELECT PASSWORD FROM users WHERE SALT = ?");
+    query_pass.addBindValue(salt);
+    query_pass.exec();
+    if (!query_pass.first())
+        return false;
+    QString stored_pass = query_pass.value(0).toString();
+
+    qDebug() << "Found DB entry Salt:" << salt << "Stored Password:" << stored_pass << "Calculated Password:" << salted_password;
+
+    return salted_password == stored_pass;
+}
+
+DBManager::~DBManager()
 {
     db.close();
 }

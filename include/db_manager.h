@@ -18,18 +18,21 @@
 #ifndef BAN_MANAGER_H
 #define BAN_MANAGER_H
 
+#include "include/aoclient.h"
+
 #include <QDebug>
 #include <QHostAddress>
+#include <QMessageAuthenticationCode>
 #include <QString>
 #include <QSqlDatabase>
 #include <QSqlDriver>
 #include <QSqlError>
 #include <QSqlQuery>
 
-class BanManager{
+class DBManager{
 public:
-    BanManager();
-    ~BanManager();
+    DBManager();
+    ~DBManager();
 
     bool isIPBanned(QHostAddress ip);
     bool isHDIDBanned(QString hdid);
@@ -39,8 +42,16 @@ public:
 
     void addBan(QString ipid, QHostAddress ip, QString hdid, unsigned long time, QString reason);
 
+    void createUser(QString username, QString salt, QString password, unsigned long long acl);
+    unsigned long long getACL(QString moderator_name);
+    bool authenticate(QString username, QString password);
+
 private:
     const QString DRIVER;
+    const QString CONN_NAME;
+
+    void openDB();
+
     QSqlDatabase db;
 };
 
