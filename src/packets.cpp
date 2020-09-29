@@ -75,6 +75,16 @@ void AOClient::pktRequestMusic(AreaData* area, int argc, QStringList argv, AOPac
 
 void AOClient::pktLoadingDone(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    if (getHwid() == "") {
+        // No early connecting!
+        socket->close();
+        return;
+    }
+
+    if (joined) {
+        return;
+    }
+
     server->player_count++;
     area->player_count++;
     joined = true;

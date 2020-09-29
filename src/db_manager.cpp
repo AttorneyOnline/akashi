@@ -146,7 +146,7 @@ bool DBManager::authenticate(QString username, QString password)
     return salted_password == stored_pass;
 }
 
-bool DBManager::updateACL(QString username, unsigned long long acl)
+bool DBManager::updateACL(QString username, unsigned long long acl, bool mode)
 {
     QSqlQuery username_exists;
     username_exists.prepare("SELECT ACL FROM users WHERE USERNAME = ?");
@@ -157,7 +157,11 @@ bool DBManager::updateACL(QString username, unsigned long long acl)
         return false;
 
     unsigned long long old_acl = username_exists.value(0).toULongLong();
-    unsigned long long new_acl = acl | old_acl;
+    unsigned long long new_acl;
+    if (mode) // adding perm
+        new_acl = old_acl | acl;
+    else // removing perm
+        new_acl = old_acl & ~acl;
     if (acl == 0) // Allow clearing all perms via adding perm "NONE"
         new_acl = 0;
 
@@ -167,6 +171,18 @@ bool DBManager::updateACL(QString username, unsigned long long acl)
     update_acl.addBindValue(username);
     update_acl.exec();
     return true;
+}
+
+QStringList DBManager::getUsers()
+{
+    QStringList users;
+
+    QSqlQuery query("SELECT USERNAME FROM users ORDER BY ID");
+    while (query.next()) {
+        users.append(query.value(0).toString());
+    }
+
+    return users;
 }
 
 DBManager::~DBManager()

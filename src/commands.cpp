@@ -136,7 +136,7 @@ void AOClient::cmdKick(int argc, QStringList argv)
     }
 
     if (did_kick)
-        sendServerMessage("Banned user with ipid " + target_ipid + " for reason: " + reason);
+        sendServerMessage("Kicked user with ipid " + target_ipid + " for reason: " + reason);
     else
         sendServerMessage("User with ipid not found!");
 }
@@ -219,7 +219,7 @@ void AOClient::cmdListPerms(int argc, QStringList argv)
     QStringList message;
     if (argc == 0) {
         // Just print out all permissions available to the user.
-        message.append("You can add the following permissions to users:");
+        message.append("You have been given the following permissions:");
         for (QString perm : ACLFlags.keys()) {
             if (perm == "NONE"); // don't need to list this one
             else if (perm == "SUPER") {
@@ -232,6 +232,11 @@ void AOClient::cmdListPerms(int argc, QStringList argv)
         }
     }
     else {
+        if ((user_acl & ACLFlags.value("MANAGE_USERS")) == 0) {
+            sendServerMessage("You do not have permission to view other users' permissions.");
+            return;
+        }
+
         message.append("User " + argv[0] + " has the following permissions:");
         unsigned long long acl = server->db_manager->getACL(argv[0]);
         if (acl == 0) {
@@ -272,7 +277,7 @@ void AOClient::cmdAddPerms(int argc, QStringList argv)
 
     unsigned long long newperm = ACLFlags.value(argv[1]);
     if ((newperm & user_acl) != 0) {
-        if (server->db_manager->updateACL(argv[0], newperm))
+        if (server->db_manager->updateACL(argv[0], newperm, true))
             sendServerMessage("Successfully added permission " + argv[1] + " to user " + argv[0]);
         else
             sendServerMessage(argv[0] + " wasn't found!");
@@ -280,6 +285,46 @@ void AOClient::cmdAddPerms(int argc, QStringList argv)
     }
 
     sendServerMessage("You aren't allowed to add that permission!");
+}
+
+void AOClient::cmdRemovePerms(int argc, QStringList argv)
+{
+    unsigned long long user_acl = server->db_manager->getACL(moderator_name);
+    argv[1] = argv[1].toUpper();
+
+    if (!ACLFlags.keys().contains(argv[1])) {
+        sendServerMessage("That permission doesn't exist!");
+        return;
+    }
+
+    if (argv[1] == "SUPER") {
+        if (user_acl != ACLFlags.value("SUPER")) {
+            // This has to be checked separately, because SUPER & anything will always be truthy
+            sendServerMessage("You aren't allowed to remove that permission!");
+            return;
+        }
+    }
+    if (argv[1] == "NONE") {
+        sendServerMessage("Removed no permissions!");
+        return;
+    }
+
+    unsigned long long newperm = ACLFlags.value(argv[1]);
+    if ((newperm & user_acl) != 0) {
+        if (server->db_manager->updateACL(argv[0], newperm, false))
+            sendServerMessage("Successfully removed permission " + argv[1] + " from user " + argv[0]);
+        else
+            sendServerMessage(argv[0] + " wasn't found!");
+        return;
+    }
+
+    sendServerMessage("You aren't allowed to remove that permission!");
+}
+
+void AOClient::cmdListUsers(int argc, QStringList argv)
+{
+    QStringList users = server->db_manager->getUsers();
+    sendServerMessage("All users:\n" + users.join("\n"));
 }
 
 QStringList AOClient::buildAreaList(int area_idx)
@@ -290,8 +335,10 @@ QStringList AOClient::buildAreaList(int area_idx)
     entries.append("=== " + area_name + " ===");
     entries.append("[" + QString::number(area->player_count) + " users][" + area->status + "]");
     for (AOClient* client : server->clients) {
-        if (client->current_area == area_idx) {
+        if (client->current_area == area_idx && client->authenticated) {
             QString char_entry = client->current_char;
+            if (char_entry == "")
+                char_entry = "Spectator";
             if (authenticated)
                 char_entry += " (" + client->getIpid() + "): " + client->ooc_name;
             entries.append(char_entry);

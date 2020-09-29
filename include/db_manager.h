@@ -43,7 +43,8 @@ public:
     void createUser(QString username, QString salt, QString password, unsigned long long acl);
     unsigned long long getACL(QString moderator_name);
     bool authenticate(QString username, QString password);
-    bool updateACL(QString username, unsigned long long acl);
+    bool updateACL(QString username, unsigned long long acl, bool mode);
+    QStringList getUsers();
 
 private:
     const QString DRIVER;

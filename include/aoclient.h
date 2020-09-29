@@ -145,6 +145,8 @@ class AOClient : public QObject {
     void cmdAddUser(int argc, QStringList argv);
     void cmdListPerms(int argc, QStringList argv);
     void cmdAddPerms(int argc, QStringList argv);
+    void cmdRemovePerms(int argc, QStringList argv);
+    void cmdListUsers(int argc, QStringList argv);
 
     // Command helper functions
     QStringList buildAreaList(int area_idx);
@@ -171,8 +173,10 @@ class AOClient : public QObject {
         {"bglock", {ACLFlags.value("BGLOCK"), 0, &AOClient::cmdBgLock}},
         {"bgunlock", {ACLFlags.value("BGLOCK"), 0, &AOClient::cmdBgUnlock}},
         {"adduser", {ACLFlags.value("MODIFY_USERS"), 2, &AOClient::cmdAddUser}},
-        {"listperms", {ACLFlags.value("MODIFY_USERS"), 0, &AOClient::cmdListPerms}},
-        {"addperm", {ACLFlags.value("MODIFY_USERS"), 2, &AOClient::cmdAddPerms}}
+        {"listperms", {ACLFlags.value("NONE"), 0, &AOClient::cmdListPerms}},
+        {"addperm", {ACLFlags.value("MODIFY_USERS"), 2, &AOClient::cmdAddPerms}},
+        {"removeperm", {ACLFlags.value("MODIFY_USERS"), 2, &AOClient::cmdRemovePerms}},
+        {"listusers", {ACLFlags.value("MODIFY_USERS"), 0, &AOClient::cmdListUsers}}
     };
 
     QString partial_packet;
