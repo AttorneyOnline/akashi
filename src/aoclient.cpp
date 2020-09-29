@@ -283,13 +283,7 @@ void AOClient::changeArea(int new_area)
 
 void AOClient::handleCommand(QString command, int argc, QStringList argv)
 {
-    // Be sure to register the command in the header before adding it here!
-    CommandInfo info = commands.value(command, {false, -1});
-
-    if (info.minArgs == -1) {
-        sendServerMessage("Invalid command.");
-        return;
-    }
+    CommandInfo info = commands.value(command, {false, -1, &AOClient::cmdDefault});
 
     if (info.privileged && !authenticated) {
         sendServerMessage("You do not have permission to use that command.");
@@ -301,110 +295,7 @@ void AOClient::handleCommand(QString command, int argc, QStringList argv)
         return;
     }
 
-    if (command == "login") {
-        QSettings config("config/config.ini", QSettings::IniFormat);
-        config.beginGroup("Options");
-        QString modpass = config.value("modpass", "default").toString();;
-        // TODO: tell the user if no modpass is set
-        if(argv[0] == modpass) {
-            sendServerMessage("Logged in as a moderator."); // This string has to be exactly this, because it is hardcoded in the client
-            authenticated = true;
-        } else {
-            sendServerMessage("Incorrect password.");
-            return;
-        }
-    }
-    else if (command == "getareas") {
-        QStringList entries;
-        entries.append("== Area List ==");
-        for (int i = 0; i < server->area_names.length(); i++) {
-            QString area_name = server->area_names[i];
-            AreaData* area = server->areas[i];
-            entries.append("=== " + area_name + " ===");
-            entries.append("[" + QString::number(area->player_count) + " users][" + area->status + "]");
-            for (AOClient* client : server->clients) {
-                if (client->current_area == i) {
-                    QString char_entry = client->current_char;
-                    if (authenticated)
-                        char_entry += " (" + client->getIpid() + "): " + ooc_name;
-                    entries.append(char_entry);
-                }
-            }
-        }
-        sendServerMessage(entries.join("\n"));
-    }
-    else if (command == "getarea") {
-        // TODO: get rid of copy-pasted code
-        QStringList entries;
-        QString area_name = server->area_names[current_area];
-        AreaData* area = server->areas[current_area];
-        entries.append("=== " + area_name + " ===");
-        entries.append("[" + QString::number(area->player_count) + " users][" + area->status + "]");
-        for (AOClient* client : server->clients) {
-            if (client->current_area == current_area) {
-                QString char_entry = client->current_char;
-                if (authenticated)
-                    char_entry += " (" + client->getIpid() + "): " + ooc_name;
-                entries.append(char_entry);
-            }
-        }
-        sendServerMessage(entries.join("\n"));
-    }
-    else if (command == "ban") {
-        QString target_ipid = argv[0];
-        QHostAddress ip;
-        QString hdid;
-        unsigned long time = QDateTime::currentDateTime().toTime_t();
-        QString reason = argv[1];
-        bool ban_logged = false;
-
-        if (argc > 2) {
-            for (int i = 2; i < argv.length(); i++) {
-                reason += " " + argv[i];
-            }
-        }
-
-        for (AOClient* client : server->clients) {
-            if (client->getIpid() == target_ipid) {
-                if (!ban_logged) {
-                    ip = client->remote_ip;
-                    hdid = client->hwid;
-                    server->ban_manager->addBan(target_ipid, ip, hdid, time, reason);
-                    sendServerMessage("Banned user with ipid " + target_ipid + " for reason: " + reason);
-                    ban_logged = true;
-                }
-                client->sendPacket("KB", {reason});
-                client->socket->close();
-            }
-        }
-
-        if (!ban_logged)
-            sendServerMessage("User with ipid not found!");
-    }
-    else if (command == "kick") {
-        QString target_ipid = argv[0];
-        QString reason = argv[1];
-        bool did_kick = false;
-
-        if (argc > 2) {
-            for (int i = 2; i < argv.length(); i++) {
-                reason += " " + argv[i];
-            }
-        }
-
-        for (AOClient* client : server->clients) {
-            if (client->getIpid() == target_ipid) {
-                client->sendPacket("KK", {reason});
-                client->socket->close();
-                did_kick = true;
-            }
-        }
-
-        if (did_kick)
-            sendServerMessage("Banned user with ipid " + target_ipid + " for reason: " + reason);
-        else
-            sendServerMessage("User with ipid not found!");
-    }
+    (this->*(info.action))(argc, argv);
 }
 
 void AOClient::arup(ARUPType type, bool broadcast)

@@ -46,6 +46,8 @@ class AOClient : public QObject {
     bool joined;
     int current_area;
     QString current_char;
+    bool authenticated = false;
+    QString ooc_name = "";
 
   public slots:
     void clientDisconnected();
@@ -53,7 +55,6 @@ class AOClient : public QObject {
     void sendPacket(AOPacket packet);
     void sendPacket(QString header, QStringList contents);
     void sendPacket(QString header);
-
 
   private:
     Server* server;
@@ -66,25 +67,37 @@ class AOClient : public QObject {
         LOCKED
     };
 
-    struct CommandInfo {
-        bool privileged;
-        int minArgs;
-    };
-
-    const QMap<QString, CommandInfo> commands {
-        {"login", {false, 1}},
-        {"getareas", {false, 0 }},
-        {"getarea", {false, 0}},
-        {"ban", {true, 2}},
-        {"kick", {true, 2}}
-    };
-
     void handlePacket(AOPacket packet);
     void handleCommand(QString command, int argc, QStringList argv);
     void changeArea(int new_area);
     void arup(ARUPType type, bool broadcast);
     void fullArup();
     void sendServerMessage(QString message);
+
+    // Commands
+    void cmdDefault(int argc, QStringList argv);
+    void cmdLogin(int argc, QStringList argv);
+    void cmdGetAreas(int argc, QStringList argv);
+    void cmdGetArea(int argc, QStringList argv);
+    void cmdBan(int argc, QStringList argv);
+    void cmdKick(int argc, QStringList argv);
+
+    // Command helper functions
+    QStringList buildAreaList(int area_idx);
+
+    struct CommandInfo {
+        bool privileged;
+        int minArgs;
+        void (AOClient::*action)(int, QStringList);
+    };
+
+    const QMap<QString, CommandInfo> commands {
+        {"login", {false, 1, &AOClient::cmdLogin}},
+        {"getareas", {false, 0 , &AOClient::cmdGetAreas}},
+        {"getarea", {false, 0, &AOClient::cmdGetArea}},
+        {"ban", {true, 2, &AOClient::cmdBan}},
+        {"kick", {true, 2, &AOClient::cmdKick}}
+    };
 
     QString partial_packet;
     bool is_partial;
@@ -93,9 +106,6 @@ class AOClient : public QObject {
     QString ipid;
     long last_wtce_time;
     QString last_message;
-
-    bool authenticated = false;
-    QString ooc_name = "";
 };
 
 #endif // AOCLIENT_H

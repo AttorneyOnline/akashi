@@ -26,6 +26,7 @@ SOURCES += src/advertiser.cpp \
     src/aopacket.cpp \
     src/area_data.cpp \
     src/ban_manager.cpp \
+    src/commands.cpp \
     src/config_manager.cpp \
     src/icchatpacket.cpp \
     src/main.cpp \
