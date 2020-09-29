@@ -218,7 +218,7 @@ void AOClient::sendServerMessage(QString message)
 
 bool AOClient::checkAuth(unsigned long long acl_mask)
 {
-    if (acl_mask != ACLFlags::NONE) {
+    if (acl_mask != ACLFlags.value("NONE")) {
         if (!authenticated) {
             return false;
         }

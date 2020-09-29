@@ -18,8 +18,6 @@
 #ifndef BAN_MANAGER_H
 #define BAN_MANAGER_H
 
-#include "include/aoclient.h"
-
 #include <QDebug>
 #include <QHostAddress>
 #include <QMessageAuthenticationCode>
@@ -45,6 +43,7 @@ public:
     void createUser(QString username, QString salt, QString password, unsigned long long acl);
     unsigned long long getACL(QString moderator_name);
     bool authenticate(QString username, QString password);
+    bool updateACL(QString username, unsigned long long acl);
 
 private:
     const QString DRIVER;

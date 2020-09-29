@@ -32,6 +32,11 @@ void AOClient::cmdLogin(int argc, QStringList argv)
     QString modpass = config.value("modpass", "default").toString();
     QString auth_type = config.value("auth", "simple").toString();
 
+    if (authenticated) {
+        sendServerMessage("You are already logged in!");
+        return;
+    }
+
     // TODO: tell the user if no modpass is set
     if (auth_type == "simple") {
         if(argv[0] == modpass) {
@@ -162,7 +167,7 @@ void AOClient::cmdSetRootPass(int argc, QStringList argv)
     quint64 salt_number = QRandomGenerator::system()->generate64();
     QString salt = QStringLiteral("%1").arg(salt_number, 16, 16, QLatin1Char('0'));
 
-    server->db_manager->createUser("root", salt, argv[0], ACLFlags::SUPER);
+    server->db_manager->createUser("root", salt, argv[0], ACLFlags.value("SUPER"));
 }
 
 void AOClient::cmdSetBackground(int argc, QStringList argv)
@@ -197,6 +202,84 @@ void AOClient::cmdBgUnlock(int argc, QStringList argv)
     AreaData* area = server->areas[current_area];
     area->bg_locked = false;
     server->broadcast(AOPacket("CT", {"Server", current_char + " unlocked the background.", "1"}), current_area);
+}
+
+void AOClient::cmdAddUser(int argc, QStringList argv)
+{
+    quint64 salt_number = QRandomGenerator::system()->generate64();
+    QString salt = QStringLiteral("%1").arg(salt_number, 16, 16, QLatin1Char('0'));
+
+    server->db_manager->createUser(argv[0], salt, argv[1], ACLFlags.value("NONE"));
+    sendServerMessage("Created user " + argv[0] + ".\nUse /addperm to modify their permissions.");
+}
+
+void AOClient::cmdListPerms(int argc, QStringList argv)
+{
+    unsigned long long user_acl = server->db_manager->getACL(moderator_name);
+    QStringList message;
+    if (argc == 0) {
+        // Just print out all permissions available to the user.
+        message.append("You can add the following permissions to users:");
+        for (QString perm : ACLFlags.keys()) {
+            if (perm == "NONE"); // don't need to list this one
+            else if (perm == "SUPER") {
+                if (user_acl == ACLFlags.value("SUPER")) // This has to be checked separately, because SUPER & anything will always be truthy
+                    message.append("SUPER (Be careful! This grants the user all permissions.)");
+            }
+            else if ((ACLFlags.value(perm) & user_acl) == 0); // user doesn't have this permission, don't print it
+            else
+                message.append(perm);
+        }
+    }
+    else {
+        message.append("User " + argv[0] + " has the following permissions:");
+        unsigned long long acl = server->db_manager->getACL(argv[0]);
+        if (acl == 0) {
+            sendServerMessage("This user either doesn't exist, or has no permissions set.");
+            return;
+        }
+
+        for (QString perm : ACLFlags.keys()) {
+            if ((ACLFlags.value(perm) & acl) != 0 && perm != "SUPER") {
+                message.append(perm);
+            }
+        }
+    }
+    sendServerMessage(message.join("\n"));
+}
+
+void AOClient::cmdAddPerms(int argc, QStringList argv)
+{
+    unsigned long long user_acl = server->db_manager->getACL(moderator_name);
+    argv[1] = argv[1].toUpper();
+
+    if (!ACLFlags.keys().contains(argv[1])) {
+        sendServerMessage("That permission doesn't exist!");
+        return;
+    }
+
+    if (argv[1] == "SUPER") {
+        if (user_acl != ACLFlags.value("SUPER")) {
+            // This has to be checked separately, because SUPER & anything will always be truthy
+            sendServerMessage("You aren't allowed to add that permission!");
+            return;
+        }
+    }
+    if (argv[1] == "NONE") {
+        sendServerMessage("Added no permissions!");
+        return;
+    }
+
+    unsigned long long newperm = ACLFlags.value(argv[1]);
+    if ((newperm & user_acl) != 0) {
+        if (server->db_manager->updateACL(argv[0], newperm))
+            sendServerMessage("Successfully added permission " + argv[1] + " to user " + argv[0]);
+        else
+            sendServerMessage(argv[0] + " wasn't found!");
+        return;
+    }
+
+    sendServerMessage("You aren't allowed to add that permission!");
 }
 
 QStringList AOClient::buildAreaList(int area_idx)

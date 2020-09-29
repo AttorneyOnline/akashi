@@ -110,12 +110,12 @@ void DBManager::createUser(QString username, QString salt, QString password, uns
 unsigned long long DBManager::getACL(QString moderator_name)
 {
     if (moderator_name == "")
-        return AOClient::ACLFlags::NONE;
+        return 0;
     QSqlQuery query("SELECT ACL FROM users WHERE USERNAME = ?");
     query.addBindValue(moderator_name);
     query.exec();
     if (!query.first())
-        return AOClient::ACLFlags::NONE;
+        return 0;
     return query.value(0).toULongLong();
 }
 
@@ -144,6 +144,29 @@ bool DBManager::authenticate(QString username, QString password)
     qDebug() << "Found DB entry Salt:" << salt << "Stored Password:" << stored_pass << "Calculated Password:" << salted_password;
 
     return salted_password == stored_pass;
+}
+
+bool DBManager::updateACL(QString username, unsigned long long acl)
+{
+    QSqlQuery username_exists;
+    username_exists.prepare("SELECT ACL FROM users WHERE USERNAME = ?");
+    username_exists.addBindValue(username);
+    username_exists.exec();
+
+    if (!username_exists.first())
+        return false;
+
+    unsigned long long old_acl = username_exists.value(0).toULongLong();
+    unsigned long long new_acl = acl | old_acl;
+    if (acl == 0) // Allow clearing all perms via adding perm "NONE"
+        new_acl = 0;
+
+    QSqlQuery update_acl;
+    update_acl.prepare("UPDATE users SET ACL = ? WHERE USERNAME = ?");
+    update_acl.addBindValue(new_acl);
+    update_acl.addBindValue(username);
+    update_acl.exec();
+    return true;
 }
 
 DBManager::~DBManager()
