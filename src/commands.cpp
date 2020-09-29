@@ -176,7 +176,7 @@ QStringList AOClient::buildAreaList(int area_idx)
         if (client->current_area == area_idx) {
             QString char_entry = client->current_char;
             if (authenticated)
-                char_entry += " (" + client->getIpid() + "): " + ooc_name;
+                char_entry += " (" + client->getIpid() + "): " + client->ooc_name;
             entries.append(char_entry);
         }
     }
