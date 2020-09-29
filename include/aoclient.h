@@ -21,6 +21,7 @@
 #include "include/aopacket.h"
 #include "include/server.h"
 #include "include/icchatpacket.h"
+#include "include/area_data.h"
 
 #include <algorithm>
 
@@ -73,6 +74,47 @@ class AOClient : public QObject {
     void arup(ARUPType type, bool broadcast);
     void fullArup();
     void sendServerMessage(QString message);
+
+    // Packet headers
+    void pktDefault(AreaData* area, int argc, QStringList argv, AOPacket packet);
+    void pktHardwareId(AreaData* area, int argc, QStringList argv, AOPacket packet);
+    void pktSoftwareId(AreaData* area, int argc, QStringList argv, AOPacket packet);
+    void pktBeginLoad(AreaData* area, int argc, QStringList argv, AOPacket packet);
+    void pktRequestChars(AreaData* area, int argc, QStringList argv, AOPacket packet);
+    void pktRequestMusic(AreaData* area, int argc, QStringList argv, AOPacket packet);
+    void pktLoadingDone(AreaData* area, int argc, QStringList argv, AOPacket packet);
+    void pktCharPassword(AreaData* area, int argc, QStringList argv, AOPacket packet);
+    void pktSelectChar(AreaData* area, int argc, QStringList argv, AOPacket packet);
+    void pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket packet);
+    void pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket packet);
+    void pktPing(AreaData* area, int argc, QStringList argv, AOPacket packet);
+    void pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPacket packet);
+    void pktWtCe(AreaData* area, int argc, QStringList argv, AOPacket packet);
+    void pktHpBar(AreaData* area, int argc, QStringList argv, AOPacket packet);
+    void pktWebSocketIp(AreaData* area, int argc, QStringList argv, AOPacket packet);
+
+    struct PacketInfo {
+        int minArgs;
+        void (AOClient::*action)(AreaData*, int, QStringList, AOPacket);
+    };
+
+    const QMap<QString, PacketInfo> packets {
+        {"HI", {1, &AOClient::pktHardwareId}},
+        {"ID", {2, &AOClient::pktSoftwareId}},
+        {"askchaa", {0, &AOClient::pktBeginLoad}},
+        {"RC", {0, &AOClient::pktRequestChars}},
+        {"RM", {0, &AOClient::pktRequestMusic}},
+        {"RD", {0, &AOClient::pktLoadingDone}},
+        {"PW", {1, &AOClient::pktCharPassword}},
+        {"CC", {3, &AOClient::pktSelectChar}},
+        {"MS", {1, &AOClient::pktIcChat}}, // TODO: doublecheck
+        {"CT", {2, &AOClient::pktOocChat}},
+        {"CH", {1, &AOClient::pktPing}},
+        {"MC", {2, &AOClient::pktChangeMusic}},
+        {"RT", {1, &AOClient::pktWtCe}},
+        {"HP", {2, &AOClient::pktHpBar}},
+        {"WSIP", {1, &AOClient::pktWebSocketIp}}
+    };
 
     // Commands
     void cmdDefault(int argc, QStringList argv);

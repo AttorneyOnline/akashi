@@ -30,6 +30,7 @@ SOURCES += src/advertiser.cpp \
     src/config_manager.cpp \
     src/icchatpacket.cpp \
     src/main.cpp \
+    src/packets.cpp \
     src/server.cpp \
     src/ws_client.cpp \
     src/ws_proxy.cpp
