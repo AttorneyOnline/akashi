@@ -145,6 +145,7 @@ bool ConfigManager::loadServerSettings(server_settings* settings)
     settings->description =
         config.value("server_description", "This is my flashy new server")
             .toString();
+    settings->buffer_length = config.value("buffer_length", "500").toInt();
     config.endGroup();
     if (!port_conversion_success || !ws_port_conversion_success ||
         !local_port_conversion_success) {

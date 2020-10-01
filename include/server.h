@@ -23,6 +23,7 @@
 #include "include/area_data.h"
 #include "include/ws_proxy.h"
 #include "include/db_manager.h"
+#include "include/logger.h"
 
 #include <QCoreApplication>
 #include <QDebug>
@@ -35,6 +36,7 @@
 
 class AOClient;
 class DBManager;
+class Logger;
 
 class Server : public QObject {
     Q_OBJECT
@@ -58,6 +60,7 @@ class Server : public QObject {
     QStringList music_list;
     QStringList backgrounds;
     DBManager* db_manager;
+    Logger* logger;
 
   signals:
 
