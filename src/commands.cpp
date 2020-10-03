@@ -209,8 +209,10 @@ void AOClient::cmdAddUser(int argc, QStringList argv)
     quint64 salt_number = QRandomGenerator::system()->generate64();
     QString salt = QStringLiteral("%1").arg(salt_number, 16, 16, QLatin1Char('0'));
 
-    server->db_manager->createUser(argv[0], salt, argv[1], ACLFlags.value("NONE"));
-    sendServerMessage("Created user " + argv[0] + ".\nUse /addperm to modify their permissions.");
+    if (server->db_manager->createUser(argv[0], salt, argv[1], ACLFlags.value("NONE")))
+        sendServerMessage("Created user " + argv[0] + ".\nUse /addperm to modify their permissions.");
+    else
+        sendServerMessage("Unable to create user " + argv[0] + ".\nDoes a user with that name already exist?");
 }
 
 void AOClient::cmdListPerms(int argc, QStringList argv)
@@ -232,7 +234,7 @@ void AOClient::cmdListPerms(int argc, QStringList argv)
         }
     }
     else {
-        if ((user_acl & ACLFlags.value("MANAGE_USERS")) == 0) {
+        if ((user_acl & ACLFlags.value("MODIFY_USERS")) == 0) {
             sendServerMessage("You do not have permission to view other users' permissions.");
             return;
         }
@@ -297,6 +299,11 @@ void AOClient::cmdRemovePerms(int argc, QStringList argv)
         return;
     }
 
+    if (argv[0] == "root") {
+        sendServerMessage("You cannot change the permissions of the root account!");
+        return;
+    }
+
     if (argv[1] == "SUPER") {
         if (user_acl != ACLFlags.value("SUPER")) {
             // This has to be checked separately, because SUPER & anything will always be truthy
@@ -327,6 +334,18 @@ void AOClient::cmdListUsers(int argc, QStringList argv)
     sendServerMessage("All users:\n" + users.join("\n"));
 }
 
+void AOClient::cmdLogout(int argc, QStringList argv)
+{
+    if (!authenticated) {
+        sendServerMessage("You are not logged in!");
+        return;
+    }
+    authenticated = false;
+    moderator_name = "";
+    sendServerMessage("You have been logged out.");
+    return;
+}
+
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;
@@ -335,7 +354,7 @@ QStringList AOClient::buildAreaList(int area_idx)
     entries.append("=== " + area_name + " ===");
     entries.append("[" + QString::number(area->player_count) + " users][" + area->status + "]");
     for (AOClient* client : server->clients) {
-        if (client->current_area == area_idx && client->authenticated) {
+        if (client->current_area == area_idx && client->joined) {
             QString char_entry = client->current_char;
             if (char_entry == "")
                 char_entry = "Spectator";

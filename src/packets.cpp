@@ -108,9 +108,11 @@ void AOClient::pktCharPassword(AreaData* area, int argc, QStringList argv, AOPac
 void AOClient::pktSelectChar(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
     bool argument_ok;
-    int char_id = argv[1].toInt(&argument_ok);
-    if (!argument_ok)
+    char_id = argv[1].toInt(&argument_ok);
+    if (!argument_ok) {
+        char_id = -1;
         return;
+    }
 
     if (current_char != "") {
         area->characters_taken[current_char] = false;
@@ -139,9 +141,11 @@ void AOClient::pktSelectChar(AreaData* area, int argc, QStringList argv, AOPacke
 void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
     // TODO: validate, validate, validate
-    ICChatPacket ic_packet(packet);
-    if (ic_packet.is_valid)
-        server->broadcast(ic_packet, current_area);
+    AOPacket validated_packet = validateIcPacket(packet);
+    if (validated_packet.header == "INVALID")
+        return;
+
+    server->broadcast(validated_packet, current_area);
 }
 
 void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket packet)
@@ -228,4 +232,146 @@ void AOClient::pktWebSocketIp(AreaData* area, int argc, QStringList argv, AOPack
         qDebug() << "ws ip set to" << argv[0];
         remote_ip = QHostAddress(argv[0]);
     }
+}
+
+AOPacket AOClient::validateIcPacket(AOPacket packet)
+{
+    // Welcome to the super cursed server-side IC chat validation hell
+
+    // I wanted to use enums or #defines here to make the
+    // indicies of the args arrays more readable. But,
+    // in typical AO fasion, the indicies for the incoming
+    // and outgoing packets are different. Just RTFM.
+
+    AOPacket invalid("INVALID", {});
+
+    QStringList args;
+    if (current_char == "" || !joined)
+        // Spectators cannot use IC
+        return invalid;
+
+    QList<QVariant> incoming_args;
+    for (QString arg : packet.contents) {
+        incoming_args.append(QVariant(arg));
+    }
+
+    // message type
+    if (incoming_args[0].toInt() == 1)
+        args.append("1");
+    else if (incoming_args[0].toInt() == 0) {
+        if (incoming_args[0].toString() == "chat")
+            args.append("chat");
+        else
+            args.append("0");
+    }
+
+    // preanim
+    args.append(incoming_args[1].toString());
+
+    // char name
+    if (!server->characters.contains(incoming_args[2].toString()))
+        return invalid;
+    if (current_char != incoming_args[2].toString()) {
+        // Selected char is different from supplied folder name
+        // This means the user is INI-swapped
+        // TODO: ini swap locking
+        qDebug() << "INI swap detected from " << getIpid();
+    }
+    args.append(incoming_args[2].toString());
+
+    // emote
+    args.append(incoming_args[3].toString());
+
+    // message text
+    QString incoming_msg = incoming_args[4].toString().trimmed();
+    if (incoming_msg == "") {
+        if (last_msg_blankpost)
+            return invalid;
+        last_msg_blankpost = true;
+    }
+    else
+        last_msg_blankpost = false;
+
+    if (incoming_msg == last_message)
+        return invalid;
+
+    last_message = incoming_msg;
+    args.append(incoming_msg);
+
+    // side
+    // this is validated clientside so w/e
+    args.append(incoming_args[5].toString());
+
+    // sfx name
+    args.append(incoming_args[6].toString());
+
+    // emote modifier
+    // Now, gather round, y'all. Here is a story that is truly a microcosm of the AO dev experience.
+    // If this value is a 4, it will crash the client. Why? Who knows, but it does.
+    // Now here is the kicker: in certain versions, the client would incorrectly send a 4 here
+    // For a long time, by configuring the client to do a zoom with a preanim, it would send 4
+    // This would crash everyone else's client, and the feature had to be disabled
+    // But, for some reason, nobody traced the cause of this issue for many many years.
+    // The serverside fix is needed to ensure invalid values are not sent, because the client sucks
+    int emote_mod = incoming_args[7].toInt();
+
+    if (emote_mod == 4)
+        emote_mod = 6;
+    if (emote_mod != 0 && emote_mod != 1 && emote_mod != 2 && emote_mod != 5 && emote_mod != 6)
+        return invalid;
+    args.append(QString::number(emote_mod));
+
+    // char id
+    if (incoming_args[8].toInt() != char_id)
+        return invalid;
+    args.append(incoming_args[8].toString());
+
+    // sfx delay
+    args.append(incoming_args[9].toString());
+
+    // objection modifier
+    if (incoming_args[10].toString().contains("4")) {
+        // custom shout includes text metadata
+        args.append(incoming_args[10].toString());
+    }
+    else {
+        int obj_mod = incoming_args[10].toInt();
+        if (obj_mod != 0 && obj_mod != 1 && obj_mod != 2 && obj_mod != 3)
+            return invalid;
+        args.append(QString::number(obj_mod));
+    }
+
+    // evidence
+    // TODO: add to this once evidence is implemented
+    args.append(incoming_args[11].toString());
+
+    // flipping
+    int flip = incoming_args[12].toInt();
+    if (flip != 0 && flip != 1)
+        return invalid;
+    args.append(QString::number(flip));
+
+    // realization
+    int realization = incoming_args[13].toInt();
+    if (realization != 0 && realization != 1)
+        return invalid;
+    args.append(QString::number(realization));
+
+    // text color
+    int text_color = incoming_args[14].toInt();
+    if (text_color != 0 && text_color != 1 && text_color != 2 && text_color != 3 && text_color != 4 && text_color != 5 && text_color != 6)
+        return invalid;
+    args.append(QString::number(text_color));
+
+    // 2.6 packet extensions
+    if (incoming_args.length() > 15) {
+
+    }
+
+    // 2.8 packet extensions
+    if (incoming_args.length() > 19) {
+
+    }
+
+    return AOPacket("MS", args);
 }

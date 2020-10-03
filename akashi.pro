@@ -15,6 +15,8 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
+QMAKE_CXXFLAGS_WARN_OFF -= -Wunused-parameter
+
 DESTDIR = $$PWD/bin
 OBJECTS_DIR = $$PWD/build
 MOC_DIR = $$PWD/build
@@ -28,7 +30,6 @@ SOURCES += src/advertiser.cpp \
     src/commands.cpp \
     src/config_manager.cpp \
     src/db_manager.cpp \
-    src/icchatpacket.cpp \
     src/main.cpp \
     src/packets.cpp \
     src/server.cpp \
@@ -42,7 +43,6 @@ HEADERS += include/advertiser.h \
     include/area_data.h \
     include/config_manager.h \
     include/db_manager.h \
-    include/icchatpacket.h \
     include/server.h \
     include/ws_client.h \
     include/ws_proxy.h

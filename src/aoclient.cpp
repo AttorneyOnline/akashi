@@ -70,8 +70,7 @@ void AOClient::clientDisconnected()
 
 void AOClient::handlePacket(AOPacket packet)
 {
-    // TODO: like everything here should send a signal
-    // qDebug() << "Received packet:" << packet.header << ":" << packet.contents;
+    qDebug() << "Received packet:" << packet.header << ":" << packet.contents << "args length:" << packet.contents.length();
     AreaData* area = server->areas[current_area];
     PacketInfo info = packets.value(packet.header, {false, 0, &AOClient::pktDefault});
 
@@ -175,7 +174,7 @@ void AOClient::fullArup() {
 
 void AOClient::sendPacket(AOPacket packet)
 {
-    // qDebug() << "Sent packet:" << packet.header << ":" << packet.contents;
+     qDebug() << "Sent packet:" << packet.header << ":" << packet.contents;
     socket->write(packet.toUtf8());
     socket->flush();
 }

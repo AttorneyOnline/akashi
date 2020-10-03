@@ -87,8 +87,16 @@ void DBManager::addBan(QString ipid, QHostAddress ip, QString hdid, unsigned lon
         qDebug() << "SQL Error:" << query.lastError().text();
 }
 
-void DBManager::createUser(QString username, QString salt, QString password, unsigned long long acl)
+bool DBManager::createUser(QString username, QString salt, QString password, unsigned long long acl)
 {
+    QSqlQuery username_exists;
+    username_exists.prepare("SELECT ACL FROM users WHERE USERNAME = ?");
+    username_exists.addBindValue(username);
+    username_exists.exec();
+
+    if (username_exists.first())
+        return false;
+
     QSqlQuery query;
 
     QString salted_password;
@@ -105,6 +113,7 @@ void DBManager::createUser(QString username, QString salt, QString password, uns
     query.exec();
 
     qDebug() << "Created user" << username << "with password" << password << "and salted with value" << salt << ": stored as" << salted_password;
+    return true;
 }
 
 unsigned long long DBManager::getACL(QString moderator_name)

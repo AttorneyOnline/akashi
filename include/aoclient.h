@@ -20,7 +20,6 @@
 
 #include "include/aopacket.h"
 #include "include/server.h"
-#include "include/icchatpacket.h"
 #include "include/area_data.h"
 #include "include/db_manager.h"
 
@@ -106,6 +105,13 @@ class AOClient : public QObject {
     void pktHpBar(AreaData* area, int argc, QStringList argv, AOPacket packet);
     void pktWebSocketIp(AreaData* area, int argc, QStringList argv, AOPacket packet);
 
+    // Packet helper functions
+    AOPacket validateIcPacket(AOPacket packet);
+
+    // Packet helper global variables
+    bool last_msg_blankpost = false;
+    int char_id = -1;
+
     struct PacketInfo {
         unsigned long long acl_mask;
         int minArgs;
@@ -121,7 +127,7 @@ class AOClient : public QObject {
         {"RD", {ACLFlags.value("NONE"), 0, &AOClient::pktLoadingDone}},
         {"PW", {ACLFlags.value("NONE"), 1, &AOClient::pktCharPassword}},
         {"CC", {ACLFlags.value("NONE"), 3, &AOClient::pktSelectChar}},
-        {"MS", {ACLFlags.value("NONE"), 1, &AOClient::pktIcChat}}, // TODO: doublecheck
+        {"MS", {ACLFlags.value("NONE"), 15, &AOClient::pktIcChat}},
         {"CT", {ACLFlags.value("NONE"), 2, &AOClient::pktOocChat}},
         {"CH", {ACLFlags.value("NONE"), 1, &AOClient::pktPing}},
         {"MC", {ACLFlags.value("NONE"), 2, &AOClient::pktChangeMusic}},
@@ -147,6 +153,7 @@ class AOClient : public QObject {
     void cmdAddPerms(int argc, QStringList argv);
     void cmdRemovePerms(int argc, QStringList argv);
     void cmdListUsers(int argc, QStringList argv);
+    void cmdLogout(int argc, QStringList argv);
 
     // Command helper functions
     QStringList buildAreaList(int area_idx);
@@ -176,7 +183,8 @@ class AOClient : public QObject {
         {"listperms", {ACLFlags.value("NONE"), 0, &AOClient::cmdListPerms}},
         {"addperm", {ACLFlags.value("MODIFY_USERS"), 2, &AOClient::cmdAddPerms}},
         {"removeperm", {ACLFlags.value("MODIFY_USERS"), 2, &AOClient::cmdRemovePerms}},
-        {"listusers", {ACLFlags.value("MODIFY_USERS"), 0, &AOClient::cmdListUsers}}
+        {"listusers", {ACLFlags.value("MODIFY_USERS"), 0, &AOClient::cmdListUsers}},
+        {"logout", {ACLFlags.value("NONE"), 0, &AOClient::cmdLogout}}
     };
 
     QString partial_packet;
