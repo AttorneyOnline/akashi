@@ -12,9 +12,15 @@ void addLogEntry(QDateTime time, QString char_name, QString user_name,
                  QString area, QString message)
 {
     QString final_entry =
-        ('[' + time::toString() + "][" + area + "][" + msg_type + "][" +
-         msg_subtype + "] " + char_name + '/' + user_name + " (" + ipid +
-         "): " + message + "\n");
+        QStringLiteral("[%1][%2][%3][%4] %5/%6 (%7): %8\n")
+            .arg(time::toString)
+            .arg(area)
+            .arg(msg_type)    // IC or OOC
+            .arg(msg_subtype) // local, global, mod/local, mod/global, etc
+            .arg(char_name)
+            .arg(user_name) // OOC name
+            .arg(ipid)
+            .arg(message);
     message_list[message_index % buffer_length] = final_entry;
     message_index++;
 }
