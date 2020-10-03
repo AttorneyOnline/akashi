@@ -28,6 +28,7 @@ SOURCES += src/advertiser.cpp \
     src/commands.cpp \
     src/config_manager.cpp \
     src/db_manager.cpp \
+	src/logger.cpp \
     src/icchatpacket.cpp \
     src/main.cpp \
     src/packets.cpp \
@@ -42,6 +43,7 @@ HEADERS += include/advertiser.h \
     include/area_data.h \
     include/config_manager.h \
     include/db_manager.h \
+	include/logger.h \
     include/icchatpacket.h \
     include/server.h \
     include/ws_client.h \
