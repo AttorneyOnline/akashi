@@ -40,7 +40,7 @@ public:
 
     void addBan(QString ipid, QHostAddress ip, QString hdid, unsigned long time, QString reason);
 
-    void createUser(QString username, QString salt, QString password, unsigned long long acl);
+    bool createUser(QString username, QString salt, QString password, unsigned long long acl);
     unsigned long long getACL(QString moderator_name);
     bool authenticate(QString username, QString password);
     bool updateACL(QString username, unsigned long long acl, bool mode);

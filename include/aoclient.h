@@ -1,19 +1,20 @@
 //////////////////////////////////////////////////////////////////////////////////////
-//    akashi - a server for Attorney Online 2                                       //
-//    Copyright (C) 2020  scatterflower                                             //
+//    akashi - a server for Attorney Online 2 // Copyright (C) 2020
+//    scatterflower                                             //
 //                                                                                  //
-//    This program is free software: you can redistribute it and/or modify          //
-//    it under the terms of the GNU Affero General Public License as                //
-//    published by the Free Software Foundation, either version 3 of the            //
-//    License, or (at your option) any later version.                               //
+//    This program is free software: you can redistribute it and/or modify // it
+//    under the terms of the GNU Affero General Public License as // published
+//    by the Free Software Foundation, either version 3 of the            //
+//    License, or (at your option) any later version. //
 //                                                                                  //
-//    This program is distributed in the hope that it will be useful,               //
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of                //
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                 //
-//    GNU Affero General Public License for more details.                           //
+//    This program is distributed in the hope that it will be useful, // but
+//    WITHOUT ANY WARRANTY; without even the implied warranty of //
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the // GNU
+//    Affero General Public License for more details. //
 //                                                                                  //
-//    You should have received a copy of the GNU Affero General Public License      //
-//    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
+//    You should have received a copy of the GNU Affero General Public License
+//    // along with this program.  If not, see <https://www.gnu.org/licenses/>.
+//    //
 //////////////////////////////////////////////////////////////////////////////////////
 #ifndef AOCLIENT_H
 #define AOCLIENT_H
@@ -25,13 +26,13 @@
 #include "include/logger.h"
 #include "include/server.h"
 
-
 #include <algorithm>
 
-#include <QHostAddress>
-#include <QTcpSocket>
 #include <QDateTime>
+#include <QHostAddress>
 #include <QRandomGenerator>
+#include <QTcpSocket>
+
 
 class Server;
 
@@ -55,14 +56,9 @@ class AOClient : public QObject {
     QString moderator_name = "";
     QString ooc_name = "";
 
-    QMap<QString, unsigned long long> ACLFlags {
-        {"NONE", 0ULL},
-        {"KICK", 1ULL << 0},
-        {"BAN", 1ULL << 1},
-        {"BGLOCK", 1ULL << 2},
-        {"MODIFY_USERS", 1ULL << 3},
-        {"SUPER", ~0ULL}
-    };
+    QMap<QString, unsigned long long> ACLFlags{
+        {"NONE", 0ULL},        {"KICK", 1ULL << 0},         {"BAN", 1ULL << 1},
+        {"BGLOCK", 1ULL << 2}, {"MODIFY_USERS", 1ULL << 3}, {"SUPER", ~0ULL}};
 
   public slots:
     void clientDisconnected();
@@ -75,12 +71,7 @@ class AOClient : public QObject {
     Server* server;
     QTcpSocket* socket;
 
-    enum ARUPType {
-        PLAYER_COUNT,
-        STATUS,
-        CM,
-        LOCKED
-    };
+    enum ARUPType { PLAYER_COUNT, STATUS, CM, LOCKED };
 
     void handlePacket(AOPacket packet);
     void handleCommand(QString command, int argc, QStringList argv);
@@ -91,22 +82,41 @@ class AOClient : public QObject {
     bool checkAuth(unsigned long long acl_mask);
 
     // Packet headers
-    void pktDefault(AreaData* area, int argc, QStringList argv, AOPacket packet);
-    void pktHardwareId(AreaData* area, int argc, QStringList argv, AOPacket packet);
-    void pktSoftwareId(AreaData* area, int argc, QStringList argv, AOPacket packet);
-    void pktBeginLoad(AreaData* area, int argc, QStringList argv, AOPacket packet);
-    void pktRequestChars(AreaData* area, int argc, QStringList argv, AOPacket packet);
-    void pktRequestMusic(AreaData* area, int argc, QStringList argv, AOPacket packet);
-    void pktLoadingDone(AreaData* area, int argc, QStringList argv, AOPacket packet);
-    void pktCharPassword(AreaData* area, int argc, QStringList argv, AOPacket packet);
-    void pktSelectChar(AreaData* area, int argc, QStringList argv, AOPacket packet);
+    void pktDefault(AreaData* area, int argc, QStringList argv,
+                    AOPacket packet);
+    void pktHardwareId(AreaData* area, int argc, QStringList argv,
+                       AOPacket packet);
+    void pktSoftwareId(AreaData* area, int argc, QStringList argv,
+                       AOPacket packet);
+    void pktBeginLoad(AreaData* area, int argc, QStringList argv,
+                      AOPacket packet);
+    void pktRequestChars(AreaData* area, int argc, QStringList argv,
+                         AOPacket packet);
+    void pktRequestMusic(AreaData* area, int argc, QStringList argv,
+                         AOPacket packet);
+    void pktLoadingDone(AreaData* area, int argc, QStringList argv,
+                        AOPacket packet);
+    void pktCharPassword(AreaData* area, int argc, QStringList argv,
+                         AOPacket packet);
+    void pktSelectChar(AreaData* area, int argc, QStringList argv,
+                       AOPacket packet);
     void pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket packet);
-    void pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket packet);
+    void pktOocChat(AreaData* area, int argc, QStringList argv,
+                    AOPacket packet);
     void pktPing(AreaData* area, int argc, QStringList argv, AOPacket packet);
-    void pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPacket packet);
+    void pktChangeMusic(AreaData* area, int argc, QStringList argv,
+                        AOPacket packet);
     void pktWtCe(AreaData* area, int argc, QStringList argv, AOPacket packet);
     void pktHpBar(AreaData* area, int argc, QStringList argv, AOPacket packet);
-    void pktWebSocketIp(AreaData* area, int argc, QStringList argv, AOPacket packet);
+    void pktWebSocketIp(AreaData* area, int argc, QStringList argv,
+                        AOPacket packet);
+
+    // Packet helper functions
+    AOPacket validateIcPacket(AOPacket packet);
+
+    // Packet helper global variables
+    bool last_msg_blankpost = false;
+    int char_id = -1;
 
     struct PacketInfo {
         unsigned long long acl_mask;
@@ -114,7 +124,7 @@ class AOClient : public QObject {
         void (AOClient::*action)(AreaData*, int, QStringList, AOPacket);
     };
 
-    const QMap<QString, PacketInfo> packets {
+    const QMap<QString, PacketInfo> packets{
         {"HI", {ACLFlags.value("NONE"), 1, &AOClient::pktHardwareId}},
         {"ID", {ACLFlags.value("NONE"), 2, &AOClient::pktSoftwareId}},
         {"askchaa", {ACLFlags.value("NONE"), 0, &AOClient::pktBeginLoad}},
@@ -123,14 +133,13 @@ class AOClient : public QObject {
         {"RD", {ACLFlags.value("NONE"), 0, &AOClient::pktLoadingDone}},
         {"PW", {ACLFlags.value("NONE"), 1, &AOClient::pktCharPassword}},
         {"CC", {ACLFlags.value("NONE"), 3, &AOClient::pktSelectChar}},
-        {"MS", {ACLFlags.value("NONE"), 1, &AOClient::pktIcChat}}, // TODO: doublecheck
+        {"MS", {ACLFlags.value("NONE"), 15, &AOClient::pktIcChat}},
         {"CT", {ACLFlags.value("NONE"), 2, &AOClient::pktOocChat}},
         {"CH", {ACLFlags.value("NONE"), 1, &AOClient::pktPing}},
         {"MC", {ACLFlags.value("NONE"), 2, &AOClient::pktChangeMusic}},
         {"RT", {ACLFlags.value("NONE"), 1, &AOClient::pktWtCe}},
         {"HP", {ACLFlags.value("NONE"), 2, &AOClient::pktHpBar}},
-        {"WSIP", {ACLFlags.value("NONE"), 1, &AOClient::pktWebSocketIp}}
-    };
+        {"WSIP", {ACLFlags.value("NONE"), 1, &AOClient::pktWebSocketIp}}};
 
     // Commands
     void cmdDefault(int argc, QStringList argv);
@@ -149,6 +158,7 @@ class AOClient : public QObject {
     void cmdAddPerms(int argc, QStringList argv);
     void cmdRemovePerms(int argc, QStringList argv);
     void cmdListUsers(int argc, QStringList argv);
+    void cmdLogout(int argc, QStringList argv);
 
     // Command helper functions
     QStringList buildAreaList(int area_idx);
@@ -162,24 +172,28 @@ class AOClient : public QObject {
         void (AOClient::*action)(int, QStringList);
     };
 
-    const QMap<QString, CommandInfo> commands {
+    const QMap<QString, CommandInfo> commands{
         {"login", {ACLFlags.value("NONE"), 1, &AOClient::cmdLogin}},
-        {"getareas", {ACLFlags.value("NONE"), 0 , &AOClient::cmdGetAreas}},
+        {"getareas", {ACLFlags.value("NONE"), 0, &AOClient::cmdGetAreas}},
         {"getarea", {ACLFlags.value("NONE"), 0, &AOClient::cmdGetArea}},
         {"ban", {ACLFlags.value("BAN"), 2, &AOClient::cmdBan}},
         {"kick", {ACLFlags.value("KICK"), 2, &AOClient::cmdKick}},
         {"changeauth", {ACLFlags.value("SUPER"), 0, &AOClient::cmdChangeAuth}},
         {"rootpass", {ACLFlags.value("SUPER"), 1, &AOClient::cmdSetRootPass}},
-        {"background", {ACLFlags.value("NONE"), 1, &AOClient::cmdSetBackground}},
+        {"background",
+         {ACLFlags.value("NONE"), 1, &AOClient::cmdSetBackground}},
         {"bg", {ACLFlags.value("NONE"), 1, &AOClient::cmdSetBackground}},
         {"bglock", {ACLFlags.value("BGLOCK"), 0, &AOClient::cmdBgLock}},
         {"bgunlock", {ACLFlags.value("BGLOCK"), 0, &AOClient::cmdBgUnlock}},
         {"adduser", {ACLFlags.value("MODIFY_USERS"), 2, &AOClient::cmdAddUser}},
         {"listperms", {ACLFlags.value("NONE"), 0, &AOClient::cmdListPerms}},
-        {"addperm", {ACLFlags.value("MODIFY_USERS"), 2, &AOClient::cmdAddPerms}},
-        {"removeperm", {ACLFlags.value("MODIFY_USERS"), 2, &AOClient::cmdRemovePerms}},
-        {"listusers", {ACLFlags.value("MODIFY_USERS"), 0, &AOClient::cmdListUsers}}
-    };
+        {"addperm",
+         {ACLFlags.value("MODIFY_USERS"), 2, &AOClient::cmdAddPerms}},
+        {"removeperm",
+         {ACLFlags.value("MODIFY_USERS"), 2, &AOClient::cmdRemovePerms}},
+        {"listusers",
+         {ACLFlags.value("MODIFY_USERS"), 0, &AOClient::cmdListUsers}},
+        {"logout", {ACLFlags.value("NONE"), 0, &AOClient::cmdLogout}}};
 
     QString partial_packet;
     bool is_partial;
