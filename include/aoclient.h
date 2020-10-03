@@ -19,10 +19,12 @@
 #define AOCLIENT_H
 
 #include "include/aopacket.h"
-#include "include/server.h"
-#include "include/icchatpacket.h"
 #include "include/area_data.h"
 #include "include/db_manager.h"
+#include "include/icchatpacket.h"
+#include "include/logger.h"
+#include "include/server.h"
+
 
 #include <algorithm>
 

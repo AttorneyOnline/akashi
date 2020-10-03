@@ -142,6 +142,10 @@ void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket pa
     ICChatPacket ic_packet(packet);
     if (ic_packet.is_valid)
         server->broadcast(ic_packet, current_area);
+
+    server->logger->addLogEntry(
+        QDateTime::currentDateTime(), current_char, ooc_name, "IC", "local",
+        getIpid(), server->area_names.value(current_area), "MESSAGE HERE");
 }
 
 void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket packet)
@@ -158,6 +162,9 @@ void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket p
     }
     // TODO: zalgo strip
     server->broadcast(packet, current_area);
+    server->logger->addLogEntry(
+        QDateTime::currentDateTime(), current_char, ooc_name, "OOC", "local",
+        getIpid(), server->area_names.value(current_area), "MESSAGE HERE");
 }
 
 void AOClient::pktPing(AreaData* area, int argc, QStringList argv, AOPacket packet)

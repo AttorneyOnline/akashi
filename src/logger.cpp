@@ -8,8 +8,8 @@ Logger::Logger()
 }
 
 void addLogEntry(QDateTime time, QString char_name, QString user_name,
-                 QString msg_type, QString msg_subtype, QString ipid,
-                 QString area, QString message)
+                        QString msg_type, QString msg_subtype, QString ipid,
+                        QString area, QString message)
 {
     QString final_entry =
         QStringLiteral("[%1][%2][%3][%4] %5/%6 (%7): %8\n")

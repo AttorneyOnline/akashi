@@ -28,6 +28,7 @@ Server::Server(int p_port, int p_ws_port, QObject* parent) : QObject(parent)
     player_count = 0;
 
     db_manager = new DBManager();
+    logger = new Logger();
 }
 
 void Server::start()
