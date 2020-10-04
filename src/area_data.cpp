@@ -35,4 +35,10 @@ AreaData::AreaData(QStringList characters, QString p_name, int p_index)
     def_hp = 10;
     pro_hp = 10;
     bg_locked = false;
+    QSettings config_ini("config/config.ini", QSettings::IniFormat);
+    config_ini.beginGroup("Options");
+    int log_size = config_ini.value("logbuffer", 50).toInt();
+    if (log_size == 0)
+        log_size = 500;
+    logger = new Logger(log_size);
 }

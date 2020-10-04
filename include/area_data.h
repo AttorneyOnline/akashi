@@ -18,11 +18,14 @@
 #ifndef AREA_DATA_H
 #define AREA_DATA_H
 
+#include "include/logger.h"
+
 #include <QMap>
 #include <QString>
 #include <QSettings>
 #include <QDebug>
 
+class Logger;
 class AreaData {
   public:
     AreaData(QStringList p_characters, QString p_name, int p_index);
@@ -34,15 +37,14 @@ class AreaData {
     QString status;
     QString current_cm;
     bool locked;
-
     QString background;
     bool showname_allowed;
     bool locking_allowed;
     bool iniswap_allowed;
     bool bg_locked;
-
     int def_hp;
     int pro_hp;
+    Logger* logger;
 };
 
 #endif // AREA_DATA_H

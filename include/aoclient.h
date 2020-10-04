@@ -51,6 +51,7 @@ class AOClient : public QObject {
     bool authenticated = false;
     QString moderator_name = "";
     QString ooc_name = "";
+    Server* server;
 
     QMap<QString, unsigned long long> ACLFlags {
         {"NONE", 0ULL},
@@ -69,7 +70,6 @@ class AOClient : public QObject {
     void sendPacket(QString header);
 
   private:
-    Server* server;
     QTcpSocket* socket;
 
     enum ARUPType {
@@ -104,6 +104,7 @@ class AOClient : public QObject {
     void pktWtCe(AreaData* area, int argc, QStringList argv, AOPacket packet);
     void pktHpBar(AreaData* area, int argc, QStringList argv, AOPacket packet);
     void pktWebSocketIp(AreaData* area, int argc, QStringList argv, AOPacket packet);
+    void pktModCall(AreaData* area, int argc, QStringList argv, AOPacket packet);
 
     // Packet helper functions
     AOPacket validateIcPacket(AOPacket packet);
@@ -133,7 +134,8 @@ class AOClient : public QObject {
         {"MC", {ACLFlags.value("NONE"), 2, &AOClient::pktChangeMusic}},
         {"RT", {ACLFlags.value("NONE"), 1, &AOClient::pktWtCe}},
         {"HP", {ACLFlags.value("NONE"), 2, &AOClient::pktHpBar}},
-        {"WSIP", {ACLFlags.value("NONE"), 1, &AOClient::pktWebSocketIp}}
+        {"WSIP", {ACLFlags.value("NONE"), 1, &AOClient::pktWebSocketIp}},
+        {"ZZ", {ACLFlags.value("NONE"), 0, &AOClient::pktModCall}}
     };
 
     // Commands

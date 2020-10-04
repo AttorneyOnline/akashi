@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //    akashi - a server for Attorney Online 2                                       //
-//    Copyright (C) 2020  scatterflower                                             //
+//    Copyright (C) 2020  scatterflower                                           //
 //                                                                                  //
 //    This program is free software: you can redistribute it and/or modify          //
 //    it under the terms of the GNU Affero General Public License as                //
@@ -15,62 +15,48 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
-#ifndef SERVER_H
-#define SERVER_H
+#include "include/logger.h"
 
-#include "include/aoclient.h"
-#include "include/aopacket.h"
-#include "include/area_data.h"
-#include "include/ws_proxy.h"
-#include "include/db_manager.h"
+Logger::Logger(int p_max_length)
+{
+    max_length = p_max_length;
+}
 
-#include <QCoreApplication>
-#include <QDebug>
-#include <QFile>
-#include <QMap>
-#include <QSettings>
-#include <QString>
-#include <QTcpServer>
-#include <QTcpSocket>
+void Logger::logIC(AOClient *client, AOPacket *packet)
+{
+    QString time = QDateTime::currentDateTime().toString("ddd MMMM d yyyy | hh:mm:ss");
+    QString area_name = client->server->area_names.value(client->current_area);
+    QString char_name = client->current_char;
+    QString ipid = client->getIpid();
+    QString message = packet->contents[4];
 
-class AOClient;
-class DBManager;
-class AreaData;
+    QString log_entry = QStringLiteral("[%1][%2][IC] %3(%4): %5\n")
+            .arg(time)
+            .arg(area_name)
+            .arg(char_name)
+            .arg(ipid)
+            .arg(message);
+    addEntry(log_entry);
+}
 
-class Server : public QObject {
-    Q_OBJECT
+void Logger::addEntry(QString entry)
+{
+    if (buffer.length() < max_length) {
+        buffer.enqueue(entry);
+    }
+    else {
+        buffer.dequeue();
+        buffer.enqueue(entry);
+    }
+}
 
-  public:
-    Server(int p_port, int p_ws_port, QObject* parent = nullptr);
-    ~Server();
-
-    void start();
-    AOClient* getClient(QString ipid);
-    void updateCharsTaken(AreaData* area);
-    void broadcast(AOPacket packet, int area_index);
-    void broadcast(AOPacket packet);
-
-    QVector<AOClient*> clients;
-
-    int player_count;
-    QStringList characters;
-    QVector<AreaData*> areas;
-    QStringList area_names;
-    QStringList music_list;
-    QStringList backgrounds;
-    DBManager* db_manager;
-
-  signals:
-
-  public slots:
-    void clientConnected();
-
-  private:
-    WSProxy* proxy;
-    QTcpServer* server;
-
-    int port;
-    int ws_port;
-};
-
-#endif // SERVER_H
+void Logger::flush()
+{
+    QFile logfile("config/server.log");
+    if (logfile.open(QIODevice::WriteOnly | QIODevice::Append)) {
+        QTextStream file_stream(&logfile);
+        while (!buffer.isEmpty())
+            file_stream << buffer.dequeue();
+    }
+    logfile.close();
+}

@@ -145,6 +145,7 @@ void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket pa
     if (validated_packet.header == "INVALID")
         return;
 
+    area->logger->logIC(this, &validated_packet);
     server->broadcast(validated_packet, current_area);
 }
 
@@ -232,6 +233,15 @@ void AOClient::pktWebSocketIp(AreaData* area, int argc, QStringList argv, AOPack
         qDebug() << "ws ip set to" << argv[0];
         remote_ip = QHostAddress(argv[0]);
     }
+}
+
+void AOClient::pktModCall(AreaData *area, int argc, QStringList argv, AOPacket packet)
+{
+    for (AOClient* client : server->clients) {
+        if (client->authenticated)
+            client->sendPacket(packet);
+    }
+    area->logger->flush();
 }
 
 AOPacket AOClient::validateIcPacket(AOPacket packet)

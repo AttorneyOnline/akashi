@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //    akashi - a server for Attorney Online 2                                       //
-//    Copyright (C) 2020  scatterflower                                             //
+//    Copyright (C) 2020  scatterflower                                           //
 //                                                                                  //
 //    This program is free software: you can redistribute it and/or modify          //
 //    it under the terms of the GNU Affero General Public License as                //
@@ -15,62 +15,32 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
-#ifndef SERVER_H
-#define SERVER_H
+#ifndef LOGGER_H
+#define LOGGER_H
 
 #include "include/aoclient.h"
 #include "include/aopacket.h"
-#include "include/area_data.h"
-#include "include/ws_proxy.h"
-#include "include/db_manager.h"
 
-#include <QCoreApplication>
-#include <QDebug>
 #include <QFile>
-#include <QMap>
-#include <QSettings>
+#include <QDebug>
 #include <QString>
-#include <QTcpServer>
-#include <QTcpSocket>
+#include <QQueue>
+#include <QDateTime>
 
 class AOClient;
-class DBManager;
-class AreaData;
+class Logger
+{
+public:
+    Logger(int p_max_length);
 
-class Server : public QObject {
-    Q_OBJECT
+    void logIC(AOClient* client, AOPacket* packet);
+    void flush();
 
-  public:
-    Server(int p_port, int p_ws_port, QObject* parent = nullptr);
-    ~Server();
+private:
+    void addEntry(QString entry);
 
-    void start();
-    AOClient* getClient(QString ipid);
-    void updateCharsTaken(AreaData* area);
-    void broadcast(AOPacket packet, int area_index);
-    void broadcast(AOPacket packet);
-
-    QVector<AOClient*> clients;
-
-    int player_count;
-    QStringList characters;
-    QVector<AreaData*> areas;
-    QStringList area_names;
-    QStringList music_list;
-    QStringList backgrounds;
-    DBManager* db_manager;
-
-  signals:
-
-  public slots:
-    void clientConnected();
-
-  private:
-    WSProxy* proxy;
-    QTcpServer* server;
-
-    int port;
-    int ws_port;
+    int max_length;
+    QQueue<QString> buffer;
 };
 
-#endif // SERVER_H
+#endif // LOGGER_H
