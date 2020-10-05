@@ -27,12 +27,13 @@ jobs:
           cd $GITHUB_WORKSPACE
           qmake
           make
+          mv bin/config_sample bin/config
           
       - name: Upload binary
         uses: actions/upload-artifact@v2
         with:
           name: akashi-linux
-          path: bin/akashi
+          path: bin/
   
   build-windows:
     runs-on: windows-latest
@@ -50,6 +51,7 @@ jobs:
           qmake "CONFIG += qtquickcompiler" akashi.pro
           nmake
           windeployqt bin\akashi.exe --release --no-opengl-sw
+          rename bin\config_sample bin\config
           
       - name: Upload zip
         uses: actions/upload-artifact@v2
