@@ -25,7 +25,7 @@ Logger::Logger(int p_max_length)
 void Logger::logIC(AOClient *client, AOPacket *packet)
 {
     QString time = QDateTime::currentDateTime().toString("ddd MMMM d yyyy | hh:mm:ss");
-    QString area_name = client->server->area_names.value(client->current_area);
+    QString area_name = client->getServer()->area_names.value(client->current_area);
     QString char_name = client->current_char;
     QString ipid = client->getIpid();
     QString message = packet->contents[4];

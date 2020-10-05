@@ -109,7 +109,7 @@ void Server::clientConnected()
                                      // completely in any client 2.4.3 or newer
     client->sendPacket(decryptor);
 
-    qDebug() << client->remote_ip.toString() << "connected";
+    //qDebug() << client->remote_ip.toString() << "connected";
 }
 
 void Server::updateCharsTaken(AreaData* area)

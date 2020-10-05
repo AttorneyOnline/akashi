@@ -290,7 +290,8 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     args.append(incoming_args[2].toString());
 
     // emote
-    args.append(incoming_args[3].toString());
+    emote = incoming_args[3].toString();
+    args.append(emote);
 
     // message text
     QString incoming_msg = incoming_args[4].toString().trimmed();
@@ -359,7 +360,8 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     int flip = incoming_args[12].toInt();
     if (flip != 0 && flip != 1)
         return invalid;
-    args.append(QString::number(flip));
+    flipping = QString::number(flip);
+    args.append(flipping);
 
     // realization
     int realization = incoming_args[13].toInt();
@@ -375,13 +377,87 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
 
     // 2.6 packet extensions
     if (incoming_args.length() > 15) {
+        // showname
+        args.append(incoming_args[15].toString());
 
+        // other char id
+        // things get a bit hairy here
+        // don't ask me how this works, because i don't know either
+        QStringList pair_data = incoming_args[16].toString().split("^");
+        pairing_with = pair_data[0].toInt();
+        QString front_back = "";
+        if (pair_data.length() > 1)
+            front_back = "^" + pair_data[1];
+        int other_charid = pairing_with;
+        bool pairing = false;
+        QString other_name = "0";
+        QString other_emote = "0";
+        QString other_offset = "0";
+        QString other_flip = "0";
+        for (AOClient* client : server->clients) {
+            if (client->pairing_with == char_id && other_charid != char_id && client->char_id == pairing_with) {
+                other_name = server->characters.at(other_charid);
+                other_emote = client->emote;
+                other_offset = client->offset;
+                other_flip = client->flipping;
+                pairing = true;
+            }
+        }
+        if (!pairing) {
+            other_charid = -1;
+            front_back = "";
+        }
+        args.append(QString::number(other_charid) + front_back);
+        args.append(other_name);
+        args.append(other_emote);
+
+        // self offset
+        offset = incoming_args[17].toString();
+        args.append(offset);
+        args.append(other_offset);
+        args.append(other_flip);
+
+        // noninterrupting preanim
+        int ni_pa = incoming_args[18].toInt();
+        if (ni_pa != 1 && ni_pa != 0)
+            return invalid;
+        args.append(QString::number(ni_pa));
     }
 
     // 2.8 packet extensions
     if (incoming_args.length() > 19) {
+        // sfx looping
+        int sfx_loop = incoming_args[19].toInt();
+        if (sfx_loop != 0 && sfx_loop != 1)
+            return invalid;
+        args.append(QString::number(sfx_loop));
 
+        // screenshake
+        int screenshake = incoming_args[20].toInt();
+        if (screenshake != 0 && screenshake != 1)
+            return invalid;
+        args.append(QString::number(screenshake));
+
+        // frames shake
+        args.append(incoming_args[21].toString());
+
+        // frames realization
+        args.append(incoming_args[22].toString());
+
+        // frames sfx
+        args.append(incoming_args[23].toString());
+
+        // additive
+        int additive = incoming_args[24].toInt();
+        if (additive != 0 && additive != 1)
+            return invalid;
+        args.append(QString::number(additive));
+
+        // effect
+        args.append(incoming_args[25].toString());
     }
+
+    qDebug() << args.length();
 
     return AOPacket("MS", args);
 }

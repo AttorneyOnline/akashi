@@ -39,9 +39,9 @@ class AOClient : public QObject {
     ~AOClient();
 
     QString getHwid();
-    void setHwid(QString p_hwid);
-
     QString getIpid();
+    Server* getServer();
+    void setHwid(QString p_hwid);
 
     QHostAddress remote_ip;
     QString password;
@@ -51,7 +51,6 @@ class AOClient : public QObject {
     bool authenticated = false;
     QString moderator_name = "";
     QString ooc_name = "";
-    Server* server;
 
     QMap<QString, unsigned long long> ACLFlags {
         {"NONE", 0ULL},
@@ -71,6 +70,7 @@ class AOClient : public QObject {
 
   private:
     QTcpSocket* socket;
+    Server* server;
 
     enum ARUPType {
         PLAYER_COUNT,
@@ -112,6 +112,10 @@ class AOClient : public QObject {
     // Packet helper global variables
     bool last_msg_blankpost = false;
     int char_id = -1;
+    int pairing_with = -1;
+    QString emote = "";
+    QString offset = "";
+    QString flipping = "";
 
     struct PacketInfo {
         unsigned long long acl_mask;
