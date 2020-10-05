@@ -185,8 +185,9 @@ void AOClient::pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPack
 
     for (QString song : server->music_list) {
         if (song == argument) {
-            // If we have a song, retransmit as-is
-            server->broadcast(packet, current_area);
+            // We have a song here
+            AOPacket music_change("MC", {song, argv[1], argv[2], "1", "0", argv[3]});
+            server->broadcast(music_change, current_area);
             return;
         }
     }
