@@ -153,7 +153,6 @@ void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket pa
 void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
     ooc_name = argv[0];
-    area->logger->logOOC(this, &packet);
     if(argv[1].at(0) == '/') {
         QStringList cmd_argv = argv[1].split(" ", QString::SplitBehavior::SkipEmptyParts);
         QString command = cmd_argv[0].trimmed().toLower();
@@ -161,10 +160,12 @@ void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket p
         cmd_argv.removeFirst();
         int cmd_argc = cmd_argv.length();
         handleCommand(command, cmd_argc, cmd_argv);
-        return;
     }
-    // TODO: zalgo strip
-    server->broadcast(packet, current_area);
+    else {
+        // TODO: zalgo strip
+        server->broadcast(packet, current_area);
+    }
+    area->logger->logOOC(this, &packet);
 }
 
 void AOClient::pktPing(AreaData* area, int argc, QStringList argv, AOPacket packet)

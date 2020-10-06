@@ -65,7 +65,7 @@ void Logger::logModcall(AOClient* client, AOPacket* packet)
     QString area_name = client->getServer()->area_names.value(client->current_area);
     QString char_name = client->current_char;
     QString ipid = client->getIpid();
-    QString message = packet->contents[1];
+    QString message = packet->contents[0];
 
     QString log_entry = QStringLiteral("[%1][%2][MODCALL] %3(%4): %5\n")
             .arg(time)
