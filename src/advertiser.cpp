@@ -45,13 +45,13 @@ void Advertiser::readData()
 {
     // The information coming back from the MS isn't very useful
     // However, it can be useful to see it when debugging
-    // TODO: master network debug switch
-    // qDebug() << "From MS:" << socket->readAll();
+#ifdef NET_DEBUG
+    qDebug() << "From MS:" << socket->readAll();
+#endif
 }
 
 void Advertiser::socketConnected()
 {
-    // TODO: fire a signal here, i18n
     qDebug("Connected to the master server");
     QString concat_ports;
     if (ws_port == -1)
@@ -66,15 +66,14 @@ void Advertiser::socketConnected()
     QByteArray data = ao_packet.toUtf8();
 
     socket->write(data);
-    // TODO: master network debug switch
-    // should be a separate one for MS as well
-    // qDebug() << "To MS:" << data;
+#ifdef NET_DEBUG
+    qDebug() << "To MS:" << data;
+#endif
     socket->flush();
 }
 
 void Advertiser::socketDisconnected()
 {
-    // TODO: fire a signal here, i18n
     qDebug("Connection to master server lost");
 }
 

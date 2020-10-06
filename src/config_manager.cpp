@@ -108,7 +108,6 @@ bool ConfigManager::updateConfig(int current_version)
         return false;
     }
     else {
-        // TODO: send signal config is out of date, and is being updated
         // Update the config as needed using a switch. This is nice because we
         // can fall through as we go up the version ladder.
         switch (current_version) {

@@ -19,8 +19,9 @@
 
 void AOClient::pktDefault(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
-    qDebug() << "Unimplemented packet:" << packet.header;
-    qDebug() << packet.contents;
+#ifdef NET_DEBUG
+    qDebug() << "Unimplemented packet:" << packet.header << packet.contents;
+#endif
 }
 
 void AOClient::pktHardwareId(AreaData* area, int argc, QStringList argv, AOPacket packet)
@@ -44,7 +45,6 @@ void AOClient::pktSoftwareId(AreaData* area, int argc, QStringList argv, AOPacke
     // Full feature list as of AO 2.8.5
     // The only ones that are critical to ensuring the server works are
     // "noencryption" and "fastloading"
-    // TODO: make the rest of these user configurable
     QStringList feature_list = {
         "noencryption", "yellowtext",       "prezoom",
         "flipping",     "customobjections", "fastloading",
@@ -58,8 +58,9 @@ void AOClient::pktSoftwareId(AreaData* area, int argc, QStringList argv, AOPacke
 
 void AOClient::pktBeginLoad(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
-    // TODO: add user configurable content
-    // For testing purposes, we will just send enough to get things working
+    // Evidence isn't loaded during this part anymore
+    // As a result, we can always send "0" for evidence length
+    // Client only cares about what it gets from LE
     sendPacket("SI", {QString::number(server->characters.length()), "0", QString::number(server->area_names.length() + server->music_list.length())});
 }
 
@@ -141,7 +142,6 @@ void AOClient::pktSelectChar(AreaData* area, int argc, QStringList argv, AOPacke
 
 void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
-    // TODO: validate, validate, validate
     AOPacket validated_packet = validateIcPacket(packet);
     if (validated_packet.header == "INVALID")
         return;
@@ -232,7 +232,9 @@ void AOClient::pktWebSocketIp(AreaData* area, int argc, QStringList argv, AOPack
             socket->close();
             return;
         }
+#ifdef NET_DEBUG
         qDebug() << "ws ip set to" << argv[0];
+#endif
         remote_ip = QHostAddress(argv[0]);
     }
 }
@@ -496,8 +498,6 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         // effect
         args.append(incoming_args[25].toString());
     }
-
-    qDebug() << args.length();
 
     return AOPacket("MS", args);
 }

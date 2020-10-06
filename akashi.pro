@@ -23,6 +23,9 @@ MOC_DIR = $$PWD/build
 
 RC_ICONS = resource/icon/akashi.ico
 
+# Enable this to print network messages tothe console
+#DEFINES += NET_DEBUG
+
 SOURCES += src/advertiser.cpp \
     src/aoclient.cpp \
     src/aopacket.cpp \

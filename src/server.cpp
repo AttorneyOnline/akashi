@@ -33,11 +33,9 @@ Server::Server(int p_port, int p_ws_port, QObject* parent) : QObject(parent)
 void Server::start()
 {
     if (!server->listen(QHostAddress::Any, port)) {
-        // TODO: signal server start failed
         qDebug() << "Server error:" << server->errorString();
     }
     else {
-        // TODO: signal server start success
         qDebug() << "Server listening on" << port;
     }
 
@@ -68,7 +66,6 @@ void Server::start()
     }
     bg_file.close();
 
-    // TODO: add verification that this exists
     QSettings areas_ini("config/areas.ini", QSettings::IniFormat);
     area_names = areas_ini.childGroups();
     for (int i = 0; i < area_names.length(); i++) {
@@ -78,7 +75,6 @@ void Server::start()
         // TODO: more area config
         areas[i]->background = areas_ini.value("background", "gs4").toString();
         areas_ini.endGroup();
-        qDebug() << "Added area" << area_name;
     }
 }
 
@@ -108,8 +104,9 @@ void Server::clientConnected()
                                      // tsuserver4. It should disable fantacrypt
                                      // completely in any client 2.4.3 or newer
     client->sendPacket(decryptor);
-
-    //qDebug() << client->remote_ip.toString() << "connected";
+#ifdef NET_DEBUG
+    qDebug() << client->remote_ip.toString() << "connected";
+#endif
 }
 
 void Server::updateCharsTaken(AreaData* area)

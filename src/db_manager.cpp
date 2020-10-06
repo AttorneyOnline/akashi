@@ -112,7 +112,6 @@ bool DBManager::createUser(QString username, QString salt, QString password, uns
     query.addBindValue(acl);
     query.exec();
 
-    qDebug() << "Created user" << username << "with password" << password << "and salted with value" << salt << ": stored as" << salted_password;
     return true;
 }
 
@@ -149,8 +148,6 @@ bool DBManager::authenticate(QString username, QString password)
     if (!query_pass.first())
         return false;
     QString stored_pass = query_pass.value(0).toString();
-
-    qDebug() << "Found DB entry Salt:" << salt << "Stored Password:" << stored_pass << "Calculated Password:" << salted_password;
 
     return salted_password == stored_pass;
 }

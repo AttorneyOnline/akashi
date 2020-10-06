@@ -35,7 +35,6 @@ AOClient::AOClient(Server* p_server, QTcpSocket* p_socket, QObject* parent)
 void AOClient::clientData()
 {
     QString data = QString::fromUtf8(socket->readAll());
-    // qDebug() << "From" << remote_ip << ":" << data;
 
     if (is_partial) {
         data = partial_packet + data;
@@ -55,7 +54,9 @@ void AOClient::clientData()
 
 void AOClient::clientDisconnected()
 {
-    //qDebug() << remote_ip.toString() << "disconnected";
+#ifdef NET_DEBUG
+    qDebug() << remote_ip.toString() << "disconnected";
+#endif
     if (joined) {
         server->player_count--;
         server->areas[current_area]->player_count--;
@@ -70,17 +71,20 @@ void AOClient::clientDisconnected()
 
 void AOClient::handlePacket(AOPacket packet)
 {
+#ifdef NET_DEBUG
     qDebug() << "Received packet:" << packet.header << ":" << packet.contents << "args length:" << packet.contents.length();
+#endif
     AreaData* area = server->areas[current_area];
     PacketInfo info = packets.value(packet.header, {false, 0, &AOClient::pktDefault});
 
     if (!checkAuth(info.acl_mask)) {
-        qDebug() << "Unauthenticated client" << getIpid() << "attempted to use privileged packet" << packet.header;
         return;
     }
 
     if (packet.contents.length() < info.minArgs) {
+#ifdef NET_DEBUG
         qDebug() << "Invalid packet args length. Minimum is" << info.minArgs << "but only" << packet.contents.length() << "were given.";
+#endif
         return;
     }
 
@@ -89,7 +93,6 @@ void AOClient::handlePacket(AOPacket packet)
 
 void AOClient::changeArea(int new_area)
 {
-    // TODO: function to send chat messages with hostname automatically
     if (current_area == new_area) {
         sendServerMessage("You are already in area " + server->area_names[current_area]);
         return;
@@ -174,7 +177,9 @@ void AOClient::fullArup() {
 
 void AOClient::sendPacket(AOPacket packet)
 {
+#ifdef NET_DEBUG
     qDebug() << "Sent packet:" << packet.header << ":" << packet.contents;
+#endif
     socket->write(packet.toUtf8());
     socket->flush();
 }
@@ -207,7 +212,6 @@ void AOClient::setHwid(QString p_hwid)
     hash.addData(concat_ip_id.toUtf8());
 
     ipid = hash.result().toHex().right(8); // Use the last 8 characters (4 bytes)
-    qDebug() << "IP:" << remote_ip.toString() << "HDID:" << p_hwid << "IPID:" << ipid;
 }
 
 void AOClient::sendServerMessage(QString message)
@@ -225,11 +229,8 @@ bool AOClient::checkAuth(unsigned long long acl_mask)
         QSettings settings("config/config.ini", QSettings::IniFormat);
         settings.beginGroup("Options");
         QString auth_type = settings.value("auth", "simple").toString();
-        qDebug() << "auth type" << auth_type;
         if (auth_type == "advanced") {
             unsigned long long user_acl = server->db_manager->getACL(moderator_name);
-            qDebug() << "checking with advanced auth";
-            qDebug() << "got acl" << QString::number(user_acl, 16).toUpper() << "for user" << moderator_name;
             return (user_acl & acl_mask) != 0;
         }
         else if (auth_type == "simple") {

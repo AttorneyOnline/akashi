@@ -29,8 +29,10 @@ AOPacket::AOPacket(QString p_packet)
     if (p_packet.at(0) == '#') {
         // The header is encrypted with FantaCrypt
         // This should never happen with AO2 2.4.3 or newer
-        // TODO: implement fantacrypt? maybe?
         qDebug() << "FantaCrypt packet received";
+        header = "Unknown";
+        packet_contents.append("Unknown");
+        return;
     }
     else {
         header = packet_contents[0];

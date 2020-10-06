@@ -39,8 +39,6 @@ int main(int argc, char* argv[])
     QCoreApplication::setApplicationVersion("0.0.1");
     std::atexit(cleanup);
 
-    qDebug("Main application started");
-
     ConfigManager config_manager;
     if (config_manager.initConfig()) {
         // Config is sound, so proceed with starting the server
@@ -56,7 +54,6 @@ int main(int argc, char* argv[])
 
         else {
             if (settings.advertise_server) {
-                // TODO: send signal advertiser started
                 advertiser =
                     new Advertiser(settings.ms_ip, settings.port,
                                    settings.ws_port, settings.local_port,
@@ -64,8 +61,6 @@ int main(int argc, char* argv[])
                 advertiser->contactMasterServer();
             }
 
-            // TODO: start the server here
-            // TODO: send signal server starting.
             server = new Server(settings.port, settings.ws_port);
             server->start();
         }
