@@ -30,9 +30,16 @@ class AreaData {
   public:
     AreaData(QStringList p_characters, QString p_name, int p_index);
 
+    struct Evidence {
+        QString name;
+        QString description;
+        QString image;
+    };
+
     QString name;
     int index;
     QMap<QString, bool> characters_taken;
+    QList<Evidence> evidence;
     int player_count;
     QString status;
     QString current_cm;

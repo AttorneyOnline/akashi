@@ -105,12 +105,15 @@ class AOClient : public QObject {
     void pktHpBar(AreaData* area, int argc, QStringList argv, AOPacket packet);
     void pktWebSocketIp(AreaData* area, int argc, QStringList argv, AOPacket packet);
     void pktModCall(AreaData* area, int argc, QStringList argv, AOPacket packet);
+    void pktAddEvidence(AreaData* area, int argc, QStringList argv, AOPacket packet);
+    void pktRemoveEvidence(AreaData* area, int argc, QStringList argv, AOPacket packet);
+    void pktEditEvidence(AreaData* area, int argc, QStringList argv, AOPacket packet);
 
     // Packet helper functions
+    void sendEvidenceList(AreaData* area);
     AOPacket validateIcPacket(AOPacket packet);
 
     // Packet helper global variables
-    bool last_msg_blankpost = false;
     int char_id = -1;
     int pairing_with = -1;
     QString emote = "";
@@ -139,7 +142,10 @@ class AOClient : public QObject {
         {"RT", {ACLFlags.value("NONE"), 1, &AOClient::pktWtCe}},
         {"HP", {ACLFlags.value("NONE"), 2, &AOClient::pktHpBar}},
         {"WSIP", {ACLFlags.value("NONE"), 1, &AOClient::pktWebSocketIp}},
-        {"ZZ", {ACLFlags.value("NONE"), 0, &AOClient::pktModCall}}
+        {"ZZ", {ACLFlags.value("NONE"), 0, &AOClient::pktModCall}},
+        {"PE", {ACLFlags.value("NONE"), 3, &AOClient::pktAddEvidence}},
+        {"DE", {ACLFlags.value("NONE"), 1, &AOClient::pktRemoveEvidence}},
+        {"EE", {ACLFlags.value("NONE"), 4, &AOClient::pktEditEvidence}}
     };
 
     // Commands

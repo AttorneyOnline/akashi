@@ -91,6 +91,7 @@ void AOClient::pktLoadingDone(AreaData* area, int argc, QStringList argv, AOPack
     server->updateCharsTaken(area);
     fullArup(); // Give client all the area data
     arup(ARUPType::PLAYER_COUNT, true); // Tell everyone there is a new player
+    sendEvidenceList(area);
 
     sendPacket("HP", {"1", QString::number(area->def_hp)});
     sendPacket("HP", {"2", QString::number(area->pro_hp)});
@@ -236,13 +237,56 @@ void AOClient::pktWebSocketIp(AreaData* area, int argc, QStringList argv, AOPack
     }
 }
 
-void AOClient::pktModCall(AreaData *area, int argc, QStringList argv, AOPacket packet)
+void AOClient::pktModCall(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
     for (AOClient* client : server->clients) {
         if (client->authenticated)
             client->sendPacket(packet);
     }
     area->logger->flush();
+}
+
+void AOClient::pktAddEvidence(AreaData* area, int argc, QStringList argv, AOPacket packet)
+{
+    AreaData::Evidence evi = {argv[0], argv[1], argv[2]};
+    area->evidence.append(evi);
+    sendEvidenceList(area);
+}
+
+void AOClient::pktRemoveEvidence(AreaData* area, int argc, QStringList argv, AOPacket packet)
+{
+    bool is_int = false;
+    int idx = argv[0].toInt(&is_int);
+    if (is_int) {
+        area->evidence.removeAt(idx);
+    }
+    sendEvidenceList(area);
+}
+
+void AOClient::pktEditEvidence(AreaData* area, int argc, QStringList argv, AOPacket packet)
+{
+    bool is_int = false;
+    int idx = argv[0].toInt(&is_int);
+    AreaData::Evidence evi = {argv[1], argv[2], argv[3]};
+    if (is_int) {
+        area->evidence.replace(idx, evi);
+    }
+    sendEvidenceList(area);
+}
+
+void AOClient::sendEvidenceList(AreaData* area)
+{
+    QStringList evidence_list;
+    QString evidence_format("%1&%2&%3");
+
+    for (AreaData::Evidence evidence : area->evidence) {
+        evidence_list.append(evidence_format
+                             .arg(evidence.name)
+                             .arg(evidence.description)
+                             .arg(evidence.image));
+    }
+
+    server->broadcast(AOPacket("LE", evidence_list), current_area);
 }
 
 AOPacket AOClient::validateIcPacket(AOPacket packet)
@@ -296,14 +340,6 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
 
     // message text
     QString incoming_msg = incoming_args[4].toString().trimmed();
-    if (incoming_msg == "") {
-        if (last_msg_blankpost)
-            return invalid;
-        last_msg_blankpost = true;
-    }
-    else
-        last_msg_blankpost = false;
-
     if (incoming_msg == last_message)
         return invalid;
 
@@ -354,8 +390,11 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     }
 
     // evidence
-    // TODO: add to this once evidence is implemented
-    args.append(incoming_args[11].toString());
+    int evi_idx = incoming_args[11].toInt();
+    AreaData* area = server->areas[current_area];
+    if (evi_idx > area->evidence.length())
+        return invalid;
+    args.append(QString::number(evi_idx));
 
     // flipping
     int flip = incoming_args[12].toInt();

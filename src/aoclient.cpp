@@ -107,7 +107,7 @@ void AOClient::changeArea(int new_area)
     server->areas[current_area]->player_count--;
     current_area = new_area;
     arup(ARUPType::PLAYER_COUNT, true);
-    // send le
+    sendEvidenceList(server->areas[new_area]);
     sendPacket("HP", {"1", QString::number(server->areas[new_area]->def_hp)});
     sendPacket("HP", {"2", QString::number(server->areas[new_area]->pro_hp)});
     sendPacket("BN", {server->areas[new_area]->background});
