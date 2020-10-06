@@ -34,6 +34,8 @@ public:
     Logger(int p_max_length);
 
     void logIC(AOClient* client, AOPacket* packet);
+    void logOOC(AOClient* client, AOPacket* packet);
+    void logModcall(AOClient* client, AOPacket* packet);
     void flush();
 
 private:

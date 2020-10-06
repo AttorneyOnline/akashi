@@ -24,6 +24,7 @@ Logger::Logger(int p_max_length)
 
 void Logger::logIC(AOClient *client, AOPacket *packet)
 {
+    // TODO: copy pasted code
     QString time = QDateTime::currentDateTime().toString("ddd MMMM d yyyy | hh:mm:ss");
     QString area_name = client->getServer()->area_names.value(client->current_area);
     QString char_name = client->current_char;
@@ -31,6 +32,42 @@ void Logger::logIC(AOClient *client, AOPacket *packet)
     QString message = packet->contents[4];
 
     QString log_entry = QStringLiteral("[%1][%2][IC] %3(%4): %5\n")
+            .arg(time)
+            .arg(area_name)
+            .arg(char_name)
+            .arg(ipid)
+            .arg(message);
+    addEntry(log_entry);
+}
+
+void Logger::logOOC(AOClient* client, AOPacket* packet)
+{
+    // TODO: copy pasted code
+    QString time = QDateTime::currentDateTime().toString("ddd MMMM d yyyy | hh:mm:ss");
+    QString area_name = client->getServer()->area_names.value(client->current_area);
+    QString char_name = client->current_char;
+    QString ipid = client->getIpid();
+    QString message = packet->contents[1];
+
+    QString log_entry = QStringLiteral("[%1][%2][OOC] %3(%4): %5\n")
+            .arg(time)
+            .arg(area_name)
+            .arg(char_name)
+            .arg(ipid)
+            .arg(message);
+    addEntry(log_entry);
+}
+
+void Logger::logModcall(AOClient* client, AOPacket* packet)
+{
+    // TODO: copy pasted code
+    QString time = QDateTime::currentDateTime().toString("ddd MMMM d yyyy | hh:mm:ss");
+    QString area_name = client->getServer()->area_names.value(client->current_area);
+    QString char_name = client->current_char;
+    QString ipid = client->getIpid();
+    QString message = packet->contents[1];
+
+    QString log_entry = QStringLiteral("[%1][%2][MODCALL] %3(%4): %5\n")
             .arg(time)
             .arg(area_name)
             .arg(char_name)

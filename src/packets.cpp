@@ -153,6 +153,7 @@ void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket pa
 void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
     ooc_name = argv[0];
+    area->logger->logOOC(this, &packet);
     if(argv[1].at(0) == '/') {
         QStringList cmd_argv = argv[1].split(" ", QString::SplitBehavior::SkipEmptyParts);
         QString command = cmd_argv[0].trimmed().toLower();
@@ -245,6 +246,7 @@ void AOClient::pktModCall(AreaData* area, int argc, QStringList argv, AOPacket p
         if (client->authenticated)
             client->sendPacket(packet);
     }
+    area->logger->logModcall(this, &packet);
     area->logger->flush();
 }
 
