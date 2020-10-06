@@ -164,7 +164,14 @@ void AOClient::cmdSetRootPass(int argc, QStringList argv)
     settings.beginGroup("Options");
     settings.setValue("auth", "advanced");
 
+#if QT_VERSION < QT_VERSION_CHECK(5, 10, 0)
+    qsrand(QDateTime::currentMSecsSinceEpoch());
+    quint32 upper_salt = qrand();
+    quint32 lower_salt = qrand();
+    quint64 salt_number = (upper_salt << 32) | lower_salt;
+#else
     quint64 salt_number = QRandomGenerator::system()->generate64();
+#endif
     QString salt = QStringLiteral("%1").arg(salt_number, 16, 16, QLatin1Char('0'));
 
     server->db_manager->createUser("root", salt, argv[0], ACLFlags.value("SUPER"));
@@ -206,7 +213,14 @@ void AOClient::cmdBgUnlock(int argc, QStringList argv)
 
 void AOClient::cmdAddUser(int argc, QStringList argv)
 {
+#if QT_VERSION < QT_VERSION_CHECK(5, 10, 0)
+    qsrand(QDateTime::currentMSecsSinceEpoch());
+    quint32 upper_salt = qrand();
+    quint32 lower_salt = qrand();
+    quint64 salt_number = (upper_salt << 32) | lower_salt;
+#else
     quint64 salt_number = QRandomGenerator::system()->generate64();
+#endif
     QString salt = QStringLiteral("%1").arg(salt_number, 16, 16, QLatin1Char('0'));
 
     if (server->db_manager->createUser(argv[0], salt, argv[1], ACLFlags.value("NONE")))
