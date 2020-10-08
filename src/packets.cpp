@@ -159,13 +159,14 @@ void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket p
         command = command.right(command.length() - 1);
         cmd_argv.removeFirst();
         int cmd_argc = cmd_argv.length();
+        area->logger->logCmd(this, &packet, command, cmd_argv);
         handleCommand(command, cmd_argc, cmd_argv);
     }
     else {
         // TODO: zalgo strip
         server->broadcast(packet, current_area);
+        area->logger->logOOC(this, &packet);
     }
-    area->logger->logOOC(this, &packet);
 }
 
 void AOClient::pktPing(AreaData* area, int argc, QStringList argv, AOPacket packet)

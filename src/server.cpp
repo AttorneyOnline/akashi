@@ -110,10 +110,9 @@ void Server::clientConnected()
     });
     connect(socket, &QTcpSocket::readyRead, client, &AOClient::clientData);
 
-    AOPacket decryptor(
-        "decryptor", {"NOENCRYPT"}); // This is the infamous workaround for
-                                     // tsuserver4. It should disable fantacrypt
-                                     // completely in any client 2.4.3 or newer
+    AOPacket decryptor("decryptor", {"NOENCRYPT"}); // This is the infamous workaround for
+                                                    // tsuserver4. It should disable fantacrypt
+                                                    // completely in any client 2.4.3 or newer
     client->sendPacket(decryptor);
 #ifdef NET_DEBUG
     qDebug() << client->remote_ip.toString() << "connected";

@@ -20,6 +20,7 @@
 
 #include "include/aoclient.h"
 #include "include/aopacket.h"
+#include "include/area_data.h"
 
 #include <QFile>
 #include <QDebug>
@@ -28,21 +29,26 @@
 #include <QDateTime>
 
 class AOClient;
+class AreaData;
 class Logger
 {
 public:
-    Logger(int p_max_length);
+    Logger(int p_max_length, AreaData* p_area);
 
     void logIC(AOClient* client, AOPacket* packet);
     void logOOC(AOClient* client, AOPacket* packet);
     void logModcall(AOClient* client, AOPacket* packet);
+    void logCmd(AOClient* client, AOPacket* packet, QString cmd, QStringList args);
+    void logLogin(AOClient* client, bool success, QString modname);
     void flush();
 
 private:
+    QString buildEntry(AOClient* client, QString type, QString message);
     void addEntry(QString entry);
 
     int max_length;
     QQueue<QString> buffer;
+    AreaData* area;
 };
 
 #endif // LOGGER_H

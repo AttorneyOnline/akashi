@@ -44,8 +44,8 @@ void AOClient::cmdLogin(int argc, QStringList argv)
             authenticated = true;
         } else {
             sendServerMessage("Incorrect password.");
-            return;
         }
+        server->areas.value(current_area)->logger->logLogin(this, authenticated, "moderator");
     }
     else {
         if (argc < 2) {
@@ -57,11 +57,13 @@ void AOClient::cmdLogin(int argc, QStringList argv)
         if (server->db_manager->authenticate(username, password)) {
             moderator_name = username;
             authenticated = true;
-            sendServerMessage("Logged in as " + username);
+            sendServerMessage("Logged in as a moderator.");
+            sendServerMessage("Welcome, " + username);
         }
         else {
             sendServerMessage("Incorrect password.");
         }
+        server->areas.value(current_area)->logger->logLogin(this, authenticated, username);
     }
 }
 

@@ -17,63 +17,68 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/logger.h"
 
-Logger::Logger(int p_max_length)
+Logger::Logger(int p_max_length, AreaData* p_area)
 {
+    area = p_area;
     max_length = p_max_length;
 }
 
 void Logger::logIC(AOClient *client, AOPacket *packet)
 {
-    // TODO: copy pasted code
-    QString time = QDateTime::currentDateTime().toString("ddd MMMM d yyyy | hh:mm:ss");
-    QString area_name = client->getServer()->area_names.value(client->current_area);
-    QString char_name = client->current_char;
-    QString ipid = client->getIpid();
     QString message = packet->contents[4];
-
-    QString log_entry = QStringLiteral("[%1][%2][IC] %3(%4): %5\n")
-            .arg(time)
-            .arg(area_name)
-            .arg(char_name)
-            .arg(ipid)
-            .arg(message);
-    addEntry(log_entry);
+    addEntry(buildEntry(client, "IC", message));
 }
 
 void Logger::logOOC(AOClient* client, AOPacket* packet)
 {
-    // TODO: copy pasted code
-    QString time = QDateTime::currentDateTime().toString("ddd MMMM d yyyy | hh:mm:ss");
-    QString area_name = client->getServer()->area_names.value(client->current_area);
-    QString char_name = client->current_char;
-    QString ipid = client->getIpid();
     QString message = packet->contents[1];
-
-    QString log_entry = QStringLiteral("[%1][%2][OOC] %3(%4): %5\n")
-            .arg(time)
-            .arg(area_name)
-            .arg(char_name)
-            .arg(ipid)
-            .arg(message);
-    addEntry(log_entry);
+    addEntry(buildEntry(client, "OOC", message));
 }
 
 void Logger::logModcall(AOClient* client, AOPacket* packet)
 {
-    // TODO: copy pasted code
+    QString message = packet->contents[0];
+    addEntry(buildEntry(client, "MODCALL", message));
+}
+
+void Logger::logCmd(AOClient *client, AOPacket *packet, QString cmd, QStringList args)
+{
+    // Some commands contain sensitive data, like passwords
+    // These must be filtered out
+    if (cmd == "login") {
+        addEntry(buildEntry(client, "LOGIN", "Attempted login"));
+    }
+    else if (cmd == "rootpass") {
+        addEntry(buildEntry(client, "USERS", "Root password created"));
+    }
+    else if (cmd == "adduser") {
+        addEntry(buildEntry(client, "USERS", "Added user " + args[0]));
+    }
+    else
+        logOOC(client, packet);
+}
+
+void Logger::logLogin(AOClient *client, bool success, QString modname)
+{
+    QString message = success ? "Logged in as " + modname : "Failed to log in as " + modname;
+    addEntry(buildEntry(client, "LOGIN", message));
+}
+
+QString Logger::buildEntry(AOClient *client, QString type, QString message)
+{
     QString time = QDateTime::currentDateTime().toString("ddd MMMM d yyyy | hh:mm:ss");
-    QString area_name = client->getServer()->area_names.value(client->current_area);
+    QString area_name = area->name;
     QString char_name = client->current_char;
     QString ipid = client->getIpid();
-    QString message = packet->contents[0];
 
-    QString log_entry = QStringLiteral("[%1][%2][MODCALL] %3(%4): %5\n")
+    QString log_entry = QStringLiteral("[%1][%2][%6] %3(%4): %5\n")
             .arg(time)
             .arg(area_name)
             .arg(char_name)
             .arg(ipid)
-            .arg(message);
-    addEntry(log_entry);
+            .arg(message)
+            .arg(type);
+    return log_entry;
 }
 
 void Logger::addEntry(QString entry)
@@ -89,6 +94,9 @@ void Logger::addEntry(QString entry)
 
 void Logger::flush()
 {
+    // raiden suggested this, but idk if i want to use it
+    // QString time = QDateTime::currentDateTime().toString("ddd mm/dd/yy hh:mm:ss");
+    // QString filename = QStringLiteral("reports/%1/%2.log").arg(area->name).arg(time);
     QFile logfile("config/server.log");
     if (logfile.open(QIODevice::WriteOnly | QIODevice::Append)) {
         QTextStream file_stream(&logfile);

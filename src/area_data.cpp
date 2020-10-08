@@ -40,5 +40,5 @@ AreaData::AreaData(QStringList characters, QString p_name, int p_index)
     int log_size = config_ini.value("logbuffer", 50).toInt();
     if (log_size == 0)
         log_size = 500;
-    logger = new Logger(log_size);
+    logger = new Logger(log_size, this);
 }
