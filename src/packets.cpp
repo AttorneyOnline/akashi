@@ -50,7 +50,9 @@ void AOClient::pktSoftwareId(AreaData* area, int argc, QStringList argv, AOPacke
         "flipping",     "customobjections", "fastloading",
         "deskmod",      "evidence",         "cccc_ic_support",
         "arup",         "casing_alerts",    "modcall_reason",
-        "looping_sfx",  "additive",         "effects"};
+        "looping_sfx",  "additive",         "effects",
+        "y_offset"
+    };
 
     sendPacket("PN", {QString::number(server->player_count), max_players});
     sendPacket("FL", feature_list);
