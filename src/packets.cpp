@@ -138,6 +138,8 @@ void AOClient::pktSelectChar(AreaData* area, int argc, QStringList argv, AOPacke
         current_char = "";
     }
 
+    pos = "";
+
     server->updateCharsTaken(area);
     sendPacket("PV", {"271828", "CID", argv[1]});
 }
@@ -147,6 +149,9 @@ void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket pa
     AOPacket validated_packet = validateIcPacket(packet);
     if (validated_packet.header == "INVALID")
         return;
+
+    if (pos != "")
+        validated_packet.contents[5] = pos;
 
     area->logger->logIC(this, &validated_packet);
     server->broadcast(validated_packet, current_area);

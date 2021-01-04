@@ -122,6 +122,7 @@ class AOClient : public QObject {
     QString emote = "";
     QString offset = "";
     QString flipping = "";
+    QString pos = "";
 
     struct PacketInfo {
         unsigned long long acl_mask;
@@ -169,6 +170,7 @@ class AOClient : public QObject {
     void cmdRemovePerms(int argc, QStringList argv);
     void cmdListUsers(int argc, QStringList argv);
     void cmdLogout(int argc, QStringList argv);
+    void cmdPos(int argc, QStringList argv);
 
     // Command helper functions
     QStringList buildAreaList(int area_idx);
@@ -199,7 +201,8 @@ class AOClient : public QObject {
         {"addperm", {ACLFlags.value("MODIFY_USERS"), 2, &AOClient::cmdAddPerms}},
         {"removeperm", {ACLFlags.value("MODIFY_USERS"), 2, &AOClient::cmdRemovePerms}},
         {"listusers", {ACLFlags.value("MODIFY_USERS"), 0, &AOClient::cmdListUsers}},
-        {"logout", {ACLFlags.value("NONE"), 0, &AOClient::cmdLogout}}
+        {"logout", {ACLFlags.value("NONE"), 0, &AOClient::cmdLogout}},
+        {"pos", {ACLFlags.value("NONE"), 1, &AOClient::cmdPos}}
     };
 
     QString partial_packet;

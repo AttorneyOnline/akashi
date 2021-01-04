@@ -359,7 +359,16 @@ void AOClient::cmdLogout(int argc, QStringList argv)
     authenticated = false;
     moderator_name = "";
     sendServerMessage("You have been logged out.");
-    return;
+}
+
+void AOClient::cmdPos(int argc, QStringList argv)
+{
+    if (argv[0] != "def" && argv[0] != "hld" && argv[0] != "pro" && argv[0] != "hlp" && argv[0] != "wit" && argv[0] != "jud" && argv[0] != "jur" && argv[0] != "sea") {
+        sendServerMessage("Invalid position!");
+        return;
+    }
+    pos = argv[0];
+    sendServerMessage("Position changed to " + pos + ".");
 }
 
 QStringList AOClient::buildAreaList(int area_idx)
