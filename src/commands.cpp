@@ -379,6 +379,13 @@ void AOClient::cmdG(int argc, QStringList argv)
     return;
 }
 
+void AOClient::cmdNeed(int argc, QStringList argv)
+{
+    QString sender_area = server->area_names.value(current_area);
+    QString sender_message = argv.join(" ");
+    server->broadcast(AOPacket("CT", {"=== Advert ===","[" + sender_area + "] needs " + sender_message}));
+}
+
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;
