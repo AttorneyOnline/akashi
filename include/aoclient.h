@@ -171,6 +171,7 @@ class AOClient : public QObject {
     void cmdListUsers(int argc, QStringList argv);
     void cmdLogout(int argc, QStringList argv);
     void cmdPos(int argc, QStringList argv);
+    void cmdG(int argc, QStringList argv);
 
     // Command helper functions
     QStringList buildAreaList(int area_idx);
@@ -202,7 +203,8 @@ class AOClient : public QObject {
         {"removeperm", {ACLFlags.value("MODIFY_USERS"), 2, &AOClient::cmdRemovePerms}},
         {"listusers", {ACLFlags.value("MODIFY_USERS"), 0, &AOClient::cmdListUsers}},
         {"logout", {ACLFlags.value("NONE"), 0, &AOClient::cmdLogout}},
-        {"pos", {ACLFlags.value("NONE"), 1, &AOClient::cmdPos}}
+        {"pos", {ACLFlags.value("NONE"), 1, &AOClient::cmdPos}},
+        {"g", {ACLFlags.value("NONE"), 1, &AOClient::cmdG}}
     };
 
     QString partial_packet;

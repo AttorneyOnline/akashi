@@ -371,6 +371,14 @@ void AOClient::cmdPos(int argc, QStringList argv)
     sendServerMessage("Position changed to " + pos + ".");
 }
 
+void AOClient::cmdG(int argc, QStringList argv)
+{
+    QString sender_name = ooc_name;
+    QString sender_message = argv.join(" ");
+    server->broadcast(AOPacket("CT", {"[G]" + sender_name, sender_message}));
+    return;
+}
+
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;
