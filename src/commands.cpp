@@ -418,7 +418,7 @@ int AOClient::genRand(int min, int max)
 {
 #if QT_VERSION < QT_VERSION_CHECK(5, 10, 0)
     qsrand(QDateTime::currentMSecsSinceEpoch());
-    quint16 random_number = (qrand() % (max - min + 1)) + min;
+    quint32 random_number = (qrand() % (max - min + 1)) + min;
     return random_number;
 
 #else

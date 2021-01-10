@@ -177,7 +177,7 @@ class AOClient : public QObject {
 
     // Command helper functions
     QStringList buildAreaList(int area_idx);
-    int  genRand(int min, int max);
+    int genRand(int min, int max);
 
     // Command function global variables
     bool change_auth_started = false;
