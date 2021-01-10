@@ -171,9 +171,13 @@ class AOClient : public QObject {
     void cmdListUsers(int argc, QStringList argv);
     void cmdLogout(int argc, QStringList argv);
     void cmdPos(int argc, QStringList argv);
+    void cmdG(int argc, QStringList argv);
+    void cmdNeed(int argc, QStringList argv);
+    void cmdFlip(int argc, QStringList argv);
 
     // Command helper functions
     QStringList buildAreaList(int area_idx);
+    int genRand(int min, int max);
 
     // Command function global variables
     bool change_auth_started = false;
@@ -202,7 +206,10 @@ class AOClient : public QObject {
         {"removeperm", {ACLFlags.value("MODIFY_USERS"), 2, &AOClient::cmdRemovePerms}},
         {"listusers", {ACLFlags.value("MODIFY_USERS"), 0, &AOClient::cmdListUsers}},
         {"logout", {ACLFlags.value("NONE"), 0, &AOClient::cmdLogout}},
-        {"pos", {ACLFlags.value("NONE"), 1, &AOClient::cmdPos}}
+        {"pos", {ACLFlags.value("NONE"), 1, &AOClient::cmdPos}},
+        {"g", {ACLFlags.value("NONE"), 1, &AOClient::cmdG}},
+        {"need", {ACLFlags.value("NONE"), 1, &AOClient::cmdNeed}},
+        {"flip", {ACLFlags.value("NONE"), 0, &AOClient::cmdFlip}}
     };
 
     QString partial_packet;

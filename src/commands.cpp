@@ -371,6 +371,29 @@ void AOClient::cmdPos(int argc, QStringList argv)
     sendServerMessage("Position changed to " + pos + ".");
 }
 
+void AOClient::cmdG(int argc, QStringList argv)
+{
+    QString sender_name = ooc_name;
+    QString sender_message = argv.join(" ");
+    server->broadcast(AOPacket("CT", {"[G]" + sender_name, sender_message+ "."}));
+    return;
+}
+
+void AOClient::cmdNeed(int argc, QStringList argv)
+{
+    QString sender_area = server->area_names.value(current_area);
+    QString sender_message = argv.join(" ");
+    server->broadcast(AOPacket("CT", {"=== Advert ===","[" + sender_area + "] needs " + sender_message+ "."}));
+}
+
+void AOClient::cmdFlip(int argc, QStringList argv)
+{
+    QString sender_name = ooc_name;
+    QStringList faces = {"head","tails"};
+    QString face = faces[AOClient::genRand(0,1)];
+    sendServerMessage(sender_name + " flipped a coin and got " + face + ".");
+}
+
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;
@@ -389,4 +412,17 @@ QStringList AOClient::buildAreaList(int area_idx)
         }
     }
     return entries;
+}
+
+int AOClient::genRand(int min, int max)
+{
+#if QT_VERSION < QT_VERSION_CHECK(5, 10, 0)
+    qsrand(QDateTime::currentMSecsSinceEpoch());
+    quint32 random_number = (qrand() % (max - min + 1)) + min;
+    return random_number;
+
+#else
+    quint32 random_number = QRandomGenerator::system()->bounded(min, max + 1);
+    return random_number;
+#endif
 }
