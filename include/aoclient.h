@@ -174,6 +174,7 @@ class AOClient : public QObject {
     void cmdG(int argc, QStringList argv);
     void cmdNeed(int argc, QStringList argv);
     void cmdFlip(int argc, QStringList argv);
+    void cmdRoll(int argc, QStringList argv);
 
     // Command helper functions
     QStringList buildAreaList(int area_idx);
@@ -209,7 +210,8 @@ class AOClient : public QObject {
         {"pos", {ACLFlags.value("NONE"), 1, &AOClient::cmdPos}},
         {"g", {ACLFlags.value("NONE"), 1, &AOClient::cmdG}},
         {"need", {ACLFlags.value("NONE"), 1, &AOClient::cmdNeed}},
-        {"flip", {ACLFlags.value("NONE"), 0, &AOClient::cmdFlip}}
+        {"flip", {ACLFlags.value("NONE"), 0, &AOClient::cmdFlip}},
+        {"roll", {ACLFlags.value("NONE"), 0, &AOClient::cmdRoll}}
     };
 
     QString partial_packet;

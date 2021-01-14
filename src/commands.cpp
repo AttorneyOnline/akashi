@@ -394,6 +394,58 @@ void AOClient::cmdFlip(int argc, QStringList argv)
     sendServerMessage(sender_name + " flipped a coin and got " + face + ".");
 }
 
+void AOClient::cmdRoll(int argc, QStringList argv)
+{
+    int max_roll_amount = 20;
+    int max_roll_faces = 11037;
+    QString sender_name = ooc_name;
+
+    if (argc == 0)
+    {
+        QString dice_result = QString::number(AOClient::genRand(1, 6));
+        server->broadcast(AOPacket("CT",{"Roll",sender_name + " rolled " + dice_result + " out of 6"}), current_area);
+    }
+    else if (argc == 1)
+    {
+        int amount_faces = argv[0].toInt();
+        if (1 <= amount_faces and amount_faces <= max_roll_faces)
+        {
+        QString dice_result = QString::number(AOClient::genRand(1, amount_faces));
+        server->broadcast(AOPacket("CT",{"Roll",sender_name + " rolled " + dice_result + " out of " + argv[0]}), current_area);
+        }
+        else
+        {
+            sendServerMessage("Invalid Range.");
+        }
+    }
+    else if (argc == 2)
+    {
+        int amount_faces = argv[0].toInt();
+        int amount_rolls = argv[1].toInt();
+        QString dice_results;
+        if (1 <= amount_faces and amount_faces <= max_roll_faces and 1 <= amount_rolls and amount_rolls <= max_roll_amount)
+        {
+            for (int i = 1; i <= amount_rolls ; i++)
+            {
+                QString dice_result = QString::number(AOClient::genRand(1, amount_faces));
+                if (i == amount_rolls)
+                {
+                    dice_results = dice_results.append(dice_result);
+                }
+                else
+                {
+                        dice_results = dice_results.append(dice_result + ",");
+                }
+            }
+        server->broadcast(AOPacket("CT",{"Roll",sender_name + " rolled (" + dice_results + ") out of " + argv[0]}), current_area);
+        }
+        else
+        {
+            sendServerMessage("Invalid Range.");
+        }
+    }
+}
+
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;
