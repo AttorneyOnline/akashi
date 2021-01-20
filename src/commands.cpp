@@ -374,8 +374,9 @@ void AOClient::cmdPos(int argc, QStringList argv)
 void AOClient::cmdG(int argc, QStringList argv)
 {
     QString sender_name = ooc_name;
+    QString sender_area = server->area_names.value(current_area);
     QString sender_message = argv.join(" ");
-    server->broadcast(AOPacket("CT", {"[G]" + sender_name, sender_message+ "."}));
+    server->broadcast(AOPacket("CT", {"[" + sender_area + "]" + sender_name, sender_message}));
     return;
 }
 
@@ -383,7 +384,7 @@ void AOClient::cmdNeed(int argc, QStringList argv)
 {
     QString sender_area = server->area_names.value(current_area);
     QString sender_message = argv.join(" ");
-    server->broadcast(AOPacket("CT", {"=== Advert ===","[" + sender_area + "] needs " + sender_message+ "."}));
+    sendServerBroadcast({"=== Advert ===\n[" + sender_area + "] needs " + sender_message+ "."});
 }
 
 void AOClient::cmdFlip(int argc, QStringList argv)
@@ -403,15 +404,15 @@ void AOClient::cmdRoll(int argc, QStringList argv)
     if (argc == 0)
     {
         QString dice_result = QString::number(AOClient::genRand(1, 6));
-        server->broadcast(AOPacket("CT",{"Roll",sender_name + " rolled " + dice_result + " out of 6"}), current_area);
+        sendServerMessageArea(sender_name + " rolled " + dice_result + " out of 6");
     }
     else if (argc == 1)
     {
         int amount_faces = argv[0].toInt();
         if (1 <= amount_faces and amount_faces <= max_roll_faces)
         {
-        QString dice_result = QString::number(AOClient::genRand(1, amount_faces));
-        server->broadcast(AOPacket("CT",{"Roll",sender_name + " rolled " + dice_result + " out of " + argv[0]}), current_area);
+            QString dice_result = QString::number(AOClient::genRand(1, amount_faces));
+            sendServerMessageArea(sender_name + " rolled " + dice_result + " out of " + argv[0]);
         }
         else
         {
@@ -434,10 +435,10 @@ void AOClient::cmdRoll(int argc, QStringList argv)
                 }
                 else
                 {
-                        dice_results = dice_results.append(dice_result + ",");
+                    dice_results = dice_results.append(dice_result + ",");
                 }
             }
-        server->broadcast(AOPacket("CT",{"Roll",sender_name + " rolled (" + dice_results + ") out of " + argv[0]}), current_area);
+        sendServerMessageArea(sender_name + " rolled (" + dice_results + ") out of " + argv[0]);
         }
         else
         {
@@ -456,16 +457,16 @@ void AOClient::cmdRollP(int argc, QStringList argv)
     {
         QString dice_result = QString::number(AOClient::genRand(1, 6));
         sendServerMessage(sender_name + " rolled " + dice_result + " out of 6");
-        server->broadcast(AOPacket("CT",{"Roll",sender_name + " rolled in secret."}), current_area);
+        sendServerMessageArea((sender_name + " rolled in secret."));
     }
     else if (argc == 1)
     {
         int amount_faces = argv[0].toInt();
         if (1 <= amount_faces and amount_faces <= max_roll_faces)
         {
-        QString dice_result = QString::number(AOClient::genRand(1, amount_faces));
-        sendServerMessage(sender_name + " rolled " + dice_result + " out of " + argv[0]);
-        server->broadcast(AOPacket("CT",{"Roll",sender_name + " rolled in secret."}), current_area);
+            QString dice_result = QString::number(AOClient::genRand(1, amount_faces));
+            sendServerMessage(sender_name + " rolled " + dice_result + " out of " + argv[0]);
+            sendServerMessageArea((sender_name + " rolled in secret."));;
         }
         else
         {
@@ -488,11 +489,11 @@ void AOClient::cmdRollP(int argc, QStringList argv)
                 }
                 else
                 {
-                        dice_results = dice_results.append(dice_result + ",");
+                    dice_results = dice_results.append(dice_result + ",");
                 }
             }
-        sendServerMessage(sender_name + " rolled " + dice_results + " out of " + argv[0]);
-        server->broadcast(AOPacket("CT",{"Roll",sender_name + " rolled in secret."}), current_area);
+            sendServerMessage(sender_name + " rolled " + dice_results + " out of " + argv[0]);
+            sendServerMessageArea((sender_name + " rolled in secret."));;
         }
         else
         {
