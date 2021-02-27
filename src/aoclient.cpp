@@ -216,26 +216,17 @@ void AOClient::setHwid(QString p_hwid)
 
 void AOClient::sendServerMessage(QString message)
 {
-    QSettings config("config/config.ini", QSettings::IniFormat);
-    config.beginGroup("Options");
-    QString hostname = config.value("hostname", "Server").toString();
-    sendPacket("CT", {hostname, message, "1"});
+    sendPacket("CT", {server->getServerName(), message, "1"});
 }
 
 void AOClient::sendServerMessageArea(QString message)
 {
-    QSettings config("config/config.ini", QSettings::IniFormat);
-    config.beginGroup("Options");
-    QString hostname = config.value("hostname", "Server").toString();
-    server->broadcast(AOPacket("CT", {hostname, message, "1"}), current_area);
+    server->broadcast(AOPacket("CT", {server->getServerName(), message, "1"}), current_area);
 }
 
 void AOClient::sendServerBroadcast(QString message)
 {
-    QSettings config("config/config.ini", QSettings::IniFormat);
-    config.beginGroup("Options");
-    QString hostname = config.value("hostname", "Server").toString();
-    server->broadcast(AOPacket("CT", {hostname, message, "1"}));
+    server->broadcast(AOPacket("CT", {server->getServerName(), message, "1"}));
 }
 
 bool AOClient::checkAuth(unsigned long long acl_mask)

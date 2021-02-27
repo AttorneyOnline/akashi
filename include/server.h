@@ -49,6 +49,7 @@ class Server : public QObject {
     void updateCharsTaken(AreaData* area);
     void broadcast(AOPacket packet, int area_index);
     void broadcast(AOPacket packet);
+    QString getServerName();
 
     QVector<AOClient*> clients;
 
@@ -59,6 +60,7 @@ class Server : public QObject {
     QStringList music_list;
     QStringList backgrounds;
     DBManager* db_manager;
+    QString server_name;
 
   signals:
 
