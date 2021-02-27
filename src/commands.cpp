@@ -471,6 +471,8 @@ QStringList AOClient::buildAreaList(int area_idx)
             QString char_entry = "[" + QString::number(client->id) + "] " + client->current_char;
             if (client->current_char == "")
                 char_entry += "Spectator";
+            if (area->owners.contains(client->id))
+                char_entry.insert(0, "[CM] ");
             if (authenticated)
                 char_entry += " (" + client->getIpid() + "): " + client->ooc_name;
             entries.append(char_entry);
