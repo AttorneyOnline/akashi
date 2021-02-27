@@ -29,12 +29,12 @@ AreaData::AreaData(QStringList characters, QString p_name, int p_index)
     background = areas_ini.value("background", "gs4").toString();
     areas_ini.endGroup();
     player_count = 0;
-    current_cm = "FREE";
-    locked = false;
+    locked = FREE;
     status = "FREE";
     def_hp = 10;
     pro_hp = 10;
     bg_locked = false;
+    document = "No document.";
     QSettings config_ini("config/config.ini", QSettings::IniFormat);
     config_ini.beginGroup("Options");
     int log_size = config_ini.value("logbuffer", 50).toInt();

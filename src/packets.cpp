@@ -142,6 +142,7 @@ void AOClient::pktSelectChar(AreaData* area, int argc, QStringList argv, AOPacke
 
     server->updateCharsTaken(area);
     sendPacket("PV", {"271828", "CID", argv[1]});
+    fullArup();
 }
 
 void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket packet)

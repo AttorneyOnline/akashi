@@ -92,7 +92,18 @@ void Server::start()
 void Server::clientConnected()
 {
     QTcpSocket* socket = server->nextPendingConnection();
-    AOClient* client = new AOClient(this, socket, this);
+    int user_id;
+    QList<int> user_ids;
+    for (AOClient* client : clients) {
+        user_ids.append(client->id);
+    }
+    for (user_id = 0; user_id <= player_count; user_id++) {
+        if (user_ids.contains(user_id))
+            continue;
+        else
+            break;
+    }
+    AOClient* client = new AOClient(this, socket, this, user_id);
     if (db_manager->isIPBanned(socket->peerAddress())) {
         AOPacket ban_reason("BD", {db_manager->getBanReason(socket->peerAddress())});
         socket->write(ban_reason.toUtf8());
@@ -151,6 +162,15 @@ AOClient* Server::getClient(QString ipid)
 {
     for (AOClient* client : clients) {
         if (client->getIpid() == ipid)
+            return client;
+    }
+    return nullptr;
+}
+
+AOClient* Server::getClientByID(int id)
+{
+    for (AOClient* client : clients) {
+        if (client->id == id)
             return client;
     }
     return nullptr;

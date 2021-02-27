@@ -394,6 +394,71 @@ void AOClient::cmdFlip(int argc, QStringList argv)
     sendServerMessage(sender_name + " flipped a coin and got " + face + ".");
 }
 
+void AOClient::cmdDoc(int argc, QStringList argv)
+{
+    QString sender_name = ooc_name;
+    AreaData* area = server->areas[current_area];
+    if (argc == 0) {
+        sendServerMessage("Document: " + area->document);
+    }
+    else {
+        area->document = argv.join(" ");
+        sendServerMessage(sender_name + " changed the document."); // broadcast this!
+    }
+}
+
+void AOClient::cmdClearDoc(int argc, QStringList argv)
+{
+    QString sender_name = ooc_name;
+    AreaData* area = server->areas[current_area];
+    area->document = "No document.";
+    sendServerMessage(sender_name + " cleared the document."); // broadcast this!
+}
+
+void AOClient::cmdCM(int argc, QStringList argv)
+{
+    QString sender_name = ooc_name;
+    AreaData* area = server->areas[current_area];
+    if (area->owners.isEmpty()) {
+        area->owners.append(id);
+        sendServerMessage(sender_name + " is now CM in this area."); // broadcast this!
+        arup(ARUPType::CM, true);
+    }
+    else if (!area->owners.contains(id)) {
+        sendServerMessage("You cannot become a CM in this area.");
+    }
+    else if (argc == 1) {
+        bool ok;
+        AOClient* owner_candidate = server->getClientByID(argv[0].toInt(&ok));
+        if (!ok) {
+            sendServerMessage("That doesn't look like a valid ID.");
+            return;
+        }
+        if (owner_candidate == nullptr) {
+            sendServerMessage("Unable to find client with ID " + argv[0] + ".");
+            return;
+        }
+        area->owners.append(owner_candidate->id);
+        sendServerMessage(owner_candidate->ooc_name + " is now CM in this area."); // broadcast this!
+        arup(ARUPType::CM, true);
+    }
+    else {
+        sendServerMessage("You are already a CM in this area.");
+    }
+}
+void AOClient::cmdUnCM(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    int removed = area->owners.removeAll(id);
+    if (removed == 0)
+        sendServerMessage("You are not a CM in this area.");
+    else {
+        sendServerMessage("You are no longer CM in this area.");
+        arup(ARUPType::CM, true);
+    }
+}
+
+
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;
@@ -403,9 +468,9 @@ QStringList AOClient::buildAreaList(int area_idx)
     entries.append("[" + QString::number(area->player_count) + " users][" + area->status + "]");
     for (AOClient* client : server->clients) {
         if (client->current_area == area_idx && client->joined) {
-            QString char_entry = client->current_char;
-            if (char_entry == "")
-                char_entry = "Spectator";
+            QString char_entry = "[" + QString::number(client->id) + "] " + client->current_char;
+            if (client->current_char == "")
+                char_entry += "Spectator";
             if (authenticated)
                 char_entry += " (" + client->getIpid() + "): " + client->ooc_name;
             entries.append(char_entry);

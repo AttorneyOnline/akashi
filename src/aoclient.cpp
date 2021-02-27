@@ -17,11 +17,12 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/aoclient.h"
 
-AOClient::AOClient(Server* p_server, QTcpSocket* p_socket, QObject* parent)
+AOClient::AOClient(Server* p_server, QTcpSocket* p_socket, QObject* parent, int user_id)
     : QObject(parent)
 {
     socket = p_socket;
     server = p_server;
+    id = user_id;
     joined = false;
     password = "";
     current_area = 0;
@@ -155,8 +156,17 @@ void AOClient::arup(ARUPType type, bool broadcast)
             arup_data.append(area->status);
         }
         else if (type == ARUPType::CM) {
-            arup_data.append(area->current_cm);
-        }
+            if (area->owners.isEmpty())
+                arup_data.append("FREE");
+            else {
+                QStringList area_owners;
+                for (int owner_id : area->owners) {
+                    AOClient* owner = server->getClientByID(owner_id);
+                    area_owners.append("[" + QString::number(owner->id) + "] " + owner->current_char);
+                    }
+                arup_data.append(area_owners.join(", "));
+                }
+            }
         else if (type == ARUPType::LOCKED) {
             arup_data.append(area->locked ? "LOCKED" : "FREE");
         }

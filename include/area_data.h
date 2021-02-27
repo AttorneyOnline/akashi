@@ -42,13 +42,19 @@ class AreaData {
     QList<Evidence> evidence;
     int player_count;
     QString status;
-    QString current_cm;
-    bool locked;
+    QList<int> owners;
+    enum LockStatus {
+      FREE,
+      LOCKED,
+      SPECTATABLE
+    };
+    LockStatus locked;
     QString background;
     bool showname_allowed;
     bool locking_allowed;
     bool iniswap_allowed;
     bool bg_locked;
+    QString document;
     int def_hp;
     int pro_hp;
     Logger* logger;

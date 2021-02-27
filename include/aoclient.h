@@ -38,13 +38,15 @@ class Server;
 class AOClient : public QObject {
     Q_OBJECT
   public:
-    AOClient(Server* p_server, QTcpSocket* p_socket, QObject* parent = nullptr);
+    AOClient(Server* p_server, QTcpSocket* p_socket, QObject* parent = nullptr, int user_id = 0);
     ~AOClient();
 
     QString getHwid();
     QString getIpid();
     Server* getServer();
     void setHwid(QString p_hwid);
+
+    int id;
 
     QHostAddress remote_ip;
     QString password;
@@ -152,28 +154,37 @@ class AOClient : public QObject {
         {"EE", {ACLFlags.value("NONE"), 4, &AOClient::pktEditEvidence}}
     };
 
-    // Commands
+    //// Commands
     void cmdDefault(int argc, QStringList argv);
+    // Authentication
     void cmdLogin(int argc, QStringList argv);
-    void cmdGetAreas(int argc, QStringList argv);
-    void cmdGetArea(int argc, QStringList argv);
-    void cmdBan(int argc, QStringList argv);
-    void cmdKick(int argc, QStringList argv);
     void cmdChangeAuth(int argc, QStringList argv);
     void cmdSetRootPass(int argc, QStringList argv);
-    void cmdSetBackground(int argc, QStringList argv);
-    void cmdBgLock(int argc, QStringList argv);
-    void cmdBgUnlock(int argc, QStringList argv);
     void cmdAddUser(int argc, QStringList argv);
     void cmdListPerms(int argc, QStringList argv);
     void cmdAddPerms(int argc, QStringList argv);
     void cmdRemovePerms(int argc, QStringList argv);
     void cmdListUsers(int argc, QStringList argv);
     void cmdLogout(int argc, QStringList argv);
-    void cmdPos(int argc, QStringList argv);
-    void cmdG(int argc, QStringList argv);
+    // Areas
+    void cmdCM(int argc, QStringList argv);
+    void cmdUnCM(int argc, QStringList argv);
+    void cmdGetAreas(int argc, QStringList argv);
+    void cmdGetArea(int argc, QStringList argv);
+    void cmdSetBackground(int argc, QStringList argv);
+    void cmdBgLock(int argc, QStringList argv);
+    void cmdBgUnlock(int argc, QStringList argv);
+    // Moderation
+    void cmdBan(int argc, QStringList argv);
+    void cmdKick(int argc, QStringList argv);
+    // Casing/RP
     void cmdNeed(int argc, QStringList argv);
     void cmdFlip(int argc, QStringList argv);
+    void cmdDoc(int argc, QStringList argv);
+    void cmdClearDoc(int argc, QStringList argv);
+    // Messaging/Client
+    void cmdPos(int argc, QStringList argv);
+    void cmdG(int argc, QStringList argv);
 
     // Command helper functions
     QStringList buildAreaList(int area_idx);
@@ -209,7 +220,11 @@ class AOClient : public QObject {
         {"pos", {ACLFlags.value("NONE"), 1, &AOClient::cmdPos}},
         {"g", {ACLFlags.value("NONE"), 1, &AOClient::cmdG}},
         {"need", {ACLFlags.value("NONE"), 1, &AOClient::cmdNeed}},
-        {"flip", {ACLFlags.value("NONE"), 0, &AOClient::cmdFlip}}
+        {"flip", {ACLFlags.value("NONE"), 0, &AOClient::cmdFlip}},
+        {"doc", {ACLFlags.value("NONE"), 0, &AOClient::cmdDoc}},
+        {"cleardoc", {ACLFlags.value("NONE"), 0, &AOClient::cmdClearDoc}},
+        {"cm", {ACLFlags.value("NONE"), 0, &AOClient::cmdCM}},
+        {"uncm", {ACLFlags.value("NONE"), 0, &AOClient::cmdUnCM}}
     };
 
     QString partial_packet;
