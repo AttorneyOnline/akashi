@@ -363,10 +363,6 @@ void AOClient::cmdLogout(int argc, QStringList argv)
 
 void AOClient::cmdPos(int argc, QStringList argv)
 {
-    if (argv[0] != "def" && argv[0] != "hld" && argv[0] != "pro" && argv[0] != "hlp" && argv[0] != "wit" && argv[0] != "jud" && argv[0] != "jur" && argv[0] != "sea") {
-        sendServerMessage("Invalid position!");
-        return;
-    }
     pos = argv[0];
     sendServerMessage("Position changed to " + pos + ".");
 }
@@ -421,6 +417,7 @@ void AOClient::cmdCM(int argc, QStringList argv)
     AreaData* area = server->areas[current_area];
     if (area->owners.isEmpty()) {
         area->owners.append(id);
+        area->invited.append(id);
         sendServerMessage(sender_name + " is now CM in this area."); // broadcast this!
         arup(ARUPType::CM, true);
     }
@@ -450,12 +447,57 @@ void AOClient::cmdUnCM(int argc, QStringList argv)
 {
     AreaData* area = server->areas[current_area];
     int removed = area->owners.removeAll(id);
+    area->invited.removeAll(id);
     if (removed == 0)
         sendServerMessage("You are not a CM in this area.");
     else {
         sendServerMessage("You are no longer CM in this area.");
         arup(ARUPType::CM, true);
     }
+}
+void AOClient::cmdInvite(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    bool ok;
+    int invited_id = argv[0].toInt(&ok);
+    if (!area->owners.contains(id)) {
+        sendServerMessage("You are not a CM in this area.");
+        return;
+    }
+    else if (!ok) {
+        sendServerMessage("That does not look like a valid ID.");
+        return;
+    }
+    else if (area->invited.contains(invited_id)) {
+        sendServerMessage("That ID is already on the invite list.");
+        return;
+    }
+    area->invited.append(invited_id);
+    sendServerMessage("You invited ID " + argv[0]);
+}
+void AOClient::cmdUnInvite(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    bool ok;
+    int uninvited_id = argv[0].toInt(&ok);
+    if (!area->owners.contains(id)) {
+        sendServerMessage("You are not a CM in this area.");
+        return;
+    }
+    else if (!ok) {
+        sendServerMessage("That does not look like a valid ID.");
+        return;
+    }
+    else if (area->owners.contains(uninvited_id)) {
+        sendServerMessage("You cannot uninvite a CM!");
+        return;
+    }
+    else if (!area->invited.contains(uninvited_id)) {
+        sendServerMessage("That ID is not on the invite list.");
+        return;
+    }
+    area->invited.removeAll(uninvited_id);
+    sendServerMessage("You uninvited ID " + argv[0]);
 }
 
 

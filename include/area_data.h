@@ -43,6 +43,7 @@ class AreaData {
     int player_count;
     QString status;
     QList<int> owners;
+    QList<int> invited;
     enum LockStatus {
       FREE,
       LOCKED,

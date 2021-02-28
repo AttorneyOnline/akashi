@@ -68,6 +68,11 @@ void AOClient::clientDisconnected()
             false;
         server->updateCharsTaken(server->areas[current_area]);
     }
+    for (AreaData* area : server->areas) {
+        area->owners.removeAll(id);
+        area->invited.removeAll(id);
+    }
+    arup(ARUPType::CM, true);
 }
 
 void AOClient::handlePacket(AOPacket packet)
