@@ -564,6 +564,17 @@ QStringList AOClient::buildAreaList(int area_idx)
     QString area_name = server->area_names[area_idx];
     AreaData* area = server->areas[area_idx];
     entries.append("=== " + area_name + " ===");
+    switch (area->locked) {
+        case AreaData::LockStatus::LOCKED:
+            entries.append("[LOCKED]");
+            break;
+        case AreaData::LockStatus::SPECTATABLE:
+            entries.append("[SPECTATABLE]");
+            break;
+        case AreaData::LockStatus::FREE:
+        default:
+            break;
+    }
     entries.append("[" + QString::number(area->player_count) + " users][" + area->status + "]");
     for (AOClient* client : server->clients) {
         if (client->current_area == area_idx && client->joined) {
