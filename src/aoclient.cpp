@@ -103,10 +103,11 @@ void AOClient::changeArea(int new_area)
         sendServerMessage("You are already in area " + server->area_names[current_area]);
         return;
     }
-    if (server->areas[new_area]->locked) {
+    if (server->areas[new_area]->locked == AreaData::LockStatus::LOCKED) {
         sendServerMessage("Area " + server->area_names[new_area] + " is locked.");
         return;
     }
+
     if (current_char != "") {
         server->areas[current_area]->characters_taken[current_char] =
             false;
@@ -129,7 +130,9 @@ void AOClient::changeArea(int new_area)
         server->areas[current_area]->characters_taken[current_char] = true;
         server->updateCharsTaken(server->areas[current_area]);
     }
-    sendServerMessage("You have been moved to area " + server->area_names[current_area]);
+    sendServerMessage("You moved to area " + server->area_names[current_area]);
+    if (server->areas[current_area]->locked == AreaData::LockStatus::SPECTATABLE)
+        sendServerMessage("Area " + server->area_names[current_area] + " is spectate-only; to chat IC you will need to be invited by the CM.");
 }
 
 void AOClient::handleCommand(QString command, int argc, QStringList argv)
@@ -175,13 +178,13 @@ void AOClient::arup(ARUPType type, bool broadcast)
         else if (type == ARUPType::LOCKED) {
             QString lock_status;
             switch (area->locked) {
-                case FREE:
+                case AreaData::LockStatus::FREE:
                     lock_status = "FREE";
                     break;
-                case LOCKED:
+                case AreaData::LockStatus::LOCKED:
                     lock_status = "LOCKED";
                     break;
-                case SPECTATABLE:
+                case AreaData::LockStatus::SPECTATABLE:
                     lock_status = "SPECTATABLE";
                     break;
                 default:

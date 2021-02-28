@@ -318,8 +318,8 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     if (current_char == "" || !joined)
         // Spectators cannot use IC
         return invalid;
-
-    if (current_area->locked == SPECTATABLE && !current_area->invited.contains(id))
+    AreaData* area = server->areas[current_area];
+    if (area->locked == AreaData::LockStatus::SPECTATABLE && !area->invited.contains(id))
         // Non-invited players cannot speak in spectatable areas
         return invalid;
 
@@ -410,7 +410,6 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
 
     // evidence
     int evi_idx = incoming_args[11].toInt();
-    AreaData* area = server->areas[current_area];
     if (evi_idx > area->evidence.length())
         return invalid;
     args.append(QString::number(evi_idx));
