@@ -169,6 +169,8 @@ class AOClient : public QObject {
     // Areas
     void cmdCM(int argc, QStringList argv);
     void cmdUnCM(int argc, QStringList argv);
+    void cmdInvite(int argc, QStringList argv);
+    void cmdUnInvite(int argc, QStringList argv);
     void cmdGetAreas(int argc, QStringList argv);
     void cmdGetArea(int argc, QStringList argv);
     void cmdSetBackground(int argc, QStringList argv);
@@ -224,7 +226,9 @@ class AOClient : public QObject {
         {"doc", {ACLFlags.value("NONE"), 0, &AOClient::cmdDoc}},
         {"cleardoc", {ACLFlags.value("NONE"), 0, &AOClient::cmdClearDoc}},
         {"cm", {ACLFlags.value("NONE"), 0, &AOClient::cmdCM}},
-        {"uncm", {ACLFlags.value("NONE"), 0, &AOClient::cmdUnCM}}
+        {"uncm", {ACLFlags.value("NONE"), 0, &AOClient::cmdUnCM}},
+        {"invite", {ACLFlags.value("NONE"), 0, &AOClient::cmdInvite}},
+        {"uninvite", {ACLFlags.value("NONE"), 0, &AOClient::cmdUnInvite}}
     };
 
     QString partial_packet;
