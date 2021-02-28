@@ -512,7 +512,7 @@ void AOClient::cmdLock(int argc, QStringList argv)
         sendServerMessage("This area is already locked.");
         return;
     }
-    sendServerMessage("This area is now locked.");
+    sendServerMessage("This area is now locked."); // broadcast me!
     area->locked = AreaData::LockStatus::LOCKED;
     for (AOClient* client : server->clients) {
         if (client->current_area == current_area && client->joined) {
@@ -532,7 +532,7 @@ void AOClient::cmdSpectatable(int argc, QStringList argv)
         sendServerMessage("This area is already in spectate mode.");
         return;
     }
-    sendServerMessage("This area is now spectatable.");
+    sendServerMessage("This area is now spectatable."); // broadcast me!
     area->locked = AreaData::LockStatus::SPECTATABLE;
     for (AOClient* client : server->clients) {
         if (client->current_area == current_area && client->joined) {
@@ -552,7 +552,7 @@ void AOClient::cmdUnLock(int argc, QStringList argv)
         sendServerMessage("This area is not locked.");
         return;
     }
-    sendServerMessage("This area is now unlocked.");
+    sendServerMessage("This area is now unlocked."); // broadcast me!
     area->locked = AreaData::LockStatus::FREE;
     arup(ARUPType::LOCKED, true);
 }

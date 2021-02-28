@@ -103,7 +103,7 @@ void AOClient::changeArea(int new_area)
         sendServerMessage("You are already in area " + server->area_names[current_area]);
         return;
     }
-    if (server->areas[new_area]->locked == AreaData::LockStatus::LOCKED) {
+    if (server->areas[new_area]->locked == AreaData::LockStatus::LOCKED && !server->areas[new_area]->invited.contains(id)) {
         sendServerMessage("Area " + server->area_names[new_area] + " is locked.");
         return;
     }
