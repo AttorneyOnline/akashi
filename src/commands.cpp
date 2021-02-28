@@ -454,6 +454,8 @@ void AOClient::cmdUnCM(int argc, QStringList argv)
         sendServerMessage("You are no longer CM in this area.");
         arup(ARUPType::CM, true);
     }
+    if (area->owners.isEmpty())
+        area->invited.clear();
 }
 void AOClient::cmdInvite(int argc, QStringList argv)
 {
@@ -498,6 +500,61 @@ void AOClient::cmdUnInvite(int argc, QStringList argv)
     }
     area->invited.removeAll(uninvited_id);
     sendServerMessage("You uninvited ID " + argv[0]);
+}
+void AOClient::cmdLock(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    if (!area->owners.contains(id)) {
+        sendServerMessage("You are not a CM in this area.");
+        return; 
+    }
+    else if (area->locked == LOCKED) {
+        sendServerMessage("This area is already locked.");
+        return;
+    }
+    sendServerMessage("This area is now locked.");
+    area->locked = LOCKED;
+    for (AOClient* client : server->clients) {
+        if (client->current_area == current_area && client->joined) {
+            area->invited.append(client->id);
+        }
+    }
+    arup(ARUPType::LOCKED, true);
+}
+void AOClient::cmdSpectatable(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    if (!area->owners.contains(id)) {
+        sendServerMessage("You are not a CM in this area.");
+        return; 
+    }
+    else if (area->locked == SPECTATABLE) {
+        sendServerMessage("This area is already in spectate mode.");
+        return;
+    }
+    sendServerMessage("This area is now spectatable.");
+    area->locked = SPECTATABLE;
+    for (AOClient* client : server->clients) {
+        if (client->current_area == current_area && client->joined) {
+            area->invited.append(client->id);
+        }
+    }
+    arup(ARUPType::LOCKED, true);
+}
+void AOClient::cmdUnLock(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    if (!area->owners.contains(id)) {
+        sendServerMessage("You are not a CM in this area.");
+        return; 
+    }
+    else if (area->locked == FREE) {
+        sendServerMessage("This area is not locked.");
+        return;
+    }
+    sendServerMessage("This area is now unlocked.");
+    area->locked = FREE;
+    arup(ARUPType::LOCKED, true);
 }
 
 

@@ -319,6 +319,10 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         // Spectators cannot use IC
         return invalid;
 
+    if (current_area->locked == SPECTATABLE && !current_area->invited.contains(id))
+        // Non-invited players cannot speak in spectatable areas
+        return invalid;
+
     QList<QVariant> incoming_args;
     for (QString arg : packet.contents) {
         incoming_args.append(QVariant(arg));

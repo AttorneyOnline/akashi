@@ -173,7 +173,21 @@ void AOClient::arup(ARUPType type, bool broadcast)
                 }
             }
         else if (type == ARUPType::LOCKED) {
-            arup_data.append(area->locked ? "LOCKED" : "FREE");
+            QString lock_status;
+            switch (area->locked) {
+                case FREE:
+                    lock_status = "FREE";
+                    break;
+                case LOCKED:
+                    lock_status = "LOCKED";
+                    break;
+                case SPECTATABLE:
+                    lock_status = "SPECTATABLE";
+                    break;
+                default:
+                    break;
+            }
+            arup_data.append(lock_status);
         }
         else return;
     }

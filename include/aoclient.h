@@ -171,6 +171,9 @@ class AOClient : public QObject {
     void cmdUnCM(int argc, QStringList argv);
     void cmdInvite(int argc, QStringList argv);
     void cmdUnInvite(int argc, QStringList argv);
+    void cmdLock(int argc, QStringList argv);
+    void cmdSpectatable(int argc, QStringList argv);
+    void cmdUnLock(int argc, QStringList argv);
     void cmdGetAreas(int argc, QStringList argv);
     void cmdGetArea(int argc, QStringList argv);
     void cmdSetBackground(int argc, QStringList argv);
@@ -227,8 +230,12 @@ class AOClient : public QObject {
         {"cleardoc", {ACLFlags.value("NONE"), 0, &AOClient::cmdClearDoc}},
         {"cm", {ACLFlags.value("NONE"), 0, &AOClient::cmdCM}},
         {"uncm", {ACLFlags.value("NONE"), 0, &AOClient::cmdUnCM}},
-        {"invite", {ACLFlags.value("NONE"), 0, &AOClient::cmdInvite}},
-        {"uninvite", {ACLFlags.value("NONE"), 0, &AOClient::cmdUnInvite}}
+        {"invite", {ACLFlags.value("NONE"), 1, &AOClient::cmdInvite}},
+        {"uninvite", {ACLFlags.value("NONE"), 1, &AOClient::cmdUnInvite}},
+        {"lock", {ACLFlags.value("NONE"), 0, &AOClient::cmdLock}},
+        {"spectatable", {ACLFlags.value("NONE"), 0, &AOClient::cmdSpectatable}},
+        {"unlock", {ACLFlags.value("NONE"), 0, &AOClient::cmdUnLock}},
+
     };
 
     QString partial_packet;
