@@ -248,7 +248,17 @@ void AOClient::setHwid(QString p_hwid)
 
 void AOClient::sendServerMessage(QString message)
 {
-    sendPacket("CT", {"Server", message, "1"});
+    sendPacket("CT", {server->getServerName(), message, "1"});
+}
+
+void AOClient::sendServerMessageArea(QString message)
+{
+    server->broadcast(AOPacket("CT", {server->getServerName(), message, "1"}), current_area);
+}
+
+void AOClient::sendServerBroadcast(QString message)
+{
+    server->broadcast(AOPacket("CT", {server->getServerName(), message, "1"}));
 }
 
 bool AOClient::checkAuth(unsigned long long acl_mask)

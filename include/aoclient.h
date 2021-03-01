@@ -90,6 +90,8 @@ class AOClient : public QObject {
     void arup(ARUPType type, bool broadcast);
     void fullArup();
     void sendServerMessage(QString message);
+    void sendServerMessageArea(QString message);
+    void sendServerBroadcast(QString message);
     bool checkAuth(unsigned long long acl_mask);
 
     // Packet headers

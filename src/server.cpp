@@ -158,6 +158,14 @@ void Server::broadcast(AOPacket packet)
     }
 }
 
+QString Server::getServerName()
+{
+    QSettings settings("config/config.ini", QSettings::IniFormat);
+    settings.beginGroup("Options");
+    QString server_name = settings.value("server_name", "Akashi").toString();
+    return server_name;
+}
+
 AOClient* Server::getClient(QString ipid)
 {
     for (AOClient* client : clients) {
