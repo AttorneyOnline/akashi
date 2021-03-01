@@ -141,7 +141,7 @@ void AOClient::pktSelectChar(AreaData* area, int argc, QStringList argv, AOPacke
     pos = "";
 
     server->updateCharsTaken(area);
-    sendPacket("PV", {"271828", "CID", argv[1]});
+    sendPacket("PV", {QString::number(id), "CID", argv[1]});
     fullArup();
 }
 
