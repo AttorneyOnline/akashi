@@ -474,7 +474,7 @@ void AOClient::diceThrower(int argc, QStringList argv, RollType type)
     switch(type)
     {
         case ROLL:
-        if (argv.isEmpty()){
+        if (argv.isEmpty()) {
             sendServerMessageArea(sender_name + " rolled " + dice_results + " out of 6");
         }
         else {
@@ -482,7 +482,7 @@ void AOClient::diceThrower(int argc, QStringList argv, RollType type)
         }
         break;
         case ROLLP:
-        if (argv.isEmpty()){
+        if (argv.isEmpty()) {
             sendServerMessage(sender_name + " rolled " + dice_results + " out of 6");
             sendServerMessageArea((sender_name + " rolled in secret."));
         }
