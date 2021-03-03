@@ -82,6 +82,12 @@ class AOClient : public QObject {
         LOCKED
     };
 
+    enum RollType {
+      roll,
+      rollp,
+      rolla
+    };
+
     void handlePacket(AOPacket packet);
     void handleCommand(QString command, int argc, QStringList argv);
     void changeArea(int new_area);
@@ -182,6 +188,7 @@ class AOClient : public QObject {
     // Command helper functions
     QStringList buildAreaList(int area_idx);
     int genRand(int min, int max);
+    void diceThrower(int argc, QStringList argv, RollType Type);
 
     // Command function global variables
     bool change_auth_started = false;

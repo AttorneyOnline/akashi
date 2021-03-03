@@ -155,6 +155,16 @@ QString Server::getServerName()
     return server_name;
 }
 
+quint32 Server::getDiceValue(QString value_type)
+{
+    QSettings settings("config/config.ini", QSettings::IniFormat);
+
+    settings.beginGroup("Dice");
+    int value = settings.value(value_type, "100").toUInt();
+
+    return value;
+}
+
 AOClient* Server::getClient(QString ipid)
 {
     for (AOClient* client : clients) {

@@ -397,109 +397,14 @@ void AOClient::cmdFlip(int argc, QStringList argv)
 
 void AOClient::cmdRoll(int argc, QStringList argv)
 {
-    int max_roll_amount = 20;
-    int max_roll_faces = 11037;
-    QString sender_name = ooc_name;
-
-    if (argc == 0)
-    {
-        QString dice_result = QString::number(AOClient::genRand(1, 6));
-        sendServerMessageArea(sender_name + " rolled " + dice_result + " out of 6");
-    }
-    else if (argc == 1)
-    {
-        int amount_faces = argv[0].toInt();
-        if (1 <= amount_faces and amount_faces <= max_roll_faces)
-        {
-            QString dice_result = QString::number(AOClient::genRand(1, amount_faces));
-            sendServerMessageArea(sender_name + " rolled " + dice_result + " out of " + argv[0]);
-        }
-        else
-        {
-            sendServerMessage("Invalid Range.");
-        }
-    }
-    else if (argc == 2)
-    {
-        int amount_faces = argv[0].toInt();
-        int amount_rolls = argv[1].toInt();
-        QString dice_results;
-        if (1 <= amount_faces and amount_faces <= max_roll_faces and 1 <= amount_rolls and amount_rolls <= max_roll_amount)
-        {
-            for (int i = 1; i <= amount_rolls ; i++)
-            {
-                QString dice_result = QString::number(AOClient::genRand(1, amount_faces));
-                if (i == amount_rolls)
-                {
-                    dice_results = dice_results.append(dice_result);
-                }
-                else
-                {
-                    dice_results = dice_results.append(dice_result + ",");
-                }
-            }
-        sendServerMessageArea(sender_name + " rolled (" + dice_results + ") out of " + argv[0]);
-        }
-        else
-        {
-            sendServerMessage("Invalid Range.");
-        }
-    }
+    RollType Type = roll;
+    diceThrower(argc, argv, Type);
 }
 
 void AOClient::cmdRollP(int argc, QStringList argv)
 {
-    int max_roll_amount = 20;
-    int max_roll_faces = 11037;
-    QString sender_name = ooc_name;
-
-    if (argc == 0)
-    {
-        QString dice_result = QString::number(AOClient::genRand(1, 6));
-        sendServerMessage(sender_name + " rolled " + dice_result + " out of 6");
-        sendServerMessageArea((sender_name + " rolled in secret."));
-    }
-    else if (argc == 1)
-    {
-        int amount_faces = argv[0].toInt();
-        if (1 <= amount_faces and amount_faces <= max_roll_faces)
-        {
-            QString dice_result = QString::number(AOClient::genRand(1, amount_faces));
-            sendServerMessage(sender_name + " rolled " + dice_result + " out of " + argv[0]);
-            sendServerMessageArea((sender_name + " rolled in secret."));;
-        }
-        else
-        {
-            sendServerMessage("Invalid Range.");
-        }
-    }
-    else if (argc == 2)
-    {
-        int amount_faces = argv[0].toInt();
-        int amount_rolls = argv[1].toInt();
-        QString dice_results;
-        if (1 <= amount_faces and amount_faces <= max_roll_faces and 1 <= amount_rolls and amount_rolls <= max_roll_amount)
-        {
-            for (int i = 1; i <= amount_rolls ; i++)
-            {
-                QString dice_result = QString::number(AOClient::genRand(1, amount_faces));
-                if (i == amount_rolls)
-                {
-                    dice_results = dice_results.append(dice_result);
-                }
-                else
-                {
-                    dice_results = dice_results.append(dice_result + ",");
-                }
-            }
-            sendServerMessage(sender_name + " rolled " + dice_results + " out of " + argv[0]);
-            sendServerMessageArea((sender_name + " rolled in secret."));;
-        }
-        else
-        {
-            sendServerMessage("Invalid Range.");
-        }
-    }
+    RollType Type = rollp;
+    diceThrower(argc, argv, Type);
 }
 
 QStringList AOClient::buildAreaList(int area_idx)
@@ -533,4 +438,71 @@ int AOClient::genRand(int min, int max)
     quint32 random_number = QRandomGenerator::system()->bounded(min, max + 1);
     return random_number;
 #endif
+}
+
+void AOClient::diceThrower(int argc, QStringList argv, RollType Type)
+{
+    QString sender_name = ooc_name;
+    int max_roll_faces = server->getDiceValue("max_value");
+    int max_roll_amount = server->getDiceValue("max_dices");
+    int bounded_faces;
+    int bounded_amount;
+    QString dice_results;
+
+    if (argc == 0)
+    {
+        dice_results = QString::number(genRand(1, 6)); // Self-explanatory
+    }
+    else if (argc == 1)
+    {
+        bounded_faces = qBound(1, argv[0].toInt(), max_roll_faces); // faces, max faces
+        dice_results = QString::number(genRand(1, bounded_faces));
+    }
+    else if (argc == 2)
+    {
+        bounded_faces = qBound(1, argv[0].toInt(), max_roll_faces); // 1, faces, max faces
+        bounded_amount = qBound(1, argv[1].toInt(), max_roll_amount); // 1, amount, max amount
+
+        for (int i = 1; i <= bounded_amount ; i++) // Loop as multiple dices are thrown
+        {
+            QString dice_result = QString::number(genRand(1, bounded_faces));
+            if (i == bounded_amount)
+            {
+                dice_results = dice_results.append(dice_result);
+            }
+            else
+            {
+                dice_results = dice_results.append(dice_result + ",");
+            }
+        }
+    }
+    // Switch to change message behaviour, isEmpty check or the entire server crashes due to an out of range issue in the QStringList
+    switch(Type)
+    {
+        case roll:
+        if (argv.isEmpty())
+        {
+            sendServerMessageArea(sender_name + " rolled " + dice_results + " out of 6");
+        }
+        else
+        {
+            sendServerMessageArea(sender_name + " rolled " + dice_results + " out of " + QString::number(bounded_faces));
+        }
+        break;
+        case rollp:
+        if (argv.isEmpty())
+        {
+            sendServerMessage(sender_name + " rolled " + dice_results + " out of 6");
+            sendServerMessageArea((sender_name + " rolled in secret."));
+        }
+        else
+        {
+            sendServerMessageArea(sender_name + " rolled " + dice_results + " out of " + QString::number(bounded_faces));
+            sendServerMessageArea((sender_name + " rolled in secret."));
+        }
+        break;
+        case rolla:
+        //Not implemented yet
+        default : break;
+    }
 }
