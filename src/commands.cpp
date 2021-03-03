@@ -188,7 +188,7 @@ void AOClient::cmdSetBackground(int argc, QStringList argv)
         if (server->backgrounds.contains(argv[0])) {
             area->background = argv[0];
             server->broadcast(AOPacket("BN", {argv[0]}), current_area);
-            server->broadcast(AOPacket("CT", {"Server", current_char + " changed the background to " + argv[0], "1"}), current_area);
+            sendServerMessageArea(current_char + " changed the background to " + argv[0]);
         }
         else {
             sendServerMessage("Invalid background name.");
@@ -385,7 +385,7 @@ void AOClient::cmdNeed(int argc, QStringList argv)
 void AOClient::cmdFlip(int argc, QStringList argv)
 {
     QString sender_name = ooc_name;
-    QStringList faces = {"head","tails"};
+    QStringList faces = {"heads","tails"};
     QString face = faces[AOClient::genRand(0,1)];
     sendServerMessage(sender_name + " flipped a coin and got " + face + ".");
 }
