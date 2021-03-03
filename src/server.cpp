@@ -161,7 +161,7 @@ int Server::getDiceValue(QString value_type)
 
     settings.beginGroup("Dice");
     int value = settings.value(value_type, "100").toUInt();
-
+    settings.endGroup();
     return value;
 }
 
