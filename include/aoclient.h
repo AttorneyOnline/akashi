@@ -82,12 +82,20 @@ class AOClient : public QObject {
         LOCKED
     };
 
+    enum RollType {
+      ROLL,
+      ROLLP,
+      ROLLA
+    };
+
     void handlePacket(AOPacket packet);
     void handleCommand(QString command, int argc, QStringList argv);
     void changeArea(int new_area);
     void arup(ARUPType type, bool broadcast);
     void fullArup();
     void sendServerMessage(QString message);
+    void sendServerMessageArea(QString message);
+    void sendServerBroadcast(QString message);
     bool checkAuth(unsigned long long acl_mask);
 
     // Packet headers
@@ -174,10 +182,13 @@ class AOClient : public QObject {
     void cmdG(int argc, QStringList argv);
     void cmdNeed(int argc, QStringList argv);
     void cmdFlip(int argc, QStringList argv);
+    void cmdRoll(int argc, QStringList argv);
+    void cmdRollP(int argc, QStringList argv);
 
     // Command helper functions
     QStringList buildAreaList(int area_idx);
     int genRand(int min, int max);
+    void diceThrower(int argc, QStringList argv, RollType Type);
 
     // Command function global variables
     bool change_auth_started = false;
@@ -209,7 +220,10 @@ class AOClient : public QObject {
         {"pos", {ACLFlags.value("NONE"), 1, &AOClient::cmdPos}},
         {"g", {ACLFlags.value("NONE"), 1, &AOClient::cmdG}},
         {"need", {ACLFlags.value("NONE"), 1, &AOClient::cmdNeed}},
-        {"flip", {ACLFlags.value("NONE"), 0, &AOClient::cmdFlip}}
+        {"flip", {ACLFlags.value("NONE"), 0, &AOClient::cmdFlip}},
+        {"roll", {ACLFlags.value("NONE"), 0, &AOClient::cmdRoll}},
+        {"rollp", {ACLFlags.value("NONE"), 0, &AOClient::cmdRollP}}
+
     };
 
     QString partial_packet;
