@@ -63,6 +63,7 @@ class AOClient : public QObject {
         {"BAN", 1ULL << 1},
         {"BGLOCK", 1ULL << 2},
         {"MODIFY_USERS", 1ULL << 3},
+        {"CM", 1ULL << 4},
         {"SUPER", ~0ULL}
     };
 
@@ -231,12 +232,12 @@ class AOClient : public QObject {
         {"doc", {ACLFlags.value("NONE"), 0, &AOClient::cmdDoc}},
         {"cleardoc", {ACLFlags.value("NONE"), 0, &AOClient::cmdClearDoc}},
         {"cm", {ACLFlags.value("NONE"), 0, &AOClient::cmdCM}},
-        {"uncm", {ACLFlags.value("NONE"), 0, &AOClient::cmdUnCM}},
-        {"invite", {ACLFlags.value("NONE"), 1, &AOClient::cmdInvite}},
-        {"uninvite", {ACLFlags.value("NONE"), 1, &AOClient::cmdUnInvite}},
-        {"lock", {ACLFlags.value("NONE"), 0, &AOClient::cmdLock}},
-        {"spectatable", {ACLFlags.value("NONE"), 0, &AOClient::cmdSpectatable}},
-        {"unlock", {ACLFlags.value("NONE"), 0, &AOClient::cmdUnLock}},
+        {"uncm", {ACLFlags.value("CM"), 0, &AOClient::cmdUnCM}},
+        {"invite", {ACLFlags.value("CM"), 1, &AOClient::cmdInvite}},
+        {"uninvite", {ACLFlags.value("CM"), 1, &AOClient::cmdUnInvite}},
+        {"lock", {ACLFlags.value("CM"), 0, &AOClient::cmdLock}},
+        {"spectatable", {ACLFlags.value("CM"), 0, &AOClient::cmdSpectatable}},
+        {"unlock", {ACLFlags.value("CM"), 0, &AOClient::cmdUnLock}},
 
     };
 

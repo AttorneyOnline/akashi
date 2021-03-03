@@ -448,12 +448,8 @@ void AOClient::cmdUnCM(int argc, QStringList argv)
     AreaData* area = server->areas[current_area];
     int removed = area->owners.removeAll(id);
     area->invited.removeAll(id);
-    if (removed == 0)
-        sendServerMessage("You are not a CM in this area.");
-    else {
-        sendServerMessage("You are no longer CM in this area.");
-        arup(ARUPType::CM, true);
-    }
+    sendServerMessage("You are no longer CM in this area.");
+    arup(ARUPType::CM, true);
     if (area->owners.isEmpty())
         area->invited.clear();
 }
@@ -462,11 +458,7 @@ void AOClient::cmdInvite(int argc, QStringList argv)
     AreaData* area = server->areas[current_area];
     bool ok;
     int invited_id = argv[0].toInt(&ok);
-    if (!area->owners.contains(id)) {
-        sendServerMessage("You are not a CM in this area.");
-        return;
-    }
-    else if (!ok) {
+    if (!ok) {
         sendServerMessage("That does not look like a valid ID.");
         return;
     }
@@ -482,11 +474,7 @@ void AOClient::cmdUnInvite(int argc, QStringList argv)
     AreaData* area = server->areas[current_area];
     bool ok;
     int uninvited_id = argv[0].toInt(&ok);
-    if (!area->owners.contains(id)) {
-        sendServerMessage("You are not a CM in this area.");
-        return;
-    }
-    else if (!ok) {
+    if (!ok) {
         sendServerMessage("That does not look like a valid ID.");
         return;
     }
@@ -504,11 +492,7 @@ void AOClient::cmdUnInvite(int argc, QStringList argv)
 void AOClient::cmdLock(int argc, QStringList argv)
 {
     AreaData* area = server->areas[current_area];
-    if (!area->owners.contains(id)) {
-        sendServerMessage("You are not a CM in this area.");
-        return; 
-    }
-    else if (area->locked == AreaData::LockStatus::LOCKED) {
+    if (area->locked == AreaData::LockStatus::LOCKED) {
         sendServerMessage("This area is already locked.");
         return;
     }
@@ -524,11 +508,7 @@ void AOClient::cmdLock(int argc, QStringList argv)
 void AOClient::cmdSpectatable(int argc, QStringList argv)
 {
     AreaData* area = server->areas[current_area];
-    if (!area->owners.contains(id)) {
-        sendServerMessage("You are not a CM in this area.");
-        return; 
-    }
-    else if (area->locked == AreaData::LockStatus::SPECTATABLE) {
+    if (area->locked == AreaData::LockStatus::SPECTATABLE) {
         sendServerMessage("This area is already in spectate mode.");
         return;
     }
@@ -544,11 +524,7 @@ void AOClient::cmdSpectatable(int argc, QStringList argv)
 void AOClient::cmdUnLock(int argc, QStringList argv)
 {
     AreaData* area = server->areas[current_area];
-    if (!area->owners.contains(id)) {
-        sendServerMessage("You are not a CM in this area.");
-        return; 
-    }
-    else if (area->locked == AreaData::LockStatus::FREE) {
+    if (area->locked == AreaData::LockStatus::FREE) {
         sendServerMessage("This area is not locked.");
         return;
     }
