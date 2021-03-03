@@ -155,7 +155,7 @@ QString Server::getServerName()
     return server_name;
 }
 
-quint32 Server::getDiceValue(QString value_type)
+int Server::getDiceValue(QString value_type)
 {
     QSettings settings("config/config.ini", QSettings::IniFormat);
 
