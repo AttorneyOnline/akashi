@@ -51,8 +51,8 @@ class AreaData {
     };
     LockStatus locked;
     QString background;
+    bool is_protected;
     bool showname_allowed;
-    bool locking_allowed;
     bool iniswap_allowed;
     bool bg_locked;
     QString document;

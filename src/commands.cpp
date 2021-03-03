@@ -415,16 +415,20 @@ void AOClient::cmdCM(int argc, QStringList argv)
 {
     QString sender_name = ooc_name;
     AreaData* area = server->areas[current_area];
-    if (area->owners.isEmpty()) {
+    if (area->is_protected) {
+        sendServerMessage("This area is protected, you may not become CM.");
+        return;
+    }
+    else if (area->owners.isEmpty()) { // no one owns this area, and it's not protected
         area->owners.append(id);
         area->invited.append(id);
         sendServerMessageArea(sender_name + " is now CM in this area.");
         arup(ARUPType::CM, true);
     }
-    else if (!area->owners.contains(id)) {
+    else if (!area->owners.contains(id)) { // there is already a CM, and it isn't us
         sendServerMessage("You cannot become a CM in this area.");
     }
-    else if (argc == 1) {
+    else if (argc == 1) { // we are CM, and we want to make ID argv[0] also CM
         bool ok;
         AOClient* owner_candidate = server->getClientByID(argv[0].toInt(&ok));
         if (!ok) {
