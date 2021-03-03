@@ -82,10 +82,6 @@ void Server::start()
     for (int i = 0; i < area_names.length(); i++) {
         QString area_name = area_names[i];
         areas.insert(i, new AreaData(characters, area_name, i));
-        areas_ini.beginGroup(area_name);
-        // TODO: more area config
-        areas[i]->background = areas_ini.value("background", "gs4").toString();
-        areas_ini.endGroup();
     }
 }
 
