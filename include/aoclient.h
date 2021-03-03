@@ -83,9 +83,9 @@ class AOClient : public QObject {
     };
 
     enum RollType {
-      roll,
-      rollp,
-      rolla
+      ROLL,
+      ROLLP,
+      ROLLA
     };
 
     void handlePacket(AOPacket packet);
