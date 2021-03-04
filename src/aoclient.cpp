@@ -171,10 +171,10 @@ void AOClient::arup(ARUPType type, bool broadcast)
                 for (int owner_id : area->owners) {
                     AOClient* owner = server->getClientByID(owner_id);
                     area_owners.append("[" + QString::number(owner->id) + "] " + owner->current_char);
-                    }
-                arup_data.append(area_owners.join(", "));
                 }
+                arup_data.append(area_owners.join(", "));
             }
+        }
         else if (type == ARUPType::LOCKED) {
             QString lock_status;
             switch (area->locked) {
