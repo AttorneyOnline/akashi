@@ -264,16 +264,14 @@ void AOClient::sendServerBroadcast(QString message)
 bool AOClient::checkAuth(unsigned long long acl_mask)
 {
     if (acl_mask != ACLFlags.value("NONE")) {
-        if (!authenticated && acl_mask != ACLFlags.value("CM")) {
-            return false;
-        }
-
         if (acl_mask == ACLFlags.value("CM")) {
             AreaData* area = server->areas[current_area];
             if (area->owners.contains(id))
                 return true;
         }
-
+        else if (!authenticated) {
+            return false;
+        }
         QSettings settings("config/config.ini", QSettings::IniFormat);
         settings.beginGroup("Options");
         QString auth_type = settings.value("auth", "simple").toString();
