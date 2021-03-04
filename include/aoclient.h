@@ -85,6 +85,12 @@ class AOClient : public QObject {
         LOCKED
     };
 
+    enum RollType {
+      ROLL,
+      ROLLP,
+      ROLLA
+    };
+
     void handlePacket(AOPacket packet);
     void handleCommand(QString command, int argc, QStringList argv);
     void changeArea(int new_area);
@@ -188,6 +194,8 @@ class AOClient : public QObject {
     // Casing/RP
     void cmdNeed(int argc, QStringList argv);
     void cmdFlip(int argc, QStringList argv);
+    void cmdRoll(int argc, QStringList argv);
+    void cmdRollP(int argc, QStringList argv);
     void cmdDoc(int argc, QStringList argv);
     void cmdClearDoc(int argc, QStringList argv);
     // Messaging/Client
@@ -197,6 +205,7 @@ class AOClient : public QObject {
     // Command helper functions
     QStringList buildAreaList(int area_idx);
     int genRand(int min, int max);
+    void diceThrower(int argc, QStringList argv, RollType Type);
 
     // Command function global variables
     bool change_auth_started = false;
@@ -229,6 +238,8 @@ class AOClient : public QObject {
         {"g", {ACLFlags.value("NONE"), 1, &AOClient::cmdG}},
         {"need", {ACLFlags.value("NONE"), 1, &AOClient::cmdNeed}},
         {"flip", {ACLFlags.value("NONE"), 0, &AOClient::cmdFlip}},
+        {"roll", {ACLFlags.value("NONE"), 0, &AOClient::cmdRoll}},
+        {"rollp", {ACLFlags.value("NONE"), 0, &AOClient::cmdRollP}},
         {"doc", {ACLFlags.value("NONE"), 0, &AOClient::cmdDoc}},
         {"cleardoc", {ACLFlags.value("NONE"), 0, &AOClient::cmdClearDoc}},
         {"cm", {ACLFlags.value("NONE"), 0, &AOClient::cmdCM}},
@@ -238,7 +249,6 @@ class AOClient : public QObject {
         {"lock", {ACLFlags.value("CM"), 0, &AOClient::cmdLock}},
         {"spectatable", {ACLFlags.value("CM"), 0, &AOClient::cmdSpectatable}},
         {"unlock", {ACLFlags.value("CM"), 0, &AOClient::cmdUnLock}},
-
     };
 
     QString partial_packet;
