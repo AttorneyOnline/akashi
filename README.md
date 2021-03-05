@@ -10,6 +10,4 @@ Requires Qt >= 5.10, and Qt websockets
    make
 ```
 
-Copyright © scatterflower 2020
-
-If you want to support the development of akashi, feel free to give a one-time gift at [liberapay](https://liberapay.com/scatterflower/)
+Copyright © scatterflower 2021
