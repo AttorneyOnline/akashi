@@ -141,7 +141,8 @@ void AOClient::pktSelectChar(AreaData* area, int argc, QStringList argv, AOPacke
     pos = "";
 
     server->updateCharsTaken(area);
-    sendPacket("PV", {"271828", "CID", argv[1]});
+    sendPacket("PV", {QString::number(id), "CID", argv[1]});
+    fullArup();
 }
 
 void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket packet)
@@ -317,6 +318,10 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     if (current_char == "" || !joined)
         // Spectators cannot use IC
         return invalid;
+    AreaData* area = server->areas[current_area];
+    if (area->locked == AreaData::LockStatus::SPECTATABLE && !area->invited.contains(id))
+        // Non-invited players cannot speak in spectatable areas
+        return invalid;
 
     QList<QVariant> incoming_args;
     for (QString arg : packet.contents) {
@@ -405,7 +410,6 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
 
     // evidence
     int evi_idx = incoming_args[11].toInt();
-    AreaData* area = server->areas[current_area];
     if (evi_idx > area->evidence.length())
         return invalid;
     args.append(QString::number(evi_idx));

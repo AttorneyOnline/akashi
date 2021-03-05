@@ -17,11 +17,12 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/aoclient.h"
 
-AOClient::AOClient(Server* p_server, QTcpSocket* p_socket, QObject* parent)
+AOClient::AOClient(Server* p_server, QTcpSocket* p_socket, QObject* parent, int user_id)
     : QObject(parent)
 {
     socket = p_socket;
     server = p_server;
+    id = user_id;
     joined = false;
     password = "";
     current_area = 0;
@@ -67,6 +68,11 @@ void AOClient::clientDisconnected()
             false;
         server->updateCharsTaken(server->areas[current_area]);
     }
+    for (AreaData* area : server->areas) {
+        area->owners.removeAll(id);
+        area->invited.removeAll(id);
+    }
+    arup(ARUPType::CM, true);
 }
 
 void AOClient::handlePacket(AOPacket packet)
@@ -97,10 +103,11 @@ void AOClient::changeArea(int new_area)
         sendServerMessage("You are already in area " + server->area_names[current_area]);
         return;
     }
-    if (server->areas[new_area]->locked) {
+    if (server->areas[new_area]->locked == AreaData::LockStatus::LOCKED && !server->areas[new_area]->invited.contains(id)) {
         sendServerMessage("Area " + server->area_names[new_area] + " is locked.");
         return;
     }
+
     if (current_char != "") {
         server->areas[current_area]->characters_taken[current_char] =
             false;
@@ -123,7 +130,9 @@ void AOClient::changeArea(int new_area)
         server->areas[current_area]->characters_taken[current_char] = true;
         server->updateCharsTaken(server->areas[current_area]);
     }
-    sendServerMessage("You have been moved to area " + server->area_names[current_area]);
+    sendServerMessage("You moved to area " + server->area_names[current_area]);
+    if (server->areas[current_area]->locked == AreaData::LockStatus::SPECTATABLE)
+        sendServerMessage("Area " + server->area_names[current_area] + " is spectate-only; to chat IC you will need to be invited by the CM.");
 }
 
 void AOClient::handleCommand(QString command, int argc, QStringList argv)
@@ -155,10 +164,33 @@ void AOClient::arup(ARUPType type, bool broadcast)
             arup_data.append(area->status);
         }
         else if (type == ARUPType::CM) {
-            arup_data.append(area->current_cm);
+            if (area->owners.isEmpty())
+                arup_data.append("FREE");
+            else {
+                QStringList area_owners;
+                for (int owner_id : area->owners) {
+                    AOClient* owner = server->getClientByID(owner_id);
+                    area_owners.append("[" + QString::number(owner->id) + "] " + owner->current_char);
+                }
+                arup_data.append(area_owners.join(", "));
+            }
         }
         else if (type == ARUPType::LOCKED) {
-            arup_data.append(area->locked ? "LOCKED" : "FREE");
+            QString lock_status;
+            switch (area->locked) {
+                case AreaData::LockStatus::FREE:
+                    lock_status = "FREE";
+                    break;
+                case AreaData::LockStatus::LOCKED:
+                    lock_status = "LOCKED";
+                    break;
+                case AreaData::LockStatus::SPECTATABLE:
+                    lock_status = "SPECTATABLE";
+                    break;
+                default:
+                    break;
+            }
+            arup_data.append(lock_status);
         }
         else return;
     }
@@ -232,10 +264,14 @@ void AOClient::sendServerBroadcast(QString message)
 bool AOClient::checkAuth(unsigned long long acl_mask)
 {
     if (acl_mask != ACLFlags.value("NONE")) {
-        if (!authenticated) {
+        if (acl_mask == ACLFlags.value("CM")) {
+            AreaData* area = server->areas[current_area];
+            if (area->owners.contains(id))
+                return true;
+        }
+        else if (!authenticated) {
             return false;
         }
-
         QSettings settings("config/config.ini", QSettings::IniFormat);
         settings.beginGroup("Options");
         QString auth_type = settings.value("auth", "simple").toString();

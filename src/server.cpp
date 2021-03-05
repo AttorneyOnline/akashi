@@ -82,17 +82,24 @@ void Server::start()
     for (int i = 0; i < area_names.length(); i++) {
         QString area_name = area_names[i];
         areas.insert(i, new AreaData(characters, area_name, i));
-        areas_ini.beginGroup(area_name);
-        // TODO: more area config
-        areas[i]->background = areas_ini.value("background", "gs4").toString();
-        areas_ini.endGroup();
     }
 }
 
 void Server::clientConnected()
 {
     QTcpSocket* socket = server->nextPendingConnection();
-    AOClient* client = new AOClient(this, socket, this);
+    int user_id;
+    QList<int> user_ids;
+    for (AOClient* client : clients) {
+        user_ids.append(client->id);
+    }
+    for (user_id = 0; user_id <= player_count; user_id++) {
+        if (user_ids.contains(user_id))
+            continue;
+        else
+            break;
+    }
+    AOClient* client = new AOClient(this, socket, this, user_id);
     if (db_manager->isIPBanned(socket->peerAddress())) {
         AOPacket ban_reason("BD", {db_manager->getBanReason(socket->peerAddress())});
         socket->write(ban_reason.toUtf8());
@@ -169,6 +176,15 @@ AOClient* Server::getClient(QString ipid)
 {
     for (AOClient* client : clients) {
         if (client->getIpid() == ipid)
+            return client;
+    }
+    return nullptr;
+}
+
+AOClient* Server::getClientByID(int id)
+{
+    for (AOClient* client : clients) {
+        if (client->id == id)
             return client;
     }
     return nullptr;

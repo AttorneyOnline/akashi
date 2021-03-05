@@ -188,7 +188,7 @@ void AOClient::cmdSetBackground(int argc, QStringList argv)
         if (server->backgrounds.contains(argv[0])) {
             area->background = argv[0];
             server->broadcast(AOPacket("BN", {argv[0]}), current_area);
-            server->broadcast(AOPacket("CT", {"Server", current_char + " changed the background to " + argv[0], "1"}), current_area);
+            sendServerMessageArea(current_char + " changed the background to " + argv[0]);
         }
         else {
             sendServerMessage("Invalid background name.");
@@ -363,10 +363,6 @@ void AOClient::cmdLogout(int argc, QStringList argv)
 
 void AOClient::cmdPos(int argc, QStringList argv)
 {
-    if (argv[0] != "def" && argv[0] != "hld" && argv[0] != "pro" && argv[0] != "hlp" && argv[0] != "wit" && argv[0] != "jud" && argv[0] != "jur" && argv[0] != "sea") {
-        sendServerMessage("Invalid position!");
-        return;
-    }
     pos = argv[0];
     sendServerMessage("Position changed to " + pos + ".");
 }
@@ -390,7 +386,7 @@ void AOClient::cmdNeed(int argc, QStringList argv)
 void AOClient::cmdFlip(int argc, QStringList argv)
 {
     QString sender_name = ooc_name;
-    QStringList faces = {"head","tails"};
+    QStringList faces = {"heads","tails"};
     QString face = faces[AOClient::genRand(0,1)];
     sendServerMessage(sender_name + " flipped a coin and got " + face + ".");
 }
@@ -402,8 +398,160 @@ void AOClient::cmdRoll(int argc, QStringList argv)
 
 void AOClient::cmdRollP(int argc, QStringList argv)
 {
-
     diceThrower(argc, argv, RollType::ROLLP);
+}
+
+void AOClient::cmdDoc(int argc, QStringList argv)
+{
+    QString sender_name = ooc_name;
+    AreaData* area = server->areas[current_area];
+    if (argc == 0) {
+        sendServerMessage("Document: " + area->document);
+    }
+    else {
+        area->document = argv.join(" ");
+        sendServerMessageArea(sender_name + " changed the document.");
+    }
+}
+
+void AOClient::cmdClearDoc(int argc, QStringList argv)
+{
+    QString sender_name = ooc_name;
+    AreaData* area = server->areas[current_area];
+    area->document = "No document.";
+    sendServerMessageArea(sender_name + " cleared the document.");
+}
+
+void AOClient::cmdCM(int argc, QStringList argv)
+{
+    QString sender_name = ooc_name;
+    AreaData* area = server->areas[current_area];
+    if (area->is_protected) {
+        sendServerMessage("This area is protected, you may not become CM.");
+        return;
+    }
+    else if (area->owners.isEmpty()) { // no one owns this area, and it's not protected
+        area->owners.append(id);
+        area->invited.append(id);
+        sendServerMessageArea(sender_name + " is now CM in this area.");
+        arup(ARUPType::CM, true);
+    }
+    else if (!area->owners.contains(id)) { // there is already a CM, and it isn't us
+        sendServerMessage("You cannot become a CM in this area.");
+    }
+    else if (argc == 1) { // we are CM, and we want to make ID argv[0] also CM
+        bool ok;
+        AOClient* owner_candidate = server->getClientByID(argv[0].toInt(&ok));
+        if (!ok) {
+            sendServerMessage("That doesn't look like a valid ID.");
+            return;
+        }
+        if (owner_candidate == nullptr) {
+            sendServerMessage("Unable to find client with ID " + argv[0] + ".");
+            return;
+        }
+        area->owners.append(owner_candidate->id);
+        sendServerMessageArea(owner_candidate->ooc_name + " is now CM in this area.");
+        arup(ARUPType::CM, true);
+    }
+    else {
+        sendServerMessage("You are already a CM in this area.");
+    }
+}
+
+void AOClient::cmdUnCM(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    int removed = area->owners.removeAll(id);
+    area->invited.removeAll(id);
+    sendServerMessage("You are no longer CM in this area.");
+    arup(ARUPType::CM, true);
+    if (area->owners.isEmpty())
+        area->invited.clear();
+}
+
+void AOClient::cmdInvite(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    bool ok;
+    int invited_id = argv[0].toInt(&ok);
+    if (!ok) {
+        sendServerMessage("That does not look like a valid ID.");
+        return;
+    }
+    else if (area->invited.contains(invited_id)) {
+        sendServerMessage("That ID is already on the invite list.");
+        return;
+    }
+    area->invited.append(invited_id);
+    sendServerMessage("You invited ID " + argv[0]);
+}
+
+void AOClient::cmdUnInvite(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    bool ok;
+    int uninvited_id = argv[0].toInt(&ok);
+    if (!ok) {
+        sendServerMessage("That does not look like a valid ID.");
+        return;
+    }
+    else if (area->owners.contains(uninvited_id)) {
+        sendServerMessage("You cannot uninvite a CM!");
+        return;
+    }
+    else if (!area->invited.contains(uninvited_id)) {
+        sendServerMessage("That ID is not on the invite list.");
+        return;
+    }
+    area->invited.removeAll(uninvited_id);
+    sendServerMessage("You uninvited ID " + argv[0]);
+}
+
+void AOClient::cmdLock(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    if (area->locked == AreaData::LockStatus::LOCKED) {
+        sendServerMessage("This area is already locked.");
+        return;
+    }
+    sendServerMessageArea("This area is now locked.");
+    area->locked = AreaData::LockStatus::LOCKED;
+    for (AOClient* client : server->clients) {
+        if (client->current_area == current_area && client->joined) {
+            area->invited.append(client->id);
+        }
+    }
+    arup(ARUPType::LOCKED, true);
+}
+
+void AOClient::cmdSpectatable(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    if (area->locked == AreaData::LockStatus::SPECTATABLE) {
+        sendServerMessage("This area is already in spectate mode.");
+        return;
+    }
+    sendServerMessageArea("This area is now spectatable.");
+    area->locked = AreaData::LockStatus::SPECTATABLE;
+    for (AOClient* client : server->clients) {
+        if (client->current_area == current_area && client->joined) {
+            area->invited.append(client->id);
+        }
+    }
+    arup(ARUPType::LOCKED, true);
+}
+
+void AOClient::cmdUnLock(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    if (area->locked == AreaData::LockStatus::FREE) {
+        sendServerMessage("This area is not locked.");
+        return;
+    }
+    sendServerMessageArea("This area is now unlocked.");
+    area->locked = AreaData::LockStatus::FREE;
+    arup(ARUPType::LOCKED, true);
 }
 
 QStringList AOClient::buildAreaList(int area_idx)
@@ -412,12 +560,25 @@ QStringList AOClient::buildAreaList(int area_idx)
     QString area_name = server->area_names[area_idx];
     AreaData* area = server->areas[area_idx];
     entries.append("=== " + area_name + " ===");
+    switch (area->locked) {
+        case AreaData::LockStatus::LOCKED:
+            entries.append("[LOCKED]");
+            break;
+        case AreaData::LockStatus::SPECTATABLE:
+            entries.append("[SPECTATABLE]");
+            break;
+        case AreaData::LockStatus::FREE:
+        default:
+            break;
+    }
     entries.append("[" + QString::number(area->player_count) + " users][" + area->status + "]");
     for (AOClient* client : server->clients) {
         if (client->current_area == area_idx && client->joined) {
-            QString char_entry = client->current_char;
-            if (char_entry == "")
-                char_entry = "Spectator";
+            QString char_entry = "[" + QString::number(client->id) + "] " + client->current_char;
+            if (client->current_char == "")
+                char_entry += "Spectator";
+            if (area->owners.contains(client->id))
+                char_entry.insert(0, "[CM] ");
             if (authenticated)
                 char_entry += " (" + client->getIpid() + "): " + client->ooc_name;
             entries.append(char_entry);

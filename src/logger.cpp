@@ -51,7 +51,7 @@ void Logger::logCmd(AOClient *client, AOPacket *packet, QString cmd, QStringList
     else if (cmd == "rootpass") {
         addEntry(buildEntry(client, "USERS", "Root password created"));
     }
-    else if (cmd == "adduser") {
+    else if (cmd == "adduser" && !args.isEmpty()) {
         addEntry(buildEntry(client, "USERS", "Added user " + args[0]));
     }
     else
