@@ -252,7 +252,7 @@ class AOClient : public QObject {
         {"lock", {ACLFlags.value("CM"), 0, &AOClient::cmdLock}},
         {"spectatable", {ACLFlags.value("CM"), 0, &AOClient::cmdSpectatable}},
         {"unlock", {ACLFlags.value("CM"), 0, &AOClient::cmdUnLock}},
-        {"timer", {ACLFlags.value("NONE"), 0, &AOClient::cmdTimer}},
+        {"timer", {ACLFlags.value("CM"), 0, &AOClient::cmdTimer}},
     };
 
     QString partial_packet;
