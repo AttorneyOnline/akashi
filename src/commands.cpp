@@ -86,7 +86,7 @@ void AOClient::cmdGetArea(int argc, QStringList argv)
 
 void AOClient::cmdBan(int argc, QStringList argv)
 {
-    QString target_ipid = argv[0];
+    QString target_ipid = argv[0]; //targeted by IPID so that bans can be entered for offline users
     QHostAddress ip;
     QString hdid;
     unsigned long time = QDateTime::currentDateTime().toTime_t();
@@ -120,7 +120,7 @@ void AOClient::cmdBan(int argc, QStringList argv)
 void AOClient::cmdKick(int argc, QStringList argv)
 {
     bool ok;
-    int target_id = argv[0].toInt(&ok);
+    int target_id = argv[0].toInt(&ok); // targeted by UID because kicks can only be performed on online users
     if (!ok) {
         sendServerMessage("Invalid ID.");
         return;
@@ -134,8 +134,10 @@ void AOClient::cmdKick(int argc, QStringList argv)
         }
     }
 
+    AOClient* target_client = server->getClientByID(target_id);
+    QString target_ipid = target_client->getIpid();
     for (AOClient* client : server->clients) {
-        if (client->id == target_id) {
+        if (client->getIpid() == target_ipid) {
             client->sendPacket("KK", {reason});
             client->socket->close();
             did_kick = true;
