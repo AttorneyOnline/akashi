@@ -143,6 +143,23 @@ void AOClient::pktSelectChar(AreaData* area, int argc, QStringList argv, AOPacke
     server->updateCharsTaken(area);
     sendPacket("PV", {QString::number(id), "CID", argv[1]});
     fullArup();
+    if (server->timer->isActive()) {
+        sendPacket("TI", {QString::number(0), QString::number(2)});
+        sendPacket("TI", {QString::number(0), QString::number(0), QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(server->timer->remainingTime())))});
+    }
+    else {
+        sendPacket("TI", {QString::number(0), QString::number(3)});
+    }
+    for (QTimer* timer : area->timers) {
+        int timer_id = area->timers.indexOf(timer) + 1;
+        if (timer->isActive()) {
+            sendPacket("TI", {QString::number(timer_id), QString::number(2)});
+            sendPacket("TI", {QString::number(timer_id), QString::number(0), QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(timer->remainingTime())))});
+        }
+        else {
+            sendPacket("TI", {QString::number(timer_id), QString::number(3)});
+        }
+    }
 }
 
 void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket packet)

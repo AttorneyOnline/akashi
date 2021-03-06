@@ -563,7 +563,7 @@ void AOClient::cmdTimer(int argc, QStringList argv)
         timers.append("Currently active timers:");
         QTimer* global_timer = server->timer;
         if (global_timer->isActive()) {
-            QTime current_time(0, 0, 0, global_timer->remainingTime());
+            QTime current_time = QTime(0,0).addMSecs(global_timer->remainingTime());
             timers.append("Global timer is at " + current_time.toString("hh:mm:ss.zzz"));
         }
         for (QTimer* timer : area->timers) {
