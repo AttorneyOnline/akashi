@@ -86,12 +86,17 @@ void AOClient::cmdGetArea(int argc, QStringList argv)
 
 void AOClient::cmdBan(int argc, QStringList argv)
 {
-    QString target_ipid = argv[0]; //targeted by IPID so that bans can be entered for offline users
+    int target_id = argv[0].toInt(&ok);
+    if (!ok) {
+        sendServerMessage("Invalid ID.");
+        return;
+    }
     QHostAddress ip;
     QString hdid;
     unsigned long time = QDateTime::currentDateTime().toTime_t();
     QString reason = argv[1];
     bool ban_logged = false;
+    int kicked_counter = 0;
 
     if (argc > 2) {
         for (int i = 2; i < argv.length(); i++) {
@@ -99,6 +104,8 @@ void AOClient::cmdBan(int argc, QStringList argv)
         }
     }
 
+    AOClient* target_client = server->getClientByID(target_id);
+    QString target_ipid = target_client->getIpid();
     for (AOClient* client : server->clients) {
         if (client->getIpid() == target_ipid) {
             if (!ban_logged) {
@@ -108,19 +115,22 @@ void AOClient::cmdBan(int argc, QStringList argv)
                 sendServerMessage("Banned user with ipid " + target_ipid + " for reason: " + reason);
                 ban_logged = true;
             }
+            kicked_counter++;
             client->sendPacket("KB", {reason});
             client->socket->close();
         }
     }
 
     if (!ban_logged)
-        sendServerMessage("User with ipid " + taget_ipid + " not found!");
+        sendServerMessage("User with ipid " + target_ipid + " not found!");
+    else
+        sendServerMessage(QString::number(kicked_counter) + " clients kicked.");
 }
 
 void AOClient::cmdKick(int argc, QStringList argv)
 {
     bool ok;
-    int target_id = argv[0].toInt(&ok); // targeted by UID because kicks can only be performed on online users
+    int target_id = argv[0].toInt(&ok);
     if (!ok) {
         sendServerMessage("Invalid ID.");
         return;
@@ -147,7 +157,7 @@ void AOClient::cmdKick(int argc, QStringList argv)
     }
 
     if (did_kick)
-        sendServerMessage("Kicked " + QString::number(kicked_counter) + " users with ipids matching id " + QString::number(target_id) + " for reason: " + reason);
+        sendServerMessage("Kicked " + QString::number(kicked_counter) + " clients with ipids matching id " + QString::number(target_id) + " for reason: " + reason);
     else
         sendServerMessage("User with id " + QString::number(target_id) + " not found!");
 }
