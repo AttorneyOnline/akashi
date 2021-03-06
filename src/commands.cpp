@@ -86,6 +86,7 @@ void AOClient::cmdGetArea(int argc, QStringList argv)
 
 void AOClient::cmdBan(int argc, QStringList argv)
 {
+    bool ok;
     int target_id = argv[0].toInt(&ok);
     if (!ok) {
         sendServerMessage("Invalid ID.");
