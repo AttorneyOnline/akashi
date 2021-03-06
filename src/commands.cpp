@@ -127,6 +127,7 @@ void AOClient::cmdKick(int argc, QStringList argv)
     }
     QString reason = argv[1];
     bool did_kick = false;
+    int kicked_counter = 0;
 
     if (argc > 2) {
         for (int i = 2; i < argv.length(); i++) {
@@ -141,11 +142,12 @@ void AOClient::cmdKick(int argc, QStringList argv)
             client->sendPacket("KK", {reason});
             client->socket->close();
             did_kick = true;
+            kicked_counter++;
         }
     }
 
     if (did_kick)
-        sendServerMessage("Kicked user with id " + QString::number(target_id) + " for reason: " + reason);
+        sendServerMessage("Kicked " + QString::number(kicked_counter) + " users with ipids matching id " + QString::number(target_id) + " for reason: " + reason);
     else
         sendServerMessage("User with id " + QString::number(target_id) + " not found!");
 }
