@@ -64,6 +64,7 @@ class AOClient : public QObject {
         {"BGLOCK", 1ULL << 2},
         {"MODIFY_USERS", 1ULL << 3},
         {"CM", 1ULL << 4},
+        {"GLOBAL_TIMER", 1ULL << 5},
         {"SUPER", ~0ULL}
     };
 
@@ -198,11 +199,13 @@ class AOClient : public QObject {
     void cmdRollP(int argc, QStringList argv);
     void cmdDoc(int argc, QStringList argv);
     void cmdClearDoc(int argc, QStringList argv);
+    void cmdTimer(int argc, QStringList argv);
     // Messaging/Client
     void cmdPos(int argc, QStringList argv);
     void cmdG(int argc, QStringList argv);
 
     // Command helper functions
+    QString getAreaTimer(int area_idx, QTimer* timer);
     QStringList buildAreaList(int area_idx);
     int genRand(int min, int max);
     void diceThrower(int argc, QStringList argv, RollType Type);
@@ -249,6 +252,7 @@ class AOClient : public QObject {
         {"lock", {ACLFlags.value("CM"), 0, &AOClient::cmdLock}},
         {"spectatable", {ACLFlags.value("CM"), 0, &AOClient::cmdSpectatable}},
         {"unlock", {ACLFlags.value("CM"), 0, &AOClient::cmdUnLock}},
+        {"timer", {ACLFlags.value("NONE"), 0, &AOClient::cmdTimer}},
     };
 
     QString partial_packet;

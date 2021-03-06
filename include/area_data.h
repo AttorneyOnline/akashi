@@ -24,6 +24,8 @@
 #include <QString>
 #include <QSettings>
 #include <QDebug>
+#include <QTimer>
+#include <QElapsedTimer>
 
 class Logger;
 class AreaData {
@@ -35,7 +37,7 @@ class AreaData {
         QString description;
         QString image;
     };
-
+    QList<QTimer*> timers;
     QString name;
     int index;
     QMap<QString, bool> characters_taken;

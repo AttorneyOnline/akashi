@@ -554,6 +554,88 @@ void AOClient::cmdUnLock(int argc, QStringList argv)
     arup(ARUPType::LOCKED, true);
 }
 
+void AOClient::cmdTimer(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+
+    if (argc == 0) {
+        QStringList timers;
+        timers.append("Currently active timers:");
+        QTimer* global_timer = server->timer;
+        if (global_timer->isActive()) {
+            QTime current_time(0, 0, 0, global_timer->remainingTime());
+            timers.append("Global timer is at " + current_time.toString("hh:mm:ss.zzz"));
+        }
+        for (AreaData* area : server->areas) {
+            for (QTimer* timer : area->timers) {
+                timers.append(getAreaTimer(area->index, timer));
+            }
+        }
+        sendServerMessage(timers.join("\n"));
+        return;
+    }
+    bool ok;
+    int timer_id = argv[0].toInt(&ok);
+    if (!ok || timer_id < 0 || timer_id > 4) {
+        sendServerMessage("Invalid timer ID. Timer ID must be a whole number between 0 and 4.");
+        return;
+    }
+
+    if (argc == 1) {
+        if (timer_id == 0) {
+            QTimer* global_timer = server->timer;
+            if (global_timer->isActive()) {
+                QTime current_time(0, 0, 0, global_timer->remainingTime());
+                sendServerMessage("Global timer is at " + current_time.toString("hh:mm:ss.zzz"));
+                return;
+            }
+        }
+        else {
+            QTimer* timer = area->timers[timer_id - 1];
+            sendServerMessage(getAreaTimer(area->index, timer));
+            return;
+        }
+    }
+
+    QTimer* requested_timer;
+    if (timer_id == 0) {
+        if (!checkAuth(ACLFlags.value("GLOBAL_TIMER"))) {
+            sendServerMessage("You are not authorized to alter the global timer.");
+            return;
+        }
+        requested_timer = server->timer;
+    }
+    else
+        requested_timer = area->timers[timer_id - 1];
+    QTime requested_time = QTime::fromString(argv[1], "hh:mm:ss");
+    if (requested_time.isValid()) {
+        requested_timer->setInterval(QTime(0,0).msecsTo(requested_time));
+        requested_timer->start();
+        sendServerMessage("Set timer " + QString::number(timer_id) + " to " + argv[1] + ".");
+        sendPacket("TI", {QString::number(timer_id), QString::number(0), QString::number(QTime(0,0).msecsTo(requested_time))});
+        return;
+    }
+    else {
+        if (argv[1] == "start") {
+            requested_timer->start();
+            sendServerMessage("Started timer " + QString::number(timer_id) + ".");
+            sendPacket("TI", {QString::number(timer_id), QString::number(0), QString::number(requested_timer->remainingTime())});
+        }
+        else if (argv[1] == "pause" || argv[1] == "stop") {
+            requested_timer->setInterval(requested_timer->remainingTime());
+            requested_timer->stop();
+            sendServerMessage("Stopped timer " + QString::number(timer_id) + ".");
+            sendPacket("TI", {QString::number(timer_id), QString::number(1), QString::number(requested_timer->remainingTime())});
+        }
+        else if (argv[1] == "hide" || argv[1] == "unset") {
+            requested_timer->setInterval(0);
+            requested_timer->stop();
+            sendServerMessage("Hid timer " + QString::number(timer_id) + ".");
+            sendPacket("TI", {QString::number(timer_id), QString::number(3)});
+        }
+    }
+}
+
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;
@@ -657,3 +739,16 @@ void AOClient::diceThrower(int argc, QStringList argv, RollType type)
         default : break;
     }
 }
+
+QString AOClient::getAreaTimer(int area_idx, QTimer* timer)
+{
+    AreaData* area = server->areas[area_idx];
+    if (timer->isActive()) {
+        QTime current_time (0,0,0,timer->remainingTime());
+        return "Timer " + QString::number(area->timers.indexOf(timer) + 1) + " is at " + current_time.toString("hh:mm:ss.zzz");
+    }
+    else {
+        return "Timer " + QString::number(area->timers.indexOf(timer) + 1) + "is inactive.";
+    }
+}
+
