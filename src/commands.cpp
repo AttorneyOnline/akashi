@@ -566,10 +566,8 @@ void AOClient::cmdTimer(int argc, QStringList argv)
             QTime current_time(0, 0, 0, global_timer->remainingTime());
             timers.append("Global timer is at " + current_time.toString("hh:mm:ss.zzz"));
         }
-        for (AreaData* area : server->areas) {
-            for (QTimer* timer : area->timers) {
-                timers.append(getAreaTimer(area->index, timer));
-            }
+        for (QTimer* timer : area->timers) {
+            timers.append(getAreaTimer(area->index, timer));
         }
         sendServerMessage(timers.join("\n"));
         return;
@@ -585,7 +583,7 @@ void AOClient::cmdTimer(int argc, QStringList argv)
         if (timer_id == 0) {
             QTimer* global_timer = server->timer;
             if (global_timer->isActive()) {
-                QTime current_time(0, 0, 0, global_timer->remainingTime());
+                QTime current_time = QTime(0, 0, 0, global_timer->remainingTime());
                 sendServerMessage("Global timer is at " + current_time.toString("hh:mm:ss.zzz"));
                 return;
             }
@@ -612,6 +610,7 @@ void AOClient::cmdTimer(int argc, QStringList argv)
         requested_timer->setInterval(QTime(0,0).msecsTo(requested_time));
         requested_timer->start();
         sendServerMessage("Set timer " + QString::number(timer_id) + " to " + argv[1] + ".");
+        sendPacket("TI", {QString::number(timer_id), QString::number(2)});
         sendPacket("TI", {QString::number(timer_id), QString::number(0), QString::number(QTime(0,0).msecsTo(requested_time))});
         return;
     }
@@ -619,6 +618,7 @@ void AOClient::cmdTimer(int argc, QStringList argv)
         if (argv[1] == "start") {
             requested_timer->start();
             sendServerMessage("Started timer " + QString::number(timer_id) + ".");
+            sendPacket("TI", {QString::number(timer_id), QString::number(2)});
             sendPacket("TI", {QString::number(timer_id), QString::number(0), QString::number(requested_timer->remainingTime())});
         }
         else if (argv[1] == "pause" || argv[1] == "stop") {
@@ -744,11 +744,11 @@ QString AOClient::getAreaTimer(int area_idx, QTimer* timer)
 {
     AreaData* area = server->areas[area_idx];
     if (timer->isActive()) {
-        QTime current_time (0,0,0,timer->remainingTime());
+        QTime current_time = QTime(0,0,0,timer->remainingTime());
         return "Timer " + QString::number(area->timers.indexOf(timer) + 1) + " is at " + current_time.toString("hh:mm:ss.zzz");
     }
     else {
-        return "Timer " + QString::number(area->timers.indexOf(timer) + 1) + "is inactive.";
+        return "Timer " + QString::number(area->timers.indexOf(timer) + 1) + " is inactive.";
     }
 }
 
