@@ -619,13 +619,13 @@ void AOClient::cmdTimer(int argc, QStringList argv)
             requested_timer->start();
             sendServerMessage("Started timer " + QString::number(timer_id) + ".");
             sendPacket("TI", {QString::number(timer_id), QString::number(2)});
-            sendPacket("TI", {QString::number(timer_id), QString::number(0), QString::number(requested_timer->remainingTime())});
+            sendPacket("TI", {QString::number(timer_id), QString::number(0), QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(requested_timer->remainingTime())))});
         }
         else if (argv[1] == "pause" || argv[1] == "stop") {
             requested_timer->setInterval(requested_timer->remainingTime());
             requested_timer->stop();
             sendServerMessage("Stopped timer " + QString::number(timer_id) + ".");
-            sendPacket("TI", {QString::number(timer_id), QString::number(1), QString::number(requested_timer->remainingTime())});
+            sendPacket("TI", {QString::number(timer_id), QString::number(1), QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(requested_timer->interval())))});
         }
         else if (argv[1] == "hide" || argv[1] == "unset") {
             requested_timer->setInterval(0);
@@ -744,7 +744,7 @@ QString AOClient::getAreaTimer(int area_idx, QTimer* timer)
 {
     AreaData* area = server->areas[area_idx];
     if (timer->isActive()) {
-        QTime current_time = QTime(0,0,0,timer->remainingTime());
+        QTime current_time = QTime(0,0).addMSecs(timer->remainingTime());
         return "Timer " + QString::number(area->timers.indexOf(timer) + 1) + " is at " + current_time.toString("hh:mm:ss.zzz");
     }
     else {
