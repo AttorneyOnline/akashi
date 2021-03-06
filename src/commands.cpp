@@ -114,12 +114,17 @@ void AOClient::cmdBan(int argc, QStringList argv)
     }
 
     if (!ban_logged)
-        sendServerMessage("User with ipid not found!");
+        sendServerMessage("User with ipid " + taget_ipid + " not found!");
 }
 
 void AOClient::cmdKick(int argc, QStringList argv)
 {
-    QString target_ipid = argv[0];
+    bool ok;
+    int target_id = argv[0].toInt(&ok);
+    if (!ok) {
+        sendServerMessage("Invalid ID.");
+        return;
+    }
     QString reason = argv[1];
     bool did_kick = false;
 
@@ -130,7 +135,7 @@ void AOClient::cmdKick(int argc, QStringList argv)
     }
 
     for (AOClient* client : server->clients) {
-        if (client->getIpid() == target_ipid) {
+        if (client->id == target_id) {
             client->sendPacket("KK", {reason});
             client->socket->close();
             did_kick = true;
@@ -138,9 +143,9 @@ void AOClient::cmdKick(int argc, QStringList argv)
     }
 
     if (did_kick)
-        sendServerMessage("Kicked user with ipid " + target_ipid + " for reason: " + reason);
+        sendServerMessage("Kicked user with id " + QString::number(target_id) + " for reason: " + reason);
     else
-        sendServerMessage("User with ipid not found!");
+        sendServerMessage("User with id " + QString::number(target_id) + " not found!");
 }
 
 void AOClient::cmdChangeAuth(int argc, QStringList argv)
