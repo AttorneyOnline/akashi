@@ -43,12 +43,12 @@ AreaData::AreaData(QStringList characters, QString p_name, int p_index)
     if (log_size == 0)
         log_size = 500;
     logger = new Logger(log_size, this);
-    QTimer* timer1;
+    QTimer* timer1 = new QTimer();
     timers.append(timer1);
-    QTimer* timer2;
+    QTimer* timer2 = new QTimer();
     timers.append(timer2);
-    QTimer* timer3;
+    QTimer* timer3 = new QTimer();
     timers.append(timer3);
-    QTimer* timer4;
+    QTimer* timer4 = new QTimer();
     timers.append(timer4);
 }
