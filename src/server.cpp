@@ -24,6 +24,7 @@ Server::Server(int p_port, int p_ws_port, QObject* parent) : QObject(parent)
 
     port = p_port;
     ws_port = p_ws_port;
+    timer = new QTimer();
 
     player_count = 0;
 

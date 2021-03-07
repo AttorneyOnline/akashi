@@ -32,6 +32,7 @@
 #include <QString>
 #include <QTcpServer>
 #include <QTcpSocket>
+#include <QTimer>
 
 class AOClient;
 class DBManager;
@@ -63,6 +64,8 @@ class Server : public QObject {
     QStringList backgrounds;
     DBManager* db_manager;
     QString server_name;
+
+    QTimer* timer;
 
   signals:
 

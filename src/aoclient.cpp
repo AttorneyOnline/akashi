@@ -130,6 +130,16 @@ void AOClient::changeArea(int new_area)
         server->areas[current_area]->characters_taken[current_char] = true;
         server->updateCharsTaken(server->areas[current_area]);
     }
+    for (QTimer* timer : server->areas[current_area]->timers) {
+        int timer_id = server->areas[current_area]->timers.indexOf(timer) + 1;
+        if (timer->isActive()) {
+            sendPacket("TI", {QString::number(timer_id), QString::number(2)});
+            sendPacket("TI", {QString::number(timer_id), QString::number(0), QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(timer->remainingTime())))});
+        }
+        else {
+            sendPacket("TI", {QString::number(timer_id), QString::number(3)});
+        }
+    }
     sendServerMessage("You moved to area " + server->area_names[current_area]);
     if (server->areas[current_area]->locked == AreaData::LockStatus::SPECTATABLE)
         sendServerMessage("Area " + server->area_names[current_area] + " is spectate-only; to chat IC you will need to be invited by the CM.");
