@@ -40,12 +40,12 @@ void AOClient::cmdLogin(int argc, QStringList argv)
     // TODO: tell the user if no modpass is set
     if (auth_type == "simple") {
         if(argv[0] == modpass) {
-            //sendServerMessage("Logged in as a moderator."); // This string has to be exactly this, because it is hardcoded in the client
-            sendPacket("AUTH", {"1"});
+            sendPacket("AUTH", {"1"}); // Client: "You were granted the Disable Modcalls button."
+            sendServerMessage("Logged in as a moderator."); // for old clients, this is hardcoded to display the mod UI
             authenticated = true;
         } else {
+            sendPacket("AUTH", {"0"}); // Client: "Login unsuccessful."
             sendServerMessage("Incorrect password.");
-            sendPacket("AUTH", {"0"});
         }
         server->areas.value(current_area)->logger->logLogin(this, authenticated, "moderator");
     }
@@ -59,12 +59,13 @@ void AOClient::cmdLogin(int argc, QStringList argv)
         if (server->db_manager->authenticate(username, password)) {
             moderator_name = username;
             authenticated = true;
-            sendPacket("AUTH", {"1"});
+            sendPacket("AUTH", {"1"}); // Client: "You were granted the Disable Modcalls button."
+            sendServerMessage("Logged in as a moderator."); // for old clients, this is hardcoded to display the mod UI
             sendServerMessage("Welcome, " + username);
         }
         else {
+            sendPacket("AUTH", {"0"}); // Client: "Login unsuccessful."
             sendServerMessage("Incorrect password.");
-            sendPacket("AUTH", {"0"});
         }
         server->areas.value(current_area)->logger->logLogin(this, authenticated, username);
     }
@@ -361,8 +362,7 @@ void AOClient::cmdLogout(int argc, QStringList argv)
     }
     authenticated = false;
     moderator_name = "";
-    sendServerMessage("You have been logged out.");
-    sendPacket("AUTH", {"-1"});
+    sendPacket("AUTH", {"-1"}); // Client: "You were logged out."
 }
 
 void AOClient::cmdPos(int argc, QStringList argv)

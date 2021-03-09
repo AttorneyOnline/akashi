@@ -346,9 +346,10 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     }
 
     // desk modifier
-    QStringList allowed_desk_mods = ["chat", "0", "1", "2", "3", "4", "5"];
-    if (allowed_desk_mods.contains(incoming_args[0])) {
-        args.append(incoming_args[0]);
+    QStringList allowed_desk_mods;
+    allowed_desk_mods << "chat" << "0" << "1" << "2" << "3" << "4" << "5";
+    if (allowed_desk_mods.contains(incoming_args[0].toString())) {
+        args.append(incoming_args[0].toString());
     }
     else
         return invalid;
