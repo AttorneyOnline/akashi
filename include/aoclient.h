@@ -28,6 +28,7 @@
 #include <QHostAddress>
 #include <QTcpSocket>
 #include <QDateTime>
+#include <QRegExp>
 #include <QtGlobal>
 #if QT_VERSION > QT_VERSION_CHECK(5, 10, 0)
 #include <QRandomGenerator>
@@ -131,6 +132,7 @@ class AOClient : public QObject {
     // Packet helper functions
     void sendEvidenceList(AreaData* area);
     AOPacket validateIcPacket(AOPacket packet);
+    QString dezalgo(QString p_text);
 
     // Packet helper global variables
     int char_id = -1;

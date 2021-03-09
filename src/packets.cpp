@@ -32,7 +32,7 @@ void AOClient::pktHardwareId(AreaData* area, int argc, QStringList argv, AOPacke
         socket->close();
         return;
     }
-    sendPacket("ID", {"271828", "akashi", QCoreApplication::applicationVersion()});
+    sendPacket("ID", {QString::number(id), "akashi", QCoreApplication::applicationVersion()});
 }
 
 void AOClient::pktSoftwareId(AreaData* area, int argc, QStringList argv, AOPacket packet)
@@ -177,20 +177,21 @@ void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket pa
 
 void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
-    ooc_name = argv[0];
-    if(argv[1].at(0) == '/') {
-        QStringList cmd_argv = argv[1].split(" ", QString::SplitBehavior::SkipEmptyParts);
+    ooc_name = dezalgo(argv[0]);
+    QString message = dezalgo(argv[1]);
+    AOPacket final_packet("CT", {ooc_name, message, "0"});
+    if(message.at(0) == '/') {
+        QStringList cmd_argv = message.split(" ", QString::SplitBehavior::SkipEmptyParts);
         QString command = cmd_argv[0].trimmed().toLower();
         command = command.right(command.length() - 1);
         cmd_argv.removeFirst();
         int cmd_argc = cmd_argv.length();
-        area->logger->logCmd(this, &packet, command, cmd_argv);
+        area->logger->logCmd(this, &final_packet, command, cmd_argv);
         handleCommand(command, cmd_argc, cmd_argv);
     }
     else {
-        // TODO: zalgo strip
-        server->broadcast(packet, current_area);
-        area->logger->logOOC(this, &packet);
+        server->broadcast(final_packet, current_area);
+        area->logger->logOOC(this, &final_packet);
     }
 }
 
@@ -374,7 +375,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     args.append(emote);
 
     // message text
-    QString incoming_msg = incoming_args[4].toString().trimmed();
+    QString incoming_msg = dezalgo(incoming_args[4].toString().trimmed());
     if (incoming_msg == last_message)
         return invalid;
 
@@ -452,7 +453,8 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     // 2.6 packet extensions
     if (incoming_args.length() > 15) {
         // showname
-        args.append(incoming_args[15].toString());
+        QString showname = dezalgo(incoming_args[15].toString().trimmed());
+        args.append(showname);
 
         // other char id
         // things get a bit hairy here
@@ -532,4 +534,18 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     }
 
     return AOPacket("MS", args);
+}
+
+QString AOClient::dezalgo(QString p_text)
+{
+    QSettings config("config/config.ini", QSettings::IniFormat);
+    config.beginGroup("Options");
+    bool zalgo_tolerance_conversion_success;
+    int zalgo_tolerance = config.value("zalgo_tolerance", "3").toInt(&zalgo_tolerance_conversion_success);
+    if (!zalgo_tolerance_conversion_success)
+        zalgo_tolerance = 3;
+
+    QRegExp rxp("([\u0300-\u036f\u1ab0-\u1aff\u1dc0-\u1dff\u20d0-\u20ff\ufe20-\ufe2f\u115f\u1160\u3164]{" + QRegExp::escape(QString::number(zalgo_tolerance)) + ",})");
+    QString filtered = p_text.replace(rxp, "");
+    return filtered;
 }

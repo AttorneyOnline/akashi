@@ -37,13 +37,16 @@ void AOClient::cmdLogin(int argc, QStringList argv)
         return;
     }
 
-    // TODO: tell the user if no modpass is set
     if (auth_type == "simple") {
-        if(argv[0] == modpass) {
+        if (modpass == "") {
+            sendServerMessage("No modpass is set! Please set a modpass before authenticating.");
+        }
+        else if(argv[0] == modpass) {
             sendPacket("AUTH", {"1"}); // Client: "You were granted the Disable Modcalls button."
             sendServerMessage("Logged in as a moderator."); // for old clients, this is hardcoded to display the mod UI
             authenticated = true;
-        } else {
+        } 
+        else {
             sendPacket("AUTH", {"0"}); // Client: "Login unsuccessful."
             sendServerMessage("Incorrect password.");
         }
@@ -185,8 +188,6 @@ void AOClient::cmdSetRootPass(int argc, QStringList argv)
 
 void AOClient::cmdSetBackground(int argc, QStringList argv)
 {
-    // TODO: area locks in areas.ini
-    // TODO: sendServerMessage but area broadcast
     AreaData* area = server->areas[current_area];
     if (authenticated || !area->bg_locked) {
         if (server->backgrounds.contains(argv[0])) {

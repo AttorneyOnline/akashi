@@ -131,6 +131,7 @@ bool ConfigManager::loadServerSettings(server_settings* settings)
     bool port_conversion_success;
     bool ws_port_conversion_success;
     bool local_port_conversion_success;
+    bool zalgo_tolerance_conversion_success;
     config.beginGroup("Options");
     settings->ms_ip =
         config.value("ms_ip", "master.aceattorneyonline.com").toString();
@@ -144,6 +145,8 @@ bool ConfigManager::loadServerSettings(server_settings* settings)
     settings->description =
         config.value("server_description", "This is my flashy new server")
             .toString();
+    settings->zalgo_tolerance = 
+        config.value("zalgo_tolerance", "3").toInt(&zalgo_tolerance_conversion_success);
     config.endGroup();
     if (!port_conversion_success || !ws_port_conversion_success ||
         !local_port_conversion_success) {
