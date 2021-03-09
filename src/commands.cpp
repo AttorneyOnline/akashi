@@ -641,7 +641,7 @@ void AOClient::cmdArea(int argc, QStringList argv)
 {
     bool ok;
     int new_area = argv[0].toInt(&ok);
-    if (!ok) {
+    if (!ok || new_area > server->areas.size() || new_area < 0) {
         sendServerMessage("That does not look like a valid area ID.");
         return;
     }

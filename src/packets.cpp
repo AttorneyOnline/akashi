@@ -289,7 +289,7 @@ void AOClient::pktRemoveEvidence(AreaData* area, int argc, QStringList argv, AOP
 {
     bool is_int = false;
     int idx = argv[0].toInt(&is_int);
-    if (is_int) {
+    if (is_int && idx <= area->evidence.size() && idx >= 0) {
         area->evidence.removeAt(idx);
     }
     sendEvidenceList(area);
@@ -300,7 +300,7 @@ void AOClient::pktEditEvidence(AreaData* area, int argc, QStringList argv, AOPac
     bool is_int = false;
     int idx = argv[0].toInt(&is_int);
     AreaData::Evidence evi = {argv[1], argv[2], argv[3]};
-    if (is_int) {
+    if (is_int && idx <= area->evidence.size() && idx >= 0) {
         area->evidence.replace(idx, evi);
     }
     sendEvidenceList(area);
