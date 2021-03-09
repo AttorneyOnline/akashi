@@ -57,6 +57,7 @@ class AOClient : public QObject {
     bool authenticated = false;
     QString moderator_name = "";
     QString ooc_name = "";
+    QString showname = "";
 
     QMap<QString, unsigned long long> ACLFlags {
         {"NONE", 0ULL},
@@ -196,6 +197,7 @@ class AOClient : public QObject {
     void cmdBan(int argc, QStringList argv);
     void cmdKick(int argc, QStringList argv);
     // Casing/RP
+    void cmdPlay(int argc, QStringList argv);
     void cmdNeed(int argc, QStringList argv);
     void cmdFlip(int argc, QStringList argv);
     void cmdRoll(int argc, QStringList argv);
@@ -257,6 +259,7 @@ class AOClient : public QObject {
         {"unlock", {ACLFlags.value("CM"), 0, &AOClient::cmdUnLock}},
         {"timer", {ACLFlags.value("CM"), 0, &AOClient::cmdTimer}},
         {"area", {ACLFlags.value("NONE"), 1, &AOClient::cmdArea}},
+        {"play", {ACLFlags.value("CM"), 1, &AOClient::cmdPlay}},
     };
 
     QString partial_packet;

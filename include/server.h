@@ -53,6 +53,7 @@ class Server : public QObject {
     void broadcast(AOPacket packet);
     QString getServerName();
     int getDiceValue(QString value_type);
+    int getCharID(QString char_name);
 
     QVector<AOClient*> clients;
 

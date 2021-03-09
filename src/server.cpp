@@ -191,6 +191,16 @@ AOClient* Server::getClientByID(int id)
     return nullptr;
 }
 
+int Server::getCharID(QString char_name)
+{
+    for (QString character : characters) {
+        if (character == char_name) {
+            return characters.indexOf(character);
+        }
+    }
+    return -1; // character does not exist
+}
+
 Server::~Server()
 {
     for (AOClient* client : clients) {

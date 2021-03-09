@@ -454,8 +454,9 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     // 2.6 packet extensions
     if (incoming_args.length() > 15) {
         // showname
-        QString showname = dezalgo(incoming_args[15].toString().trimmed());
-        args.append(showname);
+        QString incoming_showname = dezalgo(incoming_args[15].toString().trimmed());
+        args.append(incoming_showname);
+        showname = incoming_showname;
 
         // other char id
         // things get a bit hairy here
