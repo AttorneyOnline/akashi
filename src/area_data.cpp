@@ -29,13 +29,13 @@ AreaData::AreaData(QStringList characters, QString p_name, int p_index)
     background = areas_ini.value("background", "gs4").toString();
     is_protected = areas_ini.value("protected_area", "false").toBool();
     iniswap_allowed = areas_ini.value("iniswap_allowed", "true").toBool();
+    bg_locked = areas_ini.value("bg_locked", "false").toBool();
     areas_ini.endGroup();
     player_count = 0;
     locked = FREE;
     status = "FREE";
     def_hp = 10;
     pro_hp = 10;
-    bg_locked = false;
     document = "No document.";
     QSettings config_ini("config/config.ini", QSettings::IniFormat);
     config_ini.beginGroup("Options");
