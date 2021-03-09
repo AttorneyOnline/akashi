@@ -27,7 +27,8 @@ AreaData::AreaData(QStringList characters, QString p_name, int p_index)
     QSettings areas_ini("config/areas.ini", QSettings::IniFormat);
     areas_ini.beginGroup(p_name);
     background = areas_ini.value("background", "gs4").toString();
-    is_protected = areas_ini.value("protected_area").toBool();
+    is_protected = areas_ini.value("protected_area", "false").toBool();
+    iniswap_allowed = areas_ini.value("iniswap_allowed", "true").toBool();
     areas_ini.endGroup();
     player_count = 0;
     locked = FREE;
