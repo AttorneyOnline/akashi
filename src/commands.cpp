@@ -637,6 +637,17 @@ void AOClient::cmdTimer(int argc, QStringList argv)
     }
 }
 
+void AOClient::cmdArea(int argc, QStringList argv)
+{
+    bool ok;
+    int new_area = argv[0].toInt(&ok);
+    if (!ok) {
+        sendServerMessage("That does not look like a valid area ID.");
+        return;
+    }
+    changeArea(new_area);
+}
+
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;

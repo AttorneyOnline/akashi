@@ -188,6 +188,7 @@ class AOClient : public QObject {
     void cmdUnLock(int argc, QStringList argv);
     void cmdGetAreas(int argc, QStringList argv);
     void cmdGetArea(int argc, QStringList argv);
+    void cmdArea(int argc, QStringList argv);
     void cmdSetBackground(int argc, QStringList argv);
     void cmdBgLock(int argc, QStringList argv);
     void cmdBgUnlock(int argc, QStringList argv);
@@ -255,6 +256,7 @@ class AOClient : public QObject {
         {"spectatable", {ACLFlags.value("CM"), 0, &AOClient::cmdSpectatable}},
         {"unlock", {ACLFlags.value("CM"), 0, &AOClient::cmdUnLock}},
         {"timer", {ACLFlags.value("CM"), 0, &AOClient::cmdTimer}},
+        {"area", {ACLFlags.value("NONE"), 1, &AOClient::cmdArea}},
     };
 
     QString partial_packet;
