@@ -46,12 +46,12 @@ void AOClient::pktSoftwareId(AreaData* area, int argc, QStringList argv, AOPacke
     // The only ones that are critical to ensuring the server works are
     // "noencryption" and "fastloading"
     QStringList feature_list = {
-        "noencryption", "yellowtext",       "prezoom",
-        "flipping",     "customobjections", "fastloading",
-        "deskmod",      "evidence",         "cccc_ic_support",
-        "arup",         "casing_alerts",    "modcall_reason",
-        "looping_sfx",  "additive",         "effects",
-        "y_offset"
+        "noencryption", "yellowtext",         "prezoom",
+        "flipping",     "customobjections",   "fastloading",
+        "deskmod",      "evidence",           "cccc_ic_support",
+        "arup",         "casing_alerts",      "modcall_reason",
+        "looping_sfx",  "additive",           "effects",
+        "y_offset",     "expanded_desk_mods", "auth_packet"
     };
 
     sendPacket("PN", {QString::number(server->player_count), max_players});
@@ -345,15 +345,13 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         incoming_args.append(QVariant(arg));
     }
 
-    // message type
-    if (incoming_args[0].toInt() == 1)
-        args.append("1");
-    else if (incoming_args[0].toInt() == 0) {
-        if (incoming_args[0].toString() == "chat")
-            args.append("chat");
-        else
-            args.append("0");
+    // desk modifier
+    QStringList allowed_desk_mods = ["chat", "0", "1", "2", "3", "4", "5"];
+    if (allowed_desk_mods.contains(incoming_args[0])) {
+        args.append(incoming_args[0]);
     }
+    else
+        return invalid;
 
     // preanim
     args.append(incoming_args[1].toString());
