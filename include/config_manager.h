@@ -40,6 +40,7 @@ class ConfigManager {
         QString name;
         QString description;
         bool advertise_server;
+        int zalgo_tolerance;
     };
 
     bool loadServerSettings(server_settings* settings);
