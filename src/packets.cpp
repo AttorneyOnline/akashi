@@ -32,7 +32,7 @@ void AOClient::pktHardwareId(AreaData* area, int argc, QStringList argv, AOPacke
         socket->close();
         return;
     }
-    sendPacket("ID", {"271828", "akashi", QCoreApplication::applicationVersion()});
+    sendPacket("ID", {QString::number(id), "akashi", QCoreApplication::applicationVersion()});
 }
 
 void AOClient::pktSoftwareId(AreaData* area, int argc, QStringList argv, AOPacket packet)
