@@ -97,6 +97,7 @@ class AOClient : public QObject {
     void handlePacket(AOPacket packet);
     void handleCommand(QString command, int argc, QStringList argv);
     void changeArea(int new_area);
+    void changeCharacter(int char_id);
     void arup(ARUPType type, bool broadcast);
     void fullArup();
     void sendServerMessage(QString message);
@@ -190,6 +191,7 @@ class AOClient : public QObject {
     void cmdGetAreas(int argc, QStringList argv);
     void cmdGetArea(int argc, QStringList argv);
     void cmdArea(int argc, QStringList argv);
+    void cmdAreaKick(int argc, QStringList argv);
     void cmdSetBackground(int argc, QStringList argv);
     void cmdBgLock(int argc, QStringList argv);
     void cmdBgUnlock(int argc, QStringList argv);
@@ -207,6 +209,8 @@ class AOClient : public QObject {
     void cmdTimer(int argc, QStringList argv);
     // Messaging/Client
     void cmdPos(int argc, QStringList argv);
+    void cmdSwitch(int argc, QStringList argv);
+    void cmdRandomChar(int argc, QStringList argv);
     void cmdG(int argc, QStringList argv);
 
     // Command helper functions
@@ -260,6 +264,9 @@ class AOClient : public QObject {
         {"timer", {ACLFlags.value("CM"), 0, &AOClient::cmdTimer}},
         {"area", {ACLFlags.value("NONE"), 1, &AOClient::cmdArea}},
         {"play", {ACLFlags.value("CM"), 1, &AOClient::cmdPlay}},
+        {"areakick", {ACLFlags.value("CM"), 1, &AOClient::cmdAreaKick}},
+        {"randomchar", {ACLFlags.value("NONE"), 0, &AOClient::cmdRandomChar}},
+        {"switch", {ACLFlags.value("NONE"), 1, &AOClient::cmdSwitch}},
     };
 
     QString partial_packet;

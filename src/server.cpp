@@ -194,8 +194,8 @@ AOClient* Server::getClientByID(int id)
 int Server::getCharID(QString char_name)
 {
     for (QString character : characters) {
-        if (character == char_name) {
-            return characters.indexOf(character);
+        if (character.toLower() == char_name.toLower()) {
+            return characters.indexOf(QRegExp(character, Qt::CaseInsensitive));
         }
     }
     return -1; // character does not exist

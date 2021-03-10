@@ -118,48 +118,7 @@ void AOClient::pktSelectChar(AreaData* area, int argc, QStringList argv, AOPacke
         return;
     }
 
-    if (current_char != "") {
-        area->characters_taken[current_char] = false;
-    }
-
-    if(char_id > server->characters.length())
-        return;
-
-    if (char_id >= 0) {
-        QString char_selected = server->characters[char_id];
-        bool taken = area->characters_taken.value(char_selected);
-        if (taken || char_selected == "")
-            return;
-
-        area->characters_taken[char_selected] = true;
-        current_char = char_selected;
-    }
-    else {
-        current_char = "";
-    }
-
-    pos = "";
-
-    server->updateCharsTaken(area);
-    sendPacket("PV", {QString::number(id), "CID", argv[1]});
-    fullArup();
-    if (server->timer->isActive()) {
-        sendPacket("TI", {QString::number(0), QString::number(2)});
-        sendPacket("TI", {QString::number(0), QString::number(0), QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(server->timer->remainingTime())))});
-    }
-    else {
-        sendPacket("TI", {QString::number(0), QString::number(3)});
-    }
-    for (QTimer* timer : area->timers) {
-        int timer_id = area->timers.indexOf(timer) + 1;
-        if (timer->isActive()) {
-            sendPacket("TI", {QString::number(timer_id), QString::number(2)});
-            sendPacket("TI", {QString::number(timer_id), QString::number(0), QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(timer->remainingTime())))});
-        }
-        else {
-            sendPacket("TI", {QString::number(timer_id), QString::number(3)});
-        }
-    }
+    changeCharacter(char_id);
 }
 
 void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket packet)

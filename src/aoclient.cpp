@@ -145,6 +145,54 @@ void AOClient::changeArea(int new_area)
         sendServerMessage("Area " + server->area_names[current_area] + " is spectate-only; to chat IC you will need to be invited by the CM.");
 }
 
+void AOClient::changeCharacter(int char_id)
+{
+    AreaData* area = server->areas[current_area];
+
+    if (current_char != "") {
+        area->characters_taken[current_char] = false;
+    }
+
+    if(char_id > server->characters.length())
+        return;
+
+    if (char_id >= 0) {
+        QString char_selected = server->characters[char_id];
+        bool taken = area->characters_taken.value(char_selected);
+        if (taken || char_selected == "")
+            return;
+
+        area->characters_taken[char_selected] = true;
+        current_char = char_selected;
+    }
+    else {
+        current_char = "";
+    }
+
+    pos = "";
+
+    server->updateCharsTaken(area);
+    sendPacket("PV", {QString::number(id), "CID", QString::number(char_id)});
+    fullArup();
+    if (server->timer->isActive()) {
+        sendPacket("TI", {QString::number(0), QString::number(2)});
+        sendPacket("TI", {QString::number(0), QString::number(0), QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(server->timer->remainingTime())))});
+    }
+    else {
+        sendPacket("TI", {QString::number(0), QString::number(3)});
+    }
+    for (QTimer* timer : area->timers) {
+        int timer_id = area->timers.indexOf(timer) + 1;
+        if (timer->isActive()) {
+            sendPacket("TI", {QString::number(timer_id), QString::number(2)});
+            sendPacket("TI", {QString::number(timer_id), QString::number(0), QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(timer->remainingTime())))});
+        }
+        else {
+            sendPacket("TI", {QString::number(timer_id), QString::number(3)});
+        }
+    }
+}
+
 void AOClient::handleCommand(QString command, int argc, QStringList argv)
 {
     CommandInfo info = commands.value(command, {false, -1, &AOClient::cmdDefault});

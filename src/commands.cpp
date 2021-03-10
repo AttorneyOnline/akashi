@@ -653,6 +653,35 @@ void AOClient::cmdPlay(int argc, QStringList argv)
     sendPacket("MC", {argv.join(" "), QString::number(server->getCharID(current_char)), showname, "1", "0"});
 }
 
+void AOClient::cmdAreaKick(int argc, QStringList argv)
+{
+    bool ok;
+    int idx = argv[0].toInt(&ok);
+    if (!ok) {
+        sendServerMessage("That does not look like a valid ID.");
+        return;
+    }
+    AOClient* client_to_kick = server->getClientByID(idx);
+    client_to_kick->changeArea(0);
+    sendServerMessage("Client " + argv[0] + " kicked back to area 0.");
+}
+
+void AOClient::cmdSwitch(int argc, QStringList argv)
+{
+    int char_id = server->getCharID(argv.join(" "));
+    if (char_id == -1) {
+        sendServerMessage("That does not look like a valid character.");
+        return;
+    }
+    changeCharacter(char_id);
+}
+
+void AOClient::cmdRandomChar(int argc, QStringList argv)
+{
+    int char_id = genRand(0, server->characters.size() - 1);
+    changeCharacter(char_id);
+}
+
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;
