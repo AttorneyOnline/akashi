@@ -118,48 +118,7 @@ void AOClient::pktSelectChar(AreaData* area, int argc, QStringList argv, AOPacke
         return;
     }
 
-    if (current_char != "") {
-        area->characters_taken[current_char] = false;
-    }
-
-    if(char_id > server->characters.length())
-        return;
-
-    if (char_id >= 0) {
-        QString char_selected = server->characters[char_id];
-        bool taken = area->characters_taken.value(char_selected);
-        if (taken || char_selected == "")
-            return;
-
-        area->characters_taken[char_selected] = true;
-        current_char = char_selected;
-    }
-    else {
-        current_char = "";
-    }
-
-    pos = "";
-
-    server->updateCharsTaken(area);
-    sendPacket("PV", {QString::number(id), "CID", argv[1]});
-    fullArup();
-    if (server->timer->isActive()) {
-        sendPacket("TI", {QString::number(0), QString::number(2)});
-        sendPacket("TI", {QString::number(0), QString::number(0), QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(server->timer->remainingTime())))});
-    }
-    else {
-        sendPacket("TI", {QString::number(0), QString::number(3)});
-    }
-    for (QTimer* timer : area->timers) {
-        int timer_id = area->timers.indexOf(timer) + 1;
-        if (timer->isActive()) {
-            sendPacket("TI", {QString::number(timer_id), QString::number(2)});
-            sendPacket("TI", {QString::number(timer_id), QString::number(0), QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(timer->remainingTime())))});
-        }
-        else {
-            sendPacket("TI", {QString::number(timer_id), QString::number(3)});
-        }
-    }
+    changeCharacter(char_id);
 }
 
 void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket packet)
@@ -177,7 +136,11 @@ void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket pa
 
 void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
-    ooc_name = dezalgo(argv[0]);
+    ooc_name = dezalgo(argv[0]).replace(QRegExp("\\[|\\]|\\{|\\}|\\#|\\$|\\%|\\&"), ""); // no fucky wucky shit here
+    
+    if (ooc_name == server->getServerName()) // impersonation prevention
+        return;
+    
     QString message = dezalgo(argv[1]);
     AOPacket final_packet("CT", {ooc_name, message, "0"});
     if(message.at(0) == '/') {
@@ -289,7 +252,7 @@ void AOClient::pktRemoveEvidence(AreaData* area, int argc, QStringList argv, AOP
 {
     bool is_int = false;
     int idx = argv[0].toInt(&is_int);
-    if (is_int) {
+    if (is_int && idx <= area->evidence.size() && idx >= 0) {
         area->evidence.removeAt(idx);
     }
     sendEvidenceList(area);
@@ -300,7 +263,7 @@ void AOClient::pktEditEvidence(AreaData* area, int argc, QStringList argv, AOPac
     bool is_int = false;
     int idx = argv[0].toInt(&is_int);
     AreaData::Evidence evi = {argv[1], argv[2], argv[3]};
-    if (is_int) {
+    if (is_int && idx <= area->evidence.size() && idx >= 0) {
         area->evidence.replace(idx, evi);
     }
     sendEvidenceList(area);
@@ -454,8 +417,9 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     // 2.6 packet extensions
     if (incoming_args.length() > 15) {
         // showname
-        QString showname = dezalgo(incoming_args[15].toString().trimmed());
-        args.append(showname);
+        QString incoming_showname = dezalgo(incoming_args[15].toString().trimmed());
+        args.append(incoming_showname);
+        showname = incoming_showname;
 
         // other char id
         // things get a bit hairy here

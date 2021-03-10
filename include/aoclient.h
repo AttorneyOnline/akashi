@@ -57,6 +57,8 @@ class AOClient : public QObject {
     bool authenticated = false;
     QString moderator_name = "";
     QString ooc_name = "";
+    QString showname = "";
+    bool global_enabled = true;
 
     QMap<QString, unsigned long long> ACLFlags {
         {"NONE", 0ULL},
@@ -96,6 +98,7 @@ class AOClient : public QObject {
     void handlePacket(AOPacket packet);
     void handleCommand(QString command, int argc, QStringList argv);
     void changeArea(int new_area);
+    void changeCharacter(int char_id);
     void arup(ARUPType type, bool broadcast);
     void fullArup();
     void sendServerMessage(QString message);
@@ -188,13 +191,17 @@ class AOClient : public QObject {
     void cmdUnLock(int argc, QStringList argv);
     void cmdGetAreas(int argc, QStringList argv);
     void cmdGetArea(int argc, QStringList argv);
+    void cmdArea(int argc, QStringList argv);
+    void cmdAreaKick(int argc, QStringList argv);
     void cmdSetBackground(int argc, QStringList argv);
     void cmdBgLock(int argc, QStringList argv);
     void cmdBgUnlock(int argc, QStringList argv);
     // Moderation
+    void cmdMods(int argc, QStringList argv);
     void cmdBan(int argc, QStringList argv);
     void cmdKick(int argc, QStringList argv);
     // Casing/RP
+    void cmdPlay(int argc, QStringList argv);
     void cmdNeed(int argc, QStringList argv);
     void cmdFlip(int argc, QStringList argv);
     void cmdRoll(int argc, QStringList argv);
@@ -204,7 +211,10 @@ class AOClient : public QObject {
     void cmdTimer(int argc, QStringList argv);
     // Messaging/Client
     void cmdPos(int argc, QStringList argv);
+    void cmdSwitch(int argc, QStringList argv);
+    void cmdRandomChar(int argc, QStringList argv);
     void cmdG(int argc, QStringList argv);
+    void cmdToggleGlobal(int argc, QStringList argv);
 
     // Command helper functions
     QString getAreaTimer(int area_idx, QTimer* timer);
@@ -242,7 +252,7 @@ class AOClient : public QObject {
         {"pos", {ACLFlags.value("NONE"), 1, &AOClient::cmdPos}},
         {"g", {ACLFlags.value("NONE"), 1, &AOClient::cmdG}},
         {"need", {ACLFlags.value("NONE"), 1, &AOClient::cmdNeed}},
-        {"flip", {ACLFlags.value("NONE"), 0, &AOClient::cmdFlip}},
+        {"coinflip", {ACLFlags.value("NONE"), 0, &AOClient::cmdFlip}},
         {"roll", {ACLFlags.value("NONE"), 0, &AOClient::cmdRoll}},
         {"rollp", {ACLFlags.value("NONE"), 0, &AOClient::cmdRollP}},
         {"doc", {ACLFlags.value("NONE"), 0, &AOClient::cmdDoc}},
@@ -252,9 +262,20 @@ class AOClient : public QObject {
         {"invite", {ACLFlags.value("CM"), 1, &AOClient::cmdInvite}},
         {"uninvite", {ACLFlags.value("CM"), 1, &AOClient::cmdUnInvite}},
         {"lock", {ACLFlags.value("CM"), 0, &AOClient::cmdLock}},
+        {"area_lock", {ACLFlags.value("CM"), 0, &AOClient::cmdLock}},
         {"spectatable", {ACLFlags.value("CM"), 0, &AOClient::cmdSpectatable}},
+        {"area_spectate", {ACLFlags.value("CM"), 0, &AOClient::cmdSpectatable}},
         {"unlock", {ACLFlags.value("CM"), 0, &AOClient::cmdUnLock}},
+        {"area_unlock", {ACLFlags.value("CM"), 0, &AOClient::cmdUnLock}},
         {"timer", {ACLFlags.value("CM"), 0, &AOClient::cmdTimer}},
+        {"area", {ACLFlags.value("NONE"), 1, &AOClient::cmdArea}},
+        {"play", {ACLFlags.value("CM"), 1, &AOClient::cmdPlay}},
+        {"areakick", {ACLFlags.value("CM"), 1, &AOClient::cmdAreaKick}},
+        {"area_kick", {ACLFlags.value("CM"), 1, &AOClient::cmdAreaKick}},
+        {"randomchar", {ACLFlags.value("NONE"), 0, &AOClient::cmdRandomChar}},
+        {"switch", {ACLFlags.value("NONE"), 1, &AOClient::cmdSwitch}},
+        {"toggleglobal", {ACLFlags.value("NONE"), 0, &AOClient::cmdToggleGlobal}},
+        {"mods", {ACLFlags.value("NONE"), 0, &AOClient::cmdMods}},
     };
 
     QString partial_packet;

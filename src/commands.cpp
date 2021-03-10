@@ -373,7 +373,10 @@ void AOClient::cmdG(int argc, QStringList argv)
     QString sender_name = ooc_name;
     QString sender_area = server->area_names.value(current_area);
     QString sender_message = argv.join(" ");
-    server->broadcast(AOPacket("CT", {"[" + sender_area + "]" + sender_name, sender_message}));
+    for (AOClient* client : server->clients) {
+        if (client->global_enabled)
+            client->sendPacket("CT", {"[G][" + sender_area + "]" + sender_name, sender_message});
+    }
     return;
 }
 
@@ -635,6 +638,82 @@ void AOClient::cmdTimer(int argc, QStringList argv)
             sendPacket("TI", {QString::number(timer_id), QString::number(3)});
         }
     }
+}
+
+void AOClient::cmdArea(int argc, QStringList argv)
+{
+    bool ok;
+    int new_area = argv[0].toInt(&ok);
+    if (!ok || new_area >= server->areas.size() || new_area < 0) {
+        sendServerMessage("That does not look like a valid area ID.");
+        return;
+    }
+    changeArea(new_area);
+}
+
+void AOClient::cmdPlay(int argc, QStringList argv)
+{
+    sendPacket("MC", {argv.join(" "), QString::number(server->getCharID(current_char)), showname, "1", "0"});
+}
+
+void AOClient::cmdAreaKick(int argc, QStringList argv)
+{
+    bool ok;
+    int idx = argv[0].toInt(&ok);
+    if (!ok) {
+        sendServerMessage("That does not look like a valid ID.");
+        return;
+    }
+    AOClient* client_to_kick = server->getClientByID(idx);
+    client_to_kick->changeArea(0);
+    sendServerMessage("Client " + argv[0] + " kicked back to area 0.");
+}
+
+void AOClient::cmdSwitch(int argc, QStringList argv)
+{
+    int char_id = server->getCharID(argv.join(" "));
+    if (char_id == -1) {
+        sendServerMessage("That does not look like a valid character.");
+        return;
+    }
+    changeCharacter(char_id);
+}
+
+void AOClient::cmdRandomChar(int argc, QStringList argv)
+{
+    int char_id = genRand(0, server->characters.size() - 1);
+    changeCharacter(char_id);
+}
+
+void AOClient::cmdToggleGlobal(int argc, QStringList argv)
+{
+    global_enabled = !global_enabled;
+    QString str_en = global_enabled ? "shown" : "hidden";
+    sendServerMessage("Global chat set to " + str_en);
+}
+
+void AOClient::cmdMods(int argc, QStringList argv)
+{
+    QStringList entries;
+    QSettings config("config/config.ini", QSettings::IniFormat);
+    config.beginGroup("Options");
+    QString auth_type = config.value("auth", "simple").toString();
+    int online_count = 0;
+    for (AOClient* client : server->clients) {
+        if (client->authenticated) {
+            entries << "---";
+            if (auth_type != "simple")
+                entries << "Moderator: " + moderator_name;
+            entries << "OOC name: " + ooc_name;
+            entries << "ID: " + QString::number(client->id);
+            entries << "Area: " + QString::number(client->current_area);
+            entries << "Character: " + client->current_char;
+            online_count++;
+        }
+    }
+    entries << "---";
+    entries << "Total online: " << QString::number(online_count);
+    sendServerMessage(entries.join("\n"));
 }
 
 QStringList AOClient::buildAreaList(int area_idx)
