@@ -136,7 +136,11 @@ void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket pa
 
 void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
-    ooc_name = dezalgo(argv[0]);
+    ooc_name = dezalgo(argv[0]).replace(QRegExp("\\[|\\]|\\{|\\}|\\#|\\$|\\%|\\&"), ""); // no fucky wucky shit here
+    
+    if (ooc_name == server->getServerName()) // impersonation prevention
+        return;
+    
     QString message = dezalgo(argv[1]);
     AOPacket final_packet("CT", {ooc_name, message, "0"});
     if(message.at(0) == '/') {

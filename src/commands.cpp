@@ -373,7 +373,10 @@ void AOClient::cmdG(int argc, QStringList argv)
     QString sender_name = ooc_name;
     QString sender_area = server->area_names.value(current_area);
     QString sender_message = argv.join(" ");
-    server->broadcast(AOPacket("CT", {"[" + sender_area + "]" + sender_name, sender_message}));
+    for (AOClient* client : server->clients) {
+        if (client->global_enabled)
+            client->sendPacket("CT", {"[G][" + sender_area + "]" + sender_name, sender_message});
+    }
     return;
 }
 
@@ -680,6 +683,13 @@ void AOClient::cmdRandomChar(int argc, QStringList argv)
 {
     int char_id = genRand(0, server->characters.size() - 1);
     changeCharacter(char_id);
+}
+
+void AOClient::cmdToggleGlobal(int argc, QStringList argv)
+{
+    global_enabled = !global_enabled;
+    QString str_en = global_enabled ? "shown" : "hidden";
+    sendServerMessage("Global chat set to " + str_en);
 }
 
 QStringList AOClient::buildAreaList(int area_idx)

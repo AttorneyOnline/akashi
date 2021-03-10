@@ -58,6 +58,7 @@ class AOClient : public QObject {
     QString moderator_name = "";
     QString ooc_name = "";
     QString showname = "";
+    bool global_enabled = true;
 
     QMap<QString, unsigned long long> ACLFlags {
         {"NONE", 0ULL},
@@ -212,6 +213,7 @@ class AOClient : public QObject {
     void cmdSwitch(int argc, QStringList argv);
     void cmdRandomChar(int argc, QStringList argv);
     void cmdG(int argc, QStringList argv);
+    void cmdToggleGlobal(int argc, QStringList argv);
 
     // Command helper functions
     QString getAreaTimer(int area_idx, QTimer* timer);
@@ -267,6 +269,7 @@ class AOClient : public QObject {
         {"areakick", {ACLFlags.value("CM"), 1, &AOClient::cmdAreaKick}},
         {"randomchar", {ACLFlags.value("NONE"), 0, &AOClient::cmdRandomChar}},
         {"switch", {ACLFlags.value("NONE"), 1, &AOClient::cmdSwitch}},
+        {"toggleglobal", {ACLFlags.value("NONE"), 0, &AOClient::cmdToggleGlobal}},
     };
 
     QString partial_packet;
