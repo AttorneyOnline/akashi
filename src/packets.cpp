@@ -363,10 +363,10 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     if (current_char != incoming_args[2].toString()) {
         // Selected char is different from supplied folder name
         // This means the user is INI-swapped
-        // TODO: ini swap locking
-        // if no iniswap allowed then
-        // if (!server->characters.contains(incoming_args[2].toString()))
-        //     return invalid;
+        if (!area->iniswap_allowed) {
+            if (!server->characters.contains(incoming_args[2].toString()))
+                return invalid;
+        }
         qDebug() << "INI swap detected from " << getIpid();
     }
     args.append(incoming_args[2].toString());
