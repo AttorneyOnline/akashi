@@ -692,6 +692,30 @@ void AOClient::cmdToggleGlobal(int argc, QStringList argv)
     sendServerMessage("Global chat set to " + str_en);
 }
 
+void AOClient::cmdMods(int argc, QStringList argv)
+{
+    QStringList entries;
+    QSettings config("config/config.ini", QSettings::IniFormat);
+    config.beginGroup("Options");
+    QString auth_type = config.value("auth", "simple").toString();
+    int online_count = 0;
+    for (AOClient* client : server->clients) {
+        if (client->authenticated) {
+            entries << "---";
+            if (auth_type != "simple")
+                entries << "Moderator: " + moderator_name;
+            entries << "OOC name: " + ooc_name;
+            entries << "ID: " + QString::number(client->id);
+            entries << "Area: " + QString::number(client->current_area);
+            entries << "Character: " + client->current_char;
+            online_count++;
+        }
+    }
+    entries << "---";
+    entries << "Total online: " << QString::number(online_count);
+    sendServerMessage(entries.join("\n"));
+}
+
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;

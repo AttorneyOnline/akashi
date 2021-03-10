@@ -197,6 +197,7 @@ class AOClient : public QObject {
     void cmdBgLock(int argc, QStringList argv);
     void cmdBgUnlock(int argc, QStringList argv);
     // Moderation
+    void cmdMods(int argc, QStringList argv);
     void cmdBan(int argc, QStringList argv);
     void cmdKick(int argc, QStringList argv);
     // Casing/RP
@@ -270,6 +271,7 @@ class AOClient : public QObject {
         {"randomchar", {ACLFlags.value("NONE"), 0, &AOClient::cmdRandomChar}},
         {"switch", {ACLFlags.value("NONE"), 1, &AOClient::cmdSwitch}},
         {"toggleglobal", {ACLFlags.value("NONE"), 0, &AOClient::cmdToggleGlobal}},
+        {"mods", {ACLFlags.value("NONE"), 0, &AOClient::cmdMods}},
     };
 
     QString partial_packet;
