@@ -221,7 +221,7 @@ void AOClient::arup(ARUPType type, bool broadcast)
                 break;
             }
             case ARUPType::STATUS: {
-                QString area_status = QVariant::fromValue(area->status).toString().replace("_", "-");
+                QString area_status = QVariant::fromValue(area->status).toString().replace("_", "-"); // LOOKING_FOR_PLAYERS to LOOKING-FOR-PLAYERS
                 arup_data.append(area_status);
                 break;
             }

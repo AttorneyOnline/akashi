@@ -368,6 +368,41 @@ void AOClient::cmdPos(int argc, QStringList argv)
     sendServerMessage("Position changed to " + pos + ".");
 }
 
+void AOClient::cmdForcePos(int argc, QStringList argv) 
+{
+    bool ok;
+    QList<AOClient*> targets;
+    AreaData* area = server->areas[current_area];
+    int target_id = argv[1].toInt(&ok);
+    int forced_clients = 0;
+    if (!ok && argv[1] != "*") {
+        sendServerMessage("That does not look like a valid ID.");
+        return;
+    }
+    else if (ok) {
+        AOClient* target_client = server->getClientByID(target_id);
+        if (target_client != nullptr)
+            targets.append(target_client);
+        else {
+            sendServerMessage("Target ID not found!");
+            return;
+        }
+    }
+        
+    else if (argv[1] == "*") { // force all clients in the area
+        for (AOClient* client : server->clients) {
+            if (client->current_area == current_area)
+                targets.append(client);
+        }
+    }
+    for (AOClient* target : targets) {
+        target->pos = argv[0];
+        target->sendServerMessage("Position forced to " + target->pos + " by CM.");
+        forced_clients++;
+    }
+    sendServerMessage("Forced " + QString::number(forced_clients) + " into pos " + argv[0] + ".");
+}
+
 void AOClient::cmdG(int argc, QStringList argv)
 {
     QString sender_name = ooc_name;
@@ -483,6 +518,10 @@ void AOClient::cmdInvite(int argc, QStringList argv)
         sendServerMessage("That does not look like a valid ID.");
         return;
     }
+    else if (server->getClientByID(invited_id) == nullptr) {
+        sendServerMessage("No client with that ID found.");
+        return;
+    }
     else if (area->invited.contains(invited_id)) {
         sendServerMessage("That ID is already on the invite list.");
         return;
@@ -498,6 +537,10 @@ void AOClient::cmdUnInvite(int argc, QStringList argv)
     int uninvited_id = argv[0].toInt(&ok);
     if (!ok) {
         sendServerMessage("That does not look like a valid ID.");
+        return;
+    }
+    else if (server->getClientByID(uninvited_id) == nullptr) {
+        sendServerMessage("No client with that ID found.");
         return;
     }
     else if (area->owners.contains(uninvited_id)) {
@@ -665,6 +708,10 @@ void AOClient::cmdAreaKick(int argc, QStringList argv)
         return;
     }
     AOClient* client_to_kick = server->getClientByID(idx);
+    if (client_to_kick == nullptr) {
+        sendServerMessage("No client with that ID found.");
+        return;
+    }
     client_to_kick->changeArea(0);
     sendServerMessage("Client " + argv[0] + " kicked back to area 0.");
 }
