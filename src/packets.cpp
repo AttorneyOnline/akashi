@@ -56,12 +56,12 @@ void AOClient::pktSoftwareId(AreaData* area, int argc, QStringList argv, AOPacke
 
 
     version.string = argv[1];
-    QRegExp rx("\\b(\\d+)\\.(\\d+)\\.(\\d+)\\b"); // matches X.X.X (e.g. 2.9.0, 2.4.10, etc.)
-    if (rx.indexIn(version.string) != -1) {
-        QStringList version_raw = rx.capturedTexts();
-        version.release = version_raw[0].toInt();
-        version.major = version_raw[1].toInt();
-        version.minor = version_raw[2].toInt();
+    QRegularExpression rx("\\b(\\d+)\\.(\\d+)\\.(\\d+)\\b"); // matches X.X.X (e.g. 2.9.0, 2.4.10, etc.)
+    QRegularExpressionMatch match = rx.match(version.string);
+    if (match.hasMatch()) {
+        version.release = match.captured(1).toInt();
+        version.major = match.captured(2).toInt();
+        version.minor = match.captured(3).toInt();
     }
 
     sendPacket("PN", {QString::number(server->player_count), max_players});
