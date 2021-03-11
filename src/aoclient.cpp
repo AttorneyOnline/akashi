@@ -215,42 +215,38 @@ void AOClient::arup(ARUPType type, bool broadcast)
     QStringList arup_data;
     arup_data.append(QString::number(type));
     for (AreaData* area : server->areas) {
-        if (type == ARUPType::PLAYER_COUNT) {
-            arup_data.append(QString::number(area->player_count));
-        }
-        else if (type == ARUPType::STATUS) {
-            arup_data.append(area->status);
-        }
-        else if (type == ARUPType::CM) {
-            if (area->owners.isEmpty())
-                arup_data.append("FREE");
-            else {
-                QStringList area_owners;
-                for (int owner_id : area->owners) {
-                    AOClient* owner = server->getClientByID(owner_id);
-                    area_owners.append("[" + QString::number(owner->id) + "] " + owner->current_char);
+        switch(type) {
+            case ARUPType::PLAYER_COUNT: {
+                arup_data.append(QString::number(area->player_count));
+                break;
+            }
+            case ARUPType::STATUS: {
+                QString area_status = QVariant::fromValue(area->status).toString().replace("_", "-");
+                arup_data.append(area_status);
+                break;
+            }
+            case ARUPType::CM: {
+                if (area->owners.isEmpty())
+                    arup_data.append("FREE");
+                else {
+                    QStringList area_owners;
+                    for (int owner_id : area->owners) {
+                        AOClient* owner = server->getClientByID(owner_id);
+                        area_owners.append("[" + QString::number(owner->id) + "] " + owner->current_char);
+                    }
+                    arup_data.append(area_owners.join(", "));
                 }
-                arup_data.append(area_owners.join(", "));
+                break;
+            }
+            case ARUPType::LOCKED: {
+                QString lock_status = QVariant::fromValue(area->locked).toString();
+                arup_data.append(lock_status);
+                break;
+            }
+            default: {
+                return;
             }
         }
-        else if (type == ARUPType::LOCKED) {
-            QString lock_status;
-            switch (area->locked) {
-                case AreaData::LockStatus::FREE:
-                    lock_status = "FREE";
-                    break;
-                case AreaData::LockStatus::LOCKED:
-                    lock_status = "LOCKED";
-                    break;
-                case AreaData::LockStatus::SPECTATABLE:
-                    lock_status = "SPECTATABLE";
-                    break;
-                default:
-                    break;
-            }
-            arup_data.append(lock_status);
-        }
-        else return;
     }
     if (broadcast)
         server->broadcast(AOPacket("ARUP", arup_data));

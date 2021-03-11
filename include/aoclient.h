@@ -197,6 +197,7 @@ class AOClient : public QObject {
     void cmdSetBackground(int argc, QStringList argv);
     void cmdBgLock(int argc, QStringList argv);
     void cmdBgUnlock(int argc, QStringList argv);
+    void cmdStatus(int argc, QStringList argv);
     // Moderation
     void cmdMods(int argc, QStringList argv);
     void cmdBan(int argc, QStringList argv);
@@ -278,6 +279,7 @@ class AOClient : public QObject {
         {"toggleglobal", {ACLFlags.value("NONE"), 0, &AOClient::cmdToggleGlobal}},
         {"mods", {ACLFlags.value("NONE"), 0, &AOClient::cmdMods}},
         {"help", {ACLFlags.value("NONE"), 0, &AOClient::cmdHelp}},
+        {"status", {ACLFlags.value("NONE"), 1, &AOClient::cmdStatus}},
     };
 
     QString partial_packet;

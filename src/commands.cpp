@@ -723,11 +723,33 @@ void AOClient::cmdHelp(int argc, QStringList argv)
     QMap<QString, CommandInfo>::const_iterator i;
     for (i = commands.constBegin(); i!= commands.constEnd(); ++i) {
         CommandInfo info = i.value();
-        if (checkAuth(info.acl_mask)) {
+        if (checkAuth(info.acl_mask)) { // if we are allowed to use this command
             entries << "/" + i.key();
         }
     }
     sendServerMessage(entries.join("\n"));
+}
+
+void AOClient::cmdStatus(int argc, QStringList argv) {
+    AreaData* area = server->areas[current_area];
+    QString arg = argv[0].toLower();
+    if (arg == "idle")
+        area->status = AreaData::IDLE;
+    else if (arg == "rp")
+        area->status = AreaData::RP;
+    else if (arg == "casing")
+        area->status = AreaData::CASING;
+    else if (arg == "looking-for-players" || arg == "lfp")
+        area->status = AreaData::LOOKING_FOR_PLAYERS;
+    else if (arg == "recess")
+        area->status = AreaData::RECESS;
+    else if (arg == "gaming")
+        area->status = AreaData::GAMING;
+    else {
+        sendServerMessage("That does not look like a valid status. Valid statuses are idle, rp, casing, lfp, recess, gaming");
+        return;
+    }
+    arup(ARUPType::STATUS, true);
 }
 
 QStringList AOClient::buildAreaList(int area_idx)

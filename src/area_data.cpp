@@ -32,7 +32,7 @@ AreaData::AreaData(QStringList characters, QString p_name, int p_index)
     areas_ini.endGroup();
     player_count = 0;
     locked = FREE;
-    status = "FREE";
+    status = IDLE;
     def_hp = 10;
     pro_hp = 10;
     document = "No document.";
