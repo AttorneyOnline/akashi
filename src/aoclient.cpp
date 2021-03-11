@@ -68,10 +68,17 @@ void AOClient::clientDisconnected()
             false;
         server->updateCharsTaken(server->areas[current_area]);
     }
+    bool update_locks;
     for (AreaData* area : server->areas) {
         area->owners.removeAll(id);
         area->invited.removeAll(id);
+        if (area->owners.isEmpty() && area->locked != AreaData::FREE) {
+            area->locked = AreaData::FREE;
+            update_locks = true;
+        }
     }
+    if (update_locks)
+        arup(ARUPType::LOCKED, true);
     arup(ARUPType::CM, true);
 }
 

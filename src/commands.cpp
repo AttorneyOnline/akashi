@@ -504,8 +504,13 @@ void AOClient::cmdUnCM(int argc, QStringList argv)
     area->invited.removeAll(id);
     sendServerMessage("You are no longer CM in this area.");
     arup(ARUPType::CM, true);
-    if (area->owners.isEmpty())
+    if (area->owners.isEmpty()) {
         area->invited.clear();
+        if (area->locked != AreaData::FREE) {
+            area->locked = AreaData::FREE;
+            arup(ARUPType::LOCKED, true);
+        }
+    }
 }
 
 void AOClient::cmdInvite(int argc, QStringList argv)
