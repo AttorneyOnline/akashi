@@ -55,28 +55,14 @@ void AOClient::pktSoftwareId(AreaData* area, int argc, QStringList argv, AOPacke
     };
 
 
-    // Extremely cursed client version string validation
-    // Ideally version strings should be X.X.X but it can be literally anything
-    // so we have to be super careful
     version.string = argv[1];
-    QStringList version_raw = version.string.split(".");
-    bool ok;
-    int release_version = version_raw[0].toInt(&ok);
-    if (ok && version_raw.size() >= 1)
-        version.release = release_version;
-    if (ok && version_raw.size() >= 2) {
-        int major_version = version_raw[1].toInt(&ok);
-        if (ok)
-            version.major = major_version;
+    QRegularExpression rx("\\b(\\d+)\\.(\\d+)\\.(\\d+)\\b"); // matches X.X.X (e.g. 2.9.0, 2.4.10, etc.)
+    QRegularExpressionMatch match = rx.match(version.string);
+    if (match.hasMatch()) {
+        version.release = match.captured(1).toInt();
+        version.major = match.captured(2).toInt();
+        version.minor = match.captured(3).toInt();
     }
-    if (ok && version_raw.size() >= 3) {
-        int minor_version = version_raw[2].toInt(&ok);
-        if (ok)
-            version.minor = minor_version;
-    }
-        
-
-    
 
     sendPacket("PN", {QString::number(server->player_count), max_players});
     sendPacket("FL", feature_list);

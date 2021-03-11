@@ -505,8 +505,13 @@ void AOClient::cmdUnCM(int argc, QStringList argv)
     area->invited.removeAll(id);
     sendServerMessage("You are no longer CM in this area.");
     arup(ARUPType::CM, true);
-    if (area->owners.isEmpty())
+    if (area->owners.isEmpty()) {
         area->invited.clear();
+        if (area->locked != AreaData::FREE) {
+            area->locked = AreaData::FREE;
+            arup(ARUPType::LOCKED, true);
+        }
+    }
 }
 
 void AOClient::cmdInvite(int argc, QStringList argv)
@@ -657,28 +662,28 @@ void AOClient::cmdTimer(int argc, QStringList argv)
         requested_timer->setInterval(QTime(0,0).msecsTo(requested_time));
         requested_timer->start();
         sendServerMessage("Set timer " + QString::number(timer_id) + " to " + argv[1] + ".");
-        sendPacket("TI", {QString::number(timer_id), QString::number(2)});
-        sendPacket("TI", {QString::number(timer_id), QString::number(0), QString::number(QTime(0,0).msecsTo(requested_time))});
+        sendPacket("TI", {QString::number(timer_id), "2"}); // Show the timer
+        sendPacket("TI", {QString::number(timer_id), "0", QString::number(QTime(0,0).msecsTo(requested_time))});
         return;
     }
     else {
         if (argv[1] == "start") {
             requested_timer->start();
             sendServerMessage("Started timer " + QString::number(timer_id) + ".");
-            sendPacket("TI", {QString::number(timer_id), QString::number(2)});
-            sendPacket("TI", {QString::number(timer_id), QString::number(0), QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(requested_timer->remainingTime())))});
+            sendPacket("TI", {QString::number(timer_id), "2"}); // Show the timer
+            sendPacket("TI", {QString::number(timer_id), "0", QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(requested_timer->remainingTime())))});
         }
         else if (argv[1] == "pause" || argv[1] == "stop") {
             requested_timer->setInterval(requested_timer->remainingTime());
             requested_timer->stop();
             sendServerMessage("Stopped timer " + QString::number(timer_id) + ".");
-            sendPacket("TI", {QString::number(timer_id), QString::number(1), QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(requested_timer->interval())))});
+            sendPacket("TI", {QString::number(timer_id), "1", QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(requested_timer->interval())))});
         }
         else if (argv[1] == "hide" || argv[1] == "unset") {
             requested_timer->setInterval(0);
             requested_timer->stop();
             sendServerMessage("Hid timer " + QString::number(timer_id) + ".");
-            sendPacket("TI", {QString::number(timer_id), QString::number(3)});
+            sendPacket("TI", {QString::number(timer_id), "3"}); // Hide the timer
         }
     }
 }
@@ -869,7 +874,7 @@ QStringList AOClient::buildAreaList(int area_idx)
         default:
             break;
     }
-    entries.append("[" + QString::number(area->player_count) + " users][" + area->status + "]");
+    entries.append("[" + QString::number(area->player_count) + " users][" + QVariant::fromValue(area->status).toString().replace("_", "-") + "]");
     for (AOClient* client : server->clients) {
         if (client->current_area == area_idx && client->joined) {
             QString char_entry = "[" + QString::number(client->id) + "] " + client->current_char;
