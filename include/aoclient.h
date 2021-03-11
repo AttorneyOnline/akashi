@@ -139,6 +139,7 @@ class AOClient : public QObject {
 
     // Packet helper functions
     void sendEvidenceList(AreaData* area);
+    void updateEvidenceList(AreaData* area);
     AOPacket validateIcPacket(AOPacket packet);
     QString dezalgo(QString p_text);
     bool checkEvidenceAccess(AreaData* area);

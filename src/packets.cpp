@@ -303,17 +303,36 @@ void AOClient::pktEditEvidence(AreaData* area, int argc, QStringList argv, AOPac
 
 void AOClient::sendEvidenceList(AreaData* area)
 {
+    for (AOClient* client : server->clients) {
+        if (client->current_area == current_area)
+            client->updateEvidenceList(area);
+    }
+}
+
+void AOClient::updateEvidenceList(AreaData* area)
+{
     QStringList evidence_list;
     QString evidence_format("%1&%2&%3");
 
     for (AreaData::Evidence evidence : area->evidence) {
+        if (!checkAuth(ACLFlags.value("CM")) && area->evi_mod == AreaData::EvidenceMod::HIDDEN_CM) {
+            QRegularExpression regex("<owner=(.*?)>");
+            QRegularExpressionMatch match = regex.match(evidence.description);
+            if (match.hasMatch()) {
+                QStringList owners = match.captured(1).split(",");
+                if (!owners.contains("all", Qt::CaseSensitivity::CaseInsensitive) && !owners.contains(pos, Qt::CaseSensitivity::CaseInsensitive)) {
+                    continue;
+                }
+            }
+            // no match = show it to all
+        }
         evidence_list.append(evidence_format
-                             .arg(evidence.name)
-                             .arg(evidence.description)
-                             .arg(evidence.image));
+            .arg(evidence.name)
+            .arg(evidence.description)
+            .arg(evidence.image));
     }
 
-    server->broadcast(AOPacket("LE", evidence_list), current_area);
+    sendPacket(AOPacket("LE", evidence_list));
 }
 
 AOPacket AOClient::validateIcPacket(AOPacket packet)
@@ -381,6 +400,10 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     // side
     // this is validated clientside so w/e
     args.append(incoming_args[5].toString());
+    if (pos != incoming_args[5].toString()) {
+        pos = incoming_args[5].toString();
+        updateEvidenceList(server->areas[current_area]);
+    }
 
     // sfx name
     args.append(incoming_args[6].toString());

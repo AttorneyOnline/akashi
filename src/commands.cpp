@@ -365,6 +365,7 @@ void AOClient::cmdLogout(int argc, QStringList argv)
 void AOClient::cmdPos(int argc, QStringList argv)
 {
     changePosition(argv[0]);
+    updateEvidenceList(server->areas[current_area]);
 }
 
 void AOClient::cmdForcePos(int argc, QStringList argv) 
@@ -699,6 +700,9 @@ void AOClient::cmdEvidenceMod(int argc, QStringList argv)
         return;
     }
     sendServerMessage("Changed evidence mod.");
+
+    // Resend evidence lists to everyone in the area
+    sendEvidenceList(area);
 }
 
 void AOClient::cmdArea(int argc, QStringList argv)
