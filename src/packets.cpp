@@ -177,7 +177,7 @@ void AOClient::pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPack
     QString argument = argv[0];
 
     for (QString song : server->music_list) {
-        if (song == argument) {
+        if (song == argument || song == "~stop.mp3") { // ~stop.mp3 is a dummy track used by 2.9+
             // We have a song here
             AOPacket music_change("MC", {song, argv[1], argv[2], "1", "0", argv[3]});
             area->current_music = song;
