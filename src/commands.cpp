@@ -364,8 +364,42 @@ void AOClient::cmdLogout(int argc, QStringList argv)
 
 void AOClient::cmdPos(int argc, QStringList argv)
 {
-    pos = argv[0];
-    sendServerMessage("Position changed to " + pos + ".");
+    changePosition(argv[0]);
+}
+
+void AOClient::cmdForcePos(int argc, QStringList argv) 
+{
+    bool ok;
+    QList<AOClient*> targets;
+    AreaData* area = server->areas[current_area];
+    int target_id = argv[1].toInt(&ok);
+    int forced_clients = 0;
+    if (!ok && argv[1] != "*") {
+        sendServerMessage("That does not look like a valid ID.");
+        return;
+    }
+    else if (ok) {
+        AOClient* target_client = server->getClientByID(target_id);
+        if (target_client != nullptr)
+            targets.append(target_client);
+        else {
+            sendServerMessage("Target ID not found!");
+            return;
+        }
+    }
+        
+    else if (argv[1] == "*") { // force all clients in the area
+        for (AOClient* client : server->clients) {
+            if (client->current_area == current_area)
+                targets.append(client);
+        }
+    }
+    for (AOClient* target : targets) {
+        target->sendServerMessage("Position forcibly changed by CM.");
+        target->changePosition(argv[0]);
+        forced_clients++;
+    }
+    sendServerMessage("Forced " + QString::number(forced_clients) + " into pos " + argv[0] + ".");
 }
 
 void AOClient::cmdG(int argc, QStringList argv)
@@ -483,6 +517,10 @@ void AOClient::cmdInvite(int argc, QStringList argv)
         sendServerMessage("That does not look like a valid ID.");
         return;
     }
+    else if (server->getClientByID(invited_id) == nullptr) {
+        sendServerMessage("No client with that ID found.");
+        return;
+    }
     else if (area->invited.contains(invited_id)) {
         sendServerMessage("That ID is already on the invite list.");
         return;
@@ -498,6 +536,10 @@ void AOClient::cmdUnInvite(int argc, QStringList argv)
     int uninvited_id = argv[0].toInt(&ok);
     if (!ok) {
         sendServerMessage("That does not look like a valid ID.");
+        return;
+    }
+    else if (server->getClientByID(uninvited_id) == nullptr) {
+        sendServerMessage("No client with that ID found.");
         return;
     }
     else if (area->owners.contains(uninvited_id)) {
@@ -653,7 +695,11 @@ void AOClient::cmdArea(int argc, QStringList argv)
 
 void AOClient::cmdPlay(int argc, QStringList argv)
 {
-    sendPacket("MC", {argv.join(" "), QString::number(server->getCharID(current_char)), showname, "1", "0"});
+    AreaData* area = server->areas[current_area];
+    QString song = argv.join(" ");
+    area->current_music = song;
+    area->music_played_by = showname;
+    sendPacket("MC", {song, QString::number(server->getCharID(current_char)), showname, "1", "0"});
 }
 
 void AOClient::cmdAreaKick(int argc, QStringList argv)
@@ -665,6 +711,10 @@ void AOClient::cmdAreaKick(int argc, QStringList argv)
         return;
     }
     AOClient* client_to_kick = server->getClientByID(idx);
+    if (client_to_kick == nullptr) {
+        sendServerMessage("No client with that ID found.");
+        return;
+    }
     client_to_kick->changeArea(0);
     sendServerMessage("Client " + argv[0] + " kicked back to area 0.");
 }
@@ -714,6 +764,69 @@ void AOClient::cmdMods(int argc, QStringList argv)
     entries << "---";
     entries << "Total online: " << QString::number(online_count);
     sendServerMessage(entries.join("\n"));
+}
+
+void AOClient::cmdHelp(int argc, QStringList argv)
+{
+    QStringList entries;
+    entries << "Allowed commands:";
+    QMap<QString, CommandInfo>::const_iterator i;
+    for (i = commands.constBegin(); i!= commands.constEnd(); ++i) {
+        CommandInfo info = i.value();
+        if (checkAuth(info.acl_mask)) { // if we are allowed to use this command
+            entries << "/" + i.key();
+        }
+    }
+    sendServerMessage(entries.join("\n"));
+}
+
+void AOClient::cmdStatus(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    QString arg = argv[0].toLower();
+    if (arg == "idle")
+        area->status = AreaData::IDLE;
+    else if (arg == "rp")
+        area->status = AreaData::RP;
+    else if (arg == "casing")
+        area->status = AreaData::CASING;
+    else if (arg == "looking-for-players" || arg == "lfp")
+        area->status = AreaData::LOOKING_FOR_PLAYERS;
+    else if (arg == "recess")
+        area->status = AreaData::RECESS;
+    else if (arg == "gaming")
+        area->status = AreaData::GAMING;
+    else {
+        sendServerMessage("That does not look like a valid status. Valid statuses are idle, rp, casing, lfp, recess, gaming");
+        return;
+    }
+    arup(ARUPType::STATUS, true);
+}
+
+void AOClient::cmdCurrentMusic(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    if (area->current_music != "" && area->current_music != "~stop.mp3") // dummy track for stopping music
+        sendServerMessage("The current song is " + area->current_music + " played by " + area->music_played_by);
+    else
+        sendServerMessage("There is no music playing.");
+}
+
+void AOClient::cmdPM(int arc, QStringList argv)
+{
+    bool ok;
+    int target_id = argv.takeFirst().toInt(&ok); // using takeFirst removes the ID from our list of arguments...
+    if (!ok) {
+        sendServerMessage("That does not look like a valid ID.");
+        return;
+    }
+    AOClient* target_client = server->getClientByID(target_id);
+    if (target_client == nullptr) {
+        sendServerMessage("No client with that ID found.");
+        return;
+    }
+    QString message = argv.join(" "); //...which means it will not end up as part of the message
+    target_client->sendServerMessage("Message from " + ooc_name + " (" + QString::number(id) + "): " + message);
 }
 
 QStringList AOClient::buildAreaList(int area_idx)

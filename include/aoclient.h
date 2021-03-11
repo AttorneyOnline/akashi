@@ -59,6 +59,13 @@ class AOClient : public QObject {
     QString ooc_name = "";
     QString showname = "";
     bool global_enabled = true;
+    struct ClientVersion {
+      QString string;
+      int release = -1;
+      int major = -1;
+      int minor = -1;
+    };
+    ClientVersion version;
 
     QMap<QString, unsigned long long> ACLFlags {
         {"NONE", 0ULL},
@@ -99,6 +106,7 @@ class AOClient : public QObject {
     void handleCommand(QString command, int argc, QStringList argv);
     void changeArea(int new_area);
     void changeCharacter(int char_id);
+    void changePosition(QString new_pos);
     void arup(ARUPType type, bool broadcast);
     void fullArup();
     void sendServerMessage(QString message);
@@ -171,6 +179,7 @@ class AOClient : public QObject {
 
     //// Commands
     void cmdDefault(int argc, QStringList argv);
+    void cmdHelp(int argc, QStringList argv);
     // Authentication
     void cmdLogin(int argc, QStringList argv);
     void cmdChangeAuth(int argc, QStringList argv);
@@ -196,6 +205,8 @@ class AOClient : public QObject {
     void cmdSetBackground(int argc, QStringList argv);
     void cmdBgLock(int argc, QStringList argv);
     void cmdBgUnlock(int argc, QStringList argv);
+    void cmdStatus(int argc, QStringList argv);
+    void cmdCurrentMusic(int argc, QStringList argv);
     // Moderation
     void cmdMods(int argc, QStringList argv);
     void cmdBan(int argc, QStringList argv);
@@ -211,10 +222,12 @@ class AOClient : public QObject {
     void cmdTimer(int argc, QStringList argv);
     // Messaging/Client
     void cmdPos(int argc, QStringList argv);
+    void cmdForcePos(int argc, QStringList argv);
     void cmdSwitch(int argc, QStringList argv);
     void cmdRandomChar(int argc, QStringList argv);
     void cmdG(int argc, QStringList argv);
     void cmdToggleGlobal(int argc, QStringList argv);
+    void cmdPM(int argc, QStringList argv);
 
     // Command helper functions
     QString getAreaTimer(int area_idx, QTimer* timer);
@@ -276,6 +289,11 @@ class AOClient : public QObject {
         {"switch", {ACLFlags.value("NONE"), 1, &AOClient::cmdSwitch}},
         {"toggleglobal", {ACLFlags.value("NONE"), 0, &AOClient::cmdToggleGlobal}},
         {"mods", {ACLFlags.value("NONE"), 0, &AOClient::cmdMods}},
+        {"help", {ACLFlags.value("NONE"), 0, &AOClient::cmdHelp}},
+        {"status", {ACLFlags.value("NONE"), 1, &AOClient::cmdStatus}},
+        {"forcepos", {ACLFlags.value("CM"), 2, &AOClient::cmdForcePos}},
+        {"currentmusic", {ACLFlags.value("NONE"), 0, &AOClient::cmdCurrentMusic}},
+        {"pm", {ACLFlags.value("NONE"), 2, &AOClient::cmdPM}},
     };
 
     QString partial_packet;

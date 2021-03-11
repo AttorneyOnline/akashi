@@ -54,6 +54,30 @@ void AOClient::pktSoftwareId(AreaData* area, int argc, QStringList argv, AOPacke
         "y_offset"
     };
 
+
+    // Extremely cursed client version string validation
+    // Ideally version strings should be X.X.X but it can be literally anything
+    // so we have to be super careful
+    version.string = argv[1];
+    QStringList version_raw = version.string.split(".");
+    bool ok;
+    int release_version = version_raw[0].toInt(&ok);
+    if (ok && version_raw.size() >= 1)
+        version.release = release_version;
+    if (ok && version_raw.size() >= 2) {
+        int major_version = version_raw[1].toInt(&ok);
+        if (ok)
+            version.major = major_version;
+    }
+    if (ok && version_raw.size() >= 3) {
+        int minor_version = version_raw[2].toInt(&ok);
+        if (ok)
+            version.minor = minor_version;
+    }
+        
+
+    
+
     sendPacket("PN", {QString::number(server->player_count), max_players});
     sendPacket("FL", feature_list);
 }
@@ -177,9 +201,11 @@ void AOClient::pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPack
     QString argument = argv[0];
 
     for (QString song : server->music_list) {
-        if (song == argument) {
+        if (song == argument || song == "~stop.mp3") { // ~stop.mp3 is a dummy track used by 2.9+
             // We have a song here
             AOPacket music_change("MC", {song, argv[1], argv[2], "1", "0", argv[3]});
+            area->current_music = song;
+            area->music_played_by = argv[2];
             server->broadcast(music_change, current_area);
             return;
         }
@@ -454,8 +480,17 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
 
         // self offset
         offset = incoming_args[17].toString();
-        args.append(offset);
-        args.append(other_offset);
+        // versions 2.6-2.8 cannot validate y-offset so we send them just the x-offset
+        if ((version.release == 2) && (version.major == 6 || version.major == 7 || version.major == 8)) {
+            QString x_offset = offset.split("&")[0];
+            args.append(x_offset);
+            QString other_x_offset = other_offset.split("&")[0];
+            args.append(other_x_offset);
+        }
+        else {
+            args.append(offset);
+            args.append(other_offset);
+        }
         args.append(other_flip);
 
         // noninterrupting preanim

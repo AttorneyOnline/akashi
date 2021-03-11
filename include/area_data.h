@@ -28,7 +28,8 @@
 #include <QElapsedTimer>
 
 class Logger;
-class AreaData {
+class AreaData : public QObject {
+  Q_OBJECT
   public:
     AreaData(QStringList p_characters, QString p_name, int p_index);
 
@@ -43,7 +44,16 @@ class AreaData {
     QMap<QString, bool> characters_taken;
     QList<Evidence> evidence;
     int player_count;
-    QString status;
+    enum Status {
+      IDLE,
+      RP,
+      CASING,
+      LOOKING_FOR_PLAYERS,
+      RECESS,
+      GAMING
+    };
+    Q_ENUM(Status);
+    Status status;
     QList<int> owners;
     QList<int> invited;
     enum LockStatus {
@@ -51,6 +61,7 @@ class AreaData {
       LOCKED,
       SPECTATABLE
     };
+    Q_ENUM(LockStatus);
     LockStatus locked;
     QString background;
     bool is_protected;
@@ -60,6 +71,8 @@ class AreaData {
     QString document;
     int def_hp;
     int pro_hp;
+    QString current_music;
+    QString music_played_by;
     Logger* logger;
 };
 
