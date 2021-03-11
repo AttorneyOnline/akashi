@@ -51,6 +51,8 @@ void Server::start()
         qDebug() << "Server listening on" << port;
     }
 
+    MOTD = config.value("motd","MOTD is not set.").toString();
+
     proxy = new WSProxy(port, ws_port, this);
     if(ws_port != -1)
         proxy->start();
@@ -180,15 +182,6 @@ int Server::getDiceValue(QString value_type)
     int value = settings.value(value_type, "100").toUInt();
     settings.endGroup();
     return value;
-}
-
-QString Server::getMOTD()
-{
-    QSettings settings("config/config.ini", QSettings::IniFormat);
-    settings.beginGroup("Options");
-    QString MOTD = settings.value("motd", "No MOTD has been set.").toString();
-    QString f_MOTD = "=== MOTD ===\r\n" + MOTD + "\r\n============='";
-    return f_MOTD;
 }
 
 AOClient* Server::getClient(QString ipid)

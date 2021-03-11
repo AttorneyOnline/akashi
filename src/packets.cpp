@@ -112,7 +112,7 @@ void AOClient::pktLoadingDone(AreaData* area, int argc, QStringList argv, AOPack
     sendPacket("BN", {area->background});
     sendPacket("OPPASS", {"DEADBEEF"});
     sendPacket("DONE");
-    sendServerMessage(server->getMOTD());
+    sendServerMessage("=== MOTD ===\r\n" + server->MOTD + "\r\n=============");
 }
 
 void AOClient::pktCharPassword(AreaData* area, int argc, QStringList argv, AOPacket packet)

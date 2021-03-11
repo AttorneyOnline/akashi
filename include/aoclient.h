@@ -76,6 +76,7 @@ class AOClient : public QObject {
         {"CM", 1ULL << 4},
         {"GLOBAL_TIMER", 1ULL << 5},
         {"CHANGE_EVI_MOD", 1ULL << 6},
+        {"CHANGE_MOTD", 1ULL << 7},
         {"SUPER", ~0ULL}
     };
 

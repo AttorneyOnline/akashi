@@ -859,8 +859,19 @@ void AOClient::cmdPM(int arc, QStringList argv)
 
 void AOClient::cmdMOTD(int argc, QStringList argv)
 {
-    QString MOTD = server->getMOTD();
-    sendServerMessage(MOTD);
+    if (argc == 0) {
+        sendServerMessage("=== MOTD ===\r\n" + server->MOTD + "\r\n=============");
+    }
+    else if (argc == 1) {
+        unsigned long long user_acl = server->db_manager->getACL(moderator_name);
+        if ((user_acl & ACLFlags.value("MODIFY_USERS")) == 0) {
+            sendServerMessage("You do not have permission to change the MOTD");
+        }
+        else {
+            server->MOTD = argv[0];
+        }
+
+    }
 }
 
 QStringList AOClient::buildAreaList(int area_idx)

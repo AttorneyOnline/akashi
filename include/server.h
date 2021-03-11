@@ -66,6 +66,7 @@ class Server : public QObject {
     QStringList backgrounds;
     DBManager* db_manager;
     QString server_name;
+    QString MOTD;
 
     QTimer* timer;
 
