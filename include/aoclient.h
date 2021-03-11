@@ -171,6 +171,7 @@ class AOClient : public QObject {
 
     //// Commands
     void cmdDefault(int argc, QStringList argv);
+    void cmdHelp(int argc, QStringList argv);
     // Authentication
     void cmdLogin(int argc, QStringList argv);
     void cmdChangeAuth(int argc, QStringList argv);
@@ -276,6 +277,7 @@ class AOClient : public QObject {
         {"switch", {ACLFlags.value("NONE"), 1, &AOClient::cmdSwitch}},
         {"toggleglobal", {ACLFlags.value("NONE"), 0, &AOClient::cmdToggleGlobal}},
         {"mods", {ACLFlags.value("NONE"), 0, &AOClient::cmdMods}},
+        {"help", {ACLFlags.value("NONE"), 0, &AOClient::cmdHelp}},
     };
 
     QString partial_packet;

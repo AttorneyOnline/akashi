@@ -716,6 +716,20 @@ void AOClient::cmdMods(int argc, QStringList argv)
     sendServerMessage(entries.join("\n"));
 }
 
+void AOClient::cmdHelp(int argc, QStringList argv)
+{
+    QStringList entries;
+    entries << "Allowed commands:";
+    QMap<QString, CommandInfo>::const_iterator i;
+    for (i = commands.constBegin(); i!= commands.constEnd(); ++i) {
+        CommandInfo info = i.value();
+        if (checkAuth(info.acl_mask)) {
+            entries << "/" + i.key();
+        }
+    }
+    sendServerMessage(entries.join("\n"));
+}
+
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;
