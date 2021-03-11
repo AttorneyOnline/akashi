@@ -64,7 +64,7 @@ class AOClient : public QObject {
       int release = -1;
       int major = -1;
       int minor = -1;
-    }
+    };
     ClientVersion version;
 
     QMap<QString, unsigned long long> ACLFlags {
@@ -106,6 +106,7 @@ class AOClient : public QObject {
     void handleCommand(QString command, int argc, QStringList argv);
     void changeArea(int new_area);
     void changeCharacter(int char_id);
+    void changePosition(QString new_pos);
     void arup(ARUPType type, bool broadcast);
     void fullArup();
     void sendServerMessage(QString message);

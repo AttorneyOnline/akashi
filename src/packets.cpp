@@ -58,8 +58,8 @@ void AOClient::pktSoftwareId(AreaData* area, int argc, QStringList argv, AOPacke
     // Extremely cursed client version string validation
     // Ideally version strings should be X.X.X but it can be literally anything
     // so we have to be super careful
-    version->string = argv[1];
-    QString version_raw = argv[1].split(".");
+    version.string = argv[1];
+    QStringList version_raw = version.string.split(".");
     bool ok;
     int release_version = version_raw[0].toInt(&ok);
     if (ok && version_raw.size() >= 1)
