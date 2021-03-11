@@ -55,8 +55,8 @@ int main(int argc, char* argv[])
         else {
             if (settings.advertise_server) {
                 advertiser =
-                    new Advertiser(settings.ms_ip, settings.port,
-                                   settings.ws_port, settings.local_port,
+                    new Advertiser(settings.ms_ip, settings.ms_port,
+                                   settings.ws_port, settings.port,
                                    settings.name, settings.description);
                 advertiser->contactMasterServer();
             }
