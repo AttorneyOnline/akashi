@@ -857,6 +857,12 @@ void AOClient::cmdPM(int arc, QStringList argv)
     target_client->sendServerMessage("Message from " + ooc_name + " (" + QString::number(id) + "): " + message);
 }
 
+void AOClient::cmdMOTD(int argc, QStringList argv)
+{
+    QString MOTD = server->getMOTD();
+    sendServerMessage(MOTD);
+}
+
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;

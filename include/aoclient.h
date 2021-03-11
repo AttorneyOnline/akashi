@@ -183,6 +183,7 @@ class AOClient : public QObject {
     //// Commands
     void cmdDefault(int argc, QStringList argv);
     void cmdHelp(int argc, QStringList argv);
+    void cmdMOTD(int argc, QStringList argv);
     // Authentication
     void cmdLogin(int argc, QStringList argv);
     void cmdChangeAuth(int argc, QStringList argv);
@@ -298,7 +299,8 @@ class AOClient : public QObject {
         {"forcepos", {ACLFlags.value("CM"), 2, &AOClient::cmdForcePos}},
         {"currentmusic", {ACLFlags.value("NONE"), 0, &AOClient::cmdCurrentMusic}},
         {"pm", {ACLFlags.value("NONE"), 2, &AOClient::cmdPM}},
-        {"evidence_mod", {ACLFlags.value("CHANGE_EVI_MOD"), 1, &AOClient::cmdEvidenceMod}}
+        {"evidence_mod", {ACLFlags.value("CHANGE_EVI_MOD"), 1, &AOClient::cmdEvidenceMod}},
+        {"motd", {ACLFlags.value("NONE"), 0, &AOClient::cmdMOTD}}
     };
 
     QString partial_packet;
