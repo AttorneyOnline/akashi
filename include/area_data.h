@@ -74,6 +74,13 @@ class AreaData : public QObject {
     QString current_music;
     QString music_played_by;
     Logger* logger;
+    enum EvidenceMod{
+        FFA,
+        MOD,
+        CM,
+        HIDDEN_CM
+    };
+    EvidenceMod evi_mod;
 };
 
 #endif // AREA_DATA_H

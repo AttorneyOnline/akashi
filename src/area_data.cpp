@@ -30,6 +30,7 @@ AreaData::AreaData(QStringList characters, QString p_name, int p_index)
     is_protected = areas_ini.value("protected_area", "false").toBool();
     iniswap_allowed = areas_ini.value("iniswap_allowed", "true").toBool();
     bg_locked = areas_ini.value("bg_locked", "false").toBool();
+    QString configured_evi_mod = areas_ini.value("evidence_mod", "FFA").toString().toLower();
     areas_ini.endGroup();
     player_count = 0;
     locked = FREE;
@@ -52,4 +53,13 @@ AreaData::AreaData(QStringList characters, QString p_name, int p_index)
     timers.append(timer3);
     QTimer* timer4 = new QTimer();
     timers.append(timer4);
+
+    if (configured_evi_mod == "cm")
+        evi_mod = EvidenceMod::CM;
+    else if (configured_evi_mod == "mod")
+        evi_mod = EvidenceMod::MOD;
+    else if (configured_evi_mod == "hiddencm")
+        evi_mod = EvidenceMod::HIDDEN_CM;
+    else
+        evi_mod = EvidenceMod::FFA;
 }

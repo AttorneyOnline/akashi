@@ -75,6 +75,7 @@ class AOClient : public QObject {
         {"MODIFY_USERS", 1ULL << 3},
         {"CM", 1ULL << 4},
         {"GLOBAL_TIMER", 1ULL << 5},
+        {"CHANGE_EVI_MOD", 1ULL << 6},
         {"SUPER", ~0ULL}
     };
 
@@ -97,9 +98,9 @@ class AOClient : public QObject {
     };
 
     enum RollType {
-      ROLL,
-      ROLLP,
-      ROLLA
+        ROLL,
+        ROLLP,
+        ROLLA
     };
 
     void handlePacket(AOPacket packet);
@@ -140,6 +141,7 @@ class AOClient : public QObject {
     void sendEvidenceList(AreaData* area);
     AOPacket validateIcPacket(AOPacket packet);
     QString dezalgo(QString p_text);
+    bool checkEvidenceAccess(AreaData* area);
 
     // Packet helper global variables
     int char_id = -1;
@@ -220,6 +222,7 @@ class AOClient : public QObject {
     void cmdDoc(int argc, QStringList argv);
     void cmdClearDoc(int argc, QStringList argv);
     void cmdTimer(int argc, QStringList argv);
+    void cmdEvidenceMod(int argc, QStringList argv);
     // Messaging/Client
     void cmdPos(int argc, QStringList argv);
     void cmdForcePos(int argc, QStringList argv);
@@ -294,6 +297,7 @@ class AOClient : public QObject {
         {"forcepos", {ACLFlags.value("CM"), 2, &AOClient::cmdForcePos}},
         {"currentmusic", {ACLFlags.value("NONE"), 0, &AOClient::cmdCurrentMusic}},
         {"pm", {ACLFlags.value("NONE"), 2, &AOClient::cmdPM}},
+        {"evidence_mod", {ACLFlags.value("CHANGE_EVI_MOD"), 1, &AOClient::cmdEvidenceMod}}
     };
 
     QString partial_packet;

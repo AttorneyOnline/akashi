@@ -682,6 +682,25 @@ void AOClient::cmdTimer(int argc, QStringList argv)
     }
 }
 
+void AOClient::cmdEvidenceMod(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    argv[0] = argv[0].toLower();
+    if (argv[0] == "cm")
+        area->evi_mod = AreaData::EvidenceMod::CM;
+    else if (argv[0] == "mod")
+        area->evi_mod = AreaData::EvidenceMod::MOD;
+    else if (argv[0] == "hiddencm")
+        area->evi_mod = AreaData::EvidenceMod::HIDDEN_CM;
+    else if (argv[0] == "ffa")
+        area->evi_mod = AreaData::EvidenceMod::FFA;
+    else {
+        sendServerMessage("Invalid evidence mod.");
+        return;
+    }
+    sendServerMessage("Changed evidence mod.");
+}
+
 void AOClient::cmdArea(int argc, QStringList argv)
 {
     bool ok;

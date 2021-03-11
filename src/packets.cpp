@@ -269,6 +269,8 @@ void AOClient::pktModCall(AreaData* area, int argc, QStringList argv, AOPacket p
 
 void AOClient::pktAddEvidence(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    if (!checkEvidenceAccess(area))
+        return;
     AreaData::Evidence evi = {argv[0], argv[1], argv[2]};
     area->evidence.append(evi);
     sendEvidenceList(area);
@@ -276,6 +278,8 @@ void AOClient::pktAddEvidence(AreaData* area, int argc, QStringList argv, AOPack
 
 void AOClient::pktRemoveEvidence(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    if (!checkEvidenceAccess(area))
+        return;
     bool is_int = false;
     int idx = argv[0].toInt(&is_int);
     if (is_int && idx <= area->evidence.size() && idx >= 0) {
@@ -286,6 +290,8 @@ void AOClient::pktRemoveEvidence(AreaData* area, int argc, QStringList argv, AOP
 
 void AOClient::pktEditEvidence(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    if (!checkEvidenceAccess(area))
+        return;
     bool is_int = false;
     int idx = argv[0].toInt(&is_int);
     AreaData::Evidence evi = {argv[1], argv[2], argv[3]};
@@ -548,4 +554,19 @@ QString AOClient::dezalgo(QString p_text)
     QRegExp rxp("([\u0300-\u036f\u1ab0-\u1aff\u1dc0-\u1dff\u20d0-\u20ff\ufe20-\ufe2f\u115f\u1160\u3164]{" + QRegExp::escape(QString::number(zalgo_tolerance)) + ",})");
     QString filtered = p_text.replace(rxp, "");
     return filtered;
+}
+
+bool AOClient::checkEvidenceAccess(AreaData *area)
+{
+    switch(area->evi_mod) {
+    case AreaData::EvidenceMod::FFA:
+        return true;
+    case AreaData::EvidenceMod::CM:
+    case AreaData::EvidenceMod::HIDDEN_CM:
+        return checkAuth(ACLFlags.value("CM"));
+    case AreaData::EvidenceMod::MOD:
+        return authenticated;
+    default:
+        return false;
+    }
 }
