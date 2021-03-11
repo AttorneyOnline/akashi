@@ -198,6 +198,7 @@ class AOClient : public QObject {
     void cmdBgLock(int argc, QStringList argv);
     void cmdBgUnlock(int argc, QStringList argv);
     void cmdStatus(int argc, QStringList argv);
+    void cmdCurrentMusic(int argc, QStringList argv);
     // Moderation
     void cmdMods(int argc, QStringList argv);
     void cmdBan(int argc, QStringList argv);
@@ -213,6 +214,7 @@ class AOClient : public QObject {
     void cmdTimer(int argc, QStringList argv);
     // Messaging/Client
     void cmdPos(int argc, QStringList argv);
+    void cmdForcePos(int argc, QStringList argv);
     void cmdSwitch(int argc, QStringList argv);
     void cmdRandomChar(int argc, QStringList argv);
     void cmdG(int argc, QStringList argv);
@@ -280,6 +282,8 @@ class AOClient : public QObject {
         {"mods", {ACLFlags.value("NONE"), 0, &AOClient::cmdMods}},
         {"help", {ACLFlags.value("NONE"), 0, &AOClient::cmdHelp}},
         {"status", {ACLFlags.value("NONE"), 1, &AOClient::cmdStatus}},
+        {"forcepos", {ACLFlags.value("CM"), 2, &AOClient::cmdForcePos}},
+        {"currentmusic", {ACLFlags.value("NONE"), 0, &AOClient::cmdCurrentMusic}},
     };
 
     QString partial_packet;

@@ -180,6 +180,8 @@ void AOClient::pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPack
         if (song == argument) {
             // We have a song here
             AOPacket music_change("MC", {song, argv[1], argv[2], "1", "0", argv[3]});
+            area->current_music = song;
+            area->music_played_by = argv[2];
             server->broadcast(music_change, current_area);
             return;
         }

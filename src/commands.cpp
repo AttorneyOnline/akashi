@@ -696,7 +696,11 @@ void AOClient::cmdArea(int argc, QStringList argv)
 
 void AOClient::cmdPlay(int argc, QStringList argv)
 {
-    sendPacket("MC", {argv.join(" "), QString::number(server->getCharID(current_char)), showname, "1", "0"});
+    AreaData* area = server->areas[current_area];
+    QString song = argv.join(" ");
+    area->current_music = song;
+    area->music_played_by = showname;
+    sendPacket("MC", {song, QString::number(server->getCharID(current_char)), showname, "1", "0"});
 }
 
 void AOClient::cmdAreaKick(int argc, QStringList argv)
@@ -777,7 +781,8 @@ void AOClient::cmdHelp(int argc, QStringList argv)
     sendServerMessage(entries.join("\n"));
 }
 
-void AOClient::cmdStatus(int argc, QStringList argv) {
+void AOClient::cmdStatus(int argc, QStringList argv)
+{
     AreaData* area = server->areas[current_area];
     QString arg = argv[0].toLower();
     if (arg == "idle")
@@ -797,6 +802,15 @@ void AOClient::cmdStatus(int argc, QStringList argv) {
         return;
     }
     arup(ARUPType::STATUS, true);
+}
+
+void AOClient::cmdCurrentMusic(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    if (area->current_music != "" && area->current_music != "~stop.mp3") // dummy track for stopping music
+        sendServerMessage("The current song is " + area->current_music + " played by " + area->music_played_by);
+    else
+        sendServerMessage("There is no music playing.");
 }
 
 QStringList AOClient::buildAreaList(int area_idx)

@@ -71,6 +71,8 @@ class AreaData : public QObject {
     QString document;
     int def_hp;
     int pro_hp;
+    QString current_music;
+    QString music_played_by;
     Logger* logger;
 };
 
