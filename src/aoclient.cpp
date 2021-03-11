@@ -193,6 +193,13 @@ void AOClient::changeCharacter(int char_id)
     }
 }
 
+void AOClient::changePosition(QString new_pos)
+{
+    pos = new_pos;
+    sendServerMessage("Position changed to " + pos + ".");
+    sendPacket("SP", {pos});
+}
+
 void AOClient::handleCommand(QString command, int argc, QStringList argv)
 {
     CommandInfo info = commands.value(command, {false, -1, &AOClient::cmdDefault});

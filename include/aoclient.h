@@ -219,6 +219,7 @@ class AOClient : public QObject {
     void cmdRandomChar(int argc, QStringList argv);
     void cmdG(int argc, QStringList argv);
     void cmdToggleGlobal(int argc, QStringList argv);
+    void cmdPM(int argc, QStringList argv);
 
     // Command helper functions
     QString getAreaTimer(int area_idx, QTimer* timer);
@@ -284,6 +285,7 @@ class AOClient : public QObject {
         {"status", {ACLFlags.value("NONE"), 1, &AOClient::cmdStatus}},
         {"forcepos", {ACLFlags.value("CM"), 2, &AOClient::cmdForcePos}},
         {"currentmusic", {ACLFlags.value("NONE"), 0, &AOClient::cmdCurrentMusic}},
+        {"pm", {ACLFlags.value("NONE"), 2, &AOClient::cmdPM}},
     };
 
     QString partial_packet;
