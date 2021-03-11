@@ -175,20 +175,20 @@ void AOClient::changeCharacter(int char_id)
     sendPacket("PV", {QString::number(id), "CID", QString::number(char_id)});
     fullArup();
     if (server->timer->isActive()) {
-        sendPacket("TI", {QString::number(0), QString::number(2)});
-        sendPacket("TI", {QString::number(0), QString::number(0), QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(server->timer->remainingTime())))});
+        sendPacket("TI", {"0", "2"});
+        sendPacket("TI", {"0", "0", QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(server->timer->remainingTime())))});
     }
     else {
-        sendPacket("TI", {QString::number(0), QString::number(3)});
+        sendPacket("TI", {"0", "3"});
     }
     for (QTimer* timer : area->timers) {
         int timer_id = area->timers.indexOf(timer) + 1;
         if (timer->isActive()) {
-            sendPacket("TI", {QString::number(timer_id), QString::number(2)});
-            sendPacket("TI", {QString::number(timer_id), QString::number(0), QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(timer->remainingTime())))});
+            sendPacket("TI", {QString::number(timer_id), "2"});
+            sendPacket("TI", {QString::number(timer_id), "0", QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(timer->remainingTime())))});
         }
         else {
-            sendPacket("TI", {QString::number(timer_id), QString::number(3)});
+            sendPacket("TI", {QString::number(timer_id), "3"});
         }
     }
 }
