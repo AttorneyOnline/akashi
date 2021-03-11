@@ -52,6 +52,7 @@ class Server : public QObject {
     void broadcast(AOPacket packet, int area_index);
     void broadcast(AOPacket packet);
     QString getServerName();
+    QString getMOTD();
     int getDiceValue(QString value_type);
 
     QVector<AOClient*> clients;

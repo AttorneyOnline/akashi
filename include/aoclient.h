@@ -203,6 +203,7 @@ class AOClient : public QObject {
     void cmdClearDoc(int argc, QStringList argv);
     void cmdTimer(int argc, QStringList argv);
     // Messaging/Client
+    void cmdMOTD(int argc, QStringList argv);
     void cmdPos(int argc, QStringList argv);
     void cmdG(int argc, QStringList argv);
 
@@ -255,6 +256,7 @@ class AOClient : public QObject {
         {"spectatable", {ACLFlags.value("CM"), 0, &AOClient::cmdSpectatable}},
         {"unlock", {ACLFlags.value("CM"), 0, &AOClient::cmdUnLock}},
         {"timer", {ACLFlags.value("CM"), 0, &AOClient::cmdTimer}},
+        {"motd", {ACLFlags.value("NONE"), 0, &AOClient::cmdMOTD}},
     };
 
     QString partial_packet;

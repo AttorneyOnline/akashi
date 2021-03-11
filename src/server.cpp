@@ -173,6 +173,15 @@ int Server::getDiceValue(QString value_type)
     return value;
 }
 
+QString Server::getMOTD()
+{
+    QSettings settings("config/config.ini", QSettings::IniFormat);
+    settings.beginGroup("Options");
+    QString MOTD = settings.value("motd", "No MOTD has been set.").toString();
+    QString f_MOTD = "=== MOTD ===\r\n" + MOTD + "\r\n============='";
+    return f_MOTD;
+}
+
 AOClient* Server::getClient(QString ipid)
 {
     for (AOClient* client : clients) {

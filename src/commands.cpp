@@ -637,6 +637,12 @@ void AOClient::cmdTimer(int argc, QStringList argv)
     }
 }
 
+void AOClient::cmdMOTD(int argc, QStringList argv)
+{
+    QString MOTD = server->getMOTD();
+    sendServerMessage(MOTD);
+}
+
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;
