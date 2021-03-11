@@ -862,15 +862,15 @@ void AOClient::cmdMOTD(int argc, QStringList argv)
     if (argc == 0) {
         sendServerMessage("=== MOTD ===\r\n" + server->MOTD + "\r\n=============");
     }
-    else if (argc == 1) {
-        unsigned long long user_acl = server->db_manager->getACL(moderator_name);
-        if ((user_acl & ACLFlags.value("MODIFY_USERS")) == 0) {
-            sendServerMessage("You do not have permission to change the MOTD");
+    else if (argc > 0) {
+        if (checkAuth(ACLFlags.value("CHANGE_MOTD"))) {
+            QString MOTD = argv.join(" ");
+            server->MOTD = MOTD;
+            sendServerMessage("MOTD has been changed.");
         }
         else {
-            server->MOTD = argv[0];
+            sendServerMessage("You do not have permission to change the MOTD");
         }
-
     }
 }
 
