@@ -59,6 +59,13 @@ class AOClient : public QObject {
     QString ooc_name = "";
     QString showname = "";
     bool global_enabled = true;
+    struct ClientVersion {
+      QString string;
+      int release = -1;
+      int major = -1;
+      int minor = -1;
+    }
+    ClientVersion version;
 
     QMap<QString, unsigned long long> ACLFlags {
         {"NONE", 0ULL},
