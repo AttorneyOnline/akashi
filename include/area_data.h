@@ -31,7 +31,7 @@ class Logger;
 class AreaData : public QObject {
   Q_OBJECT
   public:
-    AreaData(QStringList p_characters, QString p_name, int p_index);
+    AreaData(QString p_name, int p_index);
 
     struct Evidence {
         QString name;
@@ -41,7 +41,7 @@ class AreaData : public QObject {
     QList<QTimer*> timers;
     QString name;
     int index;
-    QMap<QString, bool> characters_taken;
+    QList<int> characters_taken;
     QList<Evidence> evidence;
     int player_count;
     enum Status {
