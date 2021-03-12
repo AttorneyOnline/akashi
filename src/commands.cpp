@@ -857,6 +857,23 @@ void AOClient::cmdPM(int arc, QStringList argv)
     target_client->sendServerMessage("Message from " + ooc_name + " (" + QString::number(id) + "): " + message);
 }
 
+void AOClient::cmdMOTD(int argc, QStringList argv)
+{
+    if (argc == 0) {
+        sendServerMessage("=== MOTD ===\r\n" + server->MOTD + "\r\n=============");
+    }
+    else if (argc > 0) {
+        if (checkAuth(ACLFlags.value("CHANGE_MOTD"))) {
+            QString MOTD = argv.join(" ");
+            server->MOTD = MOTD;
+            sendServerMessage("MOTD has been changed.");
+        }
+        else {
+            sendServerMessage("You do not have permission to change the MOTD");
+        }
+    }
+}
+
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;

@@ -52,6 +52,7 @@ class Server : public QObject {
     void broadcast(AOPacket packet, int area_index);
     void broadcast(AOPacket packet);
     QString getServerName();
+    QString getMOTD();
     int getDiceValue(QString value_type);
     int getCharID(QString char_name);
 
@@ -65,6 +66,7 @@ class Server : public QObject {
     QStringList backgrounds;
     DBManager* db_manager;
     QString server_name;
+    QString MOTD;
 
     QTimer* timer;
 

@@ -76,6 +76,7 @@ class AOClient : public QObject {
         {"CM", 1ULL << 4},
         {"GLOBAL_TIMER", 1ULL << 5},
         {"CHANGE_EVI_MOD", 1ULL << 6},
+        {"CHANGE_MOTD", 1ULL << 7},
         {"SUPER", ~0ULL}
     };
 
@@ -183,6 +184,7 @@ class AOClient : public QObject {
     //// Commands
     void cmdDefault(int argc, QStringList argv);
     void cmdHelp(int argc, QStringList argv);
+    void cmdMOTD(int argc, QStringList argv);
     // Authentication
     void cmdLogin(int argc, QStringList argv);
     void cmdChangeAuth(int argc, QStringList argv);
@@ -298,7 +300,8 @@ class AOClient : public QObject {
         {"forcepos", {ACLFlags.value("CM"), 2, &AOClient::cmdForcePos}},
         {"currentmusic", {ACLFlags.value("NONE"), 0, &AOClient::cmdCurrentMusic}},
         {"pm", {ACLFlags.value("NONE"), 2, &AOClient::cmdPM}},
-        {"evidence_mod", {ACLFlags.value("CHANGE_EVI_MOD"), 1, &AOClient::cmdEvidenceMod}}
+        {"evidence_mod", {ACLFlags.value("CHANGE_EVI_MOD"), 1, &AOClient::cmdEvidenceMod}},
+        {"motd", {ACLFlags.value("NONE"), 0, &AOClient::cmdMOTD}}
     };
 
     QString partial_packet;

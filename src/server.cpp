@@ -51,6 +51,8 @@ void Server::start()
         qDebug() << "Server listening on" << port;
     }
 
+    MOTD = config.value("motd","MOTD is not set.").toString();
+
     proxy = new WSProxy(port, ws_port, this);
     if(ws_port != -1)
         proxy->start();

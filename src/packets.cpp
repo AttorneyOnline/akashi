@@ -112,6 +112,8 @@ void AOClient::pktLoadingDone(AreaData* area, int argc, QStringList argv, AOPack
     sendPacket("BN", {area->background});
     sendPacket("OPPASS", {"DEADBEEF"});
     sendPacket("DONE");
+  
+    sendServerMessage("=== MOTD ===\r\n" + server->MOTD + "\r\n=============");
 
     fullArup(); // Give client all the area data
     if (server->timer->isActive()) {
