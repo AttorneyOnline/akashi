@@ -78,6 +78,7 @@ class AOClient : public QObject {
         {"EVI_MOD", 1ULL << 6},
         {"MOTD", 1ULL << 7},
         {"ANNOUNCE", 1ULL << 8},
+        {"MODCHAT", 1ULL << 9},
         {"SUPER", ~0ULL}
     };
 
@@ -218,6 +219,7 @@ class AOClient : public QObject {
     void cmdBan(int argc, QStringList argv);
     void cmdKick(int argc, QStringList argv);
     void cmdAnnounce(int argc, QStringList argv);
+    void cmdM(int argc, QStringList argv);
     // Casing/RP
     void cmdPlay(int argc, QStringList argv);
     void cmdNeed(int argc, QStringList argv);
@@ -305,6 +307,7 @@ class AOClient : public QObject {
         {"evidence_mod", {ACLFlags.value("EVI_MOD"), 1, &AOClient::cmdEvidenceMod}},
         {"motd", {ACLFlags.value("NONE"), 0, &AOClient::cmdMOTD}},
         {"announce", {ACLFlags.value("ANNOUNCE"), 1, &AOClient::cmdAnnounce}},
+        {"m", {ACLFlags.value("MODCHAT"), 1, &AOClient::cmdM}},
     };
 
     QString partial_packet;

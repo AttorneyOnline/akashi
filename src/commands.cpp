@@ -879,6 +879,17 @@ void AOClient::cmdAnnounce(int argc, QStringList argv)
     sendServerBroadcast("=== Announcement ===\r\n" + argv.join(" ") + "\r\n=============");
 }
 
+void AOClient::cmdM(int argc, QStringList argv)
+{
+    QString sender_name = ooc_name;
+    QString sender_message = argv.join(" ");
+    for (AOClient* client : server->clients) {
+        if (client->checkAuth(ACLFlags.value("MODCHAT")))
+            client->sendPacket("CT", {"[M]" + sender_name, sender_message});
+    }
+    return;
+}
+
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;
