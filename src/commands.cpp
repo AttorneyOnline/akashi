@@ -727,7 +727,8 @@ void AOClient::cmdPlay(int argc, QStringList argv)
     QString song = argv.join(" ");
     area->current_music = song;
     area->music_played_by = showname;
-    sendPacket("MC", {song, QString::number(server->getCharID(current_char)), showname, "1", "0"});
+    AOPacket music_change("MC", {song, QString::number(server->getCharID(current_char)), showname, "1", "0"});
+    server->broadcast(music_change, current_area);
 }
 
 void AOClient::cmdAreaKick(int argc, QStringList argv)
