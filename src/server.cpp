@@ -84,6 +84,7 @@ void Server::start()
     area_names = areas_ini.childGroups(); // invisibly does a lexicographical sort, because Qt is great like that
     std::sort(area_names.begin(), area_names.end(), [] (const QString &a, const QString &b) {return a.split(":")[0].toInt() < b.split(":")[0].toInt();});
     QStringList sanitized_area_names;
+    QStringList raw_area_names = area_names;
     for (QString area_name : area_names) {
         QStringList name_split = area_name.split(":");
         name_split.removeFirst();
@@ -91,8 +92,8 @@ void Server::start()
         sanitized_area_names.append(area_name_sanitized);
     }
     area_names = sanitized_area_names;
-    for (int i = 0; i < area_names.length(); i++) {
-        QString area_name = area_names[i];
+    for (int i = 0; i < raw_area_names.length(); i++) {
+        QString area_name = raw_area_names[i];
         areas.insert(i, new AreaData(area_name, i));
     }
 }

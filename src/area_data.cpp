@@ -19,7 +19,9 @@
 
 AreaData::AreaData(QString p_name, int p_index)
 {
-    name = p_name;
+    QStringList name_split = p_name.split(":");
+    name_split.removeFirst();
+    name = name_split.join(":");
     index = p_index;
     QSettings areas_ini("config/areas.ini", QSettings::IniFormat);
     areas_ini.beginGroup(p_name);

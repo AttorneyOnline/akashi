@@ -109,9 +109,9 @@ void AOClient::pktLoadingDone(AreaData* area, int argc, QStringList argv, AOPack
     sendPacket("HP", {"1", QString::number(area->def_hp)});
     sendPacket("HP", {"2", QString::number(area->pro_hp)});
     sendPacket("FA", server->area_names);
-    sendPacket("BN", {area->background});
     sendPacket("OPPASS", {"DEADBEEF"});
     sendPacket("DONE");
+    sendPacket("BN", {area->background});
   
     sendServerMessage("=== MOTD ===\r\n" + server->MOTD + "\r\n=============");
 
