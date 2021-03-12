@@ -890,6 +890,22 @@ void AOClient::cmdM(int argc, QStringList argv)
     return;
 }
 
+void AOClient::cmdGM(int argc, QStringList argv)
+{
+    if (checkAuth(ACLFlags.value("MOTD"))) {
+        QString sender_name = ooc_name;
+        QString sender_area = server->area_names.value(current_area);
+        QString sender_message = argv.join(" ");
+        for (AOClient* client : server->clients) {
+            if (client->global_enabled)
+                client->sendPacket("CT", {"[G][" + sender_area + "]" + "["+sender_name+"][M]", sender_message});
+        }
+    }
+    else {
+        sendServerMessage("You do not have permission to use Global Mod Message.");
+    }
+}
+
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;
