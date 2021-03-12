@@ -75,8 +75,9 @@ class AOClient : public QObject {
         {"MODIFY_USERS", 1ULL << 3},
         {"CM", 1ULL << 4},
         {"GLOBAL_TIMER", 1ULL << 5},
-        {"CHANGE_EVI_MOD", 1ULL << 6},
-        {"CHANGE_MOTD", 1ULL << 7},
+        {"EVI_MOD", 1ULL << 6},
+        {"MOTD", 1ULL << 7},
+        {"ANNOUNCE", 1ULL << 8},
         {"SUPER", ~0ULL}
     };
 
@@ -216,6 +217,7 @@ class AOClient : public QObject {
     void cmdMods(int argc, QStringList argv);
     void cmdBan(int argc, QStringList argv);
     void cmdKick(int argc, QStringList argv);
+    void cmdAnnounce(int argc, QStringList argv);
     // Casing/RP
     void cmdPlay(int argc, QStringList argv);
     void cmdNeed(int argc, QStringList argv);
@@ -300,8 +302,9 @@ class AOClient : public QObject {
         {"forcepos", {ACLFlags.value("CM"), 2, &AOClient::cmdForcePos}},
         {"currentmusic", {ACLFlags.value("NONE"), 0, &AOClient::cmdCurrentMusic}},
         {"pm", {ACLFlags.value("NONE"), 2, &AOClient::cmdPM}},
-        {"evidence_mod", {ACLFlags.value("CHANGE_EVI_MOD"), 1, &AOClient::cmdEvidenceMod}},
-        {"motd", {ACLFlags.value("NONE"), 0, &AOClient::cmdMOTD}}
+        {"evidence_mod", {ACLFlags.value("EVI_MOD"), 1, &AOClient::cmdEvidenceMod}},
+        {"motd", {ACLFlags.value("NONE"), 0, &AOClient::cmdMOTD}},
+        {"announce", {ACLFlags.value("ANNOUNCE"), 1, &AOClient::cmdAnnounce}},
     };
 
     QString partial_packet;
