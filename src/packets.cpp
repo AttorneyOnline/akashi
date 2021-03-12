@@ -102,7 +102,7 @@ void AOClient::pktLoadingDone(AreaData* area, int argc, QStringList argv, AOPack
     area->player_count++;
     joined = true;
     server->updateCharsTaken(area);
-    fullArup(); // Give client all the area data
+
     arup(ARUPType::PLAYER_COUNT, true); // Tell everyone there is a new player
     sendEvidenceList(area);
 
@@ -112,7 +112,27 @@ void AOClient::pktLoadingDone(AreaData* area, int argc, QStringList argv, AOPack
     sendPacket("BN", {area->background});
     sendPacket("OPPASS", {"DEADBEEF"});
     sendPacket("DONE");
+  
     sendServerMessage("=== MOTD ===\r\n" + server->MOTD + "\r\n=============");
+
+    fullArup(); // Give client all the area data
+    if (server->timer->isActive()) {
+        sendPacket("TI", {"0", "2"});
+        sendPacket("TI", {"0", "0", QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(server->timer->remainingTime())))});
+    }
+    else {
+        sendPacket("TI", {"0", "3"});
+    }
+    for (QTimer* timer : area->timers) {
+        int timer_id = area->timers.indexOf(timer) + 1;
+        if (timer->isActive()) {
+            sendPacket("TI", {QString::number(timer_id), "2"});
+            sendPacket("TI", {QString::number(timer_id), "0", QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(timer->remainingTime())))});
+        }
+        else {
+            sendPacket("TI", {QString::number(timer_id), "3"});
+        }
+    }
 }
 
 void AOClient::pktCharPassword(AreaData* area, int argc, QStringList argv, AOPacket packet)

@@ -93,7 +93,7 @@ void Server::start()
     area_names = sanitized_area_names;
     for (int i = 0; i < area_names.length(); i++) {
         QString area_name = area_names[i];
-        areas.insert(i, new AreaData(characters, area_name, i));
+        areas.insert(i, new AreaData(area_name, i));
     }
 }
 
@@ -141,8 +141,8 @@ void Server::clientConnected()
 void Server::updateCharsTaken(AreaData* area)
 {
     QStringList chars_taken;
-    for (QString cur_char : area->characters_taken.keys()) {
-        chars_taken.append(area->characters_taken.value(cur_char)
+    for (QString cur_char : characters) {
+        chars_taken.append(area->characters_taken.contains(getCharID(cur_char))
                                ? QStringLiteral("-1")
                                : QStringLiteral("0"));
     }
