@@ -140,11 +140,11 @@ void AOClient::changeArea(int new_area)
     for (QTimer* timer : server->areas[current_area]->timers) {
         int timer_id = server->areas[current_area]->timers.indexOf(timer) + 1;
         if (timer->isActive()) {
-            sendPacket("TI", {QString::number(timer_id), QString::number(2)});
-            sendPacket("TI", {QString::number(timer_id), QString::number(0), QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(timer->remainingTime())))});
+            sendPacket("TI", {QString::number(timer_id), "2"});
+            sendPacket("TI", {QString::number(timer_id), "0", QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(timer->remainingTime())))});
         }
         else {
-            sendPacket("TI", {QString::number(timer_id), QString::number(3)});
+            sendPacket("TI", {QString::number(timer_id), "3"});
         }
     }
     sendServerMessage("You moved to area " + server->area_names[current_area]);
@@ -180,24 +180,6 @@ void AOClient::changeCharacter(int char_id)
 
     server->updateCharsTaken(area);
     sendPacket("PV", {QString::number(id), "CID", QString::number(char_id)});
-    fullArup();
-    if (server->timer->isActive()) {
-        sendPacket("TI", {"0", "2"});
-        sendPacket("TI", {"0", "0", QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(server->timer->remainingTime())))});
-    }
-    else {
-        sendPacket("TI", {"0", "3"});
-    }
-    for (QTimer* timer : area->timers) {
-        int timer_id = area->timers.indexOf(timer) + 1;
-        if (timer->isActive()) {
-            sendPacket("TI", {QString::number(timer_id), "2"});
-            sendPacket("TI", {QString::number(timer_id), "0", QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(timer->remainingTime())))});
-        }
-        else {
-            sendPacket("TI", {QString::number(timer_id), "3"});
-        }
-    }
 }
 
 void AOClient::changePosition(QString new_pos)
