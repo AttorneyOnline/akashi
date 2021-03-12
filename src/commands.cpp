@@ -892,7 +892,7 @@ void AOClient::cmdM(int argc, QStringList argv)
 
 void AOClient::cmdGM(int argc, QStringList argv)
 {
-    if (checkAuth(ACLFlags.value("GM"))) {
+    if (checkAuth(ACLFlags.value("MODCHAT"))) {
         QString sender_name = ooc_name;
         QString sender_area = server->area_names.value(current_area);
         QString sender_message = argv.join(" ");
