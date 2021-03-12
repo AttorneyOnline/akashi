@@ -17,19 +17,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/advertiser.h"
 
-Advertiser::Advertiser(QString p_ip, int p_port, int p_ws_port,
-                       int p_local_port, QString p_name, QString p_description,
-                       QObject* parent)
-    : QObject(parent)
-{
-    ip = p_ip;
-    port = p_port;
-    ws_port = p_ws_port;
-    local_port = p_local_port;
-    name = p_name;
-    description = p_description;
-}
-
 void Advertiser::contactMasterServer()
 {
     socket = new QTcpSocket(this);

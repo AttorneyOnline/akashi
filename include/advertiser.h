@@ -25,31 +25,106 @@
 #include <QString>
 #include <QTcpSocket>
 
+/**
+ * @brief A communicator class to update the master server on the server's status.
+ */
 class Advertiser : public QObject {
     Q_OBJECT
 
   public:
-    Advertiser(QString p_ip, int p_port, int p_ws_port, int p_local_port,
-               QString p_name, QString p_description,
-               QObject* parent = nullptr);
+    /**
+     * @brief Constructor for the Advertiser class.
+     *
+     * @param p_ip The IP of the master server.
+     * @param p_port The port on which the connection to the master server should be established.
+     * @param p_ws_port The port on which the server will accept connections from clients through WebSocket.
+     * @param p_local_port The port on which the server will accept connections from clients through TCP.
+     * @param p_name The name of the server, as reported in the client's server browser.
+     * @param p_description The description of the server, as reported in the client's server browser.
+     * @param p_parent Qt-based parent, passed along to inherited constructor from QObject.
+     */
+    Advertiser(const QString p_ip, const int p_port, const int p_ws_port, const int p_local_port,
+               const QString p_name, const QString p_description, QObject* p_parent = nullptr) :
+        QObject(p_parent),
+        ip(p_ip),
+        port(p_port),
+        ws_port(p_ws_port),
+        local_port(p_local_port),
+        name(p_name),
+        description(p_description)
+    {};
+
+    /**
+     * @brief Destructor for the Advertiser class.
+     *
+     * @details Marks the socket used to establish connection to the master server to be deleted later.
+     */
     ~Advertiser();
+
+    /**
+     * @brief Sets up the socket used for master server connection, establishes connection to the master server.
+     */
     void contactMasterServer();
 
-signals:
-
   public slots:
+    /**
+     * @brief Handles data that was read from the master server's socket.
+     *
+     * @note Currently does nothing.
+     */
     void readData();
+
+    /**
+     * @brief Announces the server's presence to the master server.
+     */
     void socketConnected();
+
+    /**
+     * @brief Handles disconnection from the master server through the socket.
+     *
+     * @note Currently does nothing but outputs a line about the disconnection in the debug output.
+     */
     void socketDisconnected();
 
   private:
+    /**
+     * @copydoc ConfigManager::server_settings::ms_ip
+     */
     QString ip;
+
+    /**
+     * @copydoc ConfigManager::server_settings::port
+     *
+     * @bug Because of a typo in the code, this also replaces #local_port, thus clients will have to attempt
+     * to connect through the same port as the connection is established to the master server.
+     */
     int port;
+
+    /**
+     * @copydoc ConfigManager::server_settings::ws_port
+     */
     int ws_port;
+
+    /**
+     * @copydoc ConfigManager::server_settings::local_port
+     *
+     * @bug See #port.
+     */
     int local_port;
+
+    /**
+     * @copydoc ConfigManager::server_settings::name
+     */
     QString name;
+
+    /**
+     * @copydoc ConfigManager::server_settings::description
+     */
     QString description;
 
+    /**
+     * @brief The socket used to establish connection to the master server.
+     */
     QTcpSocket* socket;
 };
 
