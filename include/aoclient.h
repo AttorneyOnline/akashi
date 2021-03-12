@@ -309,7 +309,7 @@ class AOClient : public QObject {
         {"motd", {ACLFlags.value("NONE"), 0, &AOClient::cmdMOTD}},
         {"announce", {ACLFlags.value("ANNOUNCE"), 1, &AOClient::cmdAnnounce}},
         {"m", {ACLFlags.value("MODCHAT"), 1, &AOClient::cmdM}},
-        {"gm", {ACLFlags.value("GM"), 1, &AOClient::cmdGM}}
+        {"gm", {ACLFlags.value("MODCHAT"), 1, &AOClient::cmdGM}}
     };
 
     QString partial_packet;
