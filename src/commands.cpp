@@ -89,18 +89,43 @@ void AOClient::cmdGetArea(int argc, QStringList argv)
 
 void AOClient::cmdBan(int argc, QStringList argv)
 {
+    QString args_str = argv[1];
+    if (argc > 2) {
+        for (int i = 2; i < argc; i++)
+            args_str += " " + argv[i];
+    }
+
+    QRegularExpression quoteMatcher("['\"](.+?)[\"']");
+    QRegularExpressionMatchIterator matches = quoteMatcher.globalMatch(args_str);
+    QList<QString> unquoted_args;
+    while (matches.hasNext()) {
+        QRegularExpressionMatch match = matches.next();
+        unquoted_args.append(match.captured(1));
+    }
+
+    QString reason;
+    QString duration = "perma";
+
+    if (unquoted_args.length() < 1) {
+        sendServerMessage("Invalid syntax. Usage:\n/ban <ipid> \"<reason>\" \"<duration>\"");
+        return;
+    }
+
+    reason = unquoted_args.at(0);
+    if (unquoted_args.length() > 1)
+        duration = unquoted_args.at(1);
+
+
+    qDebug() << "Reason: " << reason;
+    qDebug() << "Duration: " << duration;
+    return;
+
     QString target_ipid = argv[0];
     QHostAddress ip;
     QString hdid;
     unsigned long time = QDateTime::currentDateTime().toTime_t();
-    QString reason = argv[1];
+    //QString reason = argv[1];
     bool ban_logged = false;
-
-    if (argc > 2) {
-        for (int i = 2; i < argv.length(); i++) {
-            reason += " " + argv[i];
-        }
-    }
 
     for (AOClient* client : server->clients) {
         if (client->getIpid() == target_ipid) {
@@ -1019,3 +1044,53 @@ QString AOClient::getAreaTimer(int area_idx, QTimer* timer)
     }
 }
 
+void AOClient::cmdTestDateTime(int argc, QStringList argv)
+{
+    qDebug() << parseTime(argv[0]);
+}
+
+long long AOClient::parseTime(QString input)
+{
+    QRegularExpression regex("(?:(?:(?<year>.*?)y)*(?:(?<week>.*?)w)*(?:(?<day>.*?)d)*(?:(?<hr>.*?)h)*(?:(?<min>.*?)m)*(?:(?<sec>.*?)s)*)");
+    QRegularExpressionMatch match = regex.match(input);
+    QString str_year, str_week, str_hour, str_day, str_minute, str_second;
+    int year, week, day, hour, minute, second;
+
+    str_year = match.captured("year");
+    str_week = match.captured("week");
+    str_day = match.captured("day");
+    str_hour = match.captured("hr");
+    str_minute = match.captured("min");
+    str_second = match.captured("sec");
+
+    qDebug() << str_year << "years," << str_week << "weeks," << str_day << "days," << str_hour << "hours," << str_minute << "minutes," << str_second << "seconds";
+
+    bool is_well_formed = false;
+    QString concat_str(str_year + str_week + str_day + str_hour + str_minute + str_second);
+    concat_str.toInt(&is_well_formed);
+
+    if (!is_well_formed) {
+        qDebug() << "retard alert!";
+        return -1;
+    }
+
+    year = str_year.toInt();
+    week = str_week.toInt();
+    day = str_day.toInt();
+    hour = str_hour.toInt();
+    minute = str_minute.toInt();
+    second = str_second.toInt();
+
+    long long total = 0;
+    total += 31622400 * year;
+    total += 604800 * week;
+    total += 86400 * day;
+    total += 3600 * hour;
+    total += 60 * minute;
+    total += second;
+
+    if (total < 0)
+        return -1;
+
+    return total;
+}

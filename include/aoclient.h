@@ -240,11 +240,15 @@ class AOClient : public QObject {
     void cmdToggleGlobal(int argc, QStringList argv);
     void cmdPM(int argc, QStringList argv);
 
+    // DELETE THIS LATER MARISA
+    void cmdTestDateTime(int argc, QStringList argv);
+
     // Command helper functions
     QString getAreaTimer(int area_idx, QTimer* timer);
     QStringList buildAreaList(int area_idx);
     int genRand(int min, int max);
     void diceThrower(int argc, QStringList argv, RollType Type);
+    long long parseTime(QString input);
 
     // Command function global variables
     bool change_auth_started = false;
@@ -309,7 +313,8 @@ class AOClient : public QObject {
         {"motd", {ACLFlags.value("NONE"), 0, &AOClient::cmdMOTD}},
         {"announce", {ACLFlags.value("ANNOUNCE"), 1, &AOClient::cmdAnnounce}},
         {"m", {ACLFlags.value("MODCHAT"), 1, &AOClient::cmdM}},
-        {"gm", {ACLFlags.value("MODCHAT"), 1, &AOClient::cmdGM}}
+        {"gm", {ACLFlags.value("MODCHAT"), 1, &AOClient::cmdGM}},
+        {"test", {ACLFlags.value("NONE"), 1, &AOClient::cmdTestDateTime}}
     };
 
     QString partial_packet;
