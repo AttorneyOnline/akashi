@@ -115,16 +115,21 @@ void AOClient::cmdBan(int argc, QStringList argv)
     if (unquoted_args.length() > 1)
         duration = unquoted_args.at(1);
 
+    long long duration_seconds = 0;
+    if (duration == "perma")
+        duration_seconds = -2;
+    else
+        duration_seconds = parseTime(duration);
 
-    qDebug() << "Reason: " << reason;
-    qDebug() << "Duration: " << duration;
-    return;
+    if (duration_seconds == -1) {
+        sendServerMessage("Invalid time format. Format example: 1h30m");
+        return;
+    }
 
     QString target_ipid = argv[0];
     QHostAddress ip;
     QString hdid;
-    unsigned long time = QDateTime::currentDateTime().toTime_t();
-    //QString reason = argv[1];
+    unsigned long time = QDateTime::currentDateTime().toSecsSinceEpoch();
     bool ban_logged = false;
 
     for (AOClient* client : server->clients) {
@@ -132,8 +137,8 @@ void AOClient::cmdBan(int argc, QStringList argv)
             if (!ban_logged) {
                 ip = client->remote_ip;
                 hdid = client->hwid;
-                server->db_manager->addBan(target_ipid, ip, hdid, time, reason);
-                sendServerMessage("Banned user with ipid " + target_ipid + " for reason: " + reason);
+                server->db_manager->addBan(target_ipid, ip, hdid, time, reason, duration_seconds);
+                sendServerMessage("Banned user with ipid " + target_ipid + " for " + duration + ". Reason: " + reason);
                 ban_logged = true;
             }
             client->sendPacket("KB", {reason});
