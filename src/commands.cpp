@@ -781,8 +781,8 @@ void AOClient::cmdMods(int argc, QStringList argv)
         if (client->authenticated) {
             entries << "---";
             if (auth_type != "simple")
-                entries << "Moderator: " + moderator_name;
-            entries << "OOC name: " + ooc_name;
+                entries << "Moderator: " + client->moderator_name;
+            entries << "OOC name: " + client->ooc_name;
             entries << "ID: " + QString::number(client->id);
             entries << "Area: " + QString::number(client->current_area);
             entries << "Character: " + client->current_char;
