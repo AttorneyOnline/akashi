@@ -220,6 +220,7 @@ class AOClient : public QObject {
     void cmdKick(int argc, QStringList argv);
     void cmdAnnounce(int argc, QStringList argv);
     void cmdM(int argc, QStringList argv);
+    void cmdGM(int argc, QStringList argv);
     // Casing/RP
     void cmdPlay(int argc, QStringList argv);
     void cmdNeed(int argc, QStringList argv);
@@ -308,6 +309,7 @@ class AOClient : public QObject {
         {"motd", {ACLFlags.value("NONE"), 0, &AOClient::cmdMOTD}},
         {"announce", {ACLFlags.value("ANNOUNCE"), 1, &AOClient::cmdAnnounce}},
         {"m", {ACLFlags.value("MODCHAT"), 1, &AOClient::cmdM}},
+        {"gm", {ACLFlags.value("MODCHAT"), 1, &AOClient::cmdGM}}
     };
 
     QString partial_packet;

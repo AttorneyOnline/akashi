@@ -727,7 +727,8 @@ void AOClient::cmdPlay(int argc, QStringList argv)
     QString song = argv.join(" ");
     area->current_music = song;
     area->music_played_by = showname;
-    sendPacket("MC", {song, QString::number(server->getCharID(current_char)), showname, "1", "0"});
+    AOPacket music_change("MC", {song, QString::number(server->getCharID(current_char)), showname, "1", "0"});
+    server->broadcast(music_change, current_area);
 }
 
 void AOClient::cmdAreaKick(int argc, QStringList argv)
@@ -888,6 +889,18 @@ void AOClient::cmdM(int argc, QStringList argv)
             client->sendPacket("CT", {"[M]" + sender_name, sender_message});
     }
     return;
+}
+
+void AOClient::cmdGM(int argc, QStringList argv)
+{
+    QString sender_name = ooc_name;
+    QString sender_area = server->area_names.value(current_area);
+    QString sender_message = argv.join(" ");
+    for (AOClient* client : server->clients) {
+        if (client->global_enabled) {
+            client->sendPacket("CT", {"[G][" + sender_area + "]" + "["+sender_name+"][M]", sender_message});
+        }
+    }
 }
 
 QStringList AOClient::buildAreaList(int area_idx)
