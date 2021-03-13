@@ -17,8 +17,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/config_manager.h"
 
-ConfigManager::ConfigManager() { }
-
 // Validate and set up the config
 bool ConfigManager::initConfig()
 {
@@ -145,7 +143,7 @@ bool ConfigManager::loadServerSettings(server_settings* settings)
     settings->description =
         config.value("server_description", "This is my flashy new server")
             .toString();
-    settings->zalgo_tolerance = 
+    settings->zalgo_tolerance =
         config.value("zalgo_tolerance", "3").toInt(&zalgo_tolerance_conversion_success);
     config.endGroup();
     if (!port_conversion_success || !ws_port_conversion_success ||

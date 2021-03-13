@@ -17,10 +17,16 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/area_data.h"
 
-AreaData::AreaData(QStringList characters, QString p_name, int p_index)
+AreaData::AreaData(QStringList characters, QString p_name, int p_index) :
+    name(p_name),
+    index(p_index),
+    player_count(0),
+    status(IDLE),
+    locked(FREE),
+    document("No document."),
+    def_hp(10),
+    pro_hp(10)
 {
-    name = p_name;
-    index = p_index;
     for (QString cur_char : characters) {
         characters_taken.insert(cur_char, false);
     }
@@ -32,12 +38,6 @@ AreaData::AreaData(QStringList characters, QString p_name, int p_index)
     bg_locked = areas_ini.value("bg_locked", "false").toBool();
     QString configured_evi_mod = areas_ini.value("evidence_mod", "FFA").toString().toLower();
     areas_ini.endGroup();
-    player_count = 0;
-    locked = FREE;
-    status = IDLE;
-    def_hp = 10;
-    pro_hp = 10;
-    document = "No document.";
     QSettings config_ini("config/config.ini", QSettings::IniFormat);
     config_ini.beginGroup("Options");
     int log_size = config_ini.value("logbuffer", 50).toInt();

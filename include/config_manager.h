@@ -74,7 +74,7 @@ class ConfigManager {
     /**
      * @brief Loads the server settings into the given struct from the config file.
      *
-     * @param[out] settings Pointer to a #server_settings file to be filled with data.
+     * @param[out] settings Pointer to a server_settings file to be filled with data.
      *
      * @return False if any of the ports (the master server connection port,
      * the TCP port used by clients, or the WebSocket port used by WebAO) failed
