@@ -31,12 +31,13 @@ DBManager::DBManager() :
 bool DBManager::isIPBanned(QHostAddress ip)
 {
     QSqlQuery query;
-    query.prepare("SELECT DURATION FROM BANS WHERE IP = ? ORDER BY TIME DESC");
+    query.prepare("SELECT TIME FROM BANS WHERE IP = ? ORDER BY TIME DESC");
     query.addBindValue(ip.toString());
     query.exec();
     if (query.first()) {
         long long duration = getBanDuration(ip);
         long long ban_time = query.value(0).toLongLong();
+        qDebug() << ban_time << "duration:" << duration;
         if (duration == -2)
             return true;
         long long current_time = QDateTime::currentDateTime().toSecsSinceEpoch();
@@ -69,7 +70,7 @@ bool DBManager::isHDIDBanned(QString hdid)
 QString DBManager::getBanReason(QHostAddress ip)
 {
     QSqlQuery query;
-    query.prepare("SELECT REASON FROM BANS WHERE IP = ?");
+    query.prepare("SELECT REASON FROM BANS WHERE IP = ? ORDER BY TIME DESC");
     query.addBindValue(ip.toString());
     query.exec();
     if (query.first()) {
@@ -83,7 +84,7 @@ QString DBManager::getBanReason(QHostAddress ip)
 QString DBManager::getBanReason(QString hdid)
 {
     QSqlQuery query;
-    query.prepare("SELECT REASON FROM BANS WHERE HDID = ?");
+    query.prepare("SELECT REASON FROM BANS WHERE HDID = ? ORDER BY TIME DESC");
     query.addBindValue(hdid);
     query.exec();
     if (query.first()) {
@@ -97,7 +98,7 @@ QString DBManager::getBanReason(QString hdid)
 long long DBManager::getBanDuration(QString hdid)
 {
     QSqlQuery query;
-    query.prepare("SELECT DURATION FROM BANS WHERE HDID = ?");
+    query.prepare("SELECT DURATION FROM BANS WHERE HDID = ? ORDER BY TIME DESC");
     query.addBindValue(hdid);
     query.exec();
     if (query.first()) {
@@ -111,7 +112,7 @@ long long DBManager::getBanDuration(QString hdid)
 long long DBManager::getBanDuration(QHostAddress ip)
 {
     QSqlQuery query;
-    query.prepare("SELECT DURATION FROM BANS WHERE IP = ?");
+    query.prepare("SELECT DURATION FROM BANS WHERE IP = ? ORDER BY TIME DESC");
     query.addBindValue(ip.toString());
     query.exec();
     if (query.first()) {
