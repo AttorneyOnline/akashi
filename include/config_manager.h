@@ -26,26 +26,72 @@
 #include <QFileInfo>
 #include <QSettings>
 
+/**
+ * @brief The config file handler class.
+ */
 class ConfigManager {
   public:
-    ConfigManager();
+    /**
+     * @brief An empty constructor for ConfigManager.
+     */
+    ConfigManager() {};
+
+    /**
+     * @brief Performs some preliminary checks for the various configuration files used by the server.
+     *
+     * @return True if the config file exists, is up-to-date, and valid, false otherwise.
+     */
     bool initConfig();
+
+    /**
+     * @brief Updates the config file's version to the one used by the server currently.
+     *
+     * @details The function can return false if the server's expected config version is 0
+     * (doesn't actually exist), or negative (nonsense).
+     * If the current config file lags more than one version behind the expected, all intermediate
+     * updates are also performed on the config file.
+     *
+     * @param current_version The current configuration version expected by the server.
+     *
+     * @return True if a version update took place, false otherwise.
+     */
     bool updateConfig(int current_version);
 
+    /**
+     * @brief The collection of server-specific settings.
+     */
     struct server_settings {
-        QString ms_ip;
-        int port;
-        int ws_port;
-        int local_port;
-        QString name;
-        QString description;
-        bool advertise_server;
-        int zalgo_tolerance;
+        QString ms_ip; //!< The IP address of the master server to establish connection to.
+        int port; //!< The port of the master server to establish connection to.
+        int ws_port; //!< The WebSocket port the server will accept client connections through.
+        int local_port; //!< The TCP port the server will accept client connections through.
+        QString name; //!< The name of the server as advertised on the server browser.
+        QString description; //!< The description of the server as advertised on the server browser.
+        bool advertise_server; //!< The server will only be announced to the master server (and thus appear on the master server list) if this is true.
+        int zalgo_tolerance; //!< The amount of subscripts zalgo is stripped by.
     };
 
+    /**
+     * @brief Loads the server settings into the given struct from the config file.
+     *
+     * @param[out] settings Pointer to a #server_settings file to be filled with data.
+     *
+     * @return False if any of the ports (the master server connection port,
+     * the TCP port used by clients, or the WebSocket port used by WebAO) failed
+     * to be read in from the settings correctly, true otherwise.
+     *
+     * @pre initConfig() must have been run beforehand to check for the config file's existence.
+     */
     bool loadServerSettings(server_settings* settings);
 
   private:
+    /**
+     * @brief Convenience function to check if the object exists, and is a file.
+     *
+     * @param file The object to check.
+     *
+     * @return See brief description.
+     */
     bool fileExists(QFileInfo *file);
 };
 
