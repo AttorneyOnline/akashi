@@ -1049,11 +1049,6 @@ QString AOClient::getAreaTimer(int area_idx, QTimer* timer)
     }
 }
 
-void AOClient::cmdTestDateTime(int argc, QStringList argv)
-{
-    qDebug() << parseTime(argv[0]);
-}
-
 long long AOClient::parseTime(QString input)
 {
     QRegularExpression regex("(?:(?:(?<year>.*?)y)*(?:(?<week>.*?)w)*(?:(?<day>.*?)d)*(?:(?<hr>.*?)h)*(?:(?<min>.*?)m)*(?:(?<sec>.*?)s)*)");
@@ -1068,14 +1063,11 @@ long long AOClient::parseTime(QString input)
     str_minute = match.captured("min");
     str_second = match.captured("sec");
 
-    qDebug() << str_year << "years," << str_week << "weeks," << str_day << "days," << str_hour << "hours," << str_minute << "minutes," << str_second << "seconds";
-
     bool is_well_formed = false;
     QString concat_str(str_year + str_week + str_day + str_hour + str_minute + str_second);
     concat_str.toInt(&is_well_formed);
 
     if (!is_well_formed) {
-        qDebug() << "retard alert!";
         return -1;
     }
 

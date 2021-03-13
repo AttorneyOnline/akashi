@@ -37,7 +37,6 @@ bool DBManager::isIPBanned(QHostAddress ip)
     if (query.first()) {
         long long duration = getBanDuration(ip);
         long long ban_time = query.value(0).toLongLong();
-        qDebug() << ban_time << "duration:" << duration;
         if (duration == -2)
             return true;
         long long current_time = QDateTime::currentDateTime().toSecsSinceEpoch();
