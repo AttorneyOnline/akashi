@@ -27,6 +27,9 @@
 
 /**
  * @brief A communicator class to update the master server on the server's status.
+ *
+ * @see https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#master-server-protocol
+ * for more explanation about how to communicate with the master server.
  */
 class Advertiser : public QObject {
     Q_OBJECT
