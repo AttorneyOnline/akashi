@@ -986,11 +986,16 @@ void AOClient::cmdBans(int argc, QStringList argv)
     recent_bans << "Last 5 bans:";
     recent_bans << "-----";
     for (DBManager::BanInfo ban : server->db_manager->getRecentBans()) {
+        QString banned_until;
+        if (ban.duration == -2)
+            banned_until = "The heat death of the universe";
+        else
+            banned_until = QDateTime::fromSecsSinceEpoch(ban.time).addSecs(ban.duration).toString("dd.MM.yyyy, hh:mm");
         recent_bans << "Affected IPID: " + ban.ipid;
         recent_bans << "Affected HDID: " + ban.hdid;
         recent_bans << "Reason for ban: " + ban.reason;
         recent_bans << "Date of ban: " + QDateTime::fromSecsSinceEpoch(ban.time).toString("dd.MM.yyyy, hh:mm");
-        recent_bans << "Ban lasts until: " + QDateTime::fromSecsSinceEpoch(ban.time).addSecs(ban.duration).toString("dd.MM.yyyy, hh:mm");
+        recent_bans << "Ban lasts until: " + banned_until;
         recent_bans << "-----";
     }
     sendServerMessage(recent_bans.join("\n"));
