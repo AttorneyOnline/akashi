@@ -122,6 +122,27 @@ long long DBManager::getBanDuration(QHostAddress ip)
     }
 }
 
+QList<DBManager::BanInfo> DBManager::getRecentBans()
+{
+    QList<BanInfo> return_list;
+    QSqlQuery query;
+    query.prepare("SELECT TOP(5) * FROM BANS ORDER BY TIME DESC");
+    query.setForwardOnly(true);
+    query.exec();
+    while (query.next()) {
+        BanInfo ban;
+        ban.ipid = query.value(0).toString();
+        ban.hdid = query.value(1).toString();
+        ban.ip = QHostAddress(query.value(2).toString());
+        ban.time = static_cast<unsigned long>(query.value(3).toULongLong());
+        ban.reason = query.value(4).toString();
+        ban.duration = query.value(5).toLongLong();
+        return_list.append(ban);
+    }
+    std::reverse(return_list.begin(), return_list.end());
+    return return_list;
+}
+
 void DBManager::addBan(QString ipid, QHostAddress ip, QString hdid, unsigned long time, QString reason, long long duration)
 {
     QSqlQuery query;

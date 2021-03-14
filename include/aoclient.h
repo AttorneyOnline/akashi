@@ -224,6 +224,7 @@ class AOClient : public QObject {
     void cmdGM(int argc, QStringList argv);
     void cmdMute(int argc, QStringList argv);
     void cmdUnmute(int argc, QStringList argv);
+    void cmdBans(int argc, QStringList argv);
     // Casing/RP
     void cmdPlay(int argc, QStringList argv);
     void cmdNeed(int argc, QStringList argv);
@@ -315,7 +316,8 @@ class AOClient : public QObject {
         {"m", {ACLFlags.value("MODCHAT"), 1, &AOClient::cmdM}},
         {"gm", {ACLFlags.value("MODCHAT"), 1, &AOClient::cmdGM}},
         {"mute", {ACLFlags.value("MUTE"), 1, &AOClient::cmdMute}},
-        {"unmute", {ACLFlags.value("MUTE"), 1, &AOClient::cmdUnmute}}
+        {"unmute", {ACLFlags.value("MUTE"), 1, &AOClient::cmdUnmute}},
+        {"bans", {ACLFlags.value("BAN"), 0, &AOClient::cmdBans}}
     };
 
     QString partial_packet;

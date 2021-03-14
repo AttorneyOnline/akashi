@@ -971,6 +971,22 @@ void AOClient::cmdUnmute(int argc, QStringList argv)
     server->getClientByID(uid)->is_muted = false;
 }
 
+void AOClient::cmdBans(int argc, QStringList argv)
+{
+    QStringList recent_bans;
+    recent_bans << "Last 5 bans:";
+    recent_bans << "-----";
+    for (DBManager::BanInfo ban : server->db_manager->getRecentBans()) {
+        recent_bans << "Affected IPID: " + ban.ipid;
+        recent_bans << "Affected HDID: " + ban.hdid;
+        recent_bans << "Reason for ban: " + ban.reason;
+        recent_bans << "Date of ban: " + QDateTime::fromSecsSinceEpoch(ban.time).toString("dd.MM.yyyy, hh:mm");
+        recent_bans << "Ban lasts until: " + QDateTime::fromSecsSinceEpoch(ban.time).addSecs(ban.duration).toString("dd.MM.yyyy, hh:mm");
+        recent_bans << "-----";
+    }
+    sendServerMessage(recent_bans.join("\n"));
+}
+
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;
