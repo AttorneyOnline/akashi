@@ -234,6 +234,7 @@ class AOClient : public QObject {
     void cmdClearDoc(int argc, QStringList argv);
     void cmdTimer(int argc, QStringList argv);
     void cmdEvidenceMod(int argc, QStringList argv);
+    void cmdSubTheme(int argc, QStringList argv);
     // Messaging/Client
     void cmdPos(int argc, QStringList argv);
     void cmdForcePos(int argc, QStringList argv);
@@ -315,7 +316,8 @@ class AOClient : public QObject {
         {"m", {ACLFlags.value("MODCHAT"), 1, &AOClient::cmdM}},
         {"gm", {ACLFlags.value("MODCHAT"), 1, &AOClient::cmdGM}},
         {"mute", {ACLFlags.value("MUTE"), 1, &AOClient::cmdMute}},
-        {"unmute", {ACLFlags.value("MUTE"), 1, &AOClient::cmdUnmute}}
+        {"unmute", {ACLFlags.value("MUTE"), 1, &AOClient::cmdUnmute}},
+        {"subtheme", {ACLFlags.value("CM"), 1, &AOClient::cmdSubTheme}},
     };
 
     QString partial_packet;

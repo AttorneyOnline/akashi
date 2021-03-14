@@ -971,6 +971,16 @@ void AOClient::cmdUnmute(int argc, QStringList argv)
     server->getClientByID(uid)->is_muted = false;
 }
 
+void AOClient::cmdSubTheme(int argc, QStringList argv)
+{
+    QString subtheme = argv.join(" ");
+    for (AOClient* client : server->clients) {
+        if (client->current_area == current_area)
+            client->sendPacket("ST", {subtheme});
+    }
+    sendServerMessageArea("Subtheme was set to " + subtheme);
+}
+
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;
