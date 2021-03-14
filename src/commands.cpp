@@ -95,6 +95,8 @@ void AOClient::cmdBan(int argc, QStringList argv)
             args_str += " " + argv[i];
     }
 
+    DBManager::BanInfo ban;
+
     QRegularExpression quoteMatcher("['\"](.+?)[\"']");
     QRegularExpressionMatchIterator matches = quoteMatcher.globalMatch(args_str);
     QList<QString> unquoted_args;
@@ -103,7 +105,6 @@ void AOClient::cmdBan(int argc, QStringList argv)
         unquoted_args.append(match.captured(1));
     }
 
-    QString reason;
     QString duration = "perma";
 
     if (unquoted_args.length() < 1) {
@@ -111,7 +112,7 @@ void AOClient::cmdBan(int argc, QStringList argv)
         return;
     }
 
-    reason = unquoted_args.at(0);
+    ban.reason = unquoted_args.at(0);
     if (unquoted_args.length() > 1)
         duration = unquoted_args.at(1);
 
@@ -126,34 +127,34 @@ void AOClient::cmdBan(int argc, QStringList argv)
         return;
     }
 
-    QString target_ipid = argv[0];
-    QHostAddress ip;
-    QString hdid;
-    unsigned long time = QDateTime::currentDateTime().toSecsSinceEpoch();
+    ban.duration = duration_seconds;
+
+    ban.ipid = argv[0];
+    ban.time = QDateTime::currentDateTime().toSecsSinceEpoch();
     bool ban_logged = false;
     int kick_counter = 0;
 
     if (argc > 2) {
         for (int i = 2; i < argv.length(); i++) {
-            reason += " " + argv[i];
+            ban.reason += " " + argv[i];
         }
     }
 
-    for (AOClient* client : server->getClientsByIpid(target_ipid)) {
+    for (AOClient* client : server->getClientsByIpid(ban.ipid)) {
         if (!ban_logged) {
-            ip = client->remote_ip;
-            hdid = client->hwid;
-            server->db_manager->addBan(target_ipid, ip, hdid, time, reason, duration_seconds);
-            sendServerMessage("Banned user with ipid " + target_ipid + " for reason: " + reason);
+            ban.ip = client->remote_ip;
+            ban.hdid = client->hwid;
+            server->db_manager->addBan(ban);
+            sendServerMessage("Banned user with ipid " + ban.ipid + " for reason: " + ban.reason);
             ban_logged = true;
         }
-        client->sendPacket("KB", {reason});
+        client->sendPacket("KB", {ban.reason + "\nID: " + QString::number(server->db_manager->getBanID(ban.ip)) + "\nUntil: " + QDateTime::fromSecsSinceEpoch(ban.time).addSecs(ban.duration).toString("dd.MM.yyyy, hh:mm")});
         client->socket->close();
         kick_counter++;
     }
 
     if (kick_counter > 1)
-        sendServerMessage("Kicked " + QString::number(kick_counter) + " clients with matching ipids");
+        sendServerMessage("Kicked " + QString::number(kick_counter) + " clients with matching ipids.");
     if (!ban_logged)
         sendServerMessage("User with ipid not found!");
 }
@@ -266,6 +267,14 @@ void AOClient::cmdAddUser(int argc, QStringList argv)
         sendServerMessage("Created user " + argv[0] + ".\nUse /addperm to modify their permissions.");
     else
         sendServerMessage("Unable to create user " + argv[0] + ".\nDoes a user with that name already exist?");
+}
+
+void AOClient::cmdRemoveUser(int argc, QStringList argv)
+{
+    if (server->db_manager->deleteUser(argv[0]))
+        sendServerMessage("Successfully removed user " + argv[0] + ".");
+    else
+        sendServerMessage("Unable to remove user " + argv[0] + ".\nDoes it exist?");
 }
 
 void AOClient::cmdListPerms(int argc, QStringList argv)
@@ -969,6 +978,41 @@ void AOClient::cmdUnmute(int argc, QStringList argv)
     else
         sendServerMessage("Unmuted player.");
     server->getClientByID(uid)->is_muted = false;
+}
+
+void AOClient::cmdBans(int argc, QStringList argv)
+{
+    QStringList recent_bans;
+    recent_bans << "Last 5 bans:";
+    recent_bans << "-----";
+    for (DBManager::BanInfo ban : server->db_manager->getRecentBans()) {
+        QString banned_until;
+        if (ban.duration == -2)
+            banned_until = "The heat death of the universe";
+        else
+            banned_until = QDateTime::fromSecsSinceEpoch(ban.time).addSecs(ban.duration).toString("dd.MM.yyyy, hh:mm");
+        recent_bans << "Affected IPID: " + ban.ipid;
+        recent_bans << "Affected HDID: " + ban.hdid;
+        recent_bans << "Reason for ban: " + ban.reason;
+        recent_bans << "Date of ban: " + QDateTime::fromSecsSinceEpoch(ban.time).toString("dd.MM.yyyy, hh:mm");
+        recent_bans << "Ban lasts until: " + banned_until;
+        recent_bans << "-----";
+    }
+    sendServerMessage(recent_bans.join("\n"));
+}
+
+void AOClient::cmdUnBan(int argc, QStringList argv)
+{
+    bool ok;
+    int target_ban = argv[0].toInt(&ok);
+    if (!ok) {
+        sendServerMessage("Invalid ban ID.");
+        return;
+    }
+    else if (server->db_manager->invalidateBan(target_ban))
+        sendServerMessage("Successfully invalidated ban " + argv[0] + ".");
+    else
+        sendServerMessage("Couldn't invalidate ban " + argv[0] + ", are you sure it exists?");
 }
 
 void AOClient::cmdSubTheme(int argc, QStringList argv)

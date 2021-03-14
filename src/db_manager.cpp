@@ -122,18 +122,86 @@ long long DBManager::getBanDuration(QHostAddress ip)
     }
 }
 
-void DBManager::addBan(QString ipid, QHostAddress ip, QString hdid, unsigned long time, QString reason, long long duration)
+
+int DBManager::getBanID(QString hdid)
+{
+    QSqlQuery query;
+    query.prepare("SELECT ID FROM BANS WHERE HDID = ?");
+    query.addBindValue(hdid);
+    query.exec();
+    if (query.first()) {
+        return query.value(0).toInt();
+    }
+    else {
+        return -1;
+    }
+}
+
+
+int DBManager::getBanID(QHostAddress ip)
+{
+    QSqlQuery query;
+    query.prepare("SELECT ID FROM BANS WHERE IP = ?");
+    query.addBindValue(ip.toString());
+    query.exec();
+    if (query.first()) {
+        return query.value(0).toInt();
+    }
+    else {
+        return -1;
+    }
+}
+
+QList<DBManager::BanInfo> DBManager::getRecentBans()
+{
+    QList<BanInfo> return_list;
+    QSqlQuery query;
+    query.prepare("SELECT TOP(5) * FROM BANS ORDER BY TIME DESC");
+    query.setForwardOnly(true);
+    query.exec();
+    while (query.next()) {
+        BanInfo ban;
+        ban.ipid = query.value(0).toString();
+        ban.hdid = query.value(1).toString();
+        ban.ip = QHostAddress(query.value(2).toString());
+        ban.time = static_cast<unsigned long>(query.value(3).toULongLong());
+        ban.reason = query.value(4).toString();
+        ban.duration = query.value(5).toLongLong();
+        return_list.append(ban);
+    }
+    std::reverse(return_list.begin(), return_list.end());
+    return return_list;
+}
+
+void DBManager::addBan(BanInfo ban)
 {
     QSqlQuery query;
     query.prepare("INSERT INTO BANS(IPID, HDID, IP, TIME, REASON, DURATION) VALUES(?, ?, ?, ?, ?, ?)");
-    query.addBindValue(ipid);
-    query.addBindValue(hdid);
-    query.addBindValue(ip.toString());
-    query.addBindValue(QString::number(time));
-    query.addBindValue(reason);
-    query.addBindValue(duration);
+    query.addBindValue(ban.ipid);
+    query.addBindValue(ban.hdid);
+    query.addBindValue(ban.ip.toString());
+    query.addBindValue(QString::number(ban.time));
+    query.addBindValue(ban.reason);
+    query.addBindValue(ban.duration);
     if (!query.exec())
         qDebug() << "SQL Error:" << query.lastError().text();
+}
+
+bool DBManager::invalidateBan(int id)
+{
+    QSqlQuery ban_exists;
+    ban_exists.prepare("SELECT DURATION FROM bans WHERE ID = ?");
+    ban_exists.addBindValue(id);
+    ban_exists.exec();
+
+    if (ban_exists.first())
+        return false;
+
+    QSqlQuery query;
+    query.prepare("UPDATE bans SET DURATION = 0 WHERE ID = ?");
+    query.addBindValue(id);
+    query.exec();
+    return true;
 }
 
 bool DBManager::createUser(QString username, QString salt, QString password, unsigned long long acl)
@@ -161,6 +229,23 @@ bool DBManager::createUser(QString username, QString salt, QString password, uns
     query.addBindValue(acl);
     query.exec();
 
+    return true;
+}
+
+bool DBManager::deleteUser(QString username)
+{
+    QSqlQuery username_exists;
+    username_exists.prepare("SELECT ACL FROM users WHERE USERNAME = ?");
+    username_exists.addBindValue(username);
+    username_exists.exec();
+
+    if (username_exists.first())
+        return false;
+
+    QSqlQuery query;
+    query.prepare("DELETE FROM users WHERE USERNAME = ?");
+    username_exists.addBindValue(username);
+    username_exists.exec();
     return true;
 }
 

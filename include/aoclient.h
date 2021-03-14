@@ -193,6 +193,7 @@ class AOClient : public QObject {
     void cmdChangeAuth(int argc, QStringList argv);
     void cmdSetRootPass(int argc, QStringList argv);
     void cmdAddUser(int argc, QStringList argv);
+    void cmdRemoveUser(int argc, QStringList argv);
     void cmdListPerms(int argc, QStringList argv);
     void cmdAddPerms(int argc, QStringList argv);
     void cmdRemovePerms(int argc, QStringList argv);
@@ -218,12 +219,14 @@ class AOClient : public QObject {
     // Moderation
     void cmdMods(int argc, QStringList argv);
     void cmdBan(int argc, QStringList argv);
+    void cmdUnBan(int argc, QStringList argv);
     void cmdKick(int argc, QStringList argv);
     void cmdAnnounce(int argc, QStringList argv);
     void cmdM(int argc, QStringList argv);
     void cmdGM(int argc, QStringList argv);
     void cmdMute(int argc, QStringList argv);
     void cmdUnmute(int argc, QStringList argv);
+    void cmdBans(int argc, QStringList argv);
     // Casing/RP
     void cmdPlay(int argc, QStringList argv);
     void cmdNeed(int argc, QStringList argv);
@@ -317,6 +320,9 @@ class AOClient : public QObject {
         {"gm", {ACLFlags.value("MODCHAT"), 1, &AOClient::cmdGM}},
         {"mute", {ACLFlags.value("MUTE"), 1, &AOClient::cmdMute}},
         {"unmute", {ACLFlags.value("MUTE"), 1, &AOClient::cmdUnmute}},
+        {"bans", {ACLFlags.value("BAN"), 0, &AOClient::cmdBans}},
+        {"unban", {ACLFlags.value("BAN"), 1, &AOClient::cmdUnBan}},
+        {"removeuser", {ACLFlags.value("MODIFY_USERS"), 1, &AOClient::cmdRemoveUser}},
         {"subtheme", {ACLFlags.value("CM"), 1, &AOClient::cmdSubTheme}},
     };
 
