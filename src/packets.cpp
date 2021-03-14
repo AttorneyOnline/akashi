@@ -154,6 +154,11 @@ void AOClient::pktSelectChar(AreaData* area, int argc, QStringList argv, AOPacke
 
 void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    if (is_muted) {
+        sendServerMessage("You cannot speak while muted.");
+        return;
+    }
+
     AOPacket validated_packet = validateIcPacket(packet);
     if (validated_packet.header == "INVALID")
         return;

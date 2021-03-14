@@ -933,6 +933,38 @@ void AOClient::cmdGM(int argc, QStringList argv)
     }
 }
 
+void AOClient::cmdMute(int argc, QStringList argv)
+{
+    bool conv_ok = false;
+    int uid = argv[0].toInt(&conv_ok);
+    if (!conv_ok) {
+        sendServerMessage("Invalid user ID.");
+        return;
+    }
+
+    if (server->getClientByID(uid)->is_muted)
+        sendServerMessage("That player is already muted!");
+    else
+        sendServerMessage("Muted player.");
+    server->getClientByID(uid)->is_muted = true;
+}
+
+void AOClient::cmdUnmute(int argc, QStringList argv)
+{
+    bool conv_ok = false;
+    int uid = argv[0].toInt(&conv_ok);
+    if (!conv_ok) {
+        sendServerMessage("Invalid user ID.");
+        return;
+    }
+
+    if (!server->getClientByID(uid)->is_muted)
+        sendServerMessage("That player is already unmuted!");
+    else
+        sendServerMessage("Unmuted player.");
+    server->getClientByID(uid)->is_muted = false;
+}
+
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;

@@ -59,6 +59,7 @@ class AOClient : public QObject {
     QString ooc_name = "";
     QString showname = "";
     bool global_enabled = true;
+    bool is_muted = false;
     struct ClientVersion {
       QString string;
       int release = -1;
@@ -79,6 +80,7 @@ class AOClient : public QObject {
         {"MOTD", 1ULL << 7},
         {"ANNOUNCE", 1ULL << 8},
         {"MODCHAT", 1ULL << 9},
+        {"MUTE", 1ULL << 10},
         {"SUPER", ~0ULL}
     };
 
@@ -221,6 +223,8 @@ class AOClient : public QObject {
     void cmdAnnounce(int argc, QStringList argv);
     void cmdM(int argc, QStringList argv);
     void cmdGM(int argc, QStringList argv);
+    void cmdMute(int argc, QStringList argv);
+    void cmdUnmute(int argc, QStringList argv);
     // Casing/RP
     void cmdPlay(int argc, QStringList argv);
     void cmdNeed(int argc, QStringList argv);
@@ -310,7 +314,9 @@ class AOClient : public QObject {
         {"motd", {ACLFlags.value("NONE"), 0, &AOClient::cmdMOTD}},
         {"announce", {ACLFlags.value("ANNOUNCE"), 1, &AOClient::cmdAnnounce}},
         {"m", {ACLFlags.value("MODCHAT"), 1, &AOClient::cmdM}},
-        {"gm", {ACLFlags.value("MODCHAT"), 1, &AOClient::cmdGM}}
+        {"gm", {ACLFlags.value("MODCHAT"), 1, &AOClient::cmdGM}},
+        {"mute", {ACLFlags.value("MUTE"), 1, &AOClient::cmdMute}},
+        {"unmute", {ACLFlags.value("MUTE"), 1, &AOClient::cmdUnmute}}
     };
 
     QString partial_packet;
