@@ -1025,6 +1025,11 @@ void AOClient::cmdSubTheme(int argc, QStringList argv)
     sendServerMessageArea("Subtheme was set to " + subtheme);
 }
 
+void AOClient::cmdAbout(int argc, QStringList argv)
+{
+    sendPacket("CT", {"The akashi dev team", "Thank you for using akashi! Made with love by scatterflower, with help from in1tiate and Salanto. akashi " + QCoreApplication::applicationVersion()});
+}
+
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;

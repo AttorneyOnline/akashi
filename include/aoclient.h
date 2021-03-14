@@ -188,6 +188,7 @@ class AOClient : public QObject {
     void cmdDefault(int argc, QStringList argv);
     void cmdHelp(int argc, QStringList argv);
     void cmdMOTD(int argc, QStringList argv);
+    void cmdAbout(int argc, QStringList argv);
     // Authentication
     void cmdLogin(int argc, QStringList argv);
     void cmdChangeAuth(int argc, QStringList argv);
@@ -324,6 +325,7 @@ class AOClient : public QObject {
         {"unban", {ACLFlags.value("BAN"), 1, &AOClient::cmdUnBan}},
         {"removeuser", {ACLFlags.value("MODIFY_USERS"), 1, &AOClient::cmdRemoveUser}},
         {"subtheme", {ACLFlags.value("CM"), 1, &AOClient::cmdSubTheme}},
+        {"about", {ACLFlags.value("NONE"), 0, &AOClient::cmdAbout}}
     };
 
     QString partial_packet;
