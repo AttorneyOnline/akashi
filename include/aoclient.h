@@ -237,6 +237,7 @@ class AOClient : public QObject {
     void cmdClearDoc(int argc, QStringList argv);
     void cmdTimer(int argc, QStringList argv);
     void cmdEvidenceMod(int argc, QStringList argv);
+    void cmdSubTheme(int argc, QStringList argv);
     // Messaging/Client
     void cmdPos(int argc, QStringList argv);
     void cmdForcePos(int argc, QStringList argv);
@@ -322,7 +323,7 @@ class AOClient : public QObject {
         {"bans", {ACLFlags.value("BAN"), 0, &AOClient::cmdBans}},
         {"unban", {ACLFlags.value("BAN"), 1, &AOClient::cmdUnBan}},
         {"removeuser", {ACLFlags.value("MODIFY_USERS"), 1, &AOClient::cmdRemoveUser}},
-
+        {"subtheme", {ACLFlags.value("CM"), 1, &AOClient::cmdSubTheme}},
     };
 
     QString partial_packet;

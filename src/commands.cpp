@@ -1015,6 +1015,16 @@ void AOClient::cmdUnBan(int argc, QStringList argv)
         sendServerMessage("Couldn't invalidate ban " + argv[0] + ", are you sure it exists?");
 }
 
+void AOClient::cmdSubTheme(int argc, QStringList argv)
+{
+    QString subtheme = argv.join(" ");
+    for (AOClient* client : server->clients) {
+        if (client->current_area == current_area)
+            client->sendPacket("ST", {subtheme, "1"});
+    }
+    sendServerMessageArea("Subtheme was set to " + subtheme);
+}
+
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;
