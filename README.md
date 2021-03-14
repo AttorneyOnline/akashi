@@ -10,4 +10,8 @@ Requires Qt >= 5.10, and Qt websockets
    make
 ```
 
-Copyright © scatterflower 2021
+Copyright © scatterflower 2020-2021
+
+Copyright © Salanto 2021
+
+Copyright © in1tiate 2021

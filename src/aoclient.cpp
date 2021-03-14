@@ -28,6 +28,7 @@ AOClient::AOClient(Server* p_server, QTcpSocket* p_socket, QObject* parent, int 
     current_area = 0;
     current_char = "";
     remote_ip = p_socket->peerAddress();
+    calculateIpid();
     is_partial = false;
     last_wtce_time = 0;
     last_message = "";
@@ -274,22 +275,17 @@ void AOClient::sendPacket(QString header)
     sendPacket(AOPacket(header, {}));
 }
 
-QString AOClient::getHwid() { return hwid; }
-
-void AOClient::setHwid(QString p_hwid)
+void AOClient::calculateIpid()
 {
-    // TODO: add support for longer hwids?
+    // TODO: add support for longer ipids?
     // This reduces the (fairly high) chance of
     // birthday paradox issues arising. However,
     // typing more than 8 characters might be a
     // bit cumbersome.
-    hwid = p_hwid;
 
-    QCryptographicHash hash(
-        QCryptographicHash::Md5); // Don't need security, just
-                                  // hashing for uniqueness
-    QString concat_ip_id = remote_ip.toString() + p_hwid;
-    hash.addData(concat_ip_id.toUtf8());
+    QCryptographicHash hash(QCryptographicHash::Md5); // Don't need security, just hashing for uniqueness
+
+    hash.addData(remote_ip.toString().toUtf8());
 
     ipid = hash.result().toHex().right(8); // Use the last 8 characters (4 bytes)
 }

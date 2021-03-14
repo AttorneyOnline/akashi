@@ -24,32 +24,52 @@ DBManager::DBManager() :
     db.setDatabaseName("config/akashi.db");
     if (!db.open())
         qCritical() << "Database Error:" << db.lastError();
-    QSqlQuery create_ban_table("CREATE TABLE IF NOT EXISTS bans ('ID' INTEGER, 'IPID' TEXT, 'HDID' TEXT, 'IP' TEXT, 'TIME' INTEGER, 'REASON' TEXT, PRIMARY KEY('ID' AUTOINCREMENT))");
+    QSqlQuery create_ban_table("CREATE TABLE IF NOT EXISTS bans ('ID' INTEGER, 'IPID' TEXT, 'HDID' TEXT, 'IP' TEXT, 'TIME' INTEGER, 'REASON' TEXT, 'DURATION' INTEGER, PRIMARY KEY('ID' AUTOINCREMENT))");
     QSqlQuery create_user_table("CREATE TABLE IF NOT EXISTS users ('ID' INTEGER, 'USERNAME' TEXT, 'SALT' TEXT, 'PASSWORD' TEXT, 'ACL' TEXT, PRIMARY KEY('ID' AUTOINCREMENT))");
 }
 
 bool DBManager::isIPBanned(QHostAddress ip)
 {
     QSqlQuery query;
-    query.prepare("SELECT ID FROM BANS WHERE IP = ?");
+    query.prepare("SELECT TIME FROM BANS WHERE IP = ? ORDER BY TIME DESC");
     query.addBindValue(ip.toString());
     query.exec();
-    return query.first();
+    if (query.first()) {
+        long long duration = getBanDuration(ip);
+        long long ban_time = query.value(0).toLongLong();
+        if (duration == -2)
+            return true;
+        long long current_time = QDateTime::currentDateTime().toSecsSinceEpoch();
+        if (ban_time + duration > current_time)
+            return true;
+        else return false;
+    }
+    else return false;
 }
 
 bool DBManager::isHDIDBanned(QString hdid)
 {
     QSqlQuery query;
-    query.prepare("SELECT ID FROM BANS WHERE HDID = ?");
+    query.prepare("SELECT TIME FROM BANS WHERE HDID = ? ORDER BY TIME DESC");
     query.addBindValue(hdid);
     query.exec();
-    return query.first();
+    if (query.first()) {
+        long long duration = getBanDuration(hdid);
+        long long ban_time = query.value(0).toLongLong();
+        if (duration == -2)
+            return true;
+        long long current_time = QDateTime::currentDateTime().toSecsSinceEpoch();
+        if (ban_time + duration > current_time)
+            return true;
+        else return false;
+    }
+    else return false;
 }
 
 QString DBManager::getBanReason(QHostAddress ip)
 {
     QSqlQuery query;
-    query.prepare("SELECT REASON FROM BANS WHERE IP = ?");
+    query.prepare("SELECT REASON FROM BANS WHERE IP = ? ORDER BY TIME DESC");
     query.addBindValue(ip.toString());
     query.exec();
     if (query.first()) {
@@ -63,7 +83,7 @@ QString DBManager::getBanReason(QHostAddress ip)
 QString DBManager::getBanReason(QString hdid)
 {
     QSqlQuery query;
-    query.prepare("SELECT REASON FROM BANS WHERE HDID = ?");
+    query.prepare("SELECT REASON FROM BANS WHERE HDID = ? ORDER BY TIME DESC");
     query.addBindValue(hdid);
     query.exec();
     if (query.first()) {
@@ -74,15 +94,44 @@ QString DBManager::getBanReason(QString hdid)
     }
 }
 
-void DBManager::addBan(QString ipid, QHostAddress ip, QString hdid, unsigned long time, QString reason)
+long long DBManager::getBanDuration(QString hdid)
 {
     QSqlQuery query;
-    query.prepare("INSERT INTO BANS(IPID, HDID, IP, TIME, REASON) VALUES(?, ?, ?, ?, ?)");
+    query.prepare("SELECT DURATION FROM BANS WHERE HDID = ? ORDER BY TIME DESC");
+    query.addBindValue(hdid);
+    query.exec();
+    if (query.first()) {
+        return query.value(0).toLongLong();
+    }
+    else {
+        return -1;
+    }
+}
+
+long long DBManager::getBanDuration(QHostAddress ip)
+{
+    QSqlQuery query;
+    query.prepare("SELECT DURATION FROM BANS WHERE IP = ? ORDER BY TIME DESC");
+    query.addBindValue(ip.toString());
+    query.exec();
+    if (query.first()) {
+        return query.value(0).toLongLong();
+    }
+    else {
+        return -1;
+    }
+}
+
+void DBManager::addBan(QString ipid, QHostAddress ip, QString hdid, unsigned long time, QString reason, long long duration)
+{
+    QSqlQuery query;
+    query.prepare("INSERT INTO BANS(IPID, HDID, IP, TIME, REASON, DURATION) VALUES(?, ?, ?, ?, ?, ?)");
     query.addBindValue(ipid);
     query.addBindValue(hdid);
     query.addBindValue(ip.toString());
     query.addBindValue(QString::number(time));
     query.addBindValue(reason);
+    query.addBindValue(duration);
     if (!query.exec())
         qDebug() << "SQL Error:" << query.lastError().text();
 }

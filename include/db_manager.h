@@ -19,6 +19,7 @@
 #define BAN_MANAGER_H
 
 #include <QDebug>
+#include <QDateTime>
 #include <QHostAddress>
 #include <QMessageAuthenticationCode>
 #include <QString>
@@ -37,8 +38,10 @@ public:
 
     QString getBanReason(QHostAddress ip);
     QString getBanReason(QString hdid);
+    long long getBanDuration(QString hdid);
+    long long getBanDuration(QHostAddress hdid);
 
-    void addBan(QString ipid, QHostAddress ip, QString hdid, unsigned long time, QString reason);
+    void addBan(QString ipid, QHostAddress ip, QString hdid, unsigned long time, QString reason, long long duration);
 
     bool createUser(QString username, QString salt, QString password, unsigned long long acl);
     unsigned long long getACL(QString moderator_name);

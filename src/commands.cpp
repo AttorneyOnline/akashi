@@ -89,11 +89,47 @@ void AOClient::cmdGetArea(int argc, QStringList argv)
 
 void AOClient::cmdBan(int argc, QStringList argv)
 {
+    QString args_str = argv[1];
+    if (argc > 2) {
+        for (int i = 2; i < argc; i++)
+            args_str += " " + argv[i];
+    }
+
+    QRegularExpression quoteMatcher("['\"](.+?)[\"']");
+    QRegularExpressionMatchIterator matches = quoteMatcher.globalMatch(args_str);
+    QList<QString> unquoted_args;
+    while (matches.hasNext()) {
+        QRegularExpressionMatch match = matches.next();
+        unquoted_args.append(match.captured(1));
+    }
+
+    QString reason;
+    QString duration = "perma";
+
+    if (unquoted_args.length() < 1) {
+        sendServerMessage("Invalid syntax. Usage:\n/ban <ipid> \"<reason>\" \"<duration>\"");
+        return;
+    }
+
+    reason = unquoted_args.at(0);
+    if (unquoted_args.length() > 1)
+        duration = unquoted_args.at(1);
+
+    long long duration_seconds = 0;
+    if (duration == "perma")
+        duration_seconds = -2;
+    else
+        duration_seconds = parseTime(duration);
+
+    if (duration_seconds == -1) {
+        sendServerMessage("Invalid time format. Format example: 1h30m");
+        return;
+    }
+
     QString target_ipid = argv[0];
     QHostAddress ip;
     QString hdid;
-    unsigned long time = QDateTime::currentDateTime().toTime_t();
-    QString reason = argv[1];
+    unsigned long time = QDateTime::currentDateTime().toSecsSinceEpoch();
     bool ban_logged = false;
     int kick_counter = 0;
 
@@ -107,7 +143,7 @@ void AOClient::cmdBan(int argc, QStringList argv)
         if (!ban_logged) {
             ip = client->remote_ip;
             hdid = client->hwid;
-            server->db_manager->addBan(target_ipid, ip, hdid, time, reason);
+            server->db_manager->addBan(target_ipid, ip, hdid, time, reason, duration_seconds);
             sendServerMessage("Banned user with ipid " + target_ipid + " for reason: " + reason);
             ban_logged = true;
         }
@@ -903,6 +939,38 @@ void AOClient::cmdGM(int argc, QStringList argv)
     }
 }
 
+void AOClient::cmdMute(int argc, QStringList argv)
+{
+    bool conv_ok = false;
+    int uid = argv[0].toInt(&conv_ok);
+    if (!conv_ok) {
+        sendServerMessage("Invalid user ID.");
+        return;
+    }
+
+    if (server->getClientByID(uid)->is_muted)
+        sendServerMessage("That player is already muted!");
+    else
+        sendServerMessage("Muted player.");
+    server->getClientByID(uid)->is_muted = true;
+}
+
+void AOClient::cmdUnmute(int argc, QStringList argv)
+{
+    bool conv_ok = false;
+    int uid = argv[0].toInt(&conv_ok);
+    if (!conv_ok) {
+        sendServerMessage("Invalid user ID.");
+        return;
+    }
+
+    if (!server->getClientByID(uid)->is_muted)
+        sendServerMessage("That player is already unmuted!");
+    else
+        sendServerMessage("Unmuted player.");
+    server->getClientByID(uid)->is_muted = false;
+}
+
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;
@@ -1019,3 +1087,45 @@ QString AOClient::getAreaTimer(int area_idx, QTimer* timer)
     }
 }
 
+long long AOClient::parseTime(QString input)
+{
+    QRegularExpression regex("(?:(?:(?<year>.*?)y)*(?:(?<week>.*?)w)*(?:(?<day>.*?)d)*(?:(?<hr>.*?)h)*(?:(?<min>.*?)m)*(?:(?<sec>.*?)s)*)");
+    QRegularExpressionMatch match = regex.match(input);
+    QString str_year, str_week, str_hour, str_day, str_minute, str_second;
+    int year, week, day, hour, minute, second;
+
+    str_year = match.captured("year");
+    str_week = match.captured("week");
+    str_day = match.captured("day");
+    str_hour = match.captured("hr");
+    str_minute = match.captured("min");
+    str_second = match.captured("sec");
+
+    bool is_well_formed = false;
+    QString concat_str(str_year + str_week + str_day + str_hour + str_minute + str_second);
+    concat_str.toInt(&is_well_formed);
+
+    if (!is_well_formed) {
+        return -1;
+    }
+
+    year = str_year.toInt();
+    week = str_week.toInt();
+    day = str_day.toInt();
+    hour = str_hour.toInt();
+    minute = str_minute.toInt();
+    second = str_second.toInt();
+
+    long long total = 0;
+    total += 31622400 * year;
+    total += 604800 * week;
+    total += 86400 * day;
+    total += 3600 * hour;
+    total += 60 * minute;
+    total += second;
+
+    if (total < 0)
+        return -1;
+
+    return total;
+}
