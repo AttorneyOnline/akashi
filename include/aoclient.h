@@ -42,10 +42,9 @@ class AOClient : public QObject {
     AOClient(Server* p_server, QTcpSocket* p_socket, QObject* parent = nullptr, int user_id = 0);
     ~AOClient();
 
-    QString getHwid();
-    QString getIpid();
     Server* getServer();
-    void setHwid(QString p_hwid);
+    QString getIpid();
+    void calculateIpid();
 
     int id;
 

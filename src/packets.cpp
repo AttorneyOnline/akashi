@@ -26,9 +26,9 @@ void AOClient::pktDefault(AreaData* area, int argc, QStringList argv, AOPacket p
 
 void AOClient::pktHardwareId(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
-    setHwid(argv[0]);
-    if(server->db_manager->isHDIDBanned(getHwid())) {
-        sendPacket("BD", {server->db_manager->getBanReason(getHwid())});
+    hwid = argv[0];
+    if(server->db_manager->isHDIDBanned(hwid)) {
+        sendPacket("BD", {server->db_manager->getBanReason(hwid)});
         socket->close();
         return;
     }
@@ -88,7 +88,7 @@ void AOClient::pktRequestMusic(AreaData* area, int argc, QStringList argv, AOPac
 
 void AOClient::pktLoadingDone(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
-    if (getHwid() == "") {
+    if (hwid == "") {
         // No early connecting!
         socket->close();
         return;
@@ -271,6 +271,7 @@ void AOClient::pktWebSocketIp(AreaData* area, int argc, QStringList argv, AOPack
         qDebug() << "ws ip set to" << argv[0];
 #endif
         remote_ip = QHostAddress(argv[0]);
+        calculateIpid();
     }
 }
 
