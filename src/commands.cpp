@@ -95,6 +95,8 @@ void AOClient::cmdBan(int argc, QStringList argv)
             args_str += " " + argv[i];
     }
 
+    DBManager::BanInfo ban;
+
     QRegularExpression quoteMatcher("['\"](.+?)[\"']");
     QRegularExpressionMatchIterator matches = quoteMatcher.globalMatch(args_str);
     QList<QString> unquoted_args;
@@ -103,7 +105,6 @@ void AOClient::cmdBan(int argc, QStringList argv)
         unquoted_args.append(match.captured(1));
     }
 
-    QString reason;
     QString duration = "perma";
 
     if (unquoted_args.length() < 1) {
@@ -111,7 +112,7 @@ void AOClient::cmdBan(int argc, QStringList argv)
         return;
     }
 
-    reason = unquoted_args.at(0);
+    ban.reason = unquoted_args.at(0);
     if (unquoted_args.length() > 1)
         duration = unquoted_args.at(1);
 
@@ -126,34 +127,34 @@ void AOClient::cmdBan(int argc, QStringList argv)
         return;
     }
 
-    QString target_ipid = argv[0];
-    QHostAddress ip;
-    QString hdid;
-    unsigned long time = QDateTime::currentDateTime().toSecsSinceEpoch();
+    ban.duration = duration_seconds;
+
+    ban.ipid = argv[0];
+    ban.time = QDateTime::currentDateTime().toSecsSinceEpoch();
     bool ban_logged = false;
     int kick_counter = 0;
 
     if (argc > 2) {
         for (int i = 2; i < argv.length(); i++) {
-            reason += " " + argv[i];
+            ban.reason += " " + argv[i];
         }
     }
 
-    for (AOClient* client : server->getClientsByIpid(target_ipid)) {
+    for (AOClient* client : server->getClientsByIpid(ban.ipid)) {
         if (!ban_logged) {
-            ip = client->remote_ip;
-            hdid = client->hwid;
-            server->db_manager->addBan(target_ipid, ip, hdid, time, reason, duration_seconds);
-            sendServerMessage("Banned user with ipid " + target_ipid + " for reason: " + reason);
+            ban.ip = client->remote_ip;
+            ban.hdid = client->hwid;
+            server->db_manager->addBan(ban);
+            sendServerMessage("Banned user with ipid " + ban.ipid + " for reason: " + ban.reason);
             ban_logged = true;
         }
-        client->sendPacket("KB", {reason});
+        client->sendPacket("KB", {ban.reason + "\nID: " + QString::number(server->db_manager->getBanID(ban.ip)) + "\nUntil: " + QDateTime::fromSecsSinceEpoch(ban.time).addSecs(ban.duration).toString("dd.MM.yyyy, hh:mm")});
         client->socket->close();
         kick_counter++;
     }
 
     if (kick_counter > 1)
-        sendServerMessage("Kicked " + QString::number(kick_counter) + " clients with matching ipids");
+        sendServerMessage("Kicked " + QString::number(kick_counter) + " clients with matching ipids.");
     if (!ban_logged)
         sendServerMessage("User with ipid not found!");
 }

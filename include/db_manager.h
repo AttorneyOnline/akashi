@@ -39,7 +39,9 @@ public:
     QString getBanReason(QHostAddress ip);
     QString getBanReason(QString hdid);
     long long getBanDuration(QString hdid);
-    long long getBanDuration(QHostAddress hdid);
+    long long getBanDuration(QHostAddress ip);
+    int getBanID(QString hdid);
+    int getBanID(QHostAddress ip);
 
     struct BanInfo {
         QString ipid;
@@ -51,7 +53,7 @@ public:
     };
     QList<BanInfo> getRecentBans();
 
-    void addBan(QString ipid, QHostAddress ip, QString hdid, unsigned long time, QString reason, long long duration);
+    void addBan(BanInfo ban);
 
     bool createUser(QString username, QString salt, QString password, unsigned long long acl);
     unsigned long long getACL(QString moderator_name);

@@ -122,6 +122,36 @@ long long DBManager::getBanDuration(QHostAddress ip)
     }
 }
 
+
+int DBManager::getBanID(QString hdid)
+{
+    QSqlQuery query;
+    query.prepare("SELECT ID FROM BANS WHERE HDID = ?");
+    query.addBindValue(hdid);
+    query.exec();
+    if (query.first()) {
+        return query.value(0).toInt();
+    }
+    else {
+        return -1;
+    }
+}
+
+
+int DBManager::getBanID(QHostAddress ip)
+{
+    QSqlQuery query;
+    query.prepare("SELECT ID FROM BANS WHERE IP = ?");
+    query.addBindValue(ip.toString());
+    query.exec();
+    if (query.first()) {
+        return query.value(0).toInt();
+    }
+    else {
+        return -1;
+    }
+}
+
 QList<DBManager::BanInfo> DBManager::getRecentBans()
 {
     QList<BanInfo> return_list;
@@ -143,16 +173,16 @@ QList<DBManager::BanInfo> DBManager::getRecentBans()
     return return_list;
 }
 
-void DBManager::addBan(QString ipid, QHostAddress ip, QString hdid, unsigned long time, QString reason, long long duration)
+void DBManager::addBan(BanInfo ban)
 {
     QSqlQuery query;
     query.prepare("INSERT INTO BANS(IPID, HDID, IP, TIME, REASON, DURATION) VALUES(?, ?, ?, ?, ?, ?)");
-    query.addBindValue(ipid);
-    query.addBindValue(hdid);
-    query.addBindValue(ip.toString());
-    query.addBindValue(QString::number(time));
-    query.addBindValue(reason);
-    query.addBindValue(duration);
+    query.addBindValue(ban.ipid);
+    query.addBindValue(ban.hdid);
+    query.addBindValue(ban.ip.toString());
+    query.addBindValue(QString::number(ban.time));
+    query.addBindValue(ban.reason);
+    query.addBindValue(ban.duration);
     if (!query.exec())
         qDebug() << "SQL Error:" << query.lastError().text();
 }
