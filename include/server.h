@@ -46,7 +46,7 @@ class Server : public QObject {
     ~Server();
 
     void start();
-    AOClient* getClient(QString ipid);
+    QList<AOClient*> getClientsByIpid(QString ipid);
     AOClient* getClientByID(int id);
     void updateCharsTaken(AreaData* area);
     void broadcast(AOPacket packet, int area_index);

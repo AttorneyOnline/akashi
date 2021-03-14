@@ -95,6 +95,7 @@ void AOClient::cmdBan(int argc, QStringList argv)
     unsigned long time = QDateTime::currentDateTime().toTime_t();
     QString reason = argv[1];
     bool ban_logged = false;
+    int kick_counter = 0;
 
     if (argc > 2) {
         for (int i = 2; i < argv.length(); i++) {
@@ -102,20 +103,21 @@ void AOClient::cmdBan(int argc, QStringList argv)
         }
     }
 
-    for (AOClient* client : server->clients) {
-        if (client->getIpid() == target_ipid) {
-            if (!ban_logged) {
-                ip = client->remote_ip;
-                hdid = client->hwid;
-                server->db_manager->addBan(target_ipid, ip, hdid, time, reason);
-                sendServerMessage("Banned user with ipid " + target_ipid + " for reason: " + reason);
-                ban_logged = true;
-            }
-            client->sendPacket("KB", {reason});
-            client->socket->close();
+    for (AOClient* client : server->getClientsByIpid(target_ipid)) {
+        if (!ban_logged) {
+            ip = client->remote_ip;
+            hdid = client->hwid;
+            server->db_manager->addBan(target_ipid, ip, hdid, time, reason);
+            sendServerMessage("Banned user with ipid " + target_ipid + " for reason: " + reason);
+            ban_logged = true;
         }
+        client->sendPacket("KB", {reason});
+        client->socket->close();
+        kick_counter++;
     }
 
+    if (kick_counter > 1)
+        sendServerMessage("Kicked " + QString::number(kick_counter) + " clients with matching ipids");
     if (!ban_logged)
         sendServerMessage("User with ipid not found!");
 }
@@ -124,7 +126,7 @@ void AOClient::cmdKick(int argc, QStringList argv)
 {
     QString target_ipid = argv[0];
     QString reason = argv[1];
-    bool did_kick = false;
+    int kick_counter = 0;
 
     if (argc > 2) {
         for (int i = 2; i < argv.length(); i++) {
@@ -132,16 +134,14 @@ void AOClient::cmdKick(int argc, QStringList argv)
         }
     }
 
-    for (AOClient* client : server->clients) {
-        if (client->getIpid() == target_ipid) {
-            client->sendPacket("KK", {reason});
-            client->socket->close();
-            did_kick = true;
-        }
+    for (AOClient* client : server->getClientsByIpid(target_ipid)) {
+        client->sendPacket("KK", {reason});
+        client->socket->close();
+        kick_counter++;
     }
 
-    if (did_kick)
-        sendServerMessage("Kicked user with ipid " + target_ipid + " for reason: " + reason);
+    if (kick_counter > 0)
+        sendServerMessage("Kicked " + QString::number(kick_counter) + " client(s) with ipid " + target_ipid + " for reason: " + reason);
     else
         sendServerMessage("User with ipid not found!");
 }

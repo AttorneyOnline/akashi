@@ -185,13 +185,14 @@ int Server::getDiceValue(QString value_type)
     return value;
 }
 
-AOClient* Server::getClient(QString ipid)
+QList<AOClient*> Server::getClientsByIpid(QString ipid)
 {
+    QList<AOClient*> return_clients;
     for (AOClient* client : clients) {
         if (client->getIpid() == ipid)
-            return client;
+            return_clients.append(client);
     }
-    return nullptr;
+    return return_clients;
 }
 
 AOClient* Server::getClientByID(int id)
