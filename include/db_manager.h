@@ -54,8 +54,10 @@ public:
     QList<BanInfo> getRecentBans();
 
     void addBan(BanInfo ban);
+    bool invalidateBan(int id);
 
     bool createUser(QString username, QString salt, QString password, unsigned long long acl);
+    bool deleteUser(QString username);
     unsigned long long getACL(QString moderator_name);
     bool authenticate(QString username, QString password);
     bool updateACL(QString username, unsigned long long acl, bool mode);

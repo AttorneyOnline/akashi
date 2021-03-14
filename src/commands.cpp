@@ -269,6 +269,14 @@ void AOClient::cmdAddUser(int argc, QStringList argv)
         sendServerMessage("Unable to create user " + argv[0] + ".\nDoes a user with that name already exist?");
 }
 
+void AOClient::cmdRemoveUser(int argc, QStringList argv)
+{
+    if (server->db_manager->deleteUser(argv[0]))
+        sendServerMessage("Successfully removed user " + argv[0] + ".");
+    else
+        sendServerMessage("Unable to remove user " + argv[0] + ".\nDoes it exist?");
+}
+
 void AOClient::cmdListPerms(int argc, QStringList argv)
 {
     unsigned long long user_acl = server->db_manager->getACL(moderator_name);
@@ -986,6 +994,20 @@ void AOClient::cmdBans(int argc, QStringList argv)
         recent_bans << "-----";
     }
     sendServerMessage(recent_bans.join("\n"));
+}
+
+void AOClient::cmdUnBan(int argc, QStringList argv)
+{
+    bool ok;
+    int target_ban = argv[0].toInt(&ok);
+    if (!ok) {
+        sendServerMessage("Invalid ban ID.");
+        return;
+    }
+    else if (server->db_manager->invalidateBan(target_ban))
+        sendServerMessage("Successfully invalidated ban " + argv[0] + ".");
+    else
+        sendServerMessage("Couldn't invalidate ban " + argv[0] + ", are you sure it exists?");
 }
 
 QStringList AOClient::buildAreaList(int area_idx)

@@ -187,6 +187,23 @@ void DBManager::addBan(BanInfo ban)
         qDebug() << "SQL Error:" << query.lastError().text();
 }
 
+bool DBManager::invalidateBan(int id)
+{
+    QSqlQuery ban_exists;
+    ban_exists.prepare("SELECT DURATION FROM bans WHERE ID = ?");
+    ban_exists.addBindValue(id);
+    ban_exists.exec();
+
+    if (ban_exists.first())
+        return false;
+
+    QSqlQuery query;
+    query.prepare("UPDATE bans SET DURATION = 0 WHERE ID = ?");
+    query.addBindValue(id);
+    query.exec();
+    return true;
+}
+
 bool DBManager::createUser(QString username, QString salt, QString password, unsigned long long acl)
 {
     QSqlQuery username_exists;
@@ -212,6 +229,23 @@ bool DBManager::createUser(QString username, QString salt, QString password, uns
     query.addBindValue(acl);
     query.exec();
 
+    return true;
+}
+
+bool DBManager::deleteUser(QString username)
+{
+    QSqlQuery username_exists;
+    username_exists.prepare("SELECT ACL FROM users WHERE USERNAME = ?");
+    username_exists.addBindValue(username);
+    username_exists.exec();
+
+    if (username_exists.first())
+        return false;
+
+    QSqlQuery query;
+    query.prepare("DELETE FROM users WHERE USERNAME = ?");
+    username_exists.addBindValue(username);
+    username_exists.exec();
     return true;
 }
 
