@@ -976,7 +976,7 @@ void AOClient::cmdSubTheme(int argc, QStringList argv)
     QString subtheme = argv.join(" ");
     for (AOClient* client : server->clients) {
         if (client->current_area == current_area)
-            client->sendPacket("ST", {subtheme});
+            client->sendPacket("ST", {subtheme, "1"});
     }
     sendServerMessageArea("Subtheme was set to " + subtheme);
 }
