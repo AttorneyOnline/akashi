@@ -17,16 +17,16 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/server.h"
 
-Server::Server(int p_port, int p_ws_port, QObject* parent) : QObject(parent)
+Server::Server(int p_port, int p_ws_port, QObject* parent) :
+    QObject(parent),
+    player_count(0),
+    port(p_port),
+    ws_port(p_ws_port)
 {
     server = new QTcpServer(this);
     connect(server, SIGNAL(newConnection()), this, SLOT(clientConnected()));
 
-    port = p_port;
-    ws_port = p_ws_port;
     timer = new QTimer();
-
-    player_count = 0;
 
     db_manager = new DBManager();
 }
