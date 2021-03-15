@@ -174,7 +174,7 @@ void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket p
 {
     ooc_name = dezalgo(argv[0]).replace(QRegExp("\\[|\\]|\\{|\\}|\\#|\\$|\\%|\\&"), ""); // no fucky wucky shit here
     
-    if (ooc_name == server->getServerName()) // impersonation prevention
+    if (ooc_name == server->getServerName() || "") // impersonation & empty name protection
         return;
     
     QString message = dezalgo(argv[1]);
