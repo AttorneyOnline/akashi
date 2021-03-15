@@ -38,7 +38,7 @@ class WSProxy : public QObject {
      * @param p_local_port The port through which the TCP connection should be directed. Should the same as with
      * non-WebAO connections.
      * @param p_ws_port The WebSocket port. Should the same that is opened for WebSockets connections.
-     * @param p_parent Qt-based parent, passed along to inherited constructor from QObject.
+     * @param parent Qt-based parent, passed along to inherited constructor from QObject.
      */
     WSProxy(int p_local_port, int p_ws_port, QObject* parent);
 
