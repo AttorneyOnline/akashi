@@ -43,7 +43,7 @@ void AOClient::cmdLogin(int argc, QStringList argv)
         }
         else if(argv[0] == modpass) {
             sendPacket("AUTH", {"1"}); // Client: "You were granted the Disable Modcalls button."
-            sendServerMessage("Logged in as a moderator."); // for old clients, this is hardcoded to display the mod UI
+            sendServerMessage("Logged in as a moderator."); // pre-2.9.1 clients are hardcoded to display the mod UI when this string is sent in OOC
             authenticated = true;
         } 
         else {
@@ -63,7 +63,8 @@ void AOClient::cmdLogin(int argc, QStringList argv)
             moderator_name = username;
             authenticated = true;
             sendPacket("AUTH", {"1"}); // Client: "You were granted the Disable Modcalls button."
-            sendServerMessage("Logged in as a moderator."); // for old clients, this is hardcoded to display the mod UI
+            if (version.release <= 2 && version.major <= 9 && version.minor <= 0)
+                sendServerMessage("Logged in as a moderator."); // pre-2.9.1 clients are hardcoded to display the mod UI when this string is sent in OOC
             sendServerMessage("Welcome, " + username);
         }
         else {
