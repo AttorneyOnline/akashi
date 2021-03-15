@@ -36,7 +36,7 @@ class ConfigManager {
         QString ms_ip;
         int port;
         int ws_port;
-        int local_port;
+        int ms_port;
         QString name;
         QString description;
         bool advertise_server;

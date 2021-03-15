@@ -26,9 +26,9 @@ void AOClient::pktDefault(AreaData* area, int argc, QStringList argv, AOPacket p
 
 void AOClient::pktHardwareId(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
-    setHwid(argv[0]);
-    if(server->db_manager->isHDIDBanned(getHwid())) {
-        sendPacket("BD", {server->db_manager->getBanReason(getHwid())});
+    hwid = argv[0];
+    if(server->db_manager->isHDIDBanned(hwid)) {
+        sendPacket("BD", {server->db_manager->getBanReason(hwid)});
         socket->close();
         return;
     }
@@ -54,6 +54,16 @@ void AOClient::pktSoftwareId(AreaData* area, int argc, QStringList argv, AOPacke
         "y_offset",     "expanded_desk_mods", "auth_packet"
     };
 
+
+    version.string = argv[1];
+    QRegularExpression rx("\\b(\\d+)\\.(\\d+)\\.(\\d+)\\b"); // matches X.X.X (e.g. 2.9.0, 2.4.10, etc.)
+    QRegularExpressionMatch match = rx.match(version.string);
+    if (match.hasMatch()) {
+        version.release = match.captured(1).toInt();
+        version.major = match.captured(2).toInt();
+        version.minor = match.captured(3).toInt();
+    }
+
     sendPacket("PN", {QString::number(server->player_count), max_players});
     sendPacket("FL", feature_list);
 }
@@ -78,7 +88,7 @@ void AOClient::pktRequestMusic(AreaData* area, int argc, QStringList argv, AOPac
 
 void AOClient::pktLoadingDone(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
-    if (getHwid() == "") {
+    if (hwid == "") {
         // No early connecting!
         socket->close();
         return;
@@ -92,16 +102,37 @@ void AOClient::pktLoadingDone(AreaData* area, int argc, QStringList argv, AOPack
     area->player_count++;
     joined = true;
     server->updateCharsTaken(area);
-    fullArup(); // Give client all the area data
+
     arup(ARUPType::PLAYER_COUNT, true); // Tell everyone there is a new player
     sendEvidenceList(area);
 
     sendPacket("HP", {"1", QString::number(area->def_hp)});
     sendPacket("HP", {"2", QString::number(area->pro_hp)});
     sendPacket("FA", server->area_names);
-    sendPacket("BN", {area->background});
     sendPacket("OPPASS", {"DEADBEEF"});
     sendPacket("DONE");
+    sendPacket("BN", {area->background});
+  
+    sendServerMessage("=== MOTD ===\r\n" + server->MOTD + "\r\n=============");
+
+    fullArup(); // Give client all the area data
+    if (server->timer->isActive()) {
+        sendPacket("TI", {"0", "2"});
+        sendPacket("TI", {"0", "0", QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(server->timer->remainingTime())))});
+    }
+    else {
+        sendPacket("TI", {"0", "3"});
+    }
+    for (QTimer* timer : area->timers) {
+        int timer_id = area->timers.indexOf(timer) + 1;
+        if (timer->isActive()) {
+            sendPacket("TI", {QString::number(timer_id), "2"});
+            sendPacket("TI", {QString::number(timer_id), "0", QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(timer->remainingTime())))});
+        }
+        else {
+            sendPacket("TI", {QString::number(timer_id), "3"});
+        }
+    }
 }
 
 void AOClient::pktCharPassword(AreaData* area, int argc, QStringList argv, AOPacket packet)
@@ -118,52 +149,16 @@ void AOClient::pktSelectChar(AreaData* area, int argc, QStringList argv, AOPacke
         return;
     }
 
-    if (current_char != "") {
-        area->characters_taken[current_char] = false;
-    }
-
-    if(char_id > server->characters.length())
-        return;
-
-    if (char_id >= 0) {
-        QString char_selected = server->characters[char_id];
-        bool taken = area->characters_taken.value(char_selected);
-        if (taken || char_selected == "")
-            return;
-
-        area->characters_taken[char_selected] = true;
-        current_char = char_selected;
-    }
-    else {
-        current_char = "";
-    }
-
-    pos = "";
-
-    server->updateCharsTaken(area);
-    sendPacket("PV", {QString::number(id), "CID", argv[1]});
-    fullArup();
-    if (server->timer->isActive()) {
-        sendPacket("TI", {QString::number(0), QString::number(2)});
-        sendPacket("TI", {QString::number(0), QString::number(0), QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(server->timer->remainingTime())))});
-    }
-    else {
-        sendPacket("TI", {QString::number(0), QString::number(3)});
-    }
-    for (QTimer* timer : area->timers) {
-        int timer_id = area->timers.indexOf(timer) + 1;
-        if (timer->isActive()) {
-            sendPacket("TI", {QString::number(timer_id), QString::number(2)});
-            sendPacket("TI", {QString::number(timer_id), QString::number(0), QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(timer->remainingTime())))});
-        }
-        else {
-            sendPacket("TI", {QString::number(timer_id), QString::number(3)});
-        }
-    }
+    changeCharacter(char_id);
 }
 
 void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    if (is_muted) {
+        sendServerMessage("You cannot speak while muted.");
+        return;
+    }
+
     AOPacket validated_packet = validateIcPacket(packet);
     if (validated_packet.header == "INVALID")
         return;
@@ -177,7 +172,10 @@ void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket pa
 
 void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
-    ooc_name = dezalgo(argv[0]);
+    ooc_name = dezalgo(argv[0]).replace(QRegExp("\\[|\\]|\\{|\\}|\\#|\\$|\\%|\\&"), ""); // no fucky wucky shit here
+    if (ooc_name.isEmpty() || ooc_name == server->getServerName()) // impersonation & empty name protection
+        return;
+    
     QString message = dezalgo(argv[1]);
     AOPacket final_packet("CT", {ooc_name, message, "0"});
     if(message.at(0) == '/') {
@@ -214,9 +212,21 @@ void AOClient::pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPack
     QString argument = argv[0];
 
     for (QString song : server->music_list) {
-        if (song == argument) {
+        if (song == argument || song == "~stop.mp3") { // ~stop.mp3 is a dummy track used by 2.9+
             // We have a song here
-            AOPacket music_change("MC", {song, argv[1], argv[2], "1", "0", argv[3]});
+            QString effects;
+            if (argc >= 4)
+                effects = argv[3];
+            else
+                effects = "0";
+            QString final_song;
+            if (!argument.contains("."))
+                final_song = "~stop.mp3";
+            else
+                final_song = argument;
+            AOPacket music_change("MC", {final_song, argv[1], showname, "1", "0", effects});
+            area->current_music = final_song;
+            area->music_played_by = showname;
             server->broadcast(music_change, current_area);
             return;
         }
@@ -265,6 +275,7 @@ void AOClient::pktWebSocketIp(AreaData* area, int argc, QStringList argv, AOPack
         qDebug() << "ws ip set to" << argv[0];
 #endif
         remote_ip = QHostAddress(argv[0]);
+        calculateIpid();
     }
 }
 
@@ -280,6 +291,8 @@ void AOClient::pktModCall(AreaData* area, int argc, QStringList argv, AOPacket p
 
 void AOClient::pktAddEvidence(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    if (!checkEvidenceAccess(area))
+        return;
     AreaData::Evidence evi = {argv[0], argv[1], argv[2]};
     area->evidence.append(evi);
     sendEvidenceList(area);
@@ -287,9 +300,11 @@ void AOClient::pktAddEvidence(AreaData* area, int argc, QStringList argv, AOPack
 
 void AOClient::pktRemoveEvidence(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    if (!checkEvidenceAccess(area))
+        return;
     bool is_int = false;
     int idx = argv[0].toInt(&is_int);
-    if (is_int) {
+    if (is_int && idx <= area->evidence.size() && idx >= 0) {
         area->evidence.removeAt(idx);
     }
     sendEvidenceList(area);
@@ -297,10 +312,12 @@ void AOClient::pktRemoveEvidence(AreaData* area, int argc, QStringList argv, AOP
 
 void AOClient::pktEditEvidence(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    if (!checkEvidenceAccess(area))
+        return;
     bool is_int = false;
     int idx = argv[0].toInt(&is_int);
     AreaData::Evidence evi = {argv[1], argv[2], argv[3]};
-    if (is_int) {
+    if (is_int && idx <= area->evidence.size() && idx >= 0) {
         area->evidence.replace(idx, evi);
     }
     sendEvidenceList(area);
@@ -308,17 +325,36 @@ void AOClient::pktEditEvidence(AreaData* area, int argc, QStringList argv, AOPac
 
 void AOClient::sendEvidenceList(AreaData* area)
 {
+    for (AOClient* client : server->clients) {
+        if (client->current_area == current_area)
+            client->updateEvidenceList(area);
+    }
+}
+
+void AOClient::updateEvidenceList(AreaData* area)
+{
     QStringList evidence_list;
     QString evidence_format("%1&%2&%3");
 
     for (AreaData::Evidence evidence : area->evidence) {
+        if (!checkAuth(ACLFlags.value("CM")) && area->evi_mod == AreaData::EvidenceMod::HIDDEN_CM) {
+            QRegularExpression regex("<owner=(.*?)>");
+            QRegularExpressionMatch match = regex.match(evidence.description);
+            if (match.hasMatch()) {
+                QStringList owners = match.captured(1).split(",");
+                if (!owners.contains("all", Qt::CaseSensitivity::CaseInsensitive) && !owners.contains(pos, Qt::CaseSensitivity::CaseInsensitive)) {
+                    continue;
+                }
+            }
+            // no match = show it to all
+        }
         evidence_list.append(evidence_format
-                             .arg(evidence.name)
-                             .arg(evidence.description)
-                             .arg(evidence.image));
+            .arg(evidence.name)
+            .arg(evidence.description)
+            .arg(evidence.image));
     }
 
-    server->broadcast(AOPacket("LE", evidence_list), current_area);
+    sendPacket(AOPacket("LE", evidence_list));
 }
 
 AOPacket AOClient::validateIcPacket(AOPacket packet)
@@ -362,10 +398,10 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     if (current_char != incoming_args[2].toString()) {
         // Selected char is different from supplied folder name
         // This means the user is INI-swapped
-        // TODO: ini swap locking
-        // if no iniswap allowed then
-        // if (!server->characters.contains(incoming_args[2].toString()))
-        //     return invalid;
+        if (!area->iniswap_allowed) {
+            if (!server->characters.contains(incoming_args[2].toString()))
+                return invalid;
+        }
         qDebug() << "INI swap detected from " << getIpid();
     }
     args.append(incoming_args[2].toString());
@@ -385,6 +421,10 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     // side
     // this is validated clientside so w/e
     args.append(incoming_args[5].toString());
+    if (pos != incoming_args[5].toString()) {
+        pos = incoming_args[5].toString();
+        updateEvidenceList(server->areas[current_area]);
+    }
 
     // sfx name
     args.append(incoming_args[6].toString());
@@ -453,8 +493,9 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     // 2.6 packet extensions
     if (incoming_args.length() > 15) {
         // showname
-        QString showname = dezalgo(incoming_args[15].toString().trimmed());
-        args.append(showname);
+        QString incoming_showname = dezalgo(incoming_args[15].toString().trimmed());
+        args.append(incoming_showname);
+        showname = incoming_showname;
 
         // other char id
         // things get a bit hairy here
@@ -489,8 +530,17 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
 
         // self offset
         offset = incoming_args[17].toString();
-        args.append(offset);
-        args.append(other_offset);
+        // versions 2.6-2.8 cannot validate y-offset so we send them just the x-offset
+        if ((version.release == 2) && (version.major == 6 || version.major == 7 || version.major == 8)) {
+            QString x_offset = offset.split("&")[0];
+            args.append(x_offset);
+            QString other_x_offset = other_offset.split("&")[0];
+            args.append(other_x_offset);
+        }
+        else {
+            args.append(offset);
+            args.append(other_offset);
+        }
         args.append(other_flip);
 
         // noninterrupting preanim
@@ -548,4 +598,19 @@ QString AOClient::dezalgo(QString p_text)
     QRegExp rxp("([\u0300-\u036f\u1ab0-\u1aff\u1dc0-\u1dff\u20d0-\u20ff\ufe20-\ufe2f\u115f\u1160\u3164]{" + QRegExp::escape(QString::number(zalgo_tolerance)) + ",})");
     QString filtered = p_text.replace(rxp, "");
     return filtered;
+}
+
+bool AOClient::checkEvidenceAccess(AreaData *area)
+{
+    switch(area->evi_mod) {
+    case AreaData::EvidenceMod::FFA:
+        return true;
+    case AreaData::EvidenceMod::CM:
+    case AreaData::EvidenceMod::HIDDEN_CM:
+        return checkAuth(ACLFlags.value("CM"));
+    case AreaData::EvidenceMod::MOD:
+        return authenticated;
+    default:
+        return false;
+    }
 }

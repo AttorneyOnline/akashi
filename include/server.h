@@ -46,13 +46,14 @@ class Server : public QObject {
     ~Server();
 
     void start();
-    AOClient* getClient(QString ipid);
+    QList<AOClient*> getClientsByIpid(QString ipid);
     AOClient* getClientByID(int id);
     void updateCharsTaken(AreaData* area);
     void broadcast(AOPacket packet, int area_index);
     void broadcast(AOPacket packet);
     QString getServerName();
     int getDiceValue(QString value_type);
+    int getCharID(QString char_name);
 
     QVector<AOClient*> clients;
 
@@ -64,6 +65,7 @@ class Server : public QObject {
     QStringList backgrounds;
     DBManager* db_manager;
     QString server_name;
+    QString MOTD;
 
     QTimer* timer;
 

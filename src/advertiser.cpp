@@ -62,7 +62,7 @@ void Advertiser::socketConnected()
 
     AOPacket ao_packet("SCC",
                        {concat_ports, name, description,
-                        "akashi v" + QCoreApplication::applicationVersion()});
+                        "akashi " + QCoreApplication::applicationVersion()});
     QByteArray data = ao_packet.toUtf8();
 
     socket->write(data);

@@ -17,22 +17,23 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/area_data.h"
 
-AreaData::AreaData(QStringList characters, QString p_name, int p_index)
+AreaData::AreaData(QString p_name, int p_index)
 {
-    name = p_name;
+    QStringList name_split = p_name.split(":");
+    name_split.removeFirst();
+    name = name_split.join(":");
     index = p_index;
-    for (QString cur_char : characters) {
-        characters_taken.insert(cur_char, false);
-    }
     QSettings areas_ini("config/areas.ini", QSettings::IniFormat);
     areas_ini.beginGroup(p_name);
     background = areas_ini.value("background", "gs4").toString();
-    is_protected = areas_ini.value("protected_area").toBool();
+    is_protected = areas_ini.value("protected_area", "false").toBool();
+    iniswap_allowed = areas_ini.value("iniswap_allowed", "true").toBool();
     bg_locked = areas_ini.value("bg_locked", "false").toBool();
+    QString configured_evi_mod = areas_ini.value("evidence_mod", "FFA").toString().toLower();
     areas_ini.endGroup();
     player_count = 0;
     locked = FREE;
-    status = "FREE";
+    status = IDLE;
     def_hp = 10;
     pro_hp = 10;
     document = "No document.";
@@ -51,4 +52,13 @@ AreaData::AreaData(QStringList characters, QString p_name, int p_index)
     timers.append(timer3);
     QTimer* timer4 = new QTimer();
     timers.append(timer4);
+
+    if (configured_evi_mod == "cm")
+        evi_mod = EvidenceMod::CM;
+    else if (configured_evi_mod == "mod")
+        evi_mod = EvidenceMod::MOD;
+    else if (configured_evi_mod == "hiddencm")
+        evi_mod = EvidenceMod::HIDDEN_CM;
+    else
+        evi_mod = EvidenceMod::FFA;
 }

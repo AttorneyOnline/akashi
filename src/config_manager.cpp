@@ -139,8 +139,8 @@ bool ConfigManager::loadServerSettings(server_settings* settings)
         config.value("port", "27016").toInt(&port_conversion_success);
     settings->ws_port =
         config.value("webao_port", "27017").toInt(&ws_port_conversion_success);
-    settings->local_port =
-        config.value("port", "27016").toInt(&local_port_conversion_success);
+    settings->ms_port =
+        config.value("ms_port", "27016").toInt(&local_port_conversion_success);
     settings->name = config.value("server_name", "My First Server").toString();
     settings->description =
         config.value("server_description", "This is my flashy new server")

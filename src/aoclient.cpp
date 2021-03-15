@@ -28,6 +28,7 @@ AOClient::AOClient(Server* p_server, QTcpSocket* p_socket, QObject* parent, int 
     current_area = 0;
     current_char = "";
     remote_ip = p_socket->peerAddress();
+    calculateIpid();
     is_partial = false;
     last_wtce_time = 0;
     last_message = "";
@@ -64,14 +65,20 @@ void AOClient::clientDisconnected()
         arup(ARUPType::PLAYER_COUNT, true);
     }
     if (current_char != "") {
-        server->areas[current_area]->characters_taken[current_char] =
-            false;
+        server->areas[current_area]->characters_taken.removeAll(server->getCharID(current_char));
         server->updateCharsTaken(server->areas[current_area]);
     }
+    bool update_locks;
     for (AreaData* area : server->areas) {
         area->owners.removeAll(id);
         area->invited.removeAll(id);
+        if (area->owners.isEmpty() && area->locked != AreaData::FREE) {
+            area->locked = AreaData::FREE;
+            update_locks = true;
+        }
     }
+    if (update_locks)
+        arup(ARUPType::LOCKED, true);
     arup(ARUPType::CM, true);
 }
 
@@ -109,8 +116,7 @@ void AOClient::changeArea(int new_area)
     }
 
     if (current_char != "") {
-        server->areas[current_area]->characters_taken[current_char] =
-            false;
+        server->areas[current_area]->characters_taken.removeAll(server->getCharID(current_char));
         server->updateCharsTaken(server->areas[current_area]);
     }
     server->areas[new_area]->player_count++;
@@ -121,28 +127,65 @@ void AOClient::changeArea(int new_area)
     sendPacket("HP", {"1", QString::number(server->areas[new_area]->def_hp)});
     sendPacket("HP", {"2", QString::number(server->areas[new_area]->pro_hp)});
     sendPacket("BN", {server->areas[new_area]->background});
-    if (server->areas[current_area]->characters_taken[current_char]) {
+    if (server->areas[current_area]->characters_taken.contains(server->getCharID(current_char))) {
         server->updateCharsTaken(server->areas[current_area]);
         current_char = "";
         sendPacket("DONE");
     }
     else {
-        server->areas[current_area]->characters_taken[current_char] = true;
+        server->areas[current_area]->characters_taken.append(server->getCharID(current_char));
         server->updateCharsTaken(server->areas[current_area]);
     }
     for (QTimer* timer : server->areas[current_area]->timers) {
         int timer_id = server->areas[current_area]->timers.indexOf(timer) + 1;
         if (timer->isActive()) {
-            sendPacket("TI", {QString::number(timer_id), QString::number(2)});
-            sendPacket("TI", {QString::number(timer_id), QString::number(0), QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(timer->remainingTime())))});
+            sendPacket("TI", {QString::number(timer_id), "2"});
+            sendPacket("TI", {QString::number(timer_id), "0", QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(timer->remainingTime())))});
         }
         else {
-            sendPacket("TI", {QString::number(timer_id), QString::number(3)});
+            sendPacket("TI", {QString::number(timer_id), "3"});
         }
     }
     sendServerMessage("You moved to area " + server->area_names[current_area]);
     if (server->areas[current_area]->locked == AreaData::LockStatus::SPECTATABLE)
         sendServerMessage("Area " + server->area_names[current_area] + " is spectate-only; to chat IC you will need to be invited by the CM.");
+}
+
+void AOClient::changeCharacter(int char_id)
+{
+    AreaData* area = server->areas[current_area];
+
+    if (current_char != "") {
+        area->characters_taken.removeAll(server->getCharID(current_char));
+    }
+
+    if(char_id > server->characters.length())
+        return;
+
+    if (char_id >= 0) {
+        QString char_selected = server->characters[char_id];
+        bool taken = area->characters_taken.contains(char_id);
+        if (taken || char_selected == "")
+            return;
+
+        area->characters_taken.append(char_id);
+        current_char = char_selected;
+    }
+    else {
+        current_char = "";
+    }
+
+    pos = "";
+
+    server->updateCharsTaken(area);
+    sendPacket("PV", {QString::number(id), "CID", QString::number(char_id)});
+}
+
+void AOClient::changePosition(QString new_pos)
+{
+    pos = new_pos;
+    sendServerMessage("Position changed to " + pos + ".");
+    sendPacket("SP", {pos});
 }
 
 void AOClient::handleCommand(QString command, int argc, QStringList argv)
@@ -167,42 +210,38 @@ void AOClient::arup(ARUPType type, bool broadcast)
     QStringList arup_data;
     arup_data.append(QString::number(type));
     for (AreaData* area : server->areas) {
-        if (type == ARUPType::PLAYER_COUNT) {
-            arup_data.append(QString::number(area->player_count));
-        }
-        else if (type == ARUPType::STATUS) {
-            arup_data.append(area->status);
-        }
-        else if (type == ARUPType::CM) {
-            if (area->owners.isEmpty())
-                arup_data.append("FREE");
-            else {
-                QStringList area_owners;
-                for (int owner_id : area->owners) {
-                    AOClient* owner = server->getClientByID(owner_id);
-                    area_owners.append("[" + QString::number(owner->id) + "] " + owner->current_char);
+        switch(type) {
+            case ARUPType::PLAYER_COUNT: {
+                arup_data.append(QString::number(area->player_count));
+                break;
+            }
+            case ARUPType::STATUS: {
+                QString area_status = QVariant::fromValue(area->status).toString().replace("_", "-"); // LOOKING_FOR_PLAYERS to LOOKING-FOR-PLAYERS
+                arup_data.append(area_status);
+                break;
+            }
+            case ARUPType::CM: {
+                if (area->owners.isEmpty())
+                    arup_data.append("FREE");
+                else {
+                    QStringList area_owners;
+                    for (int owner_id : area->owners) {
+                        AOClient* owner = server->getClientByID(owner_id);
+                        area_owners.append("[" + QString::number(owner->id) + "] " + owner->current_char);
+                    }
+                    arup_data.append(area_owners.join(", "));
                 }
-                arup_data.append(area_owners.join(", "));
+                break;
+            }
+            case ARUPType::LOCKED: {
+                QString lock_status = QVariant::fromValue(area->locked).toString();
+                arup_data.append(lock_status);
+                break;
+            }
+            default: {
+                return;
             }
         }
-        else if (type == ARUPType::LOCKED) {
-            QString lock_status;
-            switch (area->locked) {
-                case AreaData::LockStatus::FREE:
-                    lock_status = "FREE";
-                    break;
-                case AreaData::LockStatus::LOCKED:
-                    lock_status = "LOCKED";
-                    break;
-                case AreaData::LockStatus::SPECTATABLE:
-                    lock_status = "SPECTATABLE";
-                    break;
-                default:
-                    break;
-            }
-            arup_data.append(lock_status);
-        }
-        else return;
     }
     if (broadcast)
         server->broadcast(AOPacket("ARUP", arup_data));
@@ -236,22 +275,17 @@ void AOClient::sendPacket(QString header)
     sendPacket(AOPacket(header, {}));
 }
 
-QString AOClient::getHwid() { return hwid; }
-
-void AOClient::setHwid(QString p_hwid)
+void AOClient::calculateIpid()
 {
-    // TODO: add support for longer hwids?
+    // TODO: add support for longer ipids?
     // This reduces the (fairly high) chance of
     // birthday paradox issues arising. However,
     // typing more than 8 characters might be a
     // bit cumbersome.
-    hwid = p_hwid;
 
-    QCryptographicHash hash(
-        QCryptographicHash::Md5); // Don't need security, just
-                                  // hashing for uniqueness
-    QString concat_ip_id = remote_ip.toString() + p_hwid;
-    hash.addData(concat_ip_id.toUtf8());
+    QCryptographicHash hash(QCryptographicHash::Md5); // Don't need security, just hashing for uniqueness
+
+    hash.addData(remote_ip.toString().toUtf8());
 
     ipid = hash.result().toHex().right(8); // Use the last 8 characters (4 bytes)
 }

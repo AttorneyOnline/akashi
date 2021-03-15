@@ -51,6 +51,8 @@ void Server::start()
         qDebug() << "Server listening on" << port;
     }
 
+    MOTD = config.value("motd","MOTD is not set.").toString();
+
     proxy = new WSProxy(port, ws_port, this);
     if(ws_port != -1)
         proxy->start();
@@ -79,10 +81,20 @@ void Server::start()
     bg_file.close();
 
     QSettings areas_ini("config/areas.ini", QSettings::IniFormat);
-    area_names = areas_ini.childGroups();
-    for (int i = 0; i < area_names.length(); i++) {
-        QString area_name = area_names[i];
-        areas.insert(i, new AreaData(characters, area_name, i));
+    area_names = areas_ini.childGroups(); // invisibly does a lexicographical sort, because Qt is great like that
+    std::sort(area_names.begin(), area_names.end(), [] (const QString &a, const QString &b) {return a.split(":")[0].toInt() < b.split(":")[0].toInt();});
+    QStringList sanitized_area_names;
+    QStringList raw_area_names = area_names;
+    for (QString area_name : area_names) {
+        QStringList name_split = area_name.split(":");
+        name_split.removeFirst();
+        QString area_name_sanitized = name_split.join(":");
+        sanitized_area_names.append(area_name_sanitized);
+    }
+    area_names = sanitized_area_names;
+    for (int i = 0; i < raw_area_names.length(); i++) {
+        QString area_name = raw_area_names[i];
+        areas.insert(i, new AreaData(area_name, i));
     }
 }
 
@@ -130,8 +142,8 @@ void Server::clientConnected()
 void Server::updateCharsTaken(AreaData* area)
 {
     QStringList chars_taken;
-    for (QString cur_char : area->characters_taken.keys()) {
-        chars_taken.append(area->characters_taken.value(cur_char)
+    for (QString cur_char : characters) {
+        chars_taken.append(area->characters_taken.contains(getCharID(cur_char))
                                ? QStringLiteral("-1")
                                : QStringLiteral("0"));
     }
@@ -173,13 +185,14 @@ int Server::getDiceValue(QString value_type)
     return value;
 }
 
-AOClient* Server::getClient(QString ipid)
+QList<AOClient*> Server::getClientsByIpid(QString ipid)
 {
+    QList<AOClient*> return_clients;
     for (AOClient* client : clients) {
         if (client->getIpid() == ipid)
-            return client;
+            return_clients.append(client);
     }
-    return nullptr;
+    return return_clients;
 }
 
 AOClient* Server::getClientByID(int id)
@@ -189,6 +202,16 @@ AOClient* Server::getClientByID(int id)
             return client;
     }
     return nullptr;
+}
+
+int Server::getCharID(QString char_name)
+{
+    for (QString character : characters) {
+        if (character.toLower() == char_name.toLower()) {
+            return characters.indexOf(QRegExp(character, Qt::CaseInsensitive));
+        }
+    }
+    return -1; // character does not exist
 }
 
 Server::~Server()

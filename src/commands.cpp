@@ -93,33 +93,72 @@ void AOClient::cmdGetArea(int argc, QStringList argv)
 
 void AOClient::cmdBan(int argc, QStringList argv)
 {
-    QString target_ipid = argv[0];
-    QHostAddress ip;
-    QString hdid;
-    unsigned long time = QDateTime::currentDateTime().toTime_t();
-    QString reason = argv[1];
+    QString args_str = argv[1];
+    if (argc > 2) {
+        for (int i = 2; i < argc; i++)
+            args_str += " " + argv[i];
+    }
+
+    DBManager::BanInfo ban;
+
+    QRegularExpression quoteMatcher("['\"](.+?)[\"']");
+    QRegularExpressionMatchIterator matches = quoteMatcher.globalMatch(args_str);
+    QList<QString> unquoted_args;
+    while (matches.hasNext()) {
+        QRegularExpressionMatch match = matches.next();
+        unquoted_args.append(match.captured(1));
+    }
+
+    QString duration = "perma";
+
+    if (unquoted_args.length() < 1) {
+        sendServerMessage("Invalid syntax. Usage:\n/ban <ipid> \"<reason>\" \"<duration>\"");
+        return;
+    }
+
+    ban.reason = unquoted_args.at(0);
+    if (unquoted_args.length() > 1)
+        duration = unquoted_args.at(1);
+
+    long long duration_seconds = 0;
+    if (duration == "perma")
+        duration_seconds = -2;
+    else
+        duration_seconds = parseTime(duration);
+
+    if (duration_seconds == -1) {
+        sendServerMessage("Invalid time format. Format example: 1h30m");
+        return;
+    }
+
+    ban.duration = duration_seconds;
+
+    ban.ipid = argv[0];
+    ban.time = QDateTime::currentDateTime().toSecsSinceEpoch();
     bool ban_logged = false;
+    int kick_counter = 0;
 
     if (argc > 2) {
         for (int i = 2; i < argv.length(); i++) {
-            reason += " " + argv[i];
+            ban.reason += " " + argv[i];
         }
     }
 
-    for (AOClient* client : server->clients) {
-        if (client->getIpid() == target_ipid) {
-            if (!ban_logged) {
-                ip = client->remote_ip;
-                hdid = client->hwid;
-                server->db_manager->addBan(target_ipid, ip, hdid, time, reason);
-                sendServerMessage("Banned user with ipid " + target_ipid + " for reason: " + reason);
-                ban_logged = true;
-            }
-            client->sendPacket("KB", {reason});
-            client->socket->close();
+    for (AOClient* client : server->getClientsByIpid(ban.ipid)) {
+        if (!ban_logged) {
+            ban.ip = client->remote_ip;
+            ban.hdid = client->hwid;
+            server->db_manager->addBan(ban);
+            sendServerMessage("Banned user with ipid " + ban.ipid + " for reason: " + ban.reason);
+            ban_logged = true;
         }
+        client->sendPacket("KB", {ban.reason + "\nID: " + QString::number(server->db_manager->getBanID(ban.ip)) + "\nUntil: " + QDateTime::fromSecsSinceEpoch(ban.time).addSecs(ban.duration).toString("dd.MM.yyyy, hh:mm")});
+        client->socket->close();
+        kick_counter++;
     }
 
+    if (kick_counter > 1)
+        sendServerMessage("Kicked " + QString::number(kick_counter) + " clients with matching ipids.");
     if (!ban_logged)
         sendServerMessage("User with ipid not found!");
 }
@@ -128,7 +167,7 @@ void AOClient::cmdKick(int argc, QStringList argv)
 {
     QString target_ipid = argv[0];
     QString reason = argv[1];
-    bool did_kick = false;
+    int kick_counter = 0;
 
     if (argc > 2) {
         for (int i = 2; i < argv.length(); i++) {
@@ -136,16 +175,14 @@ void AOClient::cmdKick(int argc, QStringList argv)
         }
     }
 
-    for (AOClient* client : server->clients) {
-        if (client->getIpid() == target_ipid) {
-            client->sendPacket("KK", {reason});
-            client->socket->close();
-            did_kick = true;
-        }
+    for (AOClient* client : server->getClientsByIpid(target_ipid)) {
+        client->sendPacket("KK", {reason});
+        client->socket->close();
+        kick_counter++;
     }
 
-    if (did_kick)
-        sendServerMessage("Kicked user with ipid " + target_ipid + " for reason: " + reason);
+    if (kick_counter > 0)
+        sendServerMessage("Kicked " + QString::number(kick_counter) + " client(s) with ipid " + target_ipid + " for reason: " + reason);
     else
         sendServerMessage("User with ipid not found!");
 }
@@ -234,6 +271,14 @@ void AOClient::cmdAddUser(int argc, QStringList argv)
         sendServerMessage("Created user " + argv[0] + ".\nUse /addperm to modify their permissions.");
     else
         sendServerMessage("Unable to create user " + argv[0] + ".\nDoes a user with that name already exist?");
+}
+
+void AOClient::cmdRemoveUser(int argc, QStringList argv)
+{
+    if (server->db_manager->deleteUser(argv[0]))
+        sendServerMessage("Successfully removed user " + argv[0] + ".");
+    else
+        sendServerMessage("Unable to remove user " + argv[0] + ".\nDoes it exist?");
 }
 
 void AOClient::cmdListPerms(int argc, QStringList argv)
@@ -368,8 +413,43 @@ void AOClient::cmdLogout(int argc, QStringList argv)
 
 void AOClient::cmdPos(int argc, QStringList argv)
 {
-    pos = argv[0];
-    sendServerMessage("Position changed to " + pos + ".");
+    changePosition(argv[0]);
+    updateEvidenceList(server->areas[current_area]);
+}
+
+void AOClient::cmdForcePos(int argc, QStringList argv) 
+{
+    bool ok;
+    QList<AOClient*> targets;
+    AreaData* area = server->areas[current_area];
+    int target_id = argv[1].toInt(&ok);
+    int forced_clients = 0;
+    if (!ok && argv[1] != "*") {
+        sendServerMessage("That does not look like a valid ID.");
+        return;
+    }
+    else if (ok) {
+        AOClient* target_client = server->getClientByID(target_id);
+        if (target_client != nullptr)
+            targets.append(target_client);
+        else {
+            sendServerMessage("Target ID not found!");
+            return;
+        }
+    }
+        
+    else if (argv[1] == "*") { // force all clients in the area
+        for (AOClient* client : server->clients) {
+            if (client->current_area == current_area)
+                targets.append(client);
+        }
+    }
+    for (AOClient* target : targets) {
+        target->sendServerMessage("Position forcibly changed by CM.");
+        target->changePosition(argv[0]);
+        forced_clients++;
+    }
+    sendServerMessage("Forced " + QString::number(forced_clients) + " into pos " + argv[0] + ".");
 }
 
 void AOClient::cmdG(int argc, QStringList argv)
@@ -377,7 +457,10 @@ void AOClient::cmdG(int argc, QStringList argv)
     QString sender_name = ooc_name;
     QString sender_area = server->area_names.value(current_area);
     QString sender_message = argv.join(" ");
-    server->broadcast(AOPacket("CT", {"[" + sender_area + "]" + sender_name, sender_message}));
+    for (AOClient* client : server->clients) {
+        if (client->global_enabled)
+            client->sendPacket("CT", {"[G][" + sender_area + "]" + sender_name, sender_message});
+    }
     return;
 }
 
@@ -471,8 +554,13 @@ void AOClient::cmdUnCM(int argc, QStringList argv)
     area->invited.removeAll(id);
     sendServerMessage("You are no longer CM in this area.");
     arup(ARUPType::CM, true);
-    if (area->owners.isEmpty())
+    if (area->owners.isEmpty()) {
         area->invited.clear();
+        if (area->locked != AreaData::FREE) {
+            area->locked = AreaData::FREE;
+            arup(ARUPType::LOCKED, true);
+        }
+    }
 }
 
 void AOClient::cmdInvite(int argc, QStringList argv)
@@ -482,6 +570,10 @@ void AOClient::cmdInvite(int argc, QStringList argv)
     int invited_id = argv[0].toInt(&ok);
     if (!ok) {
         sendServerMessage("That does not look like a valid ID.");
+        return;
+    }
+    else if (server->getClientByID(invited_id) == nullptr) {
+        sendServerMessage("No client with that ID found.");
         return;
     }
     else if (area->invited.contains(invited_id)) {
@@ -499,6 +591,10 @@ void AOClient::cmdUnInvite(int argc, QStringList argv)
     int uninvited_id = argv[0].toInt(&ok);
     if (!ok) {
         sendServerMessage("That does not look like a valid ID.");
+        return;
+    }
+    else if (server->getClientByID(uninvited_id) == nullptr) {
+        sendServerMessage("No client with that ID found.");
         return;
     }
     else if (area->owners.contains(uninvited_id)) {
@@ -615,30 +711,327 @@ void AOClient::cmdTimer(int argc, QStringList argv)
         requested_timer->setInterval(QTime(0,0).msecsTo(requested_time));
         requested_timer->start();
         sendServerMessage("Set timer " + QString::number(timer_id) + " to " + argv[1] + ".");
-        sendPacket("TI", {QString::number(timer_id), QString::number(2)});
-        sendPacket("TI", {QString::number(timer_id), QString::number(0), QString::number(QTime(0,0).msecsTo(requested_time))});
+        sendPacket("TI", {QString::number(timer_id), "2"}); // Show the timer
+        sendPacket("TI", {QString::number(timer_id), "0", QString::number(QTime(0,0).msecsTo(requested_time))});
         return;
     }
     else {
         if (argv[1] == "start") {
             requested_timer->start();
             sendServerMessage("Started timer " + QString::number(timer_id) + ".");
-            sendPacket("TI", {QString::number(timer_id), QString::number(2)});
-            sendPacket("TI", {QString::number(timer_id), QString::number(0), QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(requested_timer->remainingTime())))});
+            sendPacket("TI", {QString::number(timer_id), "2"}); // Show the timer
+            sendPacket("TI", {QString::number(timer_id), "0", QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(requested_timer->remainingTime())))});
         }
         else if (argv[1] == "pause" || argv[1] == "stop") {
             requested_timer->setInterval(requested_timer->remainingTime());
             requested_timer->stop();
             sendServerMessage("Stopped timer " + QString::number(timer_id) + ".");
-            sendPacket("TI", {QString::number(timer_id), QString::number(1), QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(requested_timer->interval())))});
+            sendPacket("TI", {QString::number(timer_id), "1", QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(requested_timer->interval())))});
         }
         else if (argv[1] == "hide" || argv[1] == "unset") {
             requested_timer->setInterval(0);
             requested_timer->stop();
             sendServerMessage("Hid timer " + QString::number(timer_id) + ".");
-            sendPacket("TI", {QString::number(timer_id), QString::number(3)});
+            sendPacket("TI", {QString::number(timer_id), "3"}); // Hide the timer
         }
     }
+}
+
+void AOClient::cmdEvidenceMod(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    argv[0] = argv[0].toLower();
+    if (argv[0] == "cm")
+        area->evi_mod = AreaData::EvidenceMod::CM;
+    else if (argv[0] == "mod")
+        area->evi_mod = AreaData::EvidenceMod::MOD;
+    else if (argv[0] == "hiddencm")
+        area->evi_mod = AreaData::EvidenceMod::HIDDEN_CM;
+    else if (argv[0] == "ffa")
+        area->evi_mod = AreaData::EvidenceMod::FFA;
+    else {
+        sendServerMessage("Invalid evidence mod.");
+        return;
+    }
+    sendServerMessage("Changed evidence mod.");
+
+    // Resend evidence lists to everyone in the area
+    sendEvidenceList(area);
+}
+
+void AOClient::cmdArea(int argc, QStringList argv)
+{
+    bool ok;
+    int new_area = argv[0].toInt(&ok);
+    if (!ok || new_area >= server->areas.size() || new_area < 0) {
+        sendServerMessage("That does not look like a valid area ID.");
+        return;
+    }
+    changeArea(new_area);
+}
+
+void AOClient::cmdPlay(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    QString song = argv.join(" ");
+    area->current_music = song;
+    area->music_played_by = showname;
+    AOPacket music_change("MC", {song, QString::number(server->getCharID(current_char)), showname, "1", "0"});
+    server->broadcast(music_change, current_area);
+}
+
+void AOClient::cmdAreaKick(int argc, QStringList argv)
+{
+    bool ok;
+    int idx = argv[0].toInt(&ok);
+    if (!ok) {
+        sendServerMessage("That does not look like a valid ID.");
+        return;
+    }
+    AOClient* client_to_kick = server->getClientByID(idx);
+    if (client_to_kick == nullptr) {
+        sendServerMessage("No client with that ID found.");
+        return;
+    }
+    client_to_kick->changeArea(0);
+    sendServerMessage("Client " + argv[0] + " kicked back to area 0.");
+}
+
+void AOClient::cmdSwitch(int argc, QStringList argv)
+{
+    int char_id = server->getCharID(argv.join(" "));
+    if (char_id == -1) {
+        sendServerMessage("That does not look like a valid character.");
+        return;
+    }
+    changeCharacter(char_id);
+}
+
+void AOClient::cmdRandomChar(int argc, QStringList argv)
+{
+    int char_id = genRand(0, server->characters.size() - 1);
+    changeCharacter(char_id);
+}
+
+void AOClient::cmdToggleGlobal(int argc, QStringList argv)
+{
+    global_enabled = !global_enabled;
+    QString str_en = global_enabled ? "shown" : "hidden";
+    sendServerMessage("Global chat set to " + str_en);
+}
+
+void AOClient::cmdMods(int argc, QStringList argv)
+{
+    QStringList entries;
+    QSettings config("config/config.ini", QSettings::IniFormat);
+    config.beginGroup("Options");
+    QString auth_type = config.value("auth", "simple").toString();
+    int online_count = 0;
+    for (AOClient* client : server->clients) {
+        if (client->authenticated) {
+            entries << "---";
+            if (auth_type != "simple")
+                entries << "Moderator: " + client->moderator_name;
+            entries << "OOC name: " + client->ooc_name;
+            entries << "ID: " + QString::number(client->id);
+            entries << "Area: " + QString::number(client->current_area);
+            entries << "Character: " + client->current_char;
+            online_count++;
+        }
+    }
+    entries << "---";
+    entries << "Total online: " << QString::number(online_count);
+    sendServerMessage(entries.join("\n"));
+}
+
+void AOClient::cmdHelp(int argc, QStringList argv)
+{
+    QStringList entries;
+    entries << "Allowed commands:";
+    QMap<QString, CommandInfo>::const_iterator i;
+    for (i = commands.constBegin(); i!= commands.constEnd(); ++i) {
+        CommandInfo info = i.value();
+        if (checkAuth(info.acl_mask)) { // if we are allowed to use this command
+            entries << "/" + i.key();
+        }
+    }
+    sendServerMessage(entries.join("\n"));
+}
+
+void AOClient::cmdStatus(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    QString arg = argv[0].toLower();
+    if (arg == "idle")
+        area->status = AreaData::IDLE;
+    else if (arg == "rp")
+        area->status = AreaData::RP;
+    else if (arg == "casing")
+        area->status = AreaData::CASING;
+    else if (arg == "looking-for-players" || arg == "lfp")
+        area->status = AreaData::LOOKING_FOR_PLAYERS;
+    else if (arg == "recess")
+        area->status = AreaData::RECESS;
+    else if (arg == "gaming")
+        area->status = AreaData::GAMING;
+    else {
+        sendServerMessage("That does not look like a valid status. Valid statuses are idle, rp, casing, lfp, recess, gaming");
+        return;
+    }
+    arup(ARUPType::STATUS, true);
+}
+
+void AOClient::cmdCurrentMusic(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    if (area->current_music != "" && area->current_music != "~stop.mp3") // dummy track for stopping music
+        sendServerMessage("The current song is " + area->current_music + " played by " + area->music_played_by);
+    else
+        sendServerMessage("There is no music playing.");
+}
+
+void AOClient::cmdPM(int arc, QStringList argv)
+{
+    bool ok;
+    int target_id = argv.takeFirst().toInt(&ok); // using takeFirst removes the ID from our list of arguments...
+    if (!ok) {
+        sendServerMessage("That does not look like a valid ID.");
+        return;
+    }
+    AOClient* target_client = server->getClientByID(target_id);
+    if (target_client == nullptr) {
+        sendServerMessage("No client with that ID found.");
+        return;
+    }
+    QString message = argv.join(" "); //...which means it will not end up as part of the message
+    target_client->sendServerMessage("Message from " + ooc_name + " (" + QString::number(id) + "): " + message);
+}
+
+void AOClient::cmdMOTD(int argc, QStringList argv)
+{
+    if (argc == 0) {
+        sendServerMessage("=== MOTD ===\r\n" + server->MOTD + "\r\n=============");
+    }
+    else if (argc > 0) {
+        if (checkAuth(ACLFlags.value("MOTD"))) {
+            QString MOTD = argv.join(" ");
+            server->MOTD = MOTD;
+            sendServerMessage("MOTD has been changed.");
+        }
+        else {
+            sendServerMessage("You do not have permission to change the MOTD");
+        }
+    }
+}
+
+void AOClient::cmdAnnounce(int argc, QStringList argv)
+{
+    sendServerBroadcast("=== Announcement ===\r\n" + argv.join(" ") + "\r\n=============");
+}
+
+void AOClient::cmdM(int argc, QStringList argv)
+{
+    QString sender_name = ooc_name;
+    QString sender_message = argv.join(" ");
+    for (AOClient* client : server->clients) {
+        if (client->checkAuth(ACLFlags.value("MODCHAT")))
+            client->sendPacket("CT", {"[M]" + sender_name, sender_message});
+    }
+    return;
+}
+
+void AOClient::cmdGM(int argc, QStringList argv)
+{
+    QString sender_name = ooc_name;
+    QString sender_area = server->area_names.value(current_area);
+    QString sender_message = argv.join(" ");
+    for (AOClient* client : server->clients) {
+        if (client->global_enabled) {
+            client->sendPacket("CT", {"[G][" + sender_area + "]" + "["+sender_name+"][M]", sender_message});
+        }
+    }
+}
+
+void AOClient::cmdMute(int argc, QStringList argv)
+{
+    bool conv_ok = false;
+    int uid = argv[0].toInt(&conv_ok);
+    if (!conv_ok) {
+        sendServerMessage("Invalid user ID.");
+        return;
+    }
+
+    if (server->getClientByID(uid)->is_muted)
+        sendServerMessage("That player is already muted!");
+    else
+        sendServerMessage("Muted player.");
+    server->getClientByID(uid)->is_muted = true;
+}
+
+void AOClient::cmdUnmute(int argc, QStringList argv)
+{
+    bool conv_ok = false;
+    int uid = argv[0].toInt(&conv_ok);
+    if (!conv_ok) {
+        sendServerMessage("Invalid user ID.");
+        return;
+    }
+
+    if (!server->getClientByID(uid)->is_muted)
+        sendServerMessage("That player is already unmuted!");
+    else
+        sendServerMessage("Unmuted player.");
+    server->getClientByID(uid)->is_muted = false;
+}
+
+void AOClient::cmdBans(int argc, QStringList argv)
+{
+    QStringList recent_bans;
+    recent_bans << "Last 5 bans:";
+    recent_bans << "-----";
+    for (DBManager::BanInfo ban : server->db_manager->getRecentBans()) {
+        QString banned_until;
+        if (ban.duration == -2)
+            banned_until = "The heat death of the universe";
+        else
+            banned_until = QDateTime::fromSecsSinceEpoch(ban.time).addSecs(ban.duration).toString("dd.MM.yyyy, hh:mm");
+        recent_bans << "Affected IPID: " + ban.ipid;
+        recent_bans << "Affected HDID: " + ban.hdid;
+        recent_bans << "Reason for ban: " + ban.reason;
+        recent_bans << "Date of ban: " + QDateTime::fromSecsSinceEpoch(ban.time).toString("dd.MM.yyyy, hh:mm");
+        recent_bans << "Ban lasts until: " + banned_until;
+        recent_bans << "-----";
+    }
+    sendServerMessage(recent_bans.join("\n"));
+}
+
+void AOClient::cmdUnBan(int argc, QStringList argv)
+{
+    bool ok;
+    int target_ban = argv[0].toInt(&ok);
+    if (!ok) {
+        sendServerMessage("Invalid ban ID.");
+        return;
+    }
+    else if (server->db_manager->invalidateBan(target_ban))
+        sendServerMessage("Successfully invalidated ban " + argv[0] + ".");
+    else
+        sendServerMessage("Couldn't invalidate ban " + argv[0] + ", are you sure it exists?");
+}
+
+void AOClient::cmdSubTheme(int argc, QStringList argv)
+{
+    QString subtheme = argv.join(" ");
+    for (AOClient* client : server->clients) {
+        if (client->current_area == current_area)
+            client->sendPacket("ST", {subtheme, "1"});
+    }
+    sendServerMessageArea("Subtheme was set to " + subtheme);
+}
+
+void AOClient::cmdAbout(int argc, QStringList argv)
+{
+    sendPacket("CT", {"The akashi dev team", "Thank you for using akashi! Made with love by scatterflower, with help from in1tiate and Salanto. akashi " + QCoreApplication::applicationVersion()});
 }
 
 QStringList AOClient::buildAreaList(int area_idx)
@@ -658,7 +1051,7 @@ QStringList AOClient::buildAreaList(int area_idx)
         default:
             break;
     }
-    entries.append("[" + QString::number(area->player_count) + " users][" + area->status + "]");
+    entries.append("[" + QString::number(area->player_count) + " users][" + QVariant::fromValue(area->status).toString().replace("_", "-") + "]");
     for (AOClient* client : server->clients) {
         if (client->current_area == area_idx && client->joined) {
             QString char_entry = "[" + QString::number(client->id) + "] " + client->current_char;
@@ -757,3 +1150,45 @@ QString AOClient::getAreaTimer(int area_idx, QTimer* timer)
     }
 }
 
+long long AOClient::parseTime(QString input)
+{
+    QRegularExpression regex("(?:(?:(?<year>.*?)y)*(?:(?<week>.*?)w)*(?:(?<day>.*?)d)*(?:(?<hr>.*?)h)*(?:(?<min>.*?)m)*(?:(?<sec>.*?)s)*)");
+    QRegularExpressionMatch match = regex.match(input);
+    QString str_year, str_week, str_hour, str_day, str_minute, str_second;
+    int year, week, day, hour, minute, second;
+
+    str_year = match.captured("year");
+    str_week = match.captured("week");
+    str_day = match.captured("day");
+    str_hour = match.captured("hr");
+    str_minute = match.captured("min");
+    str_second = match.captured("sec");
+
+    bool is_well_formed = false;
+    QString concat_str(str_year + str_week + str_day + str_hour + str_minute + str_second);
+    concat_str.toInt(&is_well_formed);
+
+    if (!is_well_formed) {
+        return -1;
+    }
+
+    year = str_year.toInt();
+    week = str_week.toInt();
+    day = str_day.toInt();
+    hour = str_hour.toInt();
+    minute = str_minute.toInt();
+    second = str_second.toInt();
+
+    long long total = 0;
+    total += 31622400 * year;
+    total += 604800 * week;
+    total += 86400 * day;
+    total += 3600 * hour;
+    total += 60 * minute;
+    total += second;
+
+    if (total < 0)
+        return -1;
+
+    return total;
+}
