@@ -220,8 +220,13 @@ void AOClient::pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPack
                 effects = argv[3];
             else
                 effects = "0";
-            AOPacket music_change("MC", {song, argv[1], showname, "1", "0", effects});
-            area->current_music = song;
+            QString final_song;
+            if (!argument.contains("."))
+                final_song = "~stop.mp3";
+            else
+                final_song = argument;
+            AOPacket music_change("MC", {final_song, argv[1], showname, "1", "0", effects});
+            area->current_music = final_song;
             area->music_played_by = showname;
             server->broadcast(music_change, current_area);
             return;
