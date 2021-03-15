@@ -83,6 +83,10 @@ class AOClient : public QObject {
         {"SUPER", ~0ULL}
     };
 
+    bool is_shaken;
+    bool is_disemvoweled;
+    bool is_gimped;
+
   public slots:
     void clientDisconnected();
     void clientData();
