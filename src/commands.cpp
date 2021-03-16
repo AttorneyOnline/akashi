@@ -1039,8 +1039,8 @@ void AOClient::cmdEvidence_Swap(int argc, QStringList argv)
 {
     AreaData* area = server->areas[current_area];
     bool ok, ok2; // This is btw a perfectly valid way to declare.
-    int EvID1 = argv[0].toInt(&ok), EvID2 = argv[1].toInt(&ok2);
-    int EvSize = area->evidence.size()-1;
+    uint EvID1 = argv[0].toInt(&ok), EvID2 = argv[1].toInt(&ok2);
+    uint EvSize = area->evidence.size()-1;
     if ((ok && ok2) && (EvID2 <= EvSize) && (EvID1 <= EvSize)) {
         AreaData::Evidence EvData = area->evidence[EvID1];
         area->evidence[EvID1] = area->evidence[EvID2];
