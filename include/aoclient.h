@@ -1436,7 +1436,7 @@ class AOClient : public QObject {
         {"removeuser",    {ACLFlags.value("MODIFY_USERS"), 1, &AOClient::cmdRemoveUser}},
         {"subtheme",      {ACLFlags.value("CM"),           1, &AOClient::cmdSubTheme}},
         {"about",         {ACLFlags.value("NONE"),         0, &AOClient::cmdAbout}},
-        {"evidence_swap", {ACLFlags.value("CM"),           2, &AOClient::cmdEvidence_Swap}}
+        {"evidence_swap", {ACLFlags.value("CM"),           2, &AOClient::cmdEvidence_Swap}},
     };
 
     /**
