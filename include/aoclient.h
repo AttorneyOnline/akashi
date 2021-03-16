@@ -1147,12 +1147,25 @@ class AOClient : public QObject {
     void cmdEvidenceMod(int argc, QStringList argv);
 
     /**
+     * @brief Changes position of two pieces of evidence in the area.
+     *
+     * @details The two arguments are the indices of the evidence items you want to swap the position of.
+     *
+     * @iscommand
+     *
+     * @see Area::Evidence_Swap
+     *
+     */
+    void cmdEvidence_Swap(int argc, QStringList argv);
+
+    /**
      * @brief Changes the subtheme of the clients in the current area.
      *
      * @details The only argument is the **name of the subtheme**. Reloading is always forced.
      *
      * @iscommand
      */
+
     void cmdSubTheme(int argc, QStringList argv);
     
     ///@}
@@ -1423,6 +1436,7 @@ class AOClient : public QObject {
         {"removeuser",    {ACLFlags.value("MODIFY_USERS"), 1, &AOClient::cmdRemoveUser}},
         {"subtheme",      {ACLFlags.value("CM"),           1, &AOClient::cmdSubTheme}},
         {"about",         {ACLFlags.value("NONE"),         0, &AOClient::cmdAbout}},
+        {"evidence_swap", {ACLFlags.value("CM"),           2, &AOClient::cmdEvidence_Swap}}
     };
 
     /**

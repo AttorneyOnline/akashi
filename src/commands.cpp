@@ -1035,6 +1035,24 @@ void AOClient::cmdAbout(int argc, QStringList argv)
     sendPacket("CT", {"The akashi dev team", "Thank you for using akashi! Made with love by scatterflower, with help from in1tiate and Salanto. akashi " + QCoreApplication::applicationVersion()});
 }
 
+void AOClient::cmdEvidence_Swap(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    bool ok, ok2; // This is btw a perfectly valid way to declare.
+    int EvID1 = argv[0].toInt(&ok), EvID2 = argv[1].toInt(&ok2);
+    int EvSize = area->evidence.size()-1;
+    if ((ok && ok2) && (EvID2 <= EvSize) && (EvID1 <= EvSize)) {
+        AreaData::Evidence EvData = area->evidence[EvID1];
+        area->evidence[EvID1] = area->evidence[EvID2];
+        area->evidence[EvID2] = EvData;
+        sendEvidenceList(area);
+        sendServerMessage("The evidence has been swapped.");
+    }
+    else {
+        sendServerMessage("Invalid evidence ID.");
+    }
+}
+
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;
