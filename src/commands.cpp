@@ -1058,7 +1058,6 @@ void AOClient::cmdEvidence_Swap(int argc, QStringList argv)
         else {
             sendServerMessage("Invalid evidence ID.");
         }
-
     }
     else {
         sendServerMessage("Invalid evidence ID.");
