@@ -1039,14 +1039,26 @@ void AOClient::cmdEvidence_Swap(int argc, QStringList argv)
 {
     AreaData* area = server->areas[current_area];
     bool ok, ok2; // This is btw a perfectly valid way to declare.
-    uint EvID1 = argv[0].toInt(&ok), EvID2 = argv[1].toInt(&ok2);
-    uint EvSize = area->evidence.size()-1;
-    if ((ok && ok2) && (EvID2 <= EvSize) && (EvID1 <= EvSize)) {
-        AreaData::Evidence EvData = area->evidence[EvID1];
-        area->evidence[EvID1] = area->evidence[EvID2];
-        area->evidence[EvID2] = EvData;
-        sendEvidenceList(area);
-        sendServerMessage("The evidence has been swapped.");
+    int ev_id1 = argv[0].toInt(&ok), ev_id2 = argv[1].toInt(&ok2);
+    int ev_size = area->evidence.size() -1;
+
+    if ((ok && ok2) && (ev_size > 0)) {
+        if ((ev_id1 > 0) && (ev_id2 > 0)) {
+            if ((ev_id2 <= ev_size) && (ev_id1 <= ev_size)) {
+                AreaData::Evidence EvData = area->evidence[ev_id1];
+                area->evidence[ev_id1] = area->evidence[ev_id2];
+                area->evidence[ev_id2] = EvData;
+                sendEvidenceList(area);
+                sendServerMessage("The evidence " + QString::number(ev_id1) + " and " + QString::number(ev_id2) + " has been swapped.");
+            }
+            else {
+                sendServerMessage("Unable to swap evidence. No reference to evidence ID found.");
+            }
+        }
+        else {
+            sendServerMessage("Invalid evidence ID.");
+        }
+
     }
     else {
         sendServerMessage("Invalid evidence ID.");
