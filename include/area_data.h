@@ -107,6 +107,7 @@ class AreaData : public QObject {
       GAMING //!< The users inside the area are playing some game outside of AO, and are using the area to communicate.
     };
 
+    /// Exposes the metadata of the Status enum.
     Q_ENUM(Status);
 
     /**
@@ -158,6 +159,7 @@ class AreaData : public QObject {
      * at the time of the transition is considered invited.
      */
 
+    /// Exposes the metadata of the LockStatus enum.
     Q_ENUM(LockStatus);
 
     /**

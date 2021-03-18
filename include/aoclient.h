@@ -18,53 +18,6 @@
 #ifndef AOCLIENT_H
 #define AOCLIENT_H
 
-/**
-  * @defgroup commandHelperFunctions Command helper functions
-  *
-  * @brief A collection of functions of shared behaviour between command functions,
-  * allowing the abstraction of technical details in the command function definition,
-  * or the avoidance of repetition over multiple definitions.
-  */
-
-/**
-  * @defgroup commands Commands
-  *
-  * @brief These functions all represent actions that would happen if a client called it specifically
-  * with a `/command` (with `command` being the command's name) in the out-of-character chat.
-  *
-  * @details Since all of these functions *are* just command calls, their format is going to be the same.
-  * They will have the following parameters:
-  *
-  * @param argc The amount of arguments arriving to the function through a command call,
-  * equivalent to `argv.size()`.
-  * See @ref commandArgc "CommandInfo's `action`'s first parameter".
-  * @param argv The list of arguments passed to the function through a command call.
-  * See @ref commandArgv "CommandInfo's `action`'s second parameter".
-  *
-  * If documenting a command, you can use the `\@iscommand` alias to quickly add the arguments described
-  * above to the function's documentation.
-  *
-  * @see AOClient::CommandInfo
-  */
-
-/**
-  * @defgroup commandsMessaging Messaging- and client-related commands
-  *
-  * @brief All functions that detail the actions of commands,
-  * that are also related to messages or the client's self-management in some way.
-  *
-  * @ingroup commands
-  */
-
-/**
-  * @defgroup commandsRP Roleplay- and casing-related commands
-  *
-  * @brief All functions that detail the actions of commands,
-  * that are also related to various kinds of roleplay actions in some way.
-  *
-  * @ingroup commands
-  */
-
 #include "include/aopacket.h"
 #include "include/server.h"
 #include "include/area_data.h"
@@ -106,12 +59,25 @@ class AOClient : public QObject {
     QString ooc_name = "";
     QString showname = "";
     bool global_enabled = true;
+
+    /**
+     * @brief Represents the client's client software, and its version.
+     *
+     * @note Though the version number and naming scheme looks vaguely semver-like,
+     * do not be misled into thinking it is that.
+     */
     struct ClientVersion {
-      QString string;
-      int release = -1;
-      int major = -1;
-      int minor = -1;
+      QString string; //!< The name of the client software, for example, `AO2`.
+      int release = -1; //!< The 'release' part of the version number. In Attorney Online's case, this is fixed at `2`.
+      int major = -1; //!< The 'major' part of the version number. In Attorney Online's case, this increases when a new feature is introduced (generally).
+      int minor = -1; //!< The 'minor' part of the version number. In Attorney Online's case, this increases for bugfix releases (generally).
     };
+
+    /**
+     * @brief The software and version of the client.
+     *
+     * @see The struct itself for more details.
+     */
     ClientVersion version;
 
     QMap<QString, unsigned long long> ACLFlags {
@@ -161,7 +127,11 @@ class AOClient : public QObject {
     void sendServerBroadcast(QString message);
     bool checkAuth(unsigned long long acl_mask);
 
-    // Packet headers
+    /**
+      * @name Packet headers
+      */
+    ///@{
+
     void pktDefault(AreaData* area, int argc, QStringList argv, AOPacket packet);
     void pktHardwareId(AreaData* area, int argc, QStringList argv, AOPacket packet);
     void pktSoftwareId(AreaData* area, int argc, QStringList argv, AOPacket packet);
@@ -183,20 +153,34 @@ class AOClient : public QObject {
     void pktRemoveEvidence(AreaData* area, int argc, QStringList argv, AOPacket packet);
     void pktEditEvidence(AreaData* area, int argc, QStringList argv, AOPacket packet);
 
-    // Packet helper functions
+    ///@}
+
+    /**
+      * @name Packet helper functions
+      */
+    ///@{
+
     void sendEvidenceList(AreaData* area);
     void updateEvidenceList(AreaData* area);
     AOPacket validateIcPacket(AOPacket packet);
     QString dezalgo(QString p_text);
     bool checkEvidenceAccess(AreaData* area);
 
-    // Packet helper global variables
+    ///@}
+
+    /**
+      * @name Packet helper global variables
+      */
+    ///@{
+
     int char_id = -1;
     int pairing_with = -1;
     QString emote = "";
     QString offset = "";
     QString flipping = "";
     QString pos = "";
+
+    ///@}
 
     struct PacketInfo {
         unsigned long long acl_mask;
@@ -226,10 +210,29 @@ class AOClient : public QObject {
         {"EE",      {ACLFlags.value("NONE"), 4,  &AOClient::pktEditEvidence   }},
     };
 
-    //// Commands
+    /**
+     * @brief Literally just an invalid default command. That's it.
+     *
+     * @note Can be used as a base for future commands.
+     *
+     * @iscommand
+     */
     void cmdDefault(int argc, QStringList argv);
+
+    /**
+     * @brief Lists all the commands that the caller client has the privileges to use.
+     *
+     * @details No arguments.
+     *
+     * @iscommand
+     */
     void cmdHelp(int argc, QStringList argv);
-    // Authentication
+
+    /**
+      * @name Authentication
+      */
+    ///@{
+
     void cmdLogin(int argc, QStringList argv);
     void cmdChangeAuth(int argc, QStringList argv);
     void cmdSetRootPass(int argc, QStringList argv);
@@ -239,7 +242,14 @@ class AOClient : public QObject {
     void cmdRemovePerms(int argc, QStringList argv);
     void cmdListUsers(int argc, QStringList argv);
     void cmdLogout(int argc, QStringList argv);
-    // Areas
+
+    ///@}
+
+    /**
+      * @name Areas
+      */
+    ///@{
+
     void cmdCM(int argc, QStringList argv);
     void cmdUnCM(int argc, QStringList argv);
     void cmdInvite(int argc, QStringList argv);
@@ -256,18 +266,159 @@ class AOClient : public QObject {
     void cmdBgUnlock(int argc, QStringList argv);
     void cmdStatus(int argc, QStringList argv);
     void cmdCurrentMusic(int argc, QStringList argv);
-    // Moderation
+
+    ///@}
+
+    /**
+      * @name Moderation
+      *
+      * @brief All functions that detail the actions of commands,
+      * that are also related to the moderation and administration of the server.
+      */
+    ///@{
+
+    /**
+     * @brief Lists the currently logged-in moderators on the server.
+     *
+     * @details No arguments.
+     *
+     * @iscommand
+     */
     void cmdMods(int argc, QStringList argv);
+
+    /**
+     * @brief Bans a client from the server, forcibly severing its connection to the server,
+     * and disallowing their return.
+     *
+     * @details The first argument is the **target's IPID**, while the remaining arguments are the **reason**
+     * the client was banned. Both arguments are mandatory.
+     *
+     * Besides banning, this command kicks all clients having the given IPID,
+     * thus a multiclienting user will have all their clients be kicked from the server.
+     *
+     * The target's hardware ID is also recorded in a ban, so users with dynamic IPs will not be able to
+     * cirvumvent the ban without also changing their hardware ID.
+     *
+     * @iscommand
+     */
     void cmdBan(int argc, QStringList argv);
+
+    /**
+     * @brief Kicks a client from the server, forcibly severing its connection to the server.
+     *
+     * @details The first argument is the **target's IPID**, while the remaining arguments are the **reason**
+     * the client was kicked. Both arguments are mandatory.
+     *
+     * This command kicks all clients having the given IPID, thus a multiclienting user will have all
+     * their clients be kicked from the server.
+     *
+     * @iscommand
+     */
     void cmdKick(int argc, QStringList argv);
-    // Casing/RP
+
+    ///@}
+
+    /**
+      * @name Roleplay
+      *
+      * @brief All functions that detail the actions of commands,
+      * that are also related to various kinds of roleplay actions in some way.
+      */
+    ///@{
+
+    /**
+     * @brief Plays music in the area.
+     *
+     * @details The arguments are **the song's filepath** originating from `base/sounds/music/`,
+     * or **the song's URL** if it's a stream.
+     *
+     * As described above, this command can be used to play songs by URL (for clients at and above version 2.9),
+     * but it can also be used to play songs locally available for the clients but not listed in the music list.
+     *
+     * @iscommand
+     */
     void cmdPlay(int argc, QStringList argv);
+
+    /**
+     * @brief A global message expressing that the client needs something (generally: players for something).
+     *
+     * @details The arguments are **the message** that the client wants to send.
+     *
+     * @iscommand
+     */
     void cmdNeed(int argc, QStringList argv);
+
+    /**
+     * @brief Flips a coin, returning heads or tails.
+     *
+     * @details No arguments.
+     *
+     * @iscommand
+     */
     void cmdFlip(int argc, QStringList argv);
+
+    /**
+     * @brief Rolls dice, summing the results.
+     *
+     * @details The first argument is the **amount of faces** each die should have.
+     * The second argument is the **amount of dice** that should be rolled.
+     *
+     * Both arguments are optional.
+     *
+     * @iscommand
+     *
+     * @see AOClient::diceThrower
+     */
     void cmdRoll(int argc, QStringList argv);
+
+    /**
+     * @brief cmdRollP
+     *
+     * @copydetails AOClient::cmdRoll
+     *
+     * @iscommand
+     *
+     * @see AOClient::diceThrower
+     */
     void cmdRollP(int argc, QStringList argv);
+
+    /**
+     * @brief Sets the `/doc` to a custom text.
+     *
+     * @details The arguments are **the text** that the client wants to set the doc to.
+     *
+     * @iscommand
+     */
     void cmdDoc(int argc, QStringList argv);
+
+    /**
+     * @brief Sets the `/doc` to `"No document."`.
+     *
+     * @details No arguments.
+     *
+     * @iscommand
+     */
     void cmdClearDoc(int argc, QStringList argv);
+
+    /**
+     * @brief Gets or sets the global or one of the area-specific timers.
+     *
+     * @details If called without arguments, sends an out-of-character message listing the statuses of both
+     * the global timer and the area-specific timers.
+     *
+     * If called with **one argument**, and that argument is between `0` and `4` (inclusive on both ends),
+     * sends an out-of-character message about the status of the given timer, where `0` is the global timer,
+     * and the remaining numbers are the first, second, third and fourth timers in the current area.
+     *
+     * If called with **two arguments**, and the second argument is
+     * * in the format of `hh:mm:ss`, then it starts the given timer,
+     *   with `hh` hours, `mm` minutes, and `ss` seconds on it, making it appear if needed.
+     * * `start`, it (re)starts the given timer, making it appear if needed.
+     * * `pause` or `stop`, it pauses the given timer.
+     * * `hide` or `unset`, it stops the timer and hides it.
+     *
+     * @iscommand
+     */
     void cmdTimer(int argc, QStringList argv);
 
     /**
@@ -278,9 +429,18 @@ class AOClient : public QObject {
      * @iscommand
      *
      * @see AreaData::EvidenceMod
-     * @ingroup commandsRP
      */
     void cmdEvidenceMod(int argc, QStringList argv);
+
+    ///@}
+
+    /**
+      * @name Messaging
+      *
+      * @brief All functions that detail the actions of commands,
+      * that are also related to messages or the client's self-management in some way.
+      */
+    ///@{
 
     /**
      * @brief Changes the client's position.
@@ -288,7 +448,6 @@ class AOClient : public QObject {
      * @details The only argument is the **target position** to move the client to.
      *
      * @iscommand
-     * @ingroup commandsMessaging
      */
     void cmdPos(int argc, QStringList argv);
 
@@ -304,7 +463,6 @@ class AOClient : public QObject {
      * This is not checked for nonsense values.
      *
      * @iscommand
-     * @ingroup commandsMessaging
      */
     void cmdForcePos(int argc, QStringList argv);
 
@@ -314,7 +472,6 @@ class AOClient : public QObject {
      * @details The only argument is the **character's ID** that the client wants to switch to.
      *
      * @iscommand
-     * @ingroup commandsMessaging
      */
     void cmdSwitch(int argc, QStringList argv);
 
@@ -326,7 +483,6 @@ class AOClient : public QObject {
      * Can silently "fail" if the character picked is already being used by another client.
      *
      * @iscommand
-     * @ingroup commandsMessaging
      */
     void cmdRandomChar(int argc, QStringList argv);
 
@@ -336,7 +492,6 @@ class AOClient : public QObject {
      * @details The arguments are **the message** that the client wants to send.
      *
      * @iscommand
-     * @ingroup commandsMessaging
      */
     void cmdG(int argc, QStringList argv);
 
@@ -346,7 +501,6 @@ class AOClient : public QObject {
      * @details No arguments.
      *
      * @iscommand
-     * @ingroup commandsMessaging
      */
     void cmdToggleGlobal(int argc, QStringList argv);
 
@@ -359,9 +513,19 @@ class AOClient : public QObject {
      * The "second" part is technically everything that isn't the first argument.
      *
      * @iscommand
-     * @ingroup commandsMessaging
      */
     void cmdPM(int argc, QStringList argv);
+
+    ///@}
+
+    /**
+      * @name Command helper functions
+      *
+      * @brief A collection of functions of shared behaviour between command functions,
+      * allowing the abstraction of technical details in the command function definition,
+      * or the avoidance of repetition over multiple definitions.
+      */
+    ///@{
 
     /**
      * @brief Returns a textual representation of the time left in an area's Timer.
@@ -371,8 +535,6 @@ class AOClient : public QObject {
      *
      * @return A textual representation of the time left over on the Timer,
      * or `"Timer is inactive"` if the timer wasn't started.
-     *
-     * @ingroup commandHelperFunctions
      */
     QString getAreaTimer(int area_idx, QTimer* timer);
 
@@ -386,8 +548,6 @@ class AOClient : public QObject {
      *
      * @return A QStringList of details about the given area, with every entry in the string list amounting to
      * roughly a separate line.
-     *
-     * @ingroup commandHelperFunctions
      */
     QStringList buildAreaList(int area_idx);
 
@@ -400,8 +560,6 @@ class AOClient : public QObject {
      * @warning `max` must be greater than `min`.
      *
      * @return A randomly generated integer within the bounds given.
-     *
-     * @ingroup commandHelperFunctions
      */
     int genRand(int min, int max);
 
@@ -418,10 +576,10 @@ class AOClient : public QObject {
      * @param argv The list of arguments passed to the function through a command call.
      * See @ref commandArgv "CommandInfo's `action`'s second parameter".
      * @param Type The type of the dice-rolling being done.
-     *
-     * @ingroup commandHelperFunctions
      */
     void diceThrower(int argc, QStringList argv, RollType Type);
+
+    ///@}
 
     /**
      * @brief A helper variable that is used to direct the called of the `/changeAuth` command through the process
