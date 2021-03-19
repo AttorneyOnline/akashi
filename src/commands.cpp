@@ -1049,7 +1049,7 @@ void AOClient::cmdEvidence_Swap(int argc, QStringList argv)
                 area->evidence[ev_id1] = area->evidence[ev_id2];
                 area->evidence[ev_id2] = EvData;
                 sendEvidenceList(area);
-                sendServerMessage("The evidence " + QString::number(ev_id1) + " and " + QString::number(ev_id2) + " has been swapped.");
+                sendServerMessage("The evidence " + QString::number(ev_id1) + " and " + QString::number(ev_id2) + " have been swapped.");
             }
             else {
                 sendServerMessage("Unable to swap evidence. No reference to evidence ID found.");
