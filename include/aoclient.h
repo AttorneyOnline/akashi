@@ -243,6 +243,9 @@ class AOClient : public QObject {
     void cmdTimer(int argc, QStringList argv);
     void cmdEvidenceMod(int argc, QStringList argv);
     void cmdSubTheme(int argc, QStringList argv);
+    void cmdNoteCard(int argc, QStringList argv);
+    void cmdNoteCardReveal(int argc, QStringList argv);
+    void cmdNoteCardClear(int argc, QStringList argv);
     // Messaging/Client
     void cmdPos(int argc, QStringList argv);
     void cmdForcePos(int argc, QStringList argv);
@@ -329,7 +332,12 @@ class AOClient : public QObject {
         {"unban", {ACLFlags.value("BAN"), 1, &AOClient::cmdUnBan}},
         {"removeuser", {ACLFlags.value("MODIFY_USERS"), 1, &AOClient::cmdRemoveUser}},
         {"subtheme", {ACLFlags.value("CM"), 1, &AOClient::cmdSubTheme}},
-        {"about", {ACLFlags.value("NONE"), 0, &AOClient::cmdAbout}}
+        {"about", {ACLFlags.value("NONE"), 0, &AOClient::cmdAbout}},
+        {"notecard", {ACLFlags.value("NONE"), 1, &AOClient::cmdNoteCard}},
+        {"notecardreveal", {ACLFlags.value("CM"), 0, &AOClient::cmdNoteCardReveal}},
+        {"notecard_reveal", {ACLFlags.value("CM"), 0, &AOClient::cmdNoteCardReveal}},
+        {"notecardclear", {ACLFlags.value("NONE"), 0, &AOClient::cmdNoteCardClear}},
+        {"notecard_clear", {ACLFlags.value("NONE"), 0, &AOClient::cmdNoteCardClear}},
     };
 
     QString partial_packet;

@@ -81,6 +81,7 @@ class AreaData : public QObject {
         HIDDEN_CM
     };
     EvidenceMod evi_mod;
+    QMap<QString, QString> notecards;
 };
 
 #endif // AREA_DATA_H
