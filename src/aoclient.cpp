@@ -17,22 +17,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/aoclient.h"
 
-AOClient::AOClient(Server* p_server, QTcpSocket* p_socket, QObject* parent, int user_id)
-    : QObject(parent)
-{
-    socket = p_socket;
-    server = p_server;
-    id = user_id;
-    joined = false;
-    password = "";
-    current_area = 0;
-    current_char = "";
-    remote_ip = p_socket->peerAddress();
-    is_partial = false;
-    last_wtce_time = 0;
-    last_message = "";
-}
-
 void AOClient::clientData()
 {
     QString data = QString::fromUtf8(socket->readAll());
