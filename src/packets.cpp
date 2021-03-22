@@ -51,7 +51,8 @@ void AOClient::pktSoftwareId(AreaData* area, int argc, QStringList argv, AOPacke
         "deskmod",      "evidence",           "cccc_ic_support",
         "arup",         "casing_alerts",      "modcall_reason",
         "looping_sfx",  "additive",           "effects",
-        "y_offset",     "expanded_desk_mods", "auth_packet"
+        "y_offset",     "expanded_desk_mods", "auth_packet",
+        "char_overlays"
     };
 
 
@@ -581,6 +582,28 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
 
         // effect
         args.append(incoming_args[25].toString());
+    }
+    // 2.9 packet extensions
+    if (incoming_args.length() > 26) {
+        // pre-overlay
+        QString incoming_pre_overlay = incoming_args[26].toString();
+        args.append(incoming_pre_overlay);
+        qDebug() << "pre overlay:" << incoming_pre_overlay;
+
+        // overlay
+        QString incoming_overlay = incoming_args[27].toString();
+        overlay = incoming_overlay;
+        args.append(incoming_overlay);
+        qDebug() << "overlay:" << incoming_overlay;
+
+        // pair overlay
+        int other_charid = pairing_with;
+        QString other_overlay = "";
+        for (AOClient* client : server->clients) {
+            if (client->pairing_with == char_id && other_charid != char_id && client->char_id == pairing_with)
+                other_overlay = client->overlay;
+        }
+        args.append(other_overlay);
     }
 
     return AOPacket("MS", args);

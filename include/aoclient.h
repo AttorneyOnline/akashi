@@ -159,6 +159,7 @@ class AOClient : public QObject {
     QString offset = "";
     QString flipping = "";
     QString pos = "";
+    QString overlay = "";
 
     struct PacketInfo {
         unsigned long long acl_mask;
