@@ -108,24 +108,24 @@ public:
      * @param username The username clients can use to log in with.
      * @param salt The salt to obfuscate the password with.
      * @param password The user's password.
-     * @param acl The user's authority bitflag -- what special privileges does the user have.
+     * @param acl The user's authority bitflag -- what special permissions does the user have.
      *
      * @return False if the user already exists, true if the user was successfully created.
      *
      * @see AOClient::cmdLogin() and AOClient::cmdLogout() for the username and password's contexts.
-     * @see AOClient::ACLFlags for the potential special privileges a user may have.
+     * @see AOClient::ACLFlags for the potential special permissions a user may have.
      */
     bool createUser(QString username, QString salt, QString password, unsigned long long acl);
 
     /**
-     * @brief Gets the privileges of a given user.
+     * @brief Gets the permissions of a given user.
      *
      * @param moderator_name The authorised user's name.
      *
      * @return `0` if `moderator_name` is empty, `0` if such user does not exist in the Users table,
-     * or the primitive representation of an AOClient::ACLFlags privilege matrix if neither of the above are true.
+     * or the primitive representation of an AOClient::ACLFlags permission matrix if neither of the above are true.
      *
-     * @see AOClient::ACLFlags for the potential privileges a user may have.
+     * @see AOClient::ACLFlags for the potential permissions a user may have.
      */
     unsigned long long getACL(QString moderator_name);
 
@@ -141,33 +141,33 @@ public:
     bool authenticate(QString username, QString password);
 
     /**
-     * @brief Updates the privileges of a given user.
+     * @brief Updates the permissions of a given user.
      *
-     * @details This function can add or remove privileges as needed.
-     * `acl` determines what privileges are modified, while `mode` determines whether said privileges are
+     * @details This function can add or remove permissions as needed.
+     * `acl` determines what permissions are modified, while `mode` determines whether said permissions are
      * added or removed.
      *
-     * `acl` **is not** the user's current privileges *or* the sum privileges you want for the user at the end
-     * -- it is the 'difference' between the user's current and desired privileges.
+     * `acl` **is not** the user's current permissions *or* the sum permissions you want for the user at the end
+     * -- it is the 'difference' between the user's current and desired permissions.
      *
-     * If `acl` is `"NONE"`, then no matter the mode, the user's privileges are cleared.
+     * If `acl` is `"NONE"`, then no matter the mode, the user's permissions are cleared.
      *
      * For some practical examples, consult this example table:
      *
-     * | Starting privileges |    `acl`    | `mode`  | Resulting privileges |
-     * | ------------------: | :---------: | :-----: | :------------------- |
-     * | KICK                | BAN         | `TRUE`  | KICK, BAN            |
-     * | BAN, KICK           | BAN         | `TRUE`  | KICK, BAN            |
-     * | KICK                | BAN, BGLOCK | `TRUE`  | KICK, BAN, BGLOCK    |
-     * | BGLOCK, BAN, KICK   | NONE        | `TRUE`  | NONE                 |
-     * | KICK                | BAN         | `FALSE` | KICK                 |
-     * | BAN, KICK           | BAN         | `FALSE` | KICK                 |
-     * | BGLOCK, BAN, KICK   | BAN, BGLOCK | `FALSE` | KICK                 |
-     * | BGLOCK, BAN, KICK   | NONE        | `FALSE` | NONE                 |
+     * | Starting permissions |    `acl`    | `mode`  | Resulting permissions |
+     * | -------------------: | :---------: | :-----: | :-------------------- |
+     * | KICK                 | BAN         | `TRUE`  | KICK, BAN             |
+     * | BAN, KICK            | BAN         | `TRUE`  | KICK, BAN             |
+     * | KICK                 | BAN, BGLOCK | `TRUE`  | KICK, BAN, BGLOCK     |
+     * | BGLOCK, BAN, KICK    | NONE        | `TRUE`  | NONE                  |
+     * | KICK                 | BAN         | `FALSE` | KICK                  |
+     * | BAN, KICK            | BAN         | `FALSE` | KICK                  |
+     * | BGLOCK, BAN, KICK    | BAN, BGLOCK | `FALSE` | KICK                  |
+     * | BGLOCK, BAN, KICK    | NONE        | `FALSE` | NONE                  |
      *
-     * @param username The username of the user whose privileges should be updated.
-     * @param acl The primitive representation of the privilege matrix being modified.
-     * @param mode If true, the privileges described in `acl` are *added* to the user;
+     * @param username The username of the user whose permissions should be updated.
+     * @param acl The primitive representation of the permission matrix being modified.
+     * @param mode If true, the permissions described in `acl` are *added* to the user;
      * if false, they are removed instead.
      *
      * @return True if the modification was successful, false if the user does not exist in the records.

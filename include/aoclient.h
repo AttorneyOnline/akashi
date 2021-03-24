@@ -185,7 +185,7 @@ class AOClient : public QObject {
     ClientVersion version;
 
     /**
-      * @brief The authorisation bitflag, representing what privileges a client can have.
+      * @brief The authorisation bitflag, representing what permissions a client can have.
       */
     QMap<QString, unsigned long long> ACLFlags {
         {"KICK",            1ULL << 0},
@@ -332,12 +332,12 @@ class AOClient : public QObject {
     void sendServerBroadcast(QString message);
 
     /**
-     * @brief Checks if the client would be authorised to something based on its necessary privileges.
+     * @brief Checks if the client would be authorised to something based on its necessary permissions.
      *
-     * @param acl_mask The privileges bitflag that the client's own privileges should be checked against.
+     * @param acl_mask The permissions bitflag that the client's own permissions should be checked against.
      *
-     * @return True if the client's privileges are high enough for `acl_mask`, or higher than it.
-     * False if the client is missing some privileges.
+     * @return True if the client's permissions are high enough for `acl_mask`, or higher than it.
+     * False if the client is missing some permissions.
      */
     bool checkAuth(unsigned long long acl_mask);
 
@@ -543,7 +543,7 @@ class AOClient : public QObject {
 
     /// Describes a packet's interpretation details.
     struct PacketInfo {
-        unsigned long long acl_mask; //!< The privileges necessary for the packet.
+        unsigned long long acl_mask; //!< The permissions necessary for the packet.
         int minArgs; //!< The minimum arguments needed for the packet to be interpreted correctly / make sense.
         void (AOClient::*action)(AreaData*, int, QStringList, AOPacket);
     };
@@ -600,7 +600,7 @@ class AOClient : public QObject {
     void cmdDefault(int argc, QStringList argv);
 
     /**
-     * @brief Lists all the commands that the caller client has the privileges to use.
+     * @brief Lists all the commands that the caller client has the permissions to use.
      *
      * @details No arguments.
      *
@@ -613,14 +613,91 @@ class AOClient : public QObject {
       */
     ///@{
 
+    /**
+     * @brief Logs the user in as a moderator.
+     *
+     * @details If the authorisation type is `"simple"`, then this command expects one argument, the **global moderator password**.
+     *
+     * If the authorisation type is `"advanced"`, then it requires two arguments, the **moderator's username** and the **matching password**.
+     *
+     * @iscommand
+     */
     void cmdLogin(int argc, QStringList argv);
+
+    /**
+     * @brief Starts the authorisation type change from `"simple"` to `"advanced"`.
+     *
+     * @details No arguments.
+     *
+     * @iscommand
+     */
     void cmdChangeAuth(int argc, QStringList argv);
+
+    /**
+     * @brief Sets the root user's password.
+     *
+     * @details Accepts a single argument that will be the **root user's password**.
+     *
+     * @iscommand
+     *
+     * @pre AOClient::cmdChangeAuth()
+     */
     void cmdSetRootPass(int argc, QStringList argv);
+
+    /**
+     * @brief Adds a user to the moderators in `"advanced"` authorisation type.
+     *
+     * @details The first argument is the **user's name**, the second is their **password**.
+     *
+     * @iscommand
+     */
     void cmdAddUser(int argc, QStringList argv);
+
+    /**
+     * @brief Lists the permission of a given user.
+     *
+     * @details If called without argument, lists the caller's permissions.
+     *
+     * If called with one argument, **a username**, lists that user's permissions.
+     *
+     * @iscommand
+     */
     void cmdListPerms(int argc, QStringList argv);
+
+    /**
+     * @brief Adds permissions to a given user.
+     *
+     * @details The first argument is the **target user**, the second is the **permission** (in string form) to add to that user.
+     *
+     * @iscommand
+     */
     void cmdAddPerms(int argc, QStringList argv);
+
+    /**
+     * @brief Removes permissions from a given user.
+     *
+     * @details The first argument is the **target user**, the second is the **permission** (in string form) to remove from that user.
+     *
+     * @iscommand
+     */
     void cmdRemovePerms(int argc, QStringList argv);
+
+    /**
+     * @brief Lists all users in the server's database.
+     *
+     * @details No arguments.
+     *
+     * @iscommand
+     */
     void cmdListUsers(int argc, QStringList argv);
+
+    /**
+     * @brief Logs the caller out from their moderator user.
+     *
+     * @details No arguments.
+     *
+     * @iscommand
+     */
     void cmdLogout(int argc, QStringList argv);
 
     ///@}
@@ -633,21 +710,160 @@ class AOClient : public QObject {
       */
     ///@{
 
+    /**
+     * @brief Promotes a client to CM status.
+     *
+     * @details If called without arguments, promotes the caller.
+     *
+     * If called with a **user ID** as an argument, and the caller is a CM, promotes the target client to CM status.
+     *
+     * @iscommand
+     */
     void cmdCM(int argc, QStringList argv);
+
+    /**
+     * @brief Removes the CM status from the caller.
+     *
+     * @details No arguments.
+     *
+     * @iscommand
+     */
     void cmdUnCM(int argc, QStringList argv);
+
+    /**
+     * @brief Invites a client to the area.
+     *
+     * @details Needs a **user ID** as an argument.
+     *
+     * @iscommand
+     *
+     * @see AreaData::LOCKED and AreaData::SPECTATABLE for the benefits of being invited.
+     */
     void cmdInvite(int argc, QStringList argv);
+
+    /**
+     * @brief Uninvites a client to the area.
+     *
+     * @details Needs a **user ID** as an argument.
+     *
+     * @iscommand
+     *
+     * @see AreaData::LOCKED and AreaData::SPECTATABLE for the benefits of being invited.
+     */
     void cmdUnInvite(int argc, QStringList argv);
+
+    /**
+     * @brief Locks the area.
+     *
+     * @details No arguments.
+     *
+     * @iscommand
+     *
+     * @see AreaData::LOCKED
+     */
     void cmdLock(int argc, QStringList argv);
+
+    /**
+     * @brief Sets the area to spectatable.
+     *
+     * @details No arguments.
+     *
+     * @iscommand
+     *
+     * @see AreaData::SPECTATABLE
+     */
     void cmdSpectatable(int argc, QStringList argv);
+
+    /**
+     * @brief Unlocks the area.
+     *
+     * @details No arguments.
+     *
+     * @iscommand
+     *
+     * @see AreaData::FREE
+     */
     void cmdUnLock(int argc, QStringList argv);
+
+    /**
+     * @brief Lists all clients in all areas.
+     *
+     * @details No arguments.
+     *
+     * @iscommand
+     */
     void cmdGetAreas(int argc, QStringList argv);
+
+    /**
+     * @brief Lists all clients in the area the caller is in.
+     *
+     * @details No arguments.
+     *
+     * @iscommand
+     */
     void cmdGetArea(int argc, QStringList argv);
+
+    /**
+     * @brief Moves the caller to the area with the given ID.
+     *
+     * @details Takes an **area ID** as an argument.
+     *
+     * @iscommand
+     */
     void cmdArea(int argc, QStringList argv);
+
+    /**
+     * @brief Kicks a client from the area, moving them back to the default area.
+     *
+     * @details Takes one argument, the **client's ID** to kick.
+     *
+     * @iscommand
+     */
     void cmdAreaKick(int argc, QStringList argv);
+
+    /**
+     * @brief Changes the background of the current area.
+     *
+     * @details Takes the **background's internal name** (generally the background's directory's name for the clients) as the only argument.
+     *
+     * @iscommand
+     */
     void cmdSetBackground(int argc, QStringList argv);
+
+    /**
+     * @brief Locks the background, preventing it from being changed.
+     *
+     * @details No arguments.
+     *
+     * @iscommand
+     */
     void cmdBgLock(int argc, QStringList argv);
+
+    /**
+     * @brief Unlocks the background, allowing it to be changed again.
+     *
+     * @details No arguments.
+     *
+     * @iscommand
+     */
     void cmdBgUnlock(int argc, QStringList argv);
+
+    /**
+     * @brief Changes the status of the current area.
+     *
+     * @details Takes a **status** as an argument. See AreaData::Status for permitted values.
+     *
+     * @iscommand
+     */
     void cmdStatus(int argc, QStringList argv);
+
+    /**
+     * @brief Returns the currently playing music in the area, and who played it.
+     *
+     * @details No arguments.
+     *
+     * @iscommand
+     */
     void cmdCurrentMusic(int argc, QStringList argv);
 
     ///@}
@@ -972,7 +1188,7 @@ class AOClient : public QObject {
      * @brief Describes a command's details.
      */
     struct CommandInfo {
-        unsigned long long acl_mask; //!< The privileges necessary to be able to run the command. @see ACLFlags.
+        unsigned long long acl_mask; //!< The permissions necessary to be able to run the command. @see ACLFlags.
         int minArgs; //!< The minimum mandatory arguments needed for the command to function.
         void (AOClient::*action)(int, QStringList);
     };
