@@ -70,6 +70,10 @@ class AOClient : public QObject {
      * @see #ipid
      */
     QString getIpid();
+
+    /**
+     * @brief Calculates the client's IPID based on a hashed version of its IP.
+     */
     void calculateIpid();
 
     /**
@@ -146,6 +150,9 @@ class AOClient : public QObject {
      */
     bool global_enabled = true;
 
+    /**
+     * @brief If true, the client may not use in-character chat.
+     */
     bool is_muted = false;
     
     /**
@@ -189,8 +196,19 @@ class AOClient : public QObject {
         {"SUPER",          ~0ULL      },
     };
 
+    /**
+     * @brief If true, the client's in-character messages will have their word order randomised.
+     */
     bool is_shaken;
+
+    /**
+     * @brief If true, the client's in-character messages will have their vowels (English alphabet only) removed.
+     */
     bool is_disemvoweled;
+
+    /**
+     * @brief If true, the client's in-character messages will be overwritten by a randomly picked predetermined message.
+     */
     bool is_gimped;
 
   public slots:
@@ -602,7 +620,25 @@ class AOClient : public QObject {
      * @iscommand
      */
     void cmdHelp(int argc, QStringList argv);
+
+    /**
+     * @brief Gets or sets the server's Message Of The Day.
+     *
+     * @details If called without arguments, gets the MOTD.
+     *
+     * If it has any number of arguments, it is set as the **MOTD**.
+     *
+     * @iscommand
+     */
     void cmdMOTD(int argc, QStringList argv);
+
+    /**
+     * @brief Gives a very brief description of Akashi.
+     *
+     * @details No arguments.
+     *
+     * @iscommand
+     */
     void cmdAbout(int argc, QStringList argv);
     
     /**
@@ -649,6 +685,14 @@ class AOClient : public QObject {
      * @iscommand
      */
     void cmdAddUser(int argc, QStringList argv);
+
+    /**
+     * @brief Removes a user from the moderators in `"advanced"` authorisation type.
+     *
+     * @details Takes the **targer user's name** as the argument.
+     *
+     * @iscommand
+     */
     void cmdRemoveUser(int argc, QStringList argv);
 
     /**
@@ -887,8 +931,14 @@ class AOClient : public QObject {
      * @brief Bans a client from the server, forcibly severing its connection to the server,
      * and disallowing their return.
      *
-     * @details The first argument is the **target's IPID**, while the remaining arguments are the **reason**
-     * the client was banned. Both arguments are mandatory.
+     * @details The first argument is the **target's IPID**, the second is the **reason** why the client
+     * was banned, the third is the **duration**.
+     *
+     * Both the reason and the duration must be in quotation marks.
+     *
+     * The duration can be `"perma"`, meaning a forever ban, otherwise, it must be given in the format of `"YYyWWwDDdHHhMMmSSs"` to
+     * mean a YY years, WW weeks, DD days, HH hours, MM minutes and SS seconds long ban. Any of these may be left out, for example,
+     * `"1h30m"` for a 1.5 hour long ban.
      *
      * Besides banning, this command kicks all clients having the given IPID,
      * thus a multiclienting user will have all their clients be kicked from the server.
@@ -899,6 +949,14 @@ class AOClient : public QObject {
      * @iscommand
      */
     void cmdBan(int argc, QStringList argv);
+
+    /**
+     * @brief Removes a ban from the database.
+     *
+     * @details Takes a single argument, the **ID** of the ban.
+     *
+     * @iscommand
+     */
     void cmdUnBan(int argc, QStringList argv);
 
     /**
@@ -913,11 +971,67 @@ class AOClient : public QObject {
      * @iscommand
      */
     void cmdKick(int argc, QStringList argv);
+
+    /**
+     * @brief Sends out a decorated global message, for announcements.
+     *
+     * @details The arguments are **the message** that the client wants to send.
+     *
+     * @iscommand
+     *
+     * @see AOClient::cmdG()
+     */
     void cmdAnnounce(int argc, QStringList argv);
+
+    /**
+     * @brief Sends a message in the server-wide, moderator only chat.
+     *
+     * @details The arguments are **the message** that the client wants to send.
+     *
+     * @iscommand
+     */
     void cmdM(int argc, QStringList argv);
+
+    /**
+     * @brief Sends out a global message that is marked with an `[M]` to mean it is coming from a moderator.
+     *
+     * @details The arguments are **the message** that the client wants to send.
+     *
+     * @iscommand
+     *
+     * @see AOClient::cmdG()
+     */
     void cmdGM(int argc, QStringList argv);
+
+    /**
+     * @brief Mutes a client.
+     *
+     * @details The only argument is the **target client's user ID**.
+     *
+     * @iscommand
+     *
+     * @see #is_muted
+     */
     void cmdMute(int argc, QStringList argv);
+
+    /**
+     * @brief Removes the muted status a client.
+     *
+     * @details The only argument is the **target client's user ID**.
+     *
+     * @iscommand
+     *
+     * @see #is_muted
+     */
     void cmdUnmute(int argc, QStringList argv);
+
+    /**
+     * @brief Lists the last five bans made on the server.
+     *
+     * @details No arguments.
+     *
+     * @iscommand
+     */
     void cmdBans(int argc, QStringList argv);
 
     ///@}
@@ -1031,6 +1145,14 @@ class AOClient : public QObject {
      * @see AreaData::EvidenceMod
      */
     void cmdEvidenceMod(int argc, QStringList argv);
+
+    /**
+     * @brief Changes the subtheme of the clients in the current area.
+     *
+     * @details The only argument is the **name of the subtheme**. Reloading is always forced.
+     *
+     * @iscommand
+     */
     void cmdSubTheme(int argc, QStringList argv);
     
     ///@}
@@ -1179,6 +1301,26 @@ class AOClient : public QObject {
      * @param Type The type of the dice-rolling being done.
      */
     void diceThrower(int argc, QStringList argv, RollType Type);
+
+    /**
+     * @brief Interprets an expression of time into amount of seconds.
+     *
+     * @param input A string in the format of `"XXyXXwXXdXXhXXmXXs"`, where every `XX` is some integer.
+     * There is no limit on the length of the integers, the `XX` text is just a placeholder, and is not intended to
+     * indicate a limit of two digits maximum.
+     *
+     * The string gets interpreted as follows:
+     * * `XXy` is parsed into `XX` amount of years,
+     * * `XXw` is parsed into `XX` amount of weeks,
+     * * `XXd` is parsed into `XX` amount of days,
+     * * `XXh` is parsed into `XX` amount of hours,
+     * * `XXm` is parsed into `XX` amount of minutes, and
+     * * `XXs` is parsed into `XX` amount of seconds.
+     *
+     * Any of these may be left out, but the order must be kept (i.e., `"10s5y"` is a malformed text).
+     *
+     * @return The parsed text, converted into their respective durations, summed up, then converted into seconds.
+     */
     long long parseTime(QString input);
 
     ///@}

@@ -96,10 +96,7 @@ class Advertiser : public QObject {
     QString ip;
 
     /**
-     * @copydoc ConfigManager::server_settings::port
-     *
-     * @bug Because of a typo in the code, this also replaces #local_port, thus clients will have to attempt
-     * to connect through the same port as the connection is established to the master server.
+     * @copydoc ConfigManager::server_settings::ms_port
      */
     int port;
 
@@ -109,7 +106,7 @@ class Advertiser : public QObject {
     int ws_port;
 
     /**
-     * @copydoc ConfigManager::server_settings::local_port
+     * @copydoc ConfigManager::server_settings::port
      *
      * @bug See #port.
      */

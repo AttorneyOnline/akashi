@@ -77,9 +77,18 @@ class Server : public QObject {
      * @param ipid The IPID to look for.
      *
      * @return A pointer to the client if found, a nullpointer if not.
+     *
+     * @see Server::getClientsByIpid() to get all clients ran by the same user.
      */
     AOClient* getClient(QString ipid);
 
+    /**
+     * @brief Gets a list of pointers to all clients with the given IPID.
+     *
+     * @param ipid The IPID to look for.
+     *
+     * @return A list of clients whose IPID match. List may be empty.
+     */
     QList<AOClient*> getClientsByIpid(QString ipid);
     
     /**
@@ -196,6 +205,10 @@ class Server : public QObject {
      * @note Unused. getServerName() serves its purpose instead.
      */
     QString server_name;
+
+    /**
+     * @brief The Message Of The Day of the server, shown upon entry to the server and on request.
+     */
     QString MOTD;
 
     /**

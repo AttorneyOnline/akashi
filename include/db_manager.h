@@ -82,30 +82,73 @@ public:
     QString getBanReason(QHostAddress ip);
 
     /**
-     * @brief Overloaded function for getBanReason(QHostAddress). Returns based on HDID instead of IP.
-     *
-     * @param hdid The hardware ID whose ban reason needs to be returned.
-     *
-     * @return The ban reason if the hardware ID is actually banned,
-     * or `"Ban reason not found."` if the hardware ID is not actually banned.
+     * @overload
      */
     QString getBanReason(QString hdid);
-    long long getBanDuration(QString hdid);
+
+    /**
+     * @brief Returns the reason the given IP address was banned with.
+     *
+     * @param ip The IP address whose ban duration to get.
+     *
+     * @return The ban duration if the IP address is actually banned,
+     * or `-1` if the IP address is not actually banned.
+     */
     long long getBanDuration(QHostAddress ip);
-    int getBanID(QString hdid);
+
+    /**
+     * @overload
+     */
+    long long getBanDuration(QString hdid);
+
+    /**
+     * @brief Gets the ID number of a given ban.
+     *
+     * @param ip The IP address whose associated ban's ID we need.
+     *
+     * @return The ID of the ban if the IP address is actually banned,
+     * or `-1` if the IP address is not actually banned.
+     */
     int getBanID(QHostAddress ip);
 
+    /**
+     * @overload
+     */
+    int getBanID(QString hdid);
+
+    /**
+     * @brief Details about a ban.
+     */
     struct BanInfo {
-        QString ipid;
-        QHostAddress ip;
-        QString hdid;
-        unsigned long time;
-        QString reason;
-        long long duration;
+        QString ipid; //!< The banned user's IPID.
+        QHostAddress ip; //!< The banned user's IP.
+        QString hdid; //!< The banned user's hardware ID.
+        unsigned long time; //!< The time the ban was registered.
+        QString reason; //!< The reason given for the ban by the moderator who registered it.
+        long long duration; //!< The duration of the ban, in seconds.
     };
+
+    /**
+     * @brief Gets the last five bans made on the server.
+     *
+     * @return See brief description.
+     */
     QList<BanInfo> getRecentBans();
 
+    /**
+     * @brief Registers a ban into the database.
+     *
+     * @param ban The details of the ban.
+     */
     void addBan(BanInfo ban);
+
+    /**
+     * @brief Sets the duration of a given ban to 0, effectively removing the ban the associated user.
+     *
+     * @param id The ID of the ban to invalidate.
+     *
+     * @return False if no such ban exists, true if the invalidation was successful.
+     */
     bool invalidateBan(int id);
 
     /**
@@ -122,6 +165,14 @@ public:
      * @see AOClient::ACLFlags for the potential special permissions a user may have.
      */
     bool createUser(QString username, QString salt, QString password, unsigned long long acl);
+
+    /**
+     * @brief Deletes an authorised user from the database.
+     *
+     * @param username The username whose associated user to delete.
+     *
+     * @return False if the user didn't even exist, true if the user was successfully deleted.
+     */
     bool deleteUser(QString username);
 
     /**

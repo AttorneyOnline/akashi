@@ -35,6 +35,13 @@ class Logger;
 class AreaData : public QObject {
   Q_OBJECT
   public:
+    /**
+     * @brief Constructor for the AreaData class.
+     *
+     * @param p_name The name of the area. This must be in the format of `"X:YYYYYY"`, where `X` is an integer,
+     * and `YYYYYY` is the actual name of the area.
+     * @param p_index The index of the area in the area list.
+     */
     AreaData(QString p_name, int p_index);
 
     /**
@@ -61,6 +68,9 @@ class AreaData : public QObject {
      */
     int index;
 
+    /**
+     * @brief A list of the character IDs of all characters taken.
+     */
     QList<int> characters_taken;
 
     /**
