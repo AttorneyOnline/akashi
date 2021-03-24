@@ -26,9 +26,9 @@ void AOClient::pktDefault(AreaData* area, int argc, QStringList argv, AOPacket p
 
 void AOClient::pktHardwareId(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
-    setHwid(argv[0]);
-    if(server->db_manager->isHDIDBanned(getHwid())) {
-        sendPacket("BD", {server->db_manager->getBanReason(getHwid())});
+    hwid = argv[0];
+    if(server->db_manager->isHDIDBanned(hwid)) {
+        sendPacket("BD", {server->db_manager->getBanReason(hwid)});
         socket->close();
         return;
     }
@@ -46,37 +46,23 @@ void AOClient::pktSoftwareId(AreaData* area, int argc, QStringList argv, AOPacke
     // The only ones that are critical to ensuring the server works are
     // "noencryption" and "fastloading"
     QStringList feature_list = {
-        "noencryption", "yellowtext",       "prezoom",
-        "flipping",     "customobjections", "fastloading",
-        "deskmod",      "evidence",         "cccc_ic_support",
-        "arup",         "casing_alerts",    "modcall_reason",
-        "looping_sfx",  "additive",         "effects",
-        "y_offset"
+        "noencryption", "yellowtext",         "prezoom",
+        "flipping",     "customobjections",   "fastloading",
+        "deskmod",      "evidence",           "cccc_ic_support",
+        "arup",         "casing_alerts",      "modcall_reason",
+        "looping_sfx",  "additive",           "effects",
+        "y_offset",     "expanded_desk_mods", "auth_packet"
     };
 
 
-    // Extremely cursed client version string validation
-    // Ideally version strings should be X.X.X but it can be literally anything
-    // so we have to be super careful
     version.string = argv[1];
-    QStringList version_raw = version.string.split(".");
-    bool ok;
-    int release_version = version_raw[0].toInt(&ok);
-    if (ok && version_raw.size() >= 1)
-        version.release = release_version;
-    if (ok && version_raw.size() >= 2) {
-        int major_version = version_raw[1].toInt(&ok);
-        if (ok)
-            version.major = major_version;
+    QRegularExpression rx("\\b(\\d+)\\.(\\d+)\\.(\\d+)\\b"); // matches X.X.X (e.g. 2.9.0, 2.4.10, etc.)
+    QRegularExpressionMatch match = rx.match(version.string);
+    if (match.hasMatch()) {
+        version.release = match.captured(1).toInt();
+        version.major = match.captured(2).toInt();
+        version.minor = match.captured(3).toInt();
     }
-    if (ok && version_raw.size() >= 3) {
-        int minor_version = version_raw[2].toInt(&ok);
-        if (ok)
-            version.minor = minor_version;
-    }
-        
-
-    
 
     sendPacket("PN", {QString::number(server->player_count), max_players});
     sendPacket("FL", feature_list);
@@ -102,7 +88,7 @@ void AOClient::pktRequestMusic(AreaData* area, int argc, QStringList argv, AOPac
 
 void AOClient::pktLoadingDone(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
-    if (getHwid() == "") {
+    if (hwid == "") {
         // No early connecting!
         socket->close();
         return;
@@ -116,16 +102,37 @@ void AOClient::pktLoadingDone(AreaData* area, int argc, QStringList argv, AOPack
     area->player_count++;
     joined = true;
     server->updateCharsTaken(area);
-    fullArup(); // Give client all the area data
+
     arup(ARUPType::PLAYER_COUNT, true); // Tell everyone there is a new player
     sendEvidenceList(area);
 
     sendPacket("HP", {"1", QString::number(area->def_hp)});
     sendPacket("HP", {"2", QString::number(area->pro_hp)});
     sendPacket("FA", server->area_names);
-    sendPacket("BN", {area->background});
     sendPacket("OPPASS", {"DEADBEEF"});
     sendPacket("DONE");
+    sendPacket("BN", {area->background});
+  
+    sendServerMessage("=== MOTD ===\r\n" + server->MOTD + "\r\n=============");
+
+    fullArup(); // Give client all the area data
+    if (server->timer->isActive()) {
+        sendPacket("TI", {"0", "2"});
+        sendPacket("TI", {"0", "0", QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(server->timer->remainingTime())))});
+    }
+    else {
+        sendPacket("TI", {"0", "3"});
+    }
+    for (QTimer* timer : area->timers) {
+        int timer_id = area->timers.indexOf(timer) + 1;
+        if (timer->isActive()) {
+            sendPacket("TI", {QString::number(timer_id), "2"});
+            sendPacket("TI", {QString::number(timer_id), "0", QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(timer->remainingTime())))});
+        }
+        else {
+            sendPacket("TI", {QString::number(timer_id), "3"});
+        }
+    }
 }
 
 void AOClient::pktCharPassword(AreaData* area, int argc, QStringList argv, AOPacket packet)
@@ -147,6 +154,11 @@ void AOClient::pktSelectChar(AreaData* area, int argc, QStringList argv, AOPacke
 
 void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    if (is_muted) {
+        sendServerMessage("You cannot speak while muted.");
+        return;
+    }
+
     AOPacket validated_packet = validateIcPacket(packet);
     if (validated_packet.header == "INVALID")
         return;
@@ -161,8 +173,7 @@ void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket pa
 void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
     ooc_name = dezalgo(argv[0]).replace(QRegExp("\\[|\\]|\\{|\\}|\\#|\\$|\\%|\\&"), ""); // no fucky wucky shit here
-    
-    if (ooc_name == server->getServerName()) // impersonation prevention
+    if (ooc_name.isEmpty() || ooc_name == server->getServerName()) // impersonation & empty name protection
         return;
     
     QString message = dezalgo(argv[1]);
@@ -203,9 +214,19 @@ void AOClient::pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPack
     for (QString song : server->music_list) {
         if (song == argument || song == "~stop.mp3") { // ~stop.mp3 is a dummy track used by 2.9+
             // We have a song here
-            AOPacket music_change("MC", {song, argv[1], argv[2], "1", "0", argv[3]});
-            area->current_music = song;
-            area->music_played_by = argv[2];
+            QString effects;
+            if (argc >= 4)
+                effects = argv[3];
+            else
+                effects = "0";
+            QString final_song;
+            if (!argument.contains("."))
+                final_song = "~stop.mp3";
+            else
+                final_song = argument;
+            AOPacket music_change("MC", {final_song, argv[1], showname, "1", "0", effects});
+            area->current_music = final_song;
+            area->music_played_by = showname;
             server->broadcast(music_change, current_area);
             return;
         }
@@ -254,6 +275,7 @@ void AOClient::pktWebSocketIp(AreaData* area, int argc, QStringList argv, AOPack
         qDebug() << "ws ip set to" << argv[0];
 #endif
         remote_ip = QHostAddress(argv[0]);
+        calculateIpid();
     }
 }
 
@@ -360,15 +382,14 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         incoming_args.append(QVariant(arg));
     }
 
-    // message type
-    if (incoming_args[0].toInt() == 1)
-        args.append("1");
-    else if (incoming_args[0].toInt() == 0) {
-        if (incoming_args[0].toString() == "chat")
-            args.append("chat");
-        else
-            args.append("0");
+    // desk modifier
+    QStringList allowed_desk_mods;
+    allowed_desk_mods << "chat" << "0" << "1" << "2" << "3" << "4" << "5";
+    if (allowed_desk_mods.contains(incoming_args[0].toString())) {
+        args.append(incoming_args[0].toString());
     }
+    else
+        return invalid;
 
     // preanim
     args.append(incoming_args[1].toString());

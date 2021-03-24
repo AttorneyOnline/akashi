@@ -62,9 +62,9 @@ class ConfigManager {
      */
     struct server_settings {
         QString ms_ip; //!< The IP address of the master server to establish connection to.
-        int port; //!< The port of the master server to establish connection to.
+        int port; //!< The TCP port the server will accept client connections through.
         int ws_port; //!< The WebSocket port the server will accept client connections through.
-        int local_port; //!< The TCP port the server will accept client connections through.
+        int ms_port; //!< The port of the master server to establish connection to.
         QString name; //!< The name of the server as advertised on the server browser.
         QString description; //!< The description of the server as advertised on the server browser.
         bool advertise_server; //!< The server will only be announced to the master server (and thus appear on the master server list) if this is true.

@@ -35,15 +35,7 @@ class Logger;
 class AreaData : public QObject {
   Q_OBJECT
   public:
-
-    /**
-     * @brief Creates an area.
-     *
-     * @param p_characters A list of characters that may be selected in the area.
-     * @param p_name The name of the area.
-     * @param p_index The index of the area.
-     */
-    AreaData(QStringList p_characters, QString p_name, int p_index);
+    AreaData(QString p_name, int p_index);
 
     /**
      * @brief The data for evidence in the area.
@@ -69,14 +61,7 @@ class AreaData : public QObject {
      */
     int index;
 
-    /**
-     * @brief A map of characters' names and whether they are taken or not.
-     *
-     * @details The key for the map the given characters' internal names (i.e., the name of their directory
-     * in `base/characters/` clientside), while the values are true if they are already taken in the area,
-     * false if not.
-     */
-    QMap<QString, bool> characters_taken;
+    QList<int> characters_taken;
 
     /**
      * @brief A list of Evidence currently available in the area's court record.

@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //    akashi - a server for Attorney Online 2                                       //
-//    Copyright (C) 2020  scatterflower                                           //
+//    Copyright (C) 2020  scatterflower                                             //
 //                                                                                  //
 //    This program is free software: you can redistribute it and/or modify          //
 //    it under the terms of the GNU Affero General Public License as                //
@@ -42,10 +42,12 @@ void AOClient::cmdLogin(int argc, QStringList argv)
             sendServerMessage("No modpass is set! Please set a modpass before authenticating.");
         }
         else if(argv[0] == modpass) {
-            sendServerMessage("Logged in as a moderator."); // This string has to be exactly this, because it is hardcoded in the client
+            sendPacket("AUTH", {"1"}); // Client: "You were granted the Disable Modcalls button."
+            sendServerMessage("Logged in as a moderator."); // pre-2.9.1 clients are hardcoded to display the mod UI when this string is sent in OOC
             authenticated = true;
-        }
+        } 
         else {
+            sendPacket("AUTH", {"0"}); // Client: "Login unsuccessful."
             sendServerMessage("Incorrect password.");
         }
         server->areas.value(current_area)->logger->logLogin(this, authenticated, "moderator");
@@ -60,10 +62,13 @@ void AOClient::cmdLogin(int argc, QStringList argv)
         if (server->db_manager->authenticate(username, password)) {
             moderator_name = username;
             authenticated = true;
-            sendServerMessage("Logged in as a moderator.");
+            sendPacket("AUTH", {"1"}); // Client: "You were granted the Disable Modcalls button."
+            if (version.release <= 2 && version.major <= 9 && version.minor <= 0)
+                sendServerMessage("Logged in as a moderator."); // pre-2.9.1 clients are hardcoded to display the mod UI when this string is sent in OOC
             sendServerMessage("Welcome, " + username);
         }
         else {
+            sendPacket("AUTH", {"0"}); // Client: "Login unsuccessful."
             sendServerMessage("Incorrect password.");
         }
         server->areas.value(current_area)->logger->logLogin(this, authenticated, username);
@@ -89,33 +94,72 @@ void AOClient::cmdGetArea(int argc, QStringList argv)
 
 void AOClient::cmdBan(int argc, QStringList argv)
 {
-    QString target_ipid = argv[0];
-    QHostAddress ip;
-    QString hdid;
-    unsigned long time = QDateTime::currentDateTime().toTime_t();
-    QString reason = argv[1];
+    QString args_str = argv[1];
+    if (argc > 2) {
+        for (int i = 2; i < argc; i++)
+            args_str += " " + argv[i];
+    }
+
+    DBManager::BanInfo ban;
+
+    QRegularExpression quoteMatcher("['\"](.+?)[\"']");
+    QRegularExpressionMatchIterator matches = quoteMatcher.globalMatch(args_str);
+    QList<QString> unquoted_args;
+    while (matches.hasNext()) {
+        QRegularExpressionMatch match = matches.next();
+        unquoted_args.append(match.captured(1));
+    }
+
+    QString duration = "perma";
+
+    if (unquoted_args.length() < 1) {
+        sendServerMessage("Invalid syntax. Usage:\n/ban <ipid> \"<reason>\" \"<duration>\"");
+        return;
+    }
+
+    ban.reason = unquoted_args.at(0);
+    if (unquoted_args.length() > 1)
+        duration = unquoted_args.at(1);
+
+    long long duration_seconds = 0;
+    if (duration == "perma")
+        duration_seconds = -2;
+    else
+        duration_seconds = parseTime(duration);
+
+    if (duration_seconds == -1) {
+        sendServerMessage("Invalid time format. Format example: 1h30m");
+        return;
+    }
+
+    ban.duration = duration_seconds;
+
+    ban.ipid = argv[0];
+    ban.time = QDateTime::currentDateTime().toSecsSinceEpoch();
     bool ban_logged = false;
+    int kick_counter = 0;
 
     if (argc > 2) {
         for (int i = 2; i < argv.length(); i++) {
-            reason += " " + argv[i];
+            ban.reason += " " + argv[i];
         }
     }
 
-    for (AOClient* client : server->clients) {
-        if (client->getIpid() == target_ipid) {
-            if (!ban_logged) {
-                ip = client->remote_ip;
-                hdid = client->hwid;
-                server->db_manager->addBan(target_ipid, ip, hdid, time, reason);
-                sendServerMessage("Banned user with ipid " + target_ipid + " for reason: " + reason);
-                ban_logged = true;
-            }
-            client->sendPacket("KB", {reason});
-            client->socket->close();
+    for (AOClient* client : server->getClientsByIpid(ban.ipid)) {
+        if (!ban_logged) {
+            ban.ip = client->remote_ip;
+            ban.hdid = client->hwid;
+            server->db_manager->addBan(ban);
+            sendServerMessage("Banned user with ipid " + ban.ipid + " for reason: " + ban.reason);
+            ban_logged = true;
         }
+        client->sendPacket("KB", {ban.reason + "\nID: " + QString::number(server->db_manager->getBanID(ban.ip)) + "\nUntil: " + QDateTime::fromSecsSinceEpoch(ban.time).addSecs(ban.duration).toString("dd.MM.yyyy, hh:mm")});
+        client->socket->close();
+        kick_counter++;
     }
 
+    if (kick_counter > 1)
+        sendServerMessage("Kicked " + QString::number(kick_counter) + " clients with matching ipids.");
     if (!ban_logged)
         sendServerMessage("User with ipid not found!");
 }
@@ -124,7 +168,7 @@ void AOClient::cmdKick(int argc, QStringList argv)
 {
     QString target_ipid = argv[0];
     QString reason = argv[1];
-    bool did_kick = false;
+    int kick_counter = 0;
 
     if (argc > 2) {
         for (int i = 2; i < argv.length(); i++) {
@@ -132,16 +176,14 @@ void AOClient::cmdKick(int argc, QStringList argv)
         }
     }
 
-    for (AOClient* client : server->clients) {
-        if (client->getIpid() == target_ipid) {
-            client->sendPacket("KK", {reason});
-            client->socket->close();
-            did_kick = true;
-        }
+    for (AOClient* client : server->getClientsByIpid(target_ipid)) {
+        client->sendPacket("KK", {reason});
+        client->socket->close();
+        kick_counter++;
     }
 
-    if (did_kick)
-        sendServerMessage("Kicked user with ipid " + target_ipid + " for reason: " + reason);
+    if (kick_counter > 0)
+        sendServerMessage("Kicked " + QString::number(kick_counter) + " client(s) with ipid " + target_ipid + " for reason: " + reason);
     else
         sendServerMessage("User with ipid not found!");
 }
@@ -230,6 +272,14 @@ void AOClient::cmdAddUser(int argc, QStringList argv)
         sendServerMessage("Created user " + argv[0] + ".\nUse /addperm to modify their permissions.");
     else
         sendServerMessage("Unable to create user " + argv[0] + ".\nDoes a user with that name already exist?");
+}
+
+void AOClient::cmdRemoveUser(int argc, QStringList argv)
+{
+    if (server->db_manager->deleteUser(argv[0]))
+        sendServerMessage("Successfully removed user " + argv[0] + ".");
+    else
+        sendServerMessage("Unable to remove user " + argv[0] + ".\nDoes it exist?");
 }
 
 void AOClient::cmdListPerms(int argc, QStringList argv)
@@ -359,7 +409,7 @@ void AOClient::cmdLogout(int argc, QStringList argv)
     }
     authenticated = false;
     moderator_name = "";
-    sendServerMessage("You have been logged out.");
+    sendPacket("AUTH", {"-1"}); // Client: "You were logged out."
 }
 
 void AOClient::cmdPos(int argc, QStringList argv)
@@ -505,8 +555,13 @@ void AOClient::cmdUnCM(int argc, QStringList argv)
     area->invited.removeAll(id);
     sendServerMessage("You are no longer CM in this area.");
     arup(ARUPType::CM, true);
-    if (area->owners.isEmpty())
+    if (area->owners.isEmpty()) {
         area->invited.clear();
+        if (area->locked != AreaData::FREE) {
+            area->locked = AreaData::FREE;
+            arup(ARUPType::LOCKED, true);
+        }
+    }
 }
 
 void AOClient::cmdInvite(int argc, QStringList argv)
@@ -657,28 +712,28 @@ void AOClient::cmdTimer(int argc, QStringList argv)
         requested_timer->setInterval(QTime(0,0).msecsTo(requested_time));
         requested_timer->start();
         sendServerMessage("Set timer " + QString::number(timer_id) + " to " + argv[1] + ".");
-        sendPacket("TI", {QString::number(timer_id), QString::number(2)});
-        sendPacket("TI", {QString::number(timer_id), QString::number(0), QString::number(QTime(0,0).msecsTo(requested_time))});
+        sendPacket("TI", {QString::number(timer_id), "2"}); // Show the timer
+        sendPacket("TI", {QString::number(timer_id), "0", QString::number(QTime(0,0).msecsTo(requested_time))});
         return;
     }
     else {
         if (argv[1] == "start") {
             requested_timer->start();
             sendServerMessage("Started timer " + QString::number(timer_id) + ".");
-            sendPacket("TI", {QString::number(timer_id), QString::number(2)});
-            sendPacket("TI", {QString::number(timer_id), QString::number(0), QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(requested_timer->remainingTime())))});
+            sendPacket("TI", {QString::number(timer_id), "2"}); // Show the timer
+            sendPacket("TI", {QString::number(timer_id), "0", QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(requested_timer->remainingTime())))});
         }
         else if (argv[1] == "pause" || argv[1] == "stop") {
             requested_timer->setInterval(requested_timer->remainingTime());
             requested_timer->stop();
             sendServerMessage("Stopped timer " + QString::number(timer_id) + ".");
-            sendPacket("TI", {QString::number(timer_id), QString::number(1), QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(requested_timer->interval())))});
+            sendPacket("TI", {QString::number(timer_id), "1", QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(requested_timer->interval())))});
         }
         else if (argv[1] == "hide" || argv[1] == "unset") {
             requested_timer->setInterval(0);
             requested_timer->stop();
             sendServerMessage("Hid timer " + QString::number(timer_id) + ".");
-            sendPacket("TI", {QString::number(timer_id), QString::number(3)});
+            sendPacket("TI", {QString::number(timer_id), "3"}); // Hide the timer
         }
     }
 }
@@ -722,7 +777,8 @@ void AOClient::cmdPlay(int argc, QStringList argv)
     QString song = argv.join(" ");
     area->current_music = song;
     area->music_played_by = showname;
-    sendPacket("MC", {song, QString::number(server->getCharID(current_char)), showname, "1", "0"});
+    AOPacket music_change("MC", {song, QString::number(server->getCharID(current_char)), showname, "1", "0"});
+    server->broadcast(music_change, current_area);
 }
 
 void AOClient::cmdAreaKick(int argc, QStringList argv)
@@ -776,8 +832,8 @@ void AOClient::cmdMods(int argc, QStringList argv)
         if (client->authenticated) {
             entries << "---";
             if (auth_type != "simple")
-                entries << "Moderator: " + moderator_name;
-            entries << "OOC name: " + ooc_name;
+                entries << "Moderator: " + client->moderator_name;
+            entries << "OOC name: " + client->ooc_name;
             entries << "ID: " + QString::number(client->id);
             entries << "Area: " + QString::number(client->current_area);
             entries << "Character: " + client->current_char;
@@ -852,6 +908,133 @@ void AOClient::cmdPM(int arc, QStringList argv)
     target_client->sendServerMessage("Message from " + ooc_name + " (" + QString::number(id) + "): " + message);
 }
 
+void AOClient::cmdMOTD(int argc, QStringList argv)
+{
+    if (argc == 0) {
+        sendServerMessage("=== MOTD ===\r\n" + server->MOTD + "\r\n=============");
+    }
+    else if (argc > 0) {
+        if (checkAuth(ACLFlags.value("MOTD"))) {
+            QString MOTD = argv.join(" ");
+            server->MOTD = MOTD;
+            sendServerMessage("MOTD has been changed.");
+        }
+        else {
+            sendServerMessage("You do not have permission to change the MOTD");
+        }
+    }
+}
+
+void AOClient::cmdAnnounce(int argc, QStringList argv)
+{
+    sendServerBroadcast("=== Announcement ===\r\n" + argv.join(" ") + "\r\n=============");
+}
+
+void AOClient::cmdM(int argc, QStringList argv)
+{
+    QString sender_name = ooc_name;
+    QString sender_message = argv.join(" ");
+    for (AOClient* client : server->clients) {
+        if (client->checkAuth(ACLFlags.value("MODCHAT")))
+            client->sendPacket("CT", {"[M]" + sender_name, sender_message});
+    }
+    return;
+}
+
+void AOClient::cmdGM(int argc, QStringList argv)
+{
+    QString sender_name = ooc_name;
+    QString sender_area = server->area_names.value(current_area);
+    QString sender_message = argv.join(" ");
+    for (AOClient* client : server->clients) {
+        if (client->global_enabled) {
+            client->sendPacket("CT", {"[G][" + sender_area + "]" + "["+sender_name+"][M]", sender_message});
+        }
+    }
+}
+
+void AOClient::cmdMute(int argc, QStringList argv)
+{
+    bool conv_ok = false;
+    int uid = argv[0].toInt(&conv_ok);
+    if (!conv_ok) {
+        sendServerMessage("Invalid user ID.");
+        return;
+    }
+
+    if (server->getClientByID(uid)->is_muted)
+        sendServerMessage("That player is already muted!");
+    else
+        sendServerMessage("Muted player.");
+    server->getClientByID(uid)->is_muted = true;
+}
+
+void AOClient::cmdUnmute(int argc, QStringList argv)
+{
+    bool conv_ok = false;
+    int uid = argv[0].toInt(&conv_ok);
+    if (!conv_ok) {
+        sendServerMessage("Invalid user ID.");
+        return;
+    }
+
+    if (!server->getClientByID(uid)->is_muted)
+        sendServerMessage("That player is already unmuted!");
+    else
+        sendServerMessage("Unmuted player.");
+    server->getClientByID(uid)->is_muted = false;
+}
+
+void AOClient::cmdBans(int argc, QStringList argv)
+{
+    QStringList recent_bans;
+    recent_bans << "Last 5 bans:";
+    recent_bans << "-----";
+    for (DBManager::BanInfo ban : server->db_manager->getRecentBans()) {
+        QString banned_until;
+        if (ban.duration == -2)
+            banned_until = "The heat death of the universe";
+        else
+            banned_until = QDateTime::fromSecsSinceEpoch(ban.time).addSecs(ban.duration).toString("dd.MM.yyyy, hh:mm");
+        recent_bans << "Affected IPID: " + ban.ipid;
+        recent_bans << "Affected HDID: " + ban.hdid;
+        recent_bans << "Reason for ban: " + ban.reason;
+        recent_bans << "Date of ban: " + QDateTime::fromSecsSinceEpoch(ban.time).toString("dd.MM.yyyy, hh:mm");
+        recent_bans << "Ban lasts until: " + banned_until;
+        recent_bans << "-----";
+    }
+    sendServerMessage(recent_bans.join("\n"));
+}
+
+void AOClient::cmdUnBan(int argc, QStringList argv)
+{
+    bool ok;
+    int target_ban = argv[0].toInt(&ok);
+    if (!ok) {
+        sendServerMessage("Invalid ban ID.");
+        return;
+    }
+    else if (server->db_manager->invalidateBan(target_ban))
+        sendServerMessage("Successfully invalidated ban " + argv[0] + ".");
+    else
+        sendServerMessage("Couldn't invalidate ban " + argv[0] + ", are you sure it exists?");
+}
+
+void AOClient::cmdSubTheme(int argc, QStringList argv)
+{
+    QString subtheme = argv.join(" ");
+    for (AOClient* client : server->clients) {
+        if (client->current_area == current_area)
+            client->sendPacket("ST", {subtheme, "1"});
+    }
+    sendServerMessageArea("Subtheme was set to " + subtheme);
+}
+
+void AOClient::cmdAbout(int argc, QStringList argv)
+{
+    sendPacket("CT", {"The akashi dev team", "Thank you for using akashi! Made with love by scatterflower, with help from in1tiate and Salanto. akashi " + QCoreApplication::applicationVersion()});
+}
+
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;
@@ -869,7 +1052,7 @@ QStringList AOClient::buildAreaList(int area_idx)
         default:
             break;
     }
-    entries.append("[" + QString::number(area->player_count) + " users][" + area->status + "]");
+    entries.append("[" + QString::number(area->player_count) + " users][" + QVariant::fromValue(area->status).toString().replace("_", "-") + "]");
     for (AOClient* client : server->clients) {
         if (client->current_area == area_idx && client->joined) {
             QString char_entry = "[" + QString::number(client->id) + "] " + client->current_char;
@@ -968,3 +1151,45 @@ QString AOClient::getAreaTimer(int area_idx, QTimer* timer)
     }
 }
 
+long long AOClient::parseTime(QString input)
+{
+    QRegularExpression regex("(?:(?:(?<year>.*?)y)*(?:(?<week>.*?)w)*(?:(?<day>.*?)d)*(?:(?<hr>.*?)h)*(?:(?<min>.*?)m)*(?:(?<sec>.*?)s)*)");
+    QRegularExpressionMatch match = regex.match(input);
+    QString str_year, str_week, str_hour, str_day, str_minute, str_second;
+    int year, week, day, hour, minute, second;
+
+    str_year = match.captured("year");
+    str_week = match.captured("week");
+    str_day = match.captured("day");
+    str_hour = match.captured("hr");
+    str_minute = match.captured("min");
+    str_second = match.captured("sec");
+
+    bool is_well_formed = false;
+    QString concat_str(str_year + str_week + str_day + str_hour + str_minute + str_second);
+    concat_str.toInt(&is_well_formed);
+
+    if (!is_well_formed) {
+        return -1;
+    }
+
+    year = str_year.toInt();
+    week = str_week.toInt();
+    day = str_day.toInt();
+    hour = str_hour.toInt();
+    minute = str_minute.toInt();
+    second = str_second.toInt();
+
+    long long total = 0;
+    total += 31622400 * year;
+    total += 604800 * week;
+    total += 86400 * day;
+    total += 3600 * hour;
+    total += 60 * minute;
+    total += second;
+
+    if (total < 0)
+        return -1;
+
+    return total;
+}

@@ -17,8 +17,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/area_data.h"
 
-AreaData::AreaData(QStringList characters, QString p_name, int p_index) :
-    name(p_name),
+AreaData::AreaData(QString p_name, int p_index) :
     index(p_index),
     player_count(0),
     status(IDLE),
@@ -27,9 +26,9 @@ AreaData::AreaData(QStringList characters, QString p_name, int p_index) :
     def_hp(10),
     pro_hp(10)
 {
-    for (QString cur_char : characters) {
-        characters_taken.insert(cur_char, false);
-    }
+    QStringList name_split = p_name.split(":");
+    name_split.removeFirst();
+    name = name_split.join(":");
     QSettings areas_ini("config/areas.ini", QSettings::IniFormat);
     areas_ini.beginGroup(p_name);
     background = areas_ini.value("background", "gs4").toString();

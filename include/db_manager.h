@@ -19,6 +19,7 @@
 #define BAN_MANAGER_H
 
 #include <QDebug>
+#include <QDateTime>
 #include <QHostAddress>
 #include <QMessageAuthenticationCode>
 #include <QString>
@@ -89,18 +90,23 @@ public:
      * or `"Ban reason not found."` if the hardware ID is not actually banned.
      */
     QString getBanReason(QString hdid);
+    long long getBanDuration(QString hdid);
+    long long getBanDuration(QHostAddress ip);
+    int getBanID(QString hdid);
+    int getBanID(QHostAddress ip);
 
-    /**
-     * @brief Records a ban for the give IPID-IP address-hardware ID combination.
-     *
-     * @param ipid The IPID to ban.
-     * @param ip The IP address to ban. The source should be the same as with the IPID
-     * (i.e., they should point to the same user).
-     * @param hdid The hardware ID to ban. Once again, should point to the same user as the IPID and the IP address.
-     * @param time The number of seconds to ban the target for.
-     * @param reason The reason the target was banned.
-     */
-    void addBan(QString ipid, QHostAddress ip, QString hdid, unsigned long time, QString reason);
+    struct BanInfo {
+        QString ipid;
+        QHostAddress ip;
+        QString hdid;
+        unsigned long time;
+        QString reason;
+        long long duration;
+    };
+    QList<BanInfo> getRecentBans();
+
+    void addBan(BanInfo ban);
+    bool invalidateBan(int id);
 
     /**
      * @brief Creates an authorised user.
@@ -116,6 +122,7 @@ public:
      * @see AOClient::ACLFlags for the potential special permissions a user may have.
      */
     bool createUser(QString username, QString salt, QString password, unsigned long long acl);
+    bool deleteUser(QString username);
 
     /**
      * @brief Gets the permissions of a given user.

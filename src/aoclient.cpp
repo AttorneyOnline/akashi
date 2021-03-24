@@ -48,14 +48,20 @@ void AOClient::clientDisconnected()
         arup(ARUPType::PLAYER_COUNT, true);
     }
     if (current_char != "") {
-        server->areas[current_area]->characters_taken[current_char] =
-            false;
+        server->areas[current_area]->characters_taken.removeAll(server->getCharID(current_char));
         server->updateCharsTaken(server->areas[current_area]);
     }
+    bool update_locks;
     for (AreaData* area : server->areas) {
         area->owners.removeAll(id);
         area->invited.removeAll(id);
+        if (area->owners.isEmpty() && area->locked != AreaData::FREE) {
+            area->locked = AreaData::FREE;
+            update_locks = true;
+        }
     }
+    if (update_locks)
+        arup(ARUPType::LOCKED, true);
     arup(ARUPType::CM, true);
 }
 
@@ -93,8 +99,7 @@ void AOClient::changeArea(int new_area)
     }
 
     if (current_char != "") {
-        server->areas[current_area]->characters_taken[current_char] =
-            false;
+        server->areas[current_area]->characters_taken.removeAll(server->getCharID(current_char));
         server->updateCharsTaken(server->areas[current_area]);
     }
     server->areas[new_area]->player_count++;
@@ -105,23 +110,23 @@ void AOClient::changeArea(int new_area)
     sendPacket("HP", {"1", QString::number(server->areas[new_area]->def_hp)});
     sendPacket("HP", {"2", QString::number(server->areas[new_area]->pro_hp)});
     sendPacket("BN", {server->areas[new_area]->background});
-    if (server->areas[current_area]->characters_taken[current_char]) {
+    if (server->areas[current_area]->characters_taken.contains(server->getCharID(current_char))) {
         server->updateCharsTaken(server->areas[current_area]);
         current_char = "";
         sendPacket("DONE");
     }
     else {
-        server->areas[current_area]->characters_taken[current_char] = true;
+        server->areas[current_area]->characters_taken.append(server->getCharID(current_char));
         server->updateCharsTaken(server->areas[current_area]);
     }
     for (QTimer* timer : server->areas[current_area]->timers) {
         int timer_id = server->areas[current_area]->timers.indexOf(timer) + 1;
         if (timer->isActive()) {
-            sendPacket("TI", {QString::number(timer_id), QString::number(2)});
-            sendPacket("TI", {QString::number(timer_id), QString::number(0), QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(timer->remainingTime())))});
+            sendPacket("TI", {QString::number(timer_id), "2"});
+            sendPacket("TI", {QString::number(timer_id), "0", QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(timer->remainingTime())))});
         }
         else {
-            sendPacket("TI", {QString::number(timer_id), QString::number(3)});
+            sendPacket("TI", {QString::number(timer_id), "3"});
         }
     }
     sendServerMessage("You moved to area " + server->area_names[current_area]);
@@ -134,7 +139,7 @@ void AOClient::changeCharacter(int char_id)
     AreaData* area = server->areas[current_area];
 
     if (current_char != "") {
-        area->characters_taken[current_char] = false;
+        area->characters_taken.removeAll(server->getCharID(current_char));
     }
 
     if(char_id > server->characters.length())
@@ -142,11 +147,11 @@ void AOClient::changeCharacter(int char_id)
 
     if (char_id >= 0) {
         QString char_selected = server->characters[char_id];
-        bool taken = area->characters_taken.value(char_selected);
+        bool taken = area->characters_taken.contains(char_id);
         if (taken || char_selected == "")
             return;
 
-        area->characters_taken[char_selected] = true;
+        area->characters_taken.append(char_id);
         current_char = char_selected;
     }
     else {
@@ -157,24 +162,6 @@ void AOClient::changeCharacter(int char_id)
 
     server->updateCharsTaken(area);
     sendPacket("PV", {QString::number(id), "CID", QString::number(char_id)});
-    fullArup();
-    if (server->timer->isActive()) {
-        sendPacket("TI", {QString::number(0), QString::number(2)});
-        sendPacket("TI", {QString::number(0), QString::number(0), QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(server->timer->remainingTime())))});
-    }
-    else {
-        sendPacket("TI", {QString::number(0), QString::number(3)});
-    }
-    for (QTimer* timer : area->timers) {
-        int timer_id = area->timers.indexOf(timer) + 1;
-        if (timer->isActive()) {
-            sendPacket("TI", {QString::number(timer_id), QString::number(2)});
-            sendPacket("TI", {QString::number(timer_id), QString::number(0), QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(timer->remainingTime())))});
-        }
-        else {
-            sendPacket("TI", {QString::number(timer_id), QString::number(3)});
-        }
-    }
 }
 
 void AOClient::changePosition(QString new_pos)
@@ -271,22 +258,17 @@ void AOClient::sendPacket(QString header)
     sendPacket(AOPacket(header, {}));
 }
 
-QString AOClient::getHwid() { return hwid; }
-
-void AOClient::setHwid(QString p_hwid)
+void AOClient::calculateIpid()
 {
-    // TODO: add support for longer hwids?
+    // TODO: add support for longer ipids?
     // This reduces the (fairly high) chance of
     // birthday paradox issues arising. However,
     // typing more than 8 characters might be a
     // bit cumbersome.
-    hwid = p_hwid;
 
-    QCryptographicHash hash(
-        QCryptographicHash::Md5); // Don't need security, just
-                                  // hashing for uniqueness
-    QString concat_ip_id = remote_ip.toString() + p_hwid;
-    hash.addData(concat_ip_id.toUtf8());
+    QCryptographicHash hash(QCryptographicHash::Md5); // Don't need security, just hashing for uniqueness
+
+    hash.addData(remote_ip.toString().toUtf8());
 
     ipid = hash.result().toHex().right(8); // Use the last 8 characters (4 bytes)
 }

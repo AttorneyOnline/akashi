@@ -80,6 +80,8 @@ class Server : public QObject {
      */
     AOClient* getClient(QString ipid);
 
+    QList<AOClient*> getClientsByIpid(QString ipid);
+    
     /**
      * @brief Gets a pointer to a client by user ID.
      *
@@ -194,6 +196,7 @@ class Server : public QObject {
      * @note Unused. getServerName() serves its purpose instead.
      */
     QString server_name;
+    QString MOTD;
 
     /**
      * @brief The server-wide global timer.
