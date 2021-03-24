@@ -46,10 +46,9 @@ class AOClient : public QObject {
     QString getIpid();
     void calculateIpid();
 
+    // user metadata
     int id;
-
     QHostAddress remote_ip;
-    QString password;
     bool joined;
     int current_area;
     QString current_char;
@@ -57,8 +56,9 @@ class AOClient : public QObject {
     QString moderator_name = "";
     QString ooc_name = "";
     QString showname = "";
-    bool global_enabled = true;
-    bool is_muted = false;
+
+    QString password; // for character passwords
+
     struct ClientVersion {
       QString string;
       int release = -1;
@@ -66,6 +66,21 @@ class AOClient : public QObject {
       int minor = -1;
     };
     ClientVersion version;
+
+    // user preferences
+    bool global_enabled = true;
+    bool adverts_enabled = true;
+    bool pm_enabled = true;
+
+    // punitive conditions
+    bool is_muted = false;
+    bool is_ooc_muted = false;
+    bool is_dj_blocked = false;
+    bool is_wtce_blocked = false;
+    bool is_shaken = false;
+    bool is_disemvoweled = false;
+    bool is_gimped = false;
+    int char_curse = -1;
 
     QMap<QString, unsigned long long> ACLFlags {
         {"NONE", 0ULL},
@@ -82,10 +97,6 @@ class AOClient : public QObject {
         {"MUTE", 1ULL << 10},
         {"SUPER", ~0ULL}
     };
-
-    bool is_shaken;
-    bool is_disemvoweled;
-    bool is_gimped;
 
   public slots:
     void clientDisconnected();
@@ -118,9 +129,9 @@ class AOClient : public QObject {
     void changePosition(QString new_pos);
     void arup(ARUPType type, bool broadcast);
     void fullArup();
-    void sendServerMessage(QString message);
-    void sendServerMessageArea(QString message);
-    void sendServerBroadcast(QString message);
+    void sendServerMessage(QString message); // send a server OOC message to just this client
+    void sendServerMessageArea(QString message); // send a server OOC message to all clients in current area
+    void sendServerBroadcast(QString message); // send a server OOC message to all clients in the server
     bool checkAuth(unsigned long long acl_mask);
 
     // Packet headers
@@ -229,9 +240,15 @@ class AOClient : public QObject {
     void cmdAnnounce(int argc, QStringList argv);
     void cmdM(int argc, QStringList argv);
     void cmdGM(int argc, QStringList argv);
-    void cmdMute(int argc, QStringList argv);
-    void cmdUnmute(int argc, QStringList argv);
     void cmdBans(int argc, QStringList argv);
+    void cmdMute(int argc, QStringList argv);
+    void cmdUnMute(int argc, QStringList argv);
+    void cmdOocMute(int argc, QStringList argv);
+    void cmdOocUnMute(int argc, QStringList argv);
+    void cmdBlockDj(int argc, QStringList argv);
+    void cmdUnBlockDj(int argc, QStringList argv);
+    void cmdBlockWtce(int argc, QStringList argv);
+    void cmdUnBlockWtce(int argc, QStringList argv);
     // Casing/RP
     void cmdPlay(int argc, QStringList argv);
     void cmdNeed(int argc, QStringList argv);
@@ -258,6 +275,7 @@ class AOClient : public QObject {
     int genRand(int min, int max);
     void diceThrower(int argc, QStringList argv, RollType Type);
     long long parseTime(QString input);
+    QString getReprimand(bool positive = false);
 
     // Command function global variables
     bool change_auth_started = false;
@@ -324,12 +342,20 @@ class AOClient : public QObject {
         {"m", {ACLFlags.value("MODCHAT"), 1, &AOClient::cmdM}},
         {"gm", {ACLFlags.value("MODCHAT"), 1, &AOClient::cmdGM}},
         {"mute", {ACLFlags.value("MUTE"), 1, &AOClient::cmdMute}},
-        {"unmute", {ACLFlags.value("MUTE"), 1, &AOClient::cmdUnmute}},
+        {"unmute", {ACLFlags.value("MUTE"), 1, &AOClient::cmdUnMute}},
         {"bans", {ACLFlags.value("BAN"), 0, &AOClient::cmdBans}},
         {"unban", {ACLFlags.value("BAN"), 1, &AOClient::cmdUnBan}},
         {"removeuser", {ACLFlags.value("MODIFY_USERS"), 1, &AOClient::cmdRemoveUser}},
         {"subtheme", {ACLFlags.value("CM"), 1, &AOClient::cmdSubTheme}},
-        {"about", {ACLFlags.value("NONE"), 0, &AOClient::cmdAbout}}
+        {"about", {ACLFlags.value("NONE"), 0, &AOClient::cmdAbout}},
+        {"oocmute", {ACLFlags.value("MUTE"), 1, &AOClient::cmdOocMute}},
+        {"ooc_mute", {ACLFlags.value("MUTE"), 1, &AOClient::cmdOocMute}},
+        {"oocunmute", {ACLFlags.value("MUTE"), 1, &AOClient::cmdOocUnMute}},
+        {"ooc_unmute", {ACLFlags.value("MUTE"), 1, &AOClient::cmdOocUnMute}},
+        {"blockdj", {ACLFlags.value("MUTE"), 1, &AOClient::cmdBlockDj}},
+        {"unblockdj", {ACLFlags.value("MUTE"), 1, &AOClient::cmdUnBlockDj}},
+        {"blockwtce", {ACLFlags.value("MUTE"), 1, &AOClient::cmdBlockWtce}},
+        {"unblockwtce", {ACLFlags.value("MUTE"), 1, &AOClient::cmdUnBlockWtce}},
     };
 
     QString partial_packet;
