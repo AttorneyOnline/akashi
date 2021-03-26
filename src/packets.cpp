@@ -225,8 +225,8 @@ void AOClient::pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPack
                 final_song = "~stop.mp3";
             else
                 final_song = argument;
-            if (server->base_streaming_url != "")
-                streaming_url = QUrl::toPercentEncoding(server->base_streaming_url + final_song);
+            if (server->base_streaming_url.isValid())
+                streaming_url = QUrl::toPercentEncoding(server->base_streaming_url.toString() + final_song);
             AOPacket music_change("MC", {final_song, argv[1], showname, "1", "0", effects, streaming_url});
             area->current_music = final_song;
             area->music_played_by = showname;

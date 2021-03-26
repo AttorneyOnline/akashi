@@ -62,7 +62,7 @@ class Server : public QObject {
     QVector<AreaData*> areas;
     QStringList area_names;
     QStringList music_list;
-    QString base_streaming_url;
+    QUrl base_streaming_url;
     QStringList backgrounds;
     DBManager* db_manager;
     QString server_name;
