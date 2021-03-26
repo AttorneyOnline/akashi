@@ -215,6 +215,7 @@ void AOClient::pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPack
         if (song == argument || song == "~stop.mp3") { // ~stop.mp3 is a dummy track used by 2.9+
             // We have a song here
             QString effects;
+            QString streaming_url = "";
             if (argc >= 4)
                 effects = argv[3];
             else
@@ -224,7 +225,9 @@ void AOClient::pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPack
                 final_song = "~stop.mp3";
             else
                 final_song = argument;
-            AOPacket music_change("MC", {final_song, argv[1], showname, "1", "0", effects});
+            if (server->base_streaming_url != "")
+                streaming_url = QUrl::toPercentEncoding(server->base_streaming_url + final_song);
+            AOPacket music_change("MC", {final_song, argv[1], showname, "1", "0", effects, streaming_url});
             area->current_music = final_song;
             area->music_played_by = showname;
             server->broadcast(music_change, current_area);

@@ -53,6 +53,8 @@ void Server::start()
 
     MOTD = config.value("motd","MOTD is not set.").toString();
 
+    base_streaming_url = config.value("streaming_url", "").toString();
+
     proxy = new WSProxy(port, ws_port, this);
     if(ws_port != -1)
         proxy->start();
