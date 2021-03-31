@@ -1039,7 +1039,7 @@ class AOClient : public QObject {
      *
      * @see #is_muted
      */
-    void cmdUnmute(int argc, QStringList argv);
+    void cmdUnMute(int argc, QStringList argv);
 
     /**
      * @brief OOC-mutes a client.
