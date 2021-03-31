@@ -404,6 +404,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         }
         qDebug() << "INI swap detected from " << getIpid();
     }
+    current_iniswap = incoming_args[2].toString();
     args.append(incoming_args[2].toString());
 
     // emote
@@ -513,7 +514,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         QString other_flip = "0";
         for (AOClient* client : server->clients) {
             if (client->pairing_with == char_id && other_charid != char_id && client->char_id == pairing_with) {
-                other_name = server->characters.at(other_charid);
+                other_name = client->current_iniswap;
                 other_emote = client->emote;
                 other_offset = client->offset;
                 other_flip = client->flipping;
