@@ -1500,7 +1500,7 @@ class AOClient : public QObject {
         {"m",             {ACLFlags.value("MODCHAT"),      1, &AOClient::cmdM}},
         {"gm",            {ACLFlags.value("MODCHAT"),      1, &AOClient::cmdGM}},
         {"mute",          {ACLFlags.value("MUTE"),         1, &AOClient::cmdMute}},
-        {"unmute",        {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnmute}},
+        {"unmute",        {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnMute}},
         {"oocmute",       {ACLFlags.value("MUTE"),         1, &AOClient::cmdOocMute}},
         {"ooc_mute",      {ACLFlags.value("MUTE"),         1, &AOClient::cmdOocMute}},
         {"oocunmute",     {ACLFlags.value("MUTE"),         1, &AOClient::cmdOocUnMute}},
