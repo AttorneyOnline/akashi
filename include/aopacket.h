@@ -23,14 +23,51 @@
 #include <QString>
 #include <QStringList>
 
+/**
+ * @brief An Attorney Online 2 compatible packet.
+ *
+ * @see https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md for a general explanation
+ * on Attorney Online 2's network protocol.
+ */
 class AOPacket {
   public:
+    /**
+     * @brief Creates an AOPacket with the given header and contents.
+     *
+     * @param p_header The header for the packet.
+     * @param p_contents The contents of the packet.
+     */
     AOPacket(QString p_header, QStringList p_contents);
+
+    /**
+     * @brief AOPacket Interprets a string of a full (header + content) packet into an AOPacket.
+     *
+     * @param packet The string to interpret.
+     */
     AOPacket(QString packet);
+
+    /**
+     * @brief Returns the string representation of the packet.
+     *
+     * @return See brief description.
+     */
     QString toString();
+
+    /**
+     * @brief Convenience function over AOPacket::toString() + QString::toUtf8().
+     *
+     * @return A UTF-8 representation of the packet.
+     */
     QByteArray toUtf8();
 
+    /**
+     * @brief The string that indentifies the type of the packet.
+     */
     QString header;
+
+    /**
+     * @brief The list of parameters for the packet. Can be empty.
+     */
     QStringList contents;
 };
 
