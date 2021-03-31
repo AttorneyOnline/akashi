@@ -194,7 +194,7 @@ bool DBManager::invalidateBan(int id)
     ban_exists.addBindValue(id);
     ban_exists.exec();
 
-    if (ban_exists.first())
+    if (!ban_exists.first())
         return false;
 
     QSqlQuery query;

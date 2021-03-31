@@ -17,10 +17,11 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/ws_proxy.h"
 
-WSProxy::WSProxy(int p_local_port, int p_ws_port, QObject* parent) : QObject(parent)
+WSProxy::WSProxy(int p_local_port, int p_ws_port, QObject* parent) :
+    QObject(parent),
+    local_port(p_local_port),
+    ws_port(p_ws_port)
 {
-    local_port = p_local_port;
-    ws_port = p_ws_port;
     server = new QWebSocketServer(QStringLiteral(""),
                                   QWebSocketServer::NonSecureMode, this);
     connect(server, &QWebSocketServer::newConnection, this,
