@@ -85,6 +85,7 @@ void Logger::addEntry(QString entry)
 {
     if (buffer.length() < max_length) {
         buffer.enqueue(entry);
+        flush();
     }
     else {
         buffer.dequeue();
