@@ -512,7 +512,10 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         QString other_offset = "0";
         QString other_flip = "0";
         for (AOClient* client : server->clients) {
-            if (client->pairing_with == char_id && other_charid != char_id && client->char_id == pairing_with) {
+            if (client->pairing_with == char_id
+                    && other_charid != char_id
+                    && client->char_id == pairing_with
+                    && client->pos == pos) {
                 other_name = server->characters.at(other_charid);
                 other_emote = client->emote;
                 other_offset = client->offset;
