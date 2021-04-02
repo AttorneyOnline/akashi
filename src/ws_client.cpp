@@ -17,13 +17,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/ws_client.h"
 
-WSClient::WSClient(QTcpSocket* p_tcp_socket, QWebSocket* p_web_socket, QObject* parent)
-    : QObject(parent)
-{
-    tcp_socket = p_tcp_socket;
-    web_socket = p_web_socket;
-}
-
 void WSClient::onWsData(QString message)
 {
     tcp_socket->write(message.toUtf8());

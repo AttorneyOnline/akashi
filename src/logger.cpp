@@ -17,12 +17,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/logger.h"
 
-Logger::Logger(int p_max_length, AreaData* p_area)
-{
-    area = p_area;
-    max_length = p_max_length;
-}
-
 void Logger::logIC(AOClient *client, AOPacket *packet)
 {
     QString message = packet->contents[4];

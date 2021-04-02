@@ -953,38 +953,6 @@ void AOClient::cmdGM(int argc, QStringList argv)
     }
 }
 
-void AOClient::cmdMute(int argc, QStringList argv)
-{
-    bool conv_ok = false;
-    int uid = argv[0].toInt(&conv_ok);
-    if (!conv_ok) {
-        sendServerMessage("Invalid user ID.");
-        return;
-    }
-
-    if (server->getClientByID(uid)->is_muted)
-        sendServerMessage("That player is already muted!");
-    else
-        sendServerMessage("Muted player.");
-    server->getClientByID(uid)->is_muted = true;
-}
-
-void AOClient::cmdUnmute(int argc, QStringList argv)
-{
-    bool conv_ok = false;
-    int uid = argv[0].toInt(&conv_ok);
-    if (!conv_ok) {
-        sendServerMessage("Invalid user ID.");
-        return;
-    }
-
-    if (!server->getClientByID(uid)->is_muted)
-        sendServerMessage("That player is already unmuted!");
-    else
-        sendServerMessage("Unmuted player.");
-    server->getClientByID(uid)->is_muted = false;
-}
-
 void AOClient::cmdBans(int argc, QStringList argv)
 {
     QStringList recent_bans;
@@ -1033,6 +1001,167 @@ void AOClient::cmdSubTheme(int argc, QStringList argv)
 void AOClient::cmdAbout(int argc, QStringList argv)
 {
     sendPacket("CT", {"The akashi dev team", "Thank you for using akashi! Made with love by scatterflower, with help from in1tiate and Salanto. akashi " + QCoreApplication::applicationVersion()});
+}
+
+
+void AOClient::cmdMute(int argc, QStringList argv)
+{
+    bool conv_ok = false;
+    int uid = argv[0].toInt(&conv_ok);
+    if (!conv_ok) {
+        sendServerMessage("Invalid user ID.");
+        return;
+    }
+
+    AOClient* target = server->getClientByID(uid);
+
+    if (target->is_muted)
+        sendServerMessage("That player is already muted!");
+    else {
+        sendServerMessage("Muted player.");
+        target->sendServerMessage("You were muted by a moderator. " + getReprimand());
+    }
+    target->is_muted = true;
+}
+
+void AOClient::cmdUnMute(int argc, QStringList argv)
+{
+    bool conv_ok = false;
+    int uid = argv[0].toInt(&conv_ok);
+    if (!conv_ok) {
+        sendServerMessage("Invalid user ID.");
+        return;
+    }
+
+    AOClient* target = server->getClientByID(uid);
+
+    if (!target->is_muted)
+        sendServerMessage("That player is not muted!");
+    else {
+        sendServerMessage("Unmuted player.");
+        target->sendServerMessage("You were unmuted by a moderator. " + getReprimand(true));
+    }
+    target->is_muted = false;
+}
+
+void AOClient::cmdOocMute(int argc, QStringList argv)
+{
+    bool conv_ok = false;
+    int uid = argv[0].toInt(&conv_ok);
+    if (!conv_ok) {
+        sendServerMessage("Invalid user ID.");
+        return;
+    }
+
+    AOClient* target = server->getClientByID(uid);
+
+    if (target->is_ooc_muted)
+        sendServerMessage("That player is already OOC muted!");
+    else {
+        sendServerMessage("OOC muted player.");
+        target->sendServerMessage("You were OOC muted by a moderator. " + getReprimand());
+    }
+    target->is_ooc_muted = true;
+}
+
+void AOClient::cmdOocUnMute(int argc, QStringList argv)
+{
+    bool conv_ok = false;
+    int uid = argv[0].toInt(&conv_ok);
+    if (!conv_ok) {
+        sendServerMessage("Invalid user ID.");
+        return;
+    }
+
+    AOClient* target = server->getClientByID(uid);
+
+    if (!target->is_ooc_muted)
+        sendServerMessage("That player is not OOC muted!");
+    else {
+        sendServerMessage("OOC unmuted player.");
+        target->sendServerMessage("You were OOC unmuted by a moderator. " + getReprimand(true));
+    }
+    target->is_ooc_muted = false;
+}
+
+void AOClient::cmdBlockDj(int argc, QStringList argv)
+{
+    bool conv_ok = false;
+    int uid = argv[0].toInt(&conv_ok);
+    if (!conv_ok) {
+        sendServerMessage("Invalid user ID.");
+        return;
+    }
+
+    AOClient* target = server->getClientByID(uid);
+
+    if (target->is_dj_blocked)
+        sendServerMessage("That player is already DJ blocked!");
+    else {
+        sendServerMessage("DJ blocked player.");
+        target->sendServerMessage("You were blocked from changing the music by a moderator. " + getReprimand());
+    }
+    target->is_dj_blocked = true;
+}
+
+void AOClient::cmdUnBlockDj(int argc, QStringList argv)
+{
+    bool conv_ok = false;
+    int uid = argv[0].toInt(&conv_ok);
+    if (!conv_ok) {
+        sendServerMessage("Invalid user ID.");
+        return;
+    }
+
+    AOClient* target = server->getClientByID(uid);
+
+    if (!target->is_dj_blocked)
+        sendServerMessage("That player is not DJ blocked!");
+    else {
+        sendServerMessage("DJ permissions restored to player.");
+        target->sendServerMessage("A moderator restored your music permissions. " + getReprimand(true));
+    }
+    target->is_dj_blocked = false;
+}
+
+void AOClient::cmdBlockWtce(int argc, QStringList argv)
+{
+    bool conv_ok = false;
+    int uid = argv[0].toInt(&conv_ok);
+    if (!conv_ok) {
+        sendServerMessage("Invalid user ID.");
+        return;
+    }
+
+    AOClient* target = server->getClientByID(uid);
+
+    if (target->is_wtce_blocked)
+        sendServerMessage("That player is already judge blocked!");
+    else {
+        sendServerMessage("Revoked player's access to judge controls.");
+        target->sendServerMessage("A moderator revoked your judge controls access. " + getReprimand());
+    }
+    target->is_wtce_blocked = true;
+}
+
+void AOClient::cmdUnBlockWtce(int argc, QStringList argv)
+{
+    bool conv_ok = false;
+    int uid = argv[0].toInt(&conv_ok);
+    if (!conv_ok) {
+        sendServerMessage("Invalid user ID.");
+        return;
+    }
+
+    AOClient* target = server->getClientByID(uid);
+
+    if (!target->is_wtce_blocked)
+        sendServerMessage("That player is not judge blocked!");
+    else {
+        sendServerMessage("Restored player's access to judge controls.");
+        target->sendServerMessage("A moderator restored your judge controls access. " + getReprimand(true));
+    }
+    target->is_wtce_blocked = false;
 }
 
 QStringList AOClient::buildAreaList(int area_idx)
@@ -1192,4 +1321,22 @@ long long AOClient::parseTime(QString input)
         return -1;
 
     return total;
+}
+
+QString AOClient::getReprimand(bool positive)
+{
+    QString filename = positive ? "praise" : "reprimands";
+    QFileInfo reprimands_info("config/text/" + filename + ".txt");
+    if (!(reprimands_info.exists() && reprimands_info.isFile())) {
+        qWarning() << filename + ".txt doesn't exist!";
+        return "";
+    }
+    QStringList reprimands;
+    QFile file("config/text/" + filename + ".txt");
+    file.open(QIODevice::ReadOnly | QIODevice::Text);
+    while (!file.atEnd()) {
+        reprimands.append(file.readLine().trimmed());
+    }
+    file.close();
+    return reprimands[genRand(0, reprimands.size() - 1)];
 }
