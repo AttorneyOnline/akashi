@@ -487,7 +487,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
 
     // text color
     int text_color = incoming_args[14].toInt();
-    if (text_color != 0 && text_color != 1 && text_color != 2 && text_color != 3 && text_color != 4 && text_color != 5 && text_color != 6)
+    if (text_color < 0 || text_color > 11)
         return invalid;
     args.append(QString::number(text_color));
 
@@ -513,7 +513,10 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         QString other_offset = "0";
         QString other_flip = "0";
         for (AOClient* client : server->clients) {
-            if (client->pairing_with == char_id && other_charid != char_id && client->char_id == pairing_with) {
+            if (client->pairing_with == char_id
+                    && other_charid != char_id
+                    && client->char_id == pairing_with
+                    && client->pos == pos) {
                 other_name = client->current_iniswap;
                 other_emote = client->emote;
                 other_offset = client->offset;
