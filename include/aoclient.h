@@ -124,6 +124,13 @@ class AOClient : public QObject {
     QString current_char;
 
     /**
+     * @brief The internal name of the character the client is iniswapped to.
+     *
+     * @note This will be the same as current_char if the client is not iniswapped.
+     */
+    QString current_iniswap;
+
+    /**
      * @brief If true, the client is a logged-in moderator.
      */
     bool authenticated = false;
