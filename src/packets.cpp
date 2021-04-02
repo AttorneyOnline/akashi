@@ -172,6 +172,11 @@ void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket pa
 
 void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    if (is_ooc_muted) {
+        sendServerMessage("You are OOC muted, and cannot speak.");
+        return;
+    }
+
     ooc_name = dezalgo(argv[0]).replace(QRegExp("\\[|\\]|\\{|\\}|\\#|\\$|\\%|\\&"), ""); // no fucky wucky shit here
     if (ooc_name.isEmpty() || ooc_name == server->getServerName()) // impersonation & empty name protection
         return;
@@ -203,6 +208,10 @@ void AOClient::pktPing(AreaData* area, int argc, QStringList argv, AOPacket pack
 
 void AOClient::pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    if (is_dj_blocked) {
+        sendServerMessage("You are blocked from changing the music.");
+        return;
+    }
     // Due to historical reasons, this
     // packet has two functions:
     // Change area, and set music.
@@ -243,6 +252,10 @@ void AOClient::pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPack
 
 void AOClient::pktWtCe(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    if (is_wtce_blocked) {
+        sendServerMessage("You are blocked from using the judge controls.");
+        return;
+    }
     if (QDateTime::currentDateTime().toSecsSinceEpoch() - last_wtce_time <= 5)
         return;
     last_wtce_time = QDateTime::currentDateTime().toSecsSinceEpoch();
@@ -251,6 +264,10 @@ void AOClient::pktWtCe(AreaData* area, int argc, QStringList argv, AOPacket pack
 
 void AOClient::pktHpBar(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    if (is_wtce_blocked) {
+        sendServerMessage("You are blocked from using the judge controls.");
+        return;
+    }
     if (argv[0] == "1") {
         area->def_hp = std::min(std::max(0, argv[1].toInt()), 10);
     }
