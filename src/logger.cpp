@@ -92,7 +92,7 @@ void Logger::flush()
     // raiden suggested this, but idk if i want to use it
     // QString time = QDateTime::currentDateTime().toString("ddd mm/dd/yy hh:mm:ss");
     // QString filename = QStringLiteral("reports/%1/%2.log").arg(area->name).arg(time);
-    QFile logfile("config/server.log");
+    QFile logfile("logs/server.log");
     if (logfile.open(QIODevice::WriteOnly | QIODevice::Append)) {
         QTextStream file_stream(&logfile);
         while (!buffer.isEmpty())
