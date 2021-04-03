@@ -511,6 +511,8 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     if (incoming_args.length() > 15) {
         // showname
         QString incoming_showname = dezalgo(incoming_args[15].toString().trimmed());
+        if (incoming_showname.length() == 0)
+            incoming_showname = " ";
         args.append(incoming_showname);
         showname = incoming_showname;
 
