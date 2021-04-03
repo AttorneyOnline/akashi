@@ -124,6 +124,13 @@ class AOClient : public QObject {
     QString current_char;
 
     /**
+     * @brief The internal name of the character the client is iniswapped to.
+     *
+     * @note This will be the same as current_char if the client is not iniswapped.
+     */
+    QString current_iniswap;
+
+    /**
      * @brief If true, the client is a logged-in moderator.
      */
     bool authenticated = false;
@@ -154,6 +161,21 @@ class AOClient : public QObject {
      * @brief If true, the client may not use in-character chat.
      */
     bool is_muted = false;
+  
+    /**
+     * @brief If true, the client may not use out-of-character chat.
+     */
+    bool is_ooc_muted = false;
+  
+    /**
+     * @brief If true, the client may not use the music list.
+     */
+    bool is_dj_blocked = false;
+  
+    /**
+     * @brief If true, the client may not use the judge controls.
+     */
+    bool is_wtce_blocked = false;
     
     /**
      * @brief Represents the client's client software, and its version.
@@ -322,7 +344,6 @@ class AOClient : public QObject {
      * @brief Sends all four types of ARUP to the client.
      */
     void fullArup();
-
     /**
      * @brief Sends an out-of-character message originating from the server to the client.
      *
@@ -1002,6 +1023,8 @@ class AOClient : public QObject {
      * @see AOClient::cmdG()
      */
     void cmdGM(int argc, QStringList argv);
+  
+    // Casing/RP
 
     /**
      * @brief Mutes a client.
@@ -1015,7 +1038,7 @@ class AOClient : public QObject {
     void cmdMute(int argc, QStringList argv);
 
     /**
-     * @brief Removes the muted status a client.
+     * @brief Removes the muted status from a client.
      *
      * @details The only argument is the **target client's user ID**.
      *
@@ -1023,8 +1046,74 @@ class AOClient : public QObject {
      *
      * @see #is_muted
      */
-    void cmdUnmute(int argc, QStringList argv);
+    void cmdUnMute(int argc, QStringList argv);
 
+    /**
+     * @brief OOC-mutes a client.
+     *
+     * @details The only argument is the **target client's user ID**.
+     *
+     * @iscommand
+     *
+     * @see #is_ooc_muted
+     */
+    void cmdOocMute(int argc, QStringList argv);
+  
+    /**
+     * @brief Removes the OOC-muted status from a client.
+     *
+     * @details The only argument is the **target client's user ID**.
+     *
+     * @iscommand
+     *
+     * @see #is_ooc_muted
+     */
+    void cmdOocUnMute(int argc, QStringList argv);
+  
+    /**
+     * @brief DJ-blocks a client.
+     *
+     * @details The only argument is the **target client's user ID**.
+     *
+     * @iscommand
+     *
+     * @see #is_dj_blocked
+     */
+    void cmdBlockDj(int argc, QStringList argv);
+  
+    /**
+     * @brief Removes the DJ-blocked status from a client.
+     *
+     * @details The only argument is the **target client's user ID**.
+     *
+     * @iscommand
+     *
+     * @see #is_dj_blocked
+     */
+    void cmdUnBlockDj(int argc, QStringList argv);
+  
+    /**
+     * @brief WTCE-blocks a client.
+     *
+     * @details The only argument is the **target client's user ID**.
+     *
+     * @iscommand
+     *
+     * @see #is_wtce_blocked
+     */
+    void cmdBlockWtce(int argc, QStringList argv);
+  
+    /**
+     * @brief Removes the WTCE-blocked status from a client.
+     *
+     * @details The only argument is the **target client's user ID**.
+     *
+     * @iscommand
+     *
+     * @see #is_wtce_blocked
+     */
+    void cmdUnBlockWtce(int argc, QStringList argv);
+  
     /**
      * @brief Lists the last five bans made on the server.
      *
@@ -1335,6 +1424,7 @@ class AOClient : public QObject {
      * @return The parsed text, converted into their respective durations, summed up, then converted into seconds.
      */
     long long parseTime(QString input);
+    QString getReprimand(bool positive = false);
 
     ///@}
 
@@ -1430,7 +1520,15 @@ class AOClient : public QObject {
         {"m",             {ACLFlags.value("MODCHAT"),      1, &AOClient::cmdM}},
         {"gm",            {ACLFlags.value("MODCHAT"),      1, &AOClient::cmdGM}},
         {"mute",          {ACLFlags.value("MUTE"),         1, &AOClient::cmdMute}},
-        {"unmute",        {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnmute}},
+        {"unmute",        {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnMute}},
+        {"oocmute",       {ACLFlags.value("MUTE"),         1, &AOClient::cmdOocMute}},
+        {"ooc_mute",      {ACLFlags.value("MUTE"),         1, &AOClient::cmdOocMute}},
+        {"oocunmute",     {ACLFlags.value("MUTE"),         1, &AOClient::cmdOocUnMute}},
+        {"ooc_unmute",    {ACLFlags.value("MUTE"),         1, &AOClient::cmdOocUnMute}},
+        {"blockdj",       {ACLFlags.value("MUTE"),         1, &AOClient::cmdBlockDj}},
+        {"unblockdj",     {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnBlockDj}},
+        {"blockwtce",     {ACLFlags.value("MUTE"),         1, &AOClient::cmdBlockWtce}},
+        {"unblockwtce",   {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnBlockWtce}},
         {"bans",          {ACLFlags.value("BAN"),          0, &AOClient::cmdBans}},
         {"unban",         {ACLFlags.value("BAN"),          1, &AOClient::cmdUnBan}},
         {"removeuser",    {ACLFlags.value("MODIFY_USERS"), 1, &AOClient::cmdRemoveUser}},
