@@ -512,7 +512,8 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     if (incoming_args.length() > 15) {
         // showname
         QString incoming_showname = dezalgo(incoming_args[15].toString().trimmed());
-        if (incoming_showname.length() == 0)
+        // if the raw input is not empty but the trimmed input is, use a single space
+        if (incoming_showname.isEmpty() && !incoming_args[15].toString().isEmpty())
             incoming_showname = " ";
         args.append(incoming_showname);
         showname = incoming_showname;
