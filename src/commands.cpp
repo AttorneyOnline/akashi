@@ -1037,6 +1037,7 @@ void AOClient::cmdEvidence_Swap(int argc, QStringList argv)
     else {
         sendServerMessage("Unable to swap evidence. Evidence ID out of range.");
     }
+}
 
 void AOClient::cmdMute(int argc, QStringList argv)
 {
