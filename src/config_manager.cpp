@@ -84,6 +84,14 @@ bool ConfigManager::initConfig()
                                                      // This means the config is invalid
         return false;
     }
+    config.beginGroup("Options");
+    QString auth_type = config.value("auth", "simple").toString();
+    config.endGroup();
+    if (!(auth_type == "simple" || auth_type == "advanced")) {
+        qCritical() << "config.ini is invalid!";
+        return false;
+    }
+
     else {
         // Config is valid and up to date, so let's go ahead
         return true;
