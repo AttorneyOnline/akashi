@@ -1007,6 +1007,41 @@ void AOClient::cmdAbout(int argc, QStringList argv)
     sendPacket("CT", {"The akashi dev team", "Thank you for using akashi! Made with love by scatterflower, with help from in1tiate and Salanto. akashi " + QCoreApplication::applicationVersion()});
 }
 
+void AOClient::cmdEvidence_Swap(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    int ev_size = area->evidence.size() -1;
+
+    if (ev_size < 0) {
+        sendServerMessage("No evidence in area.");
+        return;
+    }
+
+    bool ok, ok2;
+    int ev_id1 = argv[0].toInt(&ok), ev_id2 = argv[1].toInt(&ok2);
+
+    if ((!ok || !ok2)) {
+        sendServerMessage("Invalid evidence ID.");
+        return;
+    }
+    if ((ev_id1 < 0) || (ev_id2 < 0)) {
+        sendServerMessage("Evidence ID can't be negative.");
+        return;
+    }
+    if ((ev_id2 <= ev_size) && (ev_id1 <= ev_size)) {
+#if QT_VERSION < QT_VERSION_CHECK(5, 13, 0)
+        //swapItemsAt does not exist in Qt older than 5.13
+        area->evidence.swap(ev_id1, ev_id2);
+#else
+        area->evidence.swapItemsAt(ev_id1, ev_id2);
+#endif
+        sendEvidenceList(area);
+        sendServerMessage("The evidence " + QString::number(ev_id1) + " and " + QString::number(ev_id2) + " have been swapped.");
+    }
+    else {
+        sendServerMessage("Unable to swap evidence. Evidence ID out of range.");
+    }
+}
 
 void AOClient::cmdMute(int argc, QStringList argv)
 {
