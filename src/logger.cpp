@@ -77,8 +77,14 @@ QString Logger::buildEntry(AOClient *client, QString type, QString message)
 
 void Logger::addEntry(QString entry)
 {
+    QSettings config("config/config.ini", QSettings::IniFormat);
+    config.beginGroup("Options");
+    QString log_type = config.value("logging", "modcall").toString();
     if (buffer.length() < max_length) {
         buffer.enqueue(entry);
+        if (log_type == "full") {
+            flush();
+        }
     }
     else {
         buffer.dequeue();
@@ -88,14 +94,25 @@ void Logger::addEntry(QString entry)
 
 void Logger::flush()
 {
-    // raiden suggested this, but idk if i want to use it
-    // QString time = QDateTime::currentDateTime().toString("ddd mm/dd/yy hh:mm:ss");
-    // QString filename = QStringLiteral("reports/%1/%2.log").arg(area->name).arg(time);
-    QFile logfile("config/server.log");
-    if (logfile.open(QIODevice::WriteOnly | QIODevice::Append)) {
+    QDir dir("logs/");
+    if (!dir.exists()) {
+        dir.mkpath(".");
+    }
+
+    QSettings config("config/config.ini", QSettings::IniFormat);
+    config.beginGroup("Options");
+    QString log_type = config.value("logging", "modcall").toString();
+    QFile logfile;
+    if (log_type == "modcall") {
+        logfile.setFileName(QString("logs/report_%1_%2.log").arg((area->name), (QDateTime::currentDateTime().toString("yyyy-MM-dd_hhmmss"))));
+    }
+    else if (log_type == "full") {
+        logfile.setFileName(QString("logs/%1.log").arg(QDate::currentDate().toString("yyyy-MM-dd")));
+    }
+        if (logfile.open(QIODevice::WriteOnly | QIODevice::Append)) {
         QTextStream file_stream(&logfile);
         while (!buffer.isEmpty())
             file_stream << buffer.dequeue();
-    }
+        }
     logfile.close();
 }
