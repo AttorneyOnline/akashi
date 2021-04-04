@@ -1548,7 +1548,7 @@ class AOClient : public QObject {
         {"m",               {ACLFlags.value("MODCHAT"),      1, &AOClient::cmdM}},
         {"gm",              {ACLFlags.value("MODCHAT"),      1, &AOClient::cmdGM}},
         {"mute",            {ACLFlags.value("MUTE"),         1, &AOClient::cmdMute}},
-        {"unmute",          {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnmute}},
+        {"unmute",          {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnMute}},
         {"bans",            {ACLFlags.value("BAN"),          0, &AOClient::cmdBans}},
         {"unban",           {ACLFlags.value("BAN"),          1, &AOClient::cmdUnBan}},
         {"removeuser",      {ACLFlags.value("MODIFY_USERS"), 1, &AOClient::cmdRemoveUser}},
