@@ -1369,6 +1369,8 @@ class AOClient : public QObject {
      */
     void cmdPM(int argc, QStringList argv);
 
+    void cmd8Ball(int argc, QStringList argv);
+
     ///@}
 
     /**
@@ -1560,6 +1562,7 @@ class AOClient : public QObject {
         {"notecard_reveal", {ACLFlags.value("CM"),           0, &AOClient::cmdNoteCardReveal}},
         {"notecardclear",   {ACLFlags.value("NONE"),         0, &AOClient::cmdNoteCardClear}},
         {"notecard_clear",  {ACLFlags.value("NONE"),         0, &AOClient::cmdNoteCardClear}},
+        {"8ball",           {ACLFlags.value("NONE"),         1, &AOClient::cmd8Ball}},
     };
 
     /**

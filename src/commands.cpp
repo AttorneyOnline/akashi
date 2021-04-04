@@ -1240,6 +1240,39 @@ void AOClient::cmdNoteCardReveal(int argc, QStringList argv)
     area->notecards.clear();
 }
 
+void AOClient::cmd8Ball(int argc, QStringList argv)
+{
+    QFileInfo magic8ball_info("config/text/8ball.txt");
+    if (!(magic8ball_info.exists() && magic8ball_info.isFile())) {
+        qWarning() << "8ball.txt doesn't exist!";
+        sendServerMessage("8ball.txt doesn't exist.");
+    }
+    else {
+        QStringList answers;
+        QFile file("config/text/8ball.txt");
+        file.open(QIODevice::ReadOnly | QIODevice::Text);
+        while (!file.atEnd()) {
+            answers.append(file.readLine().trimmed());
+        }
+        file.close();
+
+        if (answers.isEmpty()) {
+            qWarning() << "8ball.txt is empty!";
+            sendServerMessage("8ball.txt is empty.");
+        }
+        else {
+            int answerindex = answers.size();
+            QString response = answers[(genRand(1, answerindex))];
+            QString sender_name = ooc_name;
+            QString sender_message = argv.join(" ");
+
+            sendServerMessageArea(sender_name + " asked the magic 8-ball " + sender_message + " and the answer is: " + response);
+        }
+
+    }
+
+}
+
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;
