@@ -1266,7 +1266,7 @@ void AOClient::cmd8Ball(int argc, QStringList argv)
             QString sender_name = ooc_name;
             QString sender_message = argv.join(" ");
 
-            sendServerMessageArea(sender_name + " asked the magic 8-ball " + sender_message + " and the answer is: " + response);
+            sendServerMessageArea(sender_name + " asked the magic 8-ball, \"" + sender_message + "\" and the answer is: " + response);
         }
 
     }
