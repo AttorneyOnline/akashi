@@ -1203,6 +1203,43 @@ void AOClient::cmdUnBlockWtce(int argc, QStringList argv)
     target->is_wtce_blocked = false;
 }
 
+void AOClient::cmdNoteCard(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    if (area->notecards.keys().contains(current_char))
+        area->notecards.remove(current_char);
+    QString notecard = argv.join(" ");
+    area->notecards[current_char] = notecard;
+    sendServerMessageArea(current_char + " wrote a note card.");
+}
+
+void AOClient::cmdNoteCardClear(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    if (area->notecards.keys().contains(current_char)) {
+        area->notecards.remove(current_char);
+        sendServerMessageArea(current_char + " erased their note card.");
+    }
+    else
+        sendServerMessage("You do not have a note card.");
+}
+
+void AOClient::cmdNoteCardReveal(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    if (area->notecards.isEmpty()) {
+        sendServerMessage("There are no cards to reveal in this area.");
+        return;
+    }
+    QStringList message;
+    message << "Note cards have been revealed.";
+    QMap<QString, QString>::iterator i;
+    for (i = area->notecards.begin(); i != area->notecards.end(); ++i)
+        message << i.key() + ": " + i.value();
+    sendServerMessageArea(message.join("\n"));
+    area->notecards.clear();
+}
+
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;
