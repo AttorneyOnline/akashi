@@ -124,6 +124,13 @@ class AOClient : public QObject {
     QString current_char;
 
     /**
+     * @brief The internal name of the character the client is iniswapped to.
+     *
+     * @note This will be the same as current_char if the client is not iniswapped.
+     */
+    QString current_iniswap;
+
+    /**
      * @brief If true, the client is a logged-in moderator.
      */
     bool authenticated = false;
@@ -154,6 +161,21 @@ class AOClient : public QObject {
      * @brief If true, the client may not use in-character chat.
      */
     bool is_muted = false;
+  
+    /**
+     * @brief If true, the client may not use out-of-character chat.
+     */
+    bool is_ooc_muted = false;
+  
+    /**
+     * @brief If true, the client may not use the music list.
+     */
+    bool is_dj_blocked = false;
+  
+    /**
+     * @brief If true, the client may not use the judge controls.
+     */
+    bool is_wtce_blocked = false;
     
     /**
      * @brief Represents the client's client software, and its version.
@@ -322,7 +344,6 @@ class AOClient : public QObject {
      * @brief Sends all four types of ARUP to the client.
      */
     void fullArup();
-
     /**
      * @brief Sends an out-of-character message originating from the server to the client.
      *
@@ -1002,6 +1023,8 @@ class AOClient : public QObject {
      * @see AOClient::cmdG()
      */
     void cmdGM(int argc, QStringList argv);
+  
+    // Casing/RP
 
     /**
      * @brief Mutes a client.
@@ -1015,7 +1038,7 @@ class AOClient : public QObject {
     void cmdMute(int argc, QStringList argv);
 
     /**
-     * @brief Removes the muted status a client.
+     * @brief Removes the muted status from a client.
      *
      * @details The only argument is the **target client's user ID**.
      *
@@ -1023,8 +1046,74 @@ class AOClient : public QObject {
      *
      * @see #is_muted
      */
-    void cmdUnmute(int argc, QStringList argv);
+    void cmdUnMute(int argc, QStringList argv);
 
+    /**
+     * @brief OOC-mutes a client.
+     *
+     * @details The only argument is the **target client's user ID**.
+     *
+     * @iscommand
+     *
+     * @see #is_ooc_muted
+     */
+    void cmdOocMute(int argc, QStringList argv);
+  
+    /**
+     * @brief Removes the OOC-muted status from a client.
+     *
+     * @details The only argument is the **target client's user ID**.
+     *
+     * @iscommand
+     *
+     * @see #is_ooc_muted
+     */
+    void cmdOocUnMute(int argc, QStringList argv);
+  
+    /**
+     * @brief DJ-blocks a client.
+     *
+     * @details The only argument is the **target client's user ID**.
+     *
+     * @iscommand
+     *
+     * @see #is_dj_blocked
+     */
+    void cmdBlockDj(int argc, QStringList argv);
+  
+    /**
+     * @brief Removes the DJ-blocked status from a client.
+     *
+     * @details The only argument is the **target client's user ID**.
+     *
+     * @iscommand
+     *
+     * @see #is_dj_blocked
+     */
+    void cmdUnBlockDj(int argc, QStringList argv);
+  
+    /**
+     * @brief WTCE-blocks a client.
+     *
+     * @details The only argument is the **target client's user ID**.
+     *
+     * @iscommand
+     *
+     * @see #is_wtce_blocked
+     */
+    void cmdBlockWtce(int argc, QStringList argv);
+  
+    /**
+     * @brief Removes the WTCE-blocked status from a client.
+     *
+     * @details The only argument is the **target client's user ID**.
+     *
+     * @iscommand
+     *
+     * @see #is_wtce_blocked
+     */
+    void cmdUnBlockWtce(int argc, QStringList argv);
+  
     /**
      * @brief Lists the last five bans made on the server.
      *
@@ -1147,12 +1236,25 @@ class AOClient : public QObject {
     void cmdEvidenceMod(int argc, QStringList argv);
 
     /**
+     * @brief Changes position of two pieces of evidence in the area.
+     *
+     * @details The two arguments are the indices of the evidence items you want to swap the position of.
+     *
+     * @iscommand
+     *
+     * @see Area::Evidence_Swap
+     *
+     */
+    void cmdEvidence_Swap(int argc, QStringList argv);
+
+    /**
      * @brief Changes the subtheme of the clients in the current area.
      *
      * @details The only argument is the **name of the subtheme**. Reloading is always forced.
      *
      * @iscommand
      */
+
     void cmdSubTheme(int argc, QStringList argv);
   
     /**
@@ -1350,6 +1452,7 @@ class AOClient : public QObject {
      * @return The parsed text, converted into their respective durations, summed up, then converted into seconds.
      */
     long long parseTime(QString input);
+    QString getReprimand(bool positive = false);
 
     ///@}
 
@@ -1451,6 +1554,7 @@ class AOClient : public QObject {
         {"removeuser",      {ACLFlags.value("MODIFY_USERS"), 1, &AOClient::cmdRemoveUser}},
         {"subtheme",        {ACLFlags.value("CM"),           1, &AOClient::cmdSubTheme}},
         {"about",           {ACLFlags.value("NONE"),         0, &AOClient::cmdAbout}},
+        {"evidence_swap",   {ACLFlags.value("CM"),           2, &AOClient::cmdEvidence_Swap}},
         {"notecard",        {ACLFlags.value("NONE"),         1, &AOClient::cmdNoteCard}},
         {"notecardreveal",  {ACLFlags.value("CM"),           0, &AOClient::cmdNoteCardReveal}},
         {"notecard_reveal", {ACLFlags.value("CM"),           0, &AOClient::cmdNoteCardReveal}},

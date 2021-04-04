@@ -172,6 +172,11 @@ void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket pa
 
 void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    if (is_ooc_muted) {
+        sendServerMessage("You are OOC muted, and cannot speak.");
+        return;
+    }
+
     ooc_name = dezalgo(argv[0]).replace(QRegExp("\\[|\\]|\\{|\\}|\\#|\\$|\\%|\\&"), ""); // no fucky wucky shit here
     if (ooc_name.isEmpty() || ooc_name == server->getServerName()) // impersonation & empty name protection
         return;
@@ -203,6 +208,10 @@ void AOClient::pktPing(AreaData* area, int argc, QStringList argv, AOPacket pack
 
 void AOClient::pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    if (is_dj_blocked) {
+        sendServerMessage("You are blocked from changing the music.");
+        return;
+    }
     // Due to historical reasons, this
     // packet has two functions:
     // Change area, and set music.
@@ -243,6 +252,10 @@ void AOClient::pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPack
 
 void AOClient::pktWtCe(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    if (is_wtce_blocked) {
+        sendServerMessage("You are blocked from using the judge controls.");
+        return;
+    }
     if (QDateTime::currentDateTime().toSecsSinceEpoch() - last_wtce_time <= 5)
         return;
     last_wtce_time = QDateTime::currentDateTime().toSecsSinceEpoch();
@@ -251,6 +264,10 @@ void AOClient::pktWtCe(AreaData* area, int argc, QStringList argv, AOPacket pack
 
 void AOClient::pktHpBar(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    if (is_wtce_blocked) {
+        sendServerMessage("You are blocked from using the judge controls.");
+        return;
+    }
     if (argv[0] == "1") {
         area->def_hp = std::min(std::max(0, argv[1].toInt()), 10);
     }
@@ -404,6 +421,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         }
         qDebug() << "INI swap detected from " << getIpid();
     }
+    current_iniswap = incoming_args[2].toString();
     args.append(incoming_args[2].toString());
 
     // emote
@@ -486,7 +504,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
 
     // text color
     int text_color = incoming_args[14].toInt();
-    if (text_color != 0 && text_color != 1 && text_color != 2 && text_color != 3 && text_color != 4 && text_color != 5 && text_color != 6)
+    if (text_color < 0 || text_color > 11)
         return invalid;
     args.append(QString::number(text_color));
 
@@ -494,6 +512,9 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     if (incoming_args.length() > 15) {
         // showname
         QString incoming_showname = dezalgo(incoming_args[15].toString().trimmed());
+        // if the raw input is not empty but the trimmed input is, use a single space
+        if (incoming_showname.isEmpty() && !incoming_args[15].toString().isEmpty())
+            incoming_showname = " ";
         args.append(incoming_showname);
         showname = incoming_showname;
 
@@ -512,8 +533,11 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         QString other_offset = "0";
         QString other_flip = "0";
         for (AOClient* client : server->clients) {
-            if (client->pairing_with == char_id && other_charid != char_id && client->char_id == pairing_with) {
-                other_name = server->characters.at(other_charid);
+            if (client->pairing_with == char_id
+                    && other_charid != char_id
+                    && client->char_id == pairing_with
+                    && client->pos == pos) {
+                other_name = client->current_iniswap;
                 other_emote = client->emote;
                 other_offset = client->offset;
                 other_flip = client->flipping;
