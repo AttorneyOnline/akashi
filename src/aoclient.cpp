@@ -142,7 +142,7 @@ void AOClient::changeCharacter(int char_id)
         area->characters_taken.removeAll(server->getCharID(current_char));
     }
 
-    if(char_id > server->characters.length())
+    if(char_id >= server->characters.length())
         return;
 
     if (char_id >= 0) {
