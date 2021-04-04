@@ -98,9 +98,7 @@ void Logger::flush()
     if (!dir.exists()) {
         dir.mkpath(".");
     }
-    // raiden suggested this, but idk if i want to use it
-    // QString time = QDateTime::currentDateTime().toString("ddd mm/dd/yy hh:mm:ss");
-    // QString filename = QStringLiteral("reports/%1/%2.log").arg(area->name).arg(time);
+
     QSettings config("config/config.ini", QSettings::IniFormat);
     config.beginGroup("Options");
     QString log_type = config.value("logging", "modcall").toString();
