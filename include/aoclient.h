@@ -1369,6 +1369,13 @@ class AOClient : public QObject {
      */
     void cmdPM(int argc, QStringList argv);
 
+    /**
+     * @brief Randomly selects an answer from 8ball.txt to a question.
+     *
+     * @details The only argument is the question the client wants answered.
+     *
+     * @iscommand
+     */
     void cmd8Ball(int argc, QStringList argv);
 
     ///@}
