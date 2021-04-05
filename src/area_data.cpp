@@ -36,6 +36,7 @@ AreaData::AreaData(QString p_name, int p_index) :
     iniswap_allowed = areas_ini.value("iniswap_allowed", "true").toBool();
     bg_locked = areas_ini.value("bg_locked", "false").toBool();
     QString configured_evi_mod = areas_ini.value("evidence_mod", "FFA").toString().toLower();
+    blankposting_allowed = areas_ini.value("blankposting_allowed","true").toBool();
     areas_ini.endGroup();
     QSettings config_ini("config/config.ini", QSettings::IniFormat);
     config_ini.beginGroup("Options");

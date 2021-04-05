@@ -188,6 +188,11 @@ class AreaData : public QObject {
     bool iniswap_allowed;
 
     /**
+     * @brief If true, clients are allowed to send empty IC messages
+     */
+    bool blankposting_allowed;
+
+    /**
      * @brief If true, the background of the area cannot be changed except by a moderator.
      */
     bool bg_locked;

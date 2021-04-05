@@ -1280,6 +1280,19 @@ void AOClient::cmd8Ball(int argc, QStringList argv)
 
 }
 
+void AOClient::cmdAllow_Blankposting(int argc, QStringList argv)
+{
+    QString sender_name = ooc_name;
+    AreaData* area = server->areas[current_area];
+    area->blankposting_allowed = !area->blankposting_allowed;
+    if (area->blankposting_allowed == false) {
+        sendServerMessageArea(sender_name + " has set blankposting in the area to forbidden.");
+    }
+    else {
+        sendServerMessageArea(sender_name + " has set blankposting in the area to allowed.");
+    }
+}
+
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;
