@@ -957,6 +957,13 @@ void AOClient::cmdGM(int argc, QStringList argv)
     }
 }
 
+void AOClient::cmdLM(int argc, QStringList argv)
+{
+    QString sender_name = ooc_name;
+    QString sender_message = argv.join(" ");
+    server->broadcast(AOPacket("CT", {"["+sender_name+"][M]", sender_message}), current_area);
+}
+
 void AOClient::cmdBans(int argc, QStringList argv)
 {
     QStringList recent_bans;

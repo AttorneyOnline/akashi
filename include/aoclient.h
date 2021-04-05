@@ -1023,7 +1023,18 @@ class AOClient : public QObject {
      * @see AOClient::cmdG()
      */
     void cmdGM(int argc, QStringList argv);
-  
+
+    /**
+     * @brief Sends out a local message that is marked with an `[M]` to mean it is coming from a moderator.
+     *
+     * @details The arguments are **the message** that the client wants to send.
+     *
+     * @iscommand
+     *
+     * @see AOClient::cmdLM()
+     */
+    void cmdLM(int argc, QStringList argv);
+
     // Casing/RP
 
     /**
@@ -1570,6 +1581,7 @@ class AOClient : public QObject {
         {"notecardclear",   {ACLFlags.value("NONE"),         0, &AOClient::cmdNoteCardClear}},
         {"notecard_clear",  {ACLFlags.value("NONE"),         0, &AOClient::cmdNoteCardClear}},
         {"8ball",           {ACLFlags.value("NONE"),         1, &AOClient::cmd8Ball}},
+        {"lm",              {ACLFlags.value("MODCHAT"),      1, &AOClient::cmdLM}},
     };
 
     /**
