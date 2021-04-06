@@ -1389,6 +1389,13 @@ class AOClient : public QObject {
      */
     void cmd8Ball(int argc, QStringList argv);
 
+    /**
+    * @brief Sends an out-of-character message with the judgelog of an area.
+    *
+    * @details No arguments.
+    *
+    * @iscommand
+    */
     void cmdJudgeLog(int argc, QStringList argv);
 
     ///@}
@@ -1633,6 +1640,15 @@ class AOClient : public QObject {
      */
     QString last_message;
 
+    /**
+     * @brief A helper function to add recorded packets to an area's judgelog.
+     *
+     * @param area Pointer to the area where the packet was sent.
+     *
+     * @param client Pointer to the client that sent the packet.
+     *
+     * @param action String containing the info that is being recorded.
+     */
     void updateJudgeLog(AreaData* area, AOClient* client, QString action);
 };
 

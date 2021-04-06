@@ -273,6 +273,11 @@ class AreaData : public QObject {
     EvidenceMod evi_mod;
     QMap<QString, QString> notecards;
 
+    /**
+    * @brief The judgelog of an area.
+    *
+    * @details This list contains up to 10 recorded packets of the most recent judge actions (WT/CE or penalty updates) in an area.
+    */
     QStringList judgelog;
 };
 
