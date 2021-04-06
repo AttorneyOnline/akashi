@@ -1293,7 +1293,7 @@ void AOClient::cmdJudgeLog(int argc, QStringList argv)
             sendServerMessage(message);
     }
     else {
-        QString filteredmessage = message.remove(QRegularExpression("[(]*[)]")); //Filter out anything between two parentheses. This should only ever be the IPID
+        QString filteredmessage = message.remove(QRegularExpression("[(].*[)]")); //Filter out anything between two parentheses. This should only ever be the IPID
         sendServerMessage(filteredmessage);
     }
 }
