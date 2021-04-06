@@ -272,6 +272,8 @@ class AreaData : public QObject {
      */
     EvidenceMod evi_mod;
     QMap<QString, QString> notecards;
+
+    QStringList judgelog;
 };
 
 #endif // AREA_DATA_H

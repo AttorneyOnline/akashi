@@ -260,6 +260,7 @@ void AOClient::pktWtCe(AreaData* area, int argc, QStringList argv, AOPacket pack
         return;
     last_wtce_time = QDateTime::currentDateTime().toSecsSinceEpoch();
     server->broadcast(packet, current_area);
+    updateJudgeLog(area, this, "WT/CE");
 }
 
 void AOClient::pktHpBar(AreaData* area, int argc, QStringList argv, AOPacket packet)
@@ -276,6 +277,7 @@ void AOClient::pktHpBar(AreaData* area, int argc, QStringList argv, AOPacket pac
     }
     server->broadcast(AOPacket("HP", {"1", QString::number(area->def_hp)}), area->index);
     server->broadcast(AOPacket("HP", {"2", QString::number(area->pro_hp)}), area->index);
+    updateJudgeLog(area, this, "updated the penalties");
 }
 
 void AOClient::pktWebSocketIp(AreaData* area, int argc, QStringList argv, AOPacket packet)
@@ -637,4 +639,22 @@ bool AOClient::checkEvidenceAccess(AreaData *area)
     default:
         return false;
     }
+}
+
+void AOClient::updateJudgeLog(AreaData* area, AOClient* client, QString action)
+{
+    QString timestamp = QTime::currentTime().toString("hh:mm:ss");
+    QString uid = QString::number(client->id);
+    QString char_name = client->current_char;
+    QString ipid = client->getIpid();
+    QString message = action;
+    QString logmessage = QString("[%1]: [%2] %3 (%4) %5").arg(timestamp, uid, char_name, ipid, message);
+    int size = area->judgelog.size();
+    if (size == 10) {
+        area->judgelog.removeFirst();
+        area->judgelog.append(logmessage);
+    }
+    else area->judgelog.append(logmessage);
+
+
 }

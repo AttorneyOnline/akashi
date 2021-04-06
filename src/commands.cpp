@@ -1280,6 +1280,17 @@ void AOClient::cmd8Ball(int argc, QStringList argv)
 
 }
 
+void AOClient::cmdJudgeLog(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    if (area->judgelog.isEmpty()) {
+        sendServerMessage("There have been no judge actions in this area.");
+        return;
+    }
+    QString message = area->judgelog.join("\n");
+    sendServerMessage(message);
+}
+
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;

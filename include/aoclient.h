@@ -1389,6 +1389,8 @@ class AOClient : public QObject {
      */
     void cmd8Ball(int argc, QStringList argv);
 
+    void cmdJudgeLog(int argc, QStringList argv);
+
     ///@}
 
     /**
@@ -1582,6 +1584,7 @@ class AOClient : public QObject {
         {"notecard_clear",  {ACLFlags.value("NONE"),         0, &AOClient::cmdNoteCardClear}},
         {"8ball",           {ACLFlags.value("NONE"),         1, &AOClient::cmd8Ball}},
         {"lm",              {ACLFlags.value("MODCHAT"),      1, &AOClient::cmdLM}},
+        {"judgelog",        {ACLFlags.value("CM"),           0, &AOClient::cmdJudgeLog}}
     };
 
     /**
@@ -1629,6 +1632,8 @@ class AOClient : public QObject {
      * @details Used to determine if the incoming message is a duplicate.
      */
     QString last_message;
+
+    void updateJudgeLog(AreaData* area, AOClient* client, QString action);
 };
 
 #endif // AOCLIENT_H
