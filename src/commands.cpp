@@ -1288,7 +1288,14 @@ void AOClient::cmdJudgeLog(int argc, QStringList argv)
         return;
     }
     QString message = area->judgelog.join("\n");
-    sendServerMessage(message);
+    //Judgelog contains an IPID, so we shouldn't send that unless the caller has appropriate permissions
+    if (((checkAuth(ACLFlags.value("KICK"))) == 1) || (((checkAuth(ACLFlags.value("BAN"))) == 1))) {
+            sendServerMessage(message);
+    }
+    else {
+        QString filteredmessage = message.remove(QRegularExpression("[(]*[)]")); //Filter out anything between two parentheses. This should only ever be the IPID
+        sendServerMessage(filteredmessage);
+    }
 }
 
 QStringList AOClient::buildAreaList(int area_idx)
