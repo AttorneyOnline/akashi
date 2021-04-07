@@ -188,6 +188,11 @@ class AreaData : public QObject {
     bool iniswap_allowed;
 
     /**
+     * @brief If true, clients are allowed to send empty IC messages
+     */
+    bool blankposting_allowed;
+
+    /**
      * @brief If true, the background of the area cannot be changed except by a moderator.
      */
     bool bg_locked;
@@ -323,6 +328,10 @@ class AreaData : public QObject {
     QVector<QStringList> testimony; //!< Vector of all statements saved. Index 0 is always the title of the testimony.
     int current_statement; //!< Keeps track of the currently played statement.
 
+    /**
+     * @brief The last IC packet sent in an area.
+     */
+    QStringList last_ic_message;
 };
 
 #endif // AREA_DATA_H

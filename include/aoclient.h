@@ -1134,6 +1134,16 @@ class AOClient : public QObject {
      */
     void cmdBans(int argc, QStringList argv);
 
+
+    /**
+     * @brief Toggle whether or not in-character messages purely consisting of spaces are allowed.
+     *
+     * @details Takes no arguments. Against all common sense this also allows you to disable blankposting.
+     *
+     * @iscommand
+     */
+    void cmdAllow_Blankposting(int argc, QStringList argv);
+
     ///@}
 
     /**
@@ -1588,6 +1598,7 @@ class AOClient : public QObject {
         {"notecard_clear",  {ACLFlags.value("NONE"),         0, &AOClient::cmdNoteCardClear}},
         {"8ball",           {ACLFlags.value("NONE"),         1, &AOClient::cmd8Ball}},
         {"lm",              {ACLFlags.value("MODCHAT"),      1, &AOClient::cmdLM}},
+        {"allow_blankposting", {ACLFlags.value("MODCHAT"),      0, &AOClient::cmdAllow_Blankposting}},
     };
 
     /**
