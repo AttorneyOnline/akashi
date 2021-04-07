@@ -274,13 +274,13 @@ class AreaData : public QObject {
     QMap<QString, QString> notecards;
 
     /**
-     * @brief The three "states" the testimony recording system can have in an area.
+     * @brief The five "states" the testimony recording system can have in an area.
      */
     enum TestimonyRecording{
         STOPPED,
         RECORDING,
         UPDATE,
-        AMEND,
+        ADD,
         PLAYBACK,
     };
 
@@ -305,7 +305,7 @@ class AreaData : public QObject {
      */
 
     /**
-     * @var TestimonyRecording AMEND
+     * @var TestimonyRecording ADD
      * The testimony recorder is active and inserts the next message after the currently displayed ic-message
      * This will increase the size by 1.
      */
@@ -319,7 +319,9 @@ class AreaData : public QObject {
     Q_ENUM(TestimonyRecording);
     TestimonyRecording test_rec;
 
-    QVector<QStringList> testimony;
+
+    QVector<QStringList> testimony; //!< Vector of all statements saved. Index 0 is always the title of the testimony.
+    int current_statement; //!< Keeps track of the currently played statement.
 
 };
 
