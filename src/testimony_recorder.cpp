@@ -21,25 +21,48 @@
 
 void AOClient::addStatement(QString packet)
 {
-
+ // This one inserts to the array in order to add new statements inbetwee. Might pull double duty to populate the testimony.
 }
+
 void AOClient::updateStatement(QString packet)
 {
-
+    AreaData* area = server->areas[current_area];
+    int c_statement = area->statement;
+    if ((c_statement >= 0 && !(area->testimony[c_statement].isEmpty()))) {
+        sendServerMessage("Unable to update an empty statement. Please use /addtestimony.");
+    }
+    //Insert code to replace packet here
 }
+
 void AOClient::deleteStatement()
 {
     AreaData* area = server->areas[current_area];
+    int c_statement = area->statement;
+    if ((c_statement > 0 && !(area->testimony[c_statement].isEmpty()))) {
+        area->testimony.remove(c_statement);
+        sendServerMessage("The statement with id " + QString::number(c_statement) + " has been deleted from the testimony.");
+    }
+    return;
 }
+
 void AOClient::clearTestimony()
 {
-
+    AreaData* area = server->areas[current_area];
+    area->test_rec = AreaData::TestimonyRecording::STOPPED;
+    area->testimony.clear(); //!< Empty out the QVector
+    area->testimony.squeeze(); //!< Release memory. Good idea? God knows, I do not.
 }
+
 void AOClient::playTestimony()
 {
-
+    AreaData* area = server->areas[current_area];
+    int c_statement = area->statement;
+    server->broadcast(AOPacket("MS",area->testimony[c_statement]), current_area);
+    //Send Message when end is reached and testimony loops?
 }
+
 void AOClient::pauseTestimony()
 {
-
+    AreaData* area = server->areas[current_area];
+    area->test_rec = AreaData::TestimonyRecording::STOPPED;
 }
