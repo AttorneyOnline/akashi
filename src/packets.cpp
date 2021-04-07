@@ -435,6 +435,11 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     if (incoming_msg == last_message)
         return invalid;
 
+    if (incoming_msg == "" && area->blankposting_allowed == false) {
+        sendServerMessage("Blankposting has been forbidden in this area.");
+        return invalid;
+    }
+
     last_message = incoming_msg;
     args.append(incoming_msg);
 
