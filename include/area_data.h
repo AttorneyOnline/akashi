@@ -272,6 +272,11 @@ class AreaData : public QObject {
      */
     EvidenceMod evi_mod;
     QMap<QString, QString> notecards;
+
+    /**
+     * @brief The last IC packet sent in an area.
+     */
+    QStringList last_ic_message;
 };
 
 #endif // AREA_DATA_H
