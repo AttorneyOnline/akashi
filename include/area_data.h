@@ -326,7 +326,7 @@ class AreaData : public QObject {
 
 
     QVector<QStringList> testimony; //!< Vector of all statements saved. Index 0 is always the title of the testimony.
-    int current_statement; //!< Keeps track of the currently played statement.
+    int statement; //!< Keeps track of the currently played statement.
 
     /**
      * @brief The last IC packet sent in an area.
