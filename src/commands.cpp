@@ -1311,6 +1311,45 @@ void AOClient::cmdAllow_Blankposting(int argc, QStringList argv)
     }
 }
 
+void AOClient::cmdBanInfo(int argc, QStringList argv)
+{
+    QStringList ban_info;
+    ban_info << ("Ban Info for " + argv[0]);
+    ban_info << "-----";
+    QString lookup_type;
+
+    if (argc == 1) {
+       lookup_type = "banid";
+    }
+    else if (argc == 2) {
+        lookup_type = argv[1];
+        if (!((lookup_type == "banid") || (lookup_type == "ipid") || (lookup_type == "hdid"))) {
+            sendServerMessage("Invalid ID type.");
+            return;
+        }
+    }
+    else {
+        sendServerMessage("Invalid command.");
+        return;
+    }
+    QString id = argv[0];
+    for (DBManager::BanInfo ban : server->db_manager->getBanInfo(lookup_type, id)) {
+        QString banned_until;
+        if (ban.duration == -2)
+            banned_until = "The heat death of the universe";
+        else
+            banned_until = QDateTime::fromSecsSinceEpoch(ban.time).addSecs(ban.duration).toString("dd.MM.yyyy, hh:mm");
+        ban_info << "Affected IPID: " + ban.ipid;
+        ban_info << "Affected HDID: " + ban.hdid;
+        ban_info << "Reason for ban: " + ban.reason;
+        ban_info << "Date of ban: " + QDateTime::fromSecsSinceEpoch(ban.time).toString("dd.MM.yyyy, hh:mm");
+        ban_info << "Ban lasts until: " + banned_until;
+        ban_info << "-----";
+    }
+    sendServerMessage(ban_info.join("\n"));
+}
+
+
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;

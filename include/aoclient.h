@@ -1408,6 +1408,18 @@ class AOClient : public QObject {
     */
     void cmdJudgeLog(int argc, QStringList argv);
 
+    /**
+     * @brief Looks up info on a ban.
+     *
+     * @details If it is called with **one argument**, that argument is the ban ID to look up.
+     *
+     * If it is called with **two arguments**, then the first argument is either a ban ID, an IPID,
+     * or an HDID, and the the second argument specifies the ID type.
+     *
+     * @iscommand
+     */
+    void cmdBanInfo(int argc, QStringList argv);
+
     ///@}
 
     /**
@@ -1603,6 +1615,7 @@ class AOClient : public QObject {
         {"lm",              {ACLFlags.value("MODCHAT"),      1, &AOClient::cmdLM}},
         {"judgelog",        {ACLFlags.value("CM"),           0, &AOClient::cmdJudgeLog}},
         {"allow_blankposting", {ACLFlags.value("MODCHAT"),      0, &AOClient::cmdAllow_Blankposting}},
+        {"baninfo",         {ACLFlags.value("BAN"),          1, &AOClient::cmdBanInfo}},
     };
 
     /**

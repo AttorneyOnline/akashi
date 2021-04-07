@@ -325,6 +325,47 @@ QStringList DBManager::getUsers()
     return users;
 }
 
+QList<DBManager::BanInfo> DBManager::getBanInfo(QString lookup_type, QString id)
+{
+    QList<BanInfo> return_list;
+    QSqlQuery query;
+    QList<BanInfo> invalid;
+    if (lookup_type == "banid") {
+        query.prepare("SELECT * FROM BANS WHERE ID = ?");
+        query.addBindValue(id);
+        query.setForwardOnly(true);
+        query.exec();
+    }
+    else if (lookup_type == "hdid") {
+        query.prepare("SELECT * FROM BANS WHERE HDID = ?");
+        query.addBindValue(id);
+        query.setForwardOnly(true);
+        query.exec();
+    }
+    else if (lookup_type == "ipid") {
+        query.prepare("SELECT * FROM BANS WHERE IPID = ?");
+        query.addBindValue(id);
+        query.setForwardOnly(true);
+        query.exec();
+    }
+    else {
+        qCritical("Invalid ban lookup type!");
+        return invalid;
+    }
+    while (query.next()) {
+        BanInfo ban;
+        ban.ipid = query.value(0).toString();
+        ban.hdid = query.value(1).toString();
+        ban.ip = QHostAddress(query.value(2).toString());
+        ban.time = static_cast<unsigned long>(query.value(3).toULongLong());
+        ban.reason = query.value(4).toString();
+        ban.duration = query.value(5).toLongLong();
+        return_list.append(ban);
+    }
+    std::reverse(return_list.begin(), return_list.end());
+    return return_list;
+}
+
 DBManager::~DBManager()
 {
     db.close();
