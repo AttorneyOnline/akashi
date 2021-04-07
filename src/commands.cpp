@@ -1349,7 +1349,6 @@ void AOClient::cmdBanInfo(int argc, QStringList argv)
     sendServerMessage(ban_info.join("\n"));
 }
 
-
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;
