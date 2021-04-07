@@ -601,6 +601,9 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         int additive = incoming_args[24].toInt();
         if (additive != 0 && additive != 1)
             return invalid;
+        else if (additive == 1) {
+            args[4].insert(0, " ");
+        }
         args.append(QString::number(additive));
 
         // effect
