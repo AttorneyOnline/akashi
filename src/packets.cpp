@@ -168,6 +168,8 @@ void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket pa
 
     area->logger->logIC(this, &validated_packet);
     server->broadcast(validated_packet, current_area);
+    area->last_ic_message.clear();
+    area->last_ic_message.append(validated_packet.contents);
 }
 
 void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket packet)
@@ -435,6 +437,11 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     if (incoming_msg == last_message)
         return invalid;
 
+    if (incoming_msg == "" && area->blankposting_allowed == false) {
+        sendServerMessage("Blankposting has been forbidden in this area.");
+        return invalid;
+    }
+
     last_message = incoming_msg;
     args.append(incoming_msg);
 
@@ -603,6 +610,15 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         int additive = incoming_args[24].toInt();
         if (additive != 0 && additive != 1)
             return invalid;
+        else if (area->last_ic_message.isEmpty()){
+            additive = 0;
+        }
+        else if (!(char_id == area->last_ic_message[8].toInt())) {
+            additive = 0;
+        }
+        else if (additive == 1) {
+            args[4].insert(0, " ");
+        }
         args.append(QString::number(additive));
 
         // effect
