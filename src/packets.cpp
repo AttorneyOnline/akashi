@@ -143,13 +143,14 @@ void AOClient::pktCharPassword(AreaData* area, int argc, QStringList argv, AOPac
 void AOClient::pktSelectChar(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
     bool argument_ok;
-    char_id = argv[1].toInt(&argument_ok);
+    int selected_char_id = argv[1].toInt(&argument_ok);
     if (!argument_ok) {
-        char_id = -1;
+        selected_char_id = -1;
         return;
     }
 
-    changeCharacter(char_id);
+    if (changeCharacter(selected_char_id))
+        char_id = selected_char_id;
 }
 
 void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket packet)

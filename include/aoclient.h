@@ -321,7 +321,7 @@ class AOClient : public QObject {
      *
      * @param char_id The character ID of the client's new character.
      */
-    void changeCharacter(int char_id);
+    bool changeCharacter(int char_id);
 
     /**
      * @brief Changes the client's in-character position.
