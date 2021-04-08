@@ -138,10 +138,6 @@ void AOClient::changeCharacter(int char_id)
 {
     AreaData* area = server->areas[current_area];
 
-    if (current_char != "") {
-        area->characters_taken.removeAll(server->getCharID(current_char));
-    }
-
     if(char_id >= server->characters.length())
         return;
 
@@ -150,6 +146,10 @@ void AOClient::changeCharacter(int char_id)
         bool taken = area->characters_taken.contains(char_id);
         if (taken || char_selected == "")
             return;
+
+        if (current_char != "") {
+            area->characters_taken.removeAll(server->getCharID(current_char));
+        }
 
         area->characters_taken.append(char_id);
         current_char = char_selected;
