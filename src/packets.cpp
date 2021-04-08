@@ -145,7 +145,7 @@ void AOClient::pktSelectChar(AreaData* area, int argc, QStringList argv, AOPacke
     bool argument_ok;
     int selected_char_id = argv[1].toInt(&argument_ok);
     if (!argument_ok) {
-        char_id = -1;
+        selected_char_id = -1;
         return;
     }
 
