@@ -134,18 +134,18 @@ void AOClient::changeArea(int new_area)
         sendServerMessage("Area " + server->area_names[current_area] + " is spectate-only; to chat IC you will need to be invited by the CM.");
 }
 
-void AOClient::changeCharacter(int char_id)
+bool AOClient::changeCharacter(int char_id)
 {
     AreaData* area = server->areas[current_area];
 
     if(char_id >= server->characters.length())
-        return;
+        return false;
 
     if (char_id >= 0) {
         QString char_selected = server->characters[char_id];
         bool taken = area->characters_taken.contains(char_id);
         if (taken || char_selected == "")
-            return;
+            return false;
 
         if (current_char != "") {
             area->characters_taken.removeAll(server->getCharID(current_char));
@@ -162,6 +162,7 @@ void AOClient::changeCharacter(int char_id)
 
     server->updateCharsTaken(area);
     sendPacket("PV", {QString::number(id), "CID", QString::number(char_id)});
+    return true;
 }
 
 void AOClient::changePosition(QString new_pos)
