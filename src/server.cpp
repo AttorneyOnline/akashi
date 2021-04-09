@@ -96,6 +96,7 @@ void Server::start()
         QString area_name = raw_area_names[i];
         areas.insert(i, new AreaData(area_name, i));
     }
+    loadCommandConfig();
 }
 
 void Server::clientConnected()
@@ -213,6 +214,25 @@ int Server::getCharID(QString char_name)
         }
     }
     return -1; // character does not exist
+}
+
+void Server::loadCommandConfig()
+{
+    magic_8ball_answers.append(loadConfigFile("8ball"));
+    praise_list.append(loadConfigFile("praise"));
+    reprimands_list.append(loadConfigFile("reprimands"));
+}
+
+QStringList Server::loadConfigFile(QString filename)
+{
+    QStringList stringlist;
+    QFile file("config/text/" + filename + ".txt");
+    file.open(QIODevice::ReadOnly | QIODevice::Text);
+    while (!(file.atEnd())) {
+        stringlist.append(file.readLine().trimmed());
+    }
+    file.close();
+    return stringlist;
 }
 
 Server::~Server()

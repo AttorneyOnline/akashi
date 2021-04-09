@@ -91,6 +91,9 @@ bool ConfigManager::initConfig()
         qCritical() << "config.ini is invalid!";
         return false;
     }
+    if (!(verifyCommandConfig())) {
+        return false;
+    }
 
     else {
         // Config is valid and up to date, so let's go ahead
@@ -175,4 +178,17 @@ bool ConfigManager::loadServerSettings(server_settings* settings)
 bool ConfigManager::fileExists(QFileInfo* file)
 {
     return (file->exists() && file->isFile());
+}
+
+bool ConfigManager::verifyCommandConfig()
+{
+    QStringList filelist = {"8ball", "praise", "reprimands"};
+    foreach (QString filename, filelist) {
+        QFileInfo file("config/text/" + filename + ".txt");
+        if (!(fileExists(&file))) {
+            qCritical() << (filename + ".txt doesn't exist!");
+            return false;
+        }
+    }
+    return true;
 }

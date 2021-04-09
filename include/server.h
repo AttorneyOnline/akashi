@@ -216,6 +216,33 @@ class Server : public QObject {
      */
     QTimer* timer;
 
+    /**
+     * @brief Loads the configuration files for commands into stringlists.
+     */
+    void loadCommandConfig();
+
+    /**
+     * @brief Returns a stringlist with the contents of a .txt file from config/text/.
+     *
+     * @param Name of the file to load.
+     */
+    QStringList loadConfigFile(QString filename);
+
+    /**
+     * @brief List holding the contents of 8ball.txt, used by /8ball.
+     */
+    QStringList magic_8ball_answers;
+
+    /**
+     * @brief List holding the contents of praise.txt, used by AOClient::getReprimand.
+     */
+    QStringList praise_list;
+
+    /**
+     * @brief List holding the contents of reprimands.txt, used by AOClient::getReprimand.
+     */
+    QStringList reprimands_list;
+
   public slots:
     /**
      * @brief Handles a new connection.
