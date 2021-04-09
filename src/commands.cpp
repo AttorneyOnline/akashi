@@ -664,20 +664,19 @@ void AOClient::cmdTimer(int argc, QStringList argv)
 {
     AreaData* area = server->areas[current_area];
 
+    // Called without arguments
+    // Shows a brief of all timers
     if (argc == 0) {
         QStringList timers;
         timers.append("Currently active timers:");
-        QTimer* global_timer = server->timer;
-        if (global_timer->isActive()) {
-            QTime current_time = QTime(0,0).addMSecs(global_timer->remainingTime());
-            timers.append("Global timer is at " + current_time.toString("hh:mm:ss.zzz"));
-        }
-        for (QTimer* timer : area->timers) {
-            timers.append(getAreaTimer(area->index, timer));
+        for (int i = 0; i <= 4; i++) {
+            timers.append(getAreaTimer(area->index, i));
         }
         sendServerMessage(timers.join("\n"));
         return;
     }
+
+    // Called with more than one argument
     bool ok;
     int timer_id = argv[0].toInt(&ok);
     if (!ok || timer_id < 0 || timer_id > 4) {
@@ -685,22 +684,15 @@ void AOClient::cmdTimer(int argc, QStringList argv)
         return;
     }
 
+    // Called with one argument
+    // Shows the status of one timer
     if (argc == 1) {
-        if (timer_id == 0) {
-            QTimer* global_timer = server->timer;
-            if (global_timer->isActive()) {
-                QTime current_time = QTime(0, 0, 0, global_timer->remainingTime());
-                sendServerMessage("Global timer is at " + current_time.toString("hh:mm:ss.zzz"));
-                return;
-            }
-        }
-        else {
-            QTimer* timer = area->timers[timer_id - 1];
-            sendServerMessage(getAreaTimer(area->index, timer));
-            return;
-        }
+        sendServerMessage(getAreaTimer(area->index, timer_id));
+        return;
     }
 
+    // Called with more than one argument
+    // Updates the state of a timer
     QTimer* requested_timer;
     if (timer_id == 0) {
         if (!checkAuth(ACLFlags.value("GLOBAL_TIMER"))) {
@@ -1397,15 +1389,26 @@ void AOClient::diceThrower(int argc, QStringList argv, RollType type)
     }
 }
 
-QString AOClient::getAreaTimer(int area_idx, QTimer* timer)
+QString AOClient::getAreaTimer(int area_idx, int timer_idx)
 {
     AreaData* area = server->areas[area_idx];
+    QTimer* timer;
+    QString timer_name = (timer_idx == 0) ? "Global timer" : "Timer " + QString::number(timer_idx);
+
+    if (timer_idx == 0)
+        timer = server->timer;
+    else if (timer_idx > 0 && timer_idx <= 4)
+        timer = area->timers[timer_idx - 1];
+    else
+        return "Invalid timer ID.";
+
     if (timer->isActive()) {
         QTime current_time = QTime(0,0).addMSecs(timer->remainingTime());
-        return "Timer " + QString::number(area->timers.indexOf(timer) + 1) + " is at " + current_time.toString("hh:mm:ss.zzz");
+
+        return timer_name + " is at " + current_time.toString("hh:mm:ss.zzz");
     }
     else {
-        return "Timer " + QString::number(area->timers.indexOf(timer) + 1) + " is inactive.";
+        return timer_name + " is inactive.";
     }
 }
 
