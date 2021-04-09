@@ -1254,8 +1254,7 @@ void AOClient::cmd8Ball(int argc, QStringList argv)
         sendServerMessage("8ball.txt is empty.");
         }
     else {
-        int answerindex = server->magic_8ball_answers.size();
-        QString response = server->magic_8ball_answers[(genRand(1, answerindex))];
+        QString response = server->magic_8ball_answers[(genRand(1, server->magic_8ball_answers.size() - 1))];
         QString sender_name = ooc_name;
         QString sender_message = argv.join(" ");
 
