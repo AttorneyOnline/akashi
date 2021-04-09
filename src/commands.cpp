@@ -1249,35 +1249,18 @@ void AOClient::cmdNoteCardReveal(int argc, QStringList argv)
 
 void AOClient::cmd8Ball(int argc, QStringList argv)
 {
-    QFileInfo magic8ball_info("config/text/8ball.txt");
-    if (!(magic8ball_info.exists() && magic8ball_info.isFile())) {
-        qWarning() << "8ball.txt doesn't exist!";
-        sendServerMessage("8ball.txt doesn't exist.");
-    }
+    if (server->magic_8ball_answers.isEmpty()) {
+        qWarning() << "8ball.txt is empty!";
+        sendServerMessage("8ball.txt is empty.");
+        }
     else {
-        QStringList answers;
-        QFile file("config/text/8ball.txt");
-        file.open(QIODevice::ReadOnly | QIODevice::Text);
-        while (!file.atEnd()) {
-            answers.append(file.readLine().trimmed());
+        int answerindex = server->magic_8ball_answers.size();
+        QString response = server->magic_8ball_answers[(genRand(1, answerindex))];
+        QString sender_name = ooc_name;
+        QString sender_message = argv.join(" ");
+
+        sendServerMessageArea(sender_name + " asked the magic 8-ball, \"" + sender_message + "\" and the answer is: " + response);
         }
-        file.close();
-
-        if (answers.isEmpty()) {
-            qWarning() << "8ball.txt is empty!";
-            sendServerMessage("8ball.txt is empty.");
-        }
-        else {
-            int answerindex = answers.size();
-            QString response = answers[(genRand(1, answerindex))];
-            QString sender_name = ooc_name;
-            QString sender_message = argv.join(" ");
-
-            sendServerMessageArea(sender_name + " asked the magic 8-ball, \"" + sender_message + "\" and the answer is: " + response);
-        }
-
-    }
-
 }
 
 void AOClient::cmdAllow_Blankposting(int argc, QStringList argv)
@@ -1454,18 +1437,10 @@ long long AOClient::parseTime(QString input)
 
 QString AOClient::getReprimand(bool positive)
 {
-    QString filename = positive ? "praise" : "reprimands";
-    QFileInfo reprimands_info("config/text/" + filename + ".txt");
-    if (!(reprimands_info.exists() && reprimands_info.isFile())) {
-        qWarning() << filename + ".txt doesn't exist!";
-        return "";
-    }
-    QStringList reprimands;
-    QFile file("config/text/" + filename + ".txt");
-    file.open(QIODevice::ReadOnly | QIODevice::Text);
-    while (!file.atEnd()) {
-        reprimands.append(file.readLine().trimmed());
-    }
-    file.close();
-    return reprimands[genRand(0, reprimands.size() - 1)];
+    if (positive) {
+        return server->praise_list[genRand(0, server->praise_list.size() - 1)];
+        }
+    else {
+        return server->reprimands_list[genRand(0, server->reprimands_list.size() - 1)];
+        }
 }
