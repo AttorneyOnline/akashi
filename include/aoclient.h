@@ -231,7 +231,7 @@ class AOClient : public QObject {
     /**
      * @brief If true, the client's in-character messages will be overwritten by a randomly picked predetermined message.
      */
-    bool is_gimped;
+    bool is_gimped = false;
 
   public slots:
     /**
@@ -1399,6 +1399,60 @@ class AOClient : public QObject {
      */
     void cmd8Ball(int argc, QStringList argv);
 
+    /**
+     * @brief Replaces a target client's in-character messages with strings randomly selected from gimp.txt.
+     *
+     * @details The only argument is the **the target's ID** whom the client wants to gimp.
+     *
+     * @iscommand
+     */
+    void cmdGimp(int argc, QStringList argv);
+
+    /**
+     * @brief Allows a gimped client to speak normally.
+     *
+     * @details The only argument is **the target's ID** whom the client wants to ungimp.
+     *
+     * @iscommand
+     */
+    void cmdUnGimp(int argc, QStringList argv);
+
+    /**
+     * @brief Removes all vowels from a target client's in-character messages.
+     *
+     * @details The only argument is **the target's ID** whom the client wants to disemvowel.
+     *
+     * @iscommand
+     */
+    void cmdDisemvowel(int argc, QStringList argv);
+
+    /**
+     * @brief Allows a disemvoweled client to speak normally.
+     *
+     * @details The only argument is **the target's ID** whom the client wants to undisemvowel.
+     *
+     * @iscommand
+     */
+    void cmdUnDisemvowel(int argc, QStringList argv);
+
+    /**
+     * @brief Scrambles the words of a target client's in-character messages.
+     *
+     * @details The only argument is **the target's ID** whom the client wants to shake.
+     *
+     * @iscommand
+     */
+    void cmdShake(int argc, QStringList argv);
+
+    /**
+     * @brief Allows a shaken client to speak normally.
+     *
+     * @details The only argument is **the target's ID** whom the client wants to unshake.
+     *
+     * @iscommand
+     */
+    void cmdUnShake(int argc, QStringList argv);
+
     ///@}
 
     /**
@@ -1593,6 +1647,7 @@ class AOClient : public QObject {
         {"8ball",           {ACLFlags.value("NONE"),         1, &AOClient::cmd8Ball}},
         {"lm",              {ACLFlags.value("MODCHAT"),      1, &AOClient::cmdLM}},
         {"allow_blankposting", {ACLFlags.value("MODCHAT"),      0, &AOClient::cmdAllow_Blankposting}},
+        {"gimp",            {ACLFlags.value("MUTE"),         1, &AOClient::cmdGimp}},
     };
 
     /**

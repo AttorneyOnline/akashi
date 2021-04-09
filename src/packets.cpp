@@ -441,6 +441,11 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         return invalid;
     }
 
+    if (is_gimped) {
+        QString gimp_message = server->gimp_list[(genRand(1, server->gimp_list.size() - 1))];
+        incoming_msg = gimp_message;
+    }
+
     last_message = incoming_msg;
     args.append(incoming_msg);
 

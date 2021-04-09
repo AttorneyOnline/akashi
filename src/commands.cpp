@@ -1276,6 +1276,26 @@ void AOClient::cmdAllow_Blankposting(int argc, QStringList argv)
     }
 }
 
+void AOClient::cmdGimp(int argc, QStringList argv)
+{
+    bool conv_ok = false;
+    int uid = argv[0].toInt(&conv_ok);
+    if (!conv_ok) {
+        sendServerMessage("Invalid user ID.");
+        return;
+    }
+
+    AOClient* target = server->getClientByID(uid);
+
+    if (target->is_gimped)
+        sendServerMessage("That player is already gimped!");
+    else {
+        sendServerMessage("Gimped player.");
+        target->sendServerMessage("You have been gimped! " + getReprimand());
+    }
+    target->is_gimped = true;
+}
+
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;

@@ -182,7 +182,7 @@ bool ConfigManager::fileExists(QFileInfo* file)
 
 bool ConfigManager::verifyCommandConfig()
 {
-    QStringList filelist = {"8ball", "praise", "reprimands"};
+    QStringList filelist = {"8ball", "praise", "reprimands", "gimp"};
     foreach (QString filename, filelist) {
         QFileInfo file("config/text/" + filename + ".txt");
         if (!(fileExists(&file))) {
