@@ -1648,6 +1648,7 @@ class AOClient : public QObject {
         {"lm",              {ACLFlags.value("MODCHAT"),      1, &AOClient::cmdLM}},
         {"allow_blankposting", {ACLFlags.value("MODCHAT"),      0, &AOClient::cmdAllow_Blankposting}},
         {"gimp",            {ACLFlags.value("MUTE"),         1, &AOClient::cmdGimp}},
+        {"ungimp",          {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnGimp}},
     };
 
     /**

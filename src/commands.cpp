@@ -1296,6 +1296,26 @@ void AOClient::cmdGimp(int argc, QStringList argv)
     target->is_gimped = true;
 }
 
+void AOClient::cmdUnGimp(int argc, QStringList argv)
+{
+    bool conv_ok = false;
+    int uid = argv[0].toInt(&conv_ok);
+    if (!conv_ok) {
+        sendServerMessage("Invalid user ID.");
+        return;
+    }
+
+    AOClient* target = server->getClientByID(uid);
+
+    if (!(target->is_gimped))
+        sendServerMessage("That player is not gimped!");
+    else {
+        sendServerMessage("Ungimped player.");
+        target->sendServerMessage("A moderator has ungimped you! " + getReprimand(true));
+    }
+    target->is_gimped = false;
+}
+
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;
