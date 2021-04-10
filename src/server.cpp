@@ -200,9 +200,9 @@ int Server::getCharID(QString char_name)
 
 void Server::loadCommandConfig()
 {
-    magic_8ball_answers.append(loadConfigFile("8ball"));
-    praise_list.append(loadConfigFile("praise"));
-    reprimands_list.append(loadConfigFile("reprimands"));
+    magic_8ball_answers = (loadConfigFile("8ball"));
+    praise_list = (loadConfigFile("praise"));
+    reprimands_list = (loadConfigFile("reprimands"));
 }
 
 QStringList Server::loadConfigFile(QString filename)
