@@ -693,6 +693,9 @@ void AOClient::cmdTimer(int argc, QStringList argv)
 
     // Called with more than one argument
     // Updates the state of a timer
+
+    // Select the proper timer
+    // Check against permissions if global timer is selected
     QTimer* requested_timer;
     if (timer_id == 0) {
         if (!checkAuth(ACLFlags.value("GLOBAL_TIMER"))) {
@@ -703,33 +706,45 @@ void AOClient::cmdTimer(int argc, QStringList argv)
     }
     else
         requested_timer = area->timers[timer_id - 1];
+
+    AOPacket show_timer("TI", {QString::number(timer_id), "2"});
+    AOPacket hide_timer("TI", {QString::number(timer_id), "3"});
+    bool is_global = timer_id == 0;
+
+    // Set the timer's time remaining if the second
+    // argument is a valid time
     QTime requested_time = QTime::fromString(argv[1], "hh:mm:ss");
     if (requested_time.isValid()) {
         requested_timer->setInterval(QTime(0,0).msecsTo(requested_time));
         requested_timer->start();
         sendServerMessage("Set timer " + QString::number(timer_id) + " to " + argv[1] + ".");
-        sendPacket("TI", {QString::number(timer_id), "2"}); // Show the timer
-        sendPacket("TI", {QString::number(timer_id), "0", QString::number(QTime(0,0).msecsTo(requested_time))});
+        AOPacket update_timer("TI", {QString::number(timer_id), "0", QString::number(QTime(0,0).msecsTo(requested_time))});
+        is_global ? server->broadcast(show_timer) : server->broadcast(show_timer, current_area); // Show the timer
+        is_global ? server->broadcast(update_timer) : server->broadcast(update_timer, current_area);
         return;
     }
+    // Otherwise, update the state of the timer
     else {
         if (argv[1] == "start") {
             requested_timer->start();
             sendServerMessage("Started timer " + QString::number(timer_id) + ".");
-            sendPacket("TI", {QString::number(timer_id), "2"}); // Show the timer
-            sendPacket("TI", {QString::number(timer_id), "0", QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(requested_timer->remainingTime())))});
+            AOPacket update_timer("TI", {QString::number(timer_id), "0", QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(requested_timer->remainingTime())))});
+            is_global ? server->broadcast(show_timer) : server->broadcast(show_timer, current_area);
+            is_global ? server->broadcast(update_timer) : server->broadcast(update_timer, current_area);
         }
         else if (argv[1] == "pause" || argv[1] == "stop") {
             requested_timer->setInterval(requested_timer->remainingTime());
             requested_timer->stop();
             sendServerMessage("Stopped timer " + QString::number(timer_id) + ".");
-            sendPacket("TI", {QString::number(timer_id), "1", QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(requested_timer->interval())))});
+            AOPacket update_timer("TI", {QString::number(timer_id), "1", QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(requested_timer->interval())))});
+            is_global ? server->broadcast(update_timer) : server->broadcast(update_timer, current_area);
         }
         else if (argv[1] == "hide" || argv[1] == "unset") {
             requested_timer->setInterval(0);
             requested_timer->stop();
             sendServerMessage("Hid timer " + QString::number(timer_id) + ".");
-            sendPacket("TI", {QString::number(timer_id), "3"}); // Hide the timer
+            // Hide the timer
+            is_global ? server->broadcast(hide_timer) : server->broadcast(hide_timer, current_area);
         }
     }
 }
