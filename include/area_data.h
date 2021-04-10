@@ -279,6 +279,13 @@ class AreaData : public QObject {
     QMap<QString, QString> notecards;
 
     /**
+    * @brief The judgelog of an area.
+    *
+    * @details This list contains up to 10 recorded packets of the most recent judge actions (WT/CE or penalty updates) in an area.
+    */
+    QStringList judgelog;
+    
+    /**
      * @brief The last IC packet sent in an area.
      */
     QStringList last_ic_message;

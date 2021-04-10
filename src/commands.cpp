@@ -1287,6 +1287,24 @@ void AOClient::cmd8Ball(int argc, QStringList argv)
 
 }
 
+void AOClient::cmdJudgeLog(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    if (area->judgelog.isEmpty()) {
+        sendServerMessage("There have been no judge actions in this area.");
+        return;
+    }
+    QString message = area->judgelog.join("\n");
+    //Judgelog contains an IPID, so we shouldn't send that unless the caller has appropriate permissions
+    if (checkAuth(ACLFlags.value("KICK")) == 1 || checkAuth(ACLFlags.value("BAN")) == 1) {
+            sendServerMessage(message);
+    }
+    else {
+        QString filteredmessage = message.remove(QRegularExpression("[(].*[)]")); //Filter out anything between two parentheses. This should only ever be the IPID
+        sendServerMessage(filteredmessage);
+    }
+}
+
 void AOClient::cmdAllow_Blankposting(int argc, QStringList argv)
 {
     QString sender_name = ooc_name;
@@ -1298,6 +1316,44 @@ void AOClient::cmdAllow_Blankposting(int argc, QStringList argv)
     else {
         sendServerMessageArea(sender_name + " has set blankposting in the area to allowed.");
     }
+}
+
+void AOClient::cmdBanInfo(int argc, QStringList argv)
+{
+    QStringList ban_info;
+    ban_info << ("Ban Info for " + argv[0]);
+    ban_info << "-----";
+    QString lookup_type;
+
+    if (argc == 1) {
+       lookup_type = "banid";
+    }
+    else if (argc == 2) {
+        lookup_type = argv[1];
+        if (!((lookup_type == "banid") || (lookup_type == "ipid") || (lookup_type == "hdid"))) {
+            sendServerMessage("Invalid ID type.");
+            return;
+        }
+    }
+    else {
+        sendServerMessage("Invalid command.");
+        return;
+    }
+    QString id = argv[0];
+    for (DBManager::BanInfo ban : server->db_manager->getBanInfo(lookup_type, id)) {
+        QString banned_until;
+        if (ban.duration == -2)
+            banned_until = "The heat death of the universe";
+        else
+            banned_until = QDateTime::fromSecsSinceEpoch(ban.time).addSecs(ban.duration).toString("dd.MM.yyyy, hh:mm");
+        ban_info << "Affected IPID: " + ban.ipid;
+        ban_info << "Affected HDID: " + ban.hdid;
+        ban_info << "Reason for ban: " + ban.reason;
+        ban_info << "Date of ban: " + QDateTime::fromSecsSinceEpoch(ban.time).toString("dd.MM.yyyy, hh:mm");
+        ban_info << "Ban lasts until: " + banned_until;
+        ban_info << "-----";
+    }
+    sendServerMessage(ban_info.join("\n"));
 }
 
 QStringList AOClient::buildAreaList(int area_idx)

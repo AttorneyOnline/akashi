@@ -1399,6 +1399,27 @@ class AOClient : public QObject {
      */
     void cmd8Ball(int argc, QStringList argv);
 
+    /**
+    * @brief Sends an out-of-character message with the judgelog of an area.
+    *
+    * @details No arguments.
+    *
+    * @iscommand
+    */
+    void cmdJudgeLog(int argc, QStringList argv);
+
+    /**
+     * @brief Looks up info on a ban.
+     *
+     * @details If it is called with **one argument**, that argument is the ban ID to look up.
+     *
+     * If it is called with **two arguments**, then the first argument is either a ban ID, an IPID,
+     * or an HDID, and the the second argument specifies the ID type.
+     *
+     * @iscommand
+     */
+    void cmdBanInfo(int argc, QStringList argv);
+
     ///@}
 
     /**
@@ -1592,7 +1613,9 @@ class AOClient : public QObject {
         {"notecard_clear",  {ACLFlags.value("NONE"),         0, &AOClient::cmdNoteCardClear}},
         {"8ball",           {ACLFlags.value("NONE"),         1, &AOClient::cmd8Ball}},
         {"lm",              {ACLFlags.value("MODCHAT"),      1, &AOClient::cmdLM}},
+        {"judgelog",        {ACLFlags.value("CM"),           0, &AOClient::cmdJudgeLog}},
         {"allow_blankposting", {ACLFlags.value("MODCHAT"),      0, &AOClient::cmdAllow_Blankposting}},
+        {"baninfo",         {ACLFlags.value("BAN"),          1, &AOClient::cmdBanInfo}},
     };
 
     /**
@@ -1640,6 +1663,17 @@ class AOClient : public QObject {
      * @details Used to determine if the incoming message is a duplicate.
      */
     QString last_message;
+
+    /**
+     * @brief A helper function to add recorded packets to an area's judgelog.
+     *
+     * @param area Pointer to the area where the packet was sent.
+     *
+     * @param client Pointer to the client that sent the packet.
+     *
+     * @param action String containing the info that is being recorded.
+     */
+    void updateJudgeLog(AreaData* area, AOClient* client, QString action);
 };
 
 #endif // AOCLIENT_H
