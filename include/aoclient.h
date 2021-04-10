@@ -53,7 +53,7 @@ class AOClient : public QObject {
     AOClient(Server* p_server, QTcpSocket* p_socket, QObject* parent = nullptr, int user_id = 0)
         : QObject(parent), id(user_id), remote_ip(p_socket->peerAddress()), password(""),
           joined(false), current_area(0), current_char(""), socket(p_socket), server(p_server),
-          is_partial(false), last_wtce_time(0), last_message("") {};
+          is_partial(false), last_wtce_time(0) {};
 
     /**
       * @brief Destructor for the AOClient instance.

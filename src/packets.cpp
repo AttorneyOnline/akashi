@@ -433,15 +433,15 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
 
     // message text
     QString incoming_msg = dezalgo(incoming_args[4].toString().trimmed());
-    if (incoming_msg == last_message)
+    if (!area->last_ic_message.isEmpty()
+            && incoming_msg == area->last_ic_message[4]
+            && incoming_msg != "")
         return invalid;
 
     if (incoming_msg == "" && area->blankposting_allowed == false) {
         sendServerMessage("Blankposting has been forbidden in this area.");
         return invalid;
     }
-
-    last_message = incoming_msg;
     args.append(incoming_msg);
 
     // side
