@@ -1414,12 +1414,12 @@ class AOClient : public QObject {
      * @brief Returns a textual representation of the time left in an area's Timer.
      *
      * @param area_idx The ID of the area whose timer to grab.
-     * @param timer The pointer to the area's timer.
+     * @param timer_idx The ID of the timer to grab
      *
      * @return A textual representation of the time left over on the Timer,
      * or `"Timer is inactive"` if the timer wasn't started.
      */
-    QString getAreaTimer(int area_idx, QTimer* timer);
+    QString getAreaTimer(int area_idx, int timer_idx);
 
     /**
      * @brief Generates a tsuserver3-style area list to be displayed to the user in the out-of-character chat.
