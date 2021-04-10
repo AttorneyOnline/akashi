@@ -1289,7 +1289,7 @@ void AOClient::cmdJudgeLog(int argc, QStringList argv)
     }
     QString message = area->judgelog.join("\n");
     //Judgelog contains an IPID, so we shouldn't send that unless the caller has appropriate permissions
-    if (((checkAuth(ACLFlags.value("KICK"))) == 1) || (((checkAuth(ACLFlags.value("BAN"))) == 1))) {
+    if (checkAuth(ACLFlags.value("KICK")) == 1 || checkAuth(ACLFlags.value("BAN")) == 1) {
             sendServerMessage(message);
     }
     else {

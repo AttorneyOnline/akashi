@@ -332,26 +332,21 @@ QList<DBManager::BanInfo> DBManager::getBanInfo(QString lookup_type, QString id)
     QList<BanInfo> invalid;
     if (lookup_type == "banid") {
         query.prepare("SELECT * FROM BANS WHERE ID = ?");
-        query.addBindValue(id);
-        query.setForwardOnly(true);
-        query.exec();
     }
     else if (lookup_type == "hdid") {
         query.prepare("SELECT * FROM BANS WHERE HDID = ?");
-        query.addBindValue(id);
-        query.setForwardOnly(true);
-        query.exec();
     }
     else if (lookup_type == "ipid") {
         query.prepare("SELECT * FROM BANS WHERE IPID = ?");
-        query.addBindValue(id);
-        query.setForwardOnly(true);
-        query.exec();
     }
     else {
         qCritical("Invalid ban lookup type!");
         return invalid;
     }
+    query.addBindValue(id);
+    query.setForwardOnly(true);
+    query.exec();
+
     while (query.next()) {
         BanInfo ban;
         ban.ipid = query.value(0).toString();
