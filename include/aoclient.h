@@ -1399,6 +1399,13 @@ class AOClient : public QObject {
      */
     void cmd8Ball(int argc, QStringList argv);
 
+    /**
+     * @brief Reloads all server configuration files.
+     *
+     * @details No arguments.
+     */
+    void cmdReload(int argc, QStringList argv);
+
     ///@}
 
     /**

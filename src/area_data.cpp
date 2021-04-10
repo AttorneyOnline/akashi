@@ -42,6 +42,7 @@ AreaData::AreaData(QString p_name, int p_index) :
     QSettings config_ini("config/config.ini", QSettings::IniFormat);
     config_ini.beginGroup("Options");
     int log_size = config_ini.value("logbuffer", 50).toInt();
+    log_type = config_ini.value("logger","modcall").toString();
     config_ini.endGroup();
     if (log_size == 0)
         log_size = 500;

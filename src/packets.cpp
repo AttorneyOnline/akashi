@@ -37,10 +37,7 @@ void AOClient::pktHardwareId(AreaData* area, int argc, QStringList argv, AOPacke
 
 void AOClient::pktSoftwareId(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
-    QSettings config("config/config.ini", QSettings::IniFormat);
-    config.beginGroup("Options");
-    QString max_players = config.value("max_players").toString();
-    config.endGroup();
+
 
     // Full feature list as of AO 2.8.5
     // The only ones that are critical to ensuring the server works are
@@ -64,7 +61,7 @@ void AOClient::pktSoftwareId(AreaData* area, int argc, QStringList argv, AOPacke
         version.minor = match.captured(3).toInt();
     }
 
-    sendPacket("PN", {QString::number(server->player_count), max_players});
+    sendPacket("PN", {QString::number(server->player_count), server->max_players});
     sendPacket("FL", feature_list);
 }
 
@@ -181,7 +178,7 @@ void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket p
     }
 
     ooc_name = dezalgo(argv[0]).replace(QRegExp("\\[|\\]|\\{|\\}|\\#|\\$|\\%|\\&"), ""); // no fucky wucky shit here
-    if (ooc_name.isEmpty() || ooc_name == server->getServerName()) // impersonation & empty name protection
+    if (ooc_name.isEmpty() || ooc_name == server->server_name) // impersonation & empty name protection
         return;
     
     QString message = dezalgo(argv[1]);
@@ -629,14 +626,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
 
 QString AOClient::dezalgo(QString p_text)
 {
-    QSettings config("config/config.ini", QSettings::IniFormat);
-    config.beginGroup("Options");
-    bool zalgo_tolerance_conversion_success;
-    int zalgo_tolerance = config.value("zalgo_tolerance", "3").toInt(&zalgo_tolerance_conversion_success);
-    if (!zalgo_tolerance_conversion_success)
-        zalgo_tolerance = 3;
-
-    QRegExp rxp("([\u0300-\u036f\u1ab0-\u1aff\u1dc0-\u1dff\u20d0-\u20ff\ufe20-\ufe2f\u115f\u1160\u3164]{" + QRegExp::escape(QString::number(zalgo_tolerance)) + ",})");
+    QRegExp rxp("([\u0300-\u036f\u1ab0-\u1aff\u1dc0-\u1dff\u20d0-\u20ff\ufe20-\ufe2f\u115f\u1160\u3164]{" + QRegExp::escape(QString::number(server->zalgo_tolerance)) + ",})");
     QString filtered = p_text.replace(rxp, "");
     return filtered;
 }

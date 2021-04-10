@@ -27,21 +27,16 @@ void AOClient::cmdDefault(int argc, QStringList argv)
 
 void AOClient::cmdLogin(int argc, QStringList argv)
 {
-    QSettings config("config/config.ini", QSettings::IniFormat);
-    config.beginGroup("Options");
-    QString modpass = config.value("modpass", "default").toString();
-    QString auth_type = config.value("auth", "simple").toString();
-
     if (authenticated) {
         sendServerMessage("You are already logged in!");
         return;
     }
 
-    if (auth_type == "simple") {
-        if (modpass == "") {
+    if (server->auth_type == "simple") {
+        if (server->modpass == "") {
             sendServerMessage("No modpass is set! Please set a modpass before authenticating.");
         }
-        else if(argv[0] == modpass) {
+        else if(argv[0] == server->modpass) {
             sendPacket("AUTH", {"1"}); // Client: "You were granted the Disable Modcalls button."
             sendServerMessage("Logged in as a moderator."); // pre-2.9.1 clients are hardcoded to display the mod UI when this string is sent in OOC
             authenticated = true;
@@ -52,7 +47,7 @@ void AOClient::cmdLogin(int argc, QStringList argv)
         }
         server->areas.value(current_area)->logger->logLogin(this, authenticated, "moderator");
     }
-    else if (auth_type == "advanced") {
+    else if (server->auth_type == "advanced") {
         if (argc < 2) {
             sendServerMessage("You must specify a username and a password");
             return;
@@ -194,11 +189,7 @@ void AOClient::cmdKick(int argc, QStringList argv)
 
 void AOClient::cmdChangeAuth(int argc, QStringList argv)
 {
-    QSettings settings("config/config.ini", QSettings::IniFormat);
-    settings.beginGroup("Options");
-    QString auth_type = settings.value("auth", "simple").toString();
-
-    if (auth_type == "simple") {
+    if (server->auth_type == "simple") {
         change_auth_started = true;
         sendServerMessage("WARNING!\nThis command will change how logging in as a moderator works.\nOnly proceed if you know what you are doing\nUse the command /rootpass to set the password for your root account.");
     }
@@ -214,6 +205,7 @@ void AOClient::cmdSetRootPass(int argc, QStringList argv)
     QSettings settings("config/config.ini", QSettings::IniFormat);
     settings.beginGroup("Options");
     settings.setValue("auth", "advanced");
+    server->auth_type = "advanced";
 
 #if QT_VERSION < QT_VERSION_CHECK(5, 10, 0)
     qsrand(QDateTime::currentMSecsSinceEpoch());
@@ -828,14 +820,11 @@ void AOClient::cmdToggleGlobal(int argc, QStringList argv)
 void AOClient::cmdMods(int argc, QStringList argv)
 {
     QStringList entries;
-    QSettings config("config/config.ini", QSettings::IniFormat);
-    config.beginGroup("Options");
-    QString auth_type = config.value("auth", "simple").toString();
     int online_count = 0;
     for (AOClient* client : server->clients) {
         if (client->authenticated) {
             entries << "---";
-            if (auth_type != "simple")
+            if (server->auth_type != "simple")
                 entries << "Moderator: " + client->moderator_name;
             entries << "OOC name: " + client->ooc_name;
             entries << "ID: " + QString::number(client->id);
@@ -1325,8 +1314,8 @@ int AOClient::genRand(int min, int max)
 void AOClient::diceThrower(int argc, QStringList argv, RollType type)
 {
     QString sender_name = ooc_name;
-    int max_value = server->getDiceValue("max_value");
-    int max_dice = server->getDiceValue("max_dice");
+    int max_value = server->dice_value;
+    int max_dice = server->max_dice;
     int bounded_value;
     int bounded_amount;
     QString dice_results;
