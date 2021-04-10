@@ -185,6 +185,8 @@ void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket p
         return;
     
     QString message = dezalgo(argv[1]);
+    if (message.length() == 0)
+        return;
     AOPacket final_packet("CT", {ooc_name, message, "0"});
     if(message.at(0) == '/') {
         QStringList cmd_argv = message.split(" ", QString::SplitBehavior::SkipEmptyParts);
