@@ -328,6 +328,7 @@ class AreaData : public QObject {
     QVector<QStringList> testimony; //!< Vector of all statements saved. Index 0 is always the title of the testimony.
     int statement; //!< Keeps track of the currently played statement.
 
+    /**
     * @brief The judgelog of an area.
     *
     * @details This list contains up to 10 recorded packets of the most recent judge actions (WT/CE or penalty updates) in an area.
