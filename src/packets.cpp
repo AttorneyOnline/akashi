@@ -143,13 +143,14 @@ void AOClient::pktCharPassword(AreaData* area, int argc, QStringList argv, AOPac
 void AOClient::pktSelectChar(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
     bool argument_ok;
-    char_id = argv[1].toInt(&argument_ok);
+    int selected_char_id = argv[1].toInt(&argument_ok);
     if (!argument_ok) {
-        char_id = -1;
+        selected_char_id = -1;
         return;
     }
 
-    changeCharacter(char_id);
+    if (changeCharacter(selected_char_id))
+        char_id = selected_char_id;
 }
 
 void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket packet)
@@ -184,6 +185,8 @@ void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket p
         return;
     
     QString message = dezalgo(argv[1]);
+    if (message.length() == 0)
+        return;
     AOPacket final_packet("CT", {ooc_name, message, "0"});
     if(message.at(0) == '/') {
         QStringList cmd_argv = message.split(" ", QString::SplitBehavior::SkipEmptyParts);
@@ -262,6 +265,7 @@ void AOClient::pktWtCe(AreaData* area, int argc, QStringList argv, AOPacket pack
         return;
     last_wtce_time = QDateTime::currentDateTime().toSecsSinceEpoch();
     server->broadcast(packet, current_area);
+    updateJudgeLog(area, this, "WT/CE");
 }
 
 void AOClient::pktHpBar(AreaData* area, int argc, QStringList argv, AOPacket packet)
@@ -278,6 +282,7 @@ void AOClient::pktHpBar(AreaData* area, int argc, QStringList argv, AOPacket pac
     }
     server->broadcast(AOPacket("HP", {"1", QString::number(area->def_hp)}), area->index);
     server->broadcast(AOPacket("HP", {"2", QString::number(area->pro_hp)}), area->index);
+    updateJudgeLog(area, this, "updated the penalties");
 }
 
 void AOClient::pktWebSocketIp(AreaData* area, int argc, QStringList argv, AOPacket packet)
@@ -432,15 +437,15 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
 
     // message text
     QString incoming_msg = dezalgo(incoming_args[4].toString().trimmed());
-    if (incoming_msg == last_message)
+    if (!area->last_ic_message.isEmpty()
+            && incoming_msg == area->last_ic_message[4]
+            && incoming_msg != "")
         return invalid;
 
     if (incoming_msg == "" && area->blankposting_allowed == false) {
         sendServerMessage("Blankposting has been forbidden in this area.");
         return invalid;
     }
-
-    last_message = incoming_msg;
     args.append(incoming_msg);
 
     // side
@@ -664,4 +669,22 @@ bool AOClient::checkEvidenceAccess(AreaData *area)
     default:
         return false;
     }
+}
+
+void AOClient::updateJudgeLog(AreaData* area, AOClient* client, QString action)
+{
+    QString timestamp = QTime::currentTime().toString("hh:mm:ss");
+    QString uid = QString::number(client->id);
+    QString char_name = client->current_char;
+    QString ipid = client->getIpid();
+    QString message = action;
+    QString logmessage = QString("[%1]: [%2] %3 (%4) %5").arg(timestamp, uid, char_name, ipid, message);
+    int size = area->judgelog.size();
+    if (size == 10) {
+        area->judgelog.removeFirst();
+        area->judgelog.append(logmessage);
+    }
+    else area->judgelog.append(logmessage);
+
+
 }

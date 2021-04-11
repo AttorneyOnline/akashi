@@ -25,6 +25,7 @@ AreaData::AreaData(QString p_name, int p_index) :
     document("No document."),
     def_hp(10),
     pro_hp(10),
+    judgelog(),
     last_ic_message()
 {
     QStringList name_split = p_name.split(":");
