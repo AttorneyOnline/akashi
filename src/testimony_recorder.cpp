@@ -23,10 +23,12 @@ void AOClient::addStatement(QStringList packet)
 {
     AreaData* area = server->areas[current_area];
     int c_statement = area->statement;
-    packet[13] = 1;
+    packet[14] = 1;
     if (area->test_rec == AreaData::TestimonyRecording::RECORDING) {
-        if (area->testimony.isEmpty() && c_statement <= 50) { //Make this configurable once Mangos ConfigManager changes get merged
+        if (c_statement <= 50) { //Make this configurable once Mangos ConfigManager changes get merged
             area->testimony.append(packet);
+            area->statement = c_statement + 1;
+            return;
         }
         else {
             sendServerMessage("Unable to add more statements. The maximum amount of statements has been reached.");

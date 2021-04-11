@@ -1356,6 +1356,20 @@ void AOClient::cmdBanInfo(int argc, QStringList argv)
     sendServerMessage(ban_info.join("\n"));
 }
 
+void AOClient::cmdExamine(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    if (area->test_rec == AreaData::TestimonyRecording::RECORDING) {
+        sendServerMessage("Examination already in progress.");
+    }
+    else {
+        clearTestimony();
+        area->statement = 0;
+        area->test_rec = AreaData::TestimonyRecording::RECORDING;
+        sendServerMessage("Started testimony recording.");
+    }
+}
+
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;

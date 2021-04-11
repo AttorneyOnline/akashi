@@ -630,6 +630,11 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
 
     //Testimony playback
     if (area->test_rec == AreaData::TestimonyRecording::RECORDING || area->test_rec == AreaData::TestimonyRecording::ADD) {
+        if (area->statement == 0) {
+            args[4] = "~~--== " + args[4] + " ==--";
+            args[14] = "5";
+            server->broadcast(AOPacket("RT",{"testimony1"}), current_area);
+        }
         addStatement(args);
     }
     else if (area->test_rec == AreaData::TestimonyRecording::UPDATE) {

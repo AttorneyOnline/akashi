@@ -1303,6 +1303,34 @@ class AOClient : public QObject {
      * @iscommand
      */
     void cmdNoteCardClear(int argc, QStringList argv);
+
+    /**
+     * @brief [Insert description here]
+     *
+     * @details [Insert explanation here]
+     */
+    void cmdExamine(int argc, QStringList argv);
+
+    /**
+     * @brief [Insert description here]
+     *
+     * @details [Insert explanation here]
+     */
+    void cmdTestify(int argc, QStringList argv);
+
+    /**
+     * @brief [Insert description here]
+     *
+     * @details [Insert explanation here]
+     */
+    void cmdUpdateStatement(int argc, QStringList argv);
+
+    /**
+     * @brief [Insert description here]
+     *
+     * @details [Insert explanation here]
+     */
+    void cmdDeleteStatement(int argc, QStringList argv);
   
     // Messaging/Client
     
@@ -1622,6 +1650,7 @@ class AOClient : public QObject {
         {"judgelog",           {ACLFlags.value("CM"),           0, &AOClient::cmdJudgeLog}},
         {"allow_blankposting", {ACLFlags.value("MODCHAT"),      0, &AOClient::cmdAllow_Blankposting}},
         {"baninfo",            {ACLFlags.value("BAN"),          1, &AOClient::cmdBanInfo}},
+        {"examine",            {ACLFlags.value("CM"),           0, &AOClient::cmdExamine}},
     };
 
     /**
