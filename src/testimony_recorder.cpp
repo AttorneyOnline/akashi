@@ -19,19 +19,47 @@
 
 //
 
-void AOClient::addStatement(QString packet)
+void AOClient::addStatement(QStringList packet)
 {
- // This one inserts to the array in order to add new statements inbetwee. Might pull double duty to populate the testimony.
+    AreaData* area = server->areas[current_area];
+    int c_statement = area->statement;
+    packet[13] = 1;
+    if (area->test_rec == AreaData::TestimonyRecording::RECORDING) {
+        if (area->testimony.isEmpty() && c_statement <= 50) { //Make this configurable once Mangos ConfigManager changes get merged
+            area->testimony.append(packet);
+        }
+        else {
+            sendServerMessage("Unable to add more statements. The maximum amount of statements has been reached.");
+        }
+    }
+    else if (area->test_rec == AreaData::TestimonyRecording::ADD) {
+        if (c_statement < 50) { //Make this configurable once Mangos ConfigManager changes get merged
+           area->testimony.insert(c_statement,packet);
+           area->test_rec = AreaData::TestimonyRecording::PLAYBACK;
+        }
+        else {
+            sendServerMessage("Unable to add more statements. The maximum amount of statements has been reached.");
+            area->test_rec = AreaData::TestimonyRecording::PLAYBACK;
+        }
+    }
+
 }
 
-void AOClient::updateStatement(QString packet)
+QStringList AOClient::updateStatement(QStringList packet)
 {
     AreaData* area = server->areas[current_area];
     int c_statement = area->statement;
     if ((c_statement >= 0 && !(area->testimony[c_statement].isEmpty()))) {
         sendServerMessage("Unable to update an empty statement. Please use /addtestimony.");
     }
-    //Insert code to replace packet here
+    else {
+        packet[13] = 1;
+        area->testimony.replace(c_statement, packet);
+        sendServerMessage("Updated current statement.");
+        return area->testimony[c_statement];
+    }
+    area->test_rec = AreaData::TestimonyRecording::PLAYBACK;
+    return packet;
 }
 
 void AOClient::deleteStatement()
@@ -42,7 +70,7 @@ void AOClient::deleteStatement()
         area->testimony.remove(c_statement);
         sendServerMessage("The statement with id " + QString::number(c_statement) + " has been deleted from the testimony.");
     }
-    return;
+    server->areas[current_area]->test_rec = AreaData::TestimonyRecording::PLAYBACK;
 }
 
 void AOClient::clearTestimony()
@@ -53,16 +81,23 @@ void AOClient::clearTestimony()
     area->testimony.squeeze(); //!< Release memory. Good idea? God knows, I do not.
 }
 
-void AOClient::playTestimony()
+QStringList AOClient::playTestimony()
 {
     AreaData* area = server->areas[current_area];
     int c_statement = area->statement;
-    server->broadcast(AOPacket("MS",area->testimony[c_statement]), current_area);
-    //Send Message when end is reached and testimony loops?
+    if (c_statement > area->testimony.size()) {
+        sendServerMessageArea("Last statement reached. Looping to first statement.");
+        area->statement = 1;
+        return area->testimony[1];
+    }
+    else {
+        return area->testimony[c_statement];
+    }
 }
 
 void AOClient::pauseTestimony()
 {
     AreaData* area = server->areas[current_area];
     area->test_rec = AreaData::TestimonyRecording::STOPPED;
+    sendServerMessage("Testimony playback has been stopped.");
 }

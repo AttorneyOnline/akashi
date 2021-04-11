@@ -623,6 +623,17 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         args.append(incoming_args[25].toString());
     }
 
+    //Testimony playback
+    if (area->test_rec == AreaData::TestimonyRecording::RECORDING || area->test_rec == AreaData::TestimonyRecording::ADD) {
+        addStatement(args);
+    }
+    else if (area->test_rec == AreaData::TestimonyRecording::UPDATE) {
+        args = updateStatement(args);
+    }
+    else if (area->test_rec == AreaData::TestimonyRecording::PLAYBACK) {
+        args = playTestimony(); // This still needs to handle > and < and when you jump, but god I am not doing this at 11PM
+    }
+
     return AOPacket("MS", args);
 }
 

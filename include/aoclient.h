@@ -1484,11 +1484,11 @@ class AOClient : public QObject {
     long long parseTime(QString input);
     QString getReprimand(bool positive = false);
 
-    void addStatement(QString packet);
-    void updateStatement(QString packet);
+    void addStatement(QStringList packet);
+    QStringList updateStatement(QStringList packet);
     void deleteStatement();
     void clearTestimony();
-    void playTestimony();
+    QStringList playTestimony();
     void pauseTestimony();
     ///@}
 
