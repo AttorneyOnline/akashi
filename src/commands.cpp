@@ -1398,7 +1398,7 @@ void AOClient::cmdUpdateStatement(int argc, QStringList argv)
     sendServerMessage("Recording updated statement.");
 }
 
-void AOClient::cmdStop(int argc, QStringList argv)
+void AOClient::cmdPauseTestimony(int argc, QStringList argv)
 {
     pauseTestimony();
 }
