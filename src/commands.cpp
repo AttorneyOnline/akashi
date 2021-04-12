@@ -1356,7 +1356,7 @@ void AOClient::cmdBanInfo(int argc, QStringList argv)
     sendServerMessage(ban_info.join("\n"));
 }
 
-void AOClient::cmdExamine(int argc, QStringList argv)
+void AOClient::cmdTestify(int argc, QStringList argv)
 {
     AreaData* area = server->areas[current_area];
     if (area->test_rec == AreaData::TestimonyRecording::RECORDING) {
@@ -1368,6 +1368,39 @@ void AOClient::cmdExamine(int argc, QStringList argv)
         area->test_rec = AreaData::TestimonyRecording::RECORDING;
         sendServerMessage("Started testimony recording.");
     }
+}
+
+void AOClient::cmdExamine(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    if (area->testimony.size() -1 > 0)
+    {
+        area->test_rec = AreaData::TestimonyRecording::PLAYBACK;
+        server->broadcast(AOPacket("RT",{"testimony2"}), current_area);
+        server->broadcast(AOPacket("MS", {area->testimony[0]}), current_area);
+        area->statement = 0;
+        return;
+    }
+    if (area->test_rec == AreaData::TestimonyRecording::PLAYBACK)
+        sendServerMessage("Unable to examine while another examination is running");
+    else
+        sendServerMessage("Unable to start replay without prior examination.");
+}
+
+void AOClient::cmdDeleteStatement(int argc, QStringList argv)
+{
+    deleteStatement();
+}
+
+void AOClient::cmdUpdateStatement(int argc, QStringList argv)
+{
+    server->areas[current_area]->test_rec = AreaData::TestimonyRecording::UPDATE;
+    sendServerMessage("Recording updated statement.");
+}
+
+void AOClient::cmdStop(int argc, QStringList argv)
+{
+    pauseTestimony();
 }
 
 QStringList AOClient::buildAreaList(int area_idx)

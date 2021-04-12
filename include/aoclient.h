@@ -1331,6 +1331,13 @@ class AOClient : public QObject {
      * @details [Insert explanation here]
      */
     void cmdDeleteStatement(int argc, QStringList argv);
+
+    /**
+     * @brief [Insert description here]
+     *
+     * @details [Insert explanation here]
+     */
+    void cmdPauseTestimony(int argc, QStringList argv);
   
     // Messaging/Client
     
@@ -1650,7 +1657,11 @@ class AOClient : public QObject {
         {"judgelog",           {ACLFlags.value("CM"),           0, &AOClient::cmdJudgeLog}},
         {"allow_blankposting", {ACLFlags.value("MODCHAT"),      0, &AOClient::cmdAllow_Blankposting}},
         {"baninfo",            {ACLFlags.value("BAN"),          1, &AOClient::cmdBanInfo}},
+        {"testify",            {ACLFlags.value("CM"),           0, &AOClient::cmdTestify}},
         {"examine",            {ACLFlags.value("CM"),           0, &AOClient::cmdExamine}},
+        {"pause",              {ACLFlags.value("CM"),           0, &AOClient::cmdPauseTestimony}},
+        {"delete",             {ACLFlags.value("CM"),           0, &AOClient::cmdDeleteStatement}},
+        {"update",             {ACLFlags.value("CM"),           0, &AOClient::cmdUpdateStatement}},
     };
 
     /**

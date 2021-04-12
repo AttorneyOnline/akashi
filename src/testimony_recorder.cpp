@@ -23,27 +23,33 @@ void AOClient::addStatement(QStringList packet)
 {
     AreaData* area = server->areas[current_area];
     int c_statement = area->statement;
-    packet[14] = 1;
-    if (area->test_rec == AreaData::TestimonyRecording::RECORDING) {
-        if (c_statement <= 50) { //Make this configurable once Mangos ConfigManager changes get merged
-            area->testimony.append(packet);
-            area->statement = c_statement + 1;
-            return;
+    if (c_statement >= 0) {
+        if (area->test_rec == AreaData::TestimonyRecording::RECORDING) {
+            if (c_statement <= 50) { //Make this configurable once Mangos ConfigManager changes get merged
+                if (c_statement == 0)
+                    packet[14] = "3";
+                else
+                    packet[14] = "1";
+                area->testimony.append(packet);
+                area->statement = c_statement + 1;
+                return;
+            }
+            else {
+                sendServerMessage("Unable to add more statements. The maximum amount of statements has been reached.");
+            }
         }
-        else {
-            sendServerMessage("Unable to add more statements. The maximum amount of statements has been reached.");
+        else if (area->test_rec == AreaData::TestimonyRecording::ADD) {
+            if (c_statement < 50) { //Make this configurable once Mangos ConfigManager changes get merged
+               area->testimony.insert(c_statement,packet);
+               area->test_rec = AreaData::TestimonyRecording::PLAYBACK;
+            }
+            else {
+                sendServerMessage("Unable to add more statements. The maximum amount of statements has been reached.");
+                area->test_rec = AreaData::TestimonyRecording::PLAYBACK;
+            }
         }
     }
-    else if (area->test_rec == AreaData::TestimonyRecording::ADD) {
-        if (c_statement < 50) { //Make this configurable once Mangos ConfigManager changes get merged
-           area->testimony.insert(c_statement,packet);
-           area->test_rec = AreaData::TestimonyRecording::PLAYBACK;
-        }
-        else {
-            sendServerMessage("Unable to add more statements. The maximum amount of statements has been reached.");
-            area->test_rec = AreaData::TestimonyRecording::PLAYBACK;
-        }
-    }
+
 
 }
 
@@ -51,16 +57,15 @@ QStringList AOClient::updateStatement(QStringList packet)
 {
     AreaData* area = server->areas[current_area];
     int c_statement = area->statement;
-    if ((c_statement >= 0 && !(area->testimony[c_statement].isEmpty()))) {
+    area->test_rec = AreaData::TestimonyRecording::PLAYBACK;
+    if (c_statement <= 0 || area->testimony[c_statement].empty())
         sendServerMessage("Unable to update an empty statement. Please use /addtestimony.");
-    }
     else {
-        packet[13] = 1;
+        packet[14] = "1";
         area->testimony.replace(c_statement, packet);
         sendServerMessage("Updated current statement.");
         return area->testimony[c_statement];
     }
-    area->test_rec = AreaData::TestimonyRecording::PLAYBACK;
     return packet;
 }
 
@@ -87,10 +92,15 @@ QStringList AOClient::playTestimony()
 {
     AreaData* area = server->areas[current_area];
     int c_statement = area->statement;
-    if (c_statement > area->testimony.size()) {
+    if (c_statement > area->testimony.size() - 1) {
         sendServerMessageArea("Last statement reached. Looping to first statement.");
         area->statement = 1;
-        return area->testimony[1];
+        return area->testimony[area->statement];
+    }
+    if (c_statement <= 0) {
+        sendServerMessage("First statement reached.");
+        area->statement = 1;
+        return area->testimony[area->statement = 1];
     }
     else {
         return area->testimony[c_statement];
@@ -101,5 +111,5 @@ void AOClient::pauseTestimony()
 {
     AreaData* area = server->areas[current_area];
     area->test_rec = AreaData::TestimonyRecording::STOPPED;
-    sendServerMessage("Testimony playback has been stopped.");
+    sendServerMessage("Testimony has been stopped.");
 }

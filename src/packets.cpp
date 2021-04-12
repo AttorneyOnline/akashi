@@ -631,8 +631,8 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     //Testimony playback
     if (area->test_rec == AreaData::TestimonyRecording::RECORDING || area->test_rec == AreaData::TestimonyRecording::ADD) {
         if (area->statement == 0) {
-            args[4] = "~~--== " + args[4] + " ==--";
-            args[14] = "5";
+            args[4] = "~~-- " + args[4] + " --";
+            args[14] = "3";
             server->broadcast(AOPacket("RT",{"testimony1"}), current_area);
         }
         addStatement(args);
@@ -641,7 +641,15 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         args = updateStatement(args);
     }
     else if (area->test_rec == AreaData::TestimonyRecording::PLAYBACK) {
-        args = playTestimony(); // This still needs to handle > and < and when you jump, but god I am not doing this at 11PM
+        if (args[4] == ">") {
+            area->statement = area->statement + 1;
+            args = playTestimony();
+        }
+        if (args[4] == "<") {
+            area->statement = area->statement - 1;
+            args = playTestimony();
+        }
+
     }
 
     return AOPacket("MS", args);
