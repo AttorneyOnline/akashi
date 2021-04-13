@@ -630,6 +630,9 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
 
     //Testimony playback
     if (area->test_rec == AreaData::TestimonyRecording::RECORDING || area->test_rec == AreaData::TestimonyRecording::ADD) {
+        if (args[5] != "wit")
+            return AOPacket("MS", args);
+
         if (area->statement == 0) {
             args[4] = "~~\\n-- " + args[4] + " --";
             args[14] = "3";
