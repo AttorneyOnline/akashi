@@ -187,10 +187,13 @@ class Server : public QObject {
     QString max_players;
     /**
      * @brief The user-facing server name.
-     *
-     * @note Unused. getServerName() serves its purpose instead.
      */
     QString server_name;
+
+    /**
+     * @brief The server description.
+     */
+    QString server_desc;
 
     /**
      * @brief The Message Of The Day of the server, shown upon entry to the server and on request.
@@ -269,6 +272,16 @@ class Server : public QObject {
      * checks if the client is banned.
      */
     void clientConnected();
+
+  signals:
+
+    /**
+     * @brief Sends the server name and description, emitted by /reload.
+     *
+     * @param p_name The server name.
+     * @param p_desc The server description.
+     */
+    void reloadRequest(QString p_name, QString p_desc);
 
   private:
     /**

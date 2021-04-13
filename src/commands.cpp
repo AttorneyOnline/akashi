@@ -1328,6 +1328,14 @@ void AOClient::cmdBanInfo(int argc, QStringList argv)
     sendServerMessage(ban_info.join("\n"));
 }
 
+void AOClient::cmdReload(int argc, QStringList argv)
+{
+    server->loadServerConfig();
+    server->loadCommandConfig();
+    emit server->reloadRequest(server->server_name, server->server_desc);
+    sendServerMessage("Reloaded configurations");
+}
+
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;

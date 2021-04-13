@@ -1625,6 +1625,7 @@ class AOClient : public QObject {
         {"judgelog",           {ACLFlags.value("CM"),           0, &AOClient::cmdJudgeLog}},
         {"allow_blankposting", {ACLFlags.value("MODCHAT"),      0, &AOClient::cmdAllow_Blankposting}},
         {"baninfo",            {ACLFlags.value("BAN"),          1, &AOClient::cmdBanInfo}},
+        {"reload",             {ACLFlags.value("SUPER"),        0, &AOClient::cmdReload}},
     };
 
     /**

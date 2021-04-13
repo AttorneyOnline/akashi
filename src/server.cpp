@@ -224,6 +224,7 @@ void Server::loadServerConfig()
     //Load config.ini values
     max_players = config.value("max_players","100").toString();
     server_name = config.value("server_name","An Unnamed Server").toString();
+    server_desc = config.value("server_description","This is a placeholder server description. Tell the world of AO who you are here!").toString();
     MOTD = config.value("motd","MOTD is not set.").toString();
     auth_type = config.value("auth","simple").toString();
     modpass = config.value("modpass","").toString();
@@ -235,7 +236,7 @@ void Server::loadServerConfig()
 
     //Load dice values
     config.beginGroup("Dice");
-    dice_value = config.value("value_type", "100").toUInt();
+    dice_value = config.value("value_type", "100").toInt();
     max_dice = config.value("max_dice","100").toInt();
     config.endGroup();
 }
