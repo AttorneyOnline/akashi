@@ -25,7 +25,7 @@ void AOClient::addStatement(QStringList packet)
     int c_statement = area->statement;
     if (c_statement >= 0) {
         if (area->test_rec == AreaData::TestimonyRecording::RECORDING) {
-            if (c_statement <= 50) { //Make this configurable once Mangos ConfigManager changes get merged
+            if (c_statement <= server->maximum_statements) {
                 if (c_statement == 0)
                     packet[14] = "3";
                 else
@@ -39,7 +39,6 @@ void AOClient::addStatement(QStringList packet)
             }
         }
         else if (area->test_rec == AreaData::TestimonyRecording::ADD) {
-            if (c_statement < 50) { //Make this configurable once Mangos ConfigManager changes get merged
                area->testimony.insert(c_statement,packet);
                area->test_rec = AreaData::TestimonyRecording::PLAYBACK;
             }
@@ -47,10 +46,7 @@ void AOClient::addStatement(QStringList packet)
                 sendServerMessage("Unable to add more statements. The maximum amount of statements has been reached.");
                 area->test_rec = AreaData::TestimonyRecording::PLAYBACK;
             }
-        }
     }
-
-
 }
 
 QStringList AOClient::updateStatement(QStringList packet)
@@ -67,17 +63,6 @@ QStringList AOClient::updateStatement(QStringList packet)
         return area->testimony[c_statement];
     }
     return packet;
-}
-
-void AOClient::deleteStatement()
-{
-    AreaData* area = server->areas[current_area];
-    int c_statement = area->statement;
-    if ((c_statement > 0 && !(area->testimony[c_statement].isEmpty()))) {
-        area->testimony.remove(c_statement);
-        sendServerMessage("The statement with id " + QString::number(c_statement) + " has been deleted from the testimony.");
-    }
-    server->areas[current_area]->test_rec = AreaData::TestimonyRecording::PLAYBACK;
 }
 
 void AOClient::clearTestimony()
@@ -107,9 +92,3 @@ QStringList AOClient::playTestimony()
     }
 }
 
-void AOClient::pauseTestimony()
-{
-    AreaData* area = server->areas[current_area];
-    area->test_rec = AreaData::TestimonyRecording::STOPPED;
-    sendServerMessage("Testimony has been stopped.");
-}

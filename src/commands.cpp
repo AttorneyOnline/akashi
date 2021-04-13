@@ -1360,7 +1360,7 @@ void AOClient::cmdTestify(int argc, QStringList argv)
 {
     AreaData* area = server->areas[current_area];
     if (area->test_rec == AreaData::TestimonyRecording::RECORDING) {
-        sendServerMessage("Examination already in progress.");
+        sendServerMessage("Testimony recording is already in progress. Please stop it before starting a new one.");
     }
     else {
         clearTestimony();
@@ -1389,18 +1389,39 @@ void AOClient::cmdExamine(int argc, QStringList argv)
 
 void AOClient::cmdDeleteStatement(int argc, QStringList argv)
 {
-    deleteStatement();
+    AreaData* area = server->areas[current_area];
+    int c_statement = area->statement;
+    if (area->test_rec == AreaData::TestimonyRecording::STOPPED) {
+        sendServerMessage("Unable to delete statement. There is currently no examination running.");
+    }
+    if (c_statement > 0 && area->test_rec == AreaData::TestimonyRecording::PLAYBACK) {
+        area->testimony.remove(c_statement);
+        sendServerMessage("The statement with id " + QString::number(c_statement) + " has been deleted from the testimony.");
+    }
+
 }
 
 void AOClient::cmdUpdateStatement(int argc, QStringList argv)
 {
     server->areas[current_area]->test_rec = AreaData::TestimonyRecording::UPDATE;
-    sendServerMessage("Recording updated statement.");
+    sendServerMessage("The next IC-Message will replace the last displayed replay message.");
 }
 
 void AOClient::cmdPauseTestimony(int argc, QStringList argv)
 {
-    pauseTestimony();
+    AreaData* area = server->areas[current_area];
+    area->test_rec = AreaData::TestimonyRecording::STOPPED;
+    sendServerMessage("Testimony has been stopped.");
+}
+
+void AOClient::cmdAddStatement(int argc, QStringList argv)
+{
+    if (server->areas[current_area]->statement < server->maximum_statements) {
+        server->areas[current_area]->test_rec = AreaData::TestimonyRecording::ADD;
+        sendServerMessage("The next IC-Message will be inserted into the testimony.");
+    }
+    else
+        sendServerMessage("Unable to add anymore statements. Please remove any unused ones.");
 }
 
 QStringList AOClient::buildAreaList(int area_idx)

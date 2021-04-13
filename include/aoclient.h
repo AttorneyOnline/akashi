@@ -1305,39 +1305,49 @@ class AOClient : public QObject {
     void cmdNoteCardClear(int argc, QStringList argv);
 
     /**
-     * @brief [Insert description here]
+     * @brief Sets are to PLAYBACK mode
      *
-     * @details [Insert explanation here]
+     * @details Enables control over the stored testimony, prevent new messages to be added and
+     * allows people to navigate trough it using > and <.
      */
     void cmdExamine(int argc, QStringList argv);
 
     /**
-     * @brief [Insert description here]
+     * @brief Enables the testimony recording functionality.
      *
-     * @details [Insert explanation here]
+     * @details Any IC-Message send after this command is issues will be recorded by the testimony recorder.
      */
     void cmdTestify(int argc, QStringList argv);
 
     /**
-     * @brief [Insert description here]
+     * @brief Allows user to update the currently displayed IC-Message from the testimony replay.
      *
-     * @details [Insert explanation here]
+     * @details Using this command replaces the content of the current statement entirely. It does not append information.
      */
     void cmdUpdateStatement(int argc, QStringList argv);
 
     /**
-     * @brief [Insert description here]
+     * @brief Deletes a statement from the testimony.
      *
-     * @details [Insert explanation here]
+     * @details Using this deletes the entire entry in the QVector and resizes it appropriately to prevent empty record indices.
      */
     void cmdDeleteStatement(int argc, QStringList argv);
 
     /**
-     * @brief [Insert description here]
+     * @brief Pauses testimony playback.
      *
-     * @details [Insert explanation here]
+     * @details Disables the testimony playback controls.
      */
     void cmdPauseTestimony(int argc, QStringList argv);
+
+
+    /**
+     * @brief
+     *
+     * @details
+     *
+     */
+    void cmdAddStatement(int argc, QStringList argv);
   
     // Messaging/Client
     
@@ -1540,12 +1550,35 @@ class AOClient : public QObject {
     long long parseTime(QString input);
     QString getReprimand(bool positive = false);
 
+    /**
+     * @brief Adds the last send IC-Message to QVector of the respective area.
+     *
+     * @details This one pulls double duty to both append IC-Messages to the QVector or insert them, depending on the current recorder enum.
+     *
+     * @param packet The MS-Packet being recorded with their color changed to green.
+     */
     void addStatement(QStringList packet);
-    QStringList updateStatement(QStringList packet);
-    void deleteStatement();
+
+    /**
+     * @brief Clears QVector of the current area.
+     *
+     * @details It clears both its content and trims it back to size 0
+     *
+     */
     void clearTestimony();
+
+    /**
+     * @brief Updates the currently displayed IC-Message with the next one send
+     * @param packet The IC-Message that will overwrite the currently stored one.
+     * @return Returns the updated IC-Message to be send to the other users. It also changes the color to green.
+     */
+    QStringList updateStatement(QStringList packet);
+
+    /**
+     * @brief Called when area enum is set to PLAYBACK. Sends the IC-Message stored at the current statement.
+     * @return IC-Message stored in the QVector.
+     */
     QStringList playTestimony();
-    void pauseTestimony();
     ///@}
 
     /**

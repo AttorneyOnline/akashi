@@ -53,6 +53,8 @@ void Server::start()
 
     MOTD = config.value("motd","MOTD is not set.").toString();
 
+    maximum_statements = config.value("maximum_statements", 50).toInt();
+
     proxy = new WSProxy(port, ws_port, this);
     if(ws_port != -1)
         proxy->start();
