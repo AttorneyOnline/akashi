@@ -239,6 +239,15 @@ public:
      */
     QStringList getUsers();
 
+    /**
+     * @brief Gets information on a ban.
+     *
+     * @param lookup_type The type of ID to search
+     *
+     * @param id A Ban ID, IPID, or HDID to search for
+     */
+    QList<BanInfo> getBanInfo(QString lookup_type, QString id);
+
 private:
     /**
      * @brief The name of the database connection driver.
