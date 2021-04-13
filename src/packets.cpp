@@ -631,7 +631,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     //Testimony playback
     if (area->test_rec == AreaData::TestimonyRecording::RECORDING || area->test_rec == AreaData::TestimonyRecording::ADD) {
         if (area->statement == 0) {
-            args[4] = "~~-- " + args[4] + " --";
+            args[4] = "~~\\n-- " + args[4] + " --";
             args[14] = "3";
             server->broadcast(AOPacket("RT",{"testimony1"}), current_area);
         }
@@ -649,7 +649,12 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
             area->statement = area->statement - 1;
             args = playTestimony();
         }
-
+        QRegularExpression jump("(?<arrow>>)(?<int>[0,1,2,3,4,5,6,7,8,9]+)");
+        QRegularExpressionMatch match = jump.match(args[4]);
+        if (match.hasMatch()) {
+            area->statement = match.captured("int").toInt();
+            args= playTestimony();
+        }
     }
 
     return AOPacket("MS", args);
