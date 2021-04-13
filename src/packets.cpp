@@ -645,16 +645,19 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     }
     else if (area->test_rec == AreaData::TestimonyRecording::PLAYBACK) {
         if (args[4] == ">") {
+            pos = "wit";
             area->statement = area->statement + 1;
             args = playTestimony();
         }
         if (args[4] == "<") {
+            pos = "wit";
             area->statement = area->statement - 1;
             args = playTestimony();
         }
         QRegularExpression jump("(?<arrow>>)(?<int>[0,1,2,3,4,5,6,7,8,9]+)");
         QRegularExpressionMatch match = jump.match(args[4]);
         if (match.hasMatch()) {
+            pos = "wit";
             area->statement = match.captured("int").toInt();
             args= playTestimony();
         }
