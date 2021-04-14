@@ -1776,6 +1776,7 @@ class AOClient : public QObject {
         {"shake",              {ACLFlags.value("MUTE"),         1, &AOClient::cmdShake}},
         {"unshake",            {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnShake}},
         {"forceimmediate",     {ACLFlags.value("CM"),           1, &AOClient::cmdForceImmediate}},
+        {"force_noint_pres",   {ACLFlags.value("CM"),           1, &AOClient::cmdForceImmediate}},
     };
 
     /**
