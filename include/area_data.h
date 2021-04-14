@@ -339,6 +339,11 @@ class AreaData : public QObject {
      * @brief The last IC packet sent in an area.
      */
     QStringList last_ic_message;
+
+    /**
+     * @brief The value of logger in config.ini.
+     */
+    QString log_type;
 };
 
 #endif // AREA_DATA_H

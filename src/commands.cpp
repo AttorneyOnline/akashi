@@ -27,21 +27,16 @@ void AOClient::cmdDefault(int argc, QStringList argv)
 
 void AOClient::cmdLogin(int argc, QStringList argv)
 {
-    QSettings config("config/config.ini", QSettings::IniFormat);
-    config.beginGroup("Options");
-    QString modpass = config.value("modpass", "default").toString();
-    QString auth_type = config.value("auth", "simple").toString();
-
     if (authenticated) {
         sendServerMessage("You are already logged in!");
         return;
     }
 
-    if (auth_type == "simple") {
-        if (modpass == "") {
+    if (server->auth_type == "simple") {
+        if (server->modpass == "") {
             sendServerMessage("No modpass is set! Please set a modpass before authenticating.");
         }
-        else if(argv[0] == modpass) {
+        else if(argv[0] == server->modpass) {
             sendPacket("AUTH", {"1"}); // Client: "You were granted the Disable Modcalls button."
             sendServerMessage("Logged in as a moderator."); // pre-2.9.1 clients are hardcoded to display the mod UI when this string is sent in OOC
             authenticated = true;
@@ -52,7 +47,7 @@ void AOClient::cmdLogin(int argc, QStringList argv)
         }
         server->areas.value(current_area)->logger->logLogin(this, authenticated, "moderator");
     }
-    else if (auth_type == "advanced") {
+    else if (server->auth_type == "advanced") {
         if (argc < 2) {
             sendServerMessage("You must specify a username and a password");
             return;
@@ -194,11 +189,7 @@ void AOClient::cmdKick(int argc, QStringList argv)
 
 void AOClient::cmdChangeAuth(int argc, QStringList argv)
 {
-    QSettings settings("config/config.ini", QSettings::IniFormat);
-    settings.beginGroup("Options");
-    QString auth_type = settings.value("auth", "simple").toString();
-
-    if (auth_type == "simple") {
+    if (server->auth_type == "simple") {
         change_auth_started = true;
         sendServerMessage("WARNING!\nThis command will change how logging in as a moderator works.\nOnly proceed if you know what you are doing\nUse the command /rootpass to set the password for your root account.");
     }
@@ -214,6 +205,7 @@ void AOClient::cmdSetRootPass(int argc, QStringList argv)
     QSettings settings("config/config.ini", QSettings::IniFormat);
     settings.beginGroup("Options");
     settings.setValue("auth", "advanced");
+    server->auth_type = "advanced";
 
 #if QT_VERSION < QT_VERSION_CHECK(5, 10, 0)
     qsrand(QDateTime::currentMSecsSinceEpoch());
@@ -835,14 +827,11 @@ void AOClient::cmdToggleGlobal(int argc, QStringList argv)
 void AOClient::cmdMods(int argc, QStringList argv)
 {
     QStringList entries;
-    QSettings config("config/config.ini", QSettings::IniFormat);
-    config.beginGroup("Options");
-    QString auth_type = config.value("auth", "simple").toString();
     int online_count = 0;
     for (AOClient* client : server->clients) {
         if (client->authenticated) {
             entries << "---";
-            if (auth_type != "simple")
+            if (server->auth_type != "simple")
                 entries << "Moderator: " + client->moderator_name;
             entries << "OOC name: " + client->ooc_name;
             entries << "ID: " + QString::number(client->id);
@@ -1256,35 +1245,17 @@ void AOClient::cmdNoteCardReveal(int argc, QStringList argv)
 
 void AOClient::cmd8Ball(int argc, QStringList argv)
 {
-    QFileInfo magic8ball_info("config/text/8ball.txt");
-    if (!(magic8ball_info.exists() && magic8ball_info.isFile())) {
-        qWarning() << "8ball.txt doesn't exist!";
-        sendServerMessage("8ball.txt doesn't exist.");
-    }
+    if (server->magic_8ball_answers.isEmpty()) {
+        qWarning() << "8ball.txt is empty!";
+        sendServerMessage("8ball.txt is empty.");
+        }
     else {
-        QStringList answers;
-        QFile file("config/text/8ball.txt");
-        file.open(QIODevice::ReadOnly | QIODevice::Text);
-        while (!file.atEnd()) {
-            answers.append(file.readLine().trimmed());
+        QString response = server->magic_8ball_answers[(genRand(1, server->magic_8ball_answers.size() - 1))];
+        QString sender_name = ooc_name;
+        QString sender_message = argv.join(" ");
+
+        sendServerMessageArea(sender_name + " asked the magic 8-ball, \"" + sender_message + "\" and the answer is: " + response);
         }
-        file.close();
-
-        if (answers.isEmpty()) {
-            qWarning() << "8ball.txt is empty!";
-            sendServerMessage("8ball.txt is empty.");
-        }
-        else {
-            int answerindex = answers.size();
-            QString response = answers[(genRand(1, answerindex))];
-            QString sender_name = ooc_name;
-            QString sender_message = argv.join(" ");
-
-            sendServerMessageArea(sender_name + " asked the magic 8-ball, \"" + sender_message + "\" and the answer is: " + response);
-        }
-
-    }
-
 }
 
 void AOClient::cmdJudgeLog(int argc, QStringList argv)
@@ -1398,7 +1369,6 @@ void AOClient::cmdDeleteStatement(int argc, QStringList argv)
         area->testimony.remove(c_statement);
         sendServerMessage("The statement with id " + QString::number(c_statement) + " has been deleted from the testimony.");
     }
-
 }
 
 void AOClient::cmdUpdateStatement(int argc, QStringList argv)
@@ -1422,6 +1392,14 @@ void AOClient::cmdAddStatement(int argc, QStringList argv)
     }
     else
         sendServerMessage("Unable to add anymore statements. Please remove any unused ones.");
+}
+
+void AOClient::cmdReload(int argc, QStringList argv)
+{
+    server->loadServerConfig();
+    server->loadCommandConfig();
+    emit server->reloadRequest(server->server_name, server->server_desc);
+    sendServerMessage("Reloaded configurations");
 }
 
 QStringList AOClient::buildAreaList(int area_idx)
@@ -1473,8 +1451,8 @@ int AOClient::genRand(int min, int max)
 void AOClient::diceThrower(int argc, QStringList argv, RollType type)
 {
     QString sender_name = ooc_name;
-    int max_value = server->getDiceValue("max_value");
-    int max_dice = server->getDiceValue("max_dice");
+    int max_value = server->dice_value;
+    int max_dice = server->max_dice;
     int bounded_value;
     int bounded_amount;
     QString dice_results;
@@ -1596,18 +1574,10 @@ long long AOClient::parseTime(QString input)
 
 QString AOClient::getReprimand(bool positive)
 {
-    QString filename = positive ? "praise" : "reprimands";
-    QFileInfo reprimands_info("config/text/" + filename + ".txt");
-    if (!(reprimands_info.exists() && reprimands_info.isFile())) {
-        qWarning() << filename + ".txt doesn't exist!";
-        return "";
-    }
-    QStringList reprimands;
-    QFile file("config/text/" + filename + ".txt");
-    file.open(QIODevice::ReadOnly | QIODevice::Text);
-    while (!file.atEnd()) {
-        reprimands.append(file.readLine().trimmed());
-    }
-    file.close();
-    return reprimands[genRand(0, reprimands.size() - 1)];
+    if (positive) {
+        return server->praise_list[genRand(0, server->praise_list.size() - 1)];
+        }
+    else {
+        return server->reprimands_list[genRand(0, server->reprimands_list.size() - 1)];
+        }
 }
