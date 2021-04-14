@@ -1537,6 +1537,15 @@ class AOClient : public QObject {
     */
     void cmdForceImmediate(int argc, QStringList argv);
 
+    /**
+    * @brief Toggles whether iniswaps are allowed in the current area.
+    *
+    * @details No arguments.
+    *
+    * @iscommand
+    */
+    void cmdAllowIniswap(int argc, QStringList argv);
+
     ///@}
 
     /**
@@ -1777,6 +1786,8 @@ class AOClient : public QObject {
         {"unshake",            {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnShake}},
         {"forceimmediate",     {ACLFlags.value("CM"),           1, &AOClient::cmdForceImmediate}},
         {"force_noint_pres",   {ACLFlags.value("CM"),           1, &AOClient::cmdForceImmediate}},
+        {"allowiniswap",       {ACLFlags.value("CM"),           1, &AOClient::cmdAllowIniswap}},
+        {"allow_iniswap",      {ACLFlags.value("CM"),           1, &AOClient::cmdAllowIniswap}},
     };
 
     /**

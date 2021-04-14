@@ -1529,6 +1529,14 @@ void AOClient::cmdForceImmediate(int argc, QStringList argv)
     sendServerMessage("Forced immediate text processing in this area is now " + state);
 }
 
+void AOClient::cmdAllowIniswap(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    area->iniswap_allowed = !area->iniswap_allowed;
+    QString state = area->iniswap_allowed ? "allowed." : "disallowed.";
+    sendServerMessage("Iniswapping in this area is now " + state);
+}
+
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;
