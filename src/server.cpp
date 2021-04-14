@@ -51,7 +51,8 @@ void Server::start()
         qDebug() << "Server listening on" << port;
     }
 
-    MOTD = config.value("motd","MOTD is not set.").toString();
+    loadServerConfig();
+    loadCommandConfig();
 
     proxy = new WSProxy(port, ws_port, this);
     if(ws_port != -1)
@@ -96,7 +97,6 @@ void Server::start()
         QString area_name = raw_area_names[i];
         areas.insert(i, new AreaData(area_name, i));
     }
-    loadCommandConfig();
 }
 
 void Server::clientConnected()
@@ -169,24 +169,6 @@ void Server::broadcast(AOPacket packet)
     }
 }
 
-QString Server::getServerName()
-{
-    QSettings settings("config/config.ini", QSettings::IniFormat);
-    settings.beginGroup("Options");
-    QString server_name = settings.value("server_name", "Akashi").toString();
-    return server_name;
-}
-
-int Server::getDiceValue(QString value_type)
-{
-    QSettings settings("config/config.ini", QSettings::IniFormat);
-
-    settings.beginGroup("Dice");
-    int value = settings.value(value_type, "100").toUInt();
-    settings.endGroup();
-    return value;
-}
-
 QList<AOClient*> Server::getClientsByIpid(QString ipid)
 {
     QList<AOClient*> return_clients;
@@ -218,10 +200,10 @@ int Server::getCharID(QString char_name)
 
 void Server::loadCommandConfig()
 {
-    magic_8ball_answers.append(loadConfigFile("8ball"));
-    praise_list.append(loadConfigFile("praise"));
-    reprimands_list.append(loadConfigFile("reprimands"));
-    gimp_list.append(loadConfigFile("gimp"));
+    magic_8ball_answers = (loadConfigFile("8ball"));
+    praise_list = (loadConfigFile("praise"));
+    reprimands_list = (loadConfigFile("reprimands"));
+    gimp_list = (loadConfigFile("gimp"));
 }
 
 QStringList Server::loadConfigFile(QString filename)
@@ -234,6 +216,30 @@ QStringList Server::loadConfigFile(QString filename)
     }
     file.close();
     return stringlist;
+}
+
+void Server::loadServerConfig()
+{
+    QSettings config("config/config.ini", QSettings::IniFormat);
+    config.beginGroup("Options");
+    //Load config.ini values
+    max_players = config.value("max_players","100").toString();
+    server_name = config.value("server_name","An Unnamed Server").toString();
+    server_desc = config.value("server_description","This is a placeholder server description. Tell the world of AO who you are here!").toString();
+    MOTD = config.value("motd","MOTD is not set.").toString();
+    auth_type = config.value("auth","simple").toString();
+    modpass = config.value("modpass","").toString();
+    bool zalgo_tolerance_conversion_success;
+        zalgo_tolerance = config.value("zalgo_tolerance", "3").toInt(&zalgo_tolerance_conversion_success);
+        if (!zalgo_tolerance_conversion_success)
+            zalgo_tolerance = 3;
+    config.endGroup();
+
+    //Load dice values
+    config.beginGroup("Dice");
+    dice_value = config.value("value_type", "100").toInt();
+    max_dice = config.value("max_dice","100").toInt();
+    config.endGroup();
 }
 
 Server::~Server()

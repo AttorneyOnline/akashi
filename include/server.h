@@ -126,24 +126,6 @@ class Server : public QObject {
     void broadcast(AOPacket packet);
 
     /**
-     * @brief Returns the server's name according to the configuration file.
-     *
-     * @return See brief description.
-     */
-    QString getServerName();
-
-    /**
-     * @brief Returns some value regarding the @ref AOClient::diceThrower "dice thrower commands".
-     *
-     * @param value_type `max_value` for the maximum amount of faces a die may have,
-     * `max_dice` for the maximum amount of dice that may be thrown at once.
-     *
-     * @return The associated value if it is found in the configuration file under the "Dice" section,
-     * or `100` if not.
-     */
-    int getDiceValue(QString value_type);
-
-    /**
      * @brief Returns the character's character ID (= their index in the character list).
      *
      * @param char_name The 'internal' name for the character whose character ID to look up. This is equivalent to
@@ -200,11 +182,18 @@ class Server : public QObject {
     DBManager* db_manager;
 
     /**
+     * @brief The max amount of players on the server.
+     */
+    QString max_players;
+    /**
      * @brief The user-facing server name.
-     *
-     * @note Unused. getServerName() serves its purpose instead.
      */
     QString server_name;
+
+    /**
+     * @brief The server description.
+     */
+    QString server_desc;
 
     /**
      * @brief The Message Of The Day of the server, shown upon entry to the server and on request.
@@ -212,9 +201,41 @@ class Server : public QObject {
     QString MOTD;
 
     /**
+     * @brief The authorization type of the server.
+     *
+     * @details In simple mode, the modpass stored in config.ini is used for moderator logins. In advanced mode, logins found in the database are used.
+     */
+    QString auth_type;
+
+    /**
+     * @brief The modpass for moderator login with simple auth_type.
+     */
+    QString modpass;
+
+    /**
+     * @brief The amount of subscripts zalgo is stripped by.
+     */
+    int zalgo_tolerance;
+
+    /**
+     * @brief The highest value dice can have.
+     */
+    uint dice_value;
+
+    /**
+     * @brief The max amount of dice that can be rolled at once.
+     */
+    int max_dice;
+
+    /**
      * @brief The server-wide global timer.
      */
     QTimer* timer;
+
+    /**
+     * @brief Loads values from config.ini.
+     */
+    void loadServerConfig();
 
     /**
      * @brief Loads the configuration files for commands into stringlists.
@@ -256,6 +277,16 @@ class Server : public QObject {
      * checks if the client is banned.
      */
     void clientConnected();
+
+  signals:
+
+    /**
+     * @brief Sends the server name and description, emitted by /reload.
+     *
+     * @param p_name The server name.
+     * @param p_desc The server description.
+     */
+    void reloadRequest(QString p_name, QString p_desc);
 
   private:
     /**

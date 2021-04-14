@@ -37,10 +37,7 @@ void AOClient::pktHardwareId(AreaData* area, int argc, QStringList argv, AOPacke
 
 void AOClient::pktSoftwareId(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
-    QSettings config("config/config.ini", QSettings::IniFormat);
-    config.beginGroup("Options");
-    QString max_players = config.value("max_players").toString();
-    config.endGroup();
+
 
     // Full feature list as of AO 2.8.5
     // The only ones that are critical to ensuring the server works are
@@ -64,7 +61,7 @@ void AOClient::pktSoftwareId(AreaData* area, int argc, QStringList argv, AOPacke
         version.minor = match.captured(3).toInt();
     }
 
-    sendPacket("PN", {QString::number(server->player_count), max_players});
+    sendPacket("PN", {QString::number(server->player_count), server->max_players});
     sendPacket("FL", feature_list);
 }
 
@@ -181,10 +178,12 @@ void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket p
     }
 
     ooc_name = dezalgo(argv[0]).replace(QRegExp("\\[|\\]|\\{|\\}|\\#|\\$|\\%|\\&"), ""); // no fucky wucky shit here
-    if (ooc_name.isEmpty() || ooc_name == server->getServerName()) // impersonation & empty name protection
+    if (ooc_name.isEmpty() || ooc_name == server->server_name) // impersonation & empty name protection
         return;
     
     QString message = dezalgo(argv[1]);
+    if (message.length() == 0)
+        return;
     AOPacket final_packet("CT", {ooc_name, message, "0"});
     if(message.at(0) == '/') {
         QStringList cmd_argv = message.split(" ", QString::SplitBehavior::SkipEmptyParts);
@@ -263,6 +262,7 @@ void AOClient::pktWtCe(AreaData* area, int argc, QStringList argv, AOPacket pack
         return;
     last_wtce_time = QDateTime::currentDateTime().toSecsSinceEpoch();
     server->broadcast(packet, current_area);
+    updateJudgeLog(area, this, "WT/CE");
 }
 
 void AOClient::pktHpBar(AreaData* area, int argc, QStringList argv, AOPacket packet)
@@ -279,6 +279,7 @@ void AOClient::pktHpBar(AreaData* area, int argc, QStringList argv, AOPacket pac
     }
     server->broadcast(AOPacket("HP", {"1", QString::number(area->def_hp)}), area->index);
     server->broadcast(AOPacket("HP", {"2", QString::number(area->pro_hp)}), area->index);
+    updateJudgeLog(area, this, "updated the penalties");
 }
 
 void AOClient::pktWebSocketIp(AreaData* area, int argc, QStringList argv, AOPacket packet)
@@ -433,7 +434,9 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
 
     // message text
     QString incoming_msg = dezalgo(incoming_args[4].toString().trimmed());
-    if (incoming_msg == last_message)
+    if (!area->last_ic_message.isEmpty()
+            && incoming_msg == area->last_ic_message[4]
+            && incoming_msg != "")
         return invalid;
 
     if (incoming_msg == "" && area->blankposting_allowed == false) {
@@ -634,14 +637,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
 
 QString AOClient::dezalgo(QString p_text)
 {
-    QSettings config("config/config.ini", QSettings::IniFormat);
-    config.beginGroup("Options");
-    bool zalgo_tolerance_conversion_success;
-    int zalgo_tolerance = config.value("zalgo_tolerance", "3").toInt(&zalgo_tolerance_conversion_success);
-    if (!zalgo_tolerance_conversion_success)
-        zalgo_tolerance = 3;
-
-    QRegExp rxp("([\u0300-\u036f\u1ab0-\u1aff\u1dc0-\u1dff\u20d0-\u20ff\ufe20-\ufe2f\u115f\u1160\u3164]{" + QRegExp::escape(QString::number(zalgo_tolerance)) + ",})");
+    QRegExp rxp("([\u0300-\u036f\u1ab0-\u1aff\u1dc0-\u1dff\u20d0-\u20ff\ufe20-\ufe2f\u115f\u1160\u3164]{" + QRegExp::escape(QString::number(server->zalgo_tolerance)) + ",})");
     QString filtered = p_text.replace(rxp, "");
     return filtered;
 }
@@ -659,4 +655,22 @@ bool AOClient::checkEvidenceAccess(AreaData *area)
     default:
         return false;
     }
+}
+
+void AOClient::updateJudgeLog(AreaData* area, AOClient* client, QString action)
+{
+    QString timestamp = QTime::currentTime().toString("hh:mm:ss");
+    QString uid = QString::number(client->id);
+    QString char_name = client->current_char;
+    QString ipid = client->getIpid();
+    QString message = action;
+    QString logmessage = QString("[%1]: [%2] %3 (%4) %5").arg(timestamp, uid, char_name, ipid, message);
+    int size = area->judgelog.size();
+    if (size == 10) {
+        area->judgelog.removeFirst();
+        area->judgelog.append(logmessage);
+    }
+    else area->judgelog.append(logmessage);
+
+
 }

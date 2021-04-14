@@ -53,7 +53,7 @@ class AOClient : public QObject {
     AOClient(Server* p_server, QTcpSocket* p_socket, QObject* parent = nullptr, int user_id = 0)
         : QObject(parent), id(user_id), remote_ip(p_socket->peerAddress()), password(""),
           joined(false), current_area(0), current_char(""), socket(p_socket), server(p_server),
-          is_partial(false), last_wtce_time(0), last_message("") {};
+          is_partial(false), last_wtce_time(0) {};
 
     /**
       * @brief Destructor for the AOClient instance.
@@ -1452,6 +1452,36 @@ class AOClient : public QObject {
      * @iscommand
      */
     void cmdUnShake(int argc, QStringList argv);
+    
+    /**
+     * @brief Reloads all server configuration files.
+     *
+     * @details No arguments.
+     * 
+     * @iscommand
+     */
+    void cmdReload(int argc, QStringList argv);
+
+    /**
+    * @brief Sends an out-of-character message with the judgelog of an area.
+    *
+    * @details No arguments.
+    *
+    * @iscommand
+    */
+    void cmdJudgeLog(int argc, QStringList argv);
+
+    /**
+     * @brief Looks up info on a ban.
+     *
+     * @details If it is called with **one argument**, that argument is the ban ID to look up.
+     *
+     * If it is called with **two arguments**, then the first argument is either a ban ID, an IPID,
+     * or an HDID, and the the second argument specifies the ID type.
+     *
+     * @iscommand
+     */
+    void cmdBanInfo(int argc, QStringList argv);
 
     ///@}
 
@@ -1468,12 +1498,12 @@ class AOClient : public QObject {
      * @brief Returns a textual representation of the time left in an area's Timer.
      *
      * @param area_idx The ID of the area whose timer to grab.
-     * @param timer The pointer to the area's timer.
+     * @param timer_idx The ID of the timer to grab
      *
      * @return A textual representation of the time left over on the Timer,
      * or `"Timer is inactive"` if the timer wasn't started.
      */
-    QString getAreaTimer(int area_idx, QTimer* timer);
+    QString getAreaTimer(int area_idx, int timer_idx);
 
     /**
      * @brief Generates a tsuserver3-style area list to be displayed to the user in the out-of-character chat.
@@ -1577,78 +1607,81 @@ class AOClient : public QObject {
       * See @ref CommandInfo "the type's documentation" for more details.
       */
     const QMap<QString, CommandInfo> commands {
-        {"login",           {ACLFlags.value("NONE"),         1, &AOClient::cmdLogin}},
-        {"getareas",        {ACLFlags.value("NONE"),         0, &AOClient::cmdGetAreas}},
-        {"getarea",         {ACLFlags.value("NONE"),         0, &AOClient::cmdGetArea}},
-        {"ban",             {ACLFlags.value("BAN"),          2, &AOClient::cmdBan}},
-        {"kick",            {ACLFlags.value("KICK"),         2, &AOClient::cmdKick}},
-        {"changeauth",      {ACLFlags.value("SUPER"),        0, &AOClient::cmdChangeAuth}},
-        {"rootpass",        {ACLFlags.value("SUPER"),        1, &AOClient::cmdSetRootPass}},
-        {"background",      {ACLFlags.value("NONE"),         1, &AOClient::cmdSetBackground}},
-        {"bg",              {ACLFlags.value("NONE"),         1, &AOClient::cmdSetBackground}},
-        {"bglock",          {ACLFlags.value("BGLOCK"),       0, &AOClient::cmdBgLock}},
-        {"bgunlock",        {ACLFlags.value("BGLOCK"),       0, &AOClient::cmdBgUnlock}},
-        {"adduser",         {ACLFlags.value("MODIFY_USERS"), 2, &AOClient::cmdAddUser}},
-        {"listperms",       {ACLFlags.value("NONE"),         0, &AOClient::cmdListPerms}},
-        {"addperm",         {ACLFlags.value("MODIFY_USERS"), 2, &AOClient::cmdAddPerms}},
-        {"removeperm",      {ACLFlags.value("MODIFY_USERS"), 2, &AOClient::cmdRemovePerms}},
-        {"listusers",       {ACLFlags.value("MODIFY_USERS"), 0, &AOClient::cmdListUsers}},
-        {"logout",          {ACLFlags.value("NONE"),         0, &AOClient::cmdLogout}},
-        {"pos",             {ACLFlags.value("NONE"),         1, &AOClient::cmdPos}},
-        {"g",               {ACLFlags.value("NONE"),         1, &AOClient::cmdG}},
-        {"need",            {ACLFlags.value("NONE"),         1, &AOClient::cmdNeed}},
-        {"coinflip",        {ACLFlags.value("NONE"),         0, &AOClient::cmdFlip}},
-        {"roll",            {ACLFlags.value("NONE"),         0, &AOClient::cmdRoll}},
-        {"rollp",           {ACLFlags.value("NONE"),         0, &AOClient::cmdRollP}},
-        {"doc",             {ACLFlags.value("NONE"),         0, &AOClient::cmdDoc}},
-        {"cleardoc",        {ACLFlags.value("NONE"),         0, &AOClient::cmdClearDoc}},
-        {"cm",              {ACLFlags.value("NONE"),         0, &AOClient::cmdCM}},
-        {"uncm",            {ACLFlags.value("CM"),           0, &AOClient::cmdUnCM}},
-        {"invite",          {ACLFlags.value("CM"),           1, &AOClient::cmdInvite}},
-        {"uninvite",        {ACLFlags.value("CM"),           1, &AOClient::cmdUnInvite}},
-        {"lock",            {ACLFlags.value("CM"),           0, &AOClient::cmdLock}},
-        {"area_lock",       {ACLFlags.value("CM"),           0, &AOClient::cmdLock}},
-        {"spectatable",     {ACLFlags.value("CM"),           0, &AOClient::cmdSpectatable}},
-        {"area_spectate",   {ACLFlags.value("CM"),           0, &AOClient::cmdSpectatable}},
-        {"unlock",          {ACLFlags.value("CM"),           0, &AOClient::cmdUnLock}},
-        {"area_unlock",     {ACLFlags.value("CM"),           0, &AOClient::cmdUnLock}},
-        {"timer",           {ACLFlags.value("CM"),           0, &AOClient::cmdTimer}},
-        {"area",            {ACLFlags.value("NONE"),         1, &AOClient::cmdArea}},
-        {"play",            {ACLFlags.value("CM"),           1, &AOClient::cmdPlay}},
-        {"areakick",        {ACLFlags.value("CM"),           1, &AOClient::cmdAreaKick}},
-        {"area_kick",       {ACLFlags.value("CM"),           1, &AOClient::cmdAreaKick}},
-        {"randomchar",      {ACLFlags.value("NONE"),         0, &AOClient::cmdRandomChar}},
-        {"switch",          {ACLFlags.value("NONE"),         1, &AOClient::cmdSwitch}},
-        {"toggleglobal",    {ACLFlags.value("NONE"),         0, &AOClient::cmdToggleGlobal}},
-        {"mods",            {ACLFlags.value("NONE"),         0, &AOClient::cmdMods}},
-        {"help",            {ACLFlags.value("NONE"),         0, &AOClient::cmdHelp}},
-        {"status",          {ACLFlags.value("NONE"),         1, &AOClient::cmdStatus}},
-        {"forcepos",        {ACLFlags.value("CM"),           2, &AOClient::cmdForcePos}},
-        {"currentmusic",    {ACLFlags.value("NONE"),         0, &AOClient::cmdCurrentMusic}},
-        {"pm",              {ACLFlags.value("NONE"),         2, &AOClient::cmdPM}},
-        {"evidence_mod",    {ACLFlags.value("EVI_MOD"),      1, &AOClient::cmdEvidenceMod}},
-        {"motd",            {ACLFlags.value("NONE"),         0, &AOClient::cmdMOTD}},
-        {"announce",        {ACLFlags.value("ANNOUNCE"),     1, &AOClient::cmdAnnounce}},
-        {"m",               {ACLFlags.value("MODCHAT"),      1, &AOClient::cmdM}},
-        {"gm",              {ACLFlags.value("MODCHAT"),      1, &AOClient::cmdGM}},
-        {"mute",            {ACLFlags.value("MUTE"),         1, &AOClient::cmdMute}},
-        {"unmute",          {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnMute}},
-        {"bans",            {ACLFlags.value("BAN"),          0, &AOClient::cmdBans}},
-        {"unban",           {ACLFlags.value("BAN"),          1, &AOClient::cmdUnBan}},
-        {"removeuser",      {ACLFlags.value("MODIFY_USERS"), 1, &AOClient::cmdRemoveUser}},
-        {"subtheme",        {ACLFlags.value("CM"),           1, &AOClient::cmdSubTheme}},
-        {"about",           {ACLFlags.value("NONE"),         0, &AOClient::cmdAbout}},
-        {"evidence_swap",   {ACLFlags.value("CM"),           2, &AOClient::cmdEvidence_Swap}},
-        {"notecard",        {ACLFlags.value("NONE"),         1, &AOClient::cmdNoteCard}},
-        {"notecardreveal",  {ACLFlags.value("CM"),           0, &AOClient::cmdNoteCardReveal}},
-        {"notecard_reveal", {ACLFlags.value("CM"),           0, &AOClient::cmdNoteCardReveal}},
-        {"notecardclear",   {ACLFlags.value("NONE"),         0, &AOClient::cmdNoteCardClear}},
-        {"notecard_clear",  {ACLFlags.value("NONE"),         0, &AOClient::cmdNoteCardClear}},
-        {"8ball",           {ACLFlags.value("NONE"),         1, &AOClient::cmd8Ball}},
-        {"lm",              {ACLFlags.value("MODCHAT"),      1, &AOClient::cmdLM}},
+        {"login",              {ACLFlags.value("NONE"),         1, &AOClient::cmdLogin}},
+        {"getareas",           {ACLFlags.value("NONE"),         0, &AOClient::cmdGetAreas}},
+        {"getarea",            {ACLFlags.value("NONE"),         0, &AOClient::cmdGetArea}},
+        {"ban",                {ACLFlags.value("BAN"),          2, &AOClient::cmdBan}},
+        {"kick",               {ACLFlags.value("KICK"),         2, &AOClient::cmdKick}},
+        {"changeauth",         {ACLFlags.value("SUPER"),        0, &AOClient::cmdChangeAuth}},
+        {"rootpass",           {ACLFlags.value("SUPER"),        1, &AOClient::cmdSetRootPass}},
+        {"background",         {ACLFlags.value("NONE"),         1, &AOClient::cmdSetBackground}},
+        {"bg",                 {ACLFlags.value("NONE"),         1, &AOClient::cmdSetBackground}},
+        {"bglock",             {ACLFlags.value("BGLOCK"),       0, &AOClient::cmdBgLock}},
+        {"bgunlock",           {ACLFlags.value("BGLOCK"),       0, &AOClient::cmdBgUnlock}},
+        {"adduser",            {ACLFlags.value("MODIFY_USERS"), 2, &AOClient::cmdAddUser}},
+        {"listperms",          {ACLFlags.value("NONE"),         0, &AOClient::cmdListPerms}},
+        {"addperm",            {ACLFlags.value("MODIFY_USERS"), 2, &AOClient::cmdAddPerms}},
+        {"removeperm",         {ACLFlags.value("MODIFY_USERS"), 2, &AOClient::cmdRemovePerms}},
+        {"listusers",          {ACLFlags.value("MODIFY_USERS"), 0, &AOClient::cmdListUsers}},
+        {"logout",             {ACLFlags.value("NONE"),         0, &AOClient::cmdLogout}},
+        {"pos",                {ACLFlags.value("NONE"),         1, &AOClient::cmdPos}},
+        {"g",                  {ACLFlags.value("NONE"),         1, &AOClient::cmdG}},
+        {"need",               {ACLFlags.value("NONE"),         1, &AOClient::cmdNeed}},
+        {"coinflip",           {ACLFlags.value("NONE"),         0, &AOClient::cmdFlip}},
+        {"roll",               {ACLFlags.value("NONE"),         0, &AOClient::cmdRoll}},
+        {"rollp",              {ACLFlags.value("NONE"),         0, &AOClient::cmdRollP}},
+        {"doc",                {ACLFlags.value("NONE"),         0, &AOClient::cmdDoc}},
+        {"cleardoc",           {ACLFlags.value("NONE"),         0, &AOClient::cmdClearDoc}},
+        {"cm",                 {ACLFlags.value("NONE"),         0, &AOClient::cmdCM}},
+        {"uncm",               {ACLFlags.value("CM"),           0, &AOClient::cmdUnCM}},
+        {"invite",             {ACLFlags.value("CM"),           1, &AOClient::cmdInvite}},
+        {"uninvite",           {ACLFlags.value("CM"),           1, &AOClient::cmdUnInvite}},
+        {"lock",               {ACLFlags.value("CM"),           0, &AOClient::cmdLock}},
+        {"area_lock",          {ACLFlags.value("CM"),           0, &AOClient::cmdLock}},
+        {"spectatable",        {ACLFlags.value("CM"),           0, &AOClient::cmdSpectatable}},
+        {"area_spectate",      {ACLFlags.value("CM"),           0, &AOClient::cmdSpectatable}},
+        {"unlock",             {ACLFlags.value("CM"),           0, &AOClient::cmdUnLock}},
+        {"area_unlock",        {ACLFlags.value("CM"),           0, &AOClient::cmdUnLock}},
+        {"timer",              {ACLFlags.value("CM"),           0, &AOClient::cmdTimer}},
+        {"area",               {ACLFlags.value("NONE"),         1, &AOClient::cmdArea}},
+        {"play",               {ACLFlags.value("CM"),           1, &AOClient::cmdPlay}},
+        {"areakick",           {ACLFlags.value("CM"),           1, &AOClient::cmdAreaKick}},
+        {"area_kick",          {ACLFlags.value("CM"),           1, &AOClient::cmdAreaKick}},
+        {"randomchar",         {ACLFlags.value("NONE"),         0, &AOClient::cmdRandomChar}},
+        {"switch",             {ACLFlags.value("NONE"),         1, &AOClient::cmdSwitch}},
+        {"toggleglobal",       {ACLFlags.value("NONE"),         0, &AOClient::cmdToggleGlobal}},
+        {"mods",               {ACLFlags.value("NONE"),         0, &AOClient::cmdMods}},
+        {"help",               {ACLFlags.value("NONE"),         0, &AOClient::cmdHelp}},
+        {"status",             {ACLFlags.value("NONE"),         1, &AOClient::cmdStatus}},
+        {"forcepos",           {ACLFlags.value("CM"),           2, &AOClient::cmdForcePos}},
+        {"currentmusic",       {ACLFlags.value("NONE"),         0, &AOClient::cmdCurrentMusic}},
+        {"pm",                 {ACLFlags.value("NONE"),         2, &AOClient::cmdPM}},
+        {"evidence_mod",       {ACLFlags.value("EVI_MOD"),      1, &AOClient::cmdEvidenceMod}},
+        {"motd",               {ACLFlags.value("NONE"),         0, &AOClient::cmdMOTD}},
+        {"announce",           {ACLFlags.value("ANNOUNCE"),     1, &AOClient::cmdAnnounce}},
+        {"m",                  {ACLFlags.value("MODCHAT"),      1, &AOClient::cmdM}},
+        {"gm",                 {ACLFlags.value("MODCHAT"),      1, &AOClient::cmdGM}},
+        {"mute",               {ACLFlags.value("MUTE"),         1, &AOClient::cmdMute}},
+        {"unmute",             {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnMute}},
+        {"bans",               {ACLFlags.value("BAN"),          0, &AOClient::cmdBans}},
+        {"unban",              {ACLFlags.value("BAN"),          1, &AOClient::cmdUnBan}},
+        {"removeuser",         {ACLFlags.value("MODIFY_USERS"), 1, &AOClient::cmdRemoveUser}},
+        {"subtheme",           {ACLFlags.value("CM"),           1, &AOClient::cmdSubTheme}},
+        {"about",              {ACLFlags.value("NONE"),         0, &AOClient::cmdAbout}},
+        {"evidence_swap",      {ACLFlags.value("CM"),           2, &AOClient::cmdEvidence_Swap}},
+        {"notecard",           {ACLFlags.value("NONE"),         1, &AOClient::cmdNoteCard}},
+        {"notecardreveal",     {ACLFlags.value("CM"),           0, &AOClient::cmdNoteCardReveal}},
+        {"notecard_reveal",    {ACLFlags.value("CM"),           0, &AOClient::cmdNoteCardReveal}},
+        {"notecardclear",      {ACLFlags.value("NONE"),         0, &AOClient::cmdNoteCardClear}},
+        {"notecard_clear",     {ACLFlags.value("NONE"),         0, &AOClient::cmdNoteCardClear}},
+        {"8ball",              {ACLFlags.value("NONE"),         1, &AOClient::cmd8Ball}},
+        {"lm",                 {ACLFlags.value("MODCHAT"),      1, &AOClient::cmdLM}},
+        {"judgelog",           {ACLFlags.value("CM"),           0, &AOClient::cmdJudgeLog}},
         {"allow_blankposting", {ACLFlags.value("MODCHAT"),      0, &AOClient::cmdAllow_Blankposting}},
-        {"gimp",            {ACLFlags.value("MUTE"),         1, &AOClient::cmdGimp}},
-        {"ungimp",          {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnGimp}},
+        {"gimp",               {ACLFlags.value("MUTE"),         1, &AOClient::cmdGimp}},
+        {"ungimp",             {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnGimp}},
+        {"baninfo",            {ACLFlags.value("BAN"),          1, &AOClient::cmdBanInfo}},
+        {"reload",             {ACLFlags.value("SUPER"),        0, &AOClient::cmdReload}},
     };
 
     /**
@@ -1696,6 +1729,17 @@ class AOClient : public QObject {
      * @details Used to determine if the incoming message is a duplicate.
      */
     QString last_message;
+
+    /**
+     * @brief A helper function to add recorded packets to an area's judgelog.
+     *
+     * @param area Pointer to the area where the packet was sent.
+     *
+     * @param client Pointer to the client that sent the packet.
+     *
+     * @param action String containing the info that is being recorded.
+     */
+    void updateJudgeLog(AreaData* area, AOClient* client, QString action);
 };
 
 #endif // AOCLIENT_H
