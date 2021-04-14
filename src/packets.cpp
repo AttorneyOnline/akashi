@@ -449,6 +449,12 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         incoming_msg = gimp_message;
     }
 
+    if (is_shaken) {
+        QStringList parts = incoming_msg.split(" ");
+        std::random_shuffle(parts.begin(), parts.end());
+        incoming_msg = parts.join(" ");
+    }
+
     if (is_disemvoweled) {
         QString disemvoweled_message = incoming_msg.remove(QRegExp("[AEIOUaeiou]"));
         incoming_msg = disemvoweled_message;

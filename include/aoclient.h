@@ -1684,6 +1684,8 @@ class AOClient : public QObject {
         {"reload",             {ACLFlags.value("SUPER"),        0, &AOClient::cmdReload}},
         {"disemvowel",         {ACLFlags.value("MUTE"),         1, &AOClient::cmdDisemvowel}},
         {"undisemvowel",       {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnDisemvowel}},
+        {"shake",              {ACLFlags.value("MUTE"),         1, &AOClient::cmdShake}},
+        {"unshake",            {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnShake}},
     };
 
     /**
