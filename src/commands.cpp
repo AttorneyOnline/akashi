@@ -1374,6 +1374,46 @@ void AOClient::cmdReload(int argc, QStringList argv)
     sendServerMessage("Reloaded configurations");
 }
 
+void AOClient::cmdDisemvowel(int argc, QStringList argv)
+{
+    bool conv_ok = false;
+    int uid = argv[0].toInt(&conv_ok);
+    if (!conv_ok) {
+        sendServerMessage("Invalid user ID.");
+        return;
+    }
+
+    AOClient* target = server->getClientByID(uid);
+
+    if (target->is_disemvoweled)
+        sendServerMessage("That player is already disemvoweled!");
+    else {
+        sendServerMessage("Disemvoweled player.");
+        target->sendServerMessage("You have been disemvoweled! " + getReprimand());
+    }
+    target->is_disemvoweled = true;
+}
+
+void AOClient::cmdUnDisemvowel(int argc, QStringList argv)
+{
+    bool conv_ok = false;
+    int uid = argv[0].toInt(&conv_ok);
+    if (!conv_ok) {
+        sendServerMessage("Invalid user ID.");
+        return;
+    }
+
+    AOClient* target = server->getClientByID(uid);
+
+    if (!(target->is_disemvoweled))
+        sendServerMessage("That player is not disemvoweled!");
+    else {
+        sendServerMessage("Undisemvoweled player.");
+        target->sendServerMessage("A moderator has undisemvoweled you! " + getReprimand(true));
+    }
+    target->is_disemvoweled = false;
+}
+
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;

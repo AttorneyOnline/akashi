@@ -221,12 +221,12 @@ class AOClient : public QObject {
     /**
      * @brief If true, the client's in-character messages will have their word order randomised.
      */
-    bool is_shaken;
+    bool is_shaken = false;
 
     /**
      * @brief If true, the client's in-character messages will have their vowels (English alphabet only) removed.
      */
-    bool is_disemvoweled;
+    bool is_disemvoweled = false;
 
     /**
      * @brief If true, the client's in-character messages will be overwritten by a randomly picked predetermined message.
@@ -1682,6 +1682,8 @@ class AOClient : public QObject {
         {"ungimp",             {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnGimp}},
         {"baninfo",            {ACLFlags.value("BAN"),          1, &AOClient::cmdBanInfo}},
         {"reload",             {ACLFlags.value("SUPER"),        0, &AOClient::cmdReload}},
+        {"disemvowel",         {ACLFlags.value("MUTE"),         1, &AOClient::cmdDisemvowel}},
+        {"undisemvowel",       {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnDisemvowel}},
     };
 
     /**

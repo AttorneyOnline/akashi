@@ -449,6 +449,11 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         incoming_msg = gimp_message;
     }
 
+    if (is_disemvoweled) {
+        QString disemvoweled_message = incoming_msg.remove(QRegExp("[AEIOUaeiou]"));
+        incoming_msg = disemvoweled_message;
+    }
+
     last_message = incoming_msg;
     args.append(incoming_msg);
 
