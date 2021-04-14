@@ -93,6 +93,13 @@ class ConfigManager {
      * @return See brief description.
      */
     bool fileExists(QFileInfo *file);
+
+    /**
+     * @brief Verifies the existence of the command configuration files found in config/text/.
+     *
+     * @return True if the config files exist, and are files. False otherwise.
+     */
+    bool verifyCommandConfig();
 };
 
 #endif // CONFIG_MANAGER_H

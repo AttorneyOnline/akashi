@@ -1400,6 +1400,15 @@ class AOClient : public QObject {
     void cmd8Ball(int argc, QStringList argv);
 
     /**
+     * @brief Reloads all server configuration files.
+     *
+     * @details No arguments.
+     * 
+     * @iscommand
+     */
+    void cmdReload(int argc, QStringList argv);
+
+    /**
     * @brief Sends an out-of-character message with the judgelog of an area.
     *
     * @details No arguments.
@@ -1616,6 +1625,7 @@ class AOClient : public QObject {
         {"judgelog",           {ACLFlags.value("CM"),           0, &AOClient::cmdJudgeLog}},
         {"allow_blankposting", {ACLFlags.value("MODCHAT"),      0, &AOClient::cmdAllow_Blankposting}},
         {"baninfo",            {ACLFlags.value("BAN"),          1, &AOClient::cmdBanInfo}},
+        {"reload",             {ACLFlags.value("SUPER"),        0, &AOClient::cmdReload}},
     };
 
     /**

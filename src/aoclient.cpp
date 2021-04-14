@@ -276,17 +276,17 @@ void AOClient::calculateIpid()
 
 void AOClient::sendServerMessage(QString message)
 {
-    sendPacket("CT", {server->getServerName(), message, "1"});
+    sendPacket("CT", {server->server_name, message, "1"});
 }
 
 void AOClient::sendServerMessageArea(QString message)
 {
-    server->broadcast(AOPacket("CT", {server->getServerName(), message, "1"}), current_area);
+    server->broadcast(AOPacket("CT", {server->server_name, message, "1"}), current_area);
 }
 
 void AOClient::sendServerBroadcast(QString message)
 {
-    server->broadcast(AOPacket("CT", {server->getServerName(), message, "1"}));
+    server->broadcast(AOPacket("CT", {server->server_name, message, "1"}));
 }
 
 bool AOClient::checkAuth(unsigned long long acl_mask)
@@ -300,14 +300,11 @@ bool AOClient::checkAuth(unsigned long long acl_mask)
         else if (!authenticated) {
             return false;
         }
-        QSettings settings("config/config.ini", QSettings::IniFormat);
-        settings.beginGroup("Options");
-        QString auth_type = settings.value("auth", "simple").toString();
-        if (auth_type == "advanced") {
+        if (server->auth_type == "advanced") {
             unsigned long long user_acl = server->db_manager->getACL(moderator_name);
             return (user_acl & acl_mask) != 0;
         }
-        else if (auth_type == "simple") {
+        else if (server->auth_type == "simple") {
             return authenticated;
         }
     }

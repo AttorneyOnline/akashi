@@ -64,6 +64,13 @@ void Advertiser::socketDisconnected()
     qDebug("Connection to master server lost");
 }
 
+void Advertiser::reloadRequested(QString p_name, QString p_desc)
+{
+    name = p_name;
+    description = p_desc;
+    socketConnected();
+}
+
 Advertiser::~Advertiser()
 {
     socket->deleteLater();
