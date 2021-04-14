@@ -1289,6 +1289,45 @@ void AOClient::cmdAllow_Blankposting(int argc, QStringList argv)
     }
 }
 
+void AOClient::cmdGimp(int argc, QStringList argv)
+{
+    bool conv_ok = false;
+    int uid = argv[0].toInt(&conv_ok);
+    if (!conv_ok) {
+        sendServerMessage("Invalid user ID.");
+        return;
+    }
+
+    AOClient* target = server->getClientByID(uid);
+
+    if (target->is_gimped)
+        sendServerMessage("That player is already gimped!");
+    else {
+        sendServerMessage("Gimped player.");
+        target->sendServerMessage("You have been gimped! " + getReprimand());
+    }
+    target->is_gimped = true;
+}
+
+void AOClient::cmdUnGimp(int argc, QStringList argv)
+{
+    bool conv_ok = false;
+    int uid = argv[0].toInt(&conv_ok);
+    if (!conv_ok) {
+        sendServerMessage("Invalid user ID.");
+        return;
+    }
+
+    AOClient* target = server->getClientByID(uid);
+
+    if (!(target->is_gimped))
+        sendServerMessage("That player is not gimped!");
+    else {
+        sendServerMessage("Ungimped player.");
+        target->sendServerMessage("A moderator has ungimped you! " + getReprimand(true));
+    }
+    target->is_gimped = false;
+}
 void AOClient::cmdBanInfo(int argc, QStringList argv)
 {
     QStringList ban_info;
@@ -1333,6 +1372,86 @@ void AOClient::cmdReload(int argc, QStringList argv)
     server->loadCommandConfig();
     emit server->reloadRequest(server->server_name, server->server_desc);
     sendServerMessage("Reloaded configurations");
+}
+
+void AOClient::cmdDisemvowel(int argc, QStringList argv)
+{
+    bool conv_ok = false;
+    int uid = argv[0].toInt(&conv_ok);
+    if (!conv_ok) {
+        sendServerMessage("Invalid user ID.");
+        return;
+    }
+
+    AOClient* target = server->getClientByID(uid);
+
+    if (target->is_disemvoweled)
+        sendServerMessage("That player is already disemvoweled!");
+    else {
+        sendServerMessage("Disemvoweled player.");
+        target->sendServerMessage("You have been disemvoweled! " + getReprimand());
+    }
+    target->is_disemvoweled = true;
+}
+
+void AOClient::cmdUnDisemvowel(int argc, QStringList argv)
+{
+    bool conv_ok = false;
+    int uid = argv[0].toInt(&conv_ok);
+    if (!conv_ok) {
+        sendServerMessage("Invalid user ID.");
+        return;
+    }
+
+    AOClient* target = server->getClientByID(uid);
+
+    if (!(target->is_disemvoweled))
+        sendServerMessage("That player is not disemvoweled!");
+    else {
+        sendServerMessage("Undisemvoweled player.");
+        target->sendServerMessage("A moderator has undisemvoweled you! " + getReprimand(true));
+    }
+    target->is_disemvoweled = false;
+}
+
+void AOClient::cmdShake(int argc, QStringList argv)
+{
+    bool conv_ok = false;
+    int uid = argv[0].toInt(&conv_ok);
+    if (!conv_ok) {
+        sendServerMessage("Invalid user ID.");
+        return;
+    }
+
+    AOClient* target = server->getClientByID(uid);
+
+    if (target->is_shaken)
+        sendServerMessage("That player is already shaken!");
+    else {
+        sendServerMessage("Shook player.");
+        target->sendServerMessage("A moderator has shaken your words! " + getReprimand());
+    }
+    target->is_shaken = true;
+}
+
+void AOClient::cmdUnShake(int argc, QStringList argv)
+{
+    bool conv_ok = false;
+    int uid = argv[0].toInt(&conv_ok);
+    if (!conv_ok) {
+        sendServerMessage("Invalid user ID.");
+        return;
+    }
+
+    AOClient* target = server->getClientByID(uid);
+
+    if (!(target->is_shaken))
+        sendServerMessage("That player is not shaken!");
+    else {
+        sendServerMessage("Unshook player.");
+        target->sendServerMessage("A moderator has unshook you! " + getReprimand(true));
+    }
+    target->is_shaken = false;
 }
 
 QStringList AOClient::buildAreaList(int area_idx)

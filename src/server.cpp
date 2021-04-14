@@ -203,6 +203,7 @@ void Server::loadCommandConfig()
     magic_8ball_answers = (loadConfigFile("8ball"));
     praise_list = (loadConfigFile("praise"));
     reprimands_list = (loadConfigFile("reprimands"));
+    gimp_list = (loadConfigFile("gimp"));
 }
 
 QStringList Server::loadConfigFile(QString filename)

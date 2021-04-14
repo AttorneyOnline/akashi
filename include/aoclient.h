@@ -221,17 +221,17 @@ class AOClient : public QObject {
     /**
      * @brief If true, the client's in-character messages will have their word order randomised.
      */
-    bool is_shaken;
+    bool is_shaken = false;
 
     /**
      * @brief If true, the client's in-character messages will have their vowels (English alphabet only) removed.
      */
-    bool is_disemvoweled;
+    bool is_disemvoweled = false;
 
     /**
      * @brief If true, the client's in-character messages will be overwritten by a randomly picked predetermined message.
      */
-    bool is_gimped;
+    bool is_gimped = false;
 
   public slots:
     /**
@@ -1400,6 +1400,60 @@ class AOClient : public QObject {
     void cmd8Ball(int argc, QStringList argv);
 
     /**
+     * @brief Replaces a target client's in-character messages with strings randomly selected from gimp.txt.
+     *
+     * @details The only argument is the **the target's ID** whom the client wants to gimp.
+     *
+     * @iscommand
+     */
+    void cmdGimp(int argc, QStringList argv);
+
+    /**
+     * @brief Allows a gimped client to speak normally.
+     *
+     * @details The only argument is **the target's ID** whom the client wants to ungimp.
+     *
+     * @iscommand
+     */
+    void cmdUnGimp(int argc, QStringList argv);
+
+    /**
+     * @brief Removes all vowels from a target client's in-character messages.
+     *
+     * @details The only argument is **the target's ID** whom the client wants to disemvowel.
+     *
+     * @iscommand
+     */
+    void cmdDisemvowel(int argc, QStringList argv);
+
+    /**
+     * @brief Allows a disemvoweled client to speak normally.
+     *
+     * @details The only argument is **the target's ID** whom the client wants to undisemvowel.
+     *
+     * @iscommand
+     */
+    void cmdUnDisemvowel(int argc, QStringList argv);
+
+    /**
+     * @brief Scrambles the words of a target client's in-character messages.
+     *
+     * @details The only argument is **the target's ID** whom the client wants to shake.
+     *
+     * @iscommand
+     */
+    void cmdShake(int argc, QStringList argv);
+
+    /**
+     * @brief Allows a shaken client to speak normally.
+     *
+     * @details The only argument is **the target's ID** whom the client wants to unshake.
+     *
+     * @iscommand
+     */
+    void cmdUnShake(int argc, QStringList argv);
+    
+    /**
      * @brief Reloads all server configuration files.
      *
      * @details No arguments.
@@ -1624,8 +1678,14 @@ class AOClient : public QObject {
         {"lm",                 {ACLFlags.value("MODCHAT"),      1, &AOClient::cmdLM}},
         {"judgelog",           {ACLFlags.value("CM"),           0, &AOClient::cmdJudgeLog}},
         {"allow_blankposting", {ACLFlags.value("MODCHAT"),      0, &AOClient::cmdAllow_Blankposting}},
+        {"gimp",               {ACLFlags.value("MUTE"),         1, &AOClient::cmdGimp}},
+        {"ungimp",             {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnGimp}},
         {"baninfo",            {ACLFlags.value("BAN"),          1, &AOClient::cmdBanInfo}},
         {"reload",             {ACLFlags.value("SUPER"),        0, &AOClient::cmdReload}},
+        {"disemvowel",         {ACLFlags.value("MUTE"),         1, &AOClient::cmdDisemvowel}},
+        {"undisemvowel",       {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnDisemvowel}},
+        {"shake",              {ACLFlags.value("MUTE"),         1, &AOClient::cmdShake}},
+        {"unshake",            {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnShake}},
     };
 
     /**

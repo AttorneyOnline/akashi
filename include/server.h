@@ -264,6 +264,11 @@ class Server : public QObject {
      */
     QStringList reprimands_list;
 
+    /**
+     * @brief List holding the contents of gimp.txt, used by AOClient::cmdGimp.
+     */
+    QStringList gimp_list;
+
   public slots:
     /**
      * @brief Handles a new connection.
