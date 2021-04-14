@@ -1391,10 +1391,10 @@ void AOClient::cmdDeleteStatement(int argc, QStringList argv)
 {
     AreaData* area = server->areas[current_area];
     int c_statement = area->statement;
-    if (area->test_rec == AreaData::TestimonyRecording::STOPPED) {
-        sendServerMessage("Unable to delete statement. There is currently no examination running.");
+    if (area->testimony.size() - 1 = 0) {
+        sendServerMessage("Unable to delete statement. No statements saved in this area.");
     }
-    if (c_statement > 0 && area->test_rec == AreaData::TestimonyRecording::PLAYBACK) {
+    if (c_statement > 0 && area->testimony.size() > 2) {
         area->testimony.remove(c_statement);
         sendServerMessage("The statement with id " + QString::number(c_statement) + " has been deleted from the testimony.");
     }
