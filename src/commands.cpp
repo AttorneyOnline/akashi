@@ -1362,7 +1362,7 @@ void AOClient::cmdDeleteStatement(int argc, QStringList argv)
 {
     AreaData* area = server->areas[current_area];
     int c_statement = area->statement;
-    if (area->testimony.size() - 1 = 0) {
+    if (area->testimony.size() - 1 == 0) {
         sendServerMessage("Unable to delete statement. No statements saved in this area.");
     }
     if (c_statement > 0 && area->testimony.size() > 2) {
@@ -1392,7 +1392,6 @@ void AOClient::cmdAddStatement(int argc, QStringList argv)
     }
     else
         sendServerMessage("Unable to add anymore statements. Please remove any unused ones.");
-    
 }
 
 void AOClient::cmdReload(int argc, QStringList argv)
