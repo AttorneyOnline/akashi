@@ -1392,6 +1392,7 @@ void AOClient::cmdAddStatement(int argc, QStringList argv)
     }
     else
         sendServerMessage("Unable to add anymore statements. Please remove any unused ones.");
+    
 }
 
 void AOClient::cmdReload(int argc, QStringList argv)
