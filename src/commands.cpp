@@ -1366,6 +1366,73 @@ void AOClient::cmdBanInfo(int argc, QStringList argv)
     sendServerMessage(ban_info.join("\n"));
 }
 
+void AOClient::cmdTestify(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    if (area->test_rec == AreaData::TestimonyRecording::RECORDING) {
+        sendServerMessage("Testimony recording is already in progress. Please stop it before starting a new one.");
+    }
+    else {
+        clearTestimony();
+        area->statement = 0;
+        area->test_rec = AreaData::TestimonyRecording::RECORDING;
+        sendServerMessage("Started testimony recording.");
+    }
+}
+
+void AOClient::cmdExamine(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    if (area->testimony.size() -1 > 0)
+    {
+        area->test_rec = AreaData::TestimonyRecording::PLAYBACK;
+        server->broadcast(AOPacket("RT",{"testimony2"}), current_area);
+        server->broadcast(AOPacket("MS", {area->testimony[0]}), current_area);
+        area->statement = 0;
+        return;
+    }
+    if (area->test_rec == AreaData::TestimonyRecording::PLAYBACK)
+        sendServerMessage("Unable to examine while another examination is running");
+    else
+        sendServerMessage("Unable to start replay without prior examination.");
+}
+
+void AOClient::cmdDeleteStatement(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    int c_statement = area->statement;
+    if (area->testimony.size() - 1 == 0) {
+        sendServerMessage("Unable to delete statement. No statements saved in this area.");
+    }
+    if (c_statement > 0 && area->testimony.size() > 2) {
+        area->testimony.remove(c_statement);
+        sendServerMessage("The statement with id " + QString::number(c_statement) + " has been deleted from the testimony.");
+    }
+}
+
+void AOClient::cmdUpdateStatement(int argc, QStringList argv)
+{
+    server->areas[current_area]->test_rec = AreaData::TestimonyRecording::UPDATE;
+    sendServerMessage("The next IC-Message will replace the last displayed replay message.");
+}
+
+void AOClient::cmdPauseTestimony(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    area->test_rec = AreaData::TestimonyRecording::STOPPED;
+    sendServerMessage("Testimony has been stopped.");
+}
+
+void AOClient::cmdAddStatement(int argc, QStringList argv)
+{
+    if (server->areas[current_area]->statement < server->maximum_statements) {
+        server->areas[current_area]->test_rec = AreaData::TestimonyRecording::ADD;
+        sendServerMessage("The next IC-Message will be inserted into the testimony.");
+    }
+    else
+        sendServerMessage("Unable to add anymore statements. Please remove any unused ones.");
+}
+
 void AOClient::cmdReload(int argc, QStringList argv)
 {
     server->loadServerConfig();

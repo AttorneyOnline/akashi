@@ -643,6 +643,41 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         args.append(incoming_args[25].toString());
     }
 
+    //Testimony playback
+    if (area->test_rec == AreaData::TestimonyRecording::RECORDING || area->test_rec == AreaData::TestimonyRecording::ADD) {
+        if (args[5] != "wit")
+            return AOPacket("MS", args);
+
+        if (area->statement == 0) {
+            args[4] = "~~\\n-- " + args[4] + " --";
+            args[14] = "3";
+            server->broadcast(AOPacket("RT",{"testimony1"}), current_area);
+        }
+        addStatement(args);
+    }
+    else if (area->test_rec == AreaData::TestimonyRecording::UPDATE) {
+        args = updateStatement(args);
+    }
+    else if (area->test_rec == AreaData::TestimonyRecording::PLAYBACK) {
+        if (args[4] == ">") {
+            pos = "wit";
+            area->statement = area->statement + 1;
+            args = playTestimony();
+        }
+        if (args[4] == "<") {
+            pos = "wit";
+            area->statement = area->statement - 1;
+            args = playTestimony();
+        }
+        QRegularExpression jump("(?<arrow>>)(?<int>[0,1,2,3,4,5,6,7,8,9]+)");
+        QRegularExpressionMatch match = jump.match(args[4]);
+        if (match.hasMatch()) {
+            pos = "wit";
+            area->statement = match.captured("int").toInt();
+            args= playTestimony();
+        }
+    }
+
     return AOPacket("MS", args);
 }
 

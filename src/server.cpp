@@ -54,6 +54,8 @@ void Server::start()
     loadServerConfig();
     loadCommandConfig();
 
+    maximum_statements = config.value("maximum_statements", 50).toInt();
+
     proxy = new WSProxy(port, ws_port, this);
     if(ws_port != -1)
         proxy->start();

@@ -200,6 +200,11 @@ class Server : public QObject {
      */
     QString MOTD;
 
+   /**
+    * @brief The Maximum amounts of IC-Messages an area is allowed to store.
+    */
+    int maximum_statements;
+
     /**
      * @brief The authorization type of the server.
      *
