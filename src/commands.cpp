@@ -1539,9 +1539,8 @@ void AOClient::cmdAllowIniswap(int argc, QStringList argv)
 
 void AOClient::cmdAfk(int argc, QStringList argv)
 {
-    is_afk = !is_afk;
-    QString state = is_afk ? "now" : "no longer";
-    sendServerMessage("You are " + state + " AFK.");
+    is_afk = true;
+    sendServerMessage("You are now AFK.");
 }
 
 QStringList AOClient::buildAreaList(int area_idx)
