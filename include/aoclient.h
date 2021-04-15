@@ -218,6 +218,27 @@ class AOClient : public QObject {
         {"SUPER",          ~0ULL      },
     };
 
+
+    /**
+     * @brief A structure for storing the client's casing alert preferences.
+     */
+    struct CasingPreferences {
+        QString caselist = ""; //!< The list of cases this user is willing to host (assuming they are also willing to CM) (unused)
+        bool cm = false; //!< If the user is willing to host cases (unused)
+        bool defense = false; //!< If the user is willing to defend a case / play as a defense attorney (or a co-defense attorney)
+        bool prosecution = false; //!< If the user is willing to prosecute a case / play as a prosecutor (or a co-prosecutor)
+        bool judge = false; //!< If the user is willing to judge a case
+        bool jury = false; //!< If the user is willing to be a member of the jury in a case
+        bool stenographer = false; //!< If the user is willing to be the stenographer of a case
+    };
+
+    /**
+     * @brief The client's casing alert preferences.
+     *
+     * @see The struct itself for more details.
+     */
+    CasingPreferences casing_preferences;
+
     /**
      * @brief If true, the client's in-character messages will have their word order randomised.
      */
@@ -472,6 +493,12 @@ class AOClient : public QObject {
     /// Implements [editing evidence](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#edit).
     void pktEditEvidence(AreaData* area, int argc, QStringList argv, AOPacket packet);
 
+    /// Implements [updating casing preferences](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#case-preferences-update).
+    void pktSetCase(AreaData* area, int argc, QStringList argv, AOPacket packet);
+
+    /// Implements [announcing a case](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#case-alert).
+    void pktAnnounceCase(AreaData* area, int argc, QStringList argv, AOPacket packet);
+
     ///@}
 
     /**
@@ -622,6 +649,8 @@ class AOClient : public QObject {
         {"PE",      {ACLFlags.value("NONE"), 3,  &AOClient::pktAddEvidence    }},
         {"DE",      {ACLFlags.value("NONE"), 1,  &AOClient::pktRemoveEvidence }},
         {"EE",      {ACLFlags.value("NONE"), 4,  &AOClient::pktEditEvidence   }},
+        {"SETCASE", {ACLFlags.value("NONE"), 7,  &AOClient::pktSetCase        }},
+        {"CASEA",   {ACLFlags.value("NONE"), 6,  &AOClient::pktAnnounceCase   }},
     };
 
     /**

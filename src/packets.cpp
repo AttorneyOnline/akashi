@@ -344,6 +344,87 @@ void AOClient::pktEditEvidence(AreaData* area, int argc, QStringList argv, AOPac
     sendEvidenceList(area);
 }
 
+void AOClient::pktSetCase(AreaData* area, int argc, QStringList argv, AOPacket packet)
+{
+    casing_preferences.caselist = argv[0];
+    QList<bool> prefs_list;
+    for (int i = 1; i <=6; i++) {
+        bool is_int = false;
+        bool pref = argv[i].toInt(&is_int);
+        if (!is_int)
+            return;
+        prefs_list.append(pref);
+    }
+    casing_preferences.cm           = prefs_list[0];
+    casing_preferences.defense      = prefs_list[1];
+    casing_preferences.prosecution  = prefs_list[2];
+    casing_preferences.judge        = prefs_list[3];
+    casing_preferences.jury         = prefs_list[4];
+    casing_preferences.stenographer = prefs_list[5];
+
+    qDebug() << casing_preferences.cm << casing_preferences.defense << casing_preferences.prosecution << casing_preferences.judge << casing_preferences.jury << casing_preferences.stenographer;
+}
+
+void AOClient::pktAnnounceCase(AreaData* area, int argc, QStringList argv, AOPacket packet)
+{
+    // the following is an example of the type of code AO2 makes me write
+    // you may wish to do something more pleasant rather than read this garbage
+    // taking a bath in battery acid, for instance
+    QString case_title = argv[0];
+    QStringList needed_roles;
+    QList<bool> needs_list;
+    for (int i = 1; i <=5; i++) {
+        bool is_int = false;
+        bool need = argv[i].toInt(&is_int);
+        if (!is_int)
+            return;
+        needs_list.append(need);
+    }
+    // this is stupid stupid stupid i hate this
+    if (needs_list[0]) {
+        needed_roles.append("defense attorney");
+    }
+    if (needs_list[1]) {
+        needed_roles.append("prosecutor");
+    }
+    if (needs_list[2]) {
+        needed_roles.append("judge");
+    }
+    if (needs_list[3]) {
+        needed_roles.append("jurors");
+    }
+    if (needs_list[4]) {
+        needed_roles.append("stenographer");
+    }
+    if (needed_roles.isEmpty()) {
+        return;
+    }
+
+    QString message = "=== Case Announcement ===\r\n" + ooc_name + " needs " + needed_roles.join(", ") + " for " + case_title + "!";
+
+    QList<AOClient*> clients_to_alert;
+    // this is morton the indented if statement
+    // please do not feed morton
+    for (AOClient* client : server->clients) {
+        if (((client->casing_preferences.defense && needed_roles.contains("defense attorney")) ||
+                    (client->casing_preferences.prosecution && needed_roles.contains("prosecutor")) ||
+                    (client->casing_preferences.judge && needed_roles.contains("judge")) ||
+                    (client->casing_preferences.jury && needed_roles.contains("jurors")) ||
+                    (client->casing_preferences.stenographer && needed_roles.contains("stenographer")))
+                && !clients_to_alert.contains(client))
+            clients_to_alert.append(client);
+    }
+    // morton is a little ugly but we love him anyway
+
+    for (AOClient* client : clients_to_alert) {
+        client->sendPacket(AOPacket("CASEA", {message, argv[1], argv[2], argv[3], argv[4], argv[5], "1"}));
+        // you may be thinking, "hey wait a minute the network protocol documentation doesn't mention that last argument!"
+        // if you are in fact thinking that, you are correct! it is not in the documentation!
+        // however for some inscrutable reason Attorney Online 2 will outright reject a CASEA packet that does not have
+        // at least 7 arguments despite only using the first 6. Cera, i kneel. you have truly broken me.
+    }
+}
+
 void AOClient::sendEvidenceList(AreaData* area)
 {
     for (AOClient* client : server->clients) {
@@ -719,6 +800,4 @@ void AOClient::updateJudgeLog(AreaData* area, AOClient* client, QString action)
         area->judgelog.append(logmessage);
     }
     else area->judgelog.append(logmessage);
-
-
 }
