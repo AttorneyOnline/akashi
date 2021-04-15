@@ -31,6 +31,8 @@ SOURCES += src/advertiser.cpp \
     src/aopacket.cpp \
     src/area_data.cpp \
     src/commands.cpp \
+    src/commands/areas.cpp \
+    src/commands/authentication.cpp \
     src/config_manager.cpp \
     src/db_manager.cpp \
     src/logger.cpp \

@@ -625,44 +625,6 @@ class AOClient : public QObject {
     };
 
     /**
-     * @brief Literally just an invalid default command. That's it.
-     *
-     * @note Can be used as a base for future commands.
-     *
-     * @iscommand
-     */
-    void cmdDefault(int argc, QStringList argv);
-
-    /**
-     * @brief Lists all the commands that the caller client has the permissions to use.
-     *
-     * @details No arguments.
-     *
-     * @iscommand
-     */
-    void cmdHelp(int argc, QStringList argv);
-
-    /**
-     * @brief Gets or sets the server's Message Of The Day.
-     *
-     * @details If called without arguments, gets the MOTD.
-     *
-     * If it has any number of arguments, it is set as the **MOTD**.
-     *
-     * @iscommand
-     */
-    void cmdMOTD(int argc, QStringList argv);
-
-    /**
-     * @brief Gives a very brief description of Akashi.
-     *
-     * @details No arguments.
-     *
-     * @iscommand
-     */
-    void cmdAbout(int argc, QStringList argv);
-    
-    /**
       * @name Authentication
       */
     ///@{
@@ -921,13 +883,13 @@ class AOClient : public QObject {
     void cmdStatus(int argc, QStringList argv);
 
     /**
-     * @brief Returns the currently playing music in the area, and who played it.
-     *
-     * @details No arguments.
-     *
-     * @iscommand
-     */
-    void cmdCurrentMusic(int argc, QStringList argv);
+    * @brief Sends an out-of-character message with the judgelog of an area.
+    *
+    * @details No arguments.
+    *
+    * @iscommand
+    */
+    void cmdJudgeLog(int argc, QStringList argv);
 
     ///@}
 
@@ -938,6 +900,35 @@ class AOClient : public QObject {
       * that are also related to the moderation and administration of the server.
       */
     ///@{
+
+    /**
+     * @brief Lists all the commands that the caller client has the permissions to use.
+     *
+     * @details No arguments.
+     *
+     * @iscommand
+     */
+    void cmdHelp(int argc, QStringList argv);
+
+    /**
+     * @brief Gets or sets the server's Message Of The Day.
+     *
+     * @details If called without arguments, gets the MOTD.
+     *
+     * If it has any number of arguments, it is set as the **MOTD**.
+     *
+     * @iscommand
+     */
+    void cmdMOTD(int argc, QStringList argv);
+
+    /**
+     * @brief Gives a very brief description of Akashi.
+     *
+     * @details No arguments.
+     *
+     * @iscommand
+     */
+    void cmdAbout(int argc, QStringList argv);
 
     /**
      * @brief Lists the currently logged-in moderators on the server.
@@ -994,50 +985,6 @@ class AOClient : public QObject {
     void cmdKick(int argc, QStringList argv);
 
     /**
-     * @brief Sends out a decorated global message, for announcements.
-     *
-     * @details The arguments are **the message** that the client wants to send.
-     *
-     * @iscommand
-     *
-     * @see AOClient::cmdG()
-     */
-    void cmdAnnounce(int argc, QStringList argv);
-
-    /**
-     * @brief Sends a message in the server-wide, moderator only chat.
-     *
-     * @details The arguments are **the message** that the client wants to send.
-     *
-     * @iscommand
-     */
-    void cmdM(int argc, QStringList argv);
-
-    /**
-     * @brief Sends out a global message that is marked with an `[M]` to mean it is coming from a moderator.
-     *
-     * @details The arguments are **the message** that the client wants to send.
-     *
-     * @iscommand
-     *
-     * @see AOClient::cmdG()
-     */
-    void cmdGM(int argc, QStringList argv);
-
-    /**
-     * @brief Sends out a local message that is marked with an `[M]` to mean it is coming from a moderator.
-     *
-     * @details The arguments are **the message** that the client wants to send.
-     *
-     * @iscommand
-     *
-     * @see AOClient::cmdLM()
-     */
-    void cmdLM(int argc, QStringList argv);
-
-    // Casing/RP
-
-    /**
      * @brief Mutes a client.
      *
      * @details The only argument is the **target client's user ID**.
@@ -1082,28 +1029,6 @@ class AOClient : public QObject {
     void cmdOocUnMute(int argc, QStringList argv);
   
     /**
-     * @brief DJ-blocks a client.
-     *
-     * @details The only argument is the **target client's user ID**.
-     *
-     * @iscommand
-     *
-     * @see #is_dj_blocked
-     */
-    void cmdBlockDj(int argc, QStringList argv);
-  
-    /**
-     * @brief Removes the DJ-blocked status from a client.
-     *
-     * @details The only argument is the **target client's user ID**.
-     *
-     * @iscommand
-     *
-     * @see #is_dj_blocked
-     */
-    void cmdUnBlockDj(int argc, QStringList argv);
-  
-    /**
      * @brief WTCE-blocks a client.
      *
      * @details The only argument is the **target client's user ID**.
@@ -1144,6 +1069,27 @@ class AOClient : public QObject {
      */
     void cmdAllow_Blankposting(int argc, QStringList argv);
 
+    /**
+     * @brief Looks up info on a ban.
+     *
+     * @details If it is called with **one argument**, that argument is the ban ID to look up.
+     *
+     * If it is called with **two arguments**, then the first argument is either a ban ID, an IPID,
+     * or an HDID, and the the second argument specifies the ID type.
+     *
+     * @iscommand
+     */
+    void cmdBanInfo(int argc, QStringList argv);
+
+    /**
+     * @brief Reloads all server configuration files.
+     *
+     * @details No arguments.
+     *
+     * @iscommand
+     */
+    void cmdReload(int argc, QStringList argv);
+
     ///@}
 
     /**
@@ -1153,28 +1099,6 @@ class AOClient : public QObject {
       * that are also related to various kinds of roleplay actions in some way.
       */
     ///@{
-
-    /**
-     * @brief Plays music in the area.
-     *
-     * @details The arguments are **the song's filepath** originating from `base/sounds/music/`,
-     * or **the song's URL** if it's a stream.
-     *
-     * As described above, this command can be used to play songs by URL (for clients at and above version 2.9),
-     * but it can also be used to play songs locally available for the clients but not listed in the music list.
-     *
-     * @iscommand
-     */
-    void cmdPlay(int argc, QStringList argv);
-
-    /**
-     * @brief A global message expressing that the client needs something (generally: players for something).
-     *
-     * @details The arguments are **the message** that the client wants to send.
-     *
-     * @iscommand
-     */
-    void cmdNeed(int argc, QStringList argv);
 
     /**
      * @brief Flips a coin, returning heads or tails.
@@ -1207,24 +1131,6 @@ class AOClient : public QObject {
     void cmdRollP(int argc, QStringList argv);
 
     /**
-     * @brief Sets the `/doc` to a custom text.
-     *
-     * @details The arguments are **the text** that the client wants to set the doc to.
-     *
-     * @iscommand
-     */
-    void cmdDoc(int argc, QStringList argv);
-
-    /**
-     * @brief Sets the `/doc` to `"No document."`.
-     *
-     * @details No arguments.
-     *
-     * @iscommand
-     */
-    void cmdClearDoc(int argc, QStringList argv);
-
-    /**
      * @brief Gets or sets the global or one of the area-specific timers.
      *
      * @details If called without arguments, sends an out-of-character message listing the statuses of both
@@ -1244,29 +1150,6 @@ class AOClient : public QObject {
      * @iscommand
      */
     void cmdTimer(int argc, QStringList argv);
-
-    /**
-     * @brief Changes the evidence mod in the area.
-     *
-     * @details The only argument is the **evidence mod** to change to.
-     *
-     * @iscommand
-     *
-     * @see AreaData::EvidenceMod
-     */
-    void cmdEvidenceMod(int argc, QStringList argv);
-
-    /**
-     * @brief Changes position of two pieces of evidence in the area.
-     *
-     * @details The two arguments are the indices of the evidence items you want to swap the position of.
-     *
-     * @iscommand
-     *
-     * @see Area::Evidence_Swap
-     *
-     */
-    void cmdEvidence_Swap(int argc, QStringList argv);
 
     /**
      * @brief Changes the subtheme of the clients in the current area.
@@ -1305,51 +1188,13 @@ class AOClient : public QObject {
     void cmdNoteCardClear(int argc, QStringList argv);
 
     /**
-     * @brief Sets are to PLAYBACK mode
+     * @brief Randomly selects an answer from 8ball.txt to a question.
      *
-     * @details Enables control over the stored testimony, prevent new messages to be added and
-     * allows people to navigate trough it using > and <.
+     * @details The only argument is the question the client wants answered.
+     *
+     * @iscommand
      */
-    void cmdExamine(int argc, QStringList argv);
-
-    /**
-     * @brief Enables the testimony recording functionality.
-     *
-     * @details Any IC-Message send after this command is issues will be recorded by the testimony recorder.
-     */
-    void cmdTestify(int argc, QStringList argv);
-
-    /**
-     * @brief Allows user to update the currently displayed IC-Message from the testimony replay.
-     *
-     * @details Using this command replaces the content of the current statement entirely. It does not append information.
-     */
-    void cmdUpdateStatement(int argc, QStringList argv);
-
-    /**
-     * @brief Deletes a statement from the testimony.
-     *
-     * @details Using this deletes the entire entry in the QVector and resizes it appropriately to prevent empty record indices.
-     */
-    void cmdDeleteStatement(int argc, QStringList argv);
-
-    /**
-     * @brief Pauses testimony playback.
-     *
-     * @details Disables the testimony playback controls.
-     */
-    void cmdPauseTestimony(int argc, QStringList argv);
-
-
-    /**
-     * @brief
-     *
-     * @details
-     *
-     */
-    void cmdAddStatement(int argc, QStringList argv);
-  
-    // Messaging/Client
+    void cmd8Ball(int argc, QStringList argv);
     
     ///@}
 
@@ -1436,13 +1281,65 @@ class AOClient : public QObject {
     void cmdPM(int argc, QStringList argv);
 
     /**
-     * @brief Randomly selects an answer from 8ball.txt to a question.
+     * @brief A global message expressing that the client needs something (generally: players for something).
      *
-     * @details The only argument is the question the client wants answered.
+     * @details The arguments are **the message** that the client wants to send.
      *
      * @iscommand
      */
-    void cmd8Ball(int argc, QStringList argv);
+    void cmdNeed(int argc, QStringList argv);
+
+    /**
+     * @brief Sends out a decorated global message, for announcements.
+     *
+     * @details The arguments are **the message** that the client wants to send.
+     *
+     * @iscommand
+     *
+     * @see AOClient::cmdG()
+     */
+    void cmdAnnounce(int argc, QStringList argv);
+
+    /**
+     * @brief Sends a message in the server-wide, moderator only chat.
+     *
+     * @details The arguments are **the message** that the client wants to send.
+     *
+     * @iscommand
+     */
+    void cmdM(int argc, QStringList argv);
+
+    /**
+     * @brief Sends out a global message that is marked with an `[M]` to mean it is coming from a moderator.
+     *
+     * @details The arguments are **the message** that the client wants to send.
+     *
+     * @iscommand
+     *
+     * @see AOClient::cmdG()
+     */
+    void cmdGM(int argc, QStringList argv);
+
+    /**
+     * @brief Sends out a local message that is marked with an `[M]` to mean it is coming from a moderator.
+     *
+     * @details The arguments are **the message** that the client wants to send.
+     *
+     * @iscommand
+     *
+     * @see AOClient::cmdLM()
+     */
+    void cmdLM(int argc, QStringList argv);
+
+    ///@}
+
+    /**
+      * @name Fun
+      *
+      * @brief All functions that detail the actions of commands,
+      * that are related to various kinds of fun moderator commands.
+      */
+    ///@{
 
     /**
      * @brief Replaces a target client's in-character messages with strings randomly selected from gimp.txt.
@@ -1497,36 +1394,156 @@ class AOClient : public QObject {
      * @iscommand
      */
     void cmdUnShake(int argc, QStringList argv);
-    
+
+    ///@}
+
     /**
-     * @brief Reloads all server configuration files.
+      * @name Casing
+      *
+      * @brief All functions that detail the actions of commands,
+      * that are related to casing.
+      */
+    ///@{
+
+    /**
+     * @brief Sets the `/doc` to a custom text.
+     *
+     * @details The arguments are **the text** that the client wants to set the doc to.
+     *
+     * @iscommand
+     */
+    void cmdDoc(int argc, QStringList argv);
+
+    /**
+     * @brief Sets the `/doc` to `"No document."`.
      *
      * @details No arguments.
-     * 
-     * @iscommand
-     */
-    void cmdReload(int argc, QStringList argv);
-
-    /**
-    * @brief Sends an out-of-character message with the judgelog of an area.
-    *
-    * @details No arguments.
-    *
-    * @iscommand
-    */
-    void cmdJudgeLog(int argc, QStringList argv);
-
-    /**
-     * @brief Looks up info on a ban.
-     *
-     * @details If it is called with **one argument**, that argument is the ban ID to look up.
-     *
-     * If it is called with **two arguments**, then the first argument is either a ban ID, an IPID,
-     * or an HDID, and the the second argument specifies the ID type.
      *
      * @iscommand
      */
-    void cmdBanInfo(int argc, QStringList argv);
+    void cmdClearDoc(int argc, QStringList argv);
+
+    /**
+     * @brief Changes the evidence mod in the area.
+     *
+     * @details The only argument is the **evidence mod** to change to.
+     *
+     * @iscommand
+     *
+     * @see AreaData::EvidenceMod
+     */
+    void cmdEvidenceMod(int argc, QStringList argv);
+
+    /**
+     * @brief Changes position of two pieces of evidence in the area.
+     *
+     * @details The two arguments are the indices of the evidence items you want to swap the position of.
+     *
+     * @iscommand
+     *
+     * @see Area::Evidence_Swap
+     *
+     */
+    void cmdEvidence_Swap(int argc, QStringList argv);
+
+    /**
+     * @brief Sets are to PLAYBACK mode
+     *
+     * @details Enables control over the stored testimony, prevent new messages to be added and
+     * allows people to navigate trough it using > and <.
+     */
+    void cmdExamine(int argc, QStringList argv);
+
+    /**
+     * @brief Enables the testimony recording functionality.
+     *
+     * @details Any IC-Message send after this command is issues will be recorded by the testimony recorder.
+     */
+    void cmdTestify(int argc, QStringList argv);
+
+    /**
+     * @brief Allows user to update the currently displayed IC-Message from the testimony replay.
+     *
+     * @details Using this command replaces the content of the current statement entirely. It does not append information.
+     */
+    void cmdUpdateStatement(int argc, QStringList argv);
+
+    /**
+     * @brief Deletes a statement from the testimony.
+     *
+     * @details Using this deletes the entire entry in the QVector and resizes it appropriately to prevent empty record indices.
+     */
+    void cmdDeleteStatement(int argc, QStringList argv);
+
+    /**
+     * @brief Pauses testimony playback.
+     *
+     * @details Disables the testimony playback controls.
+     */
+    void cmdPauseTestimony(int argc, QStringList argv);
+
+    /**
+     * @brief Adds a statement to an existing testimony.
+     *
+     * @details Inserts new statement after the currently displayed recorded message. Increases the index by 1.
+     *
+     */
+    void cmdAddStatement(int argc, QStringList argv);
+
+    ///@}
+
+    /**
+      * @name Music
+      *
+      * @brief All functions that detail the actions of commands,
+      * that are also related to music in some way.
+      */
+    ///@{
+
+    /**
+     * @brief Plays music in the area.
+     *
+     * @details The arguments are **the song's filepath** originating from `base/sounds/music/`,
+     * or **the song's URL** if it's a stream.
+     *
+     * As described above, this command can be used to play songs by URL (for clients at and above version 2.9),
+     * but it can also be used to play songs locally available for the clients but not listed in the music list.
+     *
+     * @iscommand
+     */
+    void cmdPlay(int argc, QStringList argv);
+
+    /**
+     * @brief DJ-blocks a client.
+     *
+     * @details The only argument is the **target client's user ID**.
+     *
+     * @iscommand
+     *
+     * @see #is_dj_blocked
+     */
+    void cmdBlockDj(int argc, QStringList argv);
+
+    /**
+     * @brief Removes the DJ-blocked status from a client.
+     *
+     * @details The only argument is the **target client's user ID**.
+     *
+     * @iscommand
+     *
+     * @see #is_dj_blocked
+     */
+    void cmdUnBlockDj(int argc, QStringList argv);
+
+    /**
+     * @brief Returns the currently playing music in the area, and who played it.
+     *
+     * @details No arguments.
+     *
+     * @iscommand
+     */
+    void cmdCurrentMusic(int argc, QStringList argv);
+
 
     ///@}
 
@@ -1538,6 +1555,15 @@ class AOClient : public QObject {
       * or the avoidance of repetition over multiple definitions.
       */
     ///@{
+
+    /**
+     * @brief Literally just an invalid default command. That's it.
+     *
+     * @note Can be used as a base for future commands.
+     *
+     * @iscommand
+     */
+    void cmdDefault(int argc, QStringList argv);
 
     /**
      * @brief Returns a textual representation of the time left in an area's Timer.
