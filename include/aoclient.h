@@ -1760,6 +1760,7 @@ class AOClient : public QObject {
         {"pause",              {ACLFlags.value("CM"),           0, &AOClient::cmdPauseTestimony}},
         {"delete",             {ACLFlags.value("CM"),           0, &AOClient::cmdDeleteStatement}},
         {"update",             {ACLFlags.value("CM"),           0, &AOClient::cmdUpdateStatement}},
+        {"add",                {ACLFlags.value("CM"),           0, &AOClient::cmdAddStatement}},
         {"reload",             {ACLFlags.value("SUPER"),        0, &AOClient::cmdReload}},
         {"disemvowel",         {ACLFlags.value("MUTE"),         1, &AOClient::cmdDisemvowel}},
         {"undisemvowel",       {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnDisemvowel}},
