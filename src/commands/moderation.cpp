@@ -328,7 +328,7 @@ void AOClient::cmdUnBlockWtce(int argc, QStringList argv)
     target->is_wtce_blocked = false;
 }
 
-void AOClient::cmdAllow_Blankposting(int argc, QStringList argv)
+void AOClient::cmdAllowBlankposting(int argc, QStringList argv)
 {
     QString sender_name = ooc_name;
     AreaData* area = server->areas[current_area];
@@ -387,3 +387,18 @@ void AOClient::cmdReload(int argc, QStringList argv)
     sendServerMessage("Reloaded configurations");
 }
 
+void AOClient::cmdForceImmediate(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    area->force_immediate = !area->force_immediate;
+    QString state = area->force_immediate ? "on." : "off.";
+    sendServerMessage("Forced immediate text processing in this area is now " + state);
+}
+
+void AOClient::cmdAllowIniswap(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    area->iniswap_allowed = !area->iniswap_allowed;
+    QString state = area->iniswap_allowed ? "allowed." : "disallowed.";
+    sendServerMessage("Iniswapping in this area is now " + state);
+}

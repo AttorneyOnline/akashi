@@ -1125,6 +1125,24 @@ class AOClient : public QObject {
      */
     void cmdReload(int argc, QStringList argv);
 
+    /**
+    * @brief Toggles immediate text processing in the current area.
+    *
+    * @details No arguments.
+    *
+    * @iscommand
+    */
+    void cmdForceImmediate(int argc, QStringList argv);
+
+    /**
+    * @brief Toggles whether iniswaps are allowed in the current area.
+    *
+    * @details No arguments.
+    *
+    * @iscommand
+    */
+    void cmdAllowIniswap(int argc, QStringList argv);
+
     ///@}
 
     /**
@@ -1569,24 +1587,6 @@ class AOClient : public QObject {
      */
     void cmdCurrentMusic(int argc, QStringList argv);
 
-
-    /**
-    * @brief Toggles immediate text processing in the current area.
-    *
-    * @details No arguments.
-    *
-    * @iscommand
-    */
-    void cmdForceImmediate(int argc, QStringList argv);
-
-    /**
-    * @brief Toggles whether iniswaps are allowed in the current area.
-    *
-    * @details No arguments.
-    *
-    * @iscommand
-    */
-    void cmdAllowIniswap(int argc, QStringList argv);
 
     /**
     * @brief Toggles whether this client is considered AFK.

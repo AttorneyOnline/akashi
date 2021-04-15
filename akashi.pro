@@ -30,7 +30,6 @@ SOURCES += src/advertiser.cpp \
     src/aoclient.cpp \
     src/aopacket.cpp \
     src/area_data.cpp \
-    src/commands.cpp \
     src/commands/area.cpp \
     src/commands/authentication.cpp \
     src/commands/casing.cpp \
