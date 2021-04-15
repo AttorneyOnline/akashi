@@ -1537,6 +1537,13 @@ void AOClient::cmdAllowIniswap(int argc, QStringList argv)
     sendServerMessage("Iniswapping in this area is now " + state);
 }
 
+void AOClient::cmdAfk(int argc, QStringList argv)
+{
+    is_afk = !is_afk;
+    QString state = is_afk ? "now" : "no longer";
+    sendServerMessage("You are " + state + " AFK.");
+}
+
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;
@@ -1564,6 +1571,8 @@ QStringList AOClient::buildAreaList(int area_idx)
                 char_entry.insert(0, "[CM] ");
             if (authenticated)
                 char_entry += " (" + client->getIpid() + "): " + client->ooc_name;
+            if (client->is_afk)
+                char_entry += " [AFK]";
             entries.append(char_entry);
         }
     }
