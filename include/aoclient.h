@@ -1331,16 +1331,6 @@ class AOClient : public QObject {
      */
     void cmdLM(int argc, QStringList argv);
 
-    ///@}
-
-    /**
-      * @name Fun
-      *
-      * @brief All functions that detail the actions of commands,
-      * that are related to various kinds of fun moderator commands.
-      */
-    ///@{
-
     /**
      * @brief Replaces a target client's in-character messages with strings randomly selected from gimp.txt.
      *

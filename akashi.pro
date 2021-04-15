@@ -31,8 +31,14 @@ SOURCES += src/advertiser.cpp \
     src/aopacket.cpp \
     src/area_data.cpp \
     src/commands.cpp \
-    src/commands/areas.cpp \
+    src/commands/area.cpp \
     src/commands/authentication.cpp \
+    src/commands/casing.cpp \
+    src/commands/command_helper.cpp \
+    src/commands/messaging.cpp \
+    src/commands/moderation.cpp \
+    src/commands/music.cpp \
+    src/commands/roleplay.cpp \
     src/config_manager.cpp \
     src/db_manager.cpp \
     src/logger.cpp \

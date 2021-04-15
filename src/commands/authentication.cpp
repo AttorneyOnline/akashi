@@ -17,6 +17,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/aoclient.h"
 
+// This file is for commands under the authentication category in aoclient.h
 // Be sure to register the command in the header before adding it here!
 
 void AOClient::cmdLogin(int argc, QStringList argv)
