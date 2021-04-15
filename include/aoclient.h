@@ -218,6 +218,12 @@ class AOClient : public QObject {
         {"SUPER",          ~0ULL      },
     };
 
+
+    /**
+     * @brief A list of 5 casing preferences (def, pro, judge, jury, steno)
+     */
+    QList<bool> casing_preferences = {false, false, false, false, false};
+
     /**
      * @brief If true, the client's in-character messages will have their word order randomised.
      */
@@ -472,6 +478,12 @@ class AOClient : public QObject {
     /// Implements [editing evidence](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#edit).
     void pktEditEvidence(AreaData* area, int argc, QStringList argv, AOPacket packet);
 
+    /// Implements [updating casing preferences](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#case-preferences-update).
+    void pktSetCase(AreaData* area, int argc, QStringList argv, AOPacket packet);
+
+    /// Implements [announcing a case](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#case-alert).
+    void pktAnnounceCase(AreaData* area, int argc, QStringList argv, AOPacket packet);
+
     ///@}
 
     /**
@@ -622,6 +634,8 @@ class AOClient : public QObject {
         {"PE",      {ACLFlags.value("NONE"), 3,  &AOClient::pktAddEvidence    }},
         {"DE",      {ACLFlags.value("NONE"), 1,  &AOClient::pktRemoveEvidence }},
         {"EE",      {ACLFlags.value("NONE"), 4,  &AOClient::pktEditEvidence   }},
+        {"SETCASE", {ACLFlags.value("NONE"), 7,  &AOClient::pktSetCase        }},
+        {"CASEA",   {ACLFlags.value("NONE"), 6,  &AOClient::pktAnnounceCase   }},
     };
 
     /**
