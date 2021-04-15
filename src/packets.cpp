@@ -594,11 +594,13 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         }
         args.append(other_flip);
 
-        // noninterrupting preanim
-        int ni_pa = incoming_args[18].toInt();
-        if (ni_pa != 1 && ni_pa != 0)
+        // immediate text processing
+        int immediate = incoming_args[18].toInt();
+        if (area->force_immediate)
+            immediate = 1;
+        if (immediate != 1 && immediate != 0)
             return invalid;
-        args.append(QString::number(ni_pa));
+        args.append(QString::number(immediate));
     }
 
     // 2.8 packet extensions

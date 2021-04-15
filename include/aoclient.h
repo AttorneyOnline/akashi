@@ -1142,7 +1142,7 @@ class AOClient : public QObject {
      *
      * @iscommand
      */
-    void cmdAllow_Blankposting(int argc, QStringList argv);
+    void cmdAllowBlankposting(int argc, QStringList argv);
 
     ///@}
 
@@ -1528,6 +1528,24 @@ class AOClient : public QObject {
      */
     void cmdBanInfo(int argc, QStringList argv);
 
+    /**
+    * @brief Toggles immediate text processing in the current area.
+    *
+    * @details No arguments.
+    *
+    * @iscommand
+    */
+    void cmdForceImmediate(int argc, QStringList argv);
+
+    /**
+    * @brief Toggles whether iniswaps are allowed in the current area.
+    *
+    * @details No arguments.
+    *
+    * @iscommand
+    */
+    void cmdAllowIniswap(int argc, QStringList argv);
+
     ///@}
 
     /**
@@ -1751,7 +1769,8 @@ class AOClient : public QObject {
         {"8ball",              {ACLFlags.value("NONE"),         1, &AOClient::cmd8Ball}},
         {"lm",                 {ACLFlags.value("MODCHAT"),      1, &AOClient::cmdLM}},
         {"judgelog",           {ACLFlags.value("CM"),           0, &AOClient::cmdJudgeLog}},
-        {"allow_blankposting", {ACLFlags.value("MODCHAT"),      0, &AOClient::cmdAllow_Blankposting}},
+        {"allowblankposting",  {ACLFlags.value("MODCHAT"),      0, &AOClient::cmdAllowBlankposting}},
+        {"allow_blankposting", {ACLFlags.value("MODCHAT"),      0, &AOClient::cmdAllowBlankposting}},
         {"gimp",               {ACLFlags.value("MUTE"),         1, &AOClient::cmdGimp}},
         {"ungimp",             {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnGimp}},
         {"baninfo",            {ACLFlags.value("BAN"),          1, &AOClient::cmdBanInfo}},
@@ -1766,6 +1785,10 @@ class AOClient : public QObject {
         {"undisemvowel",       {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnDisemvowel}},
         {"shake",              {ACLFlags.value("MUTE"),         1, &AOClient::cmdShake}},
         {"unshake",            {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnShake}},
+        {"forceimmediate",     {ACLFlags.value("CM"),           1, &AOClient::cmdForceImmediate}},
+        {"force_noint_pres",   {ACLFlags.value("CM"),           1, &AOClient::cmdForceImmediate}},
+        {"allowiniswap",       {ACLFlags.value("CM"),           1, &AOClient::cmdAllowIniswap}},
+        {"allow_iniswap",      {ACLFlags.value("CM"),           1, &AOClient::cmdAllowIniswap}},
     };
 
     /**
