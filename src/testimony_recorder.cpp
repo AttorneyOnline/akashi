@@ -39,6 +39,7 @@ void AOClient::addStatement(QStringList packet)
             }
         }
         else if (area->test_rec == AreaData::TestimonyRecording::ADD) {
+               packet[14] = "1";
                area->testimony.insert(c_statement,packet);
                area->test_rec = AreaData::TestimonyRecording::PLAYBACK;
             }
