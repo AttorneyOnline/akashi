@@ -344,11 +344,6 @@ class AreaData : public QObject {
      * @brief The value of logger in config.ini.
      */
     QString log_type;
-
-    /**
-     * @brief Whether or not to force immediate text processing in this area
-     */
-    bool force_immediate;
 };
 
 #endif // AREA_DATA_H

@@ -53,11 +53,7 @@ class AOClient : public QObject {
     AOClient(Server* p_server, QTcpSocket* p_socket, QObject* parent = nullptr, int user_id = 0)
         : QObject(parent), id(user_id), remote_ip(p_socket->peerAddress()), password(""),
           joined(false), current_area(0), current_char(""), socket(p_socket), server(p_server),
-          is_partial(false), last_wtce_time(0) {
-        afk_timer = new QTimer;
-        afk_timer->setSingleShot(true);
-        connect(afk_timer, SIGNAL(timeout()), this, SLOT(onAfkTimeout()));
-    };
+          is_partial(false), last_wtce_time(0) {};
 
     /**
       * @brief Destructor for the AOClient instance.
@@ -222,12 +218,6 @@ class AOClient : public QObject {
         {"SUPER",          ~0ULL      },
     };
 
-
-    /**
-     * @brief A list of 5 casing preferences (def, pro, judge, jury, steno)
-     */
-    QList<bool> casing_preferences = {false, false, false, false, false};
-
     /**
      * @brief If true, the client's in-character messages will have their word order randomised.
      */
@@ -242,18 +232,6 @@ class AOClient : public QObject {
      * @brief If true, the client's in-character messages will be overwritten by a randomly picked predetermined message.
      */
     bool is_gimped = false;
-
-    /**
-     * @brief If true, the client will be marked as AFK in /getarea. Automatically applied when a configurable
-     * amount of time has passed since the last interaction, or manually applied by /afk.
-     */
-    bool is_afk = false;
-
-    /**
-     * @brief Timer for tracking user interaction. Automatically restarted whenever a user interacts (i.e. sends any packet besides CH)
-     */
-    QTimer* afk_timer;
-
 
   public slots:
     /**
@@ -282,11 +260,6 @@ class AOClient : public QObject {
      * @overload
      */
     void sendPacket(QString header);
-
-    /**
-     * @brief A slot for when the client's AFK timer runs out.
-     */
-    void onAfkTimeout();
 
   private:
     /**
@@ -499,12 +472,6 @@ class AOClient : public QObject {
     /// Implements [editing evidence](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#edit).
     void pktEditEvidence(AreaData* area, int argc, QStringList argv, AOPacket packet);
 
-    /// Implements [updating casing preferences](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#case-preferences-update).
-    void pktSetCase(AreaData* area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [announcing a case](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#case-alert).
-    void pktAnnounceCase(AreaData* area, int argc, QStringList argv, AOPacket packet);
-
     ///@}
 
     /**
@@ -655,8 +622,6 @@ class AOClient : public QObject {
         {"PE",      {ACLFlags.value("NONE"), 3,  &AOClient::pktAddEvidence    }},
         {"DE",      {ACLFlags.value("NONE"), 1,  &AOClient::pktRemoveEvidence }},
         {"EE",      {ACLFlags.value("NONE"), 4,  &AOClient::pktEditEvidence   }},
-        {"SETCASE", {ACLFlags.value("NONE"), 7,  &AOClient::pktSetCase        }},
-        {"CASEA",   {ACLFlags.value("NONE"), 6,  &AOClient::pktAnnounceCase   }},
     };
 
     /**
@@ -1102,7 +1067,7 @@ class AOClient : public QObject {
      *
      * @iscommand
      */
-    void cmdAllowBlankposting(int argc, QStringList argv);
+    void cmdAllow_Blankposting(int argc, QStringList argv);
 
     /**
      * @brief Looks up info on a ban.
@@ -1570,33 +1535,6 @@ class AOClient : public QObject {
     void cmdCurrentMusic(int argc, QStringList argv);
 
 
-    /**
-    * @brief Toggles immediate text processing in the current area.
-    *
-    * @details No arguments.
-    *
-    * @iscommand
-    */
-    void cmdForceImmediate(int argc, QStringList argv);
-
-    /**
-    * @brief Toggles whether iniswaps are allowed in the current area.
-    *
-    * @details No arguments.
-    *
-    * @iscommand
-    */
-    void cmdAllowIniswap(int argc, QStringList argv);
-
-    /**
-    * @brief Toggles whether this client is considered AFK.
-    *
-    * @details No arguments.
-    *
-    * @iscommand
-    */
-    void cmdAfk(int argc, QStringList argv);
-
     ///@}
 
     /**
@@ -1829,8 +1767,7 @@ class AOClient : public QObject {
         {"8ball",              {ACLFlags.value("NONE"),         1, &AOClient::cmd8Ball}},
         {"lm",                 {ACLFlags.value("MODCHAT"),      1, &AOClient::cmdLM}},
         {"judgelog",           {ACLFlags.value("CM"),           0, &AOClient::cmdJudgeLog}},
-        {"allowblankposting",  {ACLFlags.value("MODCHAT"),      0, &AOClient::cmdAllowBlankposting}},
-        {"allow_blankposting", {ACLFlags.value("MODCHAT"),      0, &AOClient::cmdAllowBlankposting}},
+        {"allow_blankposting", {ACLFlags.value("MODCHAT"),      0, &AOClient::cmdAllow_Blankposting}},
         {"gimp",               {ACLFlags.value("MUTE"),         1, &AOClient::cmdGimp}},
         {"ungimp",             {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnGimp}},
         {"baninfo",            {ACLFlags.value("BAN"),          1, &AOClient::cmdBanInfo}},
@@ -1839,17 +1776,11 @@ class AOClient : public QObject {
         {"pause",              {ACLFlags.value("CM"),           0, &AOClient::cmdPauseTestimony}},
         {"delete",             {ACLFlags.value("CM"),           0, &AOClient::cmdDeleteStatement}},
         {"update",             {ACLFlags.value("CM"),           0, &AOClient::cmdUpdateStatement}},
-        {"add",                {ACLFlags.value("CM"),           0, &AOClient::cmdAddStatement}},
         {"reload",             {ACLFlags.value("SUPER"),        0, &AOClient::cmdReload}},
         {"disemvowel",         {ACLFlags.value("MUTE"),         1, &AOClient::cmdDisemvowel}},
         {"undisemvowel",       {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnDisemvowel}},
         {"shake",              {ACLFlags.value("MUTE"),         1, &AOClient::cmdShake}},
         {"unshake",            {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnShake}},
-        {"forceimmediate",     {ACLFlags.value("CM"),           0, &AOClient::cmdForceImmediate}},
-        {"force_noint_pres",   {ACLFlags.value("CM"),           0, &AOClient::cmdForceImmediate}},
-        {"allowiniswap",       {ACLFlags.value("CM"),           0, &AOClient::cmdAllowIniswap}},
-        {"allow_iniswap",      {ACLFlags.value("CM"),           0, &AOClient::cmdAllowIniswap}},
-        {"afk",                {ACLFlags.value("NONE"),         0, &AOClient::cmdAfk}},
     };
 
     /**

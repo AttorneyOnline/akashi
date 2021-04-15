@@ -77,13 +77,6 @@ void AOClient::handlePacket(AOPacket packet)
         return;
     }
 
-    if (packet.header != "CH") {
-        if (is_afk)
-            sendServerMessage("You are no longer AFK.");
-        is_afk = false;
-        afk_timer->start(server->afk_timeout * 1000);
-    }
-
     if (packet.contents.length() < info.minArgs) {
 #ifdef NET_DEBUG
         qDebug() << "Invalid packet args length. Minimum is" << info.minArgs << "but only" << packet.contents.length() << "were given.";
@@ -318,17 +311,9 @@ bool AOClient::checkAuth(unsigned long long acl_mask)
     return true;
 }
 
-
 QString AOClient::getIpid() { return ipid; }
 
-Server* AOClient::getServer() { return server; }
-
-void AOClient::onAfkTimeout()
-{
-    if (!is_afk)
-        sendServerMessage("You are now AFK.");
-    is_afk = true;
-}
+Server* AOClient::getServer() { return server; };
 
 AOClient::~AOClient() {
     socket->deleteLater();

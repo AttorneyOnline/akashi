@@ -233,11 +233,6 @@ class Server : public QObject {
     int max_dice;
 
     /**
-     * @brief The amount of time in seconds to wait before marking a user AFK.
-     */
-    int afk_timeout;
-
-    /**
      * @brief The server-wide global timer.
      */
     QTimer* timer;
