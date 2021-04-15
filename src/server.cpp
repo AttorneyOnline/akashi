@@ -230,10 +230,17 @@ void Server::loadServerConfig()
     auth_type = config.value("auth","simple").toString();
     modpass = config.value("modpass","").toString();
     bool zalgo_tolerance_conversion_success;
-        zalgo_tolerance = config.value("zalgo_tolerance", "3").toInt(&zalgo_tolerance_conversion_success);
-        if (!zalgo_tolerance_conversion_success)
-            zalgo_tolerance = 3;
-    maximum_statements = config.value("maximum_statements", 10).toInt();
+    zalgo_tolerance = config.value("zalgo_tolerance", "3").toInt(&zalgo_tolerance_conversion_success);
+    if (!zalgo_tolerance_conversion_success)
+        zalgo_tolerance = 3;
+    bool maximum_statements_conversion_success;
+    maximum_statements = config.value("maximum_statements", "10").toInt(&maximum_statements_conversion_success);
+    if (!maximum_statements_conversion_success)
+        maximum_statements = 10;
+    bool afk_timeout_conversion_success;
+    afk_timeout = config.value("afk_timeout", "300").toInt(&afk_timeout_conversion_success);
+    if (!afk_timeout_conversion_success)
+        afk_timeout = 300;
     config.endGroup();
 
     //Load dice values

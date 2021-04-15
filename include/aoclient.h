@@ -53,7 +53,11 @@ class AOClient : public QObject {
     AOClient(Server* p_server, QTcpSocket* p_socket, QObject* parent = nullptr, int user_id = 0)
         : QObject(parent), id(user_id), remote_ip(p_socket->peerAddress()), password(""),
           joined(false), current_area(0), current_char(""), socket(p_socket), server(p_server),
-          is_partial(false), last_wtce_time(0) {};
+          is_partial(false), last_wtce_time(0) {
+        afk_timer = new QTimer;
+        afk_timer->setSingleShot(true);
+        connect(afk_timer, SIGNAL(timeout()), this, SLOT(onAfkTimeout()));
+    };
 
     /**
       * @brief Destructor for the AOClient instance.
@@ -239,6 +243,18 @@ class AOClient : public QObject {
      */
     bool is_gimped = false;
 
+    /**
+     * @brief If true, the client will be marked as AFK in /getarea. Automatically applied when a configurable
+     * amount of time has passed since the last interaction, or manually applied by /afk.
+     */
+    bool is_afk = false;
+
+    /**
+     * @brief Timer for tracking user interaction. Automatically restarted whenever a user interacts (i.e. sends any packet besides CH)
+     */
+    QTimer* afk_timer;
+
+
   public slots:
     /**
      * @brief A slot for when the client disconnects from the server.
@@ -266,6 +282,11 @@ class AOClient : public QObject {
      * @overload
      */
     void sendPacket(QString header);
+
+    /**
+     * @brief A slot for when the client's AFK timer runs out.
+     */
+    void onAfkTimeout();
 
   private:
     /**
@@ -1560,6 +1581,15 @@ class AOClient : public QObject {
     */
     void cmdAllowIniswap(int argc, QStringList argv);
 
+    /**
+    * @brief Toggles whether this client is considered AFK.
+    *
+    * @details No arguments.
+    *
+    * @iscommand
+    */
+    void cmdAfk(int argc, QStringList argv);
+
     ///@}
 
     /**
@@ -1799,10 +1829,11 @@ class AOClient : public QObject {
         {"undisemvowel",       {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnDisemvowel}},
         {"shake",              {ACLFlags.value("MUTE"),         1, &AOClient::cmdShake}},
         {"unshake",            {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnShake}},
-        {"forceimmediate",     {ACLFlags.value("CM"),           1, &AOClient::cmdForceImmediate}},
-        {"force_noint_pres",   {ACLFlags.value("CM"),           1, &AOClient::cmdForceImmediate}},
-        {"allowiniswap",       {ACLFlags.value("CM"),           1, &AOClient::cmdAllowIniswap}},
-        {"allow_iniswap",      {ACLFlags.value("CM"),           1, &AOClient::cmdAllowIniswap}},
+        {"forceimmediate",     {ACLFlags.value("CM"),           0, &AOClient::cmdForceImmediate}},
+        {"force_noint_pres",   {ACLFlags.value("CM"),           0, &AOClient::cmdForceImmediate}},
+        {"allowiniswap",       {ACLFlags.value("CM"),           0, &AOClient::cmdAllowIniswap}},
+        {"allow_iniswap",      {ACLFlags.value("CM"),           0, &AOClient::cmdAllowIniswap}},
+        {"afk",                {ACLFlags.value("NONE"),         0, &AOClient::cmdAfk}},
     };
 
     /**
