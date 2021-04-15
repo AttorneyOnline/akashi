@@ -89,6 +89,14 @@ class Advertiser : public QObject {
      */
     void socketDisconnected();
 
+    /**
+     * @brief Handles updating the advertiser and recontacting the master server.
+     *
+     * @param p_name The new server name.
+     * @param p_desc The new server description.
+     */
+    void reloadRequested(QString p_name, QString p_desc);
+
   private:
     /**
      * @copydoc ConfigManager::server_settings::ms_ip

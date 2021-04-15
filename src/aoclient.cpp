@@ -134,22 +134,22 @@ void AOClient::changeArea(int new_area)
         sendServerMessage("Area " + server->area_names[current_area] + " is spectate-only; to chat IC you will need to be invited by the CM.");
 }
 
-void AOClient::changeCharacter(int char_id)
+bool AOClient::changeCharacter(int char_id)
 {
     AreaData* area = server->areas[current_area];
 
-    if (current_char != "") {
-        area->characters_taken.removeAll(server->getCharID(current_char));
-    }
-
-    if(char_id > server->characters.length())
-        return;
+    if(char_id >= server->characters.length())
+        return false;
 
     if (char_id >= 0) {
         QString char_selected = server->characters[char_id];
         bool taken = area->characters_taken.contains(char_id);
         if (taken || char_selected == "")
-            return;
+            return false;
+
+        if (current_char != "") {
+            area->characters_taken.removeAll(server->getCharID(current_char));
+        }
 
         area->characters_taken.append(char_id);
         current_char = char_selected;
@@ -162,6 +162,7 @@ void AOClient::changeCharacter(int char_id)
 
     server->updateCharsTaken(area);
     sendPacket("PV", {QString::number(id), "CID", QString::number(char_id)});
+    return true;
 }
 
 void AOClient::changePosition(QString new_pos)
@@ -279,17 +280,17 @@ void AOClient::calculateIpid()
 
 void AOClient::sendServerMessage(QString message)
 {
-    sendPacket("CT", {server->getServerName(), message, "1"});
+    sendPacket("CT", {server->server_name, message, "1"});
 }
 
 void AOClient::sendServerMessageArea(QString message)
 {
-    server->broadcast(AOPacket("CT", {server->getServerName(), message, "1"}), current_area);
+    server->broadcast(AOPacket("CT", {server->server_name, message, "1"}), current_area);
 }
 
 void AOClient::sendServerBroadcast(QString message)
 {
-    server->broadcast(AOPacket("CT", {server->getServerName(), message, "1"}));
+    server->broadcast(AOPacket("CT", {server->server_name, message, "1"}));
 }
 
 bool AOClient::checkAuth(unsigned long long acl_mask)
@@ -303,14 +304,11 @@ bool AOClient::checkAuth(unsigned long long acl_mask)
         else if (!authenticated) {
             return false;
         }
-        QSettings settings("config/config.ini", QSettings::IniFormat);
-        settings.beginGroup("Options");
-        QString auth_type = settings.value("auth", "simple").toString();
-        if (auth_type == "advanced") {
+        if (server->auth_type == "advanced") {
             unsigned long long user_acl = server->db_manager->getACL(moderator_name);
             return (user_acl & acl_mask) != 0;
         }
-        else if (auth_type == "simple") {
+        else if (server->auth_type == "simple") {
             return authenticated;
         }
     }

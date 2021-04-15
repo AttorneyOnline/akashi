@@ -37,10 +37,7 @@ void AOClient::pktHardwareId(AreaData* area, int argc, QStringList argv, AOPacke
 
 void AOClient::pktSoftwareId(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
-    QSettings config("config/config.ini", QSettings::IniFormat);
-    config.beginGroup("Options");
-    QString max_players = config.value("max_players").toString();
-    config.endGroup();
+
 
     // Full feature list as of AO 2.8.5
     // The only ones that are critical to ensuring the server works are
@@ -64,7 +61,7 @@ void AOClient::pktSoftwareId(AreaData* area, int argc, QStringList argv, AOPacke
         version.minor = match.captured(3).toInt();
     }
 
-    sendPacket("PN", {QString::number(server->player_count), max_players});
+    sendPacket("PN", {QString::number(server->player_count), server->max_players});
     sendPacket("FL", feature_list);
 }
 
@@ -143,13 +140,14 @@ void AOClient::pktCharPassword(AreaData* area, int argc, QStringList argv, AOPac
 void AOClient::pktSelectChar(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
     bool argument_ok;
-    char_id = argv[1].toInt(&argument_ok);
+    int selected_char_id = argv[1].toInt(&argument_ok);
     if (!argument_ok) {
-        char_id = -1;
+        selected_char_id = -1;
         return;
     }
 
-    changeCharacter(char_id);
+    if (changeCharacter(selected_char_id))
+        char_id = selected_char_id;
 }
 
 void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket packet)
@@ -168,15 +166,24 @@ void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket pa
 
     area->logger->logIC(this, &validated_packet);
     server->broadcast(validated_packet, current_area);
+    area->last_ic_message.clear();
+    area->last_ic_message.append(validated_packet.contents);
 }
 
 void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    if (is_ooc_muted) {
+        sendServerMessage("You are OOC muted, and cannot speak.");
+        return;
+    }
+
     ooc_name = dezalgo(argv[0]).replace(QRegExp("\\[|\\]|\\{|\\}|\\#|\\$|\\%|\\&"), ""); // no fucky wucky shit here
-    if (ooc_name.isEmpty() || ooc_name == server->getServerName()) // impersonation & empty name protection
+    if (ooc_name.isEmpty() || ooc_name == server->server_name) // impersonation & empty name protection
         return;
     
     QString message = dezalgo(argv[1]);
+    if (message.length() == 0)
+        return;
     AOPacket final_packet("CT", {ooc_name, message, "0"});
     if(message.at(0) == '/') {
         QStringList cmd_argv = message.split(" ", QString::SplitBehavior::SkipEmptyParts);
@@ -203,6 +210,10 @@ void AOClient::pktPing(AreaData* area, int argc, QStringList argv, AOPacket pack
 
 void AOClient::pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    if (is_dj_blocked) {
+        sendServerMessage("You are blocked from changing the music.");
+        return;
+    }
     // Due to historical reasons, this
     // packet has two functions:
     // Change area, and set music.
@@ -246,14 +257,23 @@ void AOClient::pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPack
 
 void AOClient::pktWtCe(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    if (is_wtce_blocked) {
+        sendServerMessage("You are blocked from using the judge controls.");
+        return;
+    }
     if (QDateTime::currentDateTime().toSecsSinceEpoch() - last_wtce_time <= 5)
         return;
     last_wtce_time = QDateTime::currentDateTime().toSecsSinceEpoch();
     server->broadcast(packet, current_area);
+    updateJudgeLog(area, this, "WT/CE");
 }
 
 void AOClient::pktHpBar(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    if (is_wtce_blocked) {
+        sendServerMessage("You are blocked from using the judge controls.");
+        return;
+    }
     if (argv[0] == "1") {
         area->def_hp = std::min(std::max(0, argv[1].toInt()), 10);
     }
@@ -262,6 +282,7 @@ void AOClient::pktHpBar(AreaData* area, int argc, QStringList argv, AOPacket pac
     }
     server->broadcast(AOPacket("HP", {"1", QString::number(area->def_hp)}), area->index);
     server->broadcast(AOPacket("HP", {"2", QString::number(area->pro_hp)}), area->index);
+    updateJudgeLog(area, this, "updated the penalties");
 }
 
 void AOClient::pktWebSocketIp(AreaData* area, int argc, QStringList argv, AOPacket packet)
@@ -407,6 +428,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         }
         qDebug() << "INI swap detected from " << getIpid();
     }
+    current_iniswap = incoming_args[2].toString();
     args.append(incoming_args[2].toString());
 
     // emote
@@ -415,8 +437,31 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
 
     // message text
     QString incoming_msg = dezalgo(incoming_args[4].toString().trimmed());
-    if (incoming_msg == last_message)
+    if (!area->last_ic_message.isEmpty()
+            && incoming_msg == area->last_ic_message[4]
+            && incoming_msg != "")
         return invalid;
+
+    if (incoming_msg == "" && area->blankposting_allowed == false) {
+        sendServerMessage("Blankposting has been forbidden in this area.");
+        return invalid;
+    }
+
+    if (is_gimped) {
+        QString gimp_message = server->gimp_list[(genRand(1, server->gimp_list.size() - 1))];
+        incoming_msg = gimp_message;
+    }
+
+    if (is_shaken) {
+        QStringList parts = incoming_msg.split(" ");
+        std::random_shuffle(parts.begin(), parts.end());
+        incoming_msg = parts.join(" ");
+    }
+
+    if (is_disemvoweled) {
+        QString disemvoweled_message = incoming_msg.remove(QRegExp("[AEIOUaeiou]"));
+        incoming_msg = disemvoweled_message;
+    }
 
     last_message = incoming_msg;
     args.append(incoming_msg);
@@ -489,7 +534,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
 
     // text color
     int text_color = incoming_args[14].toInt();
-    if (text_color != 0 && text_color != 1 && text_color != 2 && text_color != 3 && text_color != 4 && text_color != 5 && text_color != 6)
+    if (text_color < 0 || text_color > 11)
         return invalid;
     args.append(QString::number(text_color));
 
@@ -497,6 +542,9 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     if (incoming_args.length() > 15) {
         // showname
         QString incoming_showname = dezalgo(incoming_args[15].toString().trimmed());
+        // if the raw input is not empty but the trimmed input is, use a single space
+        if (incoming_showname.isEmpty() && !incoming_args[15].toString().isEmpty())
+            incoming_showname = " ";
         args.append(incoming_showname);
         showname = incoming_showname;
 
@@ -515,8 +563,11 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         QString other_offset = "0";
         QString other_flip = "0";
         for (AOClient* client : server->clients) {
-            if (client->pairing_with == char_id && other_charid != char_id && client->char_id == pairing_with) {
-                other_name = server->characters.at(other_charid);
+            if (client->pairing_with == char_id
+                    && other_charid != char_id
+                    && client->char_id == pairing_with
+                    && client->pos == pos) {
+                other_name = client->current_iniswap;
                 other_emote = client->emote;
                 other_offset = client->offset;
                 other_flip = client->flipping;
@@ -546,11 +597,13 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         }
         args.append(other_flip);
 
-        // noninterrupting preanim
-        int ni_pa = incoming_args[18].toInt();
-        if (ni_pa != 1 && ni_pa != 0)
+        // immediate text processing
+        int immediate = incoming_args[18].toInt();
+        if (area->force_immediate)
+            immediate = 1;
+        if (immediate != 1 && immediate != 0)
             return invalid;
-        args.append(QString::number(ni_pa));
+        args.append(QString::number(immediate));
     }
 
     // 2.8 packet extensions
@@ -580,10 +633,54 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         int additive = incoming_args[24].toInt();
         if (additive != 0 && additive != 1)
             return invalid;
+        else if (area->last_ic_message.isEmpty()){
+            additive = 0;
+        }
+        else if (!(char_id == area->last_ic_message[8].toInt())) {
+            additive = 0;
+        }
+        else if (additive == 1) {
+            args[4].insert(0, " ");
+        }
         args.append(QString::number(additive));
 
         // effect
         args.append(incoming_args[25].toString());
+    }
+
+    //Testimony playback
+    if (area->test_rec == AreaData::TestimonyRecording::RECORDING || area->test_rec == AreaData::TestimonyRecording::ADD) {
+        if (args[5] != "wit")
+            return AOPacket("MS", args);
+
+        if (area->statement == 0) {
+            args[4] = "~~\\n-- " + args[4] + " --";
+            args[14] = "3";
+            server->broadcast(AOPacket("RT",{"testimony1"}), current_area);
+        }
+        addStatement(args);
+    }
+    else if (area->test_rec == AreaData::TestimonyRecording::UPDATE) {
+        args = updateStatement(args);
+    }
+    else if (area->test_rec == AreaData::TestimonyRecording::PLAYBACK) {
+        if (args[4] == ">") {
+            pos = "wit";
+            area->statement = area->statement + 1;
+            args = playTestimony();
+        }
+        if (args[4] == "<") {
+            pos = "wit";
+            area->statement = area->statement - 1;
+            args = playTestimony();
+        }
+        QRegularExpression jump("(?<arrow>>)(?<int>[0,1,2,3,4,5,6,7,8,9]+)");
+        QRegularExpressionMatch match = jump.match(args[4]);
+        if (match.hasMatch()) {
+            pos = "wit";
+            area->statement = match.captured("int").toInt();
+            args= playTestimony();
+        }
     }
 
     return AOPacket("MS", args);
@@ -591,14 +688,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
 
 QString AOClient::dezalgo(QString p_text)
 {
-    QSettings config("config/config.ini", QSettings::IniFormat);
-    config.beginGroup("Options");
-    bool zalgo_tolerance_conversion_success;
-    int zalgo_tolerance = config.value("zalgo_tolerance", "3").toInt(&zalgo_tolerance_conversion_success);
-    if (!zalgo_tolerance_conversion_success)
-        zalgo_tolerance = 3;
-
-    QRegExp rxp("([\u0300-\u036f\u1ab0-\u1aff\u1dc0-\u1dff\u20d0-\u20ff\ufe20-\ufe2f\u115f\u1160\u3164]{" + QRegExp::escape(QString::number(zalgo_tolerance)) + ",})");
+    QRegExp rxp("([\u0300-\u036f\u1ab0-\u1aff\u1dc0-\u1dff\u20d0-\u20ff\ufe20-\ufe2f\u115f\u1160\u3164]{" + QRegExp::escape(QString::number(server->zalgo_tolerance)) + ",})");
     QString filtered = p_text.replace(rxp, "");
     return filtered;
 }
@@ -616,4 +706,22 @@ bool AOClient::checkEvidenceAccess(AreaData *area)
     default:
         return false;
     }
+}
+
+void AOClient::updateJudgeLog(AreaData* area, AOClient* client, QString action)
+{
+    QString timestamp = QTime::currentTime().toString("hh:mm:ss");
+    QString uid = QString::number(client->id);
+    QString char_name = client->current_char;
+    QString ipid = client->getIpid();
+    QString message = action;
+    QString logmessage = QString("[%1]: [%2] %3 (%4) %5").arg(timestamp, uid, char_name, ipid, message);
+    int size = area->judgelog.size();
+    if (size == 10) {
+        area->judgelog.removeFirst();
+        area->judgelog.append(logmessage);
+    }
+    else area->judgelog.append(logmessage);
+
+
 }

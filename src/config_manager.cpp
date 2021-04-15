@@ -84,6 +84,17 @@ bool ConfigManager::initConfig()
                                                      // This means the config is invalid
         return false;
     }
+    config.beginGroup("Options");
+    QString auth_type = config.value("auth", "simple").toString();
+    config.endGroup();
+    if (!(auth_type == "simple" || auth_type == "advanced")) {
+        qCritical() << "config.ini is invalid!";
+        return false;
+    }
+    if (!(verifyCommandConfig())) {
+        return false;
+    }
+
     else {
         // Config is valid and up to date, so let's go ahead
         return true;
@@ -167,4 +178,17 @@ bool ConfigManager::loadServerSettings(server_settings* settings)
 bool ConfigManager::fileExists(QFileInfo* file)
 {
     return (file->exists() && file->isFile());
+}
+
+bool ConfigManager::verifyCommandConfig()
+{
+    QStringList filelist = {"8ball", "praise", "reprimands", "gimp"};
+    foreach (QString filename, filelist) {
+        QFileInfo file("config/text/" + filename + ".txt");
+        if (!(fileExists(&file))) {
+            qCritical() << (filename + ".txt doesn't exist!");
+            return false;
+        }
+    }
+    return true;
 }

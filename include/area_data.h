@@ -188,6 +188,11 @@ class AreaData : public QObject {
     bool iniswap_allowed;
 
     /**
+     * @brief If true, clients are allowed to send empty IC messages
+     */
+    bool blankposting_allowed;
+
+    /**
      * @brief If true, the background of the area cannot be changed except by a moderator.
      */
     bool bg_locked;
@@ -271,6 +276,79 @@ class AreaData : public QObject {
      * @see EvidenceMod
      */
     EvidenceMod evi_mod;
+    QMap<QString, QString> notecards;
+
+    /**
+     * @brief The five "states" the testimony recording system can have in an area.
+     */
+    enum TestimonyRecording{
+        STOPPED,
+        RECORDING,
+        UPDATE,
+        ADD,
+        PLAYBACK,
+    };
+
+    /**
+     * @var TestimonyRecording STOPPED
+     * The testimony recorder is inactive and no ic-messages can be played back.
+     * If messages are inside the buffer when its stopped, the messages will remain until the recorder is set to RECORDING
+     */
+
+    /**
+     * @var TestimonyRecording RECORDING
+     * The testimony recorder is active and any ic-message send is recorded for playback.
+     * It does not differentiate between positions, so any message is recorded. Further improvement?
+     * When the recorder is started, it will clear the buffer and will make the first message the title.
+     * To prevent accidental recording by not disabling the recorder, a configurable buffer size can be set in the config.
+     */
+
+    /**
+     * @var TestimonyRecording UPDATE
+     * The testimony recorder is active and replaces the current message at the index with the next ic-message
+     * Once the IC-Message is send the recorder will default back into playback mode to prevent accidental overwriting of messages.
+     */
+
+    /**
+     * @var TestimonyRecording ADD
+     * The testimony recorder is active and inserts the next message after the currently displayed ic-message
+     * This will increase the size by 1.
+     */
+
+    /**
+     * @var TestimonyRecording PLAYBACK
+     * The testimony recorder is inactive and ic-messages in the buffer will be played back.
+     */
+
+    /// Exposes the metadata of the TestimonyRecording enum.
+    Q_ENUM(TestimonyRecording);
+    TestimonyRecording test_rec;
+
+
+    QVector<QStringList> testimony; //!< Vector of all statements saved. Index 0 is always the title of the testimony.
+    int statement; //!< Keeps track of the currently played statement.
+
+    /**
+    * @brief The judgelog of an area.
+    *
+    * @details This list contains up to 10 recorded packets of the most recent judge actions (WT/CE or penalty updates) in an area.
+    */
+    QStringList judgelog;
+
+    /**
+     * @brief The last IC packet sent in an area.
+     */
+    QStringList last_ic_message;
+
+    /**
+     * @brief The value of logger in config.ini.
+     */
+    QString log_type;
+
+    /**
+     * @brief Whether or not to force immediate text processing in this area
+     */
+    bool force_immediate;
 };
 
 #endif // AREA_DATA_H

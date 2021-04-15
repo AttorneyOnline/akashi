@@ -37,6 +37,7 @@ SOURCES += src/advertiser.cpp \
     src/main.cpp \
     src/packets.cpp \
     src/server.cpp \
+    src/testimony_recorder.cpp \
     src/ws_client.cpp \
     src/ws_proxy.cpp
 
