@@ -377,13 +377,14 @@ void AOClient::pktAnnounceCase(AreaData* area, int argc, QStringList argv, AOPac
     if (needed_roles.isEmpty())
         return;
 
-    QString message = "=== Case Announcement ===\r\n" + ooc_name == "" ? current_char : ooc_name + " needs " + needed_roles.join(", ") + " for " + case_title == "" ? "a case" : case_title + "!";
+    QString message = "=== Case Announcement ===\r\n" + (ooc_name == "" ? current_char : ooc_name) + " needs " + needed_roles.join(", ") + " for " + (case_title == "" ? "a case" : case_title) + "!";
 
     QList<AOClient*> clients_to_alert;
     // here lies morton, RIP
+    QSet<bool> needs_set = needs_list.toSet();
     for (AOClient* client : server->clients) {
-        QSet<bool> matches = client->casing_preferences.toSet().intersect(needs_list.toSet());
-        if (matches.isEmpty() && !clients_to_alert.contains(client))
+        QSet<bool> matches = client->casing_preferences.toSet().intersect(needs_set);
+        if (!matches.isEmpty() && !clients_to_alert.contains(client))
             clients_to_alert.append(client);
     }
 
