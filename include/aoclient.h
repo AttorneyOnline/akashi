@@ -55,6 +55,7 @@ class AOClient : public QObject {
           joined(false), current_area(0), current_char(""), socket(p_socket), server(p_server),
           is_partial(false), last_wtce_time(0) {
         afk_timer = new QTimer;
+        afk_timer->setSingleShot(true);
         connect(afk_timer, SIGNAL(timeout()), this, SLOT(onAfkTimeout()));
     };
 
