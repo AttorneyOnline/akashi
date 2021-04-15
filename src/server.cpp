@@ -53,9 +53,7 @@ void Server::start()
 
     loadServerConfig();
     loadCommandConfig();
-
-    maximum_statements = config.value("maximum_statements", 50).toInt();
-
+    
     proxy = new WSProxy(port, ws_port, this);
     if(ws_port != -1)
         proxy->start();
@@ -235,6 +233,7 @@ void Server::loadServerConfig()
         zalgo_tolerance = config.value("zalgo_tolerance", "3").toInt(&zalgo_tolerance_conversion_success);
         if (!zalgo_tolerance_conversion_success)
             zalgo_tolerance = 3;
+    maximum_statements = config.value("maximum_statements", 10).toInt();
     config.endGroup();
 
     //Load dice values
