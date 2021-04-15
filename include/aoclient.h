@@ -220,24 +220,9 @@ class AOClient : public QObject {
 
 
     /**
-     * @brief A structure for storing the client's casing alert preferences.
+     * @brief A list of 5 casing preferences (def, pro, judge, jury, steno)
      */
-    struct CasingPreferences {
-        QString caselist = ""; //!< The list of cases this user is willing to host (assuming they are also willing to CM) (unused)
-        bool cm = false; //!< If the user is willing to host cases (unused)
-        bool defense = false; //!< If the user is willing to defend a case / play as a defense attorney (or a co-defense attorney)
-        bool prosecution = false; //!< If the user is willing to prosecute a case / play as a prosecutor (or a co-prosecutor)
-        bool judge = false; //!< If the user is willing to judge a case
-        bool jury = false; //!< If the user is willing to be a member of the jury in a case
-        bool stenographer = false; //!< If the user is willing to be the stenographer of a case
-    };
-
-    /**
-     * @brief The client's casing alert preferences.
-     *
-     * @see The struct itself for more details.
-     */
-    CasingPreferences casing_preferences;
+    QList<bool> casing_preferences = {false, false, false, false, false};
 
     /**
      * @brief If true, the client's in-character messages will have their word order randomised.

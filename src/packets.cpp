@@ -346,28 +346,19 @@ void AOClient::pktEditEvidence(AreaData* area, int argc, QStringList argv, AOPac
 
 void AOClient::pktSetCase(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
-    casing_preferences.caselist = argv[0];
     QList<bool> prefs_list;
-    for (int i = 1; i <=6; i++) {
+    for (int i = 2; i <=6; i++) {
         bool is_int = false;
         bool pref = argv[i].toInt(&is_int);
         if (!is_int)
             return;
         prefs_list.append(pref);
     }
-    casing_preferences.cm           = prefs_list[0];
-    casing_preferences.defense      = prefs_list[1];
-    casing_preferences.prosecution  = prefs_list[2];
-    casing_preferences.judge        = prefs_list[3];
-    casing_preferences.jury         = prefs_list[4];
-    casing_preferences.stenographer = prefs_list[5];
+    casing_preferences = prefs_list;
 }
 
 void AOClient::pktAnnounceCase(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
-    // the following is an example of the type of code AO2 makes me write
-    // you may wish to do something more pleasant rather than read this garbage
-    // taking a bath in battery acid, for instance
     QString case_title = argv[0];
     QStringList needed_roles;
     QList<bool> needs_list;
@@ -389,18 +380,12 @@ void AOClient::pktAnnounceCase(AreaData* area, int argc, QStringList argv, AOPac
     QString message = "=== Case Announcement ===\r\n" + ooc_name == "" ? current_char : ooc_name + " needs " + needed_roles.join(", ") + " for " + case_title == "" ? "a case" : case_title + "!";
 
     QList<AOClient*> clients_to_alert;
-    // this is morton the indented if statement
-    // please do not feed morton
+    // here lies morton, RIP
     for (AOClient* client : server->clients) {
-        if (((client->casing_preferences.defense && needed_roles.contains("defense attorney")) ||
-                    (client->casing_preferences.prosecution && needed_roles.contains("prosecutor")) ||
-                    (client->casing_preferences.judge && needed_roles.contains("judge")) ||
-                    (client->casing_preferences.jury && needed_roles.contains("jurors")) ||
-                    (client->casing_preferences.stenographer && needed_roles.contains("stenographer")))
-                && !clients_to_alert.contains(client))
+        QSet<bool> matches = client->casing_preferences.toSet().intersect(needs_list.toSet());
+        if (matches.isEmpty() && !clients_to_alert.contains(client))
             clients_to_alert.append(client);
     }
-    // morton is a little ugly but we love him anyway
 
     for (AOClient* client : clients_to_alert) {
         client->sendPacket(AOPacket("CASEA", {message, argv[1], argv[2], argv[3], argv[4], argv[5], "1"}));
