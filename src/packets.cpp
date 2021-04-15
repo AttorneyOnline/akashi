@@ -361,8 +361,6 @@ void AOClient::pktSetCase(AreaData* area, int argc, QStringList argv, AOPacket p
     casing_preferences.judge        = prefs_list[3];
     casing_preferences.jury         = prefs_list[4];
     casing_preferences.stenographer = prefs_list[5];
-
-    qDebug() << casing_preferences.cm << casing_preferences.defense << casing_preferences.prosecution << casing_preferences.judge << casing_preferences.jury << casing_preferences.stenographer;
 }
 
 void AOClient::pktAnnounceCase(AreaData* area, int argc, QStringList argv, AOPacket packet)
@@ -400,7 +398,7 @@ void AOClient::pktAnnounceCase(AreaData* area, int argc, QStringList argv, AOPac
         return;
     }
 
-    QString message = "=== Case Announcement ===\r\n" + ooc_name + " needs " + needed_roles.join(", ") + " for " + case_title + "!";
+    QString message = "=== Case Announcement ===\r\n" + ooc_name == "" ? current_char : ooc_name + " needs " + needed_roles.join(", ") + " for " + case_title == "" ? "a case" : case_title + "!";
 
     QList<AOClient*> clients_to_alert;
     // this is morton the indented if statement
