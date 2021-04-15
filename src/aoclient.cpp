@@ -324,7 +324,8 @@ Server* AOClient::getServer() { return server; }
 
 void AOClient::onAfkTimeout()
 {
-    sendServerMessage("You are now AFK.");
+    if (!is_afk)
+        sendServerMessage("You are now AFK.");
     is_afk = true;
 }
 
