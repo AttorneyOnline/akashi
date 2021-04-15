@@ -318,6 +318,7 @@ bool AOClient::checkAuth(unsigned long long acl_mask)
     return true;
 }
 
+
 QString AOClient::getIpid() { return ipid; }
 
 Server* AOClient::getServer() { return server; }
