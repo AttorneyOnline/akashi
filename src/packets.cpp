@@ -378,25 +378,13 @@ void AOClient::pktAnnounceCase(AreaData* area, int argc, QStringList argv, AOPac
             return;
         needs_list.append(need);
     }
-    // this is stupid stupid stupid i hate this
-    if (needs_list[0]) {
-        needed_roles.append("defense attorney");
+    QStringList roles = {"defense attorney", "prosecutor", "judge", "jurors", "stenographer"};
+    for (int i = 0; i < 5; i++) {
+      if (needs_list[i])
+        needed_roles.append(roles[i]);
     }
-    if (needs_list[1]) {
-        needed_roles.append("prosecutor");
-    }
-    if (needs_list[2]) {
-        needed_roles.append("judge");
-    }
-    if (needs_list[3]) {
-        needed_roles.append("jurors");
-    }
-    if (needs_list[4]) {
-        needed_roles.append("stenographer");
-    }
-    if (needed_roles.isEmpty()) {
+    if (needed_roles.isEmpty())
         return;
-    }
 
     QString message = "=== Case Announcement ===\r\n" + ooc_name == "" ? current_char : ooc_name + " needs " + needed_roles.join(", ") + " for " + case_title == "" ? "a case" : case_title + "!";
 
