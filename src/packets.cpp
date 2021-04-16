@@ -210,10 +210,6 @@ void AOClient::pktPing(AreaData* area, int argc, QStringList argv, AOPacket pack
 
 void AOClient::pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
-    if (is_dj_blocked) {
-        sendServerMessage("You are blocked from changing the music.");
-        return;
-    }
     // Due to historical reasons, this
     // packet has two functions:
     // Change area, and set music.
@@ -225,6 +221,10 @@ void AOClient::pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPack
     for (QString song : server->music_list) {
         if (song == argument || song == "~stop.mp3") { // ~stop.mp3 is a dummy track used by 2.9+
             // We have a song here
+            if (is_dj_blocked) {
+                sendServerMessage("You are blocked from changing the music.");
+                return;
+            }
             QString effects;
             if (argc >= 4)
                 effects = argv[3];
