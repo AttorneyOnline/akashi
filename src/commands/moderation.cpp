@@ -205,7 +205,7 @@ void AOClient::cmdUnBan(int argc, QStringList argv)
 
 void AOClient::cmdAbout(int argc, QStringList argv)
 {
-    sendPacket("CT", {"The akashi dev team", "Thank you for using akashi! Made with love by scatterflower, with help from in1tiate and Salanto. akashi " + QCoreApplication::applicationVersion()});
+    sendPacket("CT", {"The akashi dev team", "Thank you for using akashi! Made with love by scatterflower, with help from in1tiate, Salanto, and mangosarentliterature. akashi " + QCoreApplication::applicationVersion()});
 }
 
 void AOClient::cmdMute(int argc, QStringList argv)
