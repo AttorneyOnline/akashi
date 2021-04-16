@@ -1850,6 +1850,10 @@ class AOClient : public QObject {
         {"allowiniswap",       {ACLFlags.value("CM"),           0, &AOClient::cmdAllowIniswap}},
         {"allow_iniswap",      {ACLFlags.value("CM"),           0, &AOClient::cmdAllowIniswap}},
         {"afk",                {ACLFlags.value("NONE"),         0, &AOClient::cmdAfk}},
+        {"oocmute",            {ACLFlags.value("MUTE"),         1, &AOClient::cmdOocMute}},
+        {"ooc_mute",           {ACLFlags.value("MUTE"),         1, &AOClient::cmdOocMute}},
+        {"oocunmute",          {ACLFlags.value("MUTE"),         1, &AOClient::cmdOocUnMute}},
+        {"ooc_unmute",         {ACLFlags.value("MUTE"),         1, &AOClient::cmdOocUnMute}},
     };
 
     /**
