@@ -283,9 +283,3 @@ void AOClient::cmdJudgeLog(int argc, QStringList argv)
         sendServerMessage(filteredmessage);
     }
 }
-
-void AOClient::cmdAfk(int argc, QStringList argv)
-{
-    is_afk = true;
-    sendServerMessage("You are now AFK.");
-}
