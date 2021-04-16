@@ -219,6 +219,7 @@ class AOClient : public QObject {
         {"ANNOUNCE",        1ULL << 8 },
         {"MODCHAT",         1ULL << 9 },
         {"MUTE",            1ULL << 10},
+        {"UNCM",            1ULL << 11},
         {"SUPER",          ~0ULL      },
     };
 

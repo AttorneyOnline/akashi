@@ -61,9 +61,36 @@ void AOClient::cmdCM(int argc, QStringList argv)
 void AOClient::cmdUnCM(int argc, QStringList argv)
 {
     AreaData* area = server->areas[current_area];
-    int removed = area->owners.removeAll(id);
-    area->invited.removeAll(id);
-    sendServerMessage("You are no longer CM in this area.");
+    int uid;
+
+    if (area->owners.isEmpty()) {
+        sendServerMessage("There are no CMs in this area.");
+        return;
+    }
+    else if (argc == 0) {
+        uid = id;
+        sendServerMessage("You are no longer CM in this area.");
+    }
+    else if (checkAuth(ACLFlags.value("UNCM")) && argc == 1) {
+        bool conv_ok = false;
+        uid = argv[0].toInt(&conv_ok);
+        if (!conv_ok) {
+            sendServerMessage("Invalid user ID.");
+            return;
+        }
+        if (!area->owners.contains(uid)) {
+            sendServerMessage("That user is not CMed.");
+            return;
+        }
+        AOClient* target = server->getClientByID(uid);
+        target->sendServerMessage("You have been unCMed by a moderator.");
+    }
+    else {
+        sendServerMessage("Invalid command.");
+        return;
+    }
+    area->owners.removeAll(uid);
+    area->invited.removeAll(uid);
     arup(ARUPType::CM, true);
     if (area->owners.isEmpty()) {
         area->invited.clear();
