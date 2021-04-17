@@ -77,7 +77,11 @@ void AOClient::cmdNeed(int argc, QStringList argv)
 {
     QString sender_area = server->area_names.value(current_area);
     QString sender_message = argv.join(" ");
-    sendServerBroadcast({"=== Advert ===\n[" + sender_area + "] needs " + sender_message+ "."});
+    for (AOClient* client : server->clients) {
+        if (client->advert_enabled) {
+            client->sendServerMessage({"=== Advert ===\n[" + sender_area + "] needs " + sender_message+ "."});
+        }
+    }
 }
 
 void AOClient::cmdSwitch(int argc, QStringList argv)
@@ -284,4 +288,11 @@ void AOClient::cmdMutePM(int argc, QStringList argv)
     pm_mute = !pm_mute;
     QString str_en = pm_mute ? "muted" : "unmuted";
     sendServerMessage("PM's are now " + str_en);
+}
+
+void AOClient::cmdToggleAdverts(int argc, QStringList argv)
+{
+    advert_enabled = !advert_enabled;
+    QString str_en = advert_enabled ? "on" : "off";
+    sendServerMessage("Advertisements turned " + str_en);
 }
