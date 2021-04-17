@@ -116,6 +116,10 @@ void AOClient::cmdPM(int arc, QStringList argv)
         sendServerMessage("No client with that ID found.");
         return;
     }
+    if (target_client->pm_mute) {
+        sendServerMessage("That user is not recieving PMs.");
+        return;
+    }
     QString message = argv.join(" "); //...which means it will not end up as part of the message
     target_client->sendServerMessage("Message from " + ooc_name + " (" + QString::number(id) + "): " + message);
 }
@@ -273,4 +277,11 @@ void AOClient::cmdUnShake(int argc, QStringList argv)
         target->sendServerMessage("A moderator has unshook you! " + getReprimand(true));
     }
     target->is_shaken = false;
+}
+
+void AOClient::cmdMutePM(int argc, QStringList argv)
+{
+    pm_mute = !pm_mute;
+    QString str_en = pm_mute ? "muted" : "unmuted";
+    sendServerMessage("PM's are now " + str_en);
 }
