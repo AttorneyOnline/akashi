@@ -1908,6 +1908,13 @@ class AOClient : public QObject {
      * @param action String containing the info that is being recorded.
      */
     void updateJudgeLog(AreaData* area, AOClient* client, QString action);
+
+    /**
+     * @brief A helper function for decoding AO encoding from a QString.
+     *
+     * @param incoming_message QString to be decoded.
+     */
+    QString decodeMessage(QString incoming_message);
 };
 
 #endif // AOCLIENT_H
