@@ -261,9 +261,16 @@ class AOClient : public QObject {
     bool advert_enabled = true;
 
     /**
+     * @brief If true, the client is restricted to only changing into certain characters.
+     */
+    bool is_charcursed = false;
+
+    /**
      * @brief Timer for tracking user interaction. Automatically restarted whenever a user interacts (i.e. sends any packet besides CH)
      */
     QTimer* afk_timer;
+
+    QStringList charcurse_list;
 
 
   public slots:
@@ -1453,6 +1460,8 @@ class AOClient : public QObject {
      * @brief Toggles whether a client will recieve @ref cmdPM private messages or not.
      *
      * @details No arguments.
+     *
+     * @iscommand
      */
     void cmdMutePM(int argc, QStringList argv);
 
@@ -1460,6 +1469,8 @@ class AOClient : public QObject {
      * @brief Toggles whether a client will recieve @ref cmdNeed "advertisement" messages.
      *
      * @details No arguments.
+     *
+     * @iscommand
      */
     void cmdToggleAdverts(int argc, QStringList argv);
 
@@ -1471,6 +1482,26 @@ class AOClient : public QObject {
     * @iscommand
     */
     void cmdAfk(int argc, QStringList argv);
+
+    /**
+     * @brief Restricts a target client to a set of characters that they can switch from, blocking them from other characters.
+     *
+     * @details The first argument is the **target's ID** whom the client wants to charcurse.
+     *
+     * The second argument is one or more character names the client wants to restrict to, comma separated.
+     *
+     * @iscommand
+     */
+    void cmdCharCurse(int argc, QStringList argv);
+
+    /**
+     * @brief Removes the charcurse status from a client.
+     *
+     * @details The only argument is the **target's ID** whom the client wants to uncharcurse.
+     *
+     * @iscommand
+     */
+    void cmdUnCharCurse(int argc, QStringList argv);
 
     ///@}
 
@@ -1888,6 +1919,8 @@ class AOClient : public QObject {
         {"block_dj",           {ACLFlags.value("MUTE"),         1, &AOClient::cmdBlockDj}},
         {"unblockdj",          {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnBlockDj}},
         {"unblock_dj",         {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnBlockDj}},
+        {"charcurse",          {ACLFlags.value("MUTE"),         1, &AOClient::cmdCharCurse}},
+        {"uncharcurse",        {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnCharCurse}},
     };
 
     /**

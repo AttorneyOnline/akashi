@@ -148,6 +148,10 @@ bool AOClient::changeCharacter(int char_id)
     if(char_id >= server->characters.length())
         return false;
 
+    if (is_charcursed && !charcurse_list.contains(QString::number(char_id))) {
+        return false;
+    }
+
     if (char_id >= 0) {
         QString char_selected = server->characters[char_id];
         bool taken = area->characters_taken.contains(char_id);

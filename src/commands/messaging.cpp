@@ -302,3 +302,70 @@ void AOClient::cmdAfk(int argc, QStringList argv)
     is_afk = true;
     sendServerMessage("You are now AFK.");
 }
+
+void AOClient::cmdCharCurse(int argc, QStringList argv)
+{
+    bool conv_ok = false;
+    int uid = argv[0].toInt(&conv_ok);
+    if (!conv_ok) {
+        sendServerMessage("Invalid user ID.");
+        return;
+    }
+
+    AOClient* target =  server->getClientByID(uid);
+
+    if (target->is_charcursed) {
+        sendServerMessage("That player is already charcursed!");
+        return;
+    }
+
+    if (argc == 1) {
+        target->charcurse_list.append(QString::number(server->getCharID(current_char)));
+    }
+
+    else {
+        argv.removeFirst(); //remove the UID
+        QString names = argv.join(" ");
+        argv = names.split(", ");
+        QString char_name;
+        foreach (char_name, argv) {
+            QString converted_char_id = QString::number(server->getCharID(char_name));
+            argv.replaceInStrings(char_name, converted_char_id);
+        }
+        if (argv.contains("-1")) {
+            sendServerMessage("One of these characters was not found.");
+            return;
+        }
+        target->charcurse_list = argv;
+    }
+
+    //Kick back to char select screen
+    if (!target->charcurse_list.contains(QString::number(server->getCharID(current_char)))) {
+        target->current_char = "";
+        target->sendPacket("DONE");
+    }
+    target->is_charcursed = true;
+    target->sendServerMessage("You have been charcursed!");
+    sendServerMessage("Charcursed player.");
+}
+
+void AOClient::cmdUnCharCurse(int argc, QStringList argv)
+{
+    bool conv_ok = false;
+    int uid = argv[0].toInt(&conv_ok);
+    if (!conv_ok) {
+        sendServerMessage("Invalid user ID.");
+        return;
+    }
+
+    AOClient* target =  server->getClientByID(uid);
+
+    if (!target->is_charcursed) {
+        sendServerMessage("That player is not charcursed!");
+        return;
+    }
+    target->is_charcursed = false;
+    target->charcurse_list.clear();
+    sendServerMessage("Uncharcursed plater.");
+    target->sendServerMessage("You were uncharcursed.");
+}
