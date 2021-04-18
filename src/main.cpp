@@ -62,7 +62,10 @@ int main(int argc, char* argv[])
             }
 
             server = new Server(settings.port, settings.ws_port);
-            QObject::connect(server, &Server::reloadRequest, advertiser, &Advertiser::reloadRequested);
+
+            if (advertiser != nullptr) {
+                QObject::connect(server, &Server::reloadRequest, advertiser, &Advertiser::reloadRequested);
+            }
             server->start();
         }
     } else {
