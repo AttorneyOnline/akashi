@@ -252,6 +252,16 @@ class AOClient : public QObject {
     bool is_afk = false;
 
     /**
+     * @brief If true, the client will not recieve PM messages.
+     */
+    bool pm_mute = false;
+
+    /**
+     * @brief If true, the client will recieve advertisements.
+     */
+    bool advert_enabled = true;
+
+    /**
      * @brief Timer for tracking user interaction. Automatically restarted whenever a user interacts (i.e. sends any packet besides CH)
      */
     QTimer* afk_timer;
@@ -1313,8 +1323,6 @@ class AOClient : public QObject {
      *
      * @details No arguments.
      *
-     * Can silently "fail" if the character picked is already being used by another client.
-     *
      * @iscommand
      */
     void cmdRandomChar(int argc, QStringList argv);
@@ -1453,6 +1461,20 @@ class AOClient : public QObject {
      * @iscommand
      */
     void cmdUnShake(int argc, QStringList argv);
+
+    /**
+     * @brief Toggles whether a client will recieve @ref cmdPM private messages or not.
+     *
+     * @details No arguments.
+     */
+    void cmdMutePM(int argc, QStringList argv);
+
+    /**
+     * @brief Toggles whether a client will recieve @ref cmdNeed "advertisement" messages.
+     *
+     * @details No arguments.
+     */
+    void cmdToggleAdverts(int argc, QStringList argv);
 
     /**
     * @brief Toggles whether this client is considered AFK.
@@ -1897,6 +1919,8 @@ class AOClient : public QObject {
         {"savetestimony",      {ACLFlags.value("NONE"),         1, &AOClient::cmdSaveTestimony}},
         {"loadtestimony",      {ACLFlags.value("CM"),           1, &AOClient::cmdLoadTestimony}},
         {"permitsaving",       {ACLFlags.value("MODCHAT"),      1, &AOClient::cmdPermitSaving}},
+        {"mutepm",             {ACLFlags.value("NONE"),         0, &AOClient::cmdMutePM}},
+        {"toggleadverts",      {ACLFlags.value("NONE"),         0, &AOClient::cmdToggleAdverts}},
         {"oocmute",            {ACLFlags.value("MUTE"),         1, &AOClient::cmdOocMute}},
         {"ooc_mute",           {ACLFlags.value("MUTE"),         1, &AOClient::cmdOocMute}},
         {"oocunmute",          {ACLFlags.value("MUTE"),         1, &AOClient::cmdOocUnMute}},
