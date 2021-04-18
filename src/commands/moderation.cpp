@@ -179,6 +179,7 @@ void AOClient::cmdBans(int argc, QStringList argv)
             banned_until = "The heat death of the universe";
         else
             banned_until = QDateTime::fromSecsSinceEpoch(ban.time).addSecs(ban.duration).toString("dd.MM.yyyy, hh:mm");
+        recent_bans << "Ban ID: " + QString::number(server->db_manager->getBanID(ban.ipid));
         recent_bans << "Affected IPID: " + ban.ipid;
         recent_bans << "Affected HDID: " + ban.hdid;
         recent_bans << "Reason for ban: " + ban.reason;
