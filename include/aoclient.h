@@ -1439,6 +1439,15 @@ class AOClient : public QObject {
      */
     void cmdUnShake(int argc, QStringList argv);
 
+    /**
+    * @brief Toggles whether this client is considered AFK.
+    *
+    * @details No arguments.
+    *
+    * @iscommand
+    */
+    void cmdAfk(int argc, QStringList argv);
+
     ///@}
 
     /**
@@ -1587,16 +1596,6 @@ class AOClient : public QObject {
      * @iscommand
      */
     void cmdCurrentMusic(int argc, QStringList argv);
-
-
-    /**
-    * @brief Toggles whether this client is considered AFK.
-    *
-    * @details No arguments.
-    *
-    * @iscommand
-    */
-    void cmdAfk(int argc, QStringList argv);
 
     ///@}
 

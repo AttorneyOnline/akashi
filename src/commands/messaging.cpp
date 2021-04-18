@@ -274,3 +274,9 @@ void AOClient::cmdUnShake(int argc, QStringList argv)
     }
     target->is_shaken = false;
 }
+
+void AOClient::cmdAfk(int argc, QStringList argv)
+{
+    is_afk = true;
+    sendServerMessage("You are now AFK.");
+}
