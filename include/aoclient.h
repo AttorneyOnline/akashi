@@ -220,7 +220,9 @@ class AOClient : public QObject {
         {"MODCHAT",         1ULL << 9 },
         {"MUTE",            1ULL << 10},
         {"UNCM",            1ULL << 11},
-        {"SUPER",          ~0ULL      },
+        {"SAVETEST",        1ULL << 12},
+        {"FORCE_CHARSELECT",1ULL << 13},
+        {"SUPER",          ~0ULL      }
     };
 
 
@@ -272,6 +274,10 @@ class AOClient : public QObject {
 
     QStringList charcurse_list;
 
+    /**
+     * @brief Temporary client permission if client is allowed to save a testimony to server storage.
+     */
+    bool testimony_saving = false;
 
   public slots:
     /**
@@ -1161,6 +1167,16 @@ class AOClient : public QObject {
     */
     void cmdAllowIniswap(int argc, QStringList argv);
 
+    /**
+    * @brief Grants a client the temporary permission to save a testimony.
+    *
+    * @details ClientID as the target of permission
+    *
+    * @iscommand
+    *
+    */
+    void cmdPermitSaving(int argc, QStringList argv);
+
     ///@}
 
     /**
@@ -1314,8 +1330,6 @@ class AOClient : public QObject {
      * @brief Picks a new random character for the client.
      *
      * @details No arguments.
-     *
-     * Can silently "fail" if the character picked is already being used by another client.
      *
      * @iscommand
      */
@@ -1502,6 +1516,7 @@ class AOClient : public QObject {
      * @iscommand
      */
     void cmdUnCharCurse(int argc, QStringList argv);
+    void cmdCharSelect(int argc, QStringList argv);
 
     ///@}
 
@@ -1597,6 +1612,34 @@ class AOClient : public QObject {
      *
      */
     void cmdAddStatement(int argc, QStringList argv);
+
+
+    /**
+     * @brief Sends a list of the testimony to OOC of the requesting client
+     *
+     * @details Retrieves all stored IC-Messages of the area and dumps them into OOC with some formatting.
+     *
+     */
+    void cmdTestimony(int argc, QStringList argv);
+
+    /**
+     * @brief Saves a testimony recording to the servers storage.
+     *
+     * @details Saves a titled text file which contains the edited packets into a text file.
+     *          The filename will always be lowercase.
+     *
+     */
+    void cmdSaveTestimony(int argc, QStringList argv);
+
+    /**
+     * @brief Loads testimony for the testimony replay. Argument is the testimony name.
+     *
+     * @details Loads a titled text file which contains the edited packets to be loaded into the QVector.
+     *          Validates the size of the testimony to ensure the entire testimony can be replayed.
+     *          Testimony name will always be converted to lowercase.
+     *
+     */
+    void cmdLoadTestimony(int argc, QStringList argv);
 
     ///@}
 
@@ -1890,6 +1933,7 @@ class AOClient : public QObject {
         {"ungimp",             {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnGimp}},
         {"baninfo",            {ACLFlags.value("BAN"),          1, &AOClient::cmdBanInfo}},
         {"testify",            {ACLFlags.value("CM"),           0, &AOClient::cmdTestify}},
+        {"testimony",          {ACLFlags.value("NONE"),         0, &AOClient::cmdTestimony}},
         {"examine",            {ACLFlags.value("CM"),           0, &AOClient::cmdExamine}},
         {"pause",              {ACLFlags.value("CM"),           0, &AOClient::cmdPauseTestimony}},
         {"delete",             {ACLFlags.value("CM"),           0, &AOClient::cmdDeleteStatement}},
@@ -1905,6 +1949,9 @@ class AOClient : public QObject {
         {"allowiniswap",       {ACLFlags.value("CM"),           0, &AOClient::cmdAllowIniswap}},
         {"allow_iniswap",      {ACLFlags.value("CM"),           0, &AOClient::cmdAllowIniswap}},
         {"afk",                {ACLFlags.value("NONE"),         0, &AOClient::cmdAfk}},
+        {"savetestimony",      {ACLFlags.value("NONE"),         1, &AOClient::cmdSaveTestimony}},
+        {"loadtestimony",      {ACLFlags.value("CM"),           1, &AOClient::cmdLoadTestimony}},
+        {"permitsaving",       {ACLFlags.value("MODCHAT"),      1, &AOClient::cmdPermitSaving}},
         {"mutepm",             {ACLFlags.value("NONE"),         0, &AOClient::cmdMutePM}},
         {"toggleadverts",      {ACLFlags.value("NONE"),         0, &AOClient::cmdToggleAdverts}},
         {"oocmute",            {ACLFlags.value("MUTE"),         1, &AOClient::cmdOocMute}},
@@ -1921,6 +1968,7 @@ class AOClient : public QObject {
         {"unblock_dj",         {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnBlockDj}},
         {"charcurse",          {ACLFlags.value("MUTE"),         1, &AOClient::cmdCharCurse}},
         {"uncharcurse",        {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnCharCurse}},
+        {"charselect",         {ACLFlags.value("NONE"),         0, &AOClient::cmdCharSelect}}
     };
 
     /**

@@ -151,16 +151,16 @@ bool AOClient::changeCharacter(int char_id)
     if (is_charcursed && !charcurse_list.contains(QString::number(char_id))) {
         return false;
     }
+    
+    if (current_char != "") {
+        area->characters_taken.removeAll(server->getCharID(current_char));
+    }
 
     if (char_id >= 0) {
         QString char_selected = server->characters[char_id];
         bool taken = area->characters_taken.contains(char_id);
         if (taken || char_selected == "")
             return false;
-
-        if (current_char != "") {
-            area->characters_taken.removeAll(server->getCharID(current_char));
-        }
 
         area->characters_taken.append(char_id);
         current_char = char_selected;
