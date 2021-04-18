@@ -232,11 +232,20 @@ void AOClient::cmdLoadTestimony(int argc, QStringList argv)
     }
 
     clearTestimony();
+    int testimony_lines = 0;
     QTextStream in(&file);
     while (!in.atEnd()) {
-        QString line = in.readLine();
-        QStringList packet = line.split("#");
-        area->testimony.append(packet);
+        if (testimony_lines <= server->maximum_statements) {
+            QString line = in.readLine();
+            QStringList packet = line.split("#");
+            area->testimony.append(packet);
+            testimony_lines = testimony_lines + 1;
+        }
+        else {
+            sendServerMessage("Testimony too large to be loaded.");
+            clearTestimony();
+            return;
+        }
     }
     sendServerMessage("Testimony loaded successfully. Use /examine to start playback.");
 }

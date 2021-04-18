@@ -1562,16 +1562,17 @@ class AOClient : public QObject {
      * @brief Saves a testimony recording to the servers storage.
      *
      * @details Saves a titled text file which contains the edited packets into a text file.
+     *          The filename will always be lowercase.
      *
      */
     void cmdSaveTestimony(int argc, QStringList argv);
 
     /**
-     * @brief Loads testimony for the testimony replay
+     * @brief Loads testimony for the testimony replay. Argument is the testimony name.
      *
      * @details Loads a titled text file which contains the edited packets to be loaded into the QVector.
-     *          Unlike manually adding statements during testifying there is no size validation as the only
-     *          way to create files is saving them.
+     *          Validates the size of the testimony to ensure the entire testimony can be replayed.
+     *          Testimony name will always be converted to lowercase.
      *
      */
     void cmdLoadTestimony(int argc, QStringList argv);
