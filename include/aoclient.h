@@ -1298,8 +1298,6 @@ class AOClient : public QObject {
      *
      * @details No arguments.
      *
-     * Can silently "fail" if the character picked is already being used by another client.
-     *
      * @iscommand
      */
     void cmdRandomChar(int argc, QStringList argv);
