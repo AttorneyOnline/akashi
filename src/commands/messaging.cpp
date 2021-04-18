@@ -82,18 +82,33 @@ void AOClient::cmdNeed(int argc, QStringList argv)
 
 void AOClient::cmdSwitch(int argc, QStringList argv)
 {
-    int char_id = server->getCharID(argv.join(" "));
-    if (char_id == -1) {
+    int selected_char_id = server->getCharID(argv.join(" "));
+    if (selected_char_id == -1) {
         sendServerMessage("That does not look like a valid character.");
         return;
     }
-    changeCharacter(char_id);
+    if (changeCharacter(selected_char_id)) {
+        char_id = selected_char_id;
+    }
+    else {
+        sendServerMessage("The character you picked is either taken or invalid.");
+    }
 }
 
 void AOClient::cmdRandomChar(int argc, QStringList argv)
 {
-    int char_id = genRand(0, server->characters.size() - 1);
-    changeCharacter(char_id);
+    AreaData* area = server->areas[current_area];
+    int selected_char_id;
+    bool taken = true;
+    while (taken) {
+        selected_char_id = genRand(0, server->characters.size() - 1);
+        if (!area->characters_taken.contains(selected_char_id)) {
+            taken = false;
+        }
+    }
+    if (changeCharacter(selected_char_id)) {
+        char_id = selected_char_id;
+    }
 }
 
 void AOClient::cmdToggleGlobal(int argc, QStringList argv)
