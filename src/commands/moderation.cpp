@@ -402,3 +402,13 @@ void AOClient::cmdAllowIniswap(int argc, QStringList argv)
     QString state = area->iniswap_allowed ? "allowed." : "disallowed.";
     sendServerMessage("Iniswapping in this area is now " + state);
 }
+
+void AOClient::cmdPermitSaving(int argc, QStringList argv)
+{
+    AOClient* client = server->getClientByID(argv[0].toInt());
+    if (client == nullptr) {
+        sendServerMessage("Invalid ID.");
+        return;
+    }
+    client->testimony_saving = true;
+}
