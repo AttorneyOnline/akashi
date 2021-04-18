@@ -272,7 +272,7 @@ class AOClient : public QObject {
      */
     QTimer* afk_timer;
 
-    QStringList charcurse_list;
+    QList<int> charcurse_list;
 
     /**
      * @brief Temporary client permission if client is allowed to save a testimony to server storage.

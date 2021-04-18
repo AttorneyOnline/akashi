@@ -335,7 +335,7 @@ void AOClient::cmdCharCurse(int argc, QStringList argv)
     }
 
     if (argc == 1) {
-        target->charcurse_list.append(QString::number(server->getCharID(current_char)));
+        target->charcurse_list.append(server->getCharID(current_char));
     }
 
     else {
@@ -343,23 +343,23 @@ void AOClient::cmdCharCurse(int argc, QStringList argv)
         QString names = argv.join(" ");
         argv = names.split(", ");
         QString char_name;
+        target->charcurse_list.clear();
         foreach (char_name, argv) {
-            QString converted_char_id = QString::number(server->getCharID(char_name));
-            argv.replaceInStrings(char_name, converted_char_id);
+            target->charcurse_list.append(server->getCharID(char_name));
         }
-        if (argv.contains("-1")) {
+        if (target->charcurse_list.contains(-1)) {
             sendServerMessage("One of these characters was not found.");
             return;
         }
-        target->charcurse_list = argv;
     }
 
     //Kick back to char select screen
-    if (!target->charcurse_list.contains(QString::number(server->getCharID(current_char)))) {
-        target->current_char = "";
+    if (!target->charcurse_list.contains(server->getCharID(current_char))) {
+        target->changeCharacter(-1);
         target->sendPacket("DONE");
     }
     target->is_charcursed = true;
+    server->updateCharsTaken(server->areas.value(current_area));
     target->sendServerMessage("You have been charcursed!");
     sendServerMessage("Charcursed player.");
 }
@@ -381,7 +381,8 @@ void AOClient::cmdUnCharCurse(int argc, QStringList argv)
     }
     target->is_charcursed = false;
     target->charcurse_list.clear();
-    sendServerMessage("Uncharcursed plater.");
+    server->updateCharsTaken(server->areas.value(current_area));
+    sendServerMessage("Uncharcursed player.");
     target->sendServerMessage("You were uncharcursed.");
 }
 

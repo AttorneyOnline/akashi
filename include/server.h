@@ -259,6 +259,8 @@ class Server : public QObject {
      */
     QStringList loadConfigFile(QString filename);
 
+    QStringList getCursedCharsTaken(AOClient* client, QStringList chars_taken);
+
     /**
      * @brief List holding the contents of 8ball.txt, used by /8ball.
      */
