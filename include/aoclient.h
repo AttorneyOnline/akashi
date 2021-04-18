@@ -251,6 +251,16 @@ class AOClient : public QObject {
     bool is_afk = false;
 
     /**
+     * @brief If true, the client will not recieve PM messages.
+     */
+    bool pm_mute = false;
+
+    /**
+     * @brief If true, the client will recieve advertisements.
+     */
+    bool advert_enabled = true;
+
+    /**
      * @brief Timer for tracking user interaction. Automatically restarted whenever a user interacts (i.e. sends any packet besides CH)
      */
     QTimer* afk_timer;
@@ -1438,6 +1448,20 @@ class AOClient : public QObject {
     void cmdUnShake(int argc, QStringList argv);
 
     /**
+     * @brief Toggles whether a client will recieve @ref cmdPM private messages or not.
+     *
+     * @details No arguments.
+     */
+    void cmdMutePM(int argc, QStringList argv);
+
+    /**
+     * @brief Toggles whether a client will recieve @ref cmdNeed "advertisement" messages.
+     *
+     * @details No arguments.
+     */
+    void cmdToggleAdverts(int argc, QStringList argv);
+
+    /**
     * @brief Toggles whether this client is considered AFK.
     *
     * @details No arguments.
@@ -1848,6 +1872,8 @@ class AOClient : public QObject {
         {"allowiniswap",       {ACLFlags.value("CM"),           0, &AOClient::cmdAllowIniswap}},
         {"allow_iniswap",      {ACLFlags.value("CM"),           0, &AOClient::cmdAllowIniswap}},
         {"afk",                {ACLFlags.value("NONE"),         0, &AOClient::cmdAfk}},
+        {"mutepm",             {ACLFlags.value("NONE"),         0, &AOClient::cmdMutePM}},
+        {"toggleadverts",      {ACLFlags.value("NONE"),         0, &AOClient::cmdToggleAdverts}},
         {"oocmute",            {ACLFlags.value("MUTE"),         1, &AOClient::cmdOocMute}},
         {"ooc_mute",           {ACLFlags.value("MUTE"),         1, &AOClient::cmdOocMute}},
         {"oocunmute",          {ACLFlags.value("MUTE"),         1, &AOClient::cmdOocUnMute}},
