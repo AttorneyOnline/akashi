@@ -1488,6 +1488,24 @@ class AOClient : public QObject {
 
     void cmdCharSelect(int argc, QStringList argv);
 
+    /**
+     * @brief Sends a message to an area that you a CM in.
+     *
+     * @details Usage: /a <area> <message>
+     *
+     * @iscommand
+     */
+    void cmdA(int argc, QStringList argv);
+
+    /**
+     * @brief Send a message to all areas that you are a CM in.
+     *
+     * @details Usage: /s <message>
+     *
+     * @iscommand
+     */
+    void cmdS(int argc, QStringList argv);
+
     ///@}
 
     /**
@@ -1936,7 +1954,9 @@ class AOClient : public QObject {
         {"block_dj",           {ACLFlags.value("MUTE"),         1, &AOClient::cmdBlockDj}},
         {"unblockdj",          {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnBlockDj}},
         {"unblock_dj",         {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnBlockDj}},
-        {"charselect",         {ACLFlags.value("NONE"),         0, &AOClient::cmdCharSelect}}
+        {"charselect",         {ACLFlags.value("NONE"),         0, &AOClient::cmdCharSelect}},
+        {"a",                  {ACLFlags.value("NONE"),         2, &AOClient::cmdA}},
+        {"s",                  {ACLFlags.value("NONE"),         0, &AOClient::cmdS}},
     };
 
     /**
