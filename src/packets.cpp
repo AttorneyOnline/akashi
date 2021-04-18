@@ -28,7 +28,7 @@ void AOClient::pktHardwareId(AreaData* area, int argc, QStringList argv, AOPacke
 {
     hwid = argv[0];
     if(server->db_manager->isHDIDBanned(hwid)) {
-        sendPacket("BD", {server->db_manager->getBanReason(hwid)});
+        sendPacket("BD", {server->db_manager->getBanReason(hwid) + "\nBan ID: " + QString::number(server->db_manager->getBanID(hwid))});
         socket->close();
         return;
     }
