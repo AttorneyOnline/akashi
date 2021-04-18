@@ -317,3 +317,26 @@ void AOClient::cmdAfk(int argc, QStringList argv)
     is_afk = true;
     sendServerMessage("You are now AFK.");
 }
+
+void AOClient::cmdCharSelect(int argc, QStringList argv)
+{
+    if (argc == 0) {
+        changeCharacter(-1);
+        sendPacket("DONE");
+    }
+    else {
+        if (!checkAuth(ACLFlags.value("FORCE_CHARSELECT"))) {
+            sendServerMessage("You do not have permission to force another player to character select!");
+            return;
+        }
+
+        bool ok = false;
+        int target_id = argv[0].toInt(&ok);
+        if (!ok)
+            return;
+
+        AOClient* target = server->getClientByID(target_id);
+        target->changeCharacter(-1);
+        target->sendPacket("DONE");
+    }
+}

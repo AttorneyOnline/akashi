@@ -221,7 +221,8 @@ class AOClient : public QObject {
         {"MUTE",            1ULL << 10},
         {"UNCM",            1ULL << 11},
         {"SAVETEST",        1ULL << 12},
-        {"SUPER",          ~0ULL      },
+        {"FORCE_CHARSELECT",1ULL << 13},
+        {"SUPER",          ~0ULL      }
     };
 
 
@@ -1485,6 +1486,8 @@ class AOClient : public QObject {
     */
     void cmdAfk(int argc, QStringList argv);
 
+    void cmdCharSelect(int argc, QStringList argv);
+
     ///@}
 
     /**
@@ -1933,6 +1936,7 @@ class AOClient : public QObject {
         {"block_dj",           {ACLFlags.value("MUTE"),         1, &AOClient::cmdBlockDj}},
         {"unblockdj",          {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnBlockDj}},
         {"unblock_dj",         {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnBlockDj}},
+        {"charselect",         {ACLFlags.value("NONE"),         0, &AOClient::cmdCharSelect}}
     };
 
     /**
