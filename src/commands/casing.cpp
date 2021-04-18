@@ -130,6 +130,24 @@ void AOClient::cmdExamine(int argc, QStringList argv)
         sendServerMessage("Unable to start replay without prior examination.");
 }
 
+void AOClient::cmdTestimony(int argc, QStringList argv)
+{
+   AreaData* area = server->areas[current_area];
+   if (area->testimony.size() -1 < 1) {
+       sendServerMessage("Unable to display empty testimony.");
+       return;
+   }
+
+   QString ooc_message;
+   for (int i = 1; i <= area->testimony.size() -1; i++)
+   {
+       QStringList packet = area->testimony.at(i);
+       QString ic_message = packet[4];
+       ooc_message.append( "[" + QString::number(i) + "]" + ic_message + "\n");
+   }
+   sendServerMessage(ooc_message);
+}
+
 void AOClient::cmdDeleteStatement(int argc, QStringList argv)
 {
     AreaData* area = server->areas[current_area];

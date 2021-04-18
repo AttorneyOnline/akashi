@@ -1558,6 +1558,15 @@ class AOClient : public QObject {
      */
     void cmdAddStatement(int argc, QStringList argv);
 
+
+    /**
+     * @brief Sends a list of the testimony to OOC of the requesting client
+     *
+     * @details Retrieves all stored IC-Messages of the area and dumps them into OOC with some formatting.
+     *
+     */
+    void cmdTestimony(int argc, QStringList argv);
+
     /**
      * @brief Saves a testimony recording to the servers storage.
      *
@@ -1869,6 +1878,7 @@ class AOClient : public QObject {
         {"ungimp",             {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnGimp}},
         {"baninfo",            {ACLFlags.value("BAN"),          1, &AOClient::cmdBanInfo}},
         {"testify",            {ACLFlags.value("CM"),           0, &AOClient::cmdTestify}},
+        {"testimony",          {ACLFlags.value("NONE"),         0, &AOClient::cmdTestimony}},
         {"examine",            {ACLFlags.value("CM"),           0, &AOClient::cmdExamine}},
         {"pause",              {ACLFlags.value("CM"),           0, &AOClient::cmdPauseTestimony}},
         {"delete",             {ACLFlags.value("CM"),           0, &AOClient::cmdDeleteStatement}},
