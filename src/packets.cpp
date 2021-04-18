@@ -210,10 +210,6 @@ void AOClient::pktPing(AreaData* area, int argc, QStringList argv, AOPacket pack
 
 void AOClient::pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
-    if (is_dj_blocked) {
-        sendServerMessage("You are blocked from changing the music.");
-        return;
-    }
     // Due to historical reasons, this
     // packet has two functions:
     // Change area, and set music.
@@ -225,6 +221,10 @@ void AOClient::pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPack
     for (QString song : server->music_list) {
         if (song == argument || song == "~stop.mp3") { // ~stop.mp3 is a dummy track used by 2.9+
             // We have a song here
+            if (is_dj_blocked) {
+                sendServerMessage("You are blocked from changing the music.");
+                return;
+            }
             QString effects;
             if (argc >= 4)
                 effects = argv[3];
@@ -724,8 +724,9 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
             area->statement = area->statement - 1;
             args = playTestimony();
         }
+        QString decoded_message = decodeMessage(args[4]); //Get rid of that pesky encoding first.
         QRegularExpression jump("(?<arrow>>)(?<int>[0,1,2,3,4,5,6,7,8,9]+)");
-        QRegularExpressionMatch match = jump.match(args[4]);
+        QRegularExpressionMatch match = jump.match(decoded_message);
         if (match.hasMatch()) {
             pos = "wit";
             area->statement = match.captured("int").toInt();
@@ -772,4 +773,13 @@ void AOClient::updateJudgeLog(AreaData* area, AOClient* client, QString action)
         area->judgelog.append(logmessage);
     }
     else area->judgelog.append(logmessage);
+}
+
+QString AOClient::decodeMessage(QString incoming_message)
+{
+   QString decoded_message = incoming_message.replace("<num>", "#")
+                                             .replace("<percent>", "%")
+                                             .replace("<dollar>", "$")
+                                             .replace("<and>", "&");
+    return decoded_message;
 }

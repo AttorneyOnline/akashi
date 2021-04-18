@@ -296,3 +296,9 @@ void AOClient::cmdToggleAdverts(int argc, QStringList argv)
     QString str_en = advert_enabled ? "on" : "off";
     sendServerMessage("Advertisements turned " + str_en);
 }
+
+void AOClient::cmdAfk(int argc, QStringList argv)
+{
+    is_afk = true;
+    sendServerMessage("You are now AFK.");
+}

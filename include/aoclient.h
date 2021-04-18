@@ -219,6 +219,7 @@ class AOClient : public QObject {
         {"ANNOUNCE",        1ULL << 8 },
         {"MODCHAT",         1ULL << 9 },
         {"MUTE",            1ULL << 10},
+        {"UNCM",            1ULL << 11},
         {"SUPER",          ~0ULL      },
     };
 
@@ -1462,6 +1463,15 @@ class AOClient : public QObject {
      */
     void cmdToggleAdverts(int argc, QStringList argv);
 
+    /**
+    * @brief Toggles whether this client is considered AFK.
+    *
+    * @details No arguments.
+    *
+    * @iscommand
+    */
+    void cmdAfk(int argc, QStringList argv);
+
     ///@}
 
     /**
@@ -1610,16 +1620,6 @@ class AOClient : public QObject {
      * @iscommand
      */
     void cmdCurrentMusic(int argc, QStringList argv);
-
-
-    /**
-    * @brief Toggles whether this client is considered AFK.
-    *
-    * @details No arguments.
-    *
-    * @iscommand
-    */
-    void cmdAfk(int argc, QStringList argv);
 
     ///@}
 
@@ -1876,6 +1876,18 @@ class AOClient : public QObject {
         {"afk",                {ACLFlags.value("NONE"),         0, &AOClient::cmdAfk}},
         {"mutepm",             {ACLFlags.value("NONE"),         0, &AOClient::cmdMutePM}},
         {"toggleadverts",      {ACLFlags.value("NONE"),         0, &AOClient::cmdToggleAdverts}},
+        {"oocmute",            {ACLFlags.value("MUTE"),         1, &AOClient::cmdOocMute}},
+        {"ooc_mute",           {ACLFlags.value("MUTE"),         1, &AOClient::cmdOocMute}},
+        {"oocunmute",          {ACLFlags.value("MUTE"),         1, &AOClient::cmdOocUnMute}},
+        {"ooc_unmute",         {ACLFlags.value("MUTE"),         1, &AOClient::cmdOocUnMute}},
+        {"blockwtce",          {ACLFlags.value("MUTE"),         1, &AOClient::cmdBlockWtce}},
+        {"block_wtce",         {ACLFlags.value("MUTE"),         1, &AOClient::cmdBlockWtce}},
+        {"unblockwtce",        {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnBlockWtce}},
+        {"unblock_wtce",       {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnBlockWtce}},
+        {"blockdj",            {ACLFlags.value("MUTE"),         1, &AOClient::cmdBlockDj}},
+        {"block_dj",           {ACLFlags.value("MUTE"),         1, &AOClient::cmdBlockDj}},
+        {"unblockdj",          {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnBlockDj}},
+        {"unblock_dj",         {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnBlockDj}},
     };
 
     /**
@@ -1934,6 +1946,13 @@ class AOClient : public QObject {
      * @param action String containing the info that is being recorded.
      */
     void updateJudgeLog(AreaData* area, AOClient* client, QString action);
+
+    /**
+     * @brief A helper function for decoding AO encoding from a QString.
+     *
+     * @param incoming_message QString to be decoded.
+     */
+    QString decodeMessage(QString incoming_message);
 };
 
 #endif // AOCLIENT_H
