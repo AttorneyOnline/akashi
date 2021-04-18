@@ -22,6 +22,10 @@
 
 void AOClient::cmdPlay(int argc, QStringList argv)
 {
+    if (is_dj_blocked) {
+        sendServerMessage("You are blocked from changing the music.");
+        return;
+    }
     AreaData* area = server->areas[current_area];
     QString song = argv.join(" ");
     area->current_music = song;
