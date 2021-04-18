@@ -219,6 +219,7 @@ class AOClient : public QObject {
         {"ANNOUNCE",        1ULL << 8 },
         {"MODCHAT",         1ULL << 9 },
         {"MUTE",            1ULL << 10},
+        {"SAVETEST",        1ULL << 11},
         {"SUPER",          ~0ULL      },
     };
 
@@ -254,6 +255,10 @@ class AOClient : public QObject {
      */
     QTimer* afk_timer;
 
+    /**
+     * @brief Temporary client permission if client is allowed to save a testimony to server storage.
+     */
+    bool testimony_saving = false;
 
   public slots:
     /**
@@ -1143,6 +1148,16 @@ class AOClient : public QObject {
     */
     void cmdAllowIniswap(int argc, QStringList argv);
 
+    /**
+    * @brief Grants a client the temporary permission to save a testimony.
+    *
+    * @details ClientID as the target of permission
+    *
+    * @iscommand
+    *
+    */
+    void cmdPermitSaving(int argc, QStringList argv);
+
     ///@}
 
     /**
@@ -1533,6 +1548,24 @@ class AOClient : public QObject {
      */
     void cmdAddStatement(int argc, QStringList argv);
 
+    /**
+     * @brief Saves a testimony recording to the servers storage.
+     *
+     * @details Saves a titled text file which contains the edited packets into a text file.
+     *
+     */
+    void cmdSaveTestimony(int argc, QStringList argv);
+
+    /**
+     * @brief Loads testimony for the testimony replay
+     *
+     * @details Loads a titled text file which contains the edited packets to be loaded into the QVector.
+     *          Unlike manually adding statements during testifying there is no size validation as the only
+     *          way to create files is saving them.
+     *
+     */
+    void cmdLoadTestimony(int argc, QStringList argv);
+
     ///@}
 
     /**
@@ -1850,6 +1883,9 @@ class AOClient : public QObject {
         {"allowiniswap",       {ACLFlags.value("CM"),           0, &AOClient::cmdAllowIniswap}},
         {"allow_iniswap",      {ACLFlags.value("CM"),           0, &AOClient::cmdAllowIniswap}},
         {"afk",                {ACLFlags.value("NONE"),         0, &AOClient::cmdAfk}},
+        {"savetestimony",      {ACLFlags.value("NONE"),         1, &AOClient::cmdSaveTestimony}},
+        {"loadtestimony",      {ACLFlags.value("CM"),           1, &AOClient::cmdLoadTestimony}},
+        {"permitsaving",       {ACLFlags.value("MODCHAT"),      1, &AOClient::cmdPermitSaving}},
     };
 
     /**

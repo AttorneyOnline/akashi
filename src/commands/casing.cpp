@@ -153,6 +153,7 @@ void AOClient::cmdPauseTestimony(int argc, QStringList argv)
 {
     AreaData* area = server->areas[current_area];
     area->test_rec = AreaData::TestimonyRecording::STOPPED;
+    server->broadcast(AOPacket("RT",{"testimony1"}), current_area);
     sendServerMessage("Testimony has been stopped.");
 }
 
@@ -164,4 +165,78 @@ void AOClient::cmdAddStatement(int argc, QStringList argv)
     }
     else
         sendServerMessage("Unable to add anymore statements. Please remove any unused ones.");
+}
+
+void AOClient::cmdSaveTestimony(int argc, QStringList argv)
+{
+    bool permission_found = false;
+    if (checkAuth(ACLFlags.value("SAVETEST")))
+        permission_found = true;
+
+    if (testimony_saving == true)
+        permission_found = true;
+
+    if (permission_found) {
+        AreaData* area = server->areas[current_area];
+        if (area->testimony.size() -1 <= 0) {
+            sendServerMessage("Can't save an empty testimony.");
+            return;
+        }
+
+        QDir dir_testimony("storage/testimony");
+            if (!dir_testimony.exists()) {
+                dir_testimony.mkpath(".");
+            }
+
+        QString testimony_name = argv[0].trimmed().toLower().replace("..",""); // :)
+        QFile file("storage/testimony/" + testimony_name + ".txt");
+        if (file.exists()) {
+            sendServerMessage("Unable to save testimony. Testimony name already exists.");
+            return;
+        }
+
+        QTextStream out(&file);
+        if(file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
+            for (int i = 0; i <= area->testimony.size() -1; i++)
+            {
+                out << area->testimony.at(i).join("#") << "\n";
+            }
+            sendServerMessage("Testimony saved. To load it use /loadtestimony " + testimony_name);
+            testimony_saving = false;
+        }
+    }
+    else {
+        sendServerMessage("You don't have permission to save a testimony. Please contact a moderator for permission.");
+        return;
+    }
+}
+
+void AOClient::cmdLoadTestimony(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    QDir dir_testimony("storage/testimony");
+    if (!dir_testimony.exists()) {
+        sendServerMessage("Unable to load testimonies. Testimony storage not found.");
+        return;
+    }
+
+    QString testimony_name = argv[0].trimmed().toLower().replace("..",""); // :)
+    QFile file("storage/testimony/" + testimony_name + ".txt");
+    if (!file.exists()) {
+        sendServerMessage("Unable to load testimony. Testimony name not found.");
+        return;
+    }
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        sendServerMessage("Unable to load testimony. Permission denied.");
+        return;
+    }
+
+    clearTestimony();
+    QTextStream in(&file);
+    while (!in.atEnd()) {
+        QString line = in.readLine();
+        QStringList packet = line.split("#");
+        area->testimony.append(packet);
+    }
+    sendServerMessage("Testimony loaded successfully. Use /examine to start playback.");
 }
