@@ -225,7 +225,7 @@ class Server : public QObject {
     /**
      * @brief The highest value dice can have.
      */
-    uint dice_value;
+    int dice_value;
 
     /**
      * @brief The max amount of dice that can be rolled at once.

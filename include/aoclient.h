@@ -1735,7 +1735,7 @@ class AOClient : public QObject {
      * See @ref commandArgv "CommandInfo's `action`'s second parameter".
      * @param Type The type of the dice-rolling being done.
      */
-    void diceThrower(int argc, QStringList argv, RollType Type);
+    void diceThrower(int argc, QStringList argv, bool p_roll);
 
     /**
      * @brief Interprets an expression of time into amount of seconds.
