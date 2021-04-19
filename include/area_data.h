@@ -346,9 +346,14 @@ class AreaData : public QObject {
     QString log_type;
 
     /**
-     * @brief Whether or not to force immediate text processing in this area
+     * @brief Whether or not to force immediate text processing in this area.
      */
     bool force_immediate;
+
+    /**
+     * @brief Whether or not music is allowed in this area. If false, only CMs can change the music.
+     */
+    bool toggle_music;
 };
 
 #endif // AREA_DATA_H

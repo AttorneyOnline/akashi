@@ -30,12 +30,12 @@ void AOClient::cmdFlip(int argc, QStringList argv)
 
 void AOClient::cmdRoll(int argc, QStringList argv)
 {
-    diceThrower(argc, argv, RollType::ROLL);
+    diceThrower(argc, argv, false);
 }
 
 void AOClient::cmdRollP(int argc, QStringList argv)
 {
-    diceThrower(argc, argv, RollType::ROLLP);
+    diceThrower(argc, argv, true);
 }
 
 void AOClient::cmdTimer(int argc, QStringList argv)

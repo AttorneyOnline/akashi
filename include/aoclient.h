@@ -327,17 +327,6 @@ class AOClient : public QObject {
     };
 
     /**
-     * @brief Used for the common parts of the dice rolling commands, to determine where the function should go after the common functionality.
-     *
-     * @see AOClient::diceThrower
-     */
-    enum RollType {
-        ROLL, //!< The roll is a simple numerical roll, should be announced in the area.
-        ROLLP, //!< The roll is a numerical roll, but private, the result should only be told to the caller.
-        ROLLA //!< The roll is an ability roll, the values must be read out of the ability die configs.
-    };
-
-    /**
      * @brief Handles an incoming packet, checking for authorisation and minimum argument count.
      *
      * @param packet The incoming packet.
@@ -1190,7 +1179,7 @@ class AOClient : public QObject {
     void cmdFlip(int argc, QStringList argv);
 
     /**
-     * @brief Rolls dice, summing the results.
+     * @brief Rolls dice and sends the results.
      *
      * @details The first argument is the **amount of faces** each die should have.
      * The second argument is the **amount of dice** that should be rolled.
@@ -1683,6 +1672,13 @@ class AOClient : public QObject {
      */
     void cmdCurrentMusic(int argc, QStringList argv);
 
+    /**
+     * @brief Toggles music playing in the current area.
+     *
+     * @details No arguments.
+     */
+    void cmdToggleMusic(int argc, QStringList argv);
+
     ///@}
 
     /**
@@ -1740,20 +1736,15 @@ class AOClient : public QObject {
     int genRand(int min, int max);
 
     /**
-     * @brief A convenience function unifying the various dice-rolling methods.
+     * @brief A convenience function for rolling dice.
      *
-     * @internal
-     *  Babby's first code. <3
-     * @endinternal
+     * @param argc The amount of arguments.
      *
-     * @param argc The amount of arguments arriving to the function through a command call,
-     * equivalent to `argv.size()`.
-     * See @ref commandArgc "CommandInfo's `action`'s first parameter".
-     * @param argv The list of arguments passed to the function through a command call.
-     * See @ref commandArgv "CommandInfo's `action`'s second parameter".
-     * @param Type The type of the dice-rolling being done.
+     * @param argv Stringlist of the arguments given by the client.
+     *
+     * @param p_roll Bool to determine of a roll is private or not.
      */
-    void diceThrower(int argc, QStringList argv, RollType Type);
+    void diceThrower(int argc, QStringList argv, bool p_roll);
 
     /**
      * @brief Interprets an expression of time into amount of seconds.
@@ -1955,6 +1946,7 @@ class AOClient : public QObject {
         {"unblockdj",          {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnBlockDj}},
         {"unblock_dj",         {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnBlockDj}},
         {"charselect",         {ACLFlags.value("NONE"),         0, &AOClient::cmdCharSelect}},
+        {"togglemusic",        {ACLFlags.value("CM"),           0, &AOClient::cmdToggleMusic}},
         {"a",                  {ACLFlags.value("NONE"),         2, &AOClient::cmdA}},
         {"s",                  {ACLFlags.value("NONE"),         0, &AOClient::cmdS}},
     };

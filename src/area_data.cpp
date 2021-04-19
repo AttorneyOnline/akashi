@@ -40,6 +40,7 @@ AreaData::AreaData(QString p_name, int p_index) :
     QString configured_evi_mod = areas_ini.value("evidence_mod", "FFA").toString().toLower();
     blankposting_allowed = areas_ini.value("blankposting_allowed","true").toBool();
     force_immediate = areas_ini.value("force_immediate", "false").toBool();
+    toggle_music = areas_ini.value("toggle_music", "true").toBool();
     areas_ini.endGroup();
     QSettings config_ini("config/config.ini", QSettings::IniFormat);
     config_ini.beginGroup("Options");

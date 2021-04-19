@@ -82,3 +82,11 @@ void AOClient::cmdUnBlockDj(int argc, QStringList argv)
     }
     target->is_dj_blocked = false;
 }
+
+void AOClient::cmdToggleMusic(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    area->toggle_music = !area->toggle_music;
+    QString state = area->toggle_music ? "allowed." : "disallowed.";
+    sendServerMessage("Music in this area is now " + state);
+}
