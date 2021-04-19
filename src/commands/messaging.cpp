@@ -327,7 +327,7 @@ void AOClient::cmdCharCurse(int argc, QStringList argv)
         return;
     }
 
-    AOClient* target =  server->getClientByID(uid);
+    AOClient* target = server->getClientByID(uid);
 
     if (target->is_charcursed) {
         sendServerMessage("That player is already charcursed!");
@@ -337,29 +337,31 @@ void AOClient::cmdCharCurse(int argc, QStringList argv)
     if (argc == 1) {
         target->charcurse_list.append(server->getCharID(current_char));
     }
-
     else {
         argv.removeFirst(); //remove the UID
-        QString names = argv.join(" ");
-        argv = names.split(", ");
-        QString char_name;
         target->charcurse_list.clear();
-        foreach (char_name, argv) {
-            target->charcurse_list.append(server->getCharID(char_name));
-        }
-        if (target->charcurse_list.contains(-1)) {
-            sendServerMessage("One of these characters was not found.");
-            return;
+        for (QString char_name : argv) {
+            int char_id = server->getCharID(char_name);
+            if (char_id == -1) {
+                sendServerMessage("Could not find character: " + char_name);
+                return;
+            }
+            target->charcurse_list.append(char_id);
         }
     }
 
+    target->is_charcursed = true;
+
     //Kick back to char select screen
-    if (!target->charcurse_list.contains(server->getCharID(current_char))) {
+    if (!target->charcurse_list.contains(server->getCharID(target->current_char))) {
         target->changeCharacter(-1);
+        server->updateCharsTaken(server->areas.value(current_area));
         target->sendPacket("DONE");
     }
-    target->is_charcursed = true;
-    server->updateCharsTaken(server->areas.value(current_area));
+    else {
+        server->updateCharsTaken(server->areas.value(current_area));
+    }
+
     target->sendServerMessage("You have been charcursed!");
     sendServerMessage("Charcursed player.");
 }
@@ -373,7 +375,7 @@ void AOClient::cmdUnCharCurse(int argc, QStringList argv)
         return;
     }
 
-    AOClient* target =  server->getClientByID(uid);
+    AOClient* target = server->getClientByID(uid);
 
     if (!target->is_charcursed) {
         sendServerMessage("That player is not charcursed!");
