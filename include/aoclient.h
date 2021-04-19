@@ -1986,7 +1986,7 @@ class AOClient : public QObject {
         {"unblock_dj",         {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnBlockDj}},
         {"charcurse",          {ACLFlags.value("MUTE"),         1, &AOClient::cmdCharCurse}},
         {"uncharcurse",        {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnCharCurse}},
-        {"charselect",         {ACLFlags.value("NONE"),         0, &AOClient::cmdCharSelect}}
+        {"charselect",         {ACLFlags.value("NONE"),         0, &AOClient::cmdCharSelect}},
         {"a",                  {ACLFlags.value("NONE"),         2, &AOClient::cmdA}},
         {"s",                  {ACLFlags.value("NONE"),         0, &AOClient::cmdS}}
     };
