@@ -340,3 +340,36 @@ void AOClient::cmdCharSelect(int argc, QStringList argv)
         target->sendPacket("DONE");
     }
 }
+
+void AOClient::cmdA(int argc, QStringList argv)
+{
+    bool ok;
+    int area_id = argv[0].toInt(&ok);
+    if (!ok) {
+        sendServerMessage("This does not look like a valid AreaID.");
+        return;
+    }
+
+    AreaData* area = server->areas[area_id];
+    if (!area->owners.contains(id)) {
+        sendServerMessage("You are not CM in that area.");
+        return;
+    }
+
+    argv.removeAt(0);
+    QString sender_name = ooc_name;
+    QString ooc_message = argv.join(" ");
+    server->broadcast(AOPacket("CT", {"[CM]" + sender_name, ooc_message}), area_id);
+}
+
+void AOClient::cmdS(int argc, QStringList argv)
+{
+    int all_areas = server->areas.size() - 1;
+    QString sender_name = ooc_name;
+    QString ooc_message = argv.join(" ");
+
+    for (int i = 0; i <= all_areas; i++) {
+        if (server->areas[i]->owners.contains(id))
+            server->broadcast(AOPacket("CT", {"[CM]" + sender_name, ooc_message}), i);
+    }
+}
