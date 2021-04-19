@@ -214,6 +214,7 @@ void AOClient::cmdSaveTestimony(int argc, QStringList argv)
         }
 
         QTextStream out(&file);
+        out.setCodec("UTF-8");
         if(file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
             for (int i = 0; i <= area->testimony.size() -1; i++)
             {
@@ -252,6 +253,7 @@ void AOClient::cmdLoadTestimony(int argc, QStringList argv)
     clearTestimony();
     int testimony_lines = 0;
     QTextStream in(&file);
+    in.setCodec("UTF-8");
     while (!in.atEnd()) {
         if (testimony_lines <= server->maximum_statements) {
             QString line = in.readLine();
