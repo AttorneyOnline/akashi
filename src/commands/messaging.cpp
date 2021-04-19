@@ -338,9 +338,11 @@ void AOClient::cmdCharCurse(int argc, QStringList argv)
         target->charcurse_list.append(server->getCharID(current_char));
     }
     else {
-        argv.removeFirst(); //remove the UID
+        argv.removeFirst();
+        QStringList char_names = argv.join(" ").split(",");
+
         target->charcurse_list.clear();
-        for (QString char_name : argv) {
+        for (QString char_name : char_names) {
             int char_id = server->getCharID(char_name);
             if (char_id == -1) {
                 sendServerMessage("Could not find character: " + char_name);
