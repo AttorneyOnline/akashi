@@ -1665,6 +1665,13 @@ class AOClient : public QObject {
      */
     void cmdCurrentMusic(int argc, QStringList argv);
 
+    /**
+     * @brief Toggles music playing in the current area.
+     *
+     * @details No arguments.
+     */
+    void cmdToggleMusic(int argc, QStringList argv);
+
     ///@}
 
     /**
@@ -1936,7 +1943,8 @@ class AOClient : public QObject {
         {"block_dj",           {ACLFlags.value("MUTE"),         1, &AOClient::cmdBlockDj}},
         {"unblockdj",          {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnBlockDj}},
         {"unblock_dj",         {ACLFlags.value("MUTE"),         1, &AOClient::cmdUnBlockDj}},
-        {"charselect",         {ACLFlags.value("NONE"),         0, &AOClient::cmdCharSelect}}
+        {"charselect",         {ACLFlags.value("NONE"),         0, &AOClient::cmdCharSelect}},
+        {"togglemusic",        {ACLFlags.value("CM"),           0, &AOClient::cmdToggleMusic}},
     };
 
     /**

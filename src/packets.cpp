@@ -225,6 +225,10 @@ void AOClient::pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPack
                 sendServerMessage("You are blocked from changing the music.");
                 return;
             }
+            if (!area->toggle_music && !checkAuth(ACLFlags.value("CM"))) {
+                sendServerMessage("Music is disabled in this area.");
+                return;
+            }
             QString effects;
             if (argc >= 4)
                 effects = argv[3];
