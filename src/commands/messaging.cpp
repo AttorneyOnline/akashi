@@ -335,7 +335,7 @@ void AOClient::cmdCharCurse(int argc, QStringList argv)
     }
 
     if (argc == 1) {
-        target->charcurse_list.append(server->getCharID(current_char));
+        target->charcurse_list.append(server->getCharID(target->current_char));
     }
     else {
         argv.removeFirst();

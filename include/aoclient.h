@@ -272,6 +272,9 @@ class AOClient : public QObject {
      */
     QTimer* afk_timer;
 
+    /**
+     * @brief The list of char IDs a charcursed player is allowed to switch to.
+     */
     QList<int> charcurse_list;
 
     /**
