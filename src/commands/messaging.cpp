@@ -318,6 +318,78 @@ void AOClient::cmdAfk(int argc, QStringList argv)
     sendServerMessage("You are now AFK.");
 }
 
+void AOClient::cmdCharCurse(int argc, QStringList argv)
+{
+    bool conv_ok = false;
+    int uid = argv[0].toInt(&conv_ok);
+    if (!conv_ok) {
+        sendServerMessage("Invalid user ID.");
+        return;
+    }
+
+    AOClient* target = server->getClientByID(uid);
+
+    if (target->is_charcursed) {
+        sendServerMessage("That player is already charcursed!");
+        return;
+    }
+
+    if (argc == 1) {
+        target->charcurse_list.append(server->getCharID(target->current_char));
+    }
+    else {
+        argv.removeFirst();
+        QStringList char_names = argv.join(" ").split(",");
+
+        target->charcurse_list.clear();
+        for (QString char_name : char_names) {
+            int char_id = server->getCharID(char_name);
+            if (char_id == -1) {
+                sendServerMessage("Could not find character: " + char_name);
+                return;
+            }
+            target->charcurse_list.append(char_id);
+        }
+    }
+
+    target->is_charcursed = true;
+
+    //Kick back to char select screen
+    if (!target->charcurse_list.contains(server->getCharID(target->current_char))) {
+        target->changeCharacter(-1);
+        server->updateCharsTaken(server->areas.value(current_area));
+        target->sendPacket("DONE");
+    }
+    else {
+        server->updateCharsTaken(server->areas.value(current_area));
+    }
+
+    target->sendServerMessage("You have been charcursed!");
+    sendServerMessage("Charcursed player.");
+}
+
+void AOClient::cmdUnCharCurse(int argc, QStringList argv)
+{
+    bool conv_ok = false;
+    int uid = argv[0].toInt(&conv_ok);
+    if (!conv_ok) {
+        sendServerMessage("Invalid user ID.");
+        return;
+    }
+
+    AOClient* target = server->getClientByID(uid);
+
+    if (!target->is_charcursed) {
+        sendServerMessage("That player is not charcursed!");
+        return;
+    }
+    target->is_charcursed = false;
+    target->charcurse_list.clear();
+    server->updateCharsTaken(server->areas.value(current_area));
+    sendServerMessage("Uncharcursed player.");
+    target->sendServerMessage("You were uncharcursed.");
+}
+
 void AOClient::cmdCharSelect(int argc, QStringList argv)
 {
     if (argc == 0) {

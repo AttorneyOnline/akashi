@@ -151,7 +151,30 @@ void Server::updateCharsTaken(AreaData* area)
     }
 
     AOPacket response_cc("CharsCheck", chars_taken);
-    broadcast(response_cc, area->index);
+
+    for (AOClient* client : clients) {
+        if (client->current_area == area->index){
+            if (!client->is_charcursed)
+                client->sendPacket(response_cc);
+            else {
+                QStringList chars_taken_cursed = getCursedCharsTaken(client, chars_taken);
+                AOPacket response_cc_cursed("CharsCheck", chars_taken_cursed);
+                client->sendPacket(response_cc_cursed);
+            }
+        }
+    }
+}
+
+QStringList Server::getCursedCharsTaken(AOClient* client, QStringList chars_taken)
+{
+    QStringList chars_taken_cursed;
+    for (int i = 0; i < chars_taken.length(); i++) {
+        if (!client->charcurse_list.contains(i))
+            chars_taken_cursed.append("-1");
+        else
+            chars_taken_cursed.append(chars_taken.value(i));
+    }
+    return chars_taken_cursed;
 }
 
 void Server::broadcast(AOPacket packet, int area_index)

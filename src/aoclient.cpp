@@ -148,6 +148,10 @@ bool AOClient::changeCharacter(int char_id)
     if(char_id >= server->characters.length())
         return false;
 
+    if (is_charcursed && !charcurse_list.contains(char_id)) {
+        return false;
+    }
+    
     if (current_char != "") {
         area->characters_taken.removeAll(server->getCharID(current_char));
     }
