@@ -308,12 +308,10 @@ void AOClient::pktWebSocketIp(AreaData* area, int argc, QStringList argv, AOPack
                 multiclient_count++;
         }
 
-        if (multiclient_count > 5) {
+        if (multiclient_count > server->multiclient_limit) {
             socket->close();
             return;
         }
-
-        qDebug() << "MULTICLIENT COUNT WS: " << multiclient_count;
     }
 }
 
