@@ -301,6 +301,17 @@ void AOClient::pktWebSocketIp(AreaData* area, int argc, QStringList argv, AOPack
 #endif
         remote_ip = QHostAddress(argv[0]);
         calculateIpid();
+
+        int multiclient_count = 0;
+        for (AOClient* joined_client : server->clients) {
+            if (remote_ip.isEqual(joined_client->remote_ip))
+                multiclient_count++;
+        }
+
+        if (multiclient_count > server->multiclient_limit) {
+            socket->close();
+            return;
+        }
     }
 }
 

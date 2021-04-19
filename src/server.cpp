@@ -114,14 +114,29 @@ void Server::clientConnected()
             break;
     }
     AOClient* client = new AOClient(this, socket, this, user_id);
-    if (db_manager->isIPBanned(socket->peerAddress())) {
+
+    int multiclient_count = 1;
+    bool is_at_multiclient_limit = false;
+    bool is_banned = db_manager->isIPBanned(socket->peerAddress());
+    for (AOClient* joined_client : clients) {
+        if (client->remote_ip.isEqual(joined_client->remote_ip))
+            multiclient_count++;
+    }
+
+    if (multiclient_count > multiclient_limit && !client->remote_ip.isLoopback()) // TODO: make this configurable
+        is_at_multiclient_limit = true;
+
+    if (is_banned) {
         AOPacket ban_reason("BD", {db_manager->getBanReason(socket->peerAddress())});
         socket->write(ban_reason.toUtf8());
+    }
+    if (is_banned || is_at_multiclient_limit) {
         socket->flush();
         client->deleteLater();
         socket->close();
         return;
     }
+
     clients.append(client);
     connect(socket, &QTcpSocket::disconnected, client,
             &AOClient::clientDisconnected);
@@ -264,6 +279,10 @@ void Server::loadServerConfig()
     afk_timeout = config.value("afk_timeout", "300").toInt(&afk_timeout_conversion_success);
     if (!afk_timeout_conversion_success)
         afk_timeout = 300;
+    bool multiclient_limit_conversion_success;
+    multiclient_limit = config.value("multiclient_limit", "15").toInt(&multiclient_limit_conversion_success);
+    if (!multiclient_limit_conversion_success)
+        multiclient_limit = 15;
     config.endGroup();
 
     //Load dice values

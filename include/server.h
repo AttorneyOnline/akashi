@@ -281,6 +281,11 @@ class Server : public QObject {
      */
     QStringList gimp_list;
 
+    /**
+     * @brief Integer representing the maximum number of clients allowed to connect from the same IP
+     */
+    int multiclient_limit;
+
   public slots:
     /**
      * @brief Handles a new connection.
