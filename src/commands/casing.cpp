@@ -107,7 +107,6 @@ void AOClient::cmdTestify(int argc, QStringList argv)
     }
     else {
         clearTestimony();
-        area->statement = 0;
         area->test_rec = AreaData::TestimonyRecording::RECORDING;
         sendServerMessage("Started testimony recording.");
     }
@@ -157,6 +156,7 @@ void AOClient::cmdDeleteStatement(int argc, QStringList argv)
     }
     if (c_statement > 0 && area->testimony.size() > 2) {
         area->testimony.remove(c_statement);
+        area->statement = c_statement - 1;
         sendServerMessage("The statement with id " + QString::number(c_statement) + " has been deleted from the testimony.");
     }
 }
