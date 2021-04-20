@@ -2049,6 +2049,11 @@ class AOClient : public QObject {
      * @param incoming_message QString to be decoded.
      */
     QString decodeMessage(QString incoming_message);
+
+    /**
+     * @brief The size, in bytes, of the last data the client sent to the server.
+     */
+    int last_read;
 };
 
 #endif // AOCLIENT_H
