@@ -180,9 +180,14 @@ void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket p
     ooc_name = dezalgo(argv[0]).replace(QRegExp("\\[|\\]|\\{|\\}|\\#|\\$|\\%|\\&"), ""); // no fucky wucky shit here
     if (ooc_name.isEmpty() || ooc_name == server->server_name) // impersonation & empty name protection
         return;
+
+    if (ooc_name.length() > 30) {
+        sendServerMessage("Your name is too long! Please limit it to under 30 characters.");
+        return;
+    }
     
     QString message = dezalgo(argv[1]);
-    if (message.length() == 0)
+    if (message.length() == 0 || message.length() > server->max_chars)
         return;
     AOPacket final_packet("CT", {ooc_name, message, "0"});
     if(message.at(0) == '/') {
@@ -456,7 +461,6 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     // and outgoing packets are different. Just RTFM.
 
     AOPacket invalid("INVALID", {});
-
     QStringList args;
     if (current_char == "" || !joined)
         // Spectators cannot use IC
@@ -501,6 +505,9 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     args.append(emote);
 
     // message text
+    if (incoming_args[4].toString().size() > server->max_chars)
+        return invalid;
+
     QString incoming_msg = dezalgo(incoming_args[4].toString().trimmed());
     if (!area->last_ic_message.isEmpty()
             && incoming_msg == area->last_ic_message[4]
@@ -607,6 +614,15 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     if (incoming_args.length() > 15) {
         // showname
         QString incoming_showname = dezalgo(incoming_args[15].toString().trimmed());
+        if (!(incoming_showname == current_char || incoming_showname.isEmpty()) && !area->showname_allowed) {
+            sendServerMessage("Shownames are not allowed in this area!");
+            return invalid;
+        }
+        if (incoming_showname.length() > 30) {
+            sendServerMessage("Your showname is too long! Please limit it to under 30 characters");
+            return invalid;
+        }
+
         // if the raw input is not empty but the trimmed input is, use a single space
         if (incoming_showname.isEmpty() && !incoming_args[15].toString().isEmpty())
             incoming_showname = " ";

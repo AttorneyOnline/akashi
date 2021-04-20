@@ -73,6 +73,10 @@ void AOClient::handlePacket(AOPacket packet)
     AreaData* area = server->areas[current_area];
     PacketInfo info = packets.value(packet.header, {false, 0, &AOClient::pktDefault});
 
+    if (packet.contents.join("").size() > 16384) {
+        return;
+    }
+
     if (!checkAuth(info.acl_mask)) {
         return;
     }

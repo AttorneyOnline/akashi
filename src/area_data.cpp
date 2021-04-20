@@ -41,6 +41,7 @@ AreaData::AreaData(QString p_name, int p_index) :
     blankposting_allowed = areas_ini.value("blankposting_allowed","true").toBool();
     force_immediate = areas_ini.value("force_immediate", "false").toBool();
     toggle_music = areas_ini.value("toggle_music", "true").toBool();
+    showname_allowed = areas_ini.value("shownames_allowed", "true").toBool();
     areas_ini.endGroup();
     QSettings config_ini("config/config.ini", QSettings::IniFormat);
     config_ini.beginGroup("Options");
