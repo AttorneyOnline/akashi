@@ -19,7 +19,12 @@
 
 void AOClient::clientData()
 {
+    if (last_read + socket->bytesAvailable() > 30720) { // Client can send a max of 30KB to the server over two sequential reads
+        socket->close();
+    }
+
     QString data = QString::fromUtf8(socket->readAll());
+    last_read = data.size();
 
     if (is_partial) {
         data = partial_packet + data;
@@ -72,6 +77,10 @@ void AOClient::handlePacket(AOPacket packet)
 #endif
     AreaData* area = server->areas[current_area];
     PacketInfo info = packets.value(packet.header, {false, 0, &AOClient::pktDefault});
+
+    if (packet.contents.join("").size() > 16384) {
+        return;
+    }
 
     if (!checkAuth(info.acl_mask)) {
         return;
