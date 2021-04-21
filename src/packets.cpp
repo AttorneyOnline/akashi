@@ -734,7 +734,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         if (args[5] != "wit")
             return AOPacket("MS", args);
 
-        if (area->statement == 0) {
+        if (area->statement == -1) {
             args[4] = "~~\\n-- " + args[4] + " --";
             args[14] = "3";
             server->broadcast(AOPacket("RT",{"testimony1"}), current_area);
