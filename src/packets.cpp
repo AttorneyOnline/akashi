@@ -322,6 +322,7 @@ void AOClient::pktModCall(AreaData* area, int argc, QStringList argv, AOPacket p
             client->sendPacket(packet);
     }
     area->logger->logModcall(this, &packet);
+    area->logger->flush();
 }
 
 void AOClient::pktAddEvidence(AreaData* area, int argc, QStringList argv, AOPacket packet)
