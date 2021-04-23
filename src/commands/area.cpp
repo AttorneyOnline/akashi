@@ -291,7 +291,7 @@ void AOClient::cmdStatus(int argc, QStringList argv)
         return;
     }
     arup(ARUPType::STATUS, true);
-    sendServerMessage(ooc_name + " changed status to " + arg);
+    sendServerMessageArea(ooc_name + " changed status to " + arg);
 }
 
 void AOClient::cmdJudgeLog(int argc, QStringList argv)
