@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
 {
     QCoreApplication app(argc, argv);
     QCoreApplication::setApplicationName("akashi");
-    QCoreApplication::setApplicationVersion("apricot r3 prerelease");
+    QCoreApplication::setApplicationVersion("banana");
     std::atexit(cleanup);
 
     ConfigManager config_manager;
