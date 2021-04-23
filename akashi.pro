@@ -1,4 +1,7 @@
 TEMPLATE = subdirs
 
 SUBDIRS += \
-  akashi
+  akashi \
+  lib
+
+akashi.depends = lib

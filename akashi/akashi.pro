@@ -23,39 +23,12 @@ MOC_DIR = $$PWD/../build
 
 RC_ICONS = resource/icon/akashi.ico
 
-# Enable this to print network messages tothe console
-#DEFINES += NET_DEBUG
+SOURCES += main.cpp
 
-SOURCES += src/advertiser.cpp \
-    src/aoclient.cpp \
-    src/aopacket.cpp \
-    src/area_data.cpp \
-    src/commands/area.cpp \
-    src/commands/authentication.cpp \
-    src/commands/casing.cpp \
-    src/commands/command_helper.cpp \
-    src/commands/messaging.cpp \
-    src/commands/moderation.cpp \
-    src/commands/music.cpp \
-    src/commands/roleplay.cpp \
-    src/config_manager.cpp \
-    src/db_manager.cpp \
-    src/logger.cpp \
-    src/main.cpp \
-    src/packets.cpp \
-    src/server.cpp \
-    src/testimony_recorder.cpp \
-    src/ws_client.cpp \
-    src/ws_proxy.cpp
+# Include the akashi library
+win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../lib/release/ -llib
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../lib/debug/ -llib
+else:unix: LIBS += -L$$OUT_PWD/../lib/ -llib
 
-
-HEADERS += include/advertiser.h \
-    include/aoclient.h \
-    include/aopacket.h \
-    include/area_data.h \
-    include/config_manager.h \
-    include/db_manager.h \
-    include/logger.h \
-    include/server.h \
-    include/ws_client.h \
-    include/ws_proxy.h
+INCLUDEPATH += $$PWD/../lib
+DEPENDPATH += $$PWD/../lib
