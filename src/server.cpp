@@ -53,6 +53,13 @@ void Server::start()
 
     loadServerConfig();
     loadCommandConfig();
+
+    if (webhook_enabled) {
+        discord = new Discord(this, this);
+        connect(this, &Server::webhookRequest,
+                discord, &Discord::postModcallWebhook);
+
+    }
     
     proxy = new WSProxy(port, ws_port, this);
     if(ws_port != -1)
@@ -290,6 +297,11 @@ void Server::loadServerConfig()
     dice_value = config.value("value_type", "100").toInt();
     max_dice = config.value("max_dice","100").toInt();
     config.endGroup();
+
+    //Load discord webhook
+    config.beginGroup("Discord");
+    webhook_enabled = config.value("webhook_enabled", "false").toBool();
+    webhook_url = config.value("webhook_url", "Your webhook url here.").toString();
 }
 
 Server::~Server()
