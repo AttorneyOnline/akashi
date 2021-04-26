@@ -282,6 +282,11 @@ class AOClient : public QObject {
      */
     bool testimony_saving = false;
 
+    /**
+     * @brief If true, the client's next OOC message will be interpreted as a moderator login.
+     */
+    bool is_logging_in = false;
+
   public slots:
     /**
      * @brief A slot for when the client disconnects from the server.
@@ -1869,7 +1874,7 @@ class AOClient : public QObject {
       * See @ref CommandInfo "the type's documentation" for more details.
       */
     const QMap<QString, CommandInfo> commands {
-        {"login",              {ACLFlags.value("NONE"),         1, &AOClient::cmdLogin}},
+        {"login",              {ACLFlags.value("NONE"),         0, &AOClient::cmdLogin}},
         {"getareas",           {ACLFlags.value("NONE"),         0, &AOClient::cmdGetAreas}},
         {"getarea",            {ACLFlags.value("NONE"),         0, &AOClient::cmdGetArea}},
         {"ban",                {ACLFlags.value("BAN"),          2, &AOClient::cmdBan}},
@@ -2054,6 +2059,13 @@ class AOClient : public QObject {
      * @brief The size, in bytes, of the last data the client sent to the server.
      */
     int last_read;
+
+    /**
+     * @brief A helper function for logging in a client as moderator.
+     *
+     * @param message The OOC message the client has sent.
+     */
+    void loginAttempt(QString message);
 };
 
 #endif // AOCLIENT_H
