@@ -26,8 +26,8 @@ RC_ICONS = resource/icon/akashi.ico
 SOURCES += main.cpp
 
 # Include the akashi library
-win32: LIBS += -L$$PWD/../bin/ -llib
-else:unix: LIBS += -L$$PWD/../bin/ -llib
+win32: LIBS += -L$$PWD/../bin/ -lcore
+else:unix: LIBS += -L$$PWD/../bin/ -lcore
 
-INCLUDEPATH += $$PWD/../lib
-DEPENDPATH += $$PWD/../lib
+INCLUDEPATH += $$PWD/../core
+DEPENDPATH += $$PWD/../core
