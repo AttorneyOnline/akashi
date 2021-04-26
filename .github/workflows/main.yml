@@ -28,6 +28,12 @@ jobs:
           qmake
           make
           mv bin/config_sample bin/config
+
+      - name: Run tests
+        run |
+          for test in bin_tests/; do
+            ./$test
+          done;
           
       - name: Upload binary
         uses: actions/upload-artifact@v2
@@ -52,6 +58,12 @@ jobs:
           nmake
           windeployqt bin\akashi.exe --release --no-opengl-sw
           mv bin\config_sample bin\config
+
+      - name: Run tests
+        run |
+          for test in bin_tests/; do
+            ./$test
+          done;
           
       - name: Upload zip
         uses: actions/upload-artifact@v2
