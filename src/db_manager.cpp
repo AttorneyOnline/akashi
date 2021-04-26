@@ -156,7 +156,7 @@ QList<DBManager::BanInfo> DBManager::getRecentBans()
 {
     QList<BanInfo> return_list;
     QSqlQuery query;
-    query.prepare("SELECT TOP(5) * FROM BANS ORDER BY TIME DESC");
+    query.prepare("SELECT * FROM BANS ORDER BY TIME DESC LIMIT 5");
     query.setForwardOnly(true);
     query.exec();
     while (query.next()) {
