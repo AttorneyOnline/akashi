@@ -686,11 +686,9 @@ class AOClient : public QObject {
     ///@{
 
     /**
-     * @brief Logs the user in as a moderator.
+     * @brief Sets the client to be in the process of logging in, setting is_logging_in to **true**.
      *
-     * @details If the authorisation type is `"simple"`, then this command expects one argument, the **global moderator password**.
-     *
-     * If the authorisation type is `"advanced"`, then it requires two arguments, the **moderator's username** and the **matching password**.
+     * @details No arguments.
      *
      * @iscommand
      */
