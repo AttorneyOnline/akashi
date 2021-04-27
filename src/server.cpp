@@ -290,6 +290,10 @@ void Server::loadServerConfig()
     multiclient_limit = config.value("multiclient_limit", "15").toInt(&multiclient_limit_conversion_success);
     if (!multiclient_limit_conversion_success)
         multiclient_limit = 15;
+    bool max_char_conversion_success;
+    max_chars = config.value("maximum_characters", "256").toInt(&max_char_conversion_success);
+    if (!max_char_conversion_success)
+        max_chars = 256;
     config.endGroup();
 
     //Load dice values

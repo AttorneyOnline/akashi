@@ -25,6 +25,9 @@ AOPacket::AOPacket(QString p_header, QStringList p_contents)
 
 AOPacket::AOPacket(QString p_packet)
 {
+    if (p_packet.isEmpty())
+        return;
+
     QStringList packet_contents = p_packet.split("#");
     if (p_packet.at(0) == '#') {
         // The header is encrypted with FantaCrypt

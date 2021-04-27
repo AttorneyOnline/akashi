@@ -23,15 +23,15 @@ void AOClient::addStatement(QStringList packet)
 {
     AreaData* area = server->areas[current_area];
     int c_statement = area->statement;
-    if (c_statement >= 0) {
+    if (c_statement >= -1) {
         if (area->test_rec == AreaData::TestimonyRecording::RECORDING) {
             if (c_statement <= server->maximum_statements) {
-                if (c_statement == 0)
+                if (c_statement == -1)
                     packet[14] = "3";
                 else
                     packet[14] = "1";
-                area->testimony.append(packet);
                 area->statement = c_statement + 1;
+                area->testimony.append(packet);
                 return;
             }
             else {
@@ -70,6 +70,7 @@ void AOClient::clearTestimony()
 {
     AreaData* area = server->areas[current_area];
     area->test_rec = AreaData::TestimonyRecording::STOPPED;
+    area->statement = -1;
     area->testimony.clear(); //!< Empty out the QVector
     area->testimony.squeeze(); //!< Release memory. Good idea? God knows, I do not.
 }

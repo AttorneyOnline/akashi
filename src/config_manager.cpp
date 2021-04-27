@@ -21,6 +21,7 @@
 bool ConfigManager::initConfig()
 {
     QSettings config("config/config.ini", QSettings::IniFormat);
+    config.setIniCodec("UTF-8");
     QFileInfo config_dir_info("config/");
     if (!config_dir_info.exists() || !config_dir_info.isDir()) {
         qCritical() << "Config directory doesn't exist!";
@@ -39,6 +40,7 @@ bool ConfigManager::initConfig()
     }
     else {
         QSettings areas_ini("config/areas.ini", QSettings::IniFormat);
+        areas_ini.setIniCodec("UTF-8");
         if (areas_ini.childGroups().length() < 1) {
             qCritical() << "areas.ini is invalid!";
             return false;
@@ -105,6 +107,7 @@ bool ConfigManager::initConfig()
 bool ConfigManager::updateConfig(int current_version)
 {
     QSettings config("config/config.ini", QSettings::IniFormat);
+    config.setIniCodec("UTF-8");
     if (current_version > CONFIG_VERSION) {
         // Config version is newer than the latest version, and the config is
         // invalid This could also mean the server is out of date, and the user
@@ -137,6 +140,7 @@ bool ConfigManager::updateConfig(int current_version)
 bool ConfigManager::loadServerSettings(server_settings* settings)
 {
     QSettings config("config/config.ini", QSettings::IniFormat);
+    config.setIniCodec("UTF-8");
     bool port_conversion_success;
     bool ws_port_conversion_success;
     bool local_port_conversion_success;

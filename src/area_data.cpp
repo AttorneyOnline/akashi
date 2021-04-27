@@ -32,6 +32,7 @@ AreaData::AreaData(QString p_name, int p_index) :
     name_split.removeFirst();
     name = name_split.join(":");
     QSettings areas_ini("config/areas.ini", QSettings::IniFormat);
+    areas_ini.setIniCodec("UTF-8");
     areas_ini.beginGroup(p_name);
     background = areas_ini.value("background", "gs4").toString();
     is_protected = areas_ini.value("protected_area", "false").toBool();
@@ -41,8 +42,10 @@ AreaData::AreaData(QString p_name, int p_index) :
     blankposting_allowed = areas_ini.value("blankposting_allowed","true").toBool();
     force_immediate = areas_ini.value("force_immediate", "false").toBool();
     toggle_music = areas_ini.value("toggle_music", "true").toBool();
+    showname_allowed = areas_ini.value("shownames_allowed", "true").toBool();
     areas_ini.endGroup();
     QSettings config_ini("config/config.ini", QSettings::IniFormat);
+    config_ini.setIniCodec("UTF-8");
     config_ini.beginGroup("Options");
     int log_size = config_ini.value("logbuffer", 50).toInt();
     log_type = config_ini.value("logger","modcall").toString();

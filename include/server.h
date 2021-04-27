@@ -303,6 +303,11 @@ class Server : public QObject {
      */
     int multiclient_limit;
 
+    /**
+     * @brief Integer representing the maximum amount of characters an IC or OOC message can contain.
+     */
+    int max_chars;
+
   public slots:
     /**
      * @brief Handles a new connection.
