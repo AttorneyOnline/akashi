@@ -302,6 +302,7 @@ void Server::loadServerConfig()
     config.beginGroup("Discord");
     webhook_enabled = config.value("webhook_enabled", "false").toBool();
     webhook_url = config.value("webhook_url", "Your webhook url here.").toString();
+    webhook_sendfile = config.value("webhook_sendfile", false).toBool();
 }
 
 Server::~Server()

@@ -46,8 +46,9 @@ public slots:
      * @param name The character or OOC name of the client who sent the modcall.
      * @param area The area name of the area the modcall was sent from.
      * @param reason The reason the client specified for the modcall.
+     * @param current_area The index of the area the modcall is made.
      */
-    void postModcallWebhook(QString name, QString area, QString reason);
+    void postModcallWebhook(QString name, QString area, QString reason, int current_area);
 
 private:
 

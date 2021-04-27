@@ -250,6 +250,11 @@ class Server : public QObject {
     QString webhook_url;
 
     /**
+     * @brief If the modcall buffer is send as a file.
+     */
+    bool webhook_sendfile;
+
+    /**
      * @brief The server-wide global timer.
      */
     QTimer* timer;
@@ -323,8 +328,9 @@ class Server : public QObject {
      * @param name The character or OOC name of the client who sent the modcall.
      * @param area_name The name of the area the modcall was sent from.
      * @param reason The reason the client specified for the modcall.
+     * @param
      */
-    void webhookRequest(QString name, QString area_name, QString reason);
+    void webhookRequest(QString name, QString area_name, QString reason, int current_area);
 
   private:
     /**

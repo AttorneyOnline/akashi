@@ -328,8 +328,9 @@ void AOClient::pktModCall(AreaData* area, int argc, QStringList argv, AOPacket p
         if (ooc_name.isEmpty())
             name = current_char;
 
-        server->webhookRequest(name, area->name, packet.contents[0]);
+        server->webhookRequest(name, area->name, packet.contents[0], current_area);
     }
+    area->logger->flush();
 }
 
 void AOClient::pktAddEvidence(AreaData* area, int argc, QStringList argv, AOPacket packet)

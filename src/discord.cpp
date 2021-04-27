@@ -17,17 +17,22 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/discord.h"
 
-void Discord::postModcallWebhook(QString name, QString area, QString reason)
+void Discord::postModcallWebhook(QString name, QString area, QString reason, int current_area)
 {
     if (!QUrl (server->webhook_url).isValid()) {
         qWarning() << "Invalid webhook url!";
         return;
     }
+
     QNetworkRequest request(QUrl (server->webhook_url));
-    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+    QNetworkAccessManager* nam = new QNetworkAccessManager();
+    connect(nam, &QNetworkAccessManager::finished,
+            this, &Discord::onFinish);
 
     // This is the kind of garbage Qt makes me write.
     // I am so tired. Qt has broken me.
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
     QJsonObject json;
     QJsonArray jsonArray;
     QJsonObject jsonObject {
@@ -35,15 +40,29 @@ void Discord::postModcallWebhook(QString name, QString area, QString reason)
         {"title", name + " filed a modcall in " + area},
         {"description", reason}
     };
-
     jsonArray.append(jsonObject);
     json["embeds"] = jsonArray;
 
-    QNetworkAccessManager* nam = new QNetworkAccessManager();
-    connect(nam, &QNetworkAccessManager::finished,
-            this, &Discord::onFinish);
-
     nam->post(request, QJsonDocument(json).toJson());
+
+    if (server->areas[current_area]->log_type == "modcall" && server->webhook_sendfile) {
+        QHttpMultiPart* construct = new QHttpMultiPart();
+        request.setHeader(QNetworkRequest::ContentTypeHeader, "multipart/form-data; boundary=" + construct->boundary());
+
+        //This cost me two days of my life. Thanks Qt and Discord. You have broken me.
+        QHttpPart file;
+        file.setRawHeader(QByteArray("Content-Disposition"), QByteArray("form-data; name=\"file\"; filename=\"log.txt\""));
+        file.setRawHeader(QByteArray("Content-Type"), QByteArray("plain/text"));
+        QQueue<QString> buffer = server->areas[current_area]->logger->getBuffer(); // I feel no shame for doing this
+        QString log;
+        while (!buffer.isEmpty()) {
+            log.append(buffer.dequeue() + "\n");
+        }
+        file.setBody(log.toUtf8());
+        construct->append(file);
+
+        nam->post(request, construct);
+    }
 }
 
 void Discord::onFinish(QNetworkReply *reply)
