@@ -45,7 +45,7 @@ void Discord::postModcallWebhook(QString name, QString reason, int current_area)
 
     nam->post(request, QJsonDocument(json).toJson());
 
-    if (server->areas[current_area]->log_type == "modcall" && server->webhook_sendfile) {
+    if (server->webhook_sendfile) {
         QHttpMultiPart* construct = new QHttpMultiPart();
         request.setHeader(QNetworkRequest::ContentTypeHeader, "multipart/form-data; boundary=" + construct->boundary());
 
