@@ -114,7 +114,7 @@ void Logger::flush()
     logfile.close();
 }
 
-const QQueue<QString>& Logger::getBuffer() const
+QQueue<QString> Logger::getBuffer()
 {
     return buffer;
 }

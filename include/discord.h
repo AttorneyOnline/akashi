@@ -20,7 +20,9 @@
 
 #include <QtNetwork>
 #include <QCoreApplication>
-#include "area_data.h"
+#include "server.h"
+
+class Server;
 
 class Discord : public QObject {
     Q_OBJECT
@@ -32,24 +34,9 @@ public:
      * @param p_server A pointer to the Server instance Discord is constructed by.
      * @param parent Qt-based parent, passed along to inherited constructor from QObject.
      */
-    Discord(QObject* parent = nullptr)
-        : QObject(parent) {
+    Discord(Server* p_server, QObject* parent = nullptr)
+        : QObject(parent), server(p_server) {
     };
-
-    /**
-     * @brief Whether discord webhooks are enabled on this server.
-     */
-    bool webhook_enabled;
-
-    /**
-     * @brief Requires link to be https and that both WebhookID and WebhookToken are present, if used for Discord.
-     */
-    QString webhook_url;
-
-    /**
-     * @brief If the modcall buffer is sent as a file.
-     */
-    bool webhook_sendfile;
 
 public slots:
 
@@ -61,7 +48,16 @@ public slots:
      * @param reason The reason the client specified for the modcall.
      * @param current_area The index of the area the modcall is made.
      */
-    void postModcallWebhook(QString name, QString reason, AreaData* area);
+    void postModcallWebhook(QString name, QString area, QString reason, int current_area);
+
+private:
+
+    /**
+     * @brief A pointer to the Server.
+     */
+    Server* server;
+
+private slots:
 
     /**
      * @brief Sends the reply to the POST request sent by Discord::postModcallWebhook.

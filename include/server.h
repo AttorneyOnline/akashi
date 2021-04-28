@@ -184,11 +184,6 @@ class Server : public QObject {
     DBManager* db_manager;
 
     /**
-     * @brief Handles discord webhooks.
-     */
-    Discord* discord;
-
-    /**
      * @brief The max amount of players on the server.
      */
     QString max_players;
@@ -243,6 +238,21 @@ class Server : public QObject {
      * @brief The amount of time in seconds to wait before marking a user AFK.
      */
     int afk_timeout;
+
+    /**
+     * @brief Whether discord webhooks are enabled on this server.
+     */
+    bool webhook_enabled;
+
+    /**
+     * @brief The URL of the discord webhook.
+     */
+    QString webhook_url;
+
+    /**
+     * @brief If the modcall buffer is send as a file.
+     */
+    bool webhook_sendfile;
 
     /**
      * @brief The server-wide global timer.
@@ -321,10 +331,11 @@ class Server : public QObject {
      * @brief Sends a modcall webhook request, emitted by AOClient::pktModcall.
      *
      * @param name The character or OOC name of the client who sent the modcall.
+     * @param area_name The name of the area the modcall was sent from.
      * @param reason The reason the client specified for the modcall.
-     * @param current_area Integer ID of the area the modcall was send.
+     * @param
      */
-    void webhookRequest(QString name, QString reason, AreaData* area);
+    void webhookRequest(QString name, QString area_name, QString reason, int current_area);
 
   private:
     /**
@@ -348,6 +359,11 @@ class Server : public QObject {
      * @brief The port through which the server will accept WebSocket connections.
      */
     int ws_port;
+
+    /**
+     * @brief Handles discord webhooks.
+     */
+    Discord* discord;
 };
 
 #endif // SERVER_H

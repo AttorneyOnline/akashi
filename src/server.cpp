@@ -304,10 +304,9 @@ void Server::loadServerConfig()
 
     //Load discord webhook
     config.beginGroup("Discord");
-    discord->webhook_enabled = config.value("webhook_enabled", "false").toBool();
-    discord->webhook_url = config.value("webhook_url", "Your webhook url here.").toString();
-    discord->webhook_sendfile = config.value("webhook_sendfile", false).toBool();
-    config.endGroup();
+    webhook_enabled = config.value("webhook_enabled", "false").toBool();
+    webhook_url = config.value("webhook_url", "Your webhook url here.").toString();
+    webhook_sendfile = config.value("webhook_sendfile", false).toBool();
 }
 
 Server::~Server()
