@@ -521,6 +521,9 @@ class AOClient : public QObject {
     /// Implements [announcing a case](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#case-alert).
     void pktAnnounceCase(AreaData* area, int argc, QStringList argv, AOPacket packet);
 
+    ///
+    void pktLogin(AreaData* area, int argc, QStringList argv, AOPacket packet);
+
     ///@}
 
     /**
@@ -673,6 +676,7 @@ class AOClient : public QObject {
         {"EE",      {ACLFlags.value("NONE"), 4,  &AOClient::pktEditEvidence   }},
         {"SETCASE", {ACLFlags.value("NONE"), 7,  &AOClient::pktSetCase        }},
         {"CASEA",   {ACLFlags.value("NONE"), 6,  &AOClient::pktAnnounceCase   }},
+        {"AUTH",    {ACLFlags.value("NONE"), 2,  &AOClient::pktLogin          }},
     };
 
     /**
