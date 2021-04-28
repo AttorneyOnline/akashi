@@ -17,7 +17,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/discord.h"
 
-void Discord::postModcallWebhook(QString name, QString area, QString reason, int current_area)
+void Discord::postModcallWebhook(QString name, QString reason, int current_area)
 {
     if (!QUrl (server->webhook_url).isValid()) {
         qWarning() << "Invalid webhook url!";
@@ -37,7 +37,7 @@ void Discord::postModcallWebhook(QString name, QString area, QString reason, int
     QJsonArray jsonArray;
     QJsonObject jsonObject {
         {"color", "13312842"},
-        {"title", name + " filed a modcall in " + area},
+        {"title", name + " filed a modcall in " + server->areas[current_area]->name},
         {"description", reason}
     };
     jsonArray.append(jsonObject);

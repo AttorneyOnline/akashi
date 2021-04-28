@@ -245,12 +245,12 @@ class Server : public QObject {
     bool webhook_enabled;
 
     /**
-     * @brief The URL of the discord webhook.
+     * @brief Requires an https Webhook link, including both ID and Token in the link.
      */
     QString webhook_url;
 
     /**
-     * @brief If the modcall buffer is send as a file.
+     * @brief If the modcall buffer is sent as a file.
      */
     bool webhook_sendfile;
 
@@ -331,11 +331,10 @@ class Server : public QObject {
      * @brief Sends a modcall webhook request, emitted by AOClient::pktModcall.
      *
      * @param name The character or OOC name of the client who sent the modcall.
-     * @param area_name The name of the area the modcall was sent from.
      * @param reason The reason the client specified for the modcall.
-     * @param
+     * @param current_area Integer ID of the area the modcall is made.
      */
-    void webhookRequest(QString name, QString area_name, QString reason, int current_area);
+    void webhookRequest(QString name, QString reason, int current_area);
 
   private:
     /**

@@ -48,7 +48,12 @@ public slots:
      * @param reason The reason the client specified for the modcall.
      * @param current_area The index of the area the modcall is made.
      */
-    void postModcallWebhook(QString name, QString area, QString reason, int current_area);
+    void postModcallWebhook(QString name, QString reason, int current_area);
+
+    /**
+     * @brief Sends the reply to the POST request sent by Discord::postModcallWebhook.
+     */
+    void onFinish(QNetworkReply *reply);
 
 private:
 
@@ -56,13 +61,6 @@ private:
      * @brief A pointer to the Server.
      */
     Server* server;
-
-private slots:
-
-    /**
-     * @brief Sends the reply to the POST request sent by Discord::postModcallWebhook.
-     */
-    void onFinish(QNetworkReply *reply);
 
 };
 
