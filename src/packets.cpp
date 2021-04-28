@@ -328,12 +328,12 @@ void AOClient::pktModCall(AreaData* area, int argc, QStringList argv, AOPacket p
     }
     area->logger->logModcall(this, &packet);
 
-    if (server->webhook_enabled) {
+    if (server->discord->webhook_enabled) {
         QString name = ooc_name;
         if (ooc_name.isEmpty())
             name = current_char;
 
-        server->webhookRequest(name, area->name, packet.contents[0], current_area);
+        server->webhookRequest(name, packet.contents[0], area);
     }
     area->logger->flush();
 }

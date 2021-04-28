@@ -101,7 +101,7 @@ public:
     /**
      *@brief Returns the current area buffer
      */
-    QQueue<QString> getBuffer();
+    const QQueue<QString>& getBuffer() const;
 
 private:
     /**

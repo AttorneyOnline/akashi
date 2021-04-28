@@ -17,14 +17,13 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/discord.h"
 
-void Discord::postModcallWebhook(QString name, QString area, QString reason, int current_area)
+void Discord::postModcallWebhook(QString name, QString reason, AreaData* area)
 {
-    if (!QUrl (server->webhook_url).isValid()) {
+    if (!QUrl (webhook_url).isValid()) {
         qWarning() << "Invalid webhook url!";
         return;
     }
-
-    QNetworkRequest request(QUrl (server->webhook_url));
+    QNetworkRequest request((QUrl (webhook_url)));
     QNetworkAccessManager* nam = new QNetworkAccessManager();
     connect(nam, &QNetworkAccessManager::finished,
             this, &Discord::onFinish);
@@ -37,7 +36,7 @@ void Discord::postModcallWebhook(QString name, QString area, QString reason, int
     QJsonArray jsonArray;
     QJsonObject jsonObject {
         {"color", "13312842"},
-        {"title", name + " filed a modcall in " + area},
+        {"title", name + " filed a modcall in " + area->name},
         {"description", reason}
     };
     jsonArray.append(jsonObject);
@@ -45,7 +44,7 @@ void Discord::postModcallWebhook(QString name, QString area, QString reason, int
 
     nam->post(request, QJsonDocument(json).toJson());
 
-    if (server->areas[current_area]->log_type == "modcall" && server->webhook_sendfile) {
+    if (area->log_type == "modcall" && webhook_sendfile) {
         QHttpMultiPart* construct = new QHttpMultiPart();
         request.setHeader(QNetworkRequest::ContentTypeHeader, "multipart/form-data; boundary=" + construct->boundary());
 
@@ -53,7 +52,7 @@ void Discord::postModcallWebhook(QString name, QString area, QString reason, int
         QHttpPart file;
         file.setRawHeader(QByteArray("Content-Disposition"), QByteArray("form-data; name=\"file\"; filename=\"log.txt\""));
         file.setRawHeader(QByteArray("Content-Type"), QByteArray("plain/text"));
-        QQueue<QString> buffer = server->areas[current_area]->logger->getBuffer(); // I feel no shame for doing this
+        QQueue<QString> buffer = area->logger->getBuffer(); // I feel no shame for doing this
         QString log;
         while (!buffer.isEmpty()) {
             log.append(buffer.dequeue() + "\n");
