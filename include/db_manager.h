@@ -248,6 +248,15 @@ public:
      */
     QList<BanInfo> getBanInfo(QString lookup_type, QString id);
 
+    /**
+     * @brief Verifies the existence of a username in the database.
+     *
+     * @param username The username to look up.
+     *
+     * @return Returns a stringlist containing the username's salted password and its salt, or "INVALID" if it was not found.
+     */
+    QStringList queryLogin(QString username);
+
 private:
     /**
      * @brief The name of the database connection driver.

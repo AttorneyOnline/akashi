@@ -48,9 +48,11 @@ void AOClient::pktSoftwareId(AreaData* area, int argc, QStringList argv, AOPacke
         "deskmod",      "evidence",           "cccc_ic_support",
         "arup",         "casing_alerts",      "modcall_reason",
         "looping_sfx",  "additive",           "effects",
-        "y_offset",     "expanded_desk_mods", "auth_packet"
+        "y_offset",     "expanded_desk_mods", "auth_packet",
+        "login_dialog"
     };
-
+    if (server->auth_type == "advanced")
+        feature_list.append("username_auth");
 
     version.string = argv[1];
     QRegularExpression rx("\\b(\\d+)\\.(\\d+)\\.(\\d+)\\b"); // matches X.X.X (e.g. 2.9.0, 2.4.10, etc.)
@@ -417,53 +419,61 @@ void AOClient::pktAnnounceCase(AreaData* area, int argc, QStringList argv, AOPac
     }
 }
 
-void AOClient::pktLogin(AreaData *area, int argc, QStringList argv, AOPacket packet)
+void AOClient::pktLoginRequest(AreaData *area, int argc, QStringList argv, AOPacket packet)
 {
-    if (authenticated) {
-        sendServerMessage("You are already logged in!");
-        return;
+    QString challenge = QString::number(AOClient::generateLoginChallenge());
+    QMessageAuthenticationCode hmac(QCryptographicHash::Sha256);
+    if (argv[0].isEmpty()) {
+        hmac.setKey(server->modpass.toUtf8());
+        hmac.addData(challenge.toUtf8());
+        sendPacket(AOPacket("CR", {challenge, ""}));
     }
-
-    if (server->auth_type == "simple") {
-        if (server->modpass == "") {
-            sendServerMessage("No modpass is set! Please set a modpass before authenticating.");
-        }
-        else if(argv[1] == server->modpass) {
-            sendPacket("AUTH", {"1"}); // Client: "You were granted the Disable Modcalls button."
-            sendServerMessage("Logged in as a moderator."); // pre-2.9.1 clients are hardcoded to display the mod UI when this string is sent in OOC
-            authenticated = true;
-        }
-        else {
+    else {
+        requested_username = argv[0];
+        QStringList db_query = server->db_manager->queryLogin(requested_username);
+        if (db_query.contains("INVALID")) {
             sendPacket("AUTH", {"0"}); // Client: "Login unsuccessful."
-            sendServerMessage("Incorrect password.");
-        }
-        server->areas.value(current_area)->logger->logLogin(this, authenticated, "moderator");
-    }
-    else if (server->auth_type == "advanced") {
-        if (argc < 2) {
-            sendServerMessage("You must specify a username and a password");
+            sendServerMessage("Invalid username.");
             return;
         }
-        QString username = argv[0];
-        QString password = argv[1];
-        if (server->db_manager->authenticate(username, password)) {
-            moderator_name = username;
+        QString salt = db_query[0];
+        QString salted_password = db_query[1];
+
+        hmac.setKey(salted_password.toUtf8());
+        hmac.addData(challenge.toUtf8());
+
+        sendPacket(AOPacket("CR", {challenge, salt}));
+    }
+    authentication_code = hmac.result().toHex();
+}
+
+void AOClient::pktLogin(AreaData *area, int argc, QStringList argv, AOPacket packet)
+{
+    if (argv[0] == authentication_code) {
+        if (server->auth_type == "advanced") {
+            moderator_name = requested_username;
+            requested_username.clear();
             authenticated = true;
             sendPacket("AUTH", {"1"}); // Client: "You were granted the Disable Modcalls button."
             if (version.release <= 2 && version.major <= 9 && version.minor <= 0)
                 sendServerMessage("Logged in as a moderator."); // pre-2.9.1 clients are hardcoded to display the mod UI when this string is sent in OOC
-            sendServerMessage("Welcome, " + username);
+            sendServerMessage("Welcome, " + moderator_name);
+            server->areas.value(current_area)->logger->logLogin(this, authenticated, moderator_name);
         }
         else {
-            sendPacket("AUTH", {"0"}); // Client: "Login unsuccessful."
-            sendServerMessage("Incorrect password.");
+            authenticated = true;
+            sendPacket("AUTH", {"1"}); // Client: "You were granted the Disable Modcalls button."
+            if (version.release <= 2 && version.major <= 9 && version.minor <= 0)
+                sendServerMessage("Logged in as a moderator."); // pre-2.9.1 clients are hardcoded to display the mod UI when this string is sent in OOC
+            server->areas.value(current_area)->logger->logLogin(this, authenticated, "moderator");
         }
-        server->areas.value(current_area)->logger->logLogin(this, authenticated, username);
     }
+
     else {
-        qWarning() << "config.ini has an unrecognized auth_type!";
-        sendServerMessage("Config.ini contains an invalid auth_type, please check your config.");
+        sendPacket("AUTH", {"0"}); // Client: "Login unsuccessful."
+        sendServerMessage("Incorrect password.");
     }
+    authentication_code.clear();
 }
 
 void AOClient::sendEvidenceList(AreaData* area)
@@ -862,4 +872,17 @@ QString AOClient::decodeMessage(QString incoming_message)
                                              .replace("<dollar>", "$")
                                              .replace("<and>", "&");
     return decoded_message;
+}
+
+quint64 AOClient::generateLoginChallenge()
+{
+#if QT_VERSION < QT_VERSION_CHECK(5, 10, 0)
+    qsrand(QDateTime::currentMSecsSinceEpoch());
+    quint32 upper_limit = qrand();
+    quint32 lower_limit = qrand();
+    quint64 challenge = (upper_limit << 32) | lower_limit;
+#else
+    quint64 challenge = QRandomGenerator::system()->generate64();
+#endif
+    return challenge;
 }

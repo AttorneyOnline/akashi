@@ -282,6 +282,16 @@ class AOClient : public QObject {
      */
     bool testimony_saving = false;
 
+    /**
+     * @brief The username the client is attempting to login as.
+     */
+    QString requested_username;
+
+    /**
+     * @brief The authentication code the client must match in order to login as moderator.
+     */
+    QString authentication_code;
+
   public slots:
     /**
      * @brief A slot for when the client disconnects from the server.
@@ -521,7 +531,10 @@ class AOClient : public QObject {
     /// Implements [announcing a case](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#case-alert).
     void pktAnnounceCase(AreaData* area, int argc, QStringList argv, AOPacket packet);
 
-    ///
+    /// Implements [requesting login response]
+    void pktLoginRequest(AreaData* area, int argc, QStringList argv, AOPacket packet);
+
+    /// Implements [logging in]
     void pktLogin(AreaData* area, int argc, QStringList argv, AOPacket packet);
 
     ///@}
@@ -573,6 +586,13 @@ class AOClient : public QObject {
      * @return True if the client can modify the evidence, false if not.
      */
     bool checkEvidenceAccess(AreaData* area);
+
+    /**
+     * @brief Generates a secure nonce for use as a login challenge.
+     *
+     * @return See brief description.
+     */
+    quint64 generateLoginChallenge();
 
     ///@}
 
@@ -676,7 +696,8 @@ class AOClient : public QObject {
         {"EE",      {ACLFlags.value("NONE"), 4,  &AOClient::pktEditEvidence   }},
         {"SETCASE", {ACLFlags.value("NONE"), 7,  &AOClient::pktSetCase        }},
         {"CASEA",   {ACLFlags.value("NONE"), 6,  &AOClient::pktAnnounceCase   }},
-        {"AUTH",    {ACLFlags.value("NONE"), 2,  &AOClient::pktLogin          }},
+        {"RL",      {ACLFlags.value("NONE"), 1,  &AOClient::pktLoginRequest   }},
+        {"LOGIN",   {ACLFlags.value("NONE"), 1,  &AOClient::pktLogin          }},
     };
 
     /**

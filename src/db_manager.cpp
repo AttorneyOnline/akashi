@@ -361,6 +361,23 @@ QList<DBManager::BanInfo> DBManager::getBanInfo(QString lookup_type, QString id)
     return return_list;
 }
 
+QStringList DBManager::queryLogin(QString username)
+{
+    QStringList invalid("INVALID");
+    QStringList return_list;
+    QSqlQuery query("SELECT SALT, PASSWORD FROM users WHERE USERNAME = ?");
+    query.addBindValue(username);
+    query.exec();
+    if (!query.first()) {
+        return invalid;
+    }
+    else {
+        return_list.append(query.value(0).toString());
+        return_list.append(query.value(1).toString());
+        return return_list;
+    }
+}
+
 DBManager::~DBManager()
 {
     db.close();
