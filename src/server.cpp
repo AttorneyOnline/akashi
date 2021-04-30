@@ -267,10 +267,6 @@ void Server::loadServerConfig()
     MOTD = config.value("motd","MOTD is not set.").toString();
     auth_type = config.value("auth","simple").toString();
     modpass = config.value("modpass","").toString();
-    bool zalgo_tolerance_conversion_success;
-    zalgo_tolerance = config.value("zalgo_tolerance", "3").toInt(&zalgo_tolerance_conversion_success);
-    if (!zalgo_tolerance_conversion_success)
-        zalgo_tolerance = 3;
     bool maximum_statements_conversion_success;
     maximum_statements = config.value("maximum_statements", "10").toInt(&maximum_statements_conversion_success);
     if (!maximum_statements_conversion_success)

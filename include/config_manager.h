@@ -68,7 +68,6 @@ class ConfigManager {
         QString name; //!< The name of the server as advertised on the server browser.
         QString description; //!< The description of the server as advertised on the server browser.
         bool advertise_server; //!< The server will only be announced to the master server (and thus appear on the master server list) if this is true.
-        int zalgo_tolerance; //!< The amount of subscripts zalgo is stripped by.
     };
 
     /**
