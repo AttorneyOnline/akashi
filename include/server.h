@@ -218,11 +218,6 @@ class Server : public QObject {
     QString modpass;
 
     /**
-     * @brief The amount of subscripts zalgo is stripped by.
-     */
-    int zalgo_tolerance;
-
-    /**
      * @brief The highest value dice can have.
      */
     int dice_value;
