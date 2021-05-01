@@ -18,7 +18,8 @@
 #ifndef AREA_DATA_H
 #define AREA_DATA_H
 
-#include "include/logger.h"
+#include "logger.h"
+#include "aopacket.h"
 
 #include <QMap>
 #include <QString>
@@ -193,6 +194,8 @@ class AreaData : public QObject {
         PROSECUTOR,
     };
 
+    static const QMap<QString, AreaData::Status> map_statuses;
+
     /**
      * @brief A client in the area has left the area.
      *
@@ -201,6 +204,8 @@ class AreaData : public QObject {
      * @param f_charId The character ID of the area.
      */
     void clientLeftArea(int f_charId);
+
+    void clientJoinedArea(int f_charId = -1);
 
     QList<int> owners() const;
 
@@ -226,6 +231,12 @@ class AreaData : public QObject {
 
     LockStatus lockStatus() const;
 
+    void lock();
+
+    void unlock();
+
+    void spectatable();
+
     /**
      * @brief invite
      * @param f_clientId
@@ -234,8 +245,6 @@ class AreaData : public QObject {
     bool invite(int f_clientId);
 
     int playerCount() const;
-
-    void changePlayerCount(bool f_increase);
 
     QList<QTimer *> timers() const;
 
@@ -249,9 +258,9 @@ class AreaData : public QObject {
 
     Status status() const;
 
-    QList<int> invited() const;
+    bool changeStatus(const QString& f_newStatus_r);
 
-    LockStatus locked() const;
+    QList<int> invited() const;
 
     QString background() const;
 
@@ -262,6 +271,8 @@ class AreaData : public QObject {
     void toggleIniswap();
 
     bool bgLocked() const;
+
+    void toggleBgLock();
 
     QString document() const;
 
@@ -283,6 +294,8 @@ class AreaData : public QObject {
 
     void setTestimonyRecording(const TestimonyRecording &testimonyRecording);
 
+    void restartTestimony();
+
     void clearTestimony();
 
     QVector<QStringList> testimony() const;
@@ -292,6 +305,8 @@ class AreaData : public QObject {
     void recordStatement(const QStringList& f_newStatement);
 
     void addStatement(int f_position, const QStringList& f_newStatement);
+
+    void removeStatement(int f_statementNumber);
 
     std::pair<QStringList, TestimonyProgress> advanceTestimony(bool f_forward = true);
 
@@ -310,6 +325,14 @@ class AreaData : public QObject {
     bool isMusicAllowed() const;
 
     void toggleMusic();
+
+    void log(const QString& f_clientName_r, const QString& f_clientIpid_r, const AOPacket& f_packet_r) const;
+
+    void logLogin(const QString &f_clientName_r, const QString &f_clientIpid_r, bool f_success, const QString& f_modname_r) const;
+
+    void flushLogs() const;
+
+    void setEviMod(const EvidenceMod &eviMod);
 
 private:
     /**

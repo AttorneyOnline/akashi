@@ -96,7 +96,7 @@ void AOClient::pktLoadingDone(AreaData* area, int argc, QStringList argv, AOPack
     }
 
     server->player_count++;
-    area->changePlayerCount(true);
+    area->clientJoinedArea();
     joined = true;
     server->updateCharsTaken(area);
 
@@ -164,7 +164,7 @@ void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket pa
     if (pos != "")
         validated_packet.contents[5] = pos;
 
-    area->logger()->logIC(this, &validated_packet);
+    area->log(current_char, ipid, validated_packet);
     server->broadcast(validated_packet, current_area);
     area->updateLastICMessage(validated_packet.contents);
 }
@@ -195,13 +195,13 @@ void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket p
         command = command.right(command.length() - 1);
         cmd_argv.removeFirst();
         int cmd_argc = cmd_argv.length();
-        area->logger()->logCmd(this, &final_packet, command, cmd_argv);
+
         handleCommand(command, cmd_argc, cmd_argv);
     }
     else {
         server->broadcast(final_packet, current_area);
-        area->logger()->logOOC(this, &final_packet);
     }
+    area->log(current_char, ipid, final_packet);
 }
 
 void AOClient::pktPing(AreaData* area, int argc, QStringList argv, AOPacket packet)
@@ -329,8 +329,8 @@ void AOClient::pktModCall(AreaData* area, int argc, QStringList argv, AOPacket p
         if (client->authenticated)
             client->sendPacket(packet);
     }
-    area->logger()->logModcall(this, &packet);
-    area->logger()->flush();
+    area->log(current_char, ipid, packet);
+    area->flushLogs();
 }
 
 void AOClient::pktAddEvidence(AreaData* area, int argc, QStringList argv, AOPacket packet)
@@ -469,7 +469,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         // Spectators cannot use IC
         return invalid;
     AreaData* area = server->areas[current_area];
-    if (area->locked() == AreaData::LockStatus::SPECTATABLE && !area->invited().contains(id))
+    if (area->lockStatus() == AreaData::LockStatus::SPECTATABLE && !area->invited().contains(id))
         // Non-invited players cannot speak in spectatable areas
         return invalid;
 

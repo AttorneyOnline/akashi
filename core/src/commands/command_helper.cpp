@@ -32,7 +32,7 @@ QStringList AOClient::buildAreaList(int area_idx)
     QString area_name = server->area_names[area_idx];
     AreaData* area = server->areas[area_idx];
     entries.append("=== " + area_name + " ===");
-    switch (area->locked()) {
+    switch (area->lockStatus()) {
         case AreaData::LockStatus::LOCKED:
             entries.append("[LOCKED]");
             break;

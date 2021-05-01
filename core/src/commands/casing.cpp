@@ -46,13 +46,13 @@ void AOClient::cmdEvidenceMod(int argc, QStringList argv)
     AreaData* area = server->areas[current_area];
     argv[0] = argv[0].toLower();
     if (argv[0] == "cm")
-        area->eviMod() = AreaData::EvidenceMod::CM;
+        area->setEviMod(AreaData::EvidenceMod::CM);
     else if (argv[0] == "mod")
-        area->eviMod() = AreaData::EvidenceMod::MOD;
+        area->setEviMod(AreaData::EvidenceMod::MOD);
     else if (argv[0] == "hiddencm")
-        area->eviMod() = AreaData::EvidenceMod::HIDDEN_CM;
+        area->setEviMod(AreaData::EvidenceMod::HIDDEN_CM);
     else if (argv[0] == "ffa")
-        area->eviMod() = AreaData::EvidenceMod::FFA;
+        area->setEviMod(AreaData::EvidenceMod::FFA);
     else {
         sendServerMessage("Invalid evidence mod.");
         return;
@@ -107,7 +107,7 @@ void AOClient::cmdTestify(int argc, QStringList argv)
     }
     else {
         clearTestimony();
-        area->testimonyRecording() = AreaData::TestimonyRecording::RECORDING;
+        area->setTestimonyRecording(AreaData::TestimonyRecording::RECORDING);
         sendServerMessage("Started testimony recording.");
     }
 }
@@ -117,10 +117,9 @@ void AOClient::cmdExamine(int argc, QStringList argv)
     AreaData* area = server->areas[current_area];
     if (area->testimony().size() -1 > 0)
     {
-        area->testimonyRecording() = AreaData::TestimonyRecording::PLAYBACK;
+        area->restartTestimony();
         server->broadcast(AOPacket("RT",{"testimony2"}), current_area);
         server->broadcast(AOPacket("MS", {area->testimony()[0]}), current_area);
-        area->statement() = 0;
         return;
     }
     if (area->testimonyRecording() == AreaData::TestimonyRecording::PLAYBACK)
@@ -155,22 +154,21 @@ void AOClient::cmdDeleteStatement(int argc, QStringList argv)
         sendServerMessage("Unable to delete statement. No statements saved in this area.");
     }
     if (c_statement > 0 && area->testimony().size() > 2) {
-        area->testimony().remove(c_statement);
-        area->statement() = c_statement - 1;
+        area->removeStatement(c_statement);
         sendServerMessage("The statement with id " + QString::number(c_statement) + " has been deleted from the testimony.");
     }
 }
 
 void AOClient::cmdUpdateStatement(int argc, QStringList argv)
 {
-    server->areas[current_area]->testimonyRecording() = AreaData::TestimonyRecording::UPDATE;
+    server->areas[current_area]->setTestimonyRecording(AreaData::TestimonyRecording::UPDATE);
     sendServerMessage("The next IC-Message will replace the last displayed replay message.");
 }
 
 void AOClient::cmdPauseTestimony(int argc, QStringList argv)
 {
     AreaData* area = server->areas[current_area];
-    area->testimonyRecording() = AreaData::TestimonyRecording::STOPPED;
+    area->setTestimonyRecording(AreaData::TestimonyRecording::STOPPED);
     server->broadcast(AOPacket("RT",{"testimony1#1"}), current_area);
     sendServerMessage("Testimony has been stopped.");
 }
@@ -178,7 +176,7 @@ void AOClient::cmdPauseTestimony(int argc, QStringList argv)
 void AOClient::cmdAddStatement(int argc, QStringList argv)
 {
     if (server->areas[current_area]->statement() < server->maximum_statements) {
-        server->areas[current_area]->testimonyRecording() = AreaData::TestimonyRecording::ADD;
+        server->areas[current_area]->setTestimonyRecording(AreaData::TestimonyRecording::ADD);
         sendServerMessage("The next IC-Message will be inserted into the testimony.");
     }
     else

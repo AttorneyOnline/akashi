@@ -73,7 +73,7 @@ class AOClient : public QObject {
      *
      * @see #ipid
      */
-    QString getIpid();
+    QString getIpid() const;
 
     /**
      * @brief Calculates the client's IPID based on a hashed version of its IP.

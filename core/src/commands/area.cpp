@@ -149,7 +149,7 @@ void AOClient::cmdLock(int argc, QStringList argv)
         return;
     }
     sendServerMessageArea("This area is now locked.");
-    area->locked() = AreaData::LockStatus::LOCKED;
+    area->lock();
     for (AOClient* client : server->clients) {
         if (client->current_area == current_area && client->joined) {
             area->invited().append(client->id);
@@ -166,7 +166,7 @@ void AOClient::cmdSpectatable(int argc, QStringList argv)
         return;
     }
     sendServerMessageArea("This area is now spectatable.");
-    area->locked() = AreaData::LockStatus::SPECTATABLE;
+    area->spectatable();
     for (AOClient* client : server->clients) {
         if (client->current_area == current_area && client->joined) {
             area->invited().append(client->id);
@@ -178,12 +178,12 @@ void AOClient::cmdSpectatable(int argc, QStringList argv)
 void AOClient::cmdUnLock(int argc, QStringList argv)
 {
     AreaData* area = server->areas[current_area];
-    if (area->locked() == AreaData::LockStatus::FREE) {
+    if (area->lockStatus() == AreaData::LockStatus::FREE) {
         sendServerMessage("This area is not locked.");
         return;
     }
     sendServerMessageArea("This area is now unlocked.");
-    area->locked() = AreaData::LockStatus::FREE;
+    area->unlock();
     arup(ARUPType::LOCKED, true);
 }
 
@@ -253,14 +253,22 @@ void AOClient::cmdSetBackground(int argc, QStringList argv)
 void AOClient::cmdBgLock(int argc, QStringList argv)
 {
     AreaData* area = server->areas[current_area];
-    area->bgLocked() = true;
+
+    if (area->bgLocked() == false) {
+        area->toggleBgLock();
+    };
+
     server->broadcast(AOPacket("CT", {"Server", current_char + " locked the background.", "1"}), current_area);
 }
 
 void AOClient::cmdBgUnlock(int argc, QStringList argv)
 {
     AreaData* area = server->areas[current_area];
-    area->bgLocked() = false;
+
+    if (area->bgLocked() == true) {
+        area->toggleBgLock();
+    };
+
     server->broadcast(AOPacket("CT", {"Server", current_char + " unlocked the background.", "1"}), current_area);
 }
 
@@ -268,24 +276,14 @@ void AOClient::cmdStatus(int argc, QStringList argv)
 {
     AreaData* area = server->areas[current_area];
     QString arg = argv[0].toLower();
-    if (arg == "idle")
-        area->status() = AreaData::IDLE;
-    else if (arg == "rp")
-        area->status() = AreaData::RP;
-    else if (arg == "casing")
-        area->status() = AreaData::CASING;
-    else if (arg == "looking-for-players" || arg == "lfp")
-        area->status() = AreaData::LOOKING_FOR_PLAYERS;
-    else if (arg == "recess")
-        area->status() = AreaData::RECESS;
-    else if (arg == "gaming")
-        area->status() = AreaData::GAMING;
-    else {
-        sendServerMessage("That does not look like a valid status. Valid statuses are idle, rp, casing, lfp, recess, gaming");
+
+    if (area->changeStatus(arg)) {
+        arup(ARUPType::STATUS, true);
+        sendServerMessageArea(ooc_name + " changed status to " + arg);
+    } else {
+        sendServerMessage("That does not look like a valid status. Valid statuses are " + AreaData::map_statuses.keys().join(", "));
         return;
     }
-    arup(ARUPType::STATUS, true);
-    sendServerMessageArea(ooc_name + " changed status to " + arg);
 }
 
 void AOClient::cmdJudgeLog(int argc, QStringList argv)

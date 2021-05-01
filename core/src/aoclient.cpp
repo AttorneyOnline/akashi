@@ -107,7 +107,7 @@ void AOClient::changeArea(int new_area)
         sendServerMessage("You are already in area " + server->area_names[current_area]);
         return;
     }
-    if (server->areas[new_area]->locked == AreaData::LockStatus::LOCKED && !server->areas[new_area]->invited().contains(id)) {
+    if (server->areas[new_area]->lockStatus() == AreaData::LockStatus::LOCKED && !server->areas[new_area]->invited().contains(id)) {
         sendServerMessage("Area " + server->area_names[new_area] + " is locked.");
         return;
     }
@@ -116,8 +116,8 @@ void AOClient::changeArea(int new_area)
         server->areas[current_area]->charactersTaken().removeAll(server->getCharID(current_char));
         server->updateCharsTaken(server->areas[current_area]);
     }
-    server->areas[new_area]->playerCount()++;
-    server->areas[current_area]->playerCount()--;
+    server->areas[new_area]->clientJoinedArea(char_id);
+    server->areas[current_area]->clientLeftArea(char_id);
     current_area = new_area;
     arup(ARUPType::PLAYER_COUNT, true);
     sendEvidenceList(server->areas[new_area]);
@@ -144,7 +144,7 @@ void AOClient::changeArea(int new_area)
         }
     }
     sendServerMessage("You moved to area " + server->area_names[current_area]);
-    if (server->areas[current_area]->locked == AreaData::LockStatus::SPECTATABLE)
+    if (server->areas[current_area]->lockStatus() == AreaData::LockStatus::SPECTATABLE)
         sendServerMessage("Area " + server->area_names[current_area] + " is spectate-only; to chat IC you will need to be invited by the CM.");
 }
 
@@ -236,7 +236,7 @@ void AOClient::arup(ARUPType type, bool broadcast)
                 break;
             }
             case ARUPType::LOCKED: {
-                QString lock_status = QVariant::fromValue(area->locked()).toString();
+                QString lock_status = QVariant::fromValue(area->lockStatus()).toString();
                 arup_data.append(lock_status);
                 break;
             }
@@ -330,7 +330,7 @@ bool AOClient::checkAuth(unsigned long long acl_mask)
 }
 
 
-QString AOClient::getIpid() { return ipid; }
+QString AOClient::getIpid() const { return ipid; }
 
 Server* AOClient::getServer() { return server; }
 

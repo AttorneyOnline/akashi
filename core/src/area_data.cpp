@@ -55,7 +55,7 @@ AreaData::AreaData(QString p_name, int p_index) :
     config_ini.endGroup();
     if (log_size == 0)
         log_size = 500;
-    m_logger = new Logger(log_size, l_logType);
+    m_logger = new Logger(m_name, log_size, l_logType);
     QTimer* timer1 = new QTimer();
     m_timers.append(timer1);
     QTimer* timer2 = new QTimer();
@@ -75,10 +75,32 @@ AreaData::AreaData(QString p_name, int p_index) :
         m_eviMod = EvidenceMod::FFA;
 }
 
+const QMap<QString, AreaData::Status> AreaData::map_statuses = {
+    {"idle",                    AreaData::Status::IDLE                },
+    {"rp",                      AreaData::Status::RP                  },
+    {"casing",                  AreaData::Status::CASING              },
+    {"lfp",                     AreaData::Status::LOOKING_FOR_PLAYERS },
+    {"looking-for-players",     AreaData::Status::LOOKING_FOR_PLAYERS },
+    {"recess",                  AreaData::Status::RECESS              },
+    {"gaming",                  AreaData::Status::GAMING              },
+};
+
 void AreaData::clientLeftArea(int f_charId)
 {
     --m_playerCount;
-    m_charactersTaken.removeAll(f_charId);
+
+    if (f_charId != -1) {
+        m_charactersTaken.removeAll(f_charId);
+    }
+}
+
+void AreaData::clientJoinedArea(int f_charId)
+{
+    ++m_playerCount;
+
+    if (f_charId != -1) {
+        m_charactersTaken.append(f_charId);
+    }
 }
 
 QList<int> AreaData::owners() const
@@ -132,6 +154,21 @@ AreaData::LockStatus AreaData::lockStatus() const
     return m_locked;
 }
 
+void AreaData::lock()
+{
+    m_locked = LockStatus::LOCKED;
+}
+
+void AreaData::unlock()
+{
+    m_locked = LockStatus::FREE;
+}
+
+void AreaData::spectatable()
+{
+    m_locked = LockStatus::SPECTATABLE;
+}
+
 bool AreaData::invite(int f_clientId)
 {
     if (m_invited.contains(f_clientId)) {
@@ -145,11 +182,6 @@ bool AreaData::invite(int f_clientId)
 int AreaData::playerCount() const
 {
     return m_playerCount;
-}
-
-void AreaData::changePlayerCount(bool f_increase)
-{
-    f_increase ? m_playerCount++: m_playerCount--;
 }
 
 QList<QTimer *> AreaData::timers() const
@@ -182,14 +214,19 @@ AreaData::Status AreaData::status() const
     return m_status;
 }
 
+bool AreaData::changeStatus(const QString &f_newStatus_r)
+{
+    if (AreaData::map_statuses.contains(f_newStatus_r)) {
+        m_status = AreaData::map_statuses[f_newStatus_r];
+        return true;
+    }
+
+    return false;
+}
+
 QList<int> AreaData::invited() const
 {
     return m_invited;
-}
-
-AreaData::LockStatus AreaData::locked() const
-{
-    return m_locked;
 }
 
 bool AreaData::isMusicAllowed() const
@@ -202,9 +239,43 @@ void AreaData::toggleMusic()
     m_toggleMusic = !m_toggleMusic;
 }
 
+void AreaData::log(const QString &f_clientName_r, const QString &f_clientIpid_r, const AOPacket &f_packet_r) const
+{
+    auto l_header = f_packet_r.header;
+
+    if (l_header == "MS") {
+        m_logger->logIC(f_clientName_r, f_clientIpid_r, f_packet_r.contents.at(4));
+    } else if (l_header == "CT") {
+        m_logger->logCmd(f_clientName_r, f_clientIpid_r, f_packet_r.contents.at(1));
+    } else if (l_header == "ZZ") {
+        m_logger->logModcall(f_clientName_r, f_clientIpid_r, f_packet_r.contents.at(0));
+    }
+}
+
+void AreaData::logLogin(const QString &f_clientName_r, const QString &f_clientIpid_r, bool f_success, const QString& f_modname_r) const
+{
+    m_logger->logLogin(f_clientName_r, f_clientIpid_r, f_success, f_modname_r);
+}
+
+void AreaData::flushLogs() const
+{
+    m_logger->flush();
+}
+
+void AreaData::setEviMod(const EvidenceMod &eviMod)
+{
+    m_eviMod = eviMod;
+}
+
 void AreaData::setTestimonyRecording(const TestimonyRecording &testimonyRecording)
 {
     m_testimonyRecording = testimonyRecording;
+}
+
+void AreaData::restartTestimony()
+{
+    m_testimonyRecording = TestimonyRecording::PLAYBACK;
+    m_statement = 0;
 }
 
 void AreaData::clearTestimony()
@@ -253,6 +324,12 @@ void AreaData::recordStatement(const QStringList &f_newStatement)
 void AreaData::addStatement(int f_position, const QStringList &f_newStatement)
 {
     m_testimony.insert(f_position, f_newStatement);
+}
+
+void AreaData::removeStatement(int f_statementNumber)
+{
+    m_testimony.remove(f_statementNumber);
+    --m_statement;
 }
 
 std::pair<QStringList, AreaData::TestimonyProgress> AreaData::advanceTestimony(bool f_forward)
@@ -333,6 +410,11 @@ QString AreaData::document() const
 bool AreaData::bgLocked() const
 {
     return m_bgLocked;
+}
+
+void AreaData::toggleBgLock()
+{
+    m_bgLocked = !m_bgLocked;
 }
 
 bool AreaData::iniswapAllowed() const
