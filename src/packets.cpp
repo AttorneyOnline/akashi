@@ -568,7 +568,10 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     // char id
     if (incoming_args[8].toInt() != char_id)
         return invalid;
-    args.append(incoming_args[8].toString());
+    if (first_person)
+        args.append("-1"); // messages with a cid of -1 don't update the viewport
+    else
+        args.append(incoming_args[8].toString());
 
     // sfx delay
     args.append(incoming_args[9].toString());
