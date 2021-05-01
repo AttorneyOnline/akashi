@@ -445,3 +445,10 @@ void AOClient::cmdS(int argc, QStringList argv)
             server->broadcast(AOPacket("CT", {"[CM]" + sender_name, ooc_message}), i);
     }
 }
+
+void AOClient::cmdFirstPerson(int argc, QStringList argv)
+{
+    first_person = !first_person;
+    QString str_en = first_person ? "enabled" : "disabled";
+    sendServerMessage("First person mode " + str_en + ".");
+}

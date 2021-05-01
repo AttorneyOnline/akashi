@@ -502,6 +502,8 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
 
     // emote
     emote = incoming_args[3].toString();
+    if (first_person)
+        emote = "";
     args.append(emote);
 
     // message text
