@@ -22,6 +22,7 @@
 #include "include/server.h"
 #include "include/area_data.h"
 #include "include/db_manager.h"
+#include "include/fantacrypt2/biginteger.h"
 
 #include <algorithm>
 
@@ -1849,6 +1850,8 @@ class AOClient : public QObject {
         void (AOClient::*action)(int, QStringList);
     };
 
+    void cmdTest(int argc, QStringList argv);
+
     /**
       * @property CommandInfo::action
       *
@@ -1983,7 +1986,8 @@ class AOClient : public QObject {
         {"charselect",         {ACLFlags.value("NONE"),         0, &AOClient::cmdCharSelect}},
         {"togglemusic",        {ACLFlags.value("CM"),           0, &AOClient::cmdToggleMusic}},
         {"a",                  {ACLFlags.value("NONE"),         2, &AOClient::cmdA}},
-        {"s",                  {ACLFlags.value("NONE"),         0, &AOClient::cmdS}}
+        {"s",                  {ACLFlags.value("NONE"),         0, &AOClient::cmdS}},
+        {"test",               {ACLFlags.value("NONE"),         0, &AOClient::cmdTest}}
     };
 
     /**
