@@ -236,7 +236,7 @@ void AOClient::arup(ARUPType type, bool broadcast)
                 break;
             }
             case ARUPType::LOCKED: {
-                QString lock_status = QVariant::fromValue(area->locked).toString();
+                QString lock_status = QVariant::fromValue(area->locked()).toString();
                 arup_data.append(lock_status);
                 break;
             }

@@ -25,13 +25,12 @@ void AOClient::addStatement(QStringList packet)
     int c_statement = area->statement();
     if (c_statement >= -1) {
         if (area->testimonyRecording() == AreaData::TestimonyRecording::RECORDING) {
-            if (c_statement <= server->maximum_statements()s) {
+            if (c_statement <= server->maximum_statements) {
                 if (c_statement == -1)
                     packet[14] = "3";
                 else
                     packet[14] = "1";
-                area->statement() = c_statement + 1;
-                area->testimony().append(packet);
+                area->recordStatement(packet);
                 return;
             }
             else {
@@ -40,12 +39,12 @@ void AOClient::addStatement(QStringList packet)
         }
         else if (area->testimonyRecording() == AreaData::TestimonyRecording::ADD) {
                packet[14] = "1";
-               area->testimony().insert(c_statement,packet);
-               area->testimonyRecording() = AreaData::TestimonyRecording::PLAYBACK;
+               area->addStatement(c_statement, packet);
+               area->setTestimonyRecording(AreaData::TestimonyRecording::PLAYBACK);
             }
             else {
                 sendServerMessage("Unable to add more statements. The maximum amount of statements has been reached.");
-                area->testimonyRecording() = AreaData::TestimonyRecording::PLAYBACK;
+                area->setTestimonyRecording(AreaData::TestimonyRecording::PLAYBACK);
             }
     }
 }
@@ -54,7 +53,7 @@ QStringList AOClient::updateStatement(QStringList packet)
 {
     AreaData* area = server->areas[current_area];
     int c_statement = area->statement();
-    area->testimonyRecording() = AreaData::TestimonyRecording::PLAYBACK;
+    area->setTestimonyRecording(AreaData::TestimonyRecording::PLAYBACK);
     if (c_statement <= 0 || area->testimony()[c_statement].empty())
         sendServerMessage("Unable to update an empty statement. Please use /addtestimony.");
     else {
@@ -69,28 +68,5 @@ QStringList AOClient::updateStatement(QStringList packet)
 void AOClient::clearTestimony()
 {
     AreaData* area = server->areas[current_area];
-    area->testimonyRecording() = AreaData::TestimonyRecording::STOPPED;
-    area->statement() = -1;
-    area->testimony().clear(); //!< Empty out the QVector
-    area->testimony().squeeze(); //!< Release memory. Good idea? God knows, I do not.
+    area->clearTestimony();
 }
-
-QStringList AOClient::playTestimony()
-{
-    AreaData* area = server->areas[current_area];
-    int c_statement = area->statement();
-    if (c_statement > area->testimony().size() - 1) {
-        sendServerMessageArea("Last statement reached. Looping to first statement.");
-        area->statement() = 1;
-        return area->testimony()[area->statement()];
-    }
-    if (c_statement <= 0) {
-        sendServerMessage("First statement reached.");
-        area->statement() = 1;
-        return area->testimony()[area->statement() = 1];
-    }
-    else {
-        return area->testimony()[c_statement];
-    }
-}
-

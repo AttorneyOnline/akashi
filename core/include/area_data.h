@@ -182,6 +182,17 @@ class AreaData : public QObject {
     /// Exposes the metadata of the TestimonyRecording enum.
     Q_ENUM(TestimonyRecording);
 
+    enum class TestimonyProgress {
+        OK,
+        LOOPED,
+        STAYED_AT_FIRST,
+    };
+
+    enum class Side {
+        DEFENCE,
+        PROSECUTOR,
+    };
+
     /**
      * @brief A client in the area has left the area.
      *
@@ -209,6 +220,8 @@ class AreaData : public QObject {
 
     bool blankpostingAllowed() const;
 
+    void toggleBlankposting();
+
     bool isProtected() const;
 
     LockStatus lockStatus() const;
@@ -221,6 +234,8 @@ class AreaData : public QObject {
     bool invite(int f_clientId);
 
     int playerCount() const;
+
+    void changePlayerCount(bool f_increase);
 
     QList<QTimer *> timers() const;
 
@@ -244,6 +259,8 @@ class AreaData : public QObject {
 
     bool iniswapAllowed() const;
 
+    void toggleIniswap();
+
     bool bgLocked() const;
 
     QString document() const;
@@ -252,11 +269,11 @@ class AreaData : public QObject {
 
     int proHP() const;
 
+    void changeHP(AreaData::Side f_side, int f_newHP);
+
     QString currentMusic() const;
 
     QString musicPlayerBy() const;
-
-    Logger *logger() const;
 
     EvidenceMod eviMod() const;
 
@@ -264,17 +281,35 @@ class AreaData : public QObject {
 
     TestimonyRecording testimonyRecording() const;
 
+    void setTestimonyRecording(const TestimonyRecording &testimonyRecording);
+
+    void clearTestimony();
+
     QVector<QStringList> testimony() const;
 
     int statement() const;
+
+    void recordStatement(const QStringList& f_newStatement);
+
+    void addStatement(int f_position, const QStringList& f_newStatement);
+
+    std::pair<QStringList, TestimonyProgress> advanceTestimony(bool f_forward = true);
+
+    QStringList jumpToStatement(int f_statementNr);
 
     QStringList judgelog() const;
 
     QStringList lastICMessage() const;
 
+    void updateLastICMessage(const QStringList& f_lastMessage);
+
     bool forceImmediate() const;
 
-    bool toggleMusic() const;
+    void toggleImmediate();
+
+    bool isMusicAllowed() const;
+
+    void toggleMusic();
 
 private:
     /**

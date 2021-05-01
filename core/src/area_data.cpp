@@ -15,6 +15,9 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
+
+#include <algorithm>
+
 #include "include/area_data.h"
 
 AreaData::AreaData(QString p_name, int p_index) :
@@ -114,6 +117,11 @@ bool AreaData::blankpostingAllowed() const
     return m_blankpostingAllowed;
 }
 
+void AreaData::toggleBlankposting()
+{
+    m_blankpostingAllowed = !m_blankpostingAllowed;
+}
+
 bool AreaData::isProtected() const
 {
     return m_isProtected;
@@ -137,6 +145,11 @@ bool AreaData::invite(int f_clientId)
 int AreaData::playerCount() const
 {
     return m_playerCount;
+}
+
+void AreaData::changePlayerCount(bool f_increase)
+{
+    f_increase ? m_playerCount++: m_playerCount--;
 }
 
 QList<QTimer *> AreaData::timers() const
@@ -179,9 +192,26 @@ AreaData::LockStatus AreaData::locked() const
     return m_locked;
 }
 
-bool AreaData::toggleMusic() const
+bool AreaData::isMusicAllowed() const
 {
     return m_toggleMusic;
+}
+
+void AreaData::toggleMusic()
+{
+    m_toggleMusic = !m_toggleMusic;
+}
+
+void AreaData::setTestimonyRecording(const TestimonyRecording &testimonyRecording)
+{
+    m_testimonyRecording = testimonyRecording;
+}
+
+void AreaData::clearTestimony()
+{
+    m_testimonyRecording = AreaData::TestimonyRecording::STOPPED;
+    m_statement = -1;
+    m_testimony.clear();
 }
 
 bool AreaData::forceImmediate() const
@@ -189,9 +219,19 @@ bool AreaData::forceImmediate() const
     return m_forceImmediate;
 }
 
+void AreaData::toggleImmediate()
+{
+    m_forceImmediate = !m_forceImmediate;
+}
+
 QStringList AreaData::lastICMessage() const
 {
     return m_lastICMessage;
+}
+
+void AreaData::updateLastICMessage(const QStringList &f_lastMessage)
+{
+    m_lastICMessage = f_lastMessage;
 }
 
 QStringList AreaData::judgelog() const
@@ -202,6 +242,38 @@ QStringList AreaData::judgelog() const
 int AreaData::statement() const
 {
     return m_statement;
+}
+
+void AreaData::recordStatement(const QStringList &f_newStatement)
+{
+    ++m_statement;
+    m_testimony.append(f_newStatement);
+}
+
+void AreaData::addStatement(int f_position, const QStringList &f_newStatement)
+{
+    m_testimony.insert(f_position, f_newStatement);
+}
+
+std::pair<QStringList, AreaData::TestimonyProgress> AreaData::advanceTestimony(bool f_forward)
+{
+    f_forward ? m_statement++: m_statement--;
+
+    if (m_statement > m_testimony.size() - 1) {
+        return {m_testimony.at(m_statement), TestimonyProgress::LOOPED};
+    }
+    if (m_statement <= 0) {
+        return {m_testimony.at(m_statement), TestimonyProgress::STAYED_AT_FIRST};
+    }
+    else {
+        return {m_testimony.at(m_statement), TestimonyProgress::OK};
+    }
+}
+
+QStringList AreaData::jumpToStatement(int f_statementNr)
+{
+    m_statement = f_statementNr;
+    return m_testimony.at(m_statement);
 }
 
 QVector<QStringList> AreaData::testimony() const
@@ -224,11 +296,6 @@ AreaData::EvidenceMod AreaData::eviMod() const
     return m_eviMod;
 }
 
-Logger *AreaData::logger() const
-{
-    return m_logger;
-}
-
 QString AreaData::musicPlayerBy() const
 {
     return m_musicPlayerBy;
@@ -242,6 +309,15 @@ QString AreaData::currentMusic() const
 int AreaData::proHP() const
 {
     return m_proHP;
+}
+
+void AreaData::changeHP(AreaData::Side f_side, int f_newHP)
+{
+    if (f_side == Side::DEFENCE) {
+        m_defHP = std::min(std::max(0, f_newHP), 10);
+    } else if(f_side == Side::PROSECUTOR) {
+        m_proHP = std::min(std::max(0, f_newHP), 10);
+    }
 }
 
 int AreaData::defHP() const
@@ -262,6 +338,11 @@ bool AreaData::bgLocked() const
 bool AreaData::iniswapAllowed() const
 {
     return m_iniswapAllowed;
+}
+
+void AreaData::toggleIniswap()
+{
+    m_iniswapAllowed = !m_iniswapAllowed;
 }
 
 bool AreaData::shownameAllowed() const

@@ -96,7 +96,7 @@ void AOClient::pktLoadingDone(AreaData* area, int argc, QStringList argv, AOPack
     }
 
     server->player_count++;
-    area->playerCount()++;
+    area->changePlayerCount(true);
     joined = true;
     server->updateCharsTaken(area);
 
@@ -166,8 +166,7 @@ void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket pa
 
     area->logger()->logIC(this, &validated_packet);
     server->broadcast(validated_packet, current_area);
-    area->lastICMessage().clear();
-    area->lastICMessage().append(validated_packet.contents);
+    area->updateLastICMessage(validated_packet.contents);
 }
 
 void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket packet)
@@ -230,7 +229,7 @@ void AOClient::pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPack
                 sendServerMessage("You are blocked from changing the music.");
                 return;
             }
-            if (!area->toggleMusic() && !checkAuth(ACLFlags.value("CM"))) {
+            if (!area->isMusicAllowed() && !checkAuth(ACLFlags.value("CM"))) {
                 sendServerMessage("Music is disabled in this area.");
                 return;
             }
@@ -280,14 +279,18 @@ void AOClient::pktHpBar(AreaData* area, int argc, QStringList argv, AOPacket pac
         sendServerMessage("You are blocked from using the judge controls.");
         return;
     }
+    int l_newValue = argv.at(1).toInt();
+
     if (argv[0] == "1") {
-        area->defHP() = std::min(std::max(0, argv[1].toInt()), 10);
+        area->changeHP(AreaData::Side::DEFENCE, l_newValue);
     }
     else if (argv[0] == "2") {
-        area->proHP() = std::min(std::max(0, argv[1].toInt()), 10);
+        area->changeHP(AreaData::Side::PROSECUTOR, l_newValue);
     }
+
     server->broadcast(AOPacket("HP", {"1", QString::number(area->defHP())}), area->index());
     server->broadcast(AOPacket("HP", {"2", QString::number(area->proHP())}), area->index());
+
     updateJudgeLog(area, this, "updated the penalties");
 }
 
@@ -614,7 +617,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     if (incoming_args.length() > 15) {
         // showname
         QString incoming_showname = dezalgo(incoming_args[15].toString().trimmed());
-        if (!(incoming_showname == current_char || incoming_showname.isEmpty()) && !area->m_shownameAllowed) {
+        if (!(incoming_showname == current_char || incoming_showname.isEmpty()) && !area->shownameAllowed()) {
             sendServerMessage("Shownames are not allowed in this area!");
             return invalid;
         }
@@ -745,23 +748,31 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         args = updateStatement(args);
     }
     else if (area->testimonyRecording() == AreaData::TestimonyRecording::PLAYBACK) {
+        AreaData::TestimonyProgress l_progress;
+
         if (args[4] == ">") {
             pos = "wit";
-            area->statement() = area->statement() + 1;
-            args = playTestimony();
+            std::make_pair(args, l_progress) = area->advanceTestimony();
+
+            if (l_progress == AreaData::TestimonyProgress::LOOPED) {
+                sendServerMessageArea("Last statement reached. Looping to first statement.");
+            }
         }
         if (args[4] == "<") {
             pos = "wit";
-            area->statement() = area->statement() - 1;
-            args = playTestimony();
+            std::make_pair(args, l_progress) = area->advanceTestimony(false);
+
+            if (l_progress == AreaData::TestimonyProgress::LOOPED) {
+                sendServerMessage("First statement reached.");
+            }
         }
+
         QString decoded_message = decodeMessage(args[4]); //Get rid of that pesky encoding first.
         QRegularExpression jump("(?<arrow>>)(?<int>[0,1,2,3,4,5,6,7,8,9]+)");
         QRegularExpressionMatch match = jump.match(decoded_message);
         if (match.hasMatch()) {
             pos = "wit";
-            area->statement() = match.captured("int").toInt();
-            args= playTestimony();
+            args = area->jumpToStatement(match.captured("int").toInt());
         }
     }
 

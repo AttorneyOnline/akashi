@@ -26,7 +26,7 @@ Server::Server(int p_port, int p_ws_port, QObject* parent) :
     server = new QTcpServer(this);
     connect(server, SIGNAL(newConnection()), this, SLOT(clientConnected()));
 
-    timer = new Qtimers();
+    timer = new QTimer();
 
     db_manager = new DBManager();
 }
