@@ -105,13 +105,6 @@ void AreaData::clientJoinedArea(int f_charId)
 
 QList<int> AreaData::owners() const
 {
-    QString l_test;
-    const auto& l_buffer = m_logger->m_buffer;
-    for (const auto& l_item : l_buffer)
-    {
-        l_test.append(l_item + "\n");
-    }
-
     return m_owners;
 }
 
@@ -265,6 +258,11 @@ void AreaData::flushLogs() const
 void AreaData::setEviMod(const EvidenceMod &eviMod)
 {
     m_eviMod = eviMod;
+}
+
+QQueue<QString> AreaData::buffer() const
+{
+    return m_logger->buffer();
 }
 
 void AreaData::setTestimonyRecording(const TestimonyRecording &testimonyRecording)

@@ -334,6 +334,8 @@ class AreaData : public QObject {
 
     void setEviMod(const EvidenceMod &eviMod);
 
+    QQueue<QString> buffer() const;
+
 private:
     /**
      * @brief The list of timers available in the area.

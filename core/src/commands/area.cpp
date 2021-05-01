@@ -258,7 +258,7 @@ void AOClient::cmdBgLock(int argc, QStringList argv)
         area->toggleBgLock();
     };
 
-    server->broadcast(AOPacket("CT", {"Server", current_char + " locked the background.", "1"}), current_area);
+    server->broadcast(AOPacket("CT", {server->server_name, current_char + " locked the background.", "1"}), current_area);
 }
 
 void AOClient::cmdBgUnlock(int argc, QStringList argv)
@@ -269,7 +269,7 @@ void AOClient::cmdBgUnlock(int argc, QStringList argv)
         area->toggleBgLock();
     };
 
-    server->broadcast(AOPacket("CT", {"Server", current_char + " unlocked the background.", "1"}), current_area);
+    server->broadcast(AOPacket("CT", {server->server_name, current_char + " unlocked the background.", "1"}), current_area);
 }
 
 void AOClient::cmdStatus(int argc, QStringList argv)
@@ -279,10 +279,9 @@ void AOClient::cmdStatus(int argc, QStringList argv)
 
     if (area->changeStatus(arg)) {
         arup(ARUPType::STATUS, true);
-        sendServerMessageArea(ooc_name + " changed status to " + arg);
+        server->broadcast(AOPacket("CT", {server->server_name, current_char + " changed status to " + arg.toUpper(), "1"}), current_area);
     } else {
         sendServerMessage("That does not look like a valid status. Valid statuses are " + AreaData::map_statuses.keys().join(", "));
-        return;
     }
 }
 

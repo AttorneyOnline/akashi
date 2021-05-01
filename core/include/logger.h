@@ -38,6 +38,11 @@ public:
     Logger(QString f_area_name, int f_max_length, const QString& f_logType_r) :
         m_areaName(f_area_name), m_maxLength(f_max_length), m_logType(f_logType_r) {};
 
+    /**
+     *@brief Returns a copy of the logger's buffer.
+     */
+    QQueue<QString> buffer() const;
+
 public slots:
     /**
      * @brief Logs an IC message.
@@ -94,12 +99,12 @@ public slots:
      */
     void flush();
 
+private:
     /**
      * @brief Contains entries that have not yet been flushed out into a log file.
      */
     QQueue<QString> m_buffer;
 
-private:
     /**
      * @brief Convenience function to add an entry to #buffer.
      *

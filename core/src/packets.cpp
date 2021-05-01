@@ -184,7 +184,7 @@ void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket p
         sendServerMessage("Your name is too long! Please limit it to under 30 characters.");
         return;
     }
-    
+
     QString message = dezalgo(argv[1]);
     if (message.length() == 0 || message.length() > server->max_chars)
         return;
@@ -330,6 +330,15 @@ void AOClient::pktModCall(AreaData* area, int argc, QStringList argv, AOPacket p
             client->sendPacket(packet);
     }
     area->log(current_char, ipid, packet);
+
+    if (server->webhook_enabled) {
+        QString name = ooc_name;
+        if (ooc_name.isEmpty())
+            name = current_char;
+
+        server->webhookRequest(name, packet.contents[0], current_area);
+    }
+    
     area->flushLogs();
 }
 
@@ -505,6 +514,8 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
 
     // emote
     emote = incoming_args[3].toString();
+    if (first_person)
+        emote = "";
     args.append(emote);
 
     // message text
@@ -683,8 +694,16 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
 
         // immediate text processing
         int immediate = incoming_args[18].toInt();
-        if (area->forceImmediate())
-            immediate = 1;
+        if (area->forceImmediate()) {
+            if (args[7] == "1" || args[7] == "2") {
+                args[7] = "0";
+                immediate = 1;
+            }
+            else if (args[7] == "6") {
+                args[7] = "5";
+                immediate = 1;
+            }
+        }
         if (immediate != 1 && immediate != 0)
             return invalid;
         args.append(QString::number(immediate));
@@ -781,7 +800,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
 
 QString AOClient::dezalgo(QString p_text)
 {
-    QRegExp rxp("([\u0300-\u036f\u1ab0-\u1aff\u1dc0-\u1dff\u20d0-\u20ff\ufe20-\ufe2f\u115f\u1160\u3164]{" + QRegExp::escape(QString::number(server->zalgo_tolerance)) + ",})");
+    QRegularExpression rxp("([̴̵̶̷̸̡̢̧̨̛̖̗̘̙̜̝̞̟̠̣̤̥̦̩̪̫̬̭̮̯̰̱̲̳̹̺̻̼͇͈͉͍͎̀́̂̃̄̅̆̇̈̉̊̋̌̍̎̏̐̑̒̓̔̽̾̿̀́͂̓̈́͆͊͋͌̕̚ͅ͏͓͔͕͖͙͚͐͑͒͗͛ͣͤͥͦͧͨͩͪͫͬͭͮͯ͘͜͟͢͝͞͠͡])");
     QString filtered = p_text.replace(rxp, "");
     return filtered;
 }
