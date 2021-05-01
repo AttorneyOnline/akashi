@@ -566,7 +566,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     args.append(QString::number(emote_mod));
 
     // char id
-    if (incoming_args[8].toInt() != char_id)
+    if (incoming_args[8].toInt() != char_id && incoming_args[8].toInt() != -1)
         return invalid;
     if (first_person)
         args.append("-1"); // messages with a cid of -1 don't update the viewport
