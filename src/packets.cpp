@@ -682,8 +682,16 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
 
         // immediate text processing
         int immediate = incoming_args[18].toInt();
-        if (area->force_immediate)
-            immediate = 1;
+        if (area->force_immediate) {
+            if (args[7] == "1" || args[7] == "2") {
+                args[7] = "0";
+                immediate = 1;
+            }
+            else if (args[7] == "6") {
+                args[7] = "5";
+                immediate = 1;
+            }
+        }
         if (immediate != 1 && immediate != 0)
             return invalid;
         args.append(QString::number(immediate));
