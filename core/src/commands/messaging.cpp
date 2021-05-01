@@ -106,7 +106,7 @@ void AOClient::cmdRandomChar(int argc, QStringList argv)
     bool taken = true;
     while (taken) {
         selected_char_id = genRand(0, server->characters.size() - 1);
-        if (!area->m_charactersTaken.contains(selected_char_id)) {
+        if (!area->charactersTaken().contains(selected_char_id)) {
             taken = false;
         }
     }
@@ -423,7 +423,7 @@ void AOClient::cmdA(int argc, QStringList argv)
     }
 
     AreaData* area = server->areas[area_id];
-    if (!area->m_owners.contains(id)) {
+    if (!area->owners().contains(id)) {
         sendServerMessage("You are not CM in that area.");
         return;
     }
@@ -441,7 +441,7 @@ void AOClient::cmdS(int argc, QStringList argv)
     QString ooc_message = argv.join(" ");
 
     for (int i = 0; i <= all_areas; i++) {
-        if (server->areas[i]->m_owners.contains(id))
+        if (server->areas[i]->owners().contains(id))
             server->broadcast(AOPacket("CT", {"[CM]" + sender_name, ooc_message}), i);
     }
 }

@@ -220,6 +220,62 @@ class AreaData : public QObject {
      */
     bool invite(int f_clientId);
 
+    int playerCount() const;
+
+    QList<QTimer *> timers() const;
+
+    QString name() const;
+
+    int index() const;
+
+    QList<int> charactersTaken() const;
+
+    QList<Evidence> evidence() const;
+
+    Status status() const;
+
+    QList<int> invited() const;
+
+    LockStatus locked() const;
+
+    QString background() const;
+
+    bool shownameAllowed() const;
+
+    bool iniswapAllowed() const;
+
+    bool bgLocked() const;
+
+    QString document() const;
+
+    int defHP() const;
+
+    int proHP() const;
+
+    QString currentMusic() const;
+
+    QString musicPlayerBy() const;
+
+    Logger *logger() const;
+
+    EvidenceMod eviMod() const;
+
+    QMap<QString, QString> notecards() const;
+
+    TestimonyRecording testimonyRecording() const;
+
+    QVector<QStringList> testimony() const;
+
+    int statement() const;
+
+    QStringList judgelog() const;
+
+    QStringList lastICMessage() const;
+
+    bool forceImmediate() const;
+
+    bool toggleMusic() const;
+
 private:
     /**
      * @brief The list of timers available in the area.

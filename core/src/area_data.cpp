@@ -138,3 +138,138 @@ int AreaData::playerCount() const
 {
     return m_playerCount;
 }
+
+QList<QTimer *> AreaData::timers() const
+{
+    return m_timers;
+}
+
+QString AreaData::name() const
+{
+    return m_name;
+}
+
+int AreaData::index() const
+{
+    return m_index;
+}
+
+QList<int> AreaData::charactersTaken() const
+{
+    return m_charactersTaken;
+}
+
+QList<AreaData::Evidence> AreaData::evidence() const
+{
+    return m_evidence;
+}
+
+AreaData::Status AreaData::status() const
+{
+    return m_status;
+}
+
+QList<int> AreaData::invited() const
+{
+    return m_invited;
+}
+
+AreaData::LockStatus AreaData::locked() const
+{
+    return m_locked;
+}
+
+bool AreaData::toggleMusic() const
+{
+    return m_toggleMusic;
+}
+
+bool AreaData::forceImmediate() const
+{
+    return m_forceImmediate;
+}
+
+QStringList AreaData::lastICMessage() const
+{
+    return m_lastICMessage;
+}
+
+QStringList AreaData::judgelog() const
+{
+    return m_judgelog;
+}
+
+int AreaData::statement() const
+{
+    return m_statement;
+}
+
+QVector<QStringList> AreaData::testimony() const
+{
+    return m_testimony;
+}
+
+AreaData::TestimonyRecording AreaData::testimonyRecording() const
+{
+    return m_testimonyRecording;
+}
+
+QMap<QString, QString> AreaData::notecards() const
+{
+    return m_notecards;
+}
+
+AreaData::EvidenceMod AreaData::eviMod() const
+{
+    return m_eviMod;
+}
+
+Logger *AreaData::logger() const
+{
+    return m_logger;
+}
+
+QString AreaData::musicPlayerBy() const
+{
+    return m_musicPlayerBy;
+}
+
+QString AreaData::currentMusic() const
+{
+    return m_currentMusic;
+}
+
+int AreaData::proHP() const
+{
+    return m_proHP;
+}
+
+int AreaData::defHP() const
+{
+    return m_defHP;
+}
+
+QString AreaData::document() const
+{
+    return m_document;
+}
+
+bool AreaData::bgLocked() const
+{
+    return m_bgLocked;
+}
+
+bool AreaData::iniswapAllowed() const
+{
+    return m_iniswapAllowed;
+}
+
+bool AreaData::shownameAllowed() const
+{
+    return m_shownameAllowed;
+}
+
+QString AreaData::background() const
+{
+    return m_background;
+}

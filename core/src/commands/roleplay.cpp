@@ -48,7 +48,7 @@ void AOClient::cmdTimer(int argc, QStringList argv)
         QStringList timers;
         timers.append("Currently active timers:");
         for (int i = 0; i <= 4; i++) {
-            timers.append(getAreaTimer(area->m_index, i));
+            timers.append(getAreaTimer(area->index(), i));
         }
         sendServerMessage(timers.join("\n"));
         return;
@@ -65,7 +65,7 @@ void AOClient::cmdTimer(int argc, QStringList argv)
     // Called with one argument
     // Shows the status of one timer
     if (argc == 1) {
-        sendServerMessage(getAreaTimer(area->m_index, timer_id));
+        sendServerMessage(getAreaTimer(area->index(), timer_id));
         return;
     }
 
@@ -83,7 +83,7 @@ void AOClient::cmdTimer(int argc, QStringList argv)
         requested_timer = server->timer;
     }
     else
-        requested_timer = area->m_timers[timer_id - 1];
+        requested_timer = area->timers()s[timer_id - 1];
 
     AOPacket show_timer("TI", {QString::number(timer_id), "2"});
     AOPacket hide_timer("TI", {QString::number(timer_id), "3"});

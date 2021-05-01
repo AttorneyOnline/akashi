@@ -26,7 +26,7 @@ Server::Server(int p_port, int p_ws_port, QObject* parent) :
     server = new QTcpServer(this);
     connect(server, SIGNAL(newConnection()), this, SLOT(clientConnected()));
 
-    timer = new QTimer();
+    timer = new Qtimers();
 
     db_manager = new DBManager();
 }
@@ -160,7 +160,7 @@ void Server::updateCharsTaken(AreaData* area)
 {
     QStringList chars_taken;
     for (QString cur_char : characters) {
-        chars_taken.append(area->m_charactersTaken.contains(getCharID(cur_char))
+        chars_taken.append(area->charactersTaken().contains(getCharID(cur_char))
                                ? QStringLiteral("-1")
                                : QStringLiteral("0"));
     }
@@ -168,7 +168,7 @@ void Server::updateCharsTaken(AreaData* area)
     AOPacket response_cc("CharsCheck", chars_taken);
 
     for (AOClient* client : clients) {
-        if (client->current_area == area->m_index){
+        if (client->current_area == area->index()){
             if (!client->is_charcursed)
                 client->sendPacket(response_cc);
             else {
@@ -272,7 +272,7 @@ void Server::loadServerConfig()
     if (!zalgo_tolerance_conversion_success)
         zalgo_tolerance = 3;
     bool maximum_statements_conversion_success;
-    maximum_statements = config.value("maximum_statements", "10").toInt(&maximum_statements_conversion_success);
+    maximum_statements = config.value("maximustatement()s", "10").toInt(&maximum_statements_conversion_success);
     if (!maximum_statements_conversion_success)
         maximum_statements = 10;
     bool afk_timeout_conversion_success;
