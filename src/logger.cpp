@@ -113,3 +113,8 @@ void Logger::flush()
         }
     logfile.close();
 }
+
+QQueue<QString> Logger::getBuffer()
+{
+    return buffer;
+}

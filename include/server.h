@@ -23,6 +23,7 @@
 #include "include/area_data.h"
 #include "include/ws_proxy.h"
 #include "include/db_manager.h"
+#include "include/discord.h"
 
 #include <QCoreApplication>
 #include <QDebug>
@@ -37,6 +38,7 @@
 class AOClient;
 class DBManager;
 class AreaData;
+class Discord;
 
 /**
  * @brief The class that represents the actual server as it is.
@@ -233,6 +235,21 @@ class Server : public QObject {
     int afk_timeout;
 
     /**
+     * @brief Whether discord webhooks are enabled on this server.
+     */
+    bool webhook_enabled;
+
+    /**
+     * @brief Requires an https Webhook link, including both ID and Token in the link.
+     */
+    QString webhook_url;
+
+    /**
+     * @brief If the modcall buffer is sent as a file.
+     */
+    bool webhook_sendfile;
+
+    /**
      * @brief The server-wide global timer.
      */
     QTimer* timer;
@@ -305,6 +322,15 @@ class Server : public QObject {
      */
     void reloadRequest(QString p_name, QString p_desc);
 
+    /**
+     * @brief Sends a modcall webhook request, emitted by AOClient::pktModcall.
+     *
+     * @param name The character or OOC name of the client who sent the modcall.
+     * @param reason The reason the client specified for the modcall.
+     * @param current_area Integer ID of the area the modcall is made.
+     */
+    void webhookRequest(QString name, QString reason, int current_area);
+
   private:
     /**
      * @brief The proxy used for WebSocket connections.
@@ -327,6 +353,11 @@ class Server : public QObject {
      * @brief The port through which the server will accept WebSocket connections.
      */
     int ws_port;
+
+    /**
+     * @brief Handles discord webhooks.
+     */
+    Discord* discord;
 };
 
 #endif // SERVER_H
