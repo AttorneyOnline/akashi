@@ -22,30 +22,30 @@
 void AOClient::addStatement(QStringList packet)
 {
     AreaData* area = server->areas[current_area];
-    int c_statement = area->statement;
+    int c_statement = area->m_statement;
     if (c_statement >= -1) {
-        if (area->test_rec == AreaData::TestimonyRecording::RECORDING) {
+        if (area->m_testimonyRecording == AreaData::TestimonyRecording::RECORDING) {
             if (c_statement <= server->maximum_statements) {
                 if (c_statement == -1)
                     packet[14] = "3";
                 else
                     packet[14] = "1";
-                area->statement = c_statement + 1;
-                area->testimony.append(packet);
+                area->m_statement = c_statement + 1;
+                area->m_testimony.append(packet);
                 return;
             }
             else {
                 sendServerMessage("Unable to add more statements. The maximum amount of statements has been reached.");
             }
         }
-        else if (area->test_rec == AreaData::TestimonyRecording::ADD) {
+        else if (area->m_testimonyRecording == AreaData::TestimonyRecording::ADD) {
                packet[14] = "1";
-               area->testimony.insert(c_statement,packet);
-               area->test_rec = AreaData::TestimonyRecording::PLAYBACK;
+               area->m_testimony.insert(c_statement,packet);
+               area->m_testimonyRecording = AreaData::TestimonyRecording::PLAYBACK;
             }
             else {
                 sendServerMessage("Unable to add more statements. The maximum amount of statements has been reached.");
-                area->test_rec = AreaData::TestimonyRecording::PLAYBACK;
+                area->m_testimonyRecording = AreaData::TestimonyRecording::PLAYBACK;
             }
     }
 }
@@ -53,15 +53,15 @@ void AOClient::addStatement(QStringList packet)
 QStringList AOClient::updateStatement(QStringList packet)
 {
     AreaData* area = server->areas[current_area];
-    int c_statement = area->statement;
-    area->test_rec = AreaData::TestimonyRecording::PLAYBACK;
-    if (c_statement <= 0 || area->testimony[c_statement].empty())
+    int c_statement = area->m_statement;
+    area->m_testimonyRecording = AreaData::TestimonyRecording::PLAYBACK;
+    if (c_statement <= 0 || area->m_testimony[c_statement].empty())
         sendServerMessage("Unable to update an empty statement. Please use /addtestimony.");
     else {
         packet[14] = "1";
-        area->testimony.replace(c_statement, packet);
+        area->m_testimony.replace(c_statement, packet);
         sendServerMessage("Updated current statement.");
-        return area->testimony[c_statement];
+        return area->m_testimony[c_statement];
     }
     return packet;
 }
@@ -69,28 +69,28 @@ QStringList AOClient::updateStatement(QStringList packet)
 void AOClient::clearTestimony()
 {
     AreaData* area = server->areas[current_area];
-    area->test_rec = AreaData::TestimonyRecording::STOPPED;
-    area->statement = -1;
-    area->testimony.clear(); //!< Empty out the QVector
-    area->testimony.squeeze(); //!< Release memory. Good idea? God knows, I do not.
+    area->m_testimonyRecording = AreaData::TestimonyRecording::STOPPED;
+    area->m_statement = -1;
+    area->m_testimony.clear(); //!< Empty out the QVector
+    area->m_testimony.squeeze(); //!< Release memory. Good idea? God knows, I do not.
 }
 
 QStringList AOClient::playTestimony()
 {
     AreaData* area = server->areas[current_area];
-    int c_statement = area->statement;
-    if (c_statement > area->testimony.size() - 1) {
+    int c_statement = area->m_statement;
+    if (c_statement > area->m_testimony.size() - 1) {
         sendServerMessageArea("Last statement reached. Looping to first statement.");
-        area->statement = 1;
-        return area->testimony[area->statement];
+        area->m_statement = 1;
+        return area->m_testimony[area->m_statement];
     }
     if (c_statement <= 0) {
         sendServerMessage("First statement reached.");
-        area->statement = 1;
-        return area->testimony[area->statement = 1];
+        area->m_statement = 1;
+        return area->m_testimony[area->m_statement = 1];
     }
     else {
-        return area->testimony[c_statement];
+        return area->m_testimony[c_statement];
     }
 }
 

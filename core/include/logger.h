@@ -18,18 +18,11 @@
 #ifndef LOGGER_H
 #define LOGGER_H
 
-#include "include/aoclient.h"
-#include "include/aopacket.h"
-#include "include/area_data.h"
-
 #include <QFile>
 #include <QDebug>
 #include <QString>
 #include <QQueue>
 #include <QDateTime>
-
-class AOClient;
-class AreaData;
 
 /**
  * @brief A class associated with an AreaData class to log various events happening inside the latter.
@@ -40,34 +33,40 @@ public:
     /**
      * @brief Constructs a Logger instance.
      *
-     * @param p_max_length The maximum amount of entries the Logger can store at once.
-     * @param p_area The area associated with the Logger from which it should log entries.
+     * @param f_max_length The maximum amount of entries the Logger can store at once.
      */
-    Logger(int p_max_length, AreaData* p_area) : max_length(p_max_length), area(p_area) {};
+    Logger(int f_max_length, const QString& f_logType_r) : m_maxLength(f_max_length), m_logType(f_logType_r) {};
 
+public slots:
     /**
      * @brief Logs an IC message.
      *
-     * @param client The client who sent the IC message.
-     * @param packet The IC packet itself, used to grab the text of the IC message.
+     * @param f_areaName_r The name of the area where the event happened.
+     * @param f_charName_r The character name of the client who sent the IC message.
+     * @param f_ipid_r The IPID of the aforementioned client.
+     * @param f_message_r The text of the IC message.
      */
-    void logIC(AOClient* client, AOPacket* packet);
+    void logIC(const QString& f_areaName_r, const QString& f_charName_r, const QString& f_ipid_r, const QString& f_message_r);
 
     /**
      * @brief Logs an OOC message.
      *
-     * @param client The client who sent the OOC message.
-     * @param packet The OOC packet itself, used to grab the text of the OOC message.
+     * @param f_areaName_r The name of the area where the event happened.
+     * @param f_charName_r The character name of the client who sent the OOC message.
+     * @param f_ipid_r The IPID of the aforementioned client.
+     * @param f_message_r The text of the OOC message.
      */
-    void logOOC(AOClient* client, AOPacket* packet);
+    void logOOC(const QString& f_areaName_r, const QString& f_charName_r, const QString& f_ipid_r, const QString& f_message_r);
 
     /**
      * @brief Logs a mod call message.
      *
-     * @param client The client who sent the mod call.
-     * @param packet The ZZ packet itself, used to grab the reason field of the modcall.
+     * @param f_areaName_r The name of the area where the event happened.
+     * @param f_charName_r The character name of the client who sent the mod call.
+     * @param f_ipid_r The IPID of the aforementioned client.
+     * @param f_modcallReason_r The reason for the modcall.
      */
-    void logModcall(AOClient* client, AOPacket* packet);
+    void logModcall(const QString& f_areaName_r, const QString& f_charName_r, const QString& f_ipid_r, const QString& f_modcallReason_r);
 
     /**
      * @brief Logs a command called in OOC.
@@ -75,69 +74,67 @@ public:
      * @details If the command is not one of any of the 'special' ones, it defaults to logOOC().
      * The only thing that makes a command 'special' if it is handled differently in here.
      *
-     * @param client The client who sent the command.
-     * @param packet The OOC packet. Passed to logOOC() if the command is not 'special' (see details).
-     * @param cmd The command called in the OOC -- this is the first word after the `/` character.
-     * @param args The arguments interpreted for the command, every word separated by a whitespace.
+     * @param f_areaName_r The name of the area where the event happened.
+     * @param f_charName_r The character name of the client who sent the command.
+     * @param f_ipid_r The IPID of the aforementioned client.
+     * @param f_oocMessage_r The text of the OOC message. Passed to logOOC() if the command is not 'special' (see details).
+     * @param f_cmd_r The command called in the OOC -- this is the first word after the `/` character.
+     * @param f_cmdArgs_r The arguments interpreted for the command, every word separated by a whitespace.
      */
-    void logCmd(AOClient* client, AOPacket* packet, QString cmd, QStringList args);
+    void logCmd(const QString& f_areaName_r, const QString& f_charName_r, const QString& f_ipid_r,
+                const QString& f_oocMessage_r, const QString& f_cmd_r, const QStringList& f_cmdArgs_r);
 
     /**
      * @brief Logs a login attempt.
      *
-     * @param client The client that attempted to login.
+     * @param f_areaName_r The name of the area where the event happened.
+     * @param f_charName_r The character name of the client that attempted to login.
+     * @param f_ipid_r The IPID of the aforementioned client.
      * @param success True if the client successfully authenticated as a mod.
-     * @param modname If the client logged in with a modname, then this is it. Otherwise, it's `"moderator"`.
-     *
-     * @note Why does this exist? logCmd() already does this in part.
+     * @param f_modname_r If the client logged in with a modname, then this is it. Otherwise, it's `"moderator"`.
      */
-    void logLogin(AOClient* client, bool success, QString modname);
+    void logLogin(const QString& f_areaName_r, const QString& f_charName_r, const QString& f_ipid_r, bool success, const QString& f_modname_r);
 
     /**
      * @brief Appends the contents of #buffer into `config/server.log`, emptying the former.
+     *
+     * @param f_areaName_r The name of the area where the event happened.
      */
-    void flush();
+    void flush(const QString& f_areaName_r);
+
+    /**
+     * @brief Contains entries that have not yet been flushed out into a log file.
+     */
+    QQueue<QString> m_buffer;
 
 private:
-    /**
-     * @brief Convenience function to format entries to the acceptable standard for logging.
-     *
-     * @param client The client who 'caused' the source event for the entry to happen.
-     * @param type The type of entry that is being built, something that uniquely identifies entries of similar being.
-     * @param message Any additional information related to the entry.
-     *
-     * @return A formatted string representation of the entry.
-     */
-    QString buildEntry(AOClient* client, QString type, QString message);
-
     /**
      * @brief Convenience function to add an entry to #buffer.
      *
      * @details If the buffer's size is equal to #max_length, the first entry in the queue is removed,
      * and the newest entry is added to the end.
      *
-     * @param entry The string representation of the entry to add.
-     *
-     * @pre You would probably call buildEntry() to format the entry before adding it to the buffer.
+     * @param f_areaName_r The name of the area where the loggable entry happened.
+     * @param f_charName_r The character name of the client who 'caused' the source event for the entry to happen.
+     * @param f_ipid_r The IPID of the aforementioned client.
+     * @param f_type_r The type of entry that is being built, something that uniquely identifies entries of similar being.
+     * @param f_message_r Any additional information related to the entry.
      */
-    void addEntry(QString entry);
+    void addEntry(const QString& f_areaName_r, const QString& f_charName_r, const QString& f_ipid_r,
+                  const QString& f_type_r,     const QString& f_message_r);
 
     /**
      * @brief The max amount of entries that may be contained in #buffer.
      */
-    int max_length;
+    int m_maxLength;
 
     /**
-     * @brief Contains entries that have not yet been flushed out into a log file.
-     */
-    QQueue<QString> buffer;
-
-    /**
-     * @brief A pointer to the area this logger is associated with.
+     * @brief Determines what kind of logging happens, `"full"` or `"modcall"`.
      *
-     * @details Used for logging in what area did a given packet event happen.
+     * @details This largely influences the resulting log file's name, and in case of a `"full"` setup,
+     * the in-memory buffer is auto-dumped to said file if full.
      */
-    AreaData* area;
+    QString m_logType;
 };
 
 #endif // LOGGER_H

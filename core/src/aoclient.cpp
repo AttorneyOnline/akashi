@@ -49,23 +49,21 @@ void AOClient::clientDisconnected()
 #endif
     if (joined) {
         server->player_count--;
-        server->areas[current_area]->player_count--;
+        server->areas[current_area]->clientLeftArea(server->getCharID(current_char));
         arup(ARUPType::PLAYER_COUNT, true);
     }
+
     if (current_char != "") {
-        server->areas[current_area]->characters_taken.removeAll(server->getCharID(current_char));
         server->updateCharsTaken(server->areas[current_area]);
     }
-    bool update_locks;
+
+    bool l_updateLocks = false;
+
     for (AreaData* area : server->areas) {
-        area->owners.removeAll(id);
-        area->invited.removeAll(id);
-        if (area->owners.isEmpty() && area->locked != AreaData::FREE) {
-            area->locked = AreaData::FREE;
-            update_locks = true;
-        }
+        l_updateLocks = l_updateLocks || area->removeOwner(id);
     }
-    if (update_locks)
+
+    if (l_updateLocks)
         arup(ARUPType::LOCKED, true);
     arup(ARUPType::CM, true);
 }
@@ -109,34 +107,34 @@ void AOClient::changeArea(int new_area)
         sendServerMessage("You are already in area " + server->area_names[current_area]);
         return;
     }
-    if (server->areas[new_area]->locked == AreaData::LockStatus::LOCKED && !server->areas[new_area]->invited.contains(id)) {
+    if (server->areas[new_area]->m_locked == AreaData::LockStatus::LOCKED && !server->areas[new_area]->m_invited.contains(id)) {
         sendServerMessage("Area " + server->area_names[new_area] + " is locked.");
         return;
     }
 
     if (current_char != "") {
-        server->areas[current_area]->characters_taken.removeAll(server->getCharID(current_char));
+        server->areas[current_area]->m_charactersTaken.removeAll(server->getCharID(current_char));
         server->updateCharsTaken(server->areas[current_area]);
     }
-    server->areas[new_area]->player_count++;
-    server->areas[current_area]->player_count--;
+    server->areas[new_area]->m_playerCount++;
+    server->areas[current_area]->m_playerCount--;
     current_area = new_area;
     arup(ARUPType::PLAYER_COUNT, true);
     sendEvidenceList(server->areas[new_area]);
-    sendPacket("HP", {"1", QString::number(server->areas[new_area]->def_hp)});
-    sendPacket("HP", {"2", QString::number(server->areas[new_area]->pro_hp)});
-    sendPacket("BN", {server->areas[new_area]->background});
-    if (server->areas[current_area]->characters_taken.contains(server->getCharID(current_char))) {
+    sendPacket("HP", {"1", QString::number(server->areas[new_area]->m_defHP)});
+    sendPacket("HP", {"2", QString::number(server->areas[new_area]->m_proHP)});
+    sendPacket("BN", {server->areas[new_area]->m_background});
+    if (server->areas[current_area]->m_charactersTaken.contains(server->getCharID(current_char))) {
         server->updateCharsTaken(server->areas[current_area]);
         current_char = "";
         sendPacket("DONE");
     }
     else {
-        server->areas[current_area]->characters_taken.append(server->getCharID(current_char));
+        server->areas[current_area]->m_charactersTaken.append(server->getCharID(current_char));
         server->updateCharsTaken(server->areas[current_area]);
     }
-    for (QTimer* timer : server->areas[current_area]->timers) {
-        int timer_id = server->areas[current_area]->timers.indexOf(timer) + 1;
+    for (QTimer* timer : server->areas[current_area]->m_timer) {
+        int timer_id = server->areas[current_area]->m_timer.indexOf(timer) + 1;
         if (timer->isActive()) {
             sendPacket("TI", {QString::number(timer_id), "2"});
             sendPacket("TI", {QString::number(timer_id), "0", QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(timer->remainingTime())))});
@@ -146,7 +144,7 @@ void AOClient::changeArea(int new_area)
         }
     }
     sendServerMessage("You moved to area " + server->area_names[current_area]);
-    if (server->areas[current_area]->locked == AreaData::LockStatus::SPECTATABLE)
+    if (server->areas[current_area]->m_locked == AreaData::LockStatus::SPECTATABLE)
         sendServerMessage("Area " + server->area_names[current_area] + " is spectate-only; to chat IC you will need to be invited by the CM.");
 }
 
@@ -162,16 +160,16 @@ bool AOClient::changeCharacter(int char_id)
     }
     
     if (current_char != "") {
-        area->characters_taken.removeAll(server->getCharID(current_char));
+        area->m_charactersTaken.removeAll(server->getCharID(current_char));
     }
 
     if (char_id >= 0) {
         QString char_selected = server->characters[char_id];
-        bool taken = area->characters_taken.contains(char_id);
+        bool taken = area->m_charactersTaken.contains(char_id);
         if (taken || char_selected == "")
             return false;
 
-        area->characters_taken.append(char_id);
+        area->m_charactersTaken.append(char_id);
         current_char = char_selected;
     }
     else {
@@ -216,20 +214,20 @@ void AOClient::arup(ARUPType type, bool broadcast)
     for (AreaData* area : server->areas) {
         switch(type) {
             case ARUPType::PLAYER_COUNT: {
-                arup_data.append(QString::number(area->player_count));
+                arup_data.append(QString::number(area->m_playerCount));
                 break;
             }
             case ARUPType::STATUS: {
-                QString area_status = QVariant::fromValue(area->status).toString().replace("_", "-"); // LOOKING_FOR_PLAYERS to LOOKING-FOR-PLAYERS
+                QString area_status = QVariant::fromValue(area->m_status).toString().replace("_", "-"); // LOOKING_FOR_PLAYERS to LOOKING-FOR-PLAYERS
                 arup_data.append(area_status);
                 break;
             }
             case ARUPType::CM: {
-                if (area->owners.isEmpty())
+                if (area->m_owners.isEmpty())
                     arup_data.append("FREE");
                 else {
                     QStringList area_owners;
-                    for (int owner_id : area->owners) {
+                    for (int owner_id : area->m_owners) {
                         AOClient* owner = server->getClientByID(owner_id);
                         area_owners.append("[" + QString::number(owner->id) + "] " + owner->current_char);
                     }
@@ -238,7 +236,7 @@ void AOClient::arup(ARUPType type, bool broadcast)
                 break;
             }
             case ARUPType::LOCKED: {
-                QString lock_status = QVariant::fromValue(area->locked).toString();
+                QString lock_status = QVariant::fromValue(area->m_locked).toString();
                 arup_data.append(lock_status);
                 break;
             }
@@ -314,7 +312,7 @@ bool AOClient::checkAuth(unsigned long long acl_mask)
     if (acl_mask != ACLFlags.value("NONE")) {
         if (acl_mask == ACLFlags.value("CM")) {
             AreaData* area = server->areas[current_area];
-            if (area->owners.contains(id))
+            if (area->m_owners.contains(id))
                 return true;
         }
         else if (!authenticated) {

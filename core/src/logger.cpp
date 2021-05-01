@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //    akashi - a server for Attorney Online 2                                       //
-//    Copyright (C) 2020  scatterflower                                           //
+//    Copyright (C) 2020  scatterflower                                             //
 //                                                                                  //
 //    This program is free software: you can redistribute it and/or modify          //
 //    it under the terms of the GNU Affero General Public License as                //
@@ -15,101 +15,101 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
+
+#include <QDir>
+
 #include "include/logger.h"
 
-void Logger::logIC(AOClient *client, AOPacket *packet)
+void Logger::logIC(const QString& f_areaName_r, const QString& f_charName_r, const QString& f_ipid_r, const QString& f_message_r)
 {
-    QString message = packet->contents[4];
-    addEntry(buildEntry(client, "IC", message));
+    addEntry(f_areaName_r, f_charName_r, f_ipid_r, "IC", f_message_r);
 }
 
-void Logger::logOOC(AOClient* client, AOPacket* packet)
+void Logger::logOOC(const QString& f_areaName_r, const QString& f_charName_r, const QString& f_ipid_r, const QString& f_message_r)
 {
-    QString message = packet->contents[1];
-    addEntry(buildEntry(client, "OOC", message));
+    addEntry(f_areaName_r, f_charName_r, f_ipid_r, "OOC", f_message_r);
 }
 
-void Logger::logModcall(AOClient* client, AOPacket* packet)
+void Logger::logModcall(const QString& f_areaName_r, const QString& f_charName_r, const QString& f_ipid_r, const QString& f_modcallReason_r)
 {
-    QString message = packet->contents[0];
-    addEntry(buildEntry(client, "MODCALL", message));
+    addEntry(f_areaName_r, f_charName_r, f_ipid_r, "MODCALL", f_modcallReason_r);
 }
 
-void Logger::logCmd(AOClient *client, AOPacket *packet, QString cmd, QStringList args)
+void Logger::logCmd(const QString& f_areaName_r, const QString& f_charName_r, const QString& f_ipid_r,
+                    const QString& f_oocMessage_r, const QString& f_cmd_r, const QStringList& f_cmdArgs_r)
 {
     // Some commands contain sensitive data, like passwords
     // These must be filtered out
-    if (cmd == "login") {
-        addEntry(buildEntry(client, "LOGIN", "Attempted login"));
+    if (f_cmd_r == "login") {
+        addEntry(f_areaName_r, f_charName_r, f_ipid_r, "LOGIN", "Attempted login");
     }
-    else if (cmd == "rootpass") {
-        addEntry(buildEntry(client, "USERS", "Root password created"));
+    else if (f_cmd_r == "rootpass") {
+        addEntry(f_areaName_r, f_charName_r, f_ipid_r, "USERS", "Root password created");
     }
-    else if (cmd == "adduser" && !args.isEmpty()) {
-        addEntry(buildEntry(client, "USERS", "Added user " + args[0]));
+    else if (f_cmd_r == "adduser" && !f_cmdArgs_r.isEmpty()) {
+        addEntry(f_areaName_r, f_charName_r, f_ipid_r, "USERS", "Added user " + f_cmdArgs_r[0]);
     }
-    else
-        logOOC(client, packet);
+    else {
+        logOOC(f_areaName_r, f_charName_r, f_ipid_r, f_oocMessage_r);
+    }
 }
 
-void Logger::logLogin(AOClient *client, bool success, QString modname)
+void Logger::logLogin(const QString& f_areaName_r, const QString& f_charName_r, const QString& f_ipid_r, bool success, const QString& f_modname_r)
 {
-    QString message = success ? "Logged in as " + modname : "Failed to log in as " + modname;
-    addEntry(buildEntry(client, "LOGIN", message));
+    QString l_message = success ? "Logged in as " + f_modname_r : "Failed to log in as " + f_modname_r;
+    addEntry(f_areaName_r, f_charName_r, f_ipid_r, "LOGIN", l_message);
 }
 
-QString Logger::buildEntry(AOClient *client, QString type, QString message)
+void Logger::addEntry(
+        const QString& f_areaName_r,
+        const QString& f_charName_r,
+        const QString& f_ipid_r,
+        const QString& f_type_r,
+        const QString& f_message_r)
 {
-    QString time = QDateTime::currentDateTime().toString("ddd MMMM d yyyy | hh:mm:ss");
-    QString area_name = area->name;
-    QString char_name = client->current_char;
-    QString ipid = client->getIpid();
+    QString l_time = QDateTime::currentDateTime().toString("ddd MMMM d yyyy | hh:mm:ss");
 
-    QString log_entry = QStringLiteral("[%1][%2][%6] %3(%4): %5\n")
-            .arg(time)
-            .arg(area_name)
-            .arg(char_name)
-            .arg(ipid)
-            .arg(message)
-            .arg(type);
-    return log_entry;
-}
+    QString l_logEntry = QStringLiteral("[%1][%2][%6] %3(%4): %5\n")
+            .arg(l_time, f_areaName_r, f_charName_r, f_ipid_r, f_message_r, f_type_r);
 
-void Logger::addEntry(QString entry)
-{
-    if (buffer.length() < max_length) {
-        buffer.enqueue(entry);
-        if (area->log_type == "full") {
-           flush();
+    if (m_buffer.length() < m_maxLength) {
+        m_buffer.enqueue(l_logEntry);
+
+        if (m_logType == "full") {
+           flush(f_areaName_r);
         }
     }
     else {
-        buffer.dequeue();
-        buffer.enqueue(entry);
+        m_buffer.dequeue();
+        m_buffer.enqueue(l_logEntry);
     }
 }
 
-void Logger::flush()
+void Logger::flush(const QString& f_areaName_r)
 {
-    QDir dir("logs/");
-    if (!dir.exists()) {
-        dir.mkpath(".");
+    QDir l_dir("logs/");
+    if (!l_dir.exists()) {
+        l_dir.mkpath(".");
     }
 
-    QFile logfile;
-    if (area->log_type == "modcall") {
-        logfile.setFileName(QString("logs/report_%1_%2.log").arg((area->name), (QDateTime::currentDateTime().toString("yyyy-MM-dd_hhmmss"))));
+    QFile l_logfile;
+
+    if (m_logType == "modcall") {
+        l_logfile.setFileName(QString("logs/report_%1_%2.log").arg(f_areaName_r, (QDateTime::currentDateTime().toString("yyyy-MM-dd_hhmmss"))));
     }
-    else if (area->log_type == "full") {
-        logfile.setFileName(QString("logs/%1.log").arg(QDate::currentDate().toString("yyyy-MM-dd")));
+    else if (m_logType == "full") {
+        l_logfile.setFileName(QString("logs/%1.log").arg(QDate::currentDate().toString("yyyy-MM-dd")));
     }
     else {
         qCritical("Invalid logger set!");
     }
-    if (logfile.open(QIODevice::WriteOnly | QIODevice::Append)) {
-    QTextStream file_stream(&logfile);
-    while (!buffer.isEmpty())
-        file_stream << buffer.dequeue();
-        }
-    logfile.close();
+
+    if (l_logfile.open(QIODevice::WriteOnly | QIODevice::Append)) {
+        QTextStream file_stream(&l_logfile);
+
+        while (!m_buffer.isEmpty())
+            file_stream << m_buffer.dequeue();
+    }
+
+    l_logfile.close();
 }

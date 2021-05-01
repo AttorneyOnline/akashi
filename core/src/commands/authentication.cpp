@@ -40,7 +40,7 @@ void AOClient::cmdLogin(int argc, QStringList argv)
             sendPacket("AUTH", {"0"}); // Client: "Login unsuccessful."
             sendServerMessage("Incorrect password.");
         }
-        server->areas.value(current_area)->logger->logLogin(this, authenticated, "moderator");
+        server->areas.value(current_area)->m_logger->logLogin(this, authenticated, "moderator");
     }
     else if (server->auth_type == "advanced") {
         if (argc < 2) {
@@ -61,7 +61,7 @@ void AOClient::cmdLogin(int argc, QStringList argv)
             sendPacket("AUTH", {"0"}); // Client: "Login unsuccessful."
             sendServerMessage("Incorrect password.");
         }
-        server->areas.value(current_area)->logger->logLogin(this, authenticated, username);
+        server->areas.value(current_area)->m_logger->logLogin(this, authenticated, username);
     }
     else {
         qWarning() << "config.ini has an unrecognized auth_type!";

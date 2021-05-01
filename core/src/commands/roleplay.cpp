@@ -48,7 +48,7 @@ void AOClient::cmdTimer(int argc, QStringList argv)
         QStringList timers;
         timers.append("Currently active timers:");
         for (int i = 0; i <= 4; i++) {
-            timers.append(getAreaTimer(area->index, i));
+            timers.append(getAreaTimer(area->m_index, i));
         }
         sendServerMessage(timers.join("\n"));
         return;
@@ -65,7 +65,7 @@ void AOClient::cmdTimer(int argc, QStringList argv)
     // Called with one argument
     // Shows the status of one timer
     if (argc == 1) {
-        sendServerMessage(getAreaTimer(area->index, timer_id));
+        sendServerMessage(getAreaTimer(area->m_index, timer_id));
         return;
     }
 
@@ -83,7 +83,7 @@ void AOClient::cmdTimer(int argc, QStringList argv)
         requested_timer = server->timer;
     }
     else
-        requested_timer = area->timers[timer_id - 1];
+        requested_timer = area->m_timers[timer_id - 1];
 
     AOPacket show_timer("TI", {QString::number(timer_id), "2"});
     AOPacket hide_timer("TI", {QString::number(timer_id), "3"});
@@ -130,18 +130,18 @@ void AOClient::cmdTimer(int argc, QStringList argv)
 void AOClient::cmdNoteCard(int argc, QStringList argv)
 {
     AreaData* area = server->areas[current_area];
-    if (area->notecards.keys().contains(current_char))
-        area->notecards.remove(current_char);
+    if (area->m_notecards.keys().contains(current_char))
+        area->m_notecards.remove(current_char);
     QString notecard = argv.join(" ");
-    area->notecards[current_char] = notecard;
+    area->m_notecards[current_char] = notecard;
     sendServerMessageArea(current_char + " wrote a note card.");
 }
 
 void AOClient::cmdNoteCardClear(int argc, QStringList argv)
 {
     AreaData* area = server->areas[current_area];
-    if (area->notecards.keys().contains(current_char)) {
-        area->notecards.remove(current_char);
+    if (area->m_notecards.keys().contains(current_char)) {
+        area->m_notecards.remove(current_char);
         sendServerMessageArea(current_char + " erased their note card.");
     }
     else
@@ -151,17 +151,17 @@ void AOClient::cmdNoteCardClear(int argc, QStringList argv)
 void AOClient::cmdNoteCardReveal(int argc, QStringList argv)
 {
     AreaData* area = server->areas[current_area];
-    if (area->notecards.isEmpty()) {
+    if (area->m_notecards.isEmpty()) {
         sendServerMessage("There are no cards to reveal in this area.");
         return;
     }
     QStringList message;
     message << "Note cards have been revealed.";
     QMap<QString, QString>::iterator i;
-    for (i = area->notecards.begin(); i != area->notecards.end(); ++i)
+    for (i = area->m_notecards.begin(); i != area->m_notecards.end(); ++i)
         message << i.key() + ": " + i.value();
     sendServerMessageArea(message.join("\n"));
-    area->notecards.clear();
+    area->m_notecards.clear();
 }
 
 void AOClient::cmd8Ball(int argc, QStringList argv)

@@ -32,7 +32,7 @@ QStringList AOClient::buildAreaList(int area_idx)
     QString area_name = server->area_names[area_idx];
     AreaData* area = server->areas[area_idx];
     entries.append("=== " + area_name + " ===");
-    switch (area->locked) {
+    switch (area->locked()) {
         case AreaData::LockStatus::LOCKED:
             entries.append("[LOCKED]");
             break;
@@ -43,13 +43,13 @@ QStringList AOClient::buildAreaList(int area_idx)
         default:
             break;
     }
-    entries.append("[" + QString::number(area->player_count) + " users][" + QVariant::fromValue(area->status).toString().replace("_", "-") + "]");
+    entries.append("[" + QString::number(area->m_playerCount) + " users][" + QVariant::fromValue(area->m_status).toString().replace("_", "-") + "]");
     for (AOClient* client : server->clients) {
         if (client->current_area == area_idx && client->joined) {
             QString char_entry = "[" + QString::number(client->id) + "] " + client->current_char;
             if (client->current_char == "")
                 char_entry += "Spectator";
-            if (area->owners.contains(client->id))
+            if (area->m_owners.contains(client->id))
                 char_entry.insert(0, "[CM] ");
             if (authenticated)
                 char_entry += " (" + client->getIpid() + "): " + client->ooc_name;
@@ -103,7 +103,7 @@ QString AOClient::getAreaTimer(int area_idx, int timer_idx)
     if (timer_idx == 0)
         timer = server->timer;
     else if (timer_idx > 0 && timer_idx <= 4)
-        timer = area->timers[timer_idx - 1];
+        timer = area->m_timer[timer_idx - 1];
     else
         return "Invalid timer ID.";
 
