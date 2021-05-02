@@ -62,6 +62,15 @@ void Advertiser::socketConnected()
 void Advertiser::socketDisconnected()
 {
     qDebug("Connection to master server lost");
+    QTimer timer;
+    while (socket->state() == QAbstractSocket::UnconnectedState) {
+        timer.start(60000);
+        QEventLoop timer_loop;
+        connect(&timer, SIGNAL(timeout()), &timer_loop, SLOT(quit()));
+        timer_loop.exec();
+        socket->connectToHost(ip, port);
+        socket->waitForConnected();
+    }
 }
 
 void Advertiser::reloadRequested(QString p_name, QString p_desc)
