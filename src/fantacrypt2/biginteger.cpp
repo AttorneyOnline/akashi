@@ -36,7 +36,10 @@ QString BigInteger::toString() {
     QString result;
 
     for (int i = digits.size() - 1; i >= 0; i--) {
-        result += QString::number(digits.at(i), 16);
+        QString conv = QString::number(digits.at(i), 16);
+        if (conv.length() == 1)
+            conv = "0" + conv;
+        result += conv;
     }
 
     if (!positive)
@@ -74,6 +77,9 @@ BigInteger BigInteger::operator + (BigInteger const &a) const
         result.digits[i] = addition_result & 0x00FF;
         carry = (addition_result & 0xFF00) >> 8;
     }
+
+    if (carry != 0)
+        result.digits.push_back(carry);
 
     result.is_valid = true;
     return result;
@@ -123,18 +129,18 @@ BigInteger BigInteger::operator - (BigInteger const &a) const
 BigInteger BigInteger::operator * (BigInteger const &a) const
 {
     BigInteger b = *this;
-    BigInteger result;
+    BigInteger result("00");
 
-    BigInteger zero;
+    BigInteger one("01");
 
-    //while (a > zero) {
-    //    result = result + b;
-    //}
+    for (BigInteger i("00"); i < b; i = i + one) {
+        result = result + a;
+    }
 
     return result;
 }
 
-bool BigInteger::operator==(const BigInteger &a) const
+bool BigInteger::operator == (const BigInteger &a) const
 {
     BigInteger b = *this;
 
@@ -145,6 +151,42 @@ bool BigInteger::operator==(const BigInteger &a) const
         if (a.digits.at(i) != b.digits.at(i))
             return false;
     }
+
+    return true;
+}
+
+bool BigInteger::operator > (const BigInteger &a) const
+{
+    BigInteger b = *this;
+
+    if (a == b)
+        return false;
+
+    if (b.digits.size() > a.digits.size())
+        return true;
+
+    if (a.digits.size() > b.digits.size())
+        return false;
+
+    for (int i = a.digits.size() - 1; i > 0; i--) {
+        if (b.digits.at(i) > a.digits.at(i))
+            return true;
+        if (b.digits.at(i) < a.digits.at(i))
+            return false;
+    }
+
+    return false;
+}
+
+bool BigInteger::operator < (const BigInteger &a) const
+{
+    BigInteger b = *this;
+
+    if (a == b)
+        return false;
+
+    if (b > a)
+        return false;
 
     return true;
 }
