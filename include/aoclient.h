@@ -162,6 +162,13 @@ class AOClient : public QObject {
     bool global_enabled = true;
 
     /**
+     * @brief If true, the client's messages will be sent in first-person mode.
+     *
+     * @see AOClient::cmdFirstPerson
+     */
+    bool first_person = false;
+
+    /**
      * @brief If true, the client may not use in-character chat.
      */
     bool is_muted = false;
@@ -1531,6 +1538,15 @@ class AOClient : public QObject {
      */
     void cmdS(int argc, QStringList argv);
 
+    /**
+     * @brief Toggle whether the client's messages will be sent in first person mode.
+     *
+     * @details No arguments.
+     *
+     * @iscommand
+     */
+    void cmdFirstPerson(int argc, QStringList argv);
+
     ///@}
 
     /**
@@ -1986,7 +2002,8 @@ class AOClient : public QObject {
         {"charselect",         {ACLFlags.value("NONE"),         0, &AOClient::cmdCharSelect}},
         {"togglemusic",        {ACLFlags.value("CM"),           0, &AOClient::cmdToggleMusic}},
         {"a",                  {ACLFlags.value("NONE"),         2, &AOClient::cmdA}},
-        {"s",                  {ACLFlags.value("NONE"),         0, &AOClient::cmdS}}
+        {"s",                  {ACLFlags.value("NONE"),         0, &AOClient::cmdS}},
+        {"firstperson",        {ACLFlags.value("NONE"),         0, &AOClient::cmdFirstPerson}},
     };
 
     /**

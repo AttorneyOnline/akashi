@@ -98,6 +98,11 @@ public:
      */
     void flush();
 
+    /**
+     *@brief Returns the current area buffer
+     */
+    QQueue<QString> getBuffer();
+
 private:
     /**
      * @brief Convenience function to format entries to the acceptable standard for logging.
