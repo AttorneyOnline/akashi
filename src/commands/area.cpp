@@ -260,14 +260,14 @@ void AOClient::cmdBgLock(int argc, QStringList argv)
 {
     AreaData* area = server->areas[current_area];
     area->bg_locked = true;
-    server->broadcast(AOPacket("CT", {"Server", current_char + " locked the background.", "1"}), current_area);
+    server->broadcast(AOPacket("CT", {server->server_name, current_char + " locked the background.", "1"}), current_area);
 }
 
 void AOClient::cmdBgUnlock(int argc, QStringList argv)
 {
     AreaData* area = server->areas[current_area];
     area->bg_locked = false;
-    server->broadcast(AOPacket("CT", {"Server", current_char + " unlocked the background.", "1"}), current_area);
+    server->broadcast(AOPacket("CT", {server->server_name, current_char + " unlocked the background.", "1"}), current_area);
 }
 
 void AOClient::cmdStatus(int argc, QStringList argv)
@@ -291,7 +291,7 @@ void AOClient::cmdStatus(int argc, QStringList argv)
         return;
     }
     arup(ARUPType::STATUS, true);
-    sendServerMessageArea(ooc_name + " changed status to " + arg);
+    server->broadcast(AOPacket("CT", {server->server_name, current_char + " changed status to " + arg.toUpper(), "1"}), current_area);
 }
 
 void AOClient::cmdJudgeLog(int argc, QStringList argv)
