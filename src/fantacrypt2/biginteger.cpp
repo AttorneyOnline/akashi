@@ -4,7 +4,10 @@
 
 BigInteger::BigInteger(QString hex)
 {
-    qDebug() << "construct";
+    if (hex.at(0) == "-") {
+        positive = false;
+        hex = hex.right(hex.size() - 1);
+    }
     if (hex.length() % 2 != 0)
         return;
     for (int i = 0; i < hex.length(); i += 2) {
@@ -25,6 +28,7 @@ BigInteger::BigInteger(QString hex)
 
 BigInteger::BigInteger()
 {
+    positive = true;
     is_valid = true;
 }
 
@@ -35,6 +39,9 @@ QString BigInteger::toString() {
         result += QString::number(digits.at(i), 16);
     }
 
+    if (!positive)
+        result = "-" + result;
+
     return result;
 }
 
@@ -42,6 +49,12 @@ BigInteger BigInteger::operator + (BigInteger const &a) const
 {
     BigInteger b = *this;
     BigInteger result;
+
+    if (!b.positive) {
+        b.positive = true;
+        return a - b;
+    }
+
     int n = a.digits.size();
     if (n < b.digits.size())
         n = b.digits.size();
@@ -66,16 +79,72 @@ BigInteger BigInteger::operator + (BigInteger const &a) const
     return result;
 }
 
+BigInteger BigInteger::operator - (BigInteger const &a) const
+{
+    BigInteger b = *this;
+    BigInteger result;
+
+    if (!b.positive) {
+        b.positive = true;
+        return a + b;
+    }
+
+    int n = a.digits.size();
+    if (n < b.digits.size())
+        n = b.digits.size();
+
+    int borrow = 0;
+    for (int i = 0; i < n; i++) {
+        result.digits.push_back(0);
+        int subtraction_result = 0;
+
+        if (i < a.digits.size() && i < b.digits.size())
+            subtraction_result -= a.digits.at(i) - b.digits.at(i);
+        else if (i >= a.digits.size())
+            subtraction_result = b.digits.at(i);
+        else if (i >= b.digits.size())
+            subtraction_result = a.digits.at(i);
+
+        subtraction_result -= borrow;
+
+        if (subtraction_result >= 0) {
+            result.digits[i] = subtraction_result;
+            borrow = 0;
+        }
+        else {
+            result.digits[i] = (0x100 + subtraction_result);
+            borrow = 1;
+        }
+    }
+
+    return result;
+}
+
 BigInteger BigInteger::operator * (BigInteger const &a) const
 {
     BigInteger b = *this;
     BigInteger result;
 
-    BigInteger zero("00");
+    BigInteger zero;
 
-    while (a > zero) {
-        result = result + b;
-    }
+    //while (a > zero) {
+    //    result = result + b;
+    //}
 
     return result;
+}
+
+bool BigInteger::operator==(const BigInteger &a) const
+{
+    BigInteger b = *this;
+
+    if (a.digits.size() != b.digits.size())
+        return false;
+
+    for (int i = 0; i < a.digits.size(); i++) {
+        if (a.digits.at(i) != b.digits.at(i))
+            return false;
+    }
+
+    return true;
 }

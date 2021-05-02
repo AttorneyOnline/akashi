@@ -418,6 +418,6 @@ void AOClient::cmdTest(int argc, QStringList argv)
 {
     BigInteger a("DEADBEEFDEADBEEFDEADBEEF");
     BigInteger b("F00DF00DF00D");
-    BigInteger c = a + b;
-    sendServerMessage("bigint test: 0x" + c.toString());
+    bool cmp = a > b;
+    sendServerMessage("bigint test: " + (cmp ? QStringLiteral("true") : QStringLiteral("false")));
 }

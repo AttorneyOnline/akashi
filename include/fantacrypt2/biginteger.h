@@ -13,9 +13,16 @@ public:
     QString toString();
 
     BigInteger operator + (BigInteger const &) const;
+    BigInteger operator - (BigInteger const &) const;
     BigInteger operator * (BigInteger const &) const;
+    BigInteger operator / (BigInteger const &) const;
+
+    bool operator == (BigInteger const &) const;
+    bool operator > (BigInteger const &) const;
+    bool operator < (BigInteger const &) const;
 
     bool is_valid = false;
+    bool positive;
     QList<unsigned char> digits;
 private:
 
