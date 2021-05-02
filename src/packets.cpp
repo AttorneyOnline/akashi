@@ -157,6 +157,10 @@ void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket pa
         return;
     }
 
+    if (!server->can_send_ic_messages) {
+        return;
+    }
+
     AOPacket validated_packet = validateIcPacket(packet);
     if (validated_packet.header == "INVALID")
         return;
@@ -168,6 +172,9 @@ void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket pa
     server->broadcast(validated_packet, current_area);
     area->last_ic_message.clear();
     area->last_ic_message.append(validated_packet.contents);
+
+    server->can_send_ic_messages = false;
+    server->next_message_timer.start(server->message_floodguard);
 }
 
 void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket packet)
@@ -884,3 +891,4 @@ void AOClient::loginAttempt(QString message)
     is_logging_in = false;
     return;
 }
+
