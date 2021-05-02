@@ -24,6 +24,7 @@
 #include <QHostAddress>
 #include <QString>
 #include <QTcpSocket>
+#include <QTimer>
 
 /**
  * @brief A communicator class to update the master server on the server's status.
