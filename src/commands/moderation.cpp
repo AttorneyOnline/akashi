@@ -413,3 +413,26 @@ void AOClient::cmdPermitSaving(int argc, QStringList argv)
     }
     client->testimony_saving = true;
 }
+
+void AOClient::cmdKickUid(int argc, QStringList argv)
+{
+    QString reason = argv[1];
+
+    if (argc > 2) {
+        for (int i = 2; i < argv.length(); i++) {
+            reason += " " + argv[i];
+        }
+    }
+
+    bool conv_ok = false;
+    int uid = argv[0].toInt(&conv_ok);
+    if (!conv_ok) {
+        sendServerMessage("Invalid user ID.");
+        return;
+    }
+
+    AOClient* target = server->getClientByID(uid);
+    target->sendPacket("KK", {reason});
+    target->socket->close();
+    sendServerMessage("Kicked client with UID " + argv[0] + " for reason: " + reason);
+}

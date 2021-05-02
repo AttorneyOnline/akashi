@@ -1176,6 +1176,20 @@ class AOClient : public QObject {
     */
     void cmdPermitSaving(int argc, QStringList argv);
 
+    /**
+     * @brief Kicks a client from the server, forcibly severing its connection to the server.
+     *
+     * @details The first argument is the **target's UID**, while the remaining arguments are the **reason**
+     * the client was kicked. Both arguments are mandatory.
+     *
+     * Unlike cmdKick, this command will only kick a single client, thus a multiclienting user will not have all their clients kicked.
+     *
+     * @iscommand
+     *
+     * @see #cmdKick
+     */
+    void cmdKickUid(int argc, QStringList argv);
+
     ///@}
 
     /**
@@ -2000,6 +2014,8 @@ class AOClient : public QObject {
         {"togglemusic",        {ACLFlags.value("CM"),           0, &AOClient::cmdToggleMusic}},
         {"a",                  {ACLFlags.value("NONE"),         2, &AOClient::cmdA}},
         {"s",                  {ACLFlags.value("NONE"),         0, &AOClient::cmdS}},
+        {"kickuid",            {ACLFlags.value("NONE"),         2, &AOClient::cmdKickUid}},
+        {"kick_uid",           {ACLFlags.value("NONE"),         2, &AOClient::cmdKickUid}},
         {"firstperson",        {ACLFlags.value("NONE"),         0, &AOClient::cmdFirstPerson}},
     };
 
