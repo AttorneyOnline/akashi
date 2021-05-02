@@ -103,7 +103,7 @@ QString AOClient::getAreaTimer(int area_idx, int timer_idx)
     if (timer_idx == 0)
         timer = server->timer;
     else if (timer_idx > 0 && timer_idx <= 4)
-        timer = area->timers()[timer_idx - 1];
+        timer = area->timers().at(timer_idx - 1);
     else
         return "Invalid timer ID.";
 

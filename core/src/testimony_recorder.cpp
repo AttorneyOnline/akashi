@@ -58,7 +58,7 @@ QStringList AOClient::updateStatement(QStringList packet)
         sendServerMessage("Unable to update an empty statement. Please use /addtestimony.");
     else {
         packet[14] = "1";
-        area->testimony().replace(c_statement, packet);
+        area->replaceStatement(c_statement, packet);
         sendServerMessage("Updated current statement.");
         return area->testimony()[c_statement];
     }

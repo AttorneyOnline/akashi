@@ -172,6 +172,16 @@ bool AreaData::invite(int f_clientId)
     return true;
 }
 
+bool AreaData::uninvite(int f_clientId)
+{
+    if (m_invited.contains(f_clientId)) {
+        return false;
+    }
+
+    m_invited.removeAll(f_clientId);
+    return true;
+}
+
 int AreaData::playerCount() const
 {
     return m_playerCount;
@@ -197,9 +207,37 @@ QList<int> AreaData::charactersTaken() const
     return m_charactersTaken;
 }
 
+bool AreaData::changeCharacter(int f_from, int f_to)
+{
+    if (f_from != -1) {
+        m_charactersTaken.removeAll(f_from);
+    }
+
+    if (m_charactersTaken.contains(f_to)) {
+        return false;
+    }
+
+    if (f_to != -1) {
+        m_charactersTaken.append(f_to);
+        return true;
+    }
+
+    return false;
+}
+
 QList<AreaData::Evidence> AreaData::evidence() const
 {
     return m_evidence;
+}
+
+void AreaData::swapEvidence(int f_eviId1, int f_eviId2)
+{
+#if QT_VERSION < QT_VERSION_CHECK(5, 13, 0)
+    //swapItemsAt does not exist in Qt older than 5.13
+    m_evidence.swap(f_eviId1, f_eviId2);
+#else
+    m_evidence.swapItemsAt(f_eviId1, f_eviId2);
+#endif
 }
 
 AreaData::Status AreaData::status() const
@@ -324,6 +362,11 @@ void AreaData::addStatement(int f_position, const QStringList &f_newStatement)
     m_testimony.insert(f_position, f_newStatement);
 }
 
+void AreaData::replaceStatement(int f_position, const QStringList &f_newStatement)
+{
+    m_testimony.replace(f_position, f_newStatement);
+}
+
 void AreaData::removeStatement(int f_statementNumber)
 {
     m_testimony.remove(f_statementNumber);
@@ -351,7 +394,7 @@ QStringList AreaData::jumpToStatement(int f_statementNr)
     return m_testimony.at(m_statement);
 }
 
-QVector<QStringList> AreaData::testimony() const
+const QVector<QStringList>& AreaData::testimony() const
 {
     return m_testimony;
 }
@@ -361,14 +404,36 @@ AreaData::TestimonyRecording AreaData::testimonyRecording() const
     return m_testimonyRecording;
 }
 
-QMap<QString, QString> AreaData::notecards() const
-{
-    return m_notecards;
-}
-
 AreaData::EvidenceMod AreaData::eviMod() const
 {
     return m_eviMod;
+}
+
+bool AreaData::addNotecard(const QString &f_owner_r, const QString &f_notecard_r)
+{
+    m_notecards[f_owner_r] = f_notecard_r;
+
+    if (f_notecard_r.isNull()) {
+        m_notecards.remove(f_owner_r);
+        return false;
+    }
+
+    return true;
+}
+
+QStringList AreaData::getNotecards()
+{
+    QMapIterator<QString, QString> l_noteIter(m_notecards);
+    QStringList l_notecards;
+
+    while (l_noteIter.hasNext()) {
+        l_noteIter.next();
+        l_notecards << l_noteIter.key() << ": " << l_noteIter.value() << "\n";
+    }
+
+    m_notecards.clear();
+
+    return l_notecards;
 }
 
 QString AreaData::musicPlayerBy() const

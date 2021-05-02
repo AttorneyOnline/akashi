@@ -85,12 +85,7 @@ void AOClient::cmdEvidence_Swap(int argc, QStringList argv)
         return;
     }
     if ((ev_id2 <= ev_size) && (ev_id1 <= ev_size)) {
-#if QT_VERSION < QT_VERSION_CHECK(5, 13, 0)
-        //swapItemsAt does not exist in Qt older than 5.13
-        area->evidence.swap(ev_id1, ev_id2);
-#else
-        area->evidence().swapItemsAt(ev_id1, ev_id2);
-#endif
+        area->swapEvidence(ev_id1, ev_id2);
         sendEvidenceList(area);
         sendServerMessage("The evidence " + QString::number(ev_id1) + " and " + QString::number(ev_id2) + " have been swapped.");
     }
@@ -256,7 +251,7 @@ void AOClient::cmdLoadTestimony(int argc, QStringList argv)
         if (testimony_lines <= server->maximum_statements) {
             QString line = in.readLine();
             QStringList packet = line.split("#");
-            area->testimony().append(packet);
+            area->addStatement(area->testimony().size(), packet);
             testimony_lines = testimony_lines + 1;
         }
         else {

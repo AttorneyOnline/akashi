@@ -159,21 +159,13 @@ bool AOClient::changeCharacter(int char_id)
         return false;
     }
     
-    if (current_char != "") {
-        area->charactersTaken().removeAll(server->getCharID(current_char));
-    }
+    bool l_successfulChange = area->changeCharacter(server->getCharID(current_char), char_id);
 
-    if (char_id >= 0) {
+    current_char = "";
+
+    if (l_successfulChange) {
         QString char_selected = server->characters[char_id];
-        bool taken = area->charactersTaken().contains(char_id);
-        if (taken || char_selected == "")
-            return false;
-
-        area->charactersTaken().append(char_id);
         current_char = char_selected;
-    }
-    else {
-        current_char = "";
     }
 
     pos = "";

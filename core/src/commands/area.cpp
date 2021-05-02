@@ -133,11 +133,10 @@ void AOClient::cmdUnInvite(int argc, QStringList argv)
         sendServerMessage("You cannot uninvite a CM!");
         return;
     }
-    else if (!area->invited().contains(uninvited_id)) {
+    else if (!area->uninvite(uninvited_id)) {
         sendServerMessage("That ID is not on the invite list.");
         return;
     }
-    area->invited().removeAll(uninvited_id);
     sendServerMessage("You uninvited ID " + argv[0]);
 }
 
@@ -152,7 +151,7 @@ void AOClient::cmdLock(int argc, QStringList argv)
     area->lock();
     for (AOClient* client : server->clients) {
         if (client->current_area == current_area && client->joined) {
-            area->invited().append(client->id);
+            area->invite(client->id);
         }
     }
     arup(ARUPType::LOCKED, true);
@@ -169,7 +168,7 @@ void AOClient::cmdSpectatable(int argc, QStringList argv)
     area->spectatable();
     for (AOClient* client : server->clients) {
         if (client->current_area == current_area && client->joined) {
-            area->invited().append(client->id);
+            area->invite(client->id);
         }
     }
     arup(ARUPType::LOCKED, true);

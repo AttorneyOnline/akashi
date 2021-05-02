@@ -237,13 +237,6 @@ class AreaData : public QObject {
 
     void spectatable();
 
-    /**
-     * @brief invite
-     * @param f_clientId
-     * @return True if the client was successfully invited. False if they were already in the list of invited people.
-     */
-    bool invite(int f_clientId);
-
     int playerCount() const;
 
     QList<QTimer *> timers() const;
@@ -254,13 +247,26 @@ class AreaData : public QObject {
 
     QList<int> charactersTaken() const;
 
+    bool changeCharacter(int f_from = -1, int f_to = -1);
+
     QList<Evidence> evidence() const;
+
+    void swapEvidence(int f_eviId1, int f_eviId2);
 
     Status status() const;
 
     bool changeStatus(const QString& f_newStatus_r);
 
     QList<int> invited() const;
+
+    /**
+     * @brief invite
+     * @param f_clientId
+     * @return True if the client was successfully invited. False if they were already in the list of invited people.
+     */
+    bool invite(int f_clientId);
+
+    bool uninvite(int f_clientId);
 
     QString background() const;
 
@@ -288,7 +294,9 @@ class AreaData : public QObject {
 
     EvidenceMod eviMod() const;
 
-    QMap<QString, QString> notecards() const;
+    bool addNotecard(const QString& f_owner_r, const QString& f_notecard_r);
+
+    QStringList getNotecards();
 
     TestimonyRecording testimonyRecording() const;
 
@@ -298,13 +306,15 @@ class AreaData : public QObject {
 
     void clearTestimony();
 
-    QVector<QStringList> testimony() const;
+    const QVector<QStringList>& testimony() const;
 
     int statement() const;
 
     void recordStatement(const QStringList& f_newStatement);
 
     void addStatement(int f_position, const QStringList& f_newStatement);
+
+    void replaceStatement(int f_position, const QStringList& f_newStatement);
 
     void removeStatement(int f_statementNumber);
 
