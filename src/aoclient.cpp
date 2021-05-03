@@ -311,6 +311,9 @@ void AOClient::sendServerBroadcast(QString message)
 
 bool AOClient::checkAuth(unsigned long long acl_mask)
 {
+#ifdef SKIP_AUTH
+    return true;
+#endif
     if (acl_mask != ACLFlags.value("NONE")) {
         if (acl_mask == ACLFlags.value("CM")) {
             AreaData* area = server->areas[current_area];
