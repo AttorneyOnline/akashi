@@ -50,31 +50,26 @@ QString BigInteger::toString() {
 
 BigInteger BigInteger::operator + (BigInteger const &a) const
 {
-    BigInteger b = *this;
     BigInteger result;
 
-    if (!b.positive) {
-        b.positive = true;
-        return a - b;
-    }
+    const int aSize = a.digits.size();
+    const int bSize = this->digits.size();
 
-    int n = a.digits.size();
-    if (n < b.digits.size())
-        n = b.digits.size();
+    const int n = std::max(aSize, bSize);
+
+    result.digits.reserve(n);
 
     int carry = 0;
+    int addition_result = 0;
     for (int i = 0; i < n; i++) {
-        result.digits.push_back(0);
-        int addition_result = carry;
+        addition_result = carry;
 
-        if (i < a.digits.size() && i < b.digits.size())
-            addition_result += a.digits.at(i) + b.digits.at(i);
-        else if (i >= a.digits.size())
-            addition_result += b.digits.at(i);
-        else if (i >= b.digits.size())
+        if (i < aSize)
             addition_result += a.digits.at(i);
+        if (i < bSize)
+            addition_result += this->digits.at(i);
 
-        result.digits[i] = addition_result & 0x00FF;
+        result.digits.append(addition_result & 0x00FF);
         carry = (addition_result & 0xFF00) >> 8;
     }
 
@@ -128,16 +123,65 @@ BigInteger BigInteger::operator - (BigInteger const &a) const
 
 BigInteger BigInteger::operator * (BigInteger const &a) const
 {
-    BigInteger b = *this;
+    // This utilizes repeated addition, which while very trivial, is extremely slow.
+    /*
     BigInteger result("00");
-
     BigInteger one("01");
 
-    for (BigInteger i("00"); i < b; i = i + one) {
-        result = result + a;
+    BigInteger larger, smaller;
+    if (a > *this) {
+        larger = a;
+        smaller = *this;
+    }
+    else {
+        larger = *this;
+        smaller = a;
+    }
+
+    for (BigInteger i("00"); i < smaller; i = i + one) {
+        result = result + larger;
     }
 
     return result;
+    */
+
+    BigInteger result;
+    for (int i = 0; i < digits.size() + a.digits.size(); i++)
+        result.digits.append(0);
+
+    for (int i = 0; i < digits.length(); i++) {
+        int carry = 0;
+        int digit;
+
+        for (int j = i; j < a.digits.length() + i; j++) {
+            digit = result.digits.at(j) + (digits.at(i) * a.digits.at(j - i)) + carry;
+            carry = (digit & 0xFF00) >> 8;
+            result.digits[j] = digit & 0xFF;
+        }
+        if (carry) {
+            int j = (a.digits.length() + i);
+            digit = result.digits.at(j) + carry;
+            carry = (digit & 0xFF00) >> 8;
+            result.digits[j] = digit & 0xFF;
+        }
+    }
+
+    for (int i = result.digits.length() - 1; i >= 0; i--) {
+        if (result.digits.at(i) == 0)
+            result.digits.pop_back();
+    }
+
+    return result;
+}
+
+// returns 2^this
+BigInteger BigInteger::exp2()
+{
+    BigInteger result;
+
+
+
+    return BigInteger();
 }
 
 bool BigInteger::operator == (const BigInteger &a) const
@@ -159,19 +203,19 @@ bool BigInteger::operator > (const BigInteger &a) const
 {
     BigInteger b = *this;
 
-    if (a == b)
+    if (a == *this)
         return false;
 
-    if (b.digits.size() > a.digits.size())
+    if (this->digits.size() > a.digits.size())
         return true;
 
-    if (a.digits.size() > b.digits.size())
+    if (a.digits.size() > this->digits.size())
         return false;
 
     for (int i = a.digits.size() - 1; i > 0; i--) {
-        if (b.digits.at(i) > a.digits.at(i))
+        if (this->digits.at(i) > a.digits.at(i))
             return true;
-        if (b.digits.at(i) < a.digits.at(i))
+        if (this->digits.at(i) < a.digits.at(i))
             return false;
     }
 
@@ -180,12 +224,10 @@ bool BigInteger::operator > (const BigInteger &a) const
 
 bool BigInteger::operator < (const BigInteger &a) const
 {
-    BigInteger b = *this;
-
-    if (a == b)
+    if (a == *this)
         return false;
 
-    if (b > a)
+    if (*this > a)
         return false;
 
     return true;

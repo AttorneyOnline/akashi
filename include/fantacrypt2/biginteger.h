@@ -12,6 +12,9 @@ public:
 
     QString toString();
 
+    BigInteger exp2();
+    bool sweep();
+
     BigInteger operator + (BigInteger const &) const;
     BigInteger operator - (BigInteger const &) const;
     BigInteger operator * (BigInteger const &) const;
@@ -23,7 +26,7 @@ public:
 
     bool is_valid = false;
     bool positive;
-    QList<unsigned char> digits;
+    QList<quint8> digits;
 private:
 
 };

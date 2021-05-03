@@ -416,8 +416,8 @@ void AOClient::cmdPermitSaving(int argc, QStringList argv)
 
 void AOClient::cmdTest(int argc, QStringList argv)
 {
-    BigInteger a("FEED");
-    BigInteger b("F00D");
+    BigInteger a("DEADBEEFF00D");
+    BigInteger b("CAFEBEEFDEAD");
     BigInteger c = a * b;
     sendServerMessage("bigint test: 0x" + c.toString());
     //bool cmp = a < b;
