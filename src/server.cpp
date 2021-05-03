@@ -104,6 +104,7 @@ void Server::start()
         QString area_name = raw_area_names[i];
         areas.insert(i, new AreaData(area_name, i));
     }
+    connect(&next_message_timer, SIGNAL(timeout()), this, SLOT(allowMessage()));
 }
 
 void Server::clientConnected()
@@ -290,6 +291,10 @@ void Server::loadServerConfig()
     max_chars = config.value("maximum_characters", "256").toInt(&max_char_conversion_success);
     if (!max_char_conversion_success)
         max_chars = 256;
+    bool message_floodguard_conversion_success;
+    message_floodguard = config.value("message_floodguard", "250").toInt(&message_floodguard_conversion_success);
+    if (!message_floodguard_conversion_success)
+        message_floodguard = 30;
     config.endGroup();
 
     //Load dice values
@@ -304,6 +309,11 @@ void Server::loadServerConfig()
     webhook_url = config.value("webhook_url", "Your webhook url here.").toString();
     webhook_sendfile = config.value("webhook_sendfile", false).toBool();
     config.endGroup();
+}
+
+void Server::allowMessage()
+{
+    can_send_ic_messages = true;
 }
 
 Server::~Server()
