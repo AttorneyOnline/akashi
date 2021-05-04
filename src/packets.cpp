@@ -63,6 +63,9 @@ void AOClient::pktSoftwareId(AreaData* area, int argc, QStringList argv, AOPacke
 
     sendPacket("PN", {QString::number(server->player_count), server->max_players});
     sendPacket("FL", feature_list);
+
+    QByteArray asset_url = server->asset_url.toEncoded(QUrl::EncodeSpaces);
+    sendPacket("ASS", {asset_url});
 }
 
 void AOClient::pktBeginLoad(AreaData* area, int argc, QStringList argv, AOPacket packet)
