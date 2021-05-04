@@ -2017,8 +2017,8 @@ class AOClient : public QObject {
         {"togglemusic",        {ACLFlags.value("CM"),           0, &AOClient::cmdToggleMusic}},
         {"a",                  {ACLFlags.value("NONE"),         2, &AOClient::cmdA}},
         {"s",                  {ACLFlags.value("NONE"),         0, &AOClient::cmdS}},
-        {"kickuid",            {ACLFlags.value("NONE"),         2, &AOClient::cmdKickUid}},
-        {"kick_uid",           {ACLFlags.value("NONE"),         2, &AOClient::cmdKickUid}},
+        {"kickuid",            {ACLFlags.value("KICK"),         2, &AOClient::cmdKickUid}},
+        {"kick_uid",           {ACLFlags.value("KICK"),         2, &AOClient::cmdKickUid}},
         {"firstperson",        {ACLFlags.value("NONE"),         0, &AOClient::cmdFirstPerson}},
     };
 
