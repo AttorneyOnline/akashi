@@ -31,7 +31,7 @@ jobs:
 
       - name: Run tests
         run: |
-            for test in bin_tests/; do
+            for test in bin_tests/*; do
               LD_LIBRARY_PATH=./bin:$LD_LIBRARY_PATH ./$test
             done;
           
@@ -61,7 +61,7 @@ jobs:
 
       - name: Run tests
         run: |
-          for test in bin_tests/; do
+          for test in bin_tests/*; do
             LD_LIBRARY_PATH=./bin:$LD_LIBRARY_PATH ./$test
           done;
           
