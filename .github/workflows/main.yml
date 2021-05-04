@@ -60,7 +60,7 @@ jobs:
           mv bin\config_sample bin\config
 
       - name: Run tests
-        run |
+        run: |
           for test in bin_tests/; do
             ./$test
           done;
