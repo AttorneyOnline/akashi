@@ -5,6 +5,13 @@ TEMPLATE = lib
 
 CONFIG += shared c++11
 
+# Needed so that Windows doesn't do `release/` and `debug/` subfolders
+# in the output directory.
+CONFIG -= \
+        copy_dir_files \
+        debug_and_release \
+        debug_and_release_target
+
 DESTDIR = $$PWD/../bin
 
 # You can make your code fail to compile if it uses deprecated APIs.
