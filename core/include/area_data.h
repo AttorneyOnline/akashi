@@ -253,6 +253,12 @@ class AreaData : public QObject {
 
     void swapEvidence(int f_eviId1, int f_eviId2);
 
+    void appendEvidence(const Evidence& f_evi_r);
+
+    void deleteEvidence(int f_eviId);
+
+    void replaceEvidence(int f_eviId, const Evidence& f_newEvi_r);
+
     Status status() const;
 
     bool changeStatus(const QString& f_newStatus_r);
@@ -324,7 +330,9 @@ class AreaData : public QObject {
 
     QStringList judgelog() const;
 
-    QStringList lastICMessage() const;
+    void appendJudgelog(const QString& f_newLog_r);
+
+    const QStringList& lastICMessage() const;
 
     void updateLastICMessage(const QStringList& f_lastMessage);
 

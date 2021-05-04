@@ -347,7 +347,7 @@ void AOClient::pktAddEvidence(AreaData* area, int argc, QStringList argv, AOPack
     if (!checkEvidenceAccess(area))
         return;
     AreaData::Evidence evi = {argv[0], argv[1], argv[2]};
-    area->evidence().append(evi);
+    area->appendEvidence(evi);
     sendEvidenceList(area);
 }
 
@@ -358,7 +358,7 @@ void AOClient::pktRemoveEvidence(AreaData* area, int argc, QStringList argv, AOP
     bool is_int = false;
     int idx = argv[0].toInt(&is_int);
     if (is_int && idx <= area->evidence().size() && idx >= 0) {
-        area->evidence().removeAt(idx);
+        area->deleteEvidence(idx);
     }
     sendEvidenceList(area);
 }
@@ -371,7 +371,7 @@ void AOClient::pktEditEvidence(AreaData* area, int argc, QStringList argv, AOPac
     int idx = argv[0].toInt(&is_int);
     AreaData::Evidence evi = {argv[1], argv[2], argv[3]};
     if (is_int && idx <= area->evidence().size() && idx >= 0) {
-        area->evidence().replace(idx, evi);
+        area->replaceEvidence(idx, evi);
     }
     sendEvidenceList(area);
 }
@@ -828,12 +828,7 @@ void AOClient::updateJudgeLog(AreaData* area, AOClient* client, QString action)
     QString ipid = client->getIpid();
     QString message = action;
     QString logmessage = QString("[%1]: [%2] %3 (%4) %5").arg(timestamp, uid, char_name, ipid, message);
-    int size = area->judgelog().size();
-    if (size == 10) {
-        area->judgelog().removeFirst();
-        area->judgelog().append(logmessage);
-    }
-    else area->judgelog().append(logmessage);
+    area->appendJudgelog(logmessage);
 }
 
 QString AOClient::decodeMessage(QString incoming_message)

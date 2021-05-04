@@ -240,6 +240,21 @@ void AreaData::swapEvidence(int f_eviId1, int f_eviId2)
 #endif
 }
 
+void AreaData::appendEvidence(const AreaData::Evidence &f_evi_r)
+{
+    m_evidence.append(f_evi_r);
+}
+
+void AreaData::deleteEvidence(int f_eviId)
+{
+    m_evidence.removeAt(f_eviId);
+}
+
+void AreaData::replaceEvidence(int f_eviId, const AreaData::Evidence &f_newEvi_r)
+{
+    m_evidence.replace(f_eviId, f_newEvi_r);
+}
+
 AreaData::Status AreaData::status() const
 {
     return m_status;
@@ -331,7 +346,7 @@ void AreaData::toggleImmediate()
     m_forceImmediate = !m_forceImmediate;
 }
 
-QStringList AreaData::lastICMessage() const
+const QStringList& AreaData::lastICMessage() const
 {
     return m_lastICMessage;
 }
@@ -344,6 +359,15 @@ void AreaData::updateLastICMessage(const QStringList &f_lastMessage)
 QStringList AreaData::judgelog() const
 {
     return m_judgelog;
+}
+
+void AreaData::appendJudgelog(const QString &f_newLog_r)
+{
+    if (m_judgelog.size() == 10) {
+        m_judgelog.removeFirst();
+    }
+
+    m_judgelog.append(f_newLog_r);
 }
 
 int AreaData::statement() const
