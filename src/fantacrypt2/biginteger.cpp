@@ -123,28 +123,6 @@ BigInteger BigInteger::operator - (BigInteger const &a) const
 
 BigInteger BigInteger::operator * (BigInteger const &a) const
 {
-    // This utilizes repeated addition, which while very trivial, is extremely slow.
-    /*
-    BigInteger result("00");
-    BigInteger one("01");
-
-    BigInteger larger, smaller;
-    if (a > *this) {
-        larger = a;
-        smaller = *this;
-    }
-    else {
-        larger = *this;
-        smaller = a;
-    }
-
-    for (BigInteger i("00"); i < smaller; i = i + one) {
-        result = result + larger;
-    }
-
-    return result;
-    */
-
     BigInteger result;
     for (int i = 0; i < digits.size() + a.digits.size(); i++)
         result.digits.append(0);
