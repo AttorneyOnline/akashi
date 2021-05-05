@@ -183,17 +183,27 @@ class AreaData : public QObject {
     /// Exposes the metadata of the TestimonyRecording enum.
     Q_ENUM(TestimonyRecording);
 
+    /**
+     * @brief Determines how the testimony progressed after advancement was called in a direction
+     * (Either to next or previous statement).
+     */
     enum class TestimonyProgress {
-        OK,
-        LOOPED,
-        STAYED_AT_FIRST,
+        OK, //!< The expected statement was selected.
+        LOOPED, //!< The "next" statement would have been beyond the testimony's limits, so the first one was selected.
+        STAYED_AT_FIRST, //!< The "previous" statement would have been before the first, so the selection stayed at the first.
     };
 
+    /**
+     * @brief Determines a side. Self-explanatory.
+     */
     enum class Side {
-        DEFENCE,
-        PROSECUTOR,
+        DEFENCE, //!< Self-explanatory.
+        PROSECUTOR, //!< Self-explanatory.
     };
 
+    /**
+     * @brief Contains a list of associations between `/status X` calls and what actual status they set the area to.
+     */
     static const QMap<QString, AreaData::Status> map_statuses;
 
     /**
@@ -201,14 +211,39 @@ class AreaData : public QObject {
      *
      * @details This function counts down the playercount and removes the character from the list of taken characters.
      *
-     * @param f_charId The character ID of the area.
+     * @param f_charId The character ID of the client who left. The default value is `-1`. If it is left at that,
+     * the area will not try to remove any character from the list of characters taken.
      */
-    void clientLeftArea(int f_charId);
+    void clientLeftArea(int f_charId = -1);
 
+    /**
+     * @brief A client in the area joined recently.
+     *
+     * @details This function adds one to the playercount and adds the client's character to the list of taken characters.
+     *
+     * @param f_charId The character ID of the client who joined. The default value is `-1`. If it is left at that,
+     * the area will not add any character to the list of characters taken.
+     */
     void clientJoinedArea(int f_charId = -1);
 
+    /**
+     * @brief Returns a copy of the list of owners of this area.
+     *
+     * @return The client IDs of the owners.
+     *
+     * @see #m_owners
+     */
     QList<int> owners() const;
 
+    /**
+     * @brief Adds a client to the list of onwers for the area.
+     *
+     * @details Also automatically adds them to the list of invited people.
+     *
+     * @param f_clientId The client ID of the client who should be added as an owner.
+     *
+     * @see #m_owners
+     */
     void addOwner(int f_clientId);
 
     /**
@@ -220,62 +255,222 @@ class AreaData : public QObject {
      *
      * @note This function *does not* imply that the client also left the area, only that they are no longer its owner.
      * See clientLeftArea() for that.
+     *
+     * @see #m_owners
      */
     bool removeOwner(int f_clientId);
 
+    /**
+     * @brief Returns true if blankposting is allowed in the area.
+     *
+     * @return See short description.
+     *
+     * @see #m_blankpostingAllowed
+     */
     bool blankpostingAllowed() const;
 
+    /**
+     * @brief Swaps between blankposting being allowed and forbidden in the area.
+     *
+     * @see #m_blankpostingAllowed
+     */
     void toggleBlankposting();
 
+    /**
+     * @brief Returns if the area is protected.
+     *
+     * @return See short description.
+     *
+     * @see #m_isProtected
+     */
     bool isProtected() const;
 
+    /**
+     * @brief Returns the lock status of the area.
+     *
+     * @return See short description.
+     *
+     * @see #m_locked
+     */
     LockStatus lockStatus() const;
 
+    /**
+     * @brief Locks the area, setting it to LOCKED.
+     */
     void lock();
 
+    /**
+     * @brief Unlocks the area, setting it to FREE.
+     */
     void unlock();
 
+    /**
+     * @brief Sets the area to SPECTATABLE only.
+     */
     void spectatable();
 
+    /**
+     * @brief Returns the amount of players in the area.
+     *
+     * @return See short description.
+     *
+     * @see #m_playerCount
+     */
     int playerCount() const;
 
+    /**
+     * @brief Returns a copy of the list of timers in the area.
+     *
+     * @return See short description.
+     *
+     * @see m_timers
+     */
     QList<QTimer *> timers() const;
 
+    /**
+     * @brief Returns the name of the area.
+     *
+     * @return See short description.
+     */
     QString name() const;
 
+    /**
+     * @brief Returns the index of the area in the server's area list.
+     *
+     * @return See short description.
+     *
+     * @todo The area probably shouldn't know its own index.
+     */
     int index() const;
 
+    /**
+     * @brief Returns a copy of the list of characters taken.
+     *
+     * @return A list of character IDs.
+     *
+     * @see #m_charactersTaken
+     */
     QList<int> charactersTaken() const;
 
+    /**
+     * @brief Adjusts the composition of the list of characters taken, by optionally removing and optionally adding one.
+     *
+     * @details This function can be used to remove a character, to add one, or to replace one with another (like when a client
+     * changes character, hence the name).
+     *
+     * @param f_from A character ID to remove from the list of characters taken -- a character to switch away "from".
+     * Defaults to `-1`. If left at that, no character is removed.
+     * @param f_to A character ID to add to the list of characters taken -- a character to switch "to".
+     * Defaults to `-1`. If left at that, no character is added.
+     *
+     * @return True if and only if a character was successfully added to the list of characters taken.
+     * False if that character already existed in the list of characters taken, or if `f_to` was left at `-1`.
+     * `f_from` does not influence the return value in any way.
+     *
+     * @todo This is godawful, but I'm at my wits end. Needs a bigger refactor later down the line --
+     * the separation should help somewhat already, maybe.
+     */
     bool changeCharacter(int f_from = -1, int f_to = -1);
 
+    /**
+     * @brief Returns a copy of the list of evidence in the area.
+     *
+     * @return See short description.
+     *
+     * @see #m_evidence
+     */
     QList<Evidence> evidence() const;
 
+    /**
+     * @brief Changes the location of two pieces of evidence in the evidence list to one another's.
+     *
+     * @param f_eviId1, f_eviId2 The indices of the pieces of evidence to swap.
+     */
     void swapEvidence(int f_eviId1, int f_eviId2);
 
+    /**
+     * @brief Appends a piece of evidence to the list of evidence.
+     *
+     * @param f_evi_r The evidence to append.
+     */
     void appendEvidence(const Evidence& f_evi_r);
 
+    /**
+     * @brief Deletes a piece of evidence from the list of evidence.
+     *
+     * @param f_eviId The ID of the evidence to delete.
+     */
     void deleteEvidence(int f_eviId);
 
+    /**
+     * @brief Replaces a piece of evidence at a given position with the one supplied.
+     *
+     * @param f_eviId The ID of the evidence to replace.
+     * @param f_newEvi_r The new piece of evidence that will replace the aforementioned one.
+     */
     void replaceEvidence(int f_eviId, const Evidence& f_newEvi_r);
 
+    /**
+     * @brief Returns the status of the area.
+     *
+     * @return See short description.
+     */
     Status status() const;
 
+    /**
+     * @brief Changes the area of the status to a new one.
+     *
+     * @param f_newStatus_r A string that a client would enter as an argument for the `/status` command.
+     *
+     * @return True if the entered status was valid, and the status changed, false otherwise.
+     *
+     * @see #map_statuses
+     */
     bool changeStatus(const QString& f_newStatus_r);
 
+    /**
+     * @brief Returns a copy of the list of invited clients.
+     *
+     * @return A list of client IDs.
+     */
     QList<int> invited() const;
 
     /**
-     * @brief invite
-     * @param f_clientId
+     * @brief Invites a client to the area.
+     *
+     * @param f_clientId The client ID of the client to invite.
+     *
      * @return True if the client was successfully invited. False if they were already in the list of invited people.
+     *
+     * @see LOCKED and SPECTATABLE for more details about being invited.
      */
     bool invite(int f_clientId);
 
+    /**
+     * @brief Removes a client from the list of people invited to the area.
+     *
+     * @param f_clientId The client ID of the client to uninvite.
+     *
+     * @return True if the client was successfully uninvited. False if they were never in the list of invited people.
+     */
     bool uninvite(int f_clientId);
 
+    /**
+     * @brief Returns the name of the background for the area.
+     *
+     * @return See short description.
+     *
+     * @see #m_background
+     */
     QString background() const;
 
+    /**
+     * @brief Returns if custom shownames are allowed in the area.
+     *
+     * @return See short description.
+     *
+     * @see #m_shownameAllowed
+     */
     bool shownameAllowed() const;
 
     bool iniswapAllowed() const;
