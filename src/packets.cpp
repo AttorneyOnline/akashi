@@ -486,7 +486,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         // Spectators cannot use IC
         return invalid;
     AreaData* area = server->areas[current_area];
-    if (area->locked == AreaData::LockStatus::SPECTATABLE && !area->invited.contains(id))
+    if (area->locked == AreaData::LockStatus::SPECTATABLE && !area->invited.contains(id) && !checkAuth(ACLFlags.value("BYPASS_LOCKS")))
         // Non-invited players cannot speak in spectatable areas
         return invalid;
 
