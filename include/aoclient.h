@@ -229,6 +229,7 @@ class AOClient : public QObject {
         {"UNCM",            1ULL << 11},
         {"SAVETEST",        1ULL << 12},
         {"FORCE_CHARSELECT",1ULL << 13},
+        {"BYPASS_LOCKS",    1ULL << 14},
         {"SUPER",          ~0ULL      }
     };
 
