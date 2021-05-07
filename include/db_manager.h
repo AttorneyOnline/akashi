@@ -18,6 +18,8 @@
 #ifndef BAN_MANAGER_H
 #define BAN_MANAGER_H
 
+#define DB_VERSION 1
+
 #include <QDebug>
 #include <QDateTime>
 #include <QHostAddress>
@@ -268,6 +270,25 @@ private:
      * @brief The backing database that stores user details.
      */
     QSqlDatabase db;
+
+    /**
+     * @brief The current server DB version.
+     */
+    int db_version;
+
+    /**
+     * @brief checkVersion Checks the current server DB version.
+     *
+     * @return Returns the server DB version.
+     */
+    int checkVersion();
+
+    /**
+     * @brief updateDB Updates the server DB to the latest version.
+     *
+     * @param current_version The current DB version.
+     */
+    void updateDB(int current_version);
 };
 
 #endif // BAN_MANAGER_H

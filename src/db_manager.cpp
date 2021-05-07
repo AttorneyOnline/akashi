@@ -24,8 +24,13 @@ DBManager::DBManager() :
     db.setDatabaseName("config/akashi.db");
     if (!db.open())
         qCritical() << "Database Error:" << db.lastError();
-    QSqlQuery create_ban_table("CREATE TABLE IF NOT EXISTS bans ('ID' INTEGER, 'IPID' TEXT, 'HDID' TEXT, 'IP' TEXT, 'TIME' INTEGER, 'REASON' TEXT, 'DURATION' INTEGER, PRIMARY KEY('ID' AUTOINCREMENT))");
+    qDebug() << QString::number(DB_VERSION);
+    db_version = checkVersion();
+    qDebug() << QString::number(db_version);
+    QSqlQuery create_ban_table("CREATE TABLE IF NOT EXISTS bans ('ID' INTEGER, 'IPID' TEXT, 'HDID' TEXT, 'IP' TEXT, 'TIME' INTEGER, 'REASON' TEXT, 'DURATION' INTEGER, 'MODERATOR' TEXT, PRIMARY KEY('ID' AUTOINCREMENT))");
     QSqlQuery create_user_table("CREATE TABLE IF NOT EXISTS users ('ID' INTEGER, 'USERNAME' TEXT, 'SALT' TEXT, 'PASSWORD' TEXT, 'ACL' TEXT, PRIMARY KEY('ID' AUTOINCREMENT))");
+    if (db_version != DB_VERSION)
+        updateDB(db_version);
 }
 
 bool DBManager::isIPBanned(QHostAddress ip)
@@ -359,6 +364,30 @@ QList<DBManager::BanInfo> DBManager::getBanInfo(QString lookup_type, QString id)
     }
     std::reverse(return_list.begin(), return_list.end());
     return return_list;
+}
+
+int DBManager::checkVersion()
+{
+    QSqlQuery query;
+    query.prepare("PRAGMA user_version");
+    query.exec();
+    if (query.first()) {
+        return query.value(0).toInt();
+    }
+    else {
+        return 0;
+    }
+}
+
+void DBManager::updateDB(int current_version)
+{
+    switch (current_version) {
+    case 0:
+        QSqlQuery("ALTER TABLE bans ADD COLUMN MODERATOR TEXT");
+    case 1:
+        QSqlQuery ("PRAGMA user_version = " + QString::number(DB_VERSION));
+        break;
+    }
 }
 
 DBManager::~DBManager()
