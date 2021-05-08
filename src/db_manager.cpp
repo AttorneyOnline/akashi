@@ -24,9 +24,7 @@ DBManager::DBManager() :
     db.setDatabaseName("config/akashi.db");
     if (!db.open())
         qCritical() << "Database Error:" << db.lastError();
-    qDebug() << QString::number(DB_VERSION);
     db_version = checkVersion();
-    qDebug() << QString::number(db_version);
     QSqlQuery create_ban_table("CREATE TABLE IF NOT EXISTS bans ('ID' INTEGER, 'IPID' TEXT, 'HDID' TEXT, 'IP' TEXT, 'TIME' INTEGER, 'REASON' TEXT, 'DURATION' INTEGER, 'MODERATOR' TEXT, PRIMARY KEY('ID' AUTOINCREMENT))");
     QSqlQuery create_user_table("CREATE TABLE IF NOT EXISTS users ('ID' INTEGER, 'USERNAME' TEXT, 'SALT' TEXT, 'PASSWORD' TEXT, 'ACL' TEXT, PRIMARY KEY('ID' AUTOINCREMENT))");
     if (db_version != DB_VERSION)
@@ -173,6 +171,7 @@ QList<DBManager::BanInfo> DBManager::getRecentBans()
         ban.time = static_cast<unsigned long>(query.value(4).toULongLong());
         ban.reason = query.value(5).toString();
         ban.duration = query.value(6).toLongLong();
+        ban.moderator = query.value(7).toString();
         return_list.append(ban);
     }
     std::reverse(return_list.begin(), return_list.end());
@@ -182,13 +181,14 @@ QList<DBManager::BanInfo> DBManager::getRecentBans()
 void DBManager::addBan(BanInfo ban)
 {
     QSqlQuery query;
-    query.prepare("INSERT INTO BANS(IPID, HDID, IP, TIME, REASON, DURATION) VALUES(?, ?, ?, ?, ?, ?)");
+    query.prepare("INSERT INTO BANS(IPID, HDID, IP, TIME, REASON, DURATION, MODERATOR) VALUES(?, ?, ?, ?, ?, ?, ?)");
     query.addBindValue(ban.ipid);
     query.addBindValue(ban.hdid);
     query.addBindValue(ban.ip.toString());
     query.addBindValue(QString::number(ban.time));
     query.addBindValue(ban.reason);
     query.addBindValue(ban.duration);
+    query.addBindValue(ban.moderator);
     if (!query.exec())
         qDebug() << "SQL Error:" << query.lastError().text();
 }
@@ -352,15 +352,16 @@ QList<DBManager::BanInfo> DBManager::getBanInfo(QString lookup_type, QString id)
     query.addBindValue(id);
     query.setForwardOnly(true);
     query.exec();
-
     while (query.next()) {
         BanInfo ban;
-        ban.ipid = query.value(0).toString();
-        ban.hdid = query.value(1).toString();
-        ban.ip = QHostAddress(query.value(2).toString());
-        ban.time = static_cast<unsigned long>(query.value(3).toULongLong());
-        ban.reason = query.value(4).toString();
-        ban.duration = query.value(5).toLongLong();
+        ban.id = query.value(0).toInt();
+        ban.ipid = query.value(1).toString();
+        ban.hdid = query.value(2).toString();
+        ban.ip = QHostAddress(query.value(3).toString());
+        ban.time = static_cast<unsigned long>(query.value(4).toULongLong());
+        ban.reason = query.value(5).toString();
+        ban.duration = query.value(6).toLongLong();
+        ban.moderator = query.value(7).toString();
         return_list.append(ban);
     }
     std::reverse(return_list.begin(), return_list.end());
