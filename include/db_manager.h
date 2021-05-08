@@ -249,6 +249,19 @@ public:
      */
     QList<BanInfo> getBanInfo(QString lookup_type, QString id);
 
+    /**
+     * @brief Updates a ban.
+     *
+     * @param ban_id The ID of the ban to update.
+     *
+     * @param field The field to update, either "reason" or "duration".
+     *
+     * @param updated_info The info to update the field to.
+     *
+     * @return True if the modification was successful.
+     */
+    bool updateBan(int ban_id, QString field, QVariant updated_info);
+
 private:
     /**
      * @brief The name of the database connection driver.

@@ -1194,6 +1194,17 @@ class AOClient : public QObject {
      */
     void cmdKickUid(int argc, QStringList argv);
 
+    /**
+     * @brief Updates a ban in the database, changing either its reason or duration.
+     *
+     * @details The first argument is the **ID** of the ban to update. The second argument is the **field** to update, either `reason` or `duration`
+     *
+     * and the remaining arguments are the **duration** or the **reason** to update to.
+     *
+     * @iscommand
+     */
+    void cmdUpdateBan(int argc, QStringList argv);
+
     ///@}
 
     /**
@@ -2021,6 +2032,8 @@ class AOClient : public QObject {
         {"kickuid",            {ACLFlags.value("KICK"),         2, &AOClient::cmdKickUid}},
         {"kick_uid",           {ACLFlags.value("KICK"),         2, &AOClient::cmdKickUid}},
         {"firstperson",        {ACLFlags.value("NONE"),         0, &AOClient::cmdFirstPerson}},
+        {"updateban",          {ACLFlags.value("BAN"),          3, &AOClient::cmdUpdateBan}},
+        {"update_ban",         {ACLFlags.value("BAN"),          3, &AOClient::cmdUpdateBan}},
     };
 
     /**
