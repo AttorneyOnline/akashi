@@ -232,3 +232,31 @@ void AOClient::cmdLogout(int argc, QStringList argv)
     moderator_name = "";
     sendPacket("AUTH", {"-1"}); // Client: "You were logged out."
 }
+
+void AOClient::cmdChangePassword(int argc, QStringList argv)
+{
+    QString username;
+    QString password;
+    if (argc == 1) {
+        if (moderator_name.isEmpty())
+            return;
+        username = moderator_name;
+        password = argv[0];
+    }
+    else if (argc == 2 && checkAuth(ACLFlags.value("SUPER"))) {
+        username = argv[0];
+        password = argv[1];
+    }
+    else {
+        sendServerMessage("Invalid command syntax.");
+        return;
+    }
+
+    if (server->db_manager->updatePassword(username, password)) {
+        sendServerMessage("Successfully changed password.");
+    }
+    else {
+        sendServerMessage("There was an error changing the password.");
+        return;
+    }
+}

@@ -249,6 +249,17 @@ public:
      */
     QList<BanInfo> getBanInfo(QString lookup_type, QString id);
 
+    /**
+     * @brief Updates the password of the given user.
+     *
+     * @param username The username to change.
+     *
+     * @param password The new password to change to.
+     *
+     * @return True if the password change was successful.
+     */
+    bool updatePassword(QString username, QString password);
+
 private:
     /**
      * @brief The name of the database connection driver.

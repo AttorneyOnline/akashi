@@ -362,6 +362,34 @@ QList<DBManager::BanInfo> DBManager::getBanInfo(QString lookup_type, QString id)
     return return_list;
 }
 
+bool DBManager::updatePassword(QString username, QString password)
+{
+    QString salt;
+    QSqlQuery salt_check;
+    salt_check.prepare("SELECT SALT FROM users WHERE USERNAME = ?");
+    salt_check.addBindValue(username);
+    salt_check.exec();
+
+    if (!salt_check.first())
+        return false;
+    else
+        salt = salt_check.value(0).toString();
+
+    QSqlQuery query;
+
+    QString salted_password;
+    QMessageAuthenticationCode hmac(QCryptographicHash::Sha256);
+    hmac.setKey(salt.toUtf8());
+    hmac.addData(password.toUtf8());
+    salted_password = hmac.result().toHex();
+
+    query.prepare("UPDATE users SET PASSWORD = ? WHERE USERNAME = ?");
+    query.addBindValue(salted_password);
+    query.addBindValue(username);
+    query.exec();
+    return true;
+}
+
 DBManager::~DBManager()
 {
     db.close();
