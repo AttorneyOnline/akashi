@@ -229,6 +229,7 @@ class AOClient : public QObject {
         {"UNCM",            1ULL << 11},
         {"SAVETEST",        1ULL << 12},
         {"FORCE_CHARSELECT",1ULL << 13},
+        {"BYPASS_LOCKS",    1ULL << 14},
         {"SUPER",          ~0ULL      }
     };
 
@@ -288,6 +289,11 @@ class AOClient : public QObject {
      * @brief Temporary client permission if client is allowed to save a testimony to server storage.
      */
     bool testimony_saving = false;
+
+    /**
+     * @brief If true, the client's next OOC message will be interpreted as a moderator login.
+     */
+    bool is_logging_in = false;
 
   public slots:
     /**
@@ -688,11 +694,9 @@ class AOClient : public QObject {
     ///@{
 
     /**
-     * @brief Logs the user in as a moderator.
+     * @brief Sets the client to be in the process of logging in, setting is_logging_in to **true**.
      *
-     * @details If the authorisation type is `"simple"`, then this command expects one argument, the **global moderator password**.
-     *
-     * If the authorisation type is `"advanced"`, then it requires two arguments, the **moderator's username** and the **matching password**.
+     * @details No arguments.
      *
      * @iscommand
      */
@@ -1899,7 +1903,7 @@ class AOClient : public QObject {
       * See @ref CommandInfo "the type's documentation" for more details.
       */
     const QMap<QString, CommandInfo> commands {
-        {"login",              {ACLFlags.value("NONE"),         1, &AOClient::cmdLogin}},
+        {"login",              {ACLFlags.value("NONE"),         0, &AOClient::cmdLogin}},
         {"getareas",           {ACLFlags.value("NONE"),         0, &AOClient::cmdGetAreas}},
         {"getarea",            {ACLFlags.value("NONE"),         0, &AOClient::cmdGetArea}},
         {"ban",                {ACLFlags.value("BAN"),          2, &AOClient::cmdBan}},
@@ -2014,8 +2018,8 @@ class AOClient : public QObject {
         {"togglemusic",        {ACLFlags.value("CM"),           0, &AOClient::cmdToggleMusic}},
         {"a",                  {ACLFlags.value("NONE"),         2, &AOClient::cmdA}},
         {"s",                  {ACLFlags.value("NONE"),         0, &AOClient::cmdS}},
-        {"kickuid",            {ACLFlags.value("NONE"),         2, &AOClient::cmdKickUid}},
-        {"kick_uid",           {ACLFlags.value("NONE"),         2, &AOClient::cmdKickUid}},
+        {"kickuid",            {ACLFlags.value("KICK"),         2, &AOClient::cmdKickUid}},
+        {"kick_uid",           {ACLFlags.value("KICK"),         2, &AOClient::cmdKickUid}},
         {"firstperson",        {ACLFlags.value("NONE"),         0, &AOClient::cmdFirstPerson}},
     };
 
@@ -2087,6 +2091,13 @@ class AOClient : public QObject {
      * @brief The size, in bytes, of the last data the client sent to the server.
      */
     int last_read;
+
+    /**
+     * @brief A helper function for logging in a client as moderator.
+     *
+     * @param message The OOC message the client has sent.
+     */
+    void loginAttempt(QString message);
 };
 
 #endif // AOCLIENT_H

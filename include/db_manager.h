@@ -128,6 +128,7 @@ public:
         unsigned long time; //!< The time the ban was registered.
         QString reason; //!< The reason given for the ban by the moderator who registered it.
         long long duration; //!< The duration of the ban, in seconds.
+        int id; //!< The unique ID of the ban.
     };
 
     /**

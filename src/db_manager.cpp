@@ -131,7 +131,7 @@ long long DBManager::getBanDuration(QHostAddress ip)
 int DBManager::getBanID(QString hdid)
 {
     QSqlQuery query;
-    query.prepare("SELECT ID FROM BANS WHERE HDID = ?");
+    query.prepare("SELECT ID FROM BANS WHERE HDID = ? ORDER BY TIME DESC");
     query.addBindValue(hdid);
     query.exec();
     if (query.first()) {
@@ -146,7 +146,7 @@ int DBManager::getBanID(QString hdid)
 int DBManager::getBanID(QHostAddress ip)
 {
     QSqlQuery query;
-    query.prepare("SELECT ID FROM BANS WHERE IP = ?");
+    query.prepare("SELECT ID FROM BANS WHERE IP = ? ORDER BY TIME DESC");
     query.addBindValue(ip.toString());
     query.exec();
     if (query.first()) {
@@ -161,17 +161,18 @@ QList<DBManager::BanInfo> DBManager::getRecentBans()
 {
     QList<BanInfo> return_list;
     QSqlQuery query;
-    query.prepare("SELECT TOP(5) * FROM BANS ORDER BY TIME DESC");
+    query.prepare("SELECT * FROM BANS ORDER BY TIME DESC LIMIT 5");
     query.setForwardOnly(true);
     query.exec();
     while (query.next()) {
         BanInfo ban;
-        ban.ipid = query.value(0).toString();
-        ban.hdid = query.value(1).toString();
-        ban.ip = QHostAddress(query.value(2).toString());
-        ban.time = static_cast<unsigned long>(query.value(3).toULongLong());
-        ban.reason = query.value(4).toString();
-        ban.duration = query.value(5).toLongLong();
+        ban.id = query.value(0).toInt();
+        ban.ipid = query.value(1).toString();
+        ban.hdid = query.value(2).toString();
+        ban.ip = QHostAddress(query.value(3).toString());
+        ban.time = static_cast<unsigned long>(query.value(4).toULongLong());
+        ban.reason = query.value(5).toString();
+        ban.duration = query.value(6).toLongLong();
         return_list.append(ban);
     }
     std::reverse(return_list.begin(), return_list.end());

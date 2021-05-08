@@ -26,6 +26,9 @@ RC_ICONS = resource/icon/akashi.ico
 # Enable this to print network messages tothe console
 #DEFINES += NET_DEBUG
 
+# Enable this to skip all authentication checks
+#DEFINES += SKIP_AUTH
+
 SOURCES += src/advertiser.cpp \
     src/aoclient.cpp \
     src/aopacket.cpp \

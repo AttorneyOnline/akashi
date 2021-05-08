@@ -26,46 +26,21 @@ void AOClient::cmdLogin(int argc, QStringList argv)
         sendServerMessage("You are already logged in!");
         return;
     }
-
     if (server->auth_type == "simple") {
         if (server->modpass == "") {
-            sendServerMessage("No modpass is set! Please set a modpass before authenticating.");
-        }
-        else if(argv[0] == server->modpass) {
-            sendPacket("AUTH", {"1"}); // Client: "You were granted the Disable Modcalls button."
-            sendServerMessage("Logged in as a moderator."); // pre-2.9.1 clients are hardcoded to display the mod UI when this string is sent in OOC
-            authenticated = true;
-        }
-        else {
-            sendPacket("AUTH", {"0"}); // Client: "Login unsuccessful."
-            sendServerMessage("Incorrect password.");
-        }
-        server->areas.value(current_area)->logger->logLogin(this, authenticated, "moderator");
-    }
-    else if (server->auth_type == "advanced") {
-        if (argc < 2) {
-            sendServerMessage("You must specify a username and a password");
+            sendServerMessage("No modpass is set. Please set a modpass before logging in.");
             return;
         }
-        QString username = argv[0];
-        QString password = argv[1];
-        if (server->db_manager->authenticate(username, password)) {
-            moderator_name = username;
-            authenticated = true;
-            sendPacket("AUTH", {"1"}); // Client: "You were granted the Disable Modcalls button."
-            if (version.release <= 2 && version.major <= 9 && version.minor <= 0)
-                sendServerMessage("Logged in as a moderator."); // pre-2.9.1 clients are hardcoded to display the mod UI when this string is sent in OOC
-            sendServerMessage("Welcome, " + username);
-        }
         else {
-            sendPacket("AUTH", {"0"}); // Client: "Login unsuccessful."
-            sendServerMessage("Incorrect password.");
+            sendServerMessage("Entering login prompt.\nPlease enter the server modpass.");
+            is_logging_in = true;
+            return;
         }
-        server->areas.value(current_area)->logger->logLogin(this, authenticated, username);
     }
-    else {
-        qWarning() << "config.ini has an unrecognized auth_type!";
-        sendServerMessage("Config.ini contains an invalid auth_type, please check your config.");
+    else if (server->auth_type == "advanced") {
+        sendServerMessage("Entering login prompt.\nPlease enter your username and password.");
+        is_logging_in = true;
+        return;
     }
 }
 
