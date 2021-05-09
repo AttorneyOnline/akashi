@@ -178,12 +178,12 @@ void AOClient::cmdBans(int argc, QStringList argv)
         if (ban.duration == -2)
             banned_until = "The heat death of the universe";
         else
-            banned_until = QDateTime::fromSecsSinceEpoch(ban.time).addSecs(ban.duration).toString("dd.MM.yyyy, hh:mm");
-        recent_bans << "Ban ID: " + QString::number(server->db_manager->getBanID(ban.ipid));
+            banned_until = QDateTime::fromSecsSinceEpoch(ban.time).addSecs(ban.duration).toString("MM/dd/yyyy, hh:mm");
+        recent_bans << "Ban ID: " + QString::number(ban.id);
         recent_bans << "Affected IPID: " + ban.ipid;
         recent_bans << "Affected HDID: " + ban.hdid;
         recent_bans << "Reason for ban: " + ban.reason;
-        recent_bans << "Date of ban: " + QDateTime::fromSecsSinceEpoch(ban.time).toString("dd.MM.yyyy, hh:mm");
+        recent_bans << "Date of ban: " + QDateTime::fromSecsSinceEpoch(ban.time).toString("MM/dd/yyyy, hh:mm");
         recent_bans << "Ban lasts until: " + banned_until;
         recent_bans << "-----";
     }
@@ -412,4 +412,27 @@ void AOClient::cmdPermitSaving(int argc, QStringList argv)
         return;
     }
     client->testimony_saving = true;
+}
+
+void AOClient::cmdKickUid(int argc, QStringList argv)
+{
+    QString reason = argv[1];
+
+    if (argc > 2) {
+        for (int i = 2; i < argv.length(); i++) {
+            reason += " " + argv[i];
+        }
+    }
+
+    bool conv_ok = false;
+    int uid = argv[0].toInt(&conv_ok);
+    if (!conv_ok) {
+        sendServerMessage("Invalid user ID.");
+        return;
+    }
+
+    AOClient* target = server->getClientByID(uid);
+    target->sendPacket("KK", {reason});
+    target->socket->close();
+    sendServerMessage("Kicked client with UID " + argv[0] + " for reason: " + reason);
 }

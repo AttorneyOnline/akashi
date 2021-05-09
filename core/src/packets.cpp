@@ -157,6 +157,10 @@ void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket pa
         return;
     }
 
+    if (!server->can_send_ic_messages) {
+        return;
+    }
+
     AOPacket validated_packet = validateIcPacket(packet);
     if (validated_packet.header == "INVALID")
         return;
@@ -167,6 +171,9 @@ void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket pa
     area->log(current_char, ipid, validated_packet);
     server->broadcast(validated_packet, current_area);
     area->updateLastICMessage(validated_packet.contents);
+
+    server->can_send_ic_messages = false;
+    server->next_message_timer.start(server->message_floodguard);
 }
 
 void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket packet)
@@ -185,6 +192,11 @@ void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket p
         return;
     }
 
+    if (is_logging_in) {
+        loginAttempt(argv[1]);
+        return;
+    }
+    
     QString message = dezalgo(argv[1]);
     if (message.length() == 0 || message.length() > server->max_chars)
         return;
@@ -478,7 +490,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         // Spectators cannot use IC
         return invalid;
     AreaData* area = server->areas[current_area];
-    if (area->lockStatus() == AreaData::LockStatus::SPECTATABLE && !area->invited().contains(id))
+    if (area->lockStatus() == AreaData::LockStatus::SPECTATABLE && !area->invited().contains(id) && !checkAuth(ACLFlags.value("BYPASS_LOCKS")))
         // Non-invited players cannot speak in spectatable areas
         return invalid;
 
@@ -839,3 +851,51 @@ QString AOClient::decodeMessage(QString incoming_message)
                                              .replace("<and>", "&");
     return decoded_message;
 }
+
+void AOClient::loginAttempt(QString message)
+{
+    if (server->auth_type == "simple") {
+        if (message == server->modpass) {
+            sendPacket("AUTH", {"1"}); // Client: "You were granted the Disable Modcalls button."
+            sendServerMessage("Logged in as a moderator."); // pre-2.9.1 clients are hardcoded to display the mod UI when this string is sent in OOC
+            authenticated = true;
+        }
+        else {
+            sendPacket("AUTH", {"0"}); // Client: "Login unsuccessful."
+            sendServerMessage("Incorrect password.");
+        }
+        server->areas.value(current_area)->logLogin(current_char, ipid, authenticated, "moderator");
+    }
+    else if (server->auth_type == "advanced") {
+        QStringList login = message.split(" ");
+        if (login.size() < 2) {
+            sendServerMessage("You must specify a username and a password");
+            sendServerMessage("Exiting login prompt.");
+            is_logging_in = false;
+            return;
+        }
+        QString username = login[0];
+        QString password = login[1];
+        if (server->db_manager->authenticate(username, password)) {
+            moderator_name = username;
+            authenticated = true;
+            sendPacket("AUTH", {"1"}); // Client: "You were granted the Disable Modcalls button."
+            if (version.release <= 2 && version.major <= 9 && version.minor <= 0)
+                sendServerMessage("Logged in as a moderator."); // pre-2.9.1 clients are hardcoded to display the mod UI when this string is sent in OOC
+            sendServerMessage("Welcome, " + username);
+        }
+        else {
+            sendPacket("AUTH", {"0"}); // Client: "Login unsuccessful."
+            sendServerMessage("Incorrect password.");
+        }
+        server->areas.value(current_area)->logLogin(current_char, ipid, authenticated, username);
+    }
+    else {
+            qWarning() << "config.ini has an unrecognized auth_type!";
+            sendServerMessage("Config.ini contains an invalid auth_type, please check your config.");
+        }
+    sendServerMessage("Exiting login prompt.");
+    is_logging_in = false;
+    return;
+}
+

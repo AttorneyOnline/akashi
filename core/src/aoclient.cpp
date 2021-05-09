@@ -107,7 +107,7 @@ void AOClient::changeArea(int new_area)
         sendServerMessage("You are already in area " + server->area_names[current_area]);
         return;
     }
-    if (server->areas[new_area]->lockStatus() == AreaData::LockStatus::LOCKED && !server->areas[new_area]->invited().contains(id)) {
+    if (server->areas[new_area]->lockStatus() == AreaData::LockStatus::LOCKED && !server->areas[new_area]->invited().contains(id) && !checkAuth(ACLFlags.value("BYPASS_LOCKS"))) {
         sendServerMessage("Area " + server->area_names[new_area] + " is locked.");
         return;
     }
@@ -301,6 +301,9 @@ void AOClient::sendServerBroadcast(QString message)
 
 bool AOClient::checkAuth(unsigned long long acl_mask)
 {
+#ifdef SKIP_AUTH
+    return true;
+#endif
     if (acl_mask != ACLFlags.value("NONE")) {
         if (acl_mask == ACLFlags.value("CM")) {
             AreaData* area = server->areas[current_area];

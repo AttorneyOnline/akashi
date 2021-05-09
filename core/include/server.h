@@ -303,6 +303,21 @@ class Server : public QObject {
      */
     int max_chars;
 
+    /**
+     * @brief Timer until the next IC message can be sent.
+     */
+    QTimer next_message_timer;
+
+    /**
+     * @brief If false, IC messages will be rejected.
+     */
+    bool can_send_ic_messages = true;
+
+    /**
+     * @brief The minimum time between IC messages, in milliseconds.
+     */
+    int message_floodguard;
+
   public slots:
     /**
      * @brief Handles a new connection.
@@ -311,6 +326,13 @@ class Server : public QObject {
      * checks if the client is banned.
      */
     void clientConnected();
+
+    /**
+     * @brief Sets #can_send_messages to true.
+     *
+     * @details Called whenever #next_message_timer reaches 0.
+     */
+    void allowMessage();
 
   signals:
 
