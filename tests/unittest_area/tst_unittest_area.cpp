@@ -2,6 +2,8 @@
 
 #include <include/area_data.h>
 
+Q_DECLARE_METATYPE(AreaData::Side);
+
 namespace tests {
 namespace unittests {
 
@@ -13,17 +15,50 @@ class Area : public QObject
     Q_OBJECT
 
 public:
+    /**
+     * @brief An AreaData pointer to test with.
+     */
     AreaData* m_area;
 
 private slots:
+    /**
+     * @brief Initialises every tests with creating a new area with the title "Test Area", and the index of 0.
+     */
     void init();
+
+    /**
+     * @brief Cleans up the area pointer.
+     */
     void cleanup();
 
+    /**
+     * @test Tests various scenarios of a client joining and leaving, and what it changes on the area.
+     */
     void clientJoinLeave();
 
+    /**
+     * @brief The data function for areaStatuses().
+     */
     void areaStatuses_data();
+
+    /**
+     * @test Tests various attempts at changing area statuses.
+     */
     void areaStatuses();
 
+    /**
+     * @brief The data function for changeHP().
+     */
+    void changeHP_data();
+
+    /**
+     * @test Tests changing Confidence bar values for the sides.
+     */
+    void changeHP();
+
+    /**
+     * @test Tests changing character in the area.
+     */
     void changeCharacter();
 };
 
@@ -80,6 +115,35 @@ void Area::areaStatuses()
 
     QCOMPARE(m_area->status(), expectedStatus);
     QCOMPARE(l_success, isSuccessful);
+}
+
+void Area::changeHP_data()
+{
+    QTest::addColumn<AreaData::Side>("side");
+    QTest::addColumn<int>("setHP");
+    QTest::addColumn<int>("expectedHP");
+
+    QTest::newRow("Set = Expected (DEF)") << AreaData::Side::DEFENCE << 3 << 3;
+    QTest::newRow("Set = Expected (PRO)") << AreaData::Side::PROSECUTOR << 5 << 5;
+    QTest::newRow("Below Zero (DEF)") << AreaData::Side::DEFENCE << -5 << 0;
+    QTest::newRow("Below Zero (PRO)") << AreaData::Side::PROSECUTOR << -7 << 0;
+    QTest::newRow("Above Ten (DEF)") << AreaData::Side::DEFENCE << 12 << 10;
+    QTest::newRow("Above Ten (PRO)") << AreaData::Side::PROSECUTOR << 14 << 10;
+}
+
+void Area::changeHP()
+{
+    QFETCH(AreaData::Side, side);
+    QFETCH(int, setHP);
+    QFETCH(int, expectedHP);
+
+    m_area->changeHP(side, setHP);
+
+    if (AreaData::Side::DEFENCE == side) {
+        QCOMPARE(expectedHP, m_area->defHP());
+    } else {
+        QCOMPARE(expectedHP, m_area->proHP());
+    }
 }
 
 void Area::changeCharacter()
