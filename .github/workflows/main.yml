@@ -64,6 +64,7 @@ jobs:
           for test in bin_tests/*; do
             LD_LIBRARY_PATH=./bin:$LD_LIBRARY_PATH ./$test
           done;
+        shell: bash
           
       - name: Upload zip
         uses: actions/upload-artifact@v2
