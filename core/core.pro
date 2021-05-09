@@ -3,7 +3,10 @@ QT -= gui
 
 TEMPLATE = lib
 
-CONFIG += shared c++11
+# Apparently, Windows needs a static config to make a dynamic library?
+# Look, I dunno.
+# Linux works just fine with `shared` only.
+CONFIG += shared static c++11
 
 # Needed so that Windows doesn't do `release/` and `debug/` subfolders
 # in the output directory.
