@@ -682,31 +682,20 @@ class AreaData : public QObject {
     void removeStatement(int f_position);
 
     /**
-     * @brief Advances the testimony playback.
+     * @brief Jumps the testimony playback to the given index.
      *
      * @details When advancing forward, if the playback would go past the last statement,
      * it instead returns the first statement.
      * When advancing backward, if the playback would go before the first statement, it
      * instead returns the first statement.
      *
-     * @param f_forward If true, the testimony playback advances to the next statement in the
-     * testimony. If false, it instead advances to the previous statement.
+     * @param f_position The index to jump to.
      *
      * @return A pair of values:
      * * First, a `QStringList` that is the packet of the statement that was advanced to.
      * * Then, a `TestimonyProgress` value that describes how the advancement happened.
      */
-    std::pair<QStringList, TestimonyProgress> advanceTestimony(bool f_forward = true);
-
-    /**
-     * @brief Jumps the testimony playback to the given index, and returns the statement in that
-     * index position.
-     *
-     * @param f_position The index to jump to.
-     *
-     * @return See short description.
-     */
-    QStringList jumpToStatement(int f_position);
+    std::pair<QStringList, AreaData::TestimonyProgress> jumpToStatement(int f_position);
 
     /**
      * @brief Returns a copy of the judgelog in the area.

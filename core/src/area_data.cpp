@@ -28,6 +28,7 @@ AreaData::AreaData(QString p_name, int p_index) :
     m_document("No document."),
     m_defHP(10),
     m_proHP(10),
+    m_statement(0),
     m_judgelog(),
     m_lastICMessage()
 {
@@ -397,25 +398,21 @@ void AreaData::removeStatement(int f_position)
     --m_statement;
 }
 
-std::pair<QStringList, AreaData::TestimonyProgress> AreaData::advanceTestimony(bool f_forward)
+std::pair<QStringList, AreaData::TestimonyProgress> AreaData::jumpToStatement(int f_position)
 {
-    f_forward ? m_statement++: m_statement--;
+    m_statement = f_position;
 
     if (m_statement > m_testimony.size() - 1) {
+        m_statement = 0;
         return {m_testimony.at(m_statement), TestimonyProgress::LOOPED};
     }
     if (m_statement <= 0) {
+        m_statement = 0;
         return {m_testimony.at(m_statement), TestimonyProgress::STAYED_AT_FIRST};
     }
     else {
         return {m_testimony.at(m_statement), TestimonyProgress::OK};
     }
-}
-
-QStringList AreaData::jumpToStatement(int f_position)
-{
-    m_statement = f_position;
-    return m_testimony.at(m_statement);
 }
 
 const QVector<QStringList>& AreaData::testimony() const
