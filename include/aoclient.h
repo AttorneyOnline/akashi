@@ -1874,6 +1874,17 @@ class AOClient : public QObject {
      * @return IC-Message stored in the QVector.
      */
     QStringList playTestimony();
+
+    /**
+     * @brief Checks if a password meets the server's password requirements.
+     *
+     * @param username The chosen username.
+     *
+     * @param password The password to check.
+     *
+     * @return True if the password meets the requirements, otherwise false.
+     */
+    bool checkPasswordRequirements(QString username, QString password);
     ///@}
 
     /**

@@ -309,6 +309,25 @@ void Server::loadServerConfig()
     webhook_url = config.value("webhook_url", "Your webhook url here.").toString();
     webhook_sendfile = config.value("webhook_sendfile", false).toBool();
     config.endGroup();
+
+    //Load password configuration
+    config.beginGroup("Password");
+    password_requirements = config.value("password_requirements", "false").toBool();
+    if (password_requirements) {
+        bool password_minimum_length_conversion_success;
+        password_minimum_length = config.value("pass_min_length", "8").toInt(&password_minimum_length_conversion_success);
+        if (!password_minimum_length_conversion_success)
+            password_minimum_length = 8;
+        bool password_maximum_length_conversion_success;
+        password_maximum_length = config.value("pass_max_length", "16").toInt(&password_maximum_length_conversion_success);
+        if (!password_minimum_length_conversion_success)
+            password_maximum_length = 16;
+        password_require_mixed_case = config.value("pass_require_mix_case", "true").toBool();
+        password_require_numbers = config.value("pass_require_numbers", "true").toBool();
+        password_require_special_characters = config.value("pass_require_special", "true").toBool();
+        password_can_contain_username = config.value("pass_contain_username", "false").toBool();
+    }
+    config.endGroup();
 }
 
 void Server::allowMessage()

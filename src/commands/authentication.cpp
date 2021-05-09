@@ -57,6 +57,11 @@ void AOClient::cmdSetRootPass(int argc, QStringList argv)
     if (!change_auth_started)
         return;
 
+    if (!checkPasswordRequirements("root", argv[0])) {
+        sendServerMessage("Password does not meet server requirements.");
+        return;
+    }
+
     sendServerMessage("Changing auth type and setting root password.\nLogin again with /login root [password]");
     authenticated = false;
     QSettings settings("config/config.ini", QSettings::IniFormat);
@@ -79,6 +84,10 @@ void AOClient::cmdSetRootPass(int argc, QStringList argv)
 
 void AOClient::cmdAddUser(int argc, QStringList argv)
 {
+    if (!checkPasswordRequirements(argv[0], argv[1])) {
+        sendServerMessage("Password does not meet server requirements.");
+        return;
+    }
 #if QT_VERSION < QT_VERSION_CHECK(5, 10, 0)
     qsrand(QDateTime::currentMSecsSinceEpoch());
     quint32 upper_salt = qrand();
@@ -249,6 +258,11 @@ void AOClient::cmdChangePassword(int argc, QStringList argv)
     }
     else {
         sendServerMessage("Invalid command syntax.");
+        return;
+    }
+
+    if (!checkPasswordRequirements(username, password)) {
+        sendServerMessage("Password does not meet server requirements.");
         return;
     }
 
