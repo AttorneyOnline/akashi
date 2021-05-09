@@ -247,8 +247,10 @@ void AOClient::cmdChangePassword(int argc, QStringList argv)
     QString username;
     QString password;
     if (argc == 1) {
-        if (moderator_name.isEmpty())
+        if (moderator_name.isEmpty()) {
+            sendServerMessage("You are not logged in.");
             return;
+        }
         username = moderator_name;
         password = argv[0];
     }
