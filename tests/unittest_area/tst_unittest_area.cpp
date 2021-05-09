@@ -23,6 +23,8 @@ private slots:
 
     void areaStatuses_data();
     void areaStatuses();
+
+    void changeCharacter();
 };
 
 void Area::init()
@@ -37,16 +39,19 @@ void Area::cleanup()
 
 void Area::clientJoinLeave()
 {
-    m_area->clientJoinedArea(5);
+    {
+        // There must be exactly one client in the area, and it must have a charid of 5.
+        m_area->clientJoinedArea(5);
 
-    // There must be exactly one client in the area, and it must have a charid of 5.
-    QCOMPARE(m_area->charactersTaken().size(), 1);
-    QCOMPARE(m_area->charactersTaken().at(0), 5);
+        QCOMPARE(m_area->charactersTaken().size(), 1);
+        QCOMPARE(m_area->charactersTaken().at(0), 5);
+    }
+    {
+        // No clients must be left in the area.
+        m_area->clientLeftArea(5);
 
-    m_area->clientLeftArea(5);
-
-    // No clients must be left in the area.
-    QCOMPARE(m_area->charactersTaken().size(), 0);
+        QCOMPARE(m_area->charactersTaken().size(), 0);
+    }
 }
 
 void Area::areaStatuses_data()
@@ -75,6 +80,46 @@ void Area::areaStatuses()
 
     QCOMPARE(m_area->status(), expectedStatus);
     QCOMPARE(l_success, isSuccessful);
+}
+
+void Area::changeCharacter()
+{
+    {
+        // A client with a charid of 6 joins. There's only them in there.
+        m_area->clientJoinedArea(6);
+
+        QCOMPARE(m_area->charactersTaken().size(), 1);
+        QCOMPARE(m_area->charactersTaken().at(0), 6);
+    }
+    {
+        // Charid 7 is marked as taken. No other client in the area still.
+        // Charids 6 and 7 are taken.
+        m_area->changeCharacter(-1, 7);
+
+        QCOMPARE(m_area->playerCount(), 1);
+        QCOMPARE(m_area->charactersTaken().size(), 2);
+        QCOMPARE(m_area->charactersTaken().at(0), 6);
+        QCOMPARE(m_area->charactersTaken().at(1), 7);
+    }
+    {
+        // Client switches to charid 8.
+        // Charids 8 and 7 are taken.
+        m_area->changeCharacter(6, 8);
+
+        QCOMPARE(m_area->playerCount(), 1);
+        QCOMPARE(m_area->charactersTaken().size(), 2);
+        QCOMPARE(m_area->charactersTaken().at(0), 7);
+        QCOMPARE(m_area->charactersTaken().at(1), 8);
+    }
+    {
+        // Charid 7 is unlocked for use.
+        // Charid 8 is taken.
+        m_area->changeCharacter(7, -1);
+
+        QCOMPARE(m_area->playerCount(), 1);
+        QCOMPARE(m_area->charactersTaken().size(), 1);
+        QCOMPARE(m_area->charactersTaken().at(0), 8);
+    }
 }
 
 }

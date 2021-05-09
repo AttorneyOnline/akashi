@@ -473,80 +473,342 @@ class AreaData : public QObject {
      */
     bool shownameAllowed() const;
 
+    /**
+     * @brief Returns if iniswapping is allowed in the area.
+     *
+     * @return See short description.
+     *
+     * @see #m_iniswapAllowed
+     */
     bool iniswapAllowed() const;
 
+    /**
+     * @brief Toggles whether iniswap is allowed in the area.
+     *
+     * @see #m_iniswapAllowed
+     */
     void toggleIniswap();
 
+    /**
+     * @brief Returns if backgrounds changing is locked in the area.
+     *
+     * @return See short description.
+     *
+     * @see #m_bgLocked
+     */
     bool bgLocked() const;
 
+    /**
+     * @brief Toggles whether backgrounds changing is allowed in the area.
+     *
+     * @see #m_bgLocked
+     */
     void toggleBgLock();
 
+    /**
+     * @brief Returns the document of the area.
+     *
+     * @return See short description.
+     *
+     * @see #m_document
+     */
     QString document() const;
 
+    /**
+     * @brief Changes the document in the area.
+     *
+     * @param f_newDoc_r The new document.
+     *
+     * @see #m_document
+     */
+    void changeDoc(const QString& f_newDoc_r);
+
+    /**
+     * @brief Returns the value of the Confidence bar for the defence's side.
+     *
+     * @return The value of the Confidence bar in units of 10%.
+     *
+     * @see #m_defHP
+     */
     int defHP() const;
 
+    /**
+     * @brief Returns the value of the Confidence bar for the prosecution's side.
+     *
+     * @return The value of the Confidence bar in units of 10%.
+     *
+     * @see #m_proHP
+     */
     int proHP() const;
 
+    /**
+     * @brief Changes the value of the Confidence bar for the given side.
+     *
+     * @param f_side The side whose Confidence bar to change.
+     * @param f_newHP The absolute new value for the Confidence bar.
+     * Will be clamped between 0 and 10, inclusive on both sides.
+     */
     void changeHP(AreaData::Side f_side, int f_newHP);
 
+    /**
+     * @brief Returns the music currently being played in the area.
+     *
+     * @return See short description.
+     *
+     * @see #m_currentMusic
+     */
     QString currentMusic() const;
 
+    /**
+     * @brief Returns the showname of the client who played the music in the area.
+     *
+     * @return See short description.
+     *
+     * @see #m_musicPlayedBy
+     */
     QString musicPlayerBy() const;
 
+    /**
+     * @brief Changes the music being played in the area.
+     *
+     * @param f_source_r The showname of the client who initiated the music change.
+     * @param f_newSong_r The name of the new song that is going to be played in the area.
+     */
+    void changeMusic(const QString& f_source_r, const QString& f_newSong_r);
+
+    /**
+     * @brief Returns the evidence mod in the area.
+     *
+     * @return See short description.
+     *
+     * @see #m_eviMod
+     */
     EvidenceMod eviMod() const;
 
+    /**
+     * @brief Sets the evidence mod in the area.
+     *
+     * @param f_eviMod_r The new evidence mod.
+     */
+    void setEviMod(const EvidenceMod &f_eviMod_r);
+
+    /**
+     * @brief Adds a notecard to the area.
+     *
+     * @param f_owner_r The showname of the character to whom the notecard should be associated to.
+     * @param f_notecard_r The contents of the notecard.
+     *
+     * @return True if the notecard didn't replace a previous one, false if it did.
+     */
     bool addNotecard(const QString& f_owner_r, const QString& f_notecard_r);
 
+    /**
+     * @brief Returns the list of notecards recorded in the area.
+     *
+     * @return Returns a QStringList with the format of `name: message`, with newlines at the end
+     * of each message.
+     */
     QStringList getNotecards();
 
+    /**
+     * @brief Returns the state of the testimony recording process in the area.
+     *
+     * @return See short description.
+     */
     TestimonyRecording testimonyRecording() const;
 
-    void setTestimonyRecording(const TestimonyRecording &testimonyRecording);
+    /**
+     * @brief Sets the state of the testimony recording process in the area.
+     *
+     * @param f_testimonyRecording_r The new state for testimony recording.
+     */
+    void setTestimonyRecording(const TestimonyRecording &f_testimonyRecording_r);
 
+    /**
+     * @brief Sets the testimony to the first moment, and the state to TestimonyRecording::PLAYBACK.
+     */
     void restartTestimony();
 
+    /**
+     * @brief Clears the testimony, sets the state to TestimonyRecording::STOPPED, and the statement
+     * index to -1.
+     */
     void clearTestimony();
 
+    /**
+     * @brief Returns the contents of the testimony.
+     *
+     * @return A const reference to the testimony.
+     *
+     * @note Unlike most other getters, this one returns a reference, as it is expected to be used frequently.
+     */
     const QVector<QStringList>& testimony() const;
 
+    /**
+     * @brief Returns the index of the currently examined statement in the testimony.
+     *
+     * @return See short description.
+     */
     int statement() const;
 
-    void recordStatement(const QStringList& f_newStatement);
+    /**
+     * @brief Adds a new statement to the end of the testimony, and increases the statement index by one.
+     *
+     * @param f_newStatement_r The IC message packet to append to the testimony vector.
+     */
+    void recordStatement(const QStringList& f_newStatement_r);
 
-    void addStatement(int f_position, const QStringList& f_newStatement);
+    /**
+     * @brief Adds a statement into the testimony to a given position.
+     *
+     * @param f_position The index to insert the statement to.
+     * @param f_newStatement_r The IC message packet to insert.
+     */
+    void addStatement(int f_position, const QStringList& f_newStatement_r);
 
-    void replaceStatement(int f_position, const QStringList& f_newStatement);
+    /**
+     * @brief Replaces an already existing statement in the testimony in a given position with a new one.
+     *
+     * @param f_position The index of the statement to replace.
+     * @param f_newStatement_r The IC message packet to insert in the old one's stead.
+     */
+    void replaceStatement(int f_position, const QStringList& f_newStatement_r);
 
-    void removeStatement(int f_statementNumber);
+    /**
+     * @brief Removes a statement from the testimony at a given position, and moves the statement index one backward.
+     *
+     * @param f_position The index to remove the statement from.
+     */
+    void removeStatement(int f_position);
 
+    /**
+     * @brief Advances the testimony playback.
+     *
+     * @details When advancing forward, if the playback would go past the last statement,
+     * it instead returns the first statement.
+     * When advancing backward, if the playback would go before the first statement, it
+     * instead returns the first statement.
+     *
+     * @param f_forward If true, the testimony playback advances to the next statement in the
+     * testimony. If false, it instead advances to the previous statement.
+     *
+     * @return A pair of values:
+     * * First, a `QStringList` that is the packet of the statement that was advanced to.
+     * * Then, a `TestimonyProgress` value that describes how the advancement happened.
+     */
     std::pair<QStringList, TestimonyProgress> advanceTestimony(bool f_forward = true);
 
-    QStringList jumpToStatement(int f_statementNr);
+    /**
+     * @brief Jumps the testimony playback to the given index, and returns the statement in that
+     * index position.
+     *
+     * @param f_position The index to jump to.
+     *
+     * @return See short description.
+     */
+    QStringList jumpToStatement(int f_position);
 
+    /**
+     * @brief Returns a copy of the judgelog in the area.
+     *
+     * @return See short description.
+     *
+     * @see #m_judgelog
+     */
     QStringList judgelog() const;
 
+    /**
+     * @brief Appends a new line to the judgelog.
+     *
+     * @details There is a hard limit of 10 lines in the judgelog -- if a new one is inserted
+     * beyond that, the oldest one is cleared.
+     *
+     * @param f_newLog_r The new line to append to the judgelog.
+     */
     void appendJudgelog(const QString& f_newLog_r);
 
+    /**
+     * @brief Returns the last IC message sent in the area.
+     *
+     * @return See short description.
+     */
     const QStringList& lastICMessage() const;
 
-    void updateLastICMessage(const QStringList& f_lastMessage);
+    /**
+     * @brief Updates the last IC message sent in the area.
+     *
+     * @param f_lastMessage_r The new last IC message.
+     */
+    void updateLastICMessage(const QStringList& f_lastMessage_r);
 
+    /**
+     * @brief Returns whether ~~non-interrupting~~ immediate messages are forced in the area.
+     *
+     * @return See short description.
+     *
+     * @see #m_forceImmediate
+     */
     bool forceImmediate() const;
 
+    /**
+     * @brief Toggles whether immediate messages are forced in the area.
+     */
     void toggleImmediate();
 
+    /**
+     * @brief Returns whether changing music is allowed in the area.
+     *
+     * @return See short description.
+     *
+     * @see #m_toggleMusic
+     */
     bool isMusicAllowed() const;
 
+    /**
+     * @brief Toggles whether changing music is allowed in the area.
+     */
     void toggleMusic();
 
+    /**
+     * @brief Logs a packet in the area's logger.
+     *
+     * @details Logs IC, OOC and modcall packets. Anything else is discarded.
+     *
+     * This function is a convenience function over the Logger's log functions.
+     *
+     * If you wish to log a login attempt, use logLogin() instead.
+     *
+     * @param f_clientName_r The showname of the packet sender's character.
+     * @param f_clientIpid_r The IPID of the packet sender.
+     * @param f_packet_r The packet that was sent.
+     */
     void log(const QString& f_clientName_r, const QString& f_clientIpid_r, const AOPacket& f_packet_r) const;
 
+    /**
+     * @brief Logs a moderator login attempt.
+     *
+     * @details This is not a duplicated function! When a client uses the `/login` command to log in, the command call
+     * itself is logged with log(), but the outcome of that call is logged here.
+     *
+     * If there was a way to login *without* the command, only this would be logged.
+     *
+     * @param f_clientName_r The showname of the login attempt sender's character.
+     * @param f_clientIpid_r The IPID of the client attempting login.
+     * @param f_success The outcome of the login attempt.
+     * @param f_modname_r The moderator name the client attempted to log in with.
+     */
     void logLogin(const QString &f_clientName_r, const QString &f_clientIpid_r, bool f_success, const QString& f_modname_r) const;
 
+    /**
+     * @brief Convenience function over Logger::flush().
+     */
     void flushLogs() const;
 
-    void setEviMod(const EvidenceMod &eviMod);
-
+    /**
+     * @brief Returns a copy of the underlying logger's buffer.
+     *
+     * @return See short description.
+     */
     QQueue<QString> buffer() const;
 
 private:
@@ -661,7 +923,7 @@ private:
     /**
      * @brief The Confidence Gauge's value for the Prosecutor side.
      *
-     * @copydetails #def_hp
+     * @copydetails #m_defHP
      */
     int m_proHP;
 
@@ -676,7 +938,7 @@ private:
     /**
      * @brief The name of the client (or client's character) that started the currently playing music.
      */
-    QString m_musicPlayerBy;
+    QString m_musicPlayedBy;
 
     /**
      * @brief A pointer to a Logger, used to send requests to log data.
@@ -689,8 +951,21 @@ private:
      * @see EvidenceMod
      */
     EvidenceMod m_eviMod;
+
+    /**
+     * @brief The list of notecards in the area.
+     *
+     * @details Notecards are plain text messages that can be left secretly in areas.
+     * They can later be revealed all at once with a command call.
+     *
+     * Notecards have a `name: message` format, with the `name` being the recorder client's character's
+     * charname at the time of recording, and `message` being a custom plain text message.
+     */
     QMap<QString, QString> m_notecards;
 
+    /**
+     * @brief The state of the testimony recording / playback in the area.
+     */
     TestimonyRecording m_testimonyRecording;
 
 

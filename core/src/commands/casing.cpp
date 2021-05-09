@@ -28,7 +28,7 @@ void AOClient::cmdDoc(int argc, QStringList argv)
         sendServerMessage("Document: " + area->document());
     }
     else {
-        area->document() = argv.join(" ");
+        area->changeDoc(argv.join(" "));
         sendServerMessageArea(sender_name + " changed the document.");
     }
 }
@@ -37,7 +37,7 @@ void AOClient::cmdClearDoc(int argc, QStringList argv)
 {
     QString sender_name = ooc_name;
     AreaData* area = server->areas[current_area];
-    area->document() = "No document.";
+    area->changeDoc("No document.");
     sendServerMessageArea(sender_name + " cleared the document.");
 }
 

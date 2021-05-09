@@ -308,9 +308,9 @@ void AreaData::flushLogs() const
     m_logger->flush();
 }
 
-void AreaData::setEviMod(const EvidenceMod &eviMod)
+void AreaData::setEviMod(const EvidenceMod &f_eviMod_r)
 {
-    m_eviMod = eviMod;
+    m_eviMod = f_eviMod_r;
 }
 
 QQueue<QString> AreaData::buffer() const
@@ -318,9 +318,9 @@ QQueue<QString> AreaData::buffer() const
     return m_logger->buffer();
 }
 
-void AreaData::setTestimonyRecording(const TestimonyRecording &testimonyRecording)
+void AreaData::setTestimonyRecording(const TestimonyRecording &f_testimonyRecording_r)
 {
-    m_testimonyRecording = testimonyRecording;
+    m_testimonyRecording = f_testimonyRecording_r;
 }
 
 void AreaData::restartTestimony()
@@ -351,9 +351,9 @@ const QStringList& AreaData::lastICMessage() const
     return m_lastICMessage;
 }
 
-void AreaData::updateLastICMessage(const QStringList &f_lastMessage)
+void AreaData::updateLastICMessage(const QStringList &f_lastMessage_r)
 {
-    m_lastICMessage = f_lastMessage;
+    m_lastICMessage = f_lastMessage_r;
 }
 
 QStringList AreaData::judgelog() const
@@ -375,25 +375,25 @@ int AreaData::statement() const
     return m_statement;
 }
 
-void AreaData::recordStatement(const QStringList &f_newStatement)
+void AreaData::recordStatement(const QStringList &f_newStatement_r)
 {
     ++m_statement;
-    m_testimony.append(f_newStatement);
+    m_testimony.append(f_newStatement_r);
 }
 
-void AreaData::addStatement(int f_position, const QStringList &f_newStatement)
+void AreaData::addStatement(int f_position, const QStringList &f_newStatement_r)
 {
-    m_testimony.insert(f_position, f_newStatement);
+    m_testimony.insert(f_position, f_newStatement_r);
 }
 
-void AreaData::replaceStatement(int f_position, const QStringList &f_newStatement)
+void AreaData::replaceStatement(int f_position, const QStringList &f_newStatement_r)
 {
-    m_testimony.replace(f_position, f_newStatement);
+    m_testimony.replace(f_position, f_newStatement_r);
 }
 
-void AreaData::removeStatement(int f_statementNumber)
+void AreaData::removeStatement(int f_position)
 {
-    m_testimony.remove(f_statementNumber);
+    m_testimony.remove(f_position);
     --m_statement;
 }
 
@@ -412,9 +412,9 @@ std::pair<QStringList, AreaData::TestimonyProgress> AreaData::advanceTestimony(b
     }
 }
 
-QStringList AreaData::jumpToStatement(int f_statementNr)
+QStringList AreaData::jumpToStatement(int f_position)
 {
-    m_statement = f_statementNr;
+    m_statement = f_position;
     return m_testimony.at(m_statement);
 }
 
@@ -462,7 +462,13 @@ QStringList AreaData::getNotecards()
 
 QString AreaData::musicPlayerBy() const
 {
-    return m_musicPlayerBy;
+    return m_musicPlayedBy;
+}
+
+void AreaData::changeMusic(const QString &f_source_r, const QString &f_newSong_r)
+{
+    m_currentMusic = f_newSong_r;
+    m_musicPlayedBy = f_source_r;
 }
 
 QString AreaData::currentMusic() const
@@ -492,6 +498,11 @@ int AreaData::defHP() const
 QString AreaData::document() const
 {
     return m_document;
+}
+
+void AreaData::changeDoc(const QString &f_newDoc_r)
+{
+    m_document = f_newDoc_r;
 }
 
 bool AreaData::bgLocked() const
