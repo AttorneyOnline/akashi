@@ -325,7 +325,7 @@ void Server::loadServerConfig()
         password_require_mixed_case = config.value("pass_require_mix_case", "true").toBool();
         password_require_numbers = config.value("pass_require_numbers", "true").toBool();
         password_require_special_characters = config.value("pass_require_special", "true").toBool();
-        password_can_contain_username = config.value("pass_contain_username", "false").toBool();
+        password_can_contain_username = config.value("pass_can_contain_username", "false").toBool();
     }
     config.endGroup();
 }
