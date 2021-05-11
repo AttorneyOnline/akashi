@@ -311,7 +311,7 @@ void Server::loadServerConfig()
     webhook_enabled = config.value("webhook_enabled", "false").toBool();
     webhook_url = config.value("webhook_url", "Your webhook url here.").toString();
     webhook_sendfile = config.value("webhook_sendfile", false).toBool();
-    webhook_content = config.value("webhook_content", NULL).toString();
+    webhook_content = config.value("webhook_content", "").toString();
     config.endGroup();
 }
 

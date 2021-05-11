@@ -42,7 +42,7 @@ void Discord::postModcallWebhook(QString name, QString reason, int current_area)
     };
     jsonArray.append(jsonObject);
     json["embeds"] = jsonArray;
-    if (server->webhook_content != NULL)
+    if (server->webhook_content != "")
       json["content"] = server->webhook_content;
 
     nam->post(request, QJsonDocument(json).toJson());
