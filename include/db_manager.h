@@ -18,6 +18,8 @@
 #ifndef BAN_MANAGER_H
 #define BAN_MANAGER_H
 
+#define DB_VERSION 1
+
 #include <QDebug>
 #include <QDateTime>
 #include <QHostAddress>
@@ -127,6 +129,7 @@ public:
         QString reason; //!< The reason given for the ban by the moderator who registered it.
         long long duration; //!< The duration of the ban, in seconds.
         int id; //!< The unique ID of the ban.
+        QString moderator; //!< The moderator who issued the ban.
     };
 
     /**
@@ -262,6 +265,17 @@ public:
      */
     bool updateBan(int ban_id, QString field, QVariant updated_info);
 
+    /**
+     * @brief Updates the password of the given user.
+     *
+     * @param username The username to change.
+     *
+     * @param password The new password to change to.
+     *
+     * @return True if the password change was successful.
+     */
+    bool updatePassword(QString username, QString password);
+
 private:
     /**
      * @brief The name of the database connection driver.
@@ -282,6 +296,25 @@ private:
      * @brief The backing database that stores user details.
      */
     QSqlDatabase db;
+
+    /**
+     * @brief The current server DB version.
+     */
+    int db_version;
+
+    /**
+     * @brief checkVersion Checks the current server DB version.
+     *
+     * @return Returns the server DB version.
+     */
+    int checkVersion();
+
+    /**
+     * @brief updateDB Updates the server DB to the latest version.
+     *
+     * @param current_version The current DB version.
+     */
+    void updateDB(int current_version);
 };
 
 #endif // BAN_MANAGER_H
