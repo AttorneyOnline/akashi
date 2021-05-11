@@ -317,10 +317,16 @@ class Server : public QObject {
      * @brief The minimum time between IC messages, in milliseconds.
      */
     int message_floodguard;
+
     /**
      * @brief URL send to the client during handshake to set the remote repository URL.
      */
     QUrl asset_url;
+
+    /**
+     * @brief Opional text to be send with the Discord embeed. Can be used to configure pings.
+     */
+    QString webhook_content;
 
   public slots:
     /**
