@@ -295,6 +295,9 @@ void Server::loadServerConfig()
     message_floodguard = config.value("message_floodguard", "250").toInt(&message_floodguard_conversion_success);
     if (!message_floodguard_conversion_success)
         message_floodguard = 30;
+    asset_url = config.value("asset_url","").toString().toUtf8();
+    if (!asset_url.isValid())
+        asset_url = NULL;
     config.endGroup();
 
     //Load dice values

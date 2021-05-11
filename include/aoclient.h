@@ -1015,14 +1015,12 @@ class AOClient : public QObject {
      * @brief Bans a client from the server, forcibly severing its connection to the server,
      * and disallowing their return.
      *
-     * @details The first argument is the **target's IPID**, the second is the **reason** why the client
-     * was banned, the third is the **duration**.
+     * @details The first argument is the **target's IPID**, the second is the **duration**, 
+     * and the third is the **reason** why the client was banned.
      *
-     * Both the reason and the duration must be in quotation marks.
-     *
-     * The duration can be `"perma"`, meaning a forever ban, otherwise, it must be given in the format of `"YYyWWwDDdHHhMMmSSs"` to
+     * The duration can be `perma`, meaning a forever ban, otherwise, it must be given in the format of `YYyWWwDDdHHhMMmSSs` to
      * mean a YY years, WW weeks, DD days, HH hours, MM minutes and SS seconds long ban. Any of these may be left out, for example,
-     * `"1h30m"` for a 1.5 hour long ban.
+     * `1h30m` for a 1.5 hour long ban.
      *
      * Besides banning, this command kicks all clients having the given IPID,
      * thus a multiclienting user will have all their clients be kicked from the server.
