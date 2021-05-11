@@ -787,6 +787,16 @@ class AOClient : public QObject {
      */
     void cmdLogout(int argc, QStringList argv);
 
+    /**
+     * @brief Changes a moderator's password.
+     *
+     * @details If it is called with **one argument**, that argument is the **new password** to change to.
+     *
+     * If it is called with **two arguments**, the first argument is the **new password** to change to,
+     * and the second argument is the **username** of the moderator to change the password of.
+     */
+    void cmdChangePassword(int argc, QStringList argv);
+
     ///@}
 
     /**
@@ -2019,6 +2029,7 @@ class AOClient : public QObject {
         {"kickuid",            {ACLFlags.value("KICK"),         2, &AOClient::cmdKickUid}},
         {"kick_uid",           {ACLFlags.value("KICK"),         2, &AOClient::cmdKickUid}},
         {"firstperson",        {ACLFlags.value("NONE"),         0, &AOClient::cmdFirstPerson}},
+        {"changepass",         {ACLFlags.value("NONE"),         1, &AOClient::cmdChangePassword}},
     };
 
     /**
