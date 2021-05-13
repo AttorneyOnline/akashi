@@ -255,6 +255,10 @@ void AOClient::sendPacket(AOPacket packet)
 #ifdef NET_DEBUG
     qDebug() << "Sent packet:" << packet.header << ":" << packet.contents;
 #endif
+    packet.contents.replaceInStrings("#", "<num>")
+                   .replaceInStrings("%", "<percent>")
+                   .replaceInStrings("$", "<dollar>")
+                   .replaceInStrings("&", "<and>");
     socket->write(packet.toUtf8());
     socket->flush();
 }
