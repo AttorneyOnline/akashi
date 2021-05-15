@@ -37,7 +37,7 @@ void Discord::postModcallWebhook(QString name, QString reason, int current_area)
     QJsonArray jsonArray;
     QJsonObject jsonObject {
         {"color", "13312842"},
-        {"title", name + " filed a modcall in " + server->areas[current_area]->name},
+        {"title", name + " filed a modcall in " + server->areas[current_area]->name()},
         {"description", reason}
     };
     jsonArray.append(jsonObject);
@@ -55,7 +55,7 @@ void Discord::postModcallWebhook(QString name, QString reason, int current_area)
         QHttpPart file;
         file.setRawHeader(QByteArray("Content-Disposition"), QByteArray("form-data; name=\"file\"; filename=\"log.txt\""));
         file.setRawHeader(QByteArray("Content-Type"), QByteArray("plain/text"));
-        QQueue<QString> buffer = server->areas[current_area]->logger->getBuffer(); // I feel no shame for doing this
+        QQueue<QString> buffer = server->areas[current_area]->buffer(); // I feel no shame for doing this
         QString log;
         while (!buffer.isEmpty()) {
             log.append(buffer.dequeue() + "\n");

@@ -101,20 +101,20 @@ void AOClient::pktLoadingDone(AreaData* area, int argc, QStringList argv, AOPack
     }
 
     server->player_count++;
-    area->player_count++;
+    area->clientJoinedArea();
     joined = true;
     server->updateCharsTaken(area);
 
     arup(ARUPType::PLAYER_COUNT, true); // Tell everyone there is a new player
     sendEvidenceList(area);
 
-    sendPacket("HP", {"1", QString::number(area->def_hp)});
-    sendPacket("HP", {"2", QString::number(area->pro_hp)});
+    sendPacket("HP", {"1", QString::number(area->defHP())});
+    sendPacket("HP", {"2", QString::number(area->proHP())});
     sendPacket("FA", server->area_names);
     sendPacket("OPPASS", {"DEADBEEF"});
     sendPacket("DONE");
-    sendPacket("BN", {area->background});
-
+    sendPacket("BN", {area->background()});
+  
     sendServerMessage("=== MOTD ===\r\n" + server->MOTD + "\r\n=============");
 
     fullArup(); // Give client all the area data
@@ -125,8 +125,8 @@ void AOClient::pktLoadingDone(AreaData* area, int argc, QStringList argv, AOPack
     else {
         sendPacket("TI", {"0", "3"});
     }
-    for (QTimer* timer : area->timers) {
-        int timer_id = area->timers.indexOf(timer) + 1;
+    for (QTimer* timer : area->timers()) {
+        int timer_id = area->timers().indexOf(timer) + 1;
         if (timer->isActive()) {
             sendPacket("TI", {QString::number(timer_id), "2"});
             sendPacket("TI", {QString::number(timer_id), "0", QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(timer->remainingTime())))});
@@ -173,10 +173,9 @@ void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket pa
     if (pos != "")
         validated_packet.contents[5] = pos;
 
-    area->logger->logIC(this, &validated_packet);
+    area->log(current_char, ipid, validated_packet);
     server->broadcast(validated_packet, current_area);
-    area->last_ic_message.clear();
-    area->last_ic_message.append(validated_packet.contents);
+    area->updateLastICMessage(validated_packet.contents);
 
     server->can_send_ic_messages = false;
     server->next_message_timer.start(server->message_floodguard);
@@ -213,13 +212,13 @@ void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket p
         command = command.right(command.length() - 1);
         cmd_argv.removeFirst();
         int cmd_argc = cmd_argv.length();
-        area->logger->logCmd(this, &final_packet, command, cmd_argv);
+
         handleCommand(command, cmd_argc, cmd_argv);
     }
     else {
         server->broadcast(final_packet, current_area);
-        area->logger->logOOC(this, &final_packet);
     }
+    area->log(current_char, ipid, final_packet);
 }
 
 void AOClient::pktPing(AreaData* area, int argc, QStringList argv, AOPacket packet)
@@ -247,7 +246,7 @@ void AOClient::pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPack
                 sendServerMessage("You are blocked from changing the music.");
                 return;
             }
-            if (!area->toggle_music && !checkAuth(ACLFlags.value("CM"))) {
+            if (!area->isMusicAllowed() && !checkAuth(ACLFlags.value("CM"))) {
                 sendServerMessage("Music is disabled in this area.");
                 return;
             }
@@ -262,8 +261,8 @@ void AOClient::pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPack
             else
                 final_song = argument;
             AOPacket music_change("MC", {final_song, argv[1], showname, "1", "0", effects});
-            area->current_music = final_song;
-            area->music_played_by = showname;
+            area->currentMusic() = final_song;
+            area->musicPlayerBy() = showname;
             server->broadcast(music_change, current_area);
             return;
         }
@@ -297,14 +296,18 @@ void AOClient::pktHpBar(AreaData* area, int argc, QStringList argv, AOPacket pac
         sendServerMessage("You are blocked from using the judge controls.");
         return;
     }
+    int l_newValue = argv.at(1).toInt();
+
     if (argv[0] == "1") {
-        area->def_hp = std::min(std::max(0, argv[1].toInt()), 10);
+        area->changeHP(AreaData::Side::DEFENCE, l_newValue);
     }
     else if (argv[0] == "2") {
-        area->pro_hp = std::min(std::max(0, argv[1].toInt()), 10);
+        area->changeHP(AreaData::Side::PROSECUTOR, l_newValue);
     }
-    server->broadcast(AOPacket("HP", {"1", QString::number(area->def_hp)}), area->index);
-    server->broadcast(AOPacket("HP", {"2", QString::number(area->pro_hp)}), area->index);
+
+    server->broadcast(AOPacket("HP", {"1", QString::number(area->defHP())}), area->index());
+    server->broadcast(AOPacket("HP", {"2", QString::number(area->proHP())}), area->index());
+
     updateJudgeLog(area, this, "updated the penalties");
 }
 
@@ -343,7 +346,7 @@ void AOClient::pktModCall(AreaData* area, int argc, QStringList argv, AOPacket p
         if (client->authenticated)
             client->sendPacket(packet);
     }
-    area->logger->logModcall(this, &packet);
+    area->log(current_char, ipid, packet);
 
     if (server->webhook_enabled) {
         QString name = ooc_name;
@@ -352,7 +355,8 @@ void AOClient::pktModCall(AreaData* area, int argc, QStringList argv, AOPacket p
 
         server->webhookRequest(name, packet.contents[0], current_area);
     }
-    area->logger->flush();
+    
+    area->flushLogs();
 }
 
 void AOClient::pktAddEvidence(AreaData* area, int argc, QStringList argv, AOPacket packet)
@@ -360,7 +364,7 @@ void AOClient::pktAddEvidence(AreaData* area, int argc, QStringList argv, AOPack
     if (!checkEvidenceAccess(area))
         return;
     AreaData::Evidence evi = {argv[0], argv[1], argv[2]};
-    area->evidence.append(evi);
+    area->appendEvidence(evi);
     sendEvidenceList(area);
 }
 
@@ -370,8 +374,8 @@ void AOClient::pktRemoveEvidence(AreaData* area, int argc, QStringList argv, AOP
         return;
     bool is_int = false;
     int idx = argv[0].toInt(&is_int);
-    if (is_int && idx <= area->evidence.size() && idx >= 0) {
-        area->evidence.removeAt(idx);
+    if (is_int && idx <= area->evidence().size() && idx >= 0) {
+        area->deleteEvidence(idx);
     }
     sendEvidenceList(area);
 }
@@ -383,8 +387,8 @@ void AOClient::pktEditEvidence(AreaData* area, int argc, QStringList argv, AOPac
     bool is_int = false;
     int idx = argv[0].toInt(&is_int);
     AreaData::Evidence evi = {argv[1], argv[2], argv[3]};
-    if (is_int && idx <= area->evidence.size() && idx >= 0) {
-        area->evidence.replace(idx, evi);
+    if (is_int && idx <= area->evidence().size() && idx >= 0) {
+        area->replaceEvidence(idx, evi);
     }
     sendEvidenceList(area);
 }
@@ -455,8 +459,8 @@ void AOClient::updateEvidenceList(AreaData* area)
     QStringList evidence_list;
     QString evidence_format("%1&%2&%3");
 
-    for (AreaData::Evidence evidence : area->evidence) {
-        if (!checkAuth(ACLFlags.value("CM")) && area->evi_mod == AreaData::EvidenceMod::HIDDEN_CM) {
+    for (AreaData::Evidence evidence : area->evidence()) {
+        if (!checkAuth(ACLFlags.value("CM")) && area->eviMod() == AreaData::EvidenceMod::HIDDEN_CM) {
             QRegularExpression regex("<owner=(.*?)>");
             QRegularExpressionMatch match = regex.match(evidence.description);
             if (match.hasMatch()) {
@@ -491,7 +495,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         // Spectators cannot use IC
         return invalid;
     AreaData* area = server->areas[current_area];
-    if (area->locked == AreaData::LockStatus::SPECTATABLE && !area->invited.contains(id) && !checkAuth(ACLFlags.value("BYPASS_LOCKS")))
+    if (area->lockStatus() == AreaData::LockStatus::SPECTATABLE && !area->invited().contains(id) && !checkAuth(ACLFlags.value("BYPASS_LOCKS")))
         // Non-invited players cannot speak in spectatable areas
         return invalid;
 
@@ -516,7 +520,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     if (current_char != incoming_args[2].toString()) {
         // Selected char is different from supplied folder name
         // This means the user is INI-swapped
-        if (!area->iniswap_allowed) {
+        if (!area->iniswapAllowed()) {
             if (!server->characters.contains(incoming_args[2].toString()))
                 return invalid;
         }
@@ -536,12 +540,12 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         return invalid;
 
     QString incoming_msg = dezalgo(incoming_args[4].toString().trimmed());
-    if (!area->last_ic_message.isEmpty()
-            && incoming_msg == area->last_ic_message[4]
+    if (!area->lastICMessage().isEmpty()
+            && incoming_msg == area->lastICMessage()[4]
             && incoming_msg != "")
         return invalid;
 
-    if (incoming_msg == "" && area->blankposting_allowed == false) {
+    if (incoming_msg == "" && area->blankpostingAllowed() == false) {
         sendServerMessage("Blankposting has been forbidden in this area.");
         return invalid;
     }
@@ -614,7 +618,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
 
     // evidence
     int evi_idx = incoming_args[11].toInt();
-    if (evi_idx > area->evidence.length())
+    if (evi_idx > area->evidence().length())
         return invalid;
     args.append(QString::number(evi_idx));
 
@@ -641,7 +645,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     if (incoming_args.length() > 15) {
         // showname
         QString incoming_showname = dezalgo(incoming_args[15].toString().trimmed());
-        if (!(incoming_showname == current_char || incoming_showname.isEmpty()) && !area->showname_allowed) {
+        if (!(incoming_showname == current_char || incoming_showname.isEmpty()) && !area->shownameAllowed()) {
             sendServerMessage("Shownames are not allowed in this area!");
             return invalid;
         }
@@ -707,7 +711,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
 
         // immediate text processing
         int immediate = incoming_args[18].toInt();
-        if (area->force_immediate) {
+        if (area->forceImmediate()) {
             if (args[7] == "1" || args[7] == "2") {
                 args[7] = "0";
                 immediate = 1;
@@ -749,10 +753,10 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         int additive = incoming_args[24].toInt();
         if (additive != 0 && additive != 1)
             return invalid;
-        else if (area->last_ic_message.isEmpty()){
+        else if (area->lastICMessage().isEmpty()){
             additive = 0;
         }
-        else if (!(char_id == area->last_ic_message[8].toInt())) {
+        else if (!(char_id == area->lastICMessage()[8].toInt())) {
             additive = 0;
         }
         else if (additive == 1) {
@@ -765,38 +769,61 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     }
 
     //Testimony playback
-    if (area->test_rec == AreaData::TestimonyRecording::RECORDING || area->test_rec == AreaData::TestimonyRecording::ADD) {
+    if (area->testimonyRecording() == AreaData::TestimonyRecording::RECORDING || area->testimonyRecording() == AreaData::TestimonyRecording::ADD) {
         if (args[5] != "wit")
             return AOPacket("MS", args);
 
-        if (area->statement == -1) {
+        if (area->statement() == -1) {
             args[4] = "~~\\n-- " + args[4] + " --";
             args[14] = "3";
             server->broadcast(AOPacket("RT",{"testimony1"}), current_area);
         }
         addStatement(args);
     }
-    else if (area->test_rec == AreaData::TestimonyRecording::UPDATE) {
+    else if (area->testimonyRecording() == AreaData::TestimonyRecording::UPDATE) {
         args = updateStatement(args);
     }
-    else if (area->test_rec == AreaData::TestimonyRecording::PLAYBACK) {
+    else if (area->testimonyRecording() == AreaData::TestimonyRecording::PLAYBACK) {
+        AreaData::TestimonyProgress l_progress;
+
         if (args[4] == ">") {
             pos = "wit";
-            area->statement = area->statement + 1;
-            args = playTestimony();
+            std::make_pair(args, l_progress) = area->jumpToStatement(area->statement() + 1);
+
+            if (l_progress == AreaData::TestimonyProgress::LOOPED) {
+                sendServerMessageArea("Last statement reached. Looping to first statement.");
+            }
         }
         if (args[4] == "<") {
             pos = "wit";
-            area->statement = area->statement - 1;
-            args = playTestimony();
+            std::make_pair(args, l_progress) = area->jumpToStatement(area->statement() - 1);
+
+            if (l_progress == AreaData::TestimonyProgress::STAYED_AT_FIRST) {
+                sendServerMessage("First statement reached.");
+            }
         }
+
         QString decoded_message = decodeMessage(args[4]); //Get rid of that pesky encoding first.
         QRegularExpression jump("(?<arrow>>)(?<int>[0,1,2,3,4,5,6,7,8,9]+)");
         QRegularExpressionMatch match = jump.match(decoded_message);
         if (match.hasMatch()) {
             pos = "wit";
-            area->statement = match.captured("int").toInt();
-            args= playTestimony();
+            std::make_pair(args, l_progress) = area->jumpToStatement(match.captured("int").toInt());
+
+            switch (l_progress){
+            case AreaData::TestimonyProgress::LOOPED:
+            {
+                sendServerMessageArea("Last statement reached. Looping to first statement.");
+            }
+            case AreaData::TestimonyProgress::STAYED_AT_FIRST:
+            {
+                sendServerMessage("First statement reached.");
+            }
+            case AreaData::TestimonyProgress::OK:
+            default:
+                // No need to handle.
+                break;
+            }
         }
     }
 
@@ -812,7 +839,7 @@ QString AOClient::dezalgo(QString p_text)
 
 bool AOClient::checkEvidenceAccess(AreaData *area)
 {
-    switch(area->evi_mod) {
+    switch(area->eviMod()) {
     case AreaData::EvidenceMod::FFA:
         return true;
     case AreaData::EvidenceMod::CM:
@@ -833,12 +860,7 @@ void AOClient::updateJudgeLog(AreaData* area, AOClient* client, QString action)
     QString ipid = client->getIpid();
     QString message = action;
     QString logmessage = QString("[%1]: [%2] %3 (%4) %5").arg(timestamp, uid, char_name, ipid, message);
-    int size = area->judgelog.size();
-    if (size == 10) {
-        area->judgelog.removeFirst();
-        area->judgelog.append(logmessage);
-    }
-    else area->judgelog.append(logmessage);
+    area->appendJudgelog(logmessage);
 }
 
 QString AOClient::decodeMessage(QString incoming_message)
@@ -862,7 +884,7 @@ void AOClient::loginAttempt(QString message)
             sendPacket("AUTH", {"0"}); // Client: "Login unsuccessful."
             sendServerMessage("Incorrect password.");
         }
-        server->areas.value(current_area)->logger->logLogin(this, authenticated, "moderator");
+        server->areas.value(current_area)->logLogin(current_char, ipid, authenticated, "moderator");
     }
     else if (server->auth_type == "advanced") {
         QStringList login = message.split(" ");
@@ -886,7 +908,7 @@ void AOClient::loginAttempt(QString message)
             sendPacket("AUTH", {"0"}); // Client: "Login unsuccessful."
             sendServerMessage("Incorrect password.");
         }
-        server->areas.value(current_area)->logger->logLogin(this, authenticated, username);
+        server->areas.value(current_area)->logLogin(current_char, ipid, authenticated, username);
     }
     else {
             qWarning() << "config.ini has an unrecognized auth_type!";

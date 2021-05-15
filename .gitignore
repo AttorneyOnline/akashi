@@ -73,4 +73,5 @@ Thumbs.db
 build/
 bin/akashi
 bin/config/
+bin_tests/
 doxygen/html

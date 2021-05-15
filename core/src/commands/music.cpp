@@ -28,8 +28,8 @@ void AOClient::cmdPlay(int argc, QStringList argv)
     }
     AreaData* area = server->areas[current_area];
     QString song = argv.join(" ");
-    area->current_music = song;
-    area->music_played_by = showname;
+    area->currentMusic() = song;
+    area->musicPlayerBy() = showname;
     AOPacket music_change("MC", {song, QString::number(server->getCharID(current_char)), showname, "1", "0"});
     server->broadcast(music_change, current_area);
 }
@@ -37,8 +37,8 @@ void AOClient::cmdPlay(int argc, QStringList argv)
 void AOClient::cmdCurrentMusic(int argc, QStringList argv)
 {
     AreaData* area = server->areas[current_area];
-    if (area->current_music != "" && area->current_music != "~stop.mp3") // dummy track for stopping music
-        sendServerMessage("The current song is " + area->current_music + " played by " + area->music_played_by);
+    if (area->currentMusic() != "" && area->currentMusic() != "~stop.mp3") // dummy track for stopping music
+        sendServerMessage("The current song is " + area->currentMusic() + " played by " + area->musicPlayerBy());
     else
         sendServerMessage("There is no music playing.");
 }
@@ -86,7 +86,7 @@ void AOClient::cmdUnBlockDj(int argc, QStringList argv)
 void AOClient::cmdToggleMusic(int argc, QStringList argv)
 {
     AreaData* area = server->areas[current_area];
-    area->toggle_music = !area->toggle_music;
-    QString state = area->toggle_music ? "allowed." : "disallowed.";
+    area->toggleMusic();
+    QString state = area->isMusicAllowed() ? "allowed." : "disallowed.";
     sendServerMessage("Music in this area is now " + state);
 }
