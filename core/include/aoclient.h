@@ -73,7 +73,7 @@ class AOClient : public QObject {
      *
      * @see #ipid
      */
-    QString getIpid();
+    QString getIpid() const;
 
     /**
      * @brief Calculates the client's IPID based on a hashed version of its IP.
@@ -1867,11 +1867,6 @@ class AOClient : public QObject {
      */
     QStringList updateStatement(QStringList packet);
 
-    /**
-     * @brief Called when area enum is set to PLAYBACK. Sends the IC-Message stored at the current statement.
-     * @return IC-Message stored in the QVector.
-     */
-    QStringList playTestimony();
     ///@}
 
     /**
