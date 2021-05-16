@@ -92,7 +92,7 @@ class Server : public QObject {
      * @return A list of clients whose IPID match. List may be empty.
      */
     QList<AOClient*> getClientsByIpid(QString ipid);
-    
+
     /**
      * @brief Gets a pointer to a client by user ID.
      *
@@ -294,7 +294,9 @@ class Server : public QObject {
     QStringList gimp_list;
 
     /**
-     * @brief Integer representing the maximum number of clients allowed to connect from the same IP
+     * @brief Integer representing the maximum number of clients allowed to connect from the same IP.
+     *
+     * @note When 0, no limit is imposed.
      */
     int multiclient_limit;
 
@@ -321,6 +323,14 @@ class Server : public QObject {
      * @brief URL send to the client during handshake to set the remote repository URL.
      */
     QUrl asset_url;
+
+    /**
+     * @brief Same as multiclient_limit, but for localhost.
+     *
+     * @see multiclient_limit
+     */
+    int localhost_multiclient_limit;
+
 
   public slots:
     /**

@@ -16,6 +16,7 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/server.h"
+#include <cstdio>
 
 Server::Server(int p_port, int p_ws_port, QObject* parent) :
     QObject(parent),
@@ -60,7 +61,7 @@ void Server::start()
                 discord, &Discord::postModcallWebhook);
 
     }
-    
+
     proxy = new WSProxy(port, ws_port, this);
     if(ws_port != -1)
         proxy->start();
@@ -131,8 +132,16 @@ void Server::clientConnected()
             multiclient_count++;
     }
 
-    if (multiclient_count > multiclient_limit && !client->remote_ip.isLoopback()) // TODO: make this configurable
-        is_at_multiclient_limit = true;
+    if (client->remote_ip.isLoopback()) {
+        qDebug() <<"localhost connected, localhost multiclient limit is " << localhost_multiclient_limit;
+        if (localhost_multiclient_limit != 0 && multiclient_count > localhost_multiclient_limit)
+            is_at_multiclient_limit = true;
+    } else {
+        qDebug() <<"new connection from ip " << client->remote_ip << ", multiclient limit is " << localhost_multiclient_limit;
+        if (multiclient_limit != 0 && multiclient_count > multiclient_limit)
+            is_at_multiclient_limit = true;
+    }
+
 
     if (is_banned) {
         AOPacket ban_reason("BD", {db_manager->getBanReason(socket->peerAddress())});
@@ -287,6 +296,10 @@ void Server::loadServerConfig()
     multiclient_limit = config.value("multiclient_limit", "15").toInt(&multiclient_limit_conversion_success);
     if (!multiclient_limit_conversion_success)
         multiclient_limit = 15;
+    bool localhost_multiclient_limit_conversion_success;
+    multiclient_limit = config.value("localhost_multiclient_limit", "1").toInt(&localhost_multiclient_limit_conversion_success);
+    if (!localhost_multiclient_limit_conversion_success)
+        localhost_multiclient_limit = 1;
     bool max_char_conversion_success;
     max_chars = config.value("maximum_characters", "256").toInt(&max_char_conversion_success);
     if (!max_char_conversion_success)
