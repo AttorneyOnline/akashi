@@ -16,7 +16,6 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/server.h"
-#include <cstdio>
 
 Server::Server(int p_port, int p_ws_port, QObject* parent) :
     QObject(parent),
