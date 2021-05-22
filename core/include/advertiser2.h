@@ -1,8 +1,8 @@
 #ifndef ADVERTISER2_H
 #define ADVERTISER2_H
 
-#include <QObject>
 #include <QtNetwork>
+#include <QObject>
 
 
 /**
@@ -41,6 +41,12 @@ public slots:
      * @param f_master_url URL of the advertisement target.
      */
     void setAdvertiserSettings(QString f_name, QString f_description, int f_port, int f_ws_port, int f_players, QUrl f_master_url);
+
+    /**
+     * @brief updatePlayers Updates the playercount of m_players
+     * @param f_players Current integer of players send by the server.
+     */
+    void updatePlayers(int f_players);
 
 private:
 

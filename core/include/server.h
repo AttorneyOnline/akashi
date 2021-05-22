@@ -24,6 +24,7 @@
 #include "include/ws_proxy.h"
 #include "include/db_manager.h"
 #include "include/discord.h"
+#include "include/advertiser2.h"
 
 #include <QCoreApplication>
 #include <QDebug>
@@ -322,6 +323,16 @@ class Server : public QObject {
      */
     QUrl asset_url;
 
+    /**
+     * @brief advertise_server HTTP advertiser is not constructed if this is false.
+     */
+    bool advertise_server;
+
+    /**
+     * @brief advertise_timer Timer till the server needs to renew its masterserver advertisement
+     */
+    QTimer* advertise_timer;
+
   public slots:
     /**
      * @brief Handles a new connection.
@@ -384,6 +395,11 @@ class Server : public QObject {
      * @brief Handles discord webhooks.
      */
     Discord* discord;
+
+    /**
+     * @brief advertiser Handles advertising to an HTTP masterserver
+     */
+    Advertiser2* advertiser;
 };
 
 #endif // SERVER_H

@@ -36,8 +36,7 @@ void Advertiser2::advertiseServer()
 void Advertiser2::readReply(QNetworkReply *reply)
 {
     QByteArray data = reply->readAll();
-    QString str_reply = data;
-    qDebug() << str_reply;
+    qDebug() << data;
 }
 
 void Advertiser2::setAdvertiserSettings(QString f_name, QString f_description, int f_port, int f_ws_port, int f_players, QUrl f_master_url)
@@ -48,4 +47,9 @@ void Advertiser2::setAdvertiserSettings(QString f_name, QString f_description, i
     m_ws_port = f_ws_port;
     m_players = f_players;
     m_masterserver = f_master_url;
+}
+
+void Advertiser2::updatePlayers(int f_players)
+{
+    m_players = f_players;
 }

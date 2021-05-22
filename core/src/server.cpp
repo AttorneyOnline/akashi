@@ -60,6 +60,16 @@ void Server::start()
                 discord, &Discord::postModcallWebhook);
 
     }
+
+    if (advertise_server) {
+        advertise_timer = new QTimer(this);
+        advertiser = new Advertiser2;
+
+        connect(advertise_timer, &QTimer::timeout,
+                advertiser, &Advertiser2::advertiseServer);
+        advertise_timer->start(300000);
+        advertiser->advertiseServer();
+    }
     
     proxy = new WSProxy(port, ws_port, this);
     if(ws_port != -1)
@@ -312,6 +322,11 @@ void Server::loadServerConfig()
     webhook_url = config.value("webhook_url", "Your webhook url here.").toString();
     webhook_sendfile = config.value("webhook_sendfile", false).toBool();
     config.endGroup();
+
+    if (advertise_server) {
+        advertiser->setAdvertiserSettings(server_name, server_desc, port, ws_port, player_count, QUrl("https://ms3.oldmud0.workers.dev/servers"));
+        //Reminder to change the link to be customizable after testing
+    }
 }
 
 void Server::allowMessage()
