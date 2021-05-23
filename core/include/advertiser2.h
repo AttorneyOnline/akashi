@@ -40,7 +40,7 @@ public slots:
      * @param f_players Maximum amount of clients.
      * @param f_master_url URL of the advertisement target.
      */
-    void setAdvertiserSettings(QString f_name, QString f_description, int f_port, int f_ws_port, int f_players, QUrl f_master_url);
+    void setAdvertiserSettings(QString f_name, QString f_description, int f_port, int f_ws_port, int f_players, QUrl f_master_url, bool f_debug);
 
     /**
      * @brief updatePlayers Updates the playercount of m_players
@@ -84,6 +84,11 @@ private:
      * @brief m_masterserver URL of the masterserver being advertised to.
      */
     QUrl m_masterserver;
+
+    /**
+     * @brief net_debug If debug information is shown
+     */
+    bool m_debug;
 };
 
 #endif // ADVERTISER2_H

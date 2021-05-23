@@ -29,6 +29,8 @@ Server::Server(int p_port, int p_ws_port, QObject* parent) :
     timer = new QTimer();
 
     db_manager = new DBManager();
+
+    advertiser = new Advertiser2();
 }
 
 void Server::start()
@@ -62,13 +64,15 @@ void Server::start()
     }
 
     if (advertise_server) {
-        advertise_timer = new QTimer(this);
-        advertiser = new Advertiser2;
-
-        connect(advertise_timer, &QTimer::timeout,
+        advertiser_timer = new QTimer(this);
+        connect(advertiser_timer, &QTimer::timeout,
                 advertiser, &Advertiser2::advertiseServer);
-        advertise_timer->start(300000);
+        connect(this, &Server::advertiseServer,
+                advertiser, &Advertiser2::advertiseServer);
+        connect(this, &Server::updatePlayers,
+                advertiser, &Advertiser2::updatePlayers);
         advertiser->advertiseServer();
+        advertiser_timer->start(300000);
     }
     
     proxy = new WSProxy(port, ws_port, this);
@@ -310,6 +314,15 @@ void Server::loadServerConfig()
         asset_url = NULL;
     config.endGroup();
 
+    //HTTP advertiser
+    if (advertise_server) {
+        config.beginGroup("Advertiser");
+        advertiser_ip = config.value("ms_ip","http://invalid.local/servers").toUrl();
+        advertiser_debug = config.value("ms_debug_info","false").toBool();
+        config.endGroup();
+        advertiser->setAdvertiserSettings(server_name, server_desc, port, ws_port, player_count, advertiser_ip, advertiser_debug);
+    }
+
     //Load dice values
     config.beginGroup("Dice");
     dice_value = config.value("value_type", "100").toInt();
@@ -322,11 +335,6 @@ void Server::loadServerConfig()
     webhook_url = config.value("webhook_url", "Your webhook url here.").toString();
     webhook_sendfile = config.value("webhook_sendfile", false).toBool();
     config.endGroup();
-
-    if (advertise_server) {
-        advertiser->setAdvertiserSettings(server_name, server_desc, port, ws_port, player_count, QUrl("https://ms3.oldmud0.workers.dev/servers"));
-        //Reminder to change the link to be customizable after testing
-    }
 }
 
 void Server::allowMessage()

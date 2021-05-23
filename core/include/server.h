@@ -329,9 +329,19 @@ class Server : public QObject {
     bool advertise_server;
 
     /**
-     * @brief advertise_timer Timer till the server needs to renew its masterserver advertisement
+     * @brief advertise_timer Timer till the server needs to renew its masterserver advertisement.
      */
-    QTimer* advertise_timer;
+    QTimer* advertiser_timer;
+
+    /**
+     * @brief advertise_debug Allows HTTP advertiser to print debug info.
+     */
+    bool advertiser_debug;
+
+    /**
+     * @brief advertiser_ip IP or URL of the masterserver
+     */
+    QUrl advertiser_ip;
 
   public slots:
     /**
@@ -367,6 +377,17 @@ class Server : public QObject {
      * @param current_area Integer ID of the area the modcall is made.
      */
     void webhookRequest(QString name, QString reason, int current_area);
+
+    /**
+     * @brief updatePlayers Updates the playercount in other objects
+     * @param player_count Current amount of players joined to the server
+     */
+    void updatePlayers(int player_count);
+
+    /**
+     * @brief advertiseServer Allows other objects to trigger an update of the advertisement
+     */
+    void advertiseServer();
 
   private:
     /**
