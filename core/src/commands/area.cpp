@@ -82,6 +82,10 @@ void AOClient::cmdUnCM(int argc, QStringList argv)
             return;
         }
         AOClient* target = server->getClientByID(uid);
+        if (target == nullptr) {
+            sendServerMessage("No client with that ID found.");
+            return;
+        }
         target->sendServerMessage("You have been unCMed by a moderator.");
     }
     else {

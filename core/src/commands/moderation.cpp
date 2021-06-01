@@ -215,6 +215,11 @@ void AOClient::cmdMute(int argc, QStringList argv)
 
     AOClient* target = server->getClientByID(uid);
 
+    if (target == nullptr) {
+        sendServerMessage("No client with that ID found.");
+        return;
+    }
+
     if (target->is_muted)
         sendServerMessage("That player is already muted!");
     else {
@@ -234,6 +239,11 @@ void AOClient::cmdUnMute(int argc, QStringList argv)
     }
 
     AOClient* target = server->getClientByID(uid);
+
+    if (target == nullptr) {
+        sendServerMessage("No client with that ID found.");
+        return;
+    }
 
     if (!target->is_muted)
         sendServerMessage("That player is not muted!");
@@ -255,6 +265,11 @@ void AOClient::cmdOocMute(int argc, QStringList argv)
 
     AOClient* target = server->getClientByID(uid);
 
+    if (target == nullptr) {
+        sendServerMessage("No client with that ID found.");
+        return;
+    }
+
     if (target->is_ooc_muted)
         sendServerMessage("That player is already OOC muted!");
     else {
@@ -274,6 +289,11 @@ void AOClient::cmdOocUnMute(int argc, QStringList argv)
     }
 
     AOClient* target = server->getClientByID(uid);
+
+    if (target == nullptr) {
+        sendServerMessage("No client with that ID found.");
+        return;
+    }
 
     if (!target->is_ooc_muted)
         sendServerMessage("That player is not OOC muted!");
@@ -295,6 +315,11 @@ void AOClient::cmdBlockWtce(int argc, QStringList argv)
 
     AOClient* target = server->getClientByID(uid);
 
+    if (target == nullptr) {
+        sendServerMessage("No client with that ID found.");
+        return;
+    }
+
     if (target->is_wtce_blocked)
         sendServerMessage("That player is already judge blocked!");
     else {
@@ -314,6 +339,11 @@ void AOClient::cmdUnBlockWtce(int argc, QStringList argv)
     }
 
     AOClient* target = server->getClientByID(uid);
+
+    if (target == nullptr) {
+        sendServerMessage("No client with that ID found.");
+        return;
+    }
 
     if (!target->is_wtce_blocked)
         sendServerMessage("That player is not judge blocked!");
@@ -429,6 +459,10 @@ void AOClient::cmdKickUid(int argc, QStringList argv)
     }
 
     AOClient* target = server->getClientByID(uid);
+    if (target == nullptr) {
+        sendServerMessage("No client with that ID found.");
+        return;
+    }
     target->sendPacket("KK", {reason});
     target->socket->close();
     sendServerMessage("Kicked client with UID " + argv[0] + " for reason: " + reason);

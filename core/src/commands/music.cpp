@@ -54,6 +54,11 @@ void AOClient::cmdBlockDj(int argc, QStringList argv)
 
     AOClient* target = server->getClientByID(uid);
 
+    if (target == nullptr) {
+        sendServerMessage("No client with that ID found.");
+        return;
+    }
+
     if (target->is_dj_blocked)
         sendServerMessage("That player is already DJ blocked!");
     else {
@@ -73,6 +78,11 @@ void AOClient::cmdUnBlockDj(int argc, QStringList argv)
     }
 
     AOClient* target = server->getClientByID(uid);
+
+    if (target == nullptr) {
+        sendServerMessage("No client with that ID found.");
+        return;
+    }
 
     if (!target->is_dj_blocked)
         sendServerMessage("That player is not DJ blocked!");

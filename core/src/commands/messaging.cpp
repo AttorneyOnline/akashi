@@ -189,6 +189,11 @@ void AOClient::cmdGimp(int argc, QStringList argv)
 
     AOClient* target = server->getClientByID(uid);
 
+    if (target == nullptr) {
+        sendServerMessage("No client with that ID found.");
+        return;
+    }
+
     if (target->is_gimped)
         sendServerMessage("That player is already gimped!");
     else {
@@ -208,6 +213,11 @@ void AOClient::cmdUnGimp(int argc, QStringList argv)
     }
 
     AOClient* target = server->getClientByID(uid);
+
+    if (target == nullptr) {
+        sendServerMessage("No client with that ID found.");
+        return;
+    }
 
     if (!(target->is_gimped))
         sendServerMessage("That player is not gimped!");
@@ -229,6 +239,11 @@ void AOClient::cmdDisemvowel(int argc, QStringList argv)
 
     AOClient* target = server->getClientByID(uid);
 
+    if (target == nullptr) {
+        sendServerMessage("No client with that ID found.");
+        return;
+    }
+
     if (target->is_disemvoweled)
         sendServerMessage("That player is already disemvoweled!");
     else {
@@ -248,6 +263,11 @@ void AOClient::cmdUnDisemvowel(int argc, QStringList argv)
     }
 
     AOClient* target = server->getClientByID(uid);
+
+    if (target == nullptr) {
+        sendServerMessage("No client with that ID found.");
+        return;
+    }
 
     if (!(target->is_disemvoweled))
         sendServerMessage("That player is not disemvoweled!");
@@ -269,6 +289,11 @@ void AOClient::cmdShake(int argc, QStringList argv)
 
     AOClient* target = server->getClientByID(uid);
 
+    if (target == nullptr) {
+        sendServerMessage("No client with that ID found.");
+        return;
+    }
+
     if (target->is_shaken)
         sendServerMessage("That player is already shaken!");
     else {
@@ -288,6 +313,11 @@ void AOClient::cmdUnShake(int argc, QStringList argv)
     }
 
     AOClient* target = server->getClientByID(uid);
+
+    if (target == nullptr) {
+        sendServerMessage("No client with that ID found.");
+        return;
+    }
 
     if (!(target->is_shaken))
         sendServerMessage("That player is not shaken!");
@@ -328,6 +358,11 @@ void AOClient::cmdCharCurse(int argc, QStringList argv)
     }
 
     AOClient* target = server->getClientByID(uid);
+
+    if (target == nullptr) {
+        sendServerMessage("No client with that ID found.");
+        return;
+    }
 
     if (target->is_charcursed) {
         sendServerMessage("That player is already charcursed!");
@@ -379,6 +414,11 @@ void AOClient::cmdUnCharCurse(int argc, QStringList argv)
 
     AOClient* target = server->getClientByID(uid);
 
+    if (target == nullptr) {
+        sendServerMessage("No client with that ID found.");
+        return;
+    }
+
     if (!target->is_charcursed) {
         sendServerMessage("That player is not charcursed!");
         return;
@@ -408,6 +448,10 @@ void AOClient::cmdCharSelect(int argc, QStringList argv)
             return;
 
         AOClient* target = server->getClientByID(target_id);
+
+        if (target == nullptr)
+            return;
+
         target->changeCharacter(-1);
         target->sendPacket("DONE");
     }
