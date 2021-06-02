@@ -210,17 +210,20 @@ QList<int> AreaData::charactersTaken() const
 
 bool AreaData::changeCharacter(int f_from, int f_to)
 {
-    if (f_from != -1) {
-        m_charactersTaken.removeAll(f_from);
-    }
-
     if (m_charactersTaken.contains(f_to)) {
         return false;
     }
 
     if (f_to != -1) {
+        if (f_from != -1) {
+            m_charactersTaken.removeAll(f_from);
+        }
         m_charactersTaken.append(f_to);
         return true;
+    }
+
+    if (f_to == -1 && f_from != -1) {
+        m_charactersTaken.removeAll(f_from);
     }
 
     return false;

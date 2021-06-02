@@ -178,6 +178,17 @@ void Area::changeCharacter()
         QCOMPARE(m_area->charactersTaken().at(1), 8);
     }
     {
+        // Client attempts to switch to 7.
+        // Nothing changes, as it is already taken.
+
+        m_area->changeCharacter(8, 7);
+
+        QCOMPARE(m_area->playerCount(), 1);
+        QCOMPARE(m_area->charactersTaken().size(), 2);
+        QCOMPARE(m_area->charactersTaken().at(0), 7);
+        QCOMPARE(m_area->charactersTaken().at(1), 8);
+    }
+    {
         // Charid 7 is unlocked for use.
         // Charid 8 is taken.
         m_area->changeCharacter(7, -1);

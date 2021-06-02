@@ -113,7 +113,7 @@ void AOClient::changeArea(int new_area)
     }
 
     if (current_char != "") {
-        server->areas[current_area]->charactersTaken().removeAll(server->getCharID(current_char));
+        server->areas[current_area]->changeCharacter(server->getCharID(current_char), -1);
         server->updateCharsTaken(server->areas[current_area]);
     }
     server->areas[new_area]->clientJoinedArea(char_id);
@@ -130,7 +130,7 @@ void AOClient::changeArea(int new_area)
         sendPacket("DONE");
     }
     else {
-        server->areas[current_area]->charactersTaken().append(server->getCharID(current_char));
+        server->areas[current_area]->changeCharacter(-1, server->getCharID(current_char));
         server->updateCharsTaken(server->areas[current_area]);
     }
     for (QTimer* timer : server->areas[current_area]->timers()) {
@@ -161,18 +161,19 @@ bool AOClient::changeCharacter(int char_id)
     
     bool l_successfulChange = area->changeCharacter(server->getCharID(current_char), char_id);
 
-    current_char = "";
-
-    if (l_successfulChange) {
-        QString char_selected = server->characters[char_id];
-        current_char = char_selected;
+    if (char_id < 0) {
+        current_char = "";
     }
 
-    pos = "";
-
-    server->updateCharsTaken(area);
-    sendPacket("PV", {QString::number(id), "CID", QString::number(char_id)});
-    return true;
+    if (l_successfulChange == true) {
+        QString char_selected = server->characters[char_id];
+        current_char = char_selected;
+        pos = "";
+        server->updateCharsTaken(area);
+        sendPacket("PV", {QString::number(id), "CID", QString::number(char_id)});
+        return true;
+    }
+    return false;
 }
 
 void AOClient::changePosition(QString new_pos)
