@@ -168,7 +168,7 @@ void Server::updateCharsTaken(AreaData* area)
 {
     QStringList chars_taken;
     for (QString cur_char : characters) {
-        chars_taken.append(area->characters_taken.contains(getCharID(cur_char))
+        chars_taken.append(area->charactersTaken().contains(getCharID(cur_char))
                                ? QStringLiteral("-1")
                                : QStringLiteral("0"));
     }
@@ -176,7 +176,7 @@ void Server::updateCharsTaken(AreaData* area)
     AOPacket response_cc("CharsCheck", chars_taken);
 
     for (AOClient* client : clients) {
-        if (client->current_area == area->index){
+        if (client->current_area == area->index()){
             if (!client->is_charcursed)
                 client->sendPacket(response_cc);
             else {
@@ -276,7 +276,7 @@ void Server::loadServerConfig()
     auth_type = config.value("auth","simple").toString();
     modpass = config.value("modpass","").toString();
     bool maximum_statements_conversion_success;
-    maximum_statements = config.value("maximum_statements", "10").toInt(&maximum_statements_conversion_success);
+    maximum_statements = config.value("maximustatement()s", "10").toInt(&maximum_statements_conversion_success);
     if (!maximum_statements_conversion_success)
         maximum_statements = 10;
     bool afk_timeout_conversion_success;
@@ -311,6 +311,7 @@ void Server::loadServerConfig()
     webhook_enabled = config.value("webhook_enabled", "false").toBool();
     webhook_url = config.value("webhook_url", "Your webhook url here.").toString();
     webhook_sendfile = config.value("webhook_sendfile", false).toBool();
+    webhook_content = config.value("webhook_content", "").toString();
     config.endGroup();
 }
 

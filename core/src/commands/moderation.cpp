@@ -215,6 +215,11 @@ void AOClient::cmdMute(int argc, QStringList argv)
 
     AOClient* target = server->getClientByID(uid);
 
+    if (target == nullptr) {
+        sendServerMessage("No client with that ID found.");
+        return;
+    }
+
     if (target->is_muted)
         sendServerMessage("That player is already muted!");
     else {
@@ -234,6 +239,11 @@ void AOClient::cmdUnMute(int argc, QStringList argv)
     }
 
     AOClient* target = server->getClientByID(uid);
+
+    if (target == nullptr) {
+        sendServerMessage("No client with that ID found.");
+        return;
+    }
 
     if (!target->is_muted)
         sendServerMessage("That player is not muted!");
@@ -255,6 +265,11 @@ void AOClient::cmdOocMute(int argc, QStringList argv)
 
     AOClient* target = server->getClientByID(uid);
 
+    if (target == nullptr) {
+        sendServerMessage("No client with that ID found.");
+        return;
+    }
+
     if (target->is_ooc_muted)
         sendServerMessage("That player is already OOC muted!");
     else {
@@ -274,6 +289,11 @@ void AOClient::cmdOocUnMute(int argc, QStringList argv)
     }
 
     AOClient* target = server->getClientByID(uid);
+
+    if (target == nullptr) {
+        sendServerMessage("No client with that ID found.");
+        return;
+    }
 
     if (!target->is_ooc_muted)
         sendServerMessage("That player is not OOC muted!");
@@ -295,6 +315,11 @@ void AOClient::cmdBlockWtce(int argc, QStringList argv)
 
     AOClient* target = server->getClientByID(uid);
 
+    if (target == nullptr) {
+        sendServerMessage("No client with that ID found.");
+        return;
+    }
+
     if (target->is_wtce_blocked)
         sendServerMessage("That player is already judge blocked!");
     else {
@@ -315,6 +340,11 @@ void AOClient::cmdUnBlockWtce(int argc, QStringList argv)
 
     AOClient* target = server->getClientByID(uid);
 
+    if (target == nullptr) {
+        sendServerMessage("No client with that ID found.");
+        return;
+    }
+
     if (!target->is_wtce_blocked)
         sendServerMessage("That player is not judge blocked!");
     else {
@@ -328,8 +358,8 @@ void AOClient::cmdAllowBlankposting(int argc, QStringList argv)
 {
     QString sender_name = ooc_name;
     AreaData* area = server->areas[current_area];
-    area->blankposting_allowed = !area->blankposting_allowed;
-    if (area->blankposting_allowed == false) {
+    area->toggleBlankposting();
+    if (area->blankpostingAllowed() == false) {
         sendServerMessageArea(sender_name + " has set blankposting in the area to forbidden.");
     }
     else {
@@ -388,16 +418,16 @@ void AOClient::cmdReload(int argc, QStringList argv)
 void AOClient::cmdForceImmediate(int argc, QStringList argv)
 {
     AreaData* area = server->areas[current_area];
-    area->force_immediate = !area->force_immediate;
-    QString state = area->force_immediate ? "on." : "off.";
+    area->toggleImmediate();
+    QString state = area->forceImmediate() ? "on." : "off.";
     sendServerMessage("Forced immediate text processing in this area is now " + state);
 }
 
 void AOClient::cmdAllowIniswap(int argc, QStringList argv)
 {
     AreaData* area = server->areas[current_area];
-    area->iniswap_allowed = !area->iniswap_allowed;
-    QString state = area->iniswap_allowed ? "allowed." : "disallowed.";
+    area->toggleIniswap();
+    QString state = area->iniswapAllowed() ? "allowed." : "disallowed.";
     sendServerMessage("Iniswapping in this area is now " + state);
 }
 
@@ -429,6 +459,10 @@ void AOClient::cmdKickUid(int argc, QStringList argv)
     }
 
     AOClient* target = server->getClientByID(uid);
+    if (target == nullptr) {
+        sendServerMessage("No client with that ID found.");
+        return;
+    }
     target->sendPacket("KK", {reason});
     target->socket->close();
     sendServerMessage("Kicked client with UID " + argv[0] + " for reason: " + reason);

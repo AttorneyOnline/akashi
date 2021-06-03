@@ -25,10 +25,10 @@ void AOClient::cmdDoc(int argc, QStringList argv)
     QString sender_name = ooc_name;
     AreaData* area = server->areas[current_area];
     if (argc == 0) {
-        sendServerMessage("Document: " + area->document);
+        sendServerMessage("Document: " + area->document());
     }
     else {
-        area->document = argv.join(" ");
+        area->changeDoc(argv.join(" "));
         sendServerMessageArea(sender_name + " changed the document.");
     }
 }
@@ -37,7 +37,7 @@ void AOClient::cmdClearDoc(int argc, QStringList argv)
 {
     QString sender_name = ooc_name;
     AreaData* area = server->areas[current_area];
-    area->document = "No document.";
+    area->changeDoc("No document.");
     sendServerMessageArea(sender_name + " cleared the document.");
 }
 
@@ -46,13 +46,13 @@ void AOClient::cmdEvidenceMod(int argc, QStringList argv)
     AreaData* area = server->areas[current_area];
     argv[0] = argv[0].toLower();
     if (argv[0] == "cm")
-        area->evi_mod = AreaData::EvidenceMod::CM;
+        area->setEviMod(AreaData::EvidenceMod::CM);
     else if (argv[0] == "mod")
-        area->evi_mod = AreaData::EvidenceMod::MOD;
+        area->setEviMod(AreaData::EvidenceMod::MOD);
     else if (argv[0] == "hiddencm")
-        area->evi_mod = AreaData::EvidenceMod::HIDDEN_CM;
+        area->setEviMod(AreaData::EvidenceMod::HIDDEN_CM);
     else if (argv[0] == "ffa")
-        area->evi_mod = AreaData::EvidenceMod::FFA;
+        area->setEviMod(AreaData::EvidenceMod::FFA);
     else {
         sendServerMessage("Invalid evidence mod.");
         return;
@@ -66,7 +66,7 @@ void AOClient::cmdEvidenceMod(int argc, QStringList argv)
 void AOClient::cmdEvidence_Swap(int argc, QStringList argv)
 {
     AreaData* area = server->areas[current_area];
-    int ev_size = area->evidence.size() -1;
+    int ev_size = area->evidence().size() -1;
 
     if (ev_size < 0) {
         sendServerMessage("No evidence in area.");
@@ -85,12 +85,7 @@ void AOClient::cmdEvidence_Swap(int argc, QStringList argv)
         return;
     }
     if ((ev_id2 <= ev_size) && (ev_id1 <= ev_size)) {
-#if QT_VERSION < QT_VERSION_CHECK(5, 13, 0)
-        //swapItemsAt does not exist in Qt older than 5.13
-        area->evidence.swap(ev_id1, ev_id2);
-#else
-        area->evidence.swapItemsAt(ev_id1, ev_id2);
-#endif
+        area->swapEvidence(ev_id1, ev_id2);
         sendEvidenceList(area);
         sendServerMessage("The evidence " + QString::number(ev_id1) + " and " + QString::number(ev_id2) + " have been swapped.");
     }
@@ -102,12 +97,12 @@ void AOClient::cmdEvidence_Swap(int argc, QStringList argv)
 void AOClient::cmdTestify(int argc, QStringList argv)
 {
     AreaData* area = server->areas[current_area];
-    if (area->test_rec == AreaData::TestimonyRecording::RECORDING) {
+    if (area->testimonyRecording() == AreaData::TestimonyRecording::RECORDING) {
         sendServerMessage("Testimony recording is already in progress. Please stop it before starting a new one.");
     }
     else {
         clearTestimony();
-        area->test_rec = AreaData::TestimonyRecording::RECORDING;
+        area->setTestimonyRecording(AreaData::TestimonyRecording::RECORDING);
         sendServerMessage("Started testimony recording.");
     }
 }
@@ -115,15 +110,14 @@ void AOClient::cmdTestify(int argc, QStringList argv)
 void AOClient::cmdExamine(int argc, QStringList argv)
 {
     AreaData* area = server->areas[current_area];
-    if (area->testimony.size() -1 > 0)
+    if (area->testimony().size() -1 > 0)
     {
-        area->test_rec = AreaData::TestimonyRecording::PLAYBACK;
+        area->restartTestimony();
         server->broadcast(AOPacket("RT",{"testimony2"}), current_area);
-        server->broadcast(AOPacket("MS", {area->testimony[0]}), current_area);
-        area->statement = 0;
+        server->broadcast(AOPacket("MS", {area->testimony()[0]}), current_area);
         return;
     }
-    if (area->test_rec == AreaData::TestimonyRecording::PLAYBACK)
+    if (area->testimonyRecording() == AreaData::TestimonyRecording::PLAYBACK)
         sendServerMessage("Unable to examine while another examination is running");
     else
         sendServerMessage("Unable to start replay without prior examination.");
@@ -132,15 +126,15 @@ void AOClient::cmdExamine(int argc, QStringList argv)
 void AOClient::cmdTestimony(int argc, QStringList argv)
 {
    AreaData* area = server->areas[current_area];
-   if (area->testimony.size() -1 < 1) {
+   if (area->testimony().size() -1 < 1) {
        sendServerMessage("Unable to display empty testimony.");
        return;
    }
 
    QString ooc_message;
-   for (int i = 1; i <= area->testimony.size() -1; i++)
+   for (int i = 1; i <= area->testimony().size() -1; i++)
    {
-       QStringList packet = area->testimony.at(i);
+       QStringList packet = area->testimony().at(i);
        QString ic_message = packet[4];
        ooc_message.append( "[" + QString::number(i) + "]" + ic_message + "\n");
    }
@@ -150,35 +144,34 @@ void AOClient::cmdTestimony(int argc, QStringList argv)
 void AOClient::cmdDeleteStatement(int argc, QStringList argv)
 {
     AreaData* area = server->areas[current_area];
-    int c_statement = area->statement;
-    if (area->testimony.size() - 1 == 0) {
+    int c_statement = area->statement();
+    if (area->testimony().size() - 1 == 0) {
         sendServerMessage("Unable to delete statement. No statements saved in this area.");
     }
-    if (c_statement > 0 && area->testimony.size() > 2) {
-        area->testimony.remove(c_statement);
-        area->statement = c_statement - 1;
+    if (c_statement > 0 && area->testimony().size() > 2) {
+        area->removeStatement(c_statement);
         sendServerMessage("The statement with id " + QString::number(c_statement) + " has been deleted from the testimony.");
     }
 }
 
 void AOClient::cmdUpdateStatement(int argc, QStringList argv)
 {
-    server->areas[current_area]->test_rec = AreaData::TestimonyRecording::UPDATE;
+    server->areas[current_area]->setTestimonyRecording(AreaData::TestimonyRecording::UPDATE);
     sendServerMessage("The next IC-Message will replace the last displayed replay message.");
 }
 
 void AOClient::cmdPauseTestimony(int argc, QStringList argv)
 {
     AreaData* area = server->areas[current_area];
-    area->test_rec = AreaData::TestimonyRecording::STOPPED;
+    area->setTestimonyRecording(AreaData::TestimonyRecording::STOPPED);
     server->broadcast(AOPacket("RT",{"testimony1#1"}), current_area);
     sendServerMessage("Testimony has been stopped.");
 }
 
 void AOClient::cmdAddStatement(int argc, QStringList argv)
 {
-    if (server->areas[current_area]->statement < server->maximum_statements) {
-        server->areas[current_area]->test_rec = AreaData::TestimonyRecording::ADD;
+    if (server->areas[current_area]->statement() < server->maximum_statements) {
+        server->areas[current_area]->setTestimonyRecording(AreaData::TestimonyRecording::ADD);
         sendServerMessage("The next IC-Message will be inserted into the testimony.");
     }
     else
@@ -196,7 +189,7 @@ void AOClient::cmdSaveTestimony(int argc, QStringList argv)
 
     if (permission_found) {
         AreaData* area = server->areas[current_area];
-        if (area->testimony.size() -1 <= 0) {
+        if (area->testimony().size() -1 <= 0) {
             sendServerMessage("Can't save an empty testimony.");
             return;
         }
@@ -216,9 +209,9 @@ void AOClient::cmdSaveTestimony(int argc, QStringList argv)
         QTextStream out(&file);
         out.setCodec("UTF-8");
         if(file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
-            for (int i = 0; i <= area->testimony.size() -1; i++)
+            for (int i = 0; i <= area->testimony().size() -1; i++)
             {
-                out << area->testimony.at(i).join("#") << "\n";
+                out << area->testimony().at(i).join("#") << "\n";
             }
             sendServerMessage("Testimony saved. To load it use /loadtestimony " + testimony_name);
             testimony_saving = false;
@@ -258,7 +251,7 @@ void AOClient::cmdLoadTestimony(int argc, QStringList argv)
         if (testimony_lines <= server->maximum_statements) {
             QString line = in.readLine();
             QStringList packet = line.split("#");
-            area->testimony.append(packet);
+            area->addStatement(area->testimony().size(), packet);
             testimony_lines = testimony_lines + 1;
         }
         else {
