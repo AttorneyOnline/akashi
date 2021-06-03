@@ -206,6 +206,7 @@ void Area::testimony()
         {"B"},
         {"C"},
         {"D"},
+        {"E"},
     };
 
     {
@@ -218,10 +219,10 @@ void Area::testimony()
         }
     }
     {
-        // Restart testimony, advance three times.
-        m_area->restartTestimony();
+        // Restart testimony, advance two times.
+        m_area->jumpToStatement(1);
 
-        for (int i = 0; i < l_testimony.size() - 1; i++) {
+        for (int i = 1; i < l_testimony.size() - 1; i++) {
            const auto& l_results = m_area->jumpToStatement(m_area->statement() + 1);
 
            QCOMPARE(l_results.first, l_testimony.at(i + 1));
@@ -232,14 +233,14 @@ void Area::testimony()
         // Next advancement loops the testimony.
         const auto& l_results = m_area->jumpToStatement(m_area->statement() + 1);
 
-        QCOMPARE(l_results.first, l_testimony.at(0));
+        QCOMPARE(l_results.first, l_testimony.at(1));
         QCOMPARE(l_results.second, AreaData::TestimonyProgress::LOOPED);
     }
     {
         // Going back makes the testimony stay at the first statement.
         const auto& l_results = m_area->jumpToStatement(m_area->statement() - 1);
 
-        QCOMPARE(l_results.first, l_testimony.at(0));
+        QCOMPARE(l_results.first, l_testimony.at(1));
         QCOMPARE(l_results.second, AreaData::TestimonyProgress::STAYED_AT_FIRST);
     }
 }
