@@ -116,22 +116,22 @@ void AOClient::changeArea(int new_area)
         server->areas[current_area]->changeCharacter(server->getCharID(current_char), -1);
         server->updateCharsTaken(server->areas[current_area]);
     }
-    server->areas[new_area]->clientJoinedArea(char_id);
     server->areas[current_area]->clientLeftArea(char_id);
+    bool character_taken = false;
+    if (server->areas[new_area]->charactersTaken().contains(server->getCharID(current_char))) {
+        current_char = "";
+        char_id = -1;
+        character_taken = true;
+    }
+    server->areas[new_area]->clientJoinedArea(char_id);
     current_area = new_area;
     arup(ARUPType::PLAYER_COUNT, true);
     sendEvidenceList(server->areas[new_area]);
     sendPacket("HP", {"1", QString::number(server->areas[new_area]->defHP())});
     sendPacket("HP", {"2", QString::number(server->areas[new_area]->proHP())});
     sendPacket("BN", {server->areas[new_area]->background()});
-    if (server->areas[current_area]->charactersTaken().contains(server->getCharID(current_char))) {
-        server->updateCharsTaken(server->areas[current_area]);
-        current_char = "";
+    if (character_taken) {
         sendPacket("DONE");
-    }
-    else {
-        server->areas[current_area]->changeCharacter(-1, server->getCharID(current_char));
-        server->updateCharsTaken(server->areas[current_area]);
     }
     for (QTimer* timer : server->areas[current_area]->timers()) {
         int timer_id = server->areas[current_area]->timers().indexOf(timer) + 1;
