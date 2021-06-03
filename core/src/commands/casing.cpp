@@ -164,7 +164,7 @@ void AOClient::cmdPauseTestimony(int argc, QStringList argv)
 {
     AreaData* area = server->areas[current_area];
     area->setTestimonyRecording(AreaData::TestimonyRecording::STOPPED);
-    server->broadcast(AOPacket("RT",{"testimony1#1"}), current_area);
+    server->broadcast(AOPacket("RT",{"testimony1", "1"}), current_area);
     sendServerMessage("Testimony has been stopped.");
 }
 

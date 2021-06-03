@@ -788,7 +788,9 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
 
         if (args[4] == ">") {
             pos = "wit";
-            std::make_pair(args, l_progress) = area->jumpToStatement(area->statement() + 1);
+            auto l_statement = area->jumpToStatement(area->statement() +1);
+            args = l_statement.first;
+            l_progress = l_statement.second;
 
             if (l_progress == AreaData::TestimonyProgress::LOOPED) {
                 sendServerMessageArea("Last statement reached. Looping to first statement.");
@@ -796,7 +798,9 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         }
         if (args[4] == "<") {
             pos = "wit";
-            std::make_pair(args, l_progress) = area->jumpToStatement(area->statement() - 1);
+            auto l_statement = area->jumpToStatement(area->statement() - 1);
+            args = l_statement.first;
+            l_progress = l_statement.second;
 
             if (l_progress == AreaData::TestimonyProgress::STAYED_AT_FIRST) {
                 sendServerMessage("First statement reached.");
@@ -808,7 +812,10 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         QRegularExpressionMatch match = jump.match(decoded_message);
         if (match.hasMatch()) {
             pos = "wit";
-            std::make_pair(args, l_progress) = area->jumpToStatement(match.captured("int").toInt());
+            auto l_statement = area->jumpToStatement(match.captured("int").toInt());
+            args = l_statement.first;
+            l_progress = l_statement.second;
+
 
             switch (l_progress){
             case AreaData::TestimonyProgress::LOOPED:

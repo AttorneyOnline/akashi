@@ -406,11 +406,11 @@ std::pair<QStringList, AreaData::TestimonyProgress> AreaData::jumpToStatement(in
     m_statement = f_position;
 
     if (m_statement > m_testimony.size() - 1) {
-        m_statement = 0;
+        m_statement = 1;
         return {m_testimony.at(m_statement), TestimonyProgress::LOOPED};
     }
-    if (m_statement <= 0) {
-        m_statement = 0;
+    if (m_statement <= 1) {
+        m_statement = 1;
         return {m_testimony.at(m_statement), TestimonyProgress::STAYED_AT_FIRST};
     }
     else {
