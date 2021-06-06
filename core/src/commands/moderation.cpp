@@ -467,3 +467,45 @@ void AOClient::cmdKickUid(int argc, QStringList argv)
     target->socket->close();
     sendServerMessage("Kicked client with UID " + argv[0] + " for reason: " + reason);
 }
+
+void AOClient::cmdUpdateBan(int argc, QStringList argv)
+{
+    bool conv_ok = false;
+    int ban_id = argv[0].toInt(&conv_ok);
+    if (!conv_ok) {
+        sendServerMessage("Invalid ban ID.");
+        return;
+    }
+    QVariant updated_info;
+    if (argv[1] == "duration") {
+        long long duration_seconds = 0;
+        if (argv[2] == "perma")
+            duration_seconds = -2;
+        else
+            duration_seconds = parseTime(argv[2]);
+
+        if (duration_seconds == -1) {
+            sendServerMessage("Invalid time format. Format example: 1h30m");
+            return;
+        }
+        updated_info = QVariant(duration_seconds);
+
+    }
+    else if (argv[1] == "reason") {
+        QString args_str = argv[2];
+        if (argc > 3) {
+            for (int i = 3; i < argc; i++)
+                args_str += " " + argv[i];
+        }
+        updated_info = QVariant(args_str);
+    }
+    else {
+        sendServerMessage("Invalid update type.");
+        return;
+    }
+    if (!server->db_manager->updateBan(ban_id, argv[1], updated_info)) {
+        sendServerMessage("There was an error updating the ban. Please confirm the ban ID is valid.");
+        return;
+    }
+    sendServerMessage("Ban updated.");
+}

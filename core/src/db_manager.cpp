@@ -368,6 +368,27 @@ QList<DBManager::BanInfo> DBManager::getBanInfo(QString lookup_type, QString id)
     return return_list;
 }
 
+bool DBManager::updateBan(int ban_id, QString field, QVariant updated_info)
+{
+    QSqlQuery query;
+    if (field == "reason") {
+        query.prepare("UPDATE bans SET REASON = ? WHERE ID = ?");
+        query.addBindValue(updated_info.toString());
+    }
+    else if (field == "duration") {
+        query.prepare("UPDATE bans SET DURATION = ? WHERE ID = ?");
+        query.addBindValue(updated_info.toLongLong());
+    }
+    query.addBindValue(ban_id);
+    if (!query.exec()) {
+        qDebug() << query.lastError();
+        return false;
+    }
+    else {
+        return true;
+    }
+}
+
 bool DBManager::updatePassword(QString username, QString password)
 {
     QString salt;
