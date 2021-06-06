@@ -319,6 +319,41 @@ class Server : public QObject {
     int message_floodguard;
 
     /**
+     * @brief Whether password requirements are enabled.
+     */
+    bool password_requirements = true;
+
+    /**
+     * @brief The minimum length passwords can be.
+     */
+    int password_minimum_length;
+
+    /**
+     * @brief The maximum length passwords can be.
+     */
+    int password_maximum_length;
+
+    /**
+     * @brief Whether passwords must be mixed case.
+     */
+    bool password_require_mixed_case = true;
+
+    /**
+     * @brief Whether passwords must contain numbers.
+     */
+    bool password_require_numbers = true;
+
+    /**
+     * @brief Whether passwords must contain special characters.
+     */
+    bool password_require_special_characters = true;
+
+    /**
+     * @brief Whether passwords can contain the associated username.
+     */
+    bool password_can_contain_username = false;
+
+    /**
      * @brief URL send to the client during handshake to set the remote repository URL.
      */
     QUrl asset_url;

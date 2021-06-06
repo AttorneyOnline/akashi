@@ -169,3 +169,40 @@ QString AOClient::getReprimand(bool positive)
         return server->reprimands_list[genRand(0, server->reprimands_list.size() - 1)];
         }
 }
+
+bool AOClient::checkPasswordRequirements(QString username, QString password)
+{
+    QString decoded_password = decodeMessage(password);
+    if (!server->password_requirements)
+        return true;
+
+    if (server->password_minimum_length > decoded_password.length())
+        return false;
+
+    if (server->password_maximum_length < decoded_password.length() && server->password_maximum_length != 0)
+        return false;
+
+    else if (server->password_require_mixed_case) {
+        if (decoded_password.toLower() == decoded_password)
+            return false;
+        if (decoded_password.toUpper() == decoded_password)
+            return false;
+    }
+    else if (server->password_require_numbers) {
+        QRegularExpression regex("[0123456789]");
+        QRegularExpressionMatch match = regex.match(decoded_password);
+        if (!match.hasMatch())
+            return false;
+    }
+    else if (server->password_require_special_characters) {
+        QRegularExpression regex("[~!@#$%^&*_-+=`|\\(){}\[]:;\"'<>,.?/]");
+        QRegularExpressionMatch match = regex.match(decoded_password);
+        if (!match.hasMatch())
+            return false;
+    }
+    else if (!server->password_can_contain_username) {
+        if (decoded_password.contains(username))
+            return false;
+    }
+    return true;
+}
