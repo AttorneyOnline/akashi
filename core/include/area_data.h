@@ -797,8 +797,22 @@ class AreaData : public QObject {
      * @brief Returns a copy of the underlying logger's buffer.
      *
      * @return See short description.
+     *
+     * @see #m_ignoreBgList
      */
     QQueue<QString> buffer() const;
+
+    /**
+     * @brief Returns whether the BG list is ignored in this araa.
+     *
+     * @return See short description.
+     */
+    bool ignoreBgList();
+
+    /**
+     * @brief Toggles whether the BG list is ignored in this area.
+     */
+    void toggleIgnoreBgList();
 
 private:
     /**
@@ -983,6 +997,11 @@ private:
      * @brief Whether or not music is allowed in this area. If false, only CMs can change the music.
      */
     bool m_toggleMusic;
+
+    /**
+     * @brief Whether or not to ignore the server defined background list. If true, any background can be set in an area.
+     */
+    bool m_ignoreBgList;
 };
 
 #endif // AREA_DATA_H
