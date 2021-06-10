@@ -51,81 +51,25 @@ std::pair<bool, QString> DBManager::isIPBanned(QString ipid)
     else return {false, nullptr};
 }
 
-bool DBManager::isHDIDBanned(QString hdid)
+std::pair<bool, QString> DBManager::isHDIDBanned(QString hdid)
 {
     QSqlQuery query;
-    query.prepare("SELECT TIME FROM BANS WHERE HDID = ? ORDER BY TIME DESC");
+    query.prepare("SELECT * FROM BANS WHERE HDID = ? ORDER BY TIME DESC");
     query.addBindValue(hdid);
     query.exec();
     if (query.first()) {
-        long long duration = getBanDuration(hdid);
-        long long ban_time = query.value(0).toLongLong();
+        long long ban_time = query.value(4).toLongLong();
+        QString reason = query.value(5).toString();
+        long long duration = query.value(6).toLongLong();
         if (duration == -2)
-            return true;
+            return {true, reason};
         long long current_time = QDateTime::currentDateTime().toSecsSinceEpoch();
         if (ban_time + duration > current_time)
-            return true;
-        else return false;
+            return {true, reason};
+        else return {false, nullptr};
     }
-    else return false;
+    else return {false, nullptr};
 }
-
-QString DBManager::getBanReason(QHostAddress ip)
-{
-    QSqlQuery query;
-    query.prepare("SELECT REASON FROM BANS WHERE IP = ? ORDER BY TIME DESC");
-    query.addBindValue(ip.toString());
-    query.exec();
-    if (query.first()) {
-        return query.value(0).toString();
-    }
-    else {
-        return "Ban reason not found.";
-    }
-}
-
-QString DBManager::getBanReason(QString hdid)
-{
-    QSqlQuery query;
-    query.prepare("SELECT REASON FROM BANS WHERE HDID = ? ORDER BY TIME DESC");
-    query.addBindValue(hdid);
-    query.exec();
-    if (query.first()) {
-        return query.value(0).toString();
-    }
-    else {
-        return "Ban reason not found.";
-    }
-}
-
-long long DBManager::getBanDuration(QString hdid)
-{
-    QSqlQuery query;
-    query.prepare("SELECT DURATION FROM BANS WHERE HDID = ? ORDER BY TIME DESC");
-    query.addBindValue(hdid);
-    query.exec();
-    if (query.first()) {
-        return query.value(0).toLongLong();
-    }
-    else {
-        return -1;
-    }
-}
-
-long long DBManager::getBanDuration(QHostAddress ip)
-{
-    QSqlQuery query;
-    query.prepare("SELECT DURATION FROM BANS WHERE IP = ? ORDER BY TIME DESC");
-    query.addBindValue(ip.toString());
-    query.exec();
-    if (query.first()) {
-        return query.value(0).toLongLong();
-    }
-    else {
-        return -1;
-    }
-}
-
 
 int DBManager::getBanID(QString hdid)
 {

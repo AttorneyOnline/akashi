@@ -71,39 +71,11 @@ public:
      *
      * @param hdid The hardware ID to check if it is banned.
      *
-     * @return True if the query could return at least one such record.
+     * @return A pair of values:
+     * * First, a `bool` that is true if the query could return at least one such record.
+     * * Then, a `QString` that is the reason for the ban.
      */
-    bool isHDIDBanned(QString hdid);
-
-    /**
-     * @brief Returns the reason the given IP address was banned with.
-     *
-     * @param ip The IP address whose ban reason needs to be returned.
-     *
-     * @return The ban reason if the IP address is actually banned,
-     * or `"Ban reason not found."` if the IP address is not actually banned.
-     */
-    QString getBanReason(QHostAddress ip);
-
-    /**
-     * @overload
-     */
-    QString getBanReason(QString hdid);
-
-    /**
-     * @brief Returns the reason the given IP address was banned with.
-     *
-     * @param ip The IP address whose ban duration to get.
-     *
-     * @return The ban duration if the IP address is actually banned,
-     * or `-1` if the IP address is not actually banned.
-     */
-    long long getBanDuration(QHostAddress ip);
-
-    /**
-     * @overload
-     */
-    long long getBanDuration(QString hdid);
+    std::pair<bool, QString> isHDIDBanned(QString hdid);
 
     /**
      * @brief Gets the ID number of a given ban.

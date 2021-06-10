@@ -27,8 +27,9 @@ void AOClient::pktDefault(AreaData* area, int argc, QStringList argv, AOPacket p
 void AOClient::pktHardwareId(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
     hwid = argv[0];
-    if(server->db_manager->isHDIDBanned(hwid)) {
-        sendPacket("BD", {server->db_manager->getBanReason(hwid) + "\nBan ID: " + QString::number(server->db_manager->getBanID(hwid))});
+    auto ban = server->db_manager->isHDIDBanned(hwid);
+    if (ban.first) {
+        sendPacket("BD", {ban.second + "\nBan ID: " + QString::number(server->db_manager->getBanID(hwid))});
         socket->close();
         return;
     }
@@ -318,10 +319,8 @@ void AOClient::pktWebSocketIp(AreaData* area, int argc, QStringList argv, AOPack
     calculateIpid();
     if (remote_ip.isLoopback()) {
         auto ban = server->db_manager->isIPBanned(ipid);
-        bool is_banned = ban.first;
-        if(is_banned) {
-            QString reason = ban.second;
-            sendPacket("BD", {reason});
+        if (ban.first) {
+            sendPacket("BD", {ban.second});
             socket->close();
             return;
         }
