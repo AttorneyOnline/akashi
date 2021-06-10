@@ -125,7 +125,9 @@ void Server::clientConnected()
 
     int multiclient_count = 1;
     bool is_at_multiclient_limit = false;
-    bool is_banned = db_manager->isIPBanned(socket->peerAddress());
+    client->calculateIpid();
+    auto ban = db_manager->isIPBanned(client->getIpid());
+    bool is_banned = ban.first;
     for (AOClient* joined_client : clients) {
         if (client->remote_ip.isEqual(joined_client->remote_ip))
             multiclient_count++;
@@ -135,7 +137,8 @@ void Server::clientConnected()
         is_at_multiclient_limit = true;
 
     if (is_banned) {
-        AOPacket ban_reason("BD", {db_manager->getBanReason(socket->peerAddress())});
+        QString reason = ban.second;
+        AOPacket ban_reason("BD", {reason});
         socket->write(ban_reason.toUtf8());
     }
     if (is_banned || is_at_multiclient_limit) {
@@ -158,7 +161,6 @@ void Server::clientConnected()
                                                     // tsuserver4. It should disable fantacrypt
                                                     // completely in any client 2.4.3 or newer
     client->sendPacket(decryptor);
-    client->calculateIpid();
 #ifdef NET_DEBUG
     qDebug() << client->remote_ip.toString() << "connected";
 #endif

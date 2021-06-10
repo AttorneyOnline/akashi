@@ -31,23 +31,24 @@ DBManager::DBManager() :
         updateDB(db_version);
 }
 
-bool DBManager::isIPBanned(QHostAddress ip)
+std::pair<bool, QString> DBManager::isIPBanned(QString ipid)
 {
     QSqlQuery query;
-    query.prepare("SELECT TIME FROM BANS WHERE IP = ? ORDER BY TIME DESC");
-    query.addBindValue(ip.toString());
+    query.prepare("SELECT * FROM BANS WHERE IPID = ? ORDER BY TIME DESC");
+    query.addBindValue(ipid);
     query.exec();
     if (query.first()) {
-        long long duration = getBanDuration(ip);
-        long long ban_time = query.value(0).toLongLong();
+        long long ban_time = query.value(4).toLongLong();
+        QString reason = query.value(5).toString();
+        long long duration = query.value(6).toLongLong();
         if (duration == -2)
-            return true;
+            return {true, reason};
         long long current_time = QDateTime::currentDateTime().toSecsSinceEpoch();
         if (ban_time + duration > current_time)
-            return true;
-        else return false;
+            return {true, reason};
+        else return {false, nullptr};
     }
-    else return false;
+    else return {false, nullptr};
 }
 
 bool DBManager::isHDIDBanned(QString hdid)

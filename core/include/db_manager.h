@@ -56,13 +56,15 @@ public:
     ~DBManager();
 
     /**
-     * @brief Checks if there is a record in the Bans table with the given IP address.
+     * @brief Checks if there is a record in the Bans table with the given IPID.
      *
-     * @param ip The IP address to check if it is banned.
+     * @param ipid The IPID to check if it is banned.
      *
-     * @return True if the query could return at least one such record.
+     * @return A pair of values:
+     * * First, a `bool` that is true if the query could return at least one such record.
+     * * Then, a `QString` that is the reason for the ban.
      */
-    bool isIPBanned(QHostAddress ip);
+    std::pair<bool, QString> isIPBanned(QString ipid);
 
     /**
      * @brief Checks if there is a record in the Bans table with the given hardware ID.
