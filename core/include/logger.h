@@ -80,7 +80,8 @@ public slots:
      *
      * @param f_charName_r The character name of the client who sent the command.
      * @param f_ipid_r The IPID of the aforementioned client.
-     * @param f_oocMessage_r The text of the OOC message. Passed to logOOC() if the command is not 'special' (see details).
+     * @param f_command_r The command being logged.
+     * @param f_cmdArgs_r The command arguments being logged.
      */
     void logCmd(const QString& f_charName_r, const QString& f_ipid_r, const QString& f_command_r, const QStringList& f_cmdArgs_r);
 
