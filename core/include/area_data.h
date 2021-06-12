@@ -795,7 +795,8 @@ class AreaData : public QObject {
      *
      * @param f_clientName_r The showname of the command sender's character.
      * @param f_clientIpid_r The IPID of the command sender.
-     * @param f_packet_r The packet that was sent.
+     * @param f_command_r The command that was sent.
+     * @param f_cmdArgs_r The arguments of the command
      */
     void logCmd(const QString& f_clientName_r, const QString& f_clientIpid_r, const QString& f_command_r, const QStringList& f_cmdArgs_r) const;
 
