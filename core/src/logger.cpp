@@ -35,27 +35,22 @@ void Logger::logModcall(const QString& f_charName_r, const QString& f_ipid_r, co
     addEntry(f_charName_r, f_ipid_r, "MODCALL", f_modcallReason_r);
 }
 
-void Logger::logCmd(const QString& f_charName_r, const QString& f_ipid_r, const QString& f_oocMessage_r)
+void Logger::logCmd(const QString& f_charName_r, const QString& f_ipid_r, const QString& f_command_r, const QStringList& f_cmdArgs_r)
 {
-    // I don't like this, but oh well.
-    auto l_cmdArgs = f_oocMessage_r.split(" ", QString::SplitBehavior::SkipEmptyParts);
-    auto l_cmd = l_cmdArgs.at(0).trimmed().toLower();
-    l_cmd = l_cmd.right(l_cmd.length() - 1);
-    l_cmdArgs.removeFirst();
-
     // Some commands contain sensitive data, like passwords
     // These must be filtered out
-    if (l_cmd == "login") {
+    if (f_command_r == "login") {
         addEntry(f_charName_r, f_ipid_r, "LOGIN", "Attempted login");
     }
-    else if (l_cmd == "rootpass") {
+    else if (f_command_r == "rootpass") {
         addEntry(f_charName_r, f_ipid_r, "USERS", "Root password created");
     }
-    else if (l_cmd == "adduser" && !l_cmdArgs.isEmpty()) {
-        addEntry(f_charName_r, f_ipid_r, "USERS", "Added user " + l_cmdArgs.at(0));
+    else if (f_command_r == "adduser" && !f_cmdArgs_r.isEmpty()) {
+        addEntry(f_charName_r, f_ipid_r, "USERS", "Added user " + f_cmdArgs_r.at(0));
     }
     else {
-        logOOC(f_charName_r, f_ipid_r, f_oocMessage_r);
+        QString message = "/" + f_command_r + f_cmdArgs_r.join(" ");
+        logOOC(f_charName_r, f_ipid_r, message);
     }
 }
 

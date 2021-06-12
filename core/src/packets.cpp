@@ -214,6 +214,8 @@ void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket p
         int cmd_argc = cmd_argv.length();
 
         handleCommand(command, cmd_argc, cmd_argv);
+        area->logCmd(current_char, ipid, command, cmd_argv);
+        return;
     }
     else {
         server->broadcast(final_packet, current_area);

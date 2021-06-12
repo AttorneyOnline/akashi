@@ -82,7 +82,7 @@ public slots:
      * @param f_ipid_r The IPID of the aforementioned client.
      * @param f_oocMessage_r The text of the OOC message. Passed to logOOC() if the command is not 'special' (see details).
      */
-    void logCmd(const QString& f_charName_r, const QString& f_ipid_r, const QString& f_oocMessage_r);
+    void logCmd(const QString& f_charName_r, const QString& f_ipid_r, const QString& f_command_r, const QStringList& f_cmdArgs_r);
 
     /**
      * @brief Logs a login attempt.

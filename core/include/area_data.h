@@ -777,7 +777,7 @@ class AreaData : public QObject {
      * @brief Logs a moderator login attempt.
      *
      * @details This is not a duplicated function! When a client uses the `/login` command to log in, the command call
-     * itself is logged with log(), but the outcome of that call is logged here.
+     * itself is logged with logCmd(), but the outcome of that call is logged here.
      *
      * If there was a way to login *without* the command, only this would be logged.
      *
@@ -787,6 +787,17 @@ class AreaData : public QObject {
      * @param f_modname_r The moderator name the client attempted to log in with.
      */
     void logLogin(const QString &f_clientName_r, const QString &f_clientIpid_r, bool f_success, const QString& f_modname_r) const;
+
+    /**
+     * @brief Logs a command in the area logger.
+     *
+     * @details When a client sends any packet containing `/`, it is sent to this function instead of log().
+     *
+     * @param f_clientName_r The showname of the command sender's character.
+     * @param f_clientIpid_r The IPID of the command sender.
+     * @param f_packet_r The packet that was sent.
+     */
+    void logCmd(const QString& f_clientName_r, const QString& f_clientIpid_r, const QString& f_command_r, const QStringList& f_cmdArgs_r) const;
 
     /**
      * @brief Convenience function over Logger::flush().

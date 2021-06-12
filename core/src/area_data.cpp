@@ -296,7 +296,7 @@ void AreaData::log(const QString &f_clientName_r, const QString &f_clientIpid_r,
     if (l_header == "MS") {
         m_logger->logIC(f_clientName_r, f_clientIpid_r, f_packet_r.contents.at(4));
     } else if (l_header == "CT") {
-        m_logger->logCmd(f_clientName_r, f_clientIpid_r, f_packet_r.contents.at(1));
+        m_logger->logOOC(f_clientName_r, f_clientIpid_r, f_packet_r.contents.at(1));
     } else if (l_header == "ZZ") {
         m_logger->logModcall(f_clientName_r, f_clientIpid_r, f_packet_r.contents.at(0));
     }
@@ -305,6 +305,11 @@ void AreaData::log(const QString &f_clientName_r, const QString &f_clientIpid_r,
 void AreaData::logLogin(const QString &f_clientName_r, const QString &f_clientIpid_r, bool f_success, const QString& f_modname_r) const
 {
     m_logger->logLogin(f_clientName_r, f_clientIpid_r, f_success, f_modname_r);
+}
+
+void AreaData::logCmd(const QString &f_clientName_r, const QString &f_clientIpid_r, const QString &f_command_r, const QStringList &f_cmdArgs_r) const
+{
+    m_logger->logCmd(f_clientName_r, f_clientIpid_r, f_command_r, f_cmdArgs_r);
 }
 
 void AreaData::flushLogs() const
