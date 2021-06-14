@@ -30,11 +30,6 @@ void AOClient::cmdBan(int argc, QStringList argv)
 
     DBManager::BanInfo ban;
 
-    if (argc < 3) {
-        sendServerMessage("Invalid syntax. Usage:\n/ban <ipid> <duration> <reason>");
-        return;
-    }
-
     long long duration_seconds = 0;
     if (argv[1] == "perma")
         duration_seconds = -2;
