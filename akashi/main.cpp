@@ -39,12 +39,10 @@ int main(int argc, char* argv[])
     QCoreApplication::setApplicationVersion("banana");
     std::atexit(cleanup);
 
-    ConfigManager config_manager;
-    if (config_manager.initConfig()) {
+    if (ConfigManager::verifyServerConfig()) {
         // Config is sound, so proceed with starting the server
         // Validate some of the config before passing it on
-        ConfigManager::server_settings settings;
-        bool config_valid = config_manager.loadServerSettings(&settings);
+        bool config_valid = ConfigManager::loadConfigSettings();
         if (!config_valid) {
             qCritical() << "config.ini is invalid!";
             qCritical() << "Exiting server due to configuration issue.";
@@ -53,15 +51,15 @@ int main(int argc, char* argv[])
         }
 
         else {
-            if (settings.advertise_server) {
+            if (ConfigManager::advertiseServer()) {
                 advertiser =
-                    new Advertiser(settings.ms_ip, settings.ms_port,
-                                   settings.ws_port, settings.port,
-                                   settings.name, settings.description);
+                    new Advertiser(ConfigManager::masterServerIP(), ConfigManager::masterServerPort(),
+                                   ConfigManager::webaoPort(), ConfigManager::serverPort(),
+                                   ConfigManager::serverName(), ConfigManager::serverDescription());
                 advertiser->contactMasterServer();
             }
 
-            server = new Server(settings.port, settings.ws_port);
+            server = new Server(ConfigManager::serverPort(), ConfigManager::webaoPort());
 
             if (advertiser != nullptr) {
                 QObject::connect(server, &Server::reloadRequest, advertiser, &Advertiser::reloadRequested);

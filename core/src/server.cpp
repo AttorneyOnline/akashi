@@ -51,10 +51,7 @@ void Server::start()
         qDebug() << "Server listening on" << port;
     }
 
-    loadServerConfig();
-    loadCommandConfig();
-
-    if (webhook_enabled) {
+    if (ConfigManager::discordWebhookEnabled()) {
         discord = new Discord(this, this);
         connect(this, &Server::webhookRequest,
                 discord, &Discord::postModcallWebhook);
@@ -131,7 +128,7 @@ void Server::clientConnected()
             multiclient_count++;
     }
 
-    if (multiclient_count > multiclient_limit && !client->remote_ip.isLoopback()) // TODO: make this configurable
+    if (multiclient_count > ConfigManager::multiClientLimit() && !client->remote_ip.isLoopback()) // TODO: make this configurable
         is_at_multiclient_limit = true;
 
     if (is_banned) {
@@ -242,96 +239,6 @@ int Server::getCharID(QString char_name)
         }
     }
     return -1; // character does not exist
-}
-
-void Server::loadCommandConfig()
-{
-    magic_8ball_answers = (loadConfigFile("8ball"));
-    praise_list = (loadConfigFile("praise"));
-    reprimands_list = (loadConfigFile("reprimands"));
-    gimp_list = (loadConfigFile("gimp"));
-}
-
-QStringList Server::loadConfigFile(QString filename)
-{
-    QStringList stringlist;
-    QFile file("config/text/" + filename + ".txt");
-    file.open(QIODevice::ReadOnly | QIODevice::Text);
-    while (!(file.atEnd())) {
-        stringlist.append(file.readLine().trimmed());
-    }
-    file.close();
-    return stringlist;
-}
-
-void Server::loadServerConfig()
-{
-    QSettings config("config/config.ini", QSettings::IniFormat);
-    config.beginGroup("Options");
-    //Load config.ini values
-    max_players = config.value("max_players","100").toString();
-    server_name = config.value("server_name","An Unnamed Server").toString();
-    server_desc = config.value("server_description","This is a placeholder server description. Tell the world of AO who you are here!").toString();
-    MOTD = config.value("motd","MOTD is not set.").toString();
-    auth_type = config.value("auth","simple").toString();
-    modpass = config.value("modpass","").toString();
-    bool maximum_statements_conversion_success;
-    maximum_statements = config.value("maximustatement()s", "10").toInt(&maximum_statements_conversion_success);
-    if (!maximum_statements_conversion_success)
-        maximum_statements = 10;
-    bool afk_timeout_conversion_success;
-    afk_timeout = config.value("afk_timeout", "300").toInt(&afk_timeout_conversion_success);
-    if (!afk_timeout_conversion_success)
-        afk_timeout = 300;
-    bool multiclient_limit_conversion_success;
-    multiclient_limit = config.value("multiclient_limit", "15").toInt(&multiclient_limit_conversion_success);
-    if (!multiclient_limit_conversion_success)
-        multiclient_limit = 15;
-    bool max_char_conversion_success;
-    max_chars = config.value("maximum_characters", "256").toInt(&max_char_conversion_success);
-    if (!max_char_conversion_success)
-        max_chars = 256;
-    bool message_floodguard_conversion_success;
-    message_floodguard = config.value("message_floodguard", "250").toInt(&message_floodguard_conversion_success);
-    if (!message_floodguard_conversion_success)
-        message_floodguard = 30;
-    asset_url = config.value("asset_url","").toString().toUtf8();
-    if (!asset_url.isValid())
-        asset_url = NULL;
-    config.endGroup();
-
-    //Load dice values
-    config.beginGroup("Dice");
-    dice_value = config.value("value_type", "100").toInt();
-    max_dice = config.value("max_dice","100").toInt();
-    config.endGroup();
-
-    //Load discord webhook
-    config.beginGroup("Discord");
-    webhook_enabled = config.value("webhook_enabled", "false").toBool();
-    webhook_url = config.value("webhook_url", "Your webhook url here.").toString();
-    webhook_sendfile = config.value("webhook_sendfile", false).toBool();
-    webhook_content = config.value("webhook_content", "").toString();
-    config.endGroup();
-
-    //Load password configuration
-    config.beginGroup("Password");
-    password_requirements = config.value("password_requirements", "false").toBool();
-    if (password_requirements) {
-        bool password_minimum_length_conversion_success;
-        password_minimum_length = config.value("pass_min_length", "8").toInt(&password_minimum_length_conversion_success);
-        if (!password_minimum_length_conversion_success)
-            password_minimum_length = 8;
-        bool password_maximum_length_conversion_success;
-        password_maximum_length = config.value("pass_max_length", "16").toInt(&password_maximum_length_conversion_success);
-        if (!password_minimum_length_conversion_success)
-            password_maximum_length = 16;
-        password_require_mixed_case = config.value("pass_require_mix_case", "true").toBool();
-        password_require_numbers = config.value("pass_require_numbers", "true").toBool();
-        password_require_special_characters = config.value("pass_require_special", "true").toBool();
-        password_can_contain_username = config.value("pass_can_contain_username", "false").toBool();
-    }
-    config.endGroup();
 }
 
 void Server::allowMessage()

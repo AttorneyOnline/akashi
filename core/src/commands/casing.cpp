@@ -170,7 +170,7 @@ void AOClient::cmdPauseTestimony(int argc, QStringList argv)
 
 void AOClient::cmdAddStatement(int argc, QStringList argv)
 {
-    if (server->areas[current_area]->statement() < server->maximum_statements) {
+    if (server->areas[current_area]->statement() < ConfigManager::maxStatements()) {
         server->areas[current_area]->setTestimonyRecording(AreaData::TestimonyRecording::ADD);
         sendServerMessage("The next IC-Message will be inserted into the testimony.");
     }
@@ -248,7 +248,7 @@ void AOClient::cmdLoadTestimony(int argc, QStringList argv)
     QTextStream in(&file);
     in.setCodec("UTF-8");
     while (!in.atEnd()) {
-        if (testimony_lines <= server->maximum_statements) {
+        if (testimony_lines <= ConfigManager::maxStatements()) {
             QString line = in.readLine();
             QStringList packet = line.split("#");
             area->addStatement(area->testimony().size(), packet);

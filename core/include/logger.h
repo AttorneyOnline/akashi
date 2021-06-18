@@ -23,6 +23,7 @@
 #include <QString>
 #include <QQueue>
 #include <QDateTime>
+#include "data_types.h"
 
 /**
  * @brief A class associated with an AreaData class to log various events happening inside the latter.
@@ -35,7 +36,7 @@ public:
      *
      * @param f_max_length The maximum amount of entries the Logger can store at once.
      */
-    Logger(QString f_area_name, int f_max_length, const QString& f_logType_r) :
+    Logger(QString f_area_name, int f_max_length, const DataTypes::LogType& f_logType_r) :
         m_areaName(f_area_name), m_maxLength(f_max_length), m_logType(f_logType_r) {};
 
     /**
@@ -132,7 +133,7 @@ private:
      * @details This largely influences the resulting log file's name, and in case of a `"full"` setup,
      * the in-memory buffer is auto-dumped to said file if full.
      */
-    QString m_logType;
+    DataTypes::LogType m_logType;
 };
 
 #endif // LOGGER_H
