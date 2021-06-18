@@ -53,14 +53,13 @@ void Server::start()
 
     loadServerConfig();
     loadCommandConfig();
-
-    if (webhook_enabled) {
-        discord = new Discord(this, this);
-        connect(this, &Server::webhookRequest,
-                discord, &Discord::postModcallWebhook);
-
-    }
     
+    if (webhook_enabled) {
+        discord = new Discord(webhook_url, webhook_content, webhook_sendfile, this);
+        connect(this, &Server::modcallWebhookRequest,
+                discord, &Discord::onModcallWebhookRequested);
+    }
+
     proxy = new WSProxy(port, ws_port, this);
     if(ws_port != -1)
         proxy->start();
@@ -309,7 +308,9 @@ void Server::loadServerConfig()
     //Load discord webhook
     config.beginGroup("Discord");
     webhook_enabled = config.value("webhook_enabled", "false").toBool();
-    webhook_url = config.value("webhook_url", "Your webhook url here.").toString();
+    webhook_url = config.value("webhook_url", "").toUrl();
+    if (!webhook_url.isValid())
+        webhook_url = NULL;
     webhook_sendfile = config.value("webhook_sendfile", false).toBool();
     webhook_content = config.value("webhook_content", "").toString();
     config.endGroup();
@@ -346,6 +347,7 @@ Server::~Server()
     }
     server->deleteLater();
     proxy->deleteLater();
+    discord->deleteLater();
 
     delete db_manager;
 }
