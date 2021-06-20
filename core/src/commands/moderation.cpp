@@ -411,7 +411,7 @@ void AOClient::cmdBanInfo(int argc, QStringList argv)
 
 void AOClient::cmdReload(int argc, QStringList argv)
 {
-    ConfigManager::reloadConfigSettings();
+    ConfigManager::reloadSettings();
     emit server->reloadRequest(ConfigManager::serverName(), ConfigManager::serverDescription());
     sendServerMessage("Reloaded configurations");
 }
