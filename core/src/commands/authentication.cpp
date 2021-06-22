@@ -26,8 +26,9 @@ void AOClient::cmdLogin(int argc, QStringList argv)
         sendServerMessage("You are already logged in!");
         return;
     }
-    if (server->auth_type == "simple") {
-        if (server->modpass == "") {
+    switch (ConfigManager::authType()) {
+    case DataTypes::AuthType::SIMPLE:
+        if (ConfigManager::modpass() == "") {
             sendServerMessage("No modpass is set. Please set a modpass before logging in.");
             return;
         }
@@ -36,17 +37,18 @@ void AOClient::cmdLogin(int argc, QStringList argv)
             is_logging_in = true;
             return;
         }
-    }
-    else if (server->auth_type == "advanced") {
+        break;
+    case DataTypes::AuthType::ADVANCED:
         sendServerMessage("Entering login prompt.\nPlease enter your username and password.");
         is_logging_in = true;
         return;
+        break;
     }
 }
 
 void AOClient::cmdChangeAuth(int argc, QStringList argv)
 {
-    if (server->auth_type == "simple") {
+    if (ConfigManager::authType() == DataTypes::AuthType::SIMPLE) {
         change_auth_started = true;
         sendServerMessage("WARNING!\nThis command will change how logging in as a moderator works.\nOnly proceed if you know what you are doing\nUse the command /rootpass to set the password for your root account.");
     }
@@ -64,10 +66,7 @@ void AOClient::cmdSetRootPass(int argc, QStringList argv)
 
     sendServerMessage("Changing auth type and setting root password.\nLogin again with /login root [password]");
     authenticated = false;
-    QSettings settings("config/config.ini", QSettings::IniFormat);
-    settings.beginGroup("Options");
-    settings.setValue("auth", "advanced");
-    server->auth_type = "advanced";
+    ConfigManager::setAuthType(DataTypes::AuthType::ADVANCED);
 
 #if QT_VERSION < QT_VERSION_CHECK(5, 10, 0)
     qsrand(QDateTime::currentMSecsSinceEpoch());

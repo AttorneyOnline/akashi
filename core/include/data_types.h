@@ -15,53 +15,45 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
-#include <include/advertiser.h>
-#include <include/server.h>
-#include <include/config_manager.h>
+#ifndef DATA_TYPES_H
+#define DATA_TYPES_H
 
-#include <cstdlib>
-
-#include <QCoreApplication>
 #include <QDebug>
-
-Advertiser* advertiser;
-Server* server;
-
-void cleanup() {
-    server->deleteLater();
-    advertiser->deleteLater();
-}
-
-int main(int argc, char* argv[])
+/**
+ * @brief A class for handling several custom data types.
+ */
+class DataTypes
 {
-    QCoreApplication app(argc, argv);
-    QCoreApplication::setApplicationName("akashi");
-    QCoreApplication::setApplicationVersion("banana");
-    std::atexit(cleanup);
+    Q_GADGET
 
-    // Verify server configuration is sound.
-    if (!ConfigManager::verifyServerConfig()) {
-        qCritical() << "config.ini is invalid!";
-        qCritical() << "Exiting server due to configuration issue.";
-        exit(EXIT_FAILURE);
-        QCoreApplication::quit();
-    }
-    else {
-        if (ConfigManager::advertiseServer()) {
-            advertiser =
-                new Advertiser(ConfigManager::masterServerIP(), ConfigManager::masterServerPort(),
-                               ConfigManager::webaoPort(), ConfigManager::serverPort(),
-                               ConfigManager::serverName(), ConfigManager::serverDescription());
-            advertiser->contactMasterServer();
-        }
+public:
+    /**
+     * @brief Custom type for authorization types.
+     */
+    enum class AuthType {
+            SIMPLE,
+            ADVANCED
+        };
+    Q_ENUM(AuthType);
 
-        server = new Server(ConfigManager::serverPort(), ConfigManager::webaoPort());
+    /**
+     * @brief Custom type for logging types.
+     */
+    enum class LogType {
+        MODCALL,
+        FULL
+    };
+    Q_ENUM(LogType)
+};
 
-        if (advertiser != nullptr) {
-            QObject::connect(server, &Server::reloadRequest, advertiser, &Advertiser::reloadRequested);
-        }
-        server->start();
-    }
-
-    return app.exec();
+template<typename T>
+T toDataType(const QString& f_string){
+    return QVariant(f_string).value<T>();
 }
+
+template<typename T>
+QString fromDataType(const T& f_t){
+    return QVariant::fromValue(f_t).toString();
+}
+
+#endif // DATA_TYPES_H

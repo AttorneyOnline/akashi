@@ -24,6 +24,7 @@
 #include "include/ws_proxy.h"
 #include "include/db_manager.h"
 #include "include/discord.h"
+#include "include/config_manager.h"
 
 #include <QCoreApplication>
 #include <QDebug>
@@ -183,124 +184,12 @@ class Server : public QObject {
     DBManager* db_manager;
 
     /**
-     * @brief The max amount of players on the server.
-     */
-    QString max_players;
-    /**
-     * @brief The user-facing server name.
-     */
-    QString server_name;
-
-    /**
-     * @brief The server description.
-     */
-    QString server_desc;
-
-    /**
-     * @brief The Message Of The Day of the server, shown upon entry to the server and on request.
-     */
-    QString MOTD;
-
-   /**
-    * @brief The Maximum amounts of IC-Messages an area is allowed to store.
-    */
-    int maximum_statements;
-
-    /**
-     * @brief The authorization type of the server.
-     *
-     * @details In simple mode, the modpass stored in config.ini is used for moderator logins. In advanced mode, logins found in the database are used.
-     */
-    QString auth_type;
-
-    /**
-     * @brief The modpass for moderator login with simple auth_type.
-     */
-    QString modpass;
-
-    /**
-     * @brief The highest value dice can have.
-     */
-    int dice_value;
-
-    /**
-     * @brief The max amount of dice that can be rolled at once.
-     */
-    int max_dice;
-
-    /**
-     * @brief The amount of time in seconds to wait before marking a user AFK.
-     */
-    int afk_timeout;
-
-    /**
-     * @brief Whether discord webhooks are enabled on this server.
-     */
-    bool webhook_enabled;
-
-    /**
-     * @brief Requires an https Webhook link, including both ID and Token in the link.
-     */
-    QUrl webhook_url;
-
-    /**
-     * @brief If the modcall buffer is sent as a file.
-     */
-    bool webhook_sendfile;
-
-    /**
      * @brief The server-wide global timer.
      */
     QTimer* timer;
 
-    /**
-     * @brief Loads values from config.ini.
-     */
-    void loadServerConfig();
-
-    /**
-     * @brief Loads the configuration files for commands into stringlists.
-     */
-    void loadCommandConfig();
-
-    /**
-     * @brief Returns a stringlist with the contents of a .txt file from config/text/.
-     *
-     * @param Name of the file to load.
-     */
-    QStringList loadConfigFile(QString filename);
 
     QStringList getCursedCharsTaken(AOClient* client, QStringList chars_taken);
-
-    /**
-     * @brief List holding the contents of 8ball.txt, used by /8ball.
-     */
-    QStringList magic_8ball_answers;
-
-    /**
-     * @brief List holding the contents of praise.txt, used by AOClient::getReprimand.
-     */
-    QStringList praise_list;
-
-    /**
-     * @brief List holding the contents of reprimands.txt, used by AOClient::getReprimand.
-     */
-    QStringList reprimands_list;
-
-    /**
-     * @brief List holding the contents of gimp.txt, used by AOClient::cmdGimp.
-     */
-    QStringList gimp_list;
-
-    /**
-     * @brief Integer representing the maximum number of clients allowed to connect from the same IP
-     */
-    int multiclient_limit;
-
-    /**
-     * @brief Integer representing the maximum amount of characters an IC or OOC message can contain.
-     */
-    int max_chars;
 
     /**
      * @brief Timer until the next IC message can be sent.
@@ -311,56 +200,6 @@ class Server : public QObject {
      * @brief If false, IC messages will be rejected.
      */
     bool can_send_ic_messages = true;
-
-    /**
-     * @brief The minimum time between IC messages, in milliseconds.
-     */
-    int message_floodguard;
-
-    /**
-     * @brief Whether password requirements are enabled.
-     */
-    bool password_requirements = true;
-
-    /**
-     * @brief The minimum length passwords can be.
-     */
-    int password_minimum_length;
-
-    /**
-     * @brief The maximum length passwords can be.
-     */
-    int password_maximum_length;
-
-    /**
-     * @brief Whether passwords must be mixed case.
-     */
-    bool password_require_mixed_case = true;
-
-    /**
-     * @brief Whether passwords must contain numbers.
-     */
-    bool password_require_numbers = true;
-
-    /**
-     * @brief Whether passwords must contain special characters.
-     */
-    bool password_require_special_characters = true;
-
-    /**
-     * @brief Whether passwords can contain the associated username.
-     */
-    bool password_can_contain_username = false;
-
-    /**
-     * @brief URL send to the client during handshake to set the remote repository URL.
-     */
-    QUrl asset_url;
-
-    /**
-     * @brief Opional text to be send with the Discord embeed. Can be used to configure pings.
-     */
-    QString webhook_content;
 
   public slots:
     /**

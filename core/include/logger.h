@@ -23,6 +23,7 @@
 #include <QString>
 #include <QQueue>
 #include <QDateTime>
+#include "data_types.h"
 
 /**
  * @brief A class associated with an AreaData class to log various events happening inside the latter.
@@ -35,7 +36,7 @@ public:
      *
      * @param f_max_length The maximum amount of entries the Logger can store at once.
      */
-    Logger(QString f_area_name, int f_max_length, const QString& f_logType_r) :
+    Logger(QString f_area_name, int f_max_length, const DataTypes::LogType& f_logType_r) :
         m_areaName(f_area_name), m_maxLength(f_max_length), m_logType(f_logType_r) {};
 
     /**
@@ -80,9 +81,10 @@ public slots:
      *
      * @param f_charName_r The character name of the client who sent the command.
      * @param f_ipid_r The IPID of the aforementioned client.
-     * @param f_oocMessage_r The text of the OOC message. Passed to logOOC() if the command is not 'special' (see details).
+     * @param f_command_r The command being logged.
+     * @param f_cmdArgs_r The command arguments being logged.
      */
-    void logCmd(const QString& f_charName_r, const QString& f_ipid_r, const QString& f_oocMessage_r);
+    void logCmd(const QString& f_charName_r, const QString& f_ipid_r, const QString& f_command_r, const QStringList& f_cmdArgs_r);
 
     /**
      * @brief Logs a login attempt.
@@ -132,7 +134,7 @@ private:
      * @details This largely influences the resulting log file's name, and in case of a `"full"` setup,
      * the in-memory buffer is auto-dumped to said file if full.
      */
-    QString m_logType;
+    DataTypes::LogType m_logType;
 };
 
 #endif // LOGGER_H

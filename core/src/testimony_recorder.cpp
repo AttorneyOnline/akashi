@@ -25,7 +25,7 @@ void AOClient::addStatement(QStringList packet)
     int c_statement = area->statement();
     if (c_statement >= -1) {
         if (area->testimonyRecording() == AreaData::TestimonyRecording::RECORDING) {
-            if (c_statement <= server->maximum_statements) {
+            if (c_statement <= ConfigManager::maxStatements()) {
                 if (c_statement == -1)
                     packet[14] = "3";
                 else

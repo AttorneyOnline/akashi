@@ -48,12 +48,8 @@ AreaData::AreaData(QString p_name, int p_index) :
     m_toggleMusic = areas_ini.value("toggle_music", "true").toBool();
     m_shownameAllowed = areas_ini.value("shownames_allowed", "true").toBool();
     areas_ini.endGroup();
-    QSettings config_ini("config/config.ini", QSettings::IniFormat);
-    config_ini.setIniCodec("UTF-8");
-    config_ini.beginGroup("Options");
-    int log_size = config_ini.value("logbuffer", 50).toInt();
-    QString l_logType = config_ini.value("logger","modcall").toString();
-    config_ini.endGroup();
+    int log_size = ConfigManager::logBuffer();
+    DataTypes::LogType l_logType = ConfigManager::loggingType();
     if (log_size == 0)
         log_size = 500;
     m_logger = new Logger(m_name, log_size, l_logType);
@@ -296,7 +292,7 @@ void AreaData::log(const QString &f_clientName_r, const QString &f_clientIpid_r,
     if (l_header == "MS") {
         m_logger->logIC(f_clientName_r, f_clientIpid_r, f_packet_r.contents.at(4));
     } else if (l_header == "CT") {
-        m_logger->logCmd(f_clientName_r, f_clientIpid_r, f_packet_r.contents.at(1));
+        m_logger->logOOC(f_clientName_r, f_clientIpid_r, f_packet_r.contents.at(1));
     } else if (l_header == "ZZ") {
         m_logger->logModcall(f_clientName_r, f_clientIpid_r, f_packet_r.contents.at(0));
     }
@@ -305,6 +301,11 @@ void AreaData::log(const QString &f_clientName_r, const QString &f_clientIpid_r,
 void AreaData::logLogin(const QString &f_clientName_r, const QString &f_clientIpid_r, bool f_success, const QString& f_modname_r) const
 {
     m_logger->logLogin(f_clientName_r, f_clientIpid_r, f_success, f_modname_r);
+}
+
+void AreaData::logCmd(const QString &f_clientName_r, const QString &f_clientIpid_r, const QString &f_command_r, const QStringList &f_cmdArgs_r) const
+{
+    m_logger->logCmd(f_clientName_r, f_clientIpid_r, f_command_r, f_cmdArgs_r);
 }
 
 void AreaData::flushLogs() const

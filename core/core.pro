@@ -52,6 +52,7 @@ HEADERS += include/advertiser.h \
     include/aopacket.h \
     include/area_data.h \
     include/config_manager.h \
+    include/data_types.h \
     include/db_manager.h \
     include/discord.h \
     include/logger.h \
