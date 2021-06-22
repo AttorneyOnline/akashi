@@ -230,6 +230,7 @@ class AOClient : public QObject {
         {"SAVETEST",        1ULL << 12},
         {"FORCE_CHARSELECT",1ULL << 13},
         {"BYPASS_LOCKS",    1ULL << 14},
+        {"IGNORE_BGLIST",   1ULL << 15},
         {"SUPER",          ~0ULL      }
     };
 
@@ -962,6 +963,15 @@ class AOClient : public QObject {
     * @iscommand
     */
     void cmdJudgeLog(int argc, QStringList argv);
+
+    /**
+     * @brief Toggles whether the BG list is ignored in an area.
+     *
+     * @details No arguments.
+     *
+     * @iscommand
+     */
+    void cmdIgnoreBgList(int argc, QStringList argv);
 
     ///@}
 
@@ -1937,7 +1947,7 @@ class AOClient : public QObject {
         {"login",              {ACLFlags.value("NONE"),         0, &AOClient::cmdLogin}},
         {"getareas",           {ACLFlags.value("NONE"),         0, &AOClient::cmdGetAreas}},
         {"getarea",            {ACLFlags.value("NONE"),         0, &AOClient::cmdGetArea}},
-        {"ban",                {ACLFlags.value("BAN"),          2, &AOClient::cmdBan}},
+        {"ban",                {ACLFlags.value("BAN"),          3, &AOClient::cmdBan}},
         {"kick",               {ACLFlags.value("KICK"),         2, &AOClient::cmdKick}},
         {"changeauth",         {ACLFlags.value("SUPER"),        0, &AOClient::cmdChangeAuth}},
         {"rootpass",           {ACLFlags.value("SUPER"),        1, &AOClient::cmdSetRootPass}},
@@ -2055,6 +2065,8 @@ class AOClient : public QObject {
         {"updateban",          {ACLFlags.value("BAN"),          3, &AOClient::cmdUpdateBan}},
         {"update_ban",         {ACLFlags.value("BAN"),          3, &AOClient::cmdUpdateBan}},
         {"changepass",         {ACLFlags.value("NONE"),         1, &AOClient::cmdChangePassword}},
+        {"ignorebglist",       {ACLFlags.value("IGNORE_BGLIST"),0, &AOClient::cmdIgnoreBgList}},
+        {"ignore_bglist",      {ACLFlags.value("IGNORE_BGLIST"),0, &AOClient::cmdIgnoreBgList}}
     };
 
     /**

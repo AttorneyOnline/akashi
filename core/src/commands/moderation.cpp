@@ -30,11 +30,6 @@ void AOClient::cmdBan(int argc, QStringList argv)
 
     DBManager::BanInfo ban;
 
-    if (argc < 3) {
-        sendServerMessage("Invalid syntax. Usage:\n/ban <ipid> <duration> <reason>");
-        return;
-    }
-
     long long duration_seconds = 0;
     if (argv[1] == "perma")
         duration_seconds = -2;
@@ -53,11 +48,13 @@ void AOClient::cmdBan(int argc, QStringList argv)
     bool ban_logged = false;
     int kick_counter = 0;
 
-    if (server->auth_type == "advanced") {
-        ban.moderator = moderator_name;
-    }
-    else {
+    switch (ConfigManager::authType()) {
+    case DataTypes::AuthType::SIMPLE:
         ban.moderator = "moderator";
+        break;
+    case DataTypes::AuthType::ADVANCED:
+        ban.moderator = moderator_name;
+        break;
     }
 
     for (AOClient* client : server->getClientsByIpid(ban.ipid)) {
@@ -121,7 +118,7 @@ void AOClient::cmdMods(int argc, QStringList argv)
     for (AOClient* client : server->clients) {
         if (client->authenticated) {
             entries << "---";
-            if (server->auth_type != "simple")
+            if (ConfigManager::authType() != DataTypes::AuthType::SIMPLE)
                 entries << "Moderator: " + client->moderator_name;
             entries << "OOC name: " + client->ooc_name;
             entries << "ID: " + QString::number(client->id);
@@ -152,12 +149,12 @@ void AOClient::cmdHelp(int argc, QStringList argv)
 void AOClient::cmdMOTD(int argc, QStringList argv)
 {
     if (argc == 0) {
-        sendServerMessage("=== MOTD ===\r\n" + server->MOTD + "\r\n=============");
+        sendServerMessage("=== MOTD ===\r\n" + ConfigManager::motd() + "\r\n=============");
     }
     else if (argc > 0) {
         if (checkAuth(ACLFlags.value("MOTD"))) {
             QString MOTD = argv.join(" ");
-            server->MOTD = MOTD;
+            ConfigManager::setMotd(MOTD);
             sendServerMessage("MOTD has been changed.");
         }
         else {
@@ -413,9 +410,8 @@ void AOClient::cmdBanInfo(int argc, QStringList argv)
 
 void AOClient::cmdReload(int argc, QStringList argv)
 {
-    server->loadServerConfig();
-    server->loadCommandConfig();
-    emit server->reloadRequest(server->server_name, server->server_desc);
+    ConfigManager::reloadSettings();
+    emit server->reloadRequest(ConfigManager::serverName(), ConfigManager::serverDescription());
     sendServerMessage("Reloaded configurations");
 }
 

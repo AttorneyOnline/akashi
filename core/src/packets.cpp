@@ -62,11 +62,11 @@ void AOClient::pktSoftwareId(AreaData* area, int argc, QStringList argv, AOPacke
         version.minor = match.captured(3).toInt();
     }
 
-    sendPacket("PN", {QString::number(server->player_count), server->max_players});
+    sendPacket("PN", {QString::number(server->player_count), QString::number(ConfigManager::maxPlayers())});
     sendPacket("FL", feature_list);
 
-    if (server->asset_url.isValid()) {
-    QByteArray asset_url = server->asset_url.toEncoded(QUrl::EncodeSpaces);
+    if (ConfigManager::assetUrl().isValid()) {
+    QByteArray asset_url = ConfigManager::assetUrl().toEncoded(QUrl::EncodeSpaces);
     sendPacket("ASS", {asset_url});
     }
 }
@@ -116,7 +116,7 @@ void AOClient::pktLoadingDone(AreaData* area, int argc, QStringList argv, AOPack
     sendPacket("DONE");
     sendPacket("BN", {area->background()});
   
-    sendServerMessage("=== MOTD ===\r\n" + server->MOTD + "\r\n=============");
+    sendServerMessage("=== MOTD ===\r\n" + ConfigManager::motd() + "\r\n=============");
 
     fullArup(); // Give client all the area data
     if (server->timer->isActive()) {
@@ -179,7 +179,7 @@ void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket pa
     area->updateLastICMessage(validated_packet.contents);
 
     server->can_send_ic_messages = false;
-    server->next_message_timer.start(server->message_floodguard);
+    server->next_message_timer.start(ConfigManager::messageFloodguard());
 }
 
 void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket packet)
@@ -190,7 +190,7 @@ void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket p
     }
 
     ooc_name = dezalgo(argv[0]).replace(QRegExp("\\[|\\]|\\{|\\}|\\#|\\$|\\%|\\&"), ""); // no fucky wucky shit here
-    if (ooc_name.isEmpty() || ooc_name == server->server_name) // impersonation & empty name protection
+    if (ooc_name.isEmpty() || ooc_name == ConfigManager::serverName()) // impersonation & empty name protection
         return;
 
     if (ooc_name.length() > 30) {
@@ -204,7 +204,7 @@ void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket p
     }
     
     QString message = dezalgo(argv[1]);
-    if (message.length() == 0 || message.length() > server->max_chars)
+    if (message.length() == 0 || message.length() > ConfigManager::maxCharacters())
         return;
     AOPacket final_packet("CT", {ooc_name, message, "0"});
     if(message.at(0) == '/') {
@@ -215,6 +215,8 @@ void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket p
         int cmd_argc = cmd_argv.length();
 
         handleCommand(command, cmd_argc, cmd_argv);
+        area->logCmd(current_char, ipid, command, cmd_argv);
+        return;
     }
     else {
         server->broadcast(final_packet, current_area);
@@ -335,7 +337,7 @@ void AOClient::pktWebSocketIp(AreaData* area, int argc, QStringList argv, AOPack
                 multiclient_count++;
         }
 
-        if (multiclient_count > server->multiclient_limit) {
+        if (multiclient_count > ConfigManager::multiClientLimit()) {
             socket->close();
             return;
         }
@@ -350,7 +352,7 @@ void AOClient::pktModCall(AreaData* area, int argc, QStringList argv, AOPacket p
     }
     area->log(current_char, ipid, packet);
 
-    if (server->webhook_enabled) {
+    if (ConfigManager::discordWebhookEnabled()) {
         QString name = ooc_name;
         if (ooc_name.isEmpty())
             name = current_char;
@@ -519,11 +521,11 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     args.append(incoming_args[1].toString());
 
     // char name
-    if (current_char != incoming_args[2].toString()) {
+    if (current_char.toLower() != incoming_args[2].toString().toLower()) {
         // Selected char is different from supplied folder name
         // This means the user is INI-swapped
         if (!area->iniswapAllowed()) {
-            if (!server->characters.contains(incoming_args[2].toString()))
+            if (!server->characters.contains(incoming_args[2].toString(), Qt::CaseInsensitive))
                 return invalid;
         }
         qDebug() << "INI swap detected from " << getIpid();
@@ -538,7 +540,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     args.append(emote);
 
     // message text
-    if (incoming_args[4].toString().size() > server->max_chars)
+    if (incoming_args[4].toString().size() > ConfigManager::maxCharacters())
         return invalid;
 
     QString incoming_msg = dezalgo(incoming_args[4].toString().trimmed());
@@ -553,7 +555,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     }
 
     if (is_gimped) {
-        QString gimp_message = server->gimp_list[(genRand(1, server->gimp_list.size() - 1))];
+        QString gimp_message = ConfigManager::gimpList()[(genRand(1, ConfigManager::gimpList().size() - 1))];
         incoming_msg = gimp_message;
     }
 
@@ -883,8 +885,9 @@ QString AOClient::decodeMessage(QString incoming_message)
 
 void AOClient::loginAttempt(QString message)
 {
-    if (server->auth_type == "simple") {
-        if (message == server->modpass) {
+    switch (ConfigManager::authType()) {
+    case DataTypes::AuthType::SIMPLE:
+        if (message == ConfigManager::modpass()) {
             sendPacket("AUTH", {"1"}); // Client: "You were granted the Disable Modcalls button."
             sendServerMessage("Logged in as a moderator."); // pre-2.9.1 clients are hardcoded to display the mod UI when this string is sent in OOC
             authenticated = true;
@@ -894,8 +897,8 @@ void AOClient::loginAttempt(QString message)
             sendServerMessage("Incorrect password.");
         }
         server->areas.value(current_area)->logLogin(current_char, ipid, authenticated, "moderator");
-    }
-    else if (server->auth_type == "advanced") {
+        break;
+    case DataTypes::AuthType::ADVANCED:
         QStringList login = message.split(" ");
         if (login.size() < 2) {
             sendServerMessage("You must specify a username and a password");
@@ -918,11 +921,8 @@ void AOClient::loginAttempt(QString message)
             sendServerMessage("Incorrect password.");
         }
         server->areas.value(current_area)->logLogin(current_char, ipid, authenticated, username);
+        break;
     }
-    else {
-            qWarning() << "config.ini has an unrecognized auth_type!";
-            sendServerMessage("Config.ini contains an invalid auth_type, please check your config.");
-        }
     sendServerMessage("Exiting login prompt.");
     is_logging_in = false;
     return;

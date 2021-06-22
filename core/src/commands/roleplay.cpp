@@ -161,12 +161,12 @@ void AOClient::cmdNoteCardReveal(int argc, QStringList argv)
 
 void AOClient::cmd8Ball(int argc, QStringList argv)
 {
-    if (server->magic_8ball_answers.isEmpty()) {
+    if (ConfigManager::magic8BallAnswers().isEmpty()) {
         qWarning() << "8ball.txt is empty!";
         sendServerMessage("8ball.txt is empty.");
         }
     else {
-        QString response = server->magic_8ball_answers[(genRand(1, server->magic_8ball_answers.size() - 1))];
+        QString response = ConfigManager::magic8BallAnswers()[(genRand(1, ConfigManager::magic8BallAnswers().size() - 1))];
         QString sender_name = ooc_name;
         QString sender_message = argv.join(" ");
 

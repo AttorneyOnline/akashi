@@ -19,12 +19,13 @@
 
 void Discord::postModcallWebhook(QString name, QString reason, int current_area)
 {
-    if (!QUrl (server->webhook_url).isValid()) {
+    if (!QUrl (ConfigManager::discordWebhookUrl()).isValid()) {
         qWarning() << "Invalid webhook url!";
         return;
     }
 
-    QNetworkRequest request(QUrl (server->webhook_url));
+    QNetworkRequest request;
+    request.setUrl(QUrl (ConfigManager::discordWebhookUrl()));
     QNetworkAccessManager* nam = new QNetworkAccessManager();
     connect(nam, &QNetworkAccessManager::finished,
             this, &Discord::onFinish);
@@ -42,12 +43,12 @@ void Discord::postModcallWebhook(QString name, QString reason, int current_area)
     };
     jsonArray.append(jsonObject);
     json["embeds"] = jsonArray;
-    if (!server->webhook_content.isEmpty())
-      json["content"] = server->webhook_content;
+    if (!ConfigManager::discordWebhookContent().isEmpty())
+      json["content"] = ConfigManager::discordWebhookContent();
 
     nam->post(request, QJsonDocument(json).toJson());
 
-    if (server->webhook_sendfile) {
+    if (ConfigManager::discordWebhookSendFile()) {
         QHttpMultiPart* construct = new QHttpMultiPart();
         request.setHeader(QNetworkRequest::ContentTypeHeader, "multipart/form-data; boundary=" + construct->boundary());
 
