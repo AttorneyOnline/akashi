@@ -1937,7 +1937,7 @@ class AOClient : public QObject {
         {"login",              {ACLFlags.value("NONE"),         0, &AOClient::cmdLogin}},
         {"getareas",           {ACLFlags.value("NONE"),         0, &AOClient::cmdGetAreas}},
         {"getarea",            {ACLFlags.value("NONE"),         0, &AOClient::cmdGetArea}},
-        {"ban",                {ACLFlags.value("BAN"),          2, &AOClient::cmdBan}},
+        {"ban",                {ACLFlags.value("BAN"),          3, &AOClient::cmdBan}},
         {"kick",               {ACLFlags.value("KICK"),         2, &AOClient::cmdKick}},
         {"changeauth",         {ACLFlags.value("SUPER"),        0, &AOClient::cmdChangeAuth}},
         {"rootpass",           {ACLFlags.value("SUPER"),        1, &AOClient::cmdSetRootPass}},
