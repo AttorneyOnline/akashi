@@ -20,48 +20,95 @@
 
 #include <QtNetwork>
 #include <QCoreApplication>
-#include "server.h"
+#include "config_manager.h"
 
-class Server;
-
+/**
+ * @brief A class for handling all Discord webhook requests.
+ */
 class Discord : public QObject {
     Q_OBJECT
 
 public:
     /**
-     * @brief Creates an instance of the Discord class.
+     * @brief Constructor for the Discord object
      *
-     * @param p_server A pointer to the Server instance Discord is constructed by.
+     * @param f_webhook_url The URL to send webhook POST requests to.
+     * @param f_webhook_content The content to include in the webhook POST request.
+     * @param f_webhook_sendfile Whether or not to send a file containing area logs with the webhook POST request.
      * @param parent Qt-based parent, passed along to inherited constructor from QObject.
      */
-    Discord(Server* p_server, QObject* parent = nullptr)
-        : QObject(parent), server(p_server) {
-    };
+    Discord(QObject* parent = nullptr);
+
+    /**
+      * @brief Deconstructor for the Discord class.
+      *
+      * @details Marks the nam to be deleted later.
+      */
+    ~Discord();
+
+    /**
+     * @brief Sends a webhook POST request with the given JSON document.
+     *
+     * @param f_json The JSON document to send.
+     */
+    void postJsonWebhook(const QJsonDocument& f_json);
+
+    /**
+     * @brief Sends a webhook POST request with the given QHttpMultiPart.
+     *
+     * @param f_multipart The QHttpMultiPart to send.
+     */
+    void postMultipartWebhook(QHttpMultiPart& f_multipart);
+
+    /**
+     * @brief Constructs a new JSON document for modcalls.
+     *
+     * @param f_name The name of the modcall sender.
+     * @param f_area The name of the area the modcall was sent from.
+     * @param f_reason The reason for the modcall.
+     *
+     * @return A JSON document for the modcall.
+     */
+    QJsonDocument constructModcallJson(const QString& f_name, const QString& f_area, const QString& f_reason) const;
+
+    /**
+     * @brief Constructs a new QHttpMultiPart document for log files.
+     *
+     * @param f_buffer The area's log buffer.
+     *
+     * @return A QHttpMultiPart containing the log file.
+     */
+    QHttpMultiPart* constructLogMultipart(const QQueue<QString>& f_buffer) const;
 
 public slots:
-
     /**
-     * @brief Sends a modcall to a discord webhook.
+     * @brief Handles a modcall webhook request.
      *
-     * @param name The character or OOC name of the client who sent the modcall.
-     * @param area The area name of the area the modcall was sent from.
-     * @param reason The reason the client specified for the modcall.
-     * @param current_area The index of the area the modcall is made.
+     * @param f_name The name of the modcall sender.
+     * @param f_area The name of the area the modcall was sent from.
+     * @param f_reason The reason for the modcall.
+     * @param f_buffer The area's log buffer.
      */
-    void postModcallWebhook(QString name, QString reason, int current_area);
-
-    /**
-     * @brief Sends the reply to the POST request sent by Discord::postModcallWebhook.
-     */
-    void onFinish(QNetworkReply *reply);
+    void onModcallWebhookRequested(const QString& f_name, const QString& f_area, const QString& f_reason, const QQueue<QString>& f_buffer);
 
 private:
+    /**
+     * @brief The QNetworkAccessManager for webhooks.
+     */
+    QNetworkAccessManager* m_nam;
 
     /**
-     * @brief A pointer to the Server.
+     * @brief The QNetworkRequest for webhooks.
      */
-    Server* server;
+    QNetworkRequest m_request;
 
+private slots:
+    /**
+     * @brief Handles a network reply from a webhook POST request.
+     *
+     * @param f_reply Pointer to the QNetworkReply created by the webhook POST request.
+     */
+    void onReplyFinished(QNetworkReply* f_reply);
 };
 
 #endif // DISCORD_H

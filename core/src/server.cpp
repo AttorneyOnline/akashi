@@ -50,14 +50,13 @@ void Server::start()
     else {
         qDebug() << "Server listening on" << port;
     }
-
-    if (ConfigManager::discordWebhookEnabled()) {
-        discord = new Discord(this, this);
-        connect(this, &Server::webhookRequest,
-                discord, &Discord::postModcallWebhook);
-
-    }
     
+    if (ConfigManager::discordWebhookEnabled()) {
+        discord = new Discord(this);
+        connect(this, &Server::modcallWebhookRequest,
+                discord, &Discord::onModcallWebhookRequested);
+    }
+
     proxy = new WSProxy(port, ws_port, this);
     if(ws_port != -1)
         proxy->start();
@@ -253,6 +252,7 @@ Server::~Server()
     }
     server->deleteLater();
     proxy->deleteLater();
+    discord->deleteLater();
 
     delete db_manager;
 }

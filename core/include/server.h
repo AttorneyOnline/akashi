@@ -39,7 +39,6 @@
 class AOClient;
 class DBManager;
 class AreaData;
-class Discord;
 
 /**
  * @brief The class that represents the actual server as it is.
@@ -231,11 +230,12 @@ class Server : public QObject {
     /**
      * @brief Sends a modcall webhook request, emitted by AOClient::pktModcall.
      *
-     * @param name The character or OOC name of the client who sent the modcall.
-     * @param reason The reason the client specified for the modcall.
-     * @param current_area Integer ID of the area the modcall is made.
+     * @param f_name The character or OOC name of the client who sent the modcall.
+     * @param f_area The name of the area the modcall was sent from.
+     * @param f_reason The reason the client specified for the modcall.
+     * @param f_buffer The area's log buffer.
      */
-    void webhookRequest(QString name, QString reason, int current_area);
+    void modcallWebhookRequest(const QString& f_name, const QString& f_area, const QString& f_reason, const QQueue<QString>& f_buffer);
 
   private:
     /**
@@ -251,6 +251,11 @@ class Server : public QObject {
     QTcpServer* server;
 
     /**
+     * @brief Handles Discord webhooks.
+     */
+    Discord* discord;
+
+    /**
      * @brief The port through which the server will accept TCP connections.
      */
     int port;
@@ -259,11 +264,6 @@ class Server : public QObject {
      * @brief The port through which the server will accept WebSocket connections.
      */
     int ws_port;
-
-    /**
-     * @brief Handles discord webhooks.
-     */
-    Discord* discord;
 };
 
 #endif // SERVER_H

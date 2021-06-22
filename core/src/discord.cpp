@@ -17,60 +17,92 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/discord.h"
 
-void Discord::postModcallWebhook(QString name, QString reason, int current_area)
+Discord::Discord(QObject* parent) :
+    QObject(parent)
 {
-    if (!QUrl (ConfigManager::discordWebhookUrl()).isValid()) {
-        qWarning() << "Invalid webhook url!";
-        return;
-    }
+    if (!QUrl(ConfigManager::discordWebhookUrl()).isValid())
+        qWarning("Invalid webhook URL!");
+    m_nam = new QNetworkAccessManager();
+    connect(m_nam, &QNetworkAccessManager::finished,
+            this, &Discord::onReplyFinished);
+    m_request.setUrl(QUrl(ConfigManager::discordWebhookUrl()));
+}
 
-    QNetworkRequest request;
-    request.setUrl(QUrl (ConfigManager::discordWebhookUrl()));
-    QNetworkAccessManager* nam = new QNetworkAccessManager();
-    connect(nam, &QNetworkAccessManager::finished,
-            this, &Discord::onFinish);
-
-    // This is the kind of garbage Qt makes me write.
-    // I am so tired. Qt has broken me.
-    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-
-    QJsonObject json;
-    QJsonArray jsonArray;
-    QJsonObject jsonObject {
-        {"color", "13312842"},
-        {"title", name + " filed a modcall in " + server->areas[current_area]->name()},
-        {"description", reason}
-    };
-    jsonArray.append(jsonObject);
-    json["embeds"] = jsonArray;
-    if (!ConfigManager::discordWebhookContent().isEmpty())
-      json["content"] = ConfigManager::discordWebhookContent();
-
-    nam->post(request, QJsonDocument(json).toJson());
+void Discord::onModcallWebhookRequested(const QString &f_name, const QString &f_area, const QString &f_reason, const QQueue<QString> &f_buffer)
+{
+    QJsonDocument l_json = constructModcallJson(f_name, f_area, f_reason);
+    postJsonWebhook(l_json);
 
     if (ConfigManager::discordWebhookSendFile()) {
-        QHttpMultiPart* construct = new QHttpMultiPart();
-        request.setHeader(QNetworkRequest::ContentTypeHeader, "multipart/form-data; boundary=" + construct->boundary());
-
-        //This cost me two days of my life. Thanks Qt and Discord. You have broken me.
-        QHttpPart file;
-        file.setRawHeader(QByteArray("Content-Disposition"), QByteArray("form-data; name=\"file\"; filename=\"log.txt\""));
-        file.setRawHeader(QByteArray("Content-Type"), QByteArray("plain/text"));
-        QQueue<QString> buffer = server->areas[current_area]->buffer(); // I feel no shame for doing this
-        QString log;
-        while (!buffer.isEmpty()) {
-            log.append(buffer.dequeue() + "\n");
-        }
-        file.setBody(log.toUtf8());
-        construct->append(file);
-
-        nam->post(request, construct);
+        QHttpMultiPart *l_multipart = constructLogMultipart(f_buffer);
+        postMultipartWebhook(*l_multipart);
     }
 }
 
-void Discord::onFinish(QNetworkReply *reply)
+QJsonDocument Discord::constructModcallJson(const QString &f_name, const QString &f_area, const QString &f_reason) const
 {
-    QByteArray data = reply->readAll();
-    QString str_reply = data;
-    qDebug() << str_reply;
+    QJsonObject l_json;
+    QJsonArray l_array;
+    QJsonObject l_object {
+        {"color", "13312842"},
+        {"title", f_name + " filed a modcall in " + f_area},
+        {"description", f_reason}
+    };
+    l_array.append(l_object);
+    l_json["embeds"] = l_array;
+    if (!ConfigManager::discordWebhookContent().isEmpty())
+        l_json["content"] = ConfigManager::discordWebhookContent();
+
+    return QJsonDocument(l_json);
+}
+
+QHttpMultiPart* Discord::constructLogMultipart(const QQueue<QString> &f_buffer) const
+{
+    QHttpMultiPart* l_multipart = new QHttpMultiPart();
+    QHttpPart l_file;
+    l_file.setRawHeader(QByteArray("Content-Disposition"), QByteArray("form-data; name=\"file\"; filename=\"log.txt\""));
+    l_file.setRawHeader(QByteArray("Content-Type"), QByteArray("plain/text"));
+    QString l_log;
+    for (QString log_entry : f_buffer) {
+        l_log.append(log_entry + "\n");
+    }
+    l_file.setBody(l_log.toUtf8());
+    l_multipart->append(l_file);
+    return l_multipart;
+}
+
+void Discord::postJsonWebhook(const QJsonDocument &f_json)
+{
+    if (!QUrl(m_request.url()).isValid()) {
+        qWarning("Invalid webhook URL!");
+        return;
+    }
+    m_request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+    m_nam->post(m_request, f_json.toJson());
+}
+
+void Discord::postMultipartWebhook(QHttpMultiPart &f_multipart)
+{
+    if (!QUrl(m_request.url()).isValid()) {
+        qWarning("Invalid webhook URL!");
+        f_multipart.deleteLater();
+        return;
+    }
+    m_request.setHeader(QNetworkRequest::ContentTypeHeader, "multipart/form-data; boundary=" + f_multipart.boundary());
+    QNetworkReply* l_reply = m_nam->post(m_request, &f_multipart);
+    f_multipart.setParent(l_reply);
+}
+
+void Discord::onReplyFinished(QNetworkReply *f_reply)
+{
+    auto l_data = f_reply->readAll();
+    f_reply->deleteLater();
+#ifdef DISCORD_DEBUG
+    QDebug() << l_data;
+#endif
+}
+
+Discord::~Discord()
+{
+    m_nam->deleteLater();
 }
