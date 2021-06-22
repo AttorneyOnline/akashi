@@ -239,7 +239,7 @@ void AOClient::cmdSetBackground(int argc, QStringList argv)
 {
     AreaData* area = server->areas[current_area];
     if (authenticated || !area->bgLocked()) {
-        if (server->backgrounds.contains(argv[0])) {
+        if (server->backgrounds.contains(argv[0]) || area->ignoreBgList() == true) {
             area->background() = argv[0];
             server->broadcast(AOPacket("BN", {argv[0]}), current_area);
             sendServerMessageArea(current_char + " changed the background to " + argv[0]);
@@ -304,4 +304,12 @@ void AOClient::cmdJudgeLog(int argc, QStringList argv)
         QString filteredmessage = message.remove(QRegularExpression("[(].*[)]")); //Filter out anything between two parentheses. This should only ever be the IPID
         sendServerMessage(filteredmessage);
     }
+}
+
+void AOClient::cmdIgnoreBgList(int argc, QStringList argv)
+{
+    AreaData* area = server->areas[current_area];
+    area->toggleIgnoreBgList();
+    QString state = area->ignoreBgList() ? "ignored." : "enforced.";
+    sendServerMessage("BG list in this area is now " + state);
 }

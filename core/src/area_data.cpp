@@ -47,6 +47,7 @@ AreaData::AreaData(QString p_name, int p_index) :
     m_forceImmediate = areas_ini.value("force_immediate", "false").toBool();
     m_toggleMusic = areas_ini.value("toggle_music", "true").toBool();
     m_shownameAllowed = areas_ini.value("shownames_allowed", "true").toBool();
+    m_ignoreBgList = areas_ini.value("ignore_bglist", "false").toBool();
     areas_ini.endGroup();
     int log_size = ConfigManager::logBuffer();
     DataTypes::LogType l_logType = ConfigManager::loggingType();
@@ -534,4 +535,14 @@ bool AreaData::shownameAllowed() const
 QString AreaData::background() const
 {
     return m_background;
+}
+
+bool AreaData::ignoreBgList()
+{
+    return m_ignoreBgList;
+}
+
+void AreaData::toggleIgnoreBgList()
+{
+    m_ignoreBgList = !m_ignoreBgList;
 }
