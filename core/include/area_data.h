@@ -20,6 +20,7 @@
 
 #include "logger.h"
 #include "aopacket.h"
+#include "config_manager.h"
 
 #include <QMap>
 #include <QString>

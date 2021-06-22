@@ -48,12 +48,8 @@ AreaData::AreaData(QString p_name, int p_index) :
     m_toggleMusic = areas_ini.value("toggle_music", "true").toBool();
     m_shownameAllowed = areas_ini.value("shownames_allowed", "true").toBool();
     areas_ini.endGroup();
-    QSettings config_ini("config/config.ini", QSettings::IniFormat);
-    config_ini.setIniCodec("UTF-8");
-    config_ini.beginGroup("Options");
-    int log_size = config_ini.value("logbuffer", 50).toInt();
-    QString l_logType = config_ini.value("logger","modcall").toString();
-    config_ini.endGroup();
+    int log_size = ConfigManager::logBuffer();
+    DataTypes::LogType l_logType = ConfigManager::loggingType();
     if (log_size == 0)
         log_size = 500;
     m_logger = new Logger(m_name, log_size, l_logType);

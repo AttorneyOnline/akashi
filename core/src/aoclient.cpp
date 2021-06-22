@@ -88,7 +88,7 @@ void AOClient::handlePacket(AOPacket packet)
         if (is_afk)
             sendServerMessage("You are no longer AFK.");
         is_afk = false;
-        afk_timer->start(server->afk_timeout * 1000);
+        afk_timer->start(ConfigManager::afkTimeout() * 1000);
     }
 
     if (packet.contents.length() < info.minArgs) {
@@ -291,17 +291,17 @@ void AOClient::calculateIpid()
 
 void AOClient::sendServerMessage(QString message)
 {
-    sendPacket("CT", {server->server_name, message, "1"});
+    sendPacket("CT", {ConfigManager::serverName(), message, "1"});
 }
 
 void AOClient::sendServerMessageArea(QString message)
 {
-    server->broadcast(AOPacket("CT", {server->server_name, message, "1"}), current_area);
+    server->broadcast(AOPacket("CT", {ConfigManager::serverName(), message, "1"}), current_area);
 }
 
 void AOClient::sendServerBroadcast(QString message)
 {
-    server->broadcast(AOPacket("CT", {server->server_name, message, "1"}));
+    server->broadcast(AOPacket("CT", {ConfigManager::serverName(), message, "1"}));
 }
 
 bool AOClient::checkAuth(unsigned long long acl_mask)
@@ -318,12 +318,14 @@ bool AOClient::checkAuth(unsigned long long acl_mask)
         else if (!authenticated) {
             return false;
         }
-        if (server->auth_type == "advanced") {
+        switch (ConfigManager::authType()) {
+        case DataTypes::AuthType::SIMPLE:
+            return authenticated;
+            break;
+        case DataTypes::AuthType::ADVANCED:
             unsigned long long user_acl = server->db_manager->getACL(moderator_name);
             return (user_acl & acl_mask) != 0;
-        }
-        else if (server->auth_type == "simple") {
-            return authenticated;
+            break;
         }
     }
     return true;

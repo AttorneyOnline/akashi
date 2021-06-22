@@ -80,9 +80,9 @@ void AOClient::diceThrower(int argc, QStringList argv, bool p_roll)
     int dice = 1;
     QStringList results;
     if (argc >= 1)
-        sides = qBound(1, argv[0].toInt(), server->dice_value);
+        sides = qBound(1, argv[0].toInt(), ConfigManager::diceMaxValue());
     if (argc == 2)
-        dice = qBound(1, argv[1].toInt(), server->max_dice);
+        dice = qBound(1, argv[1].toInt(), ConfigManager::diceMaxDice());
     for (int i = 1; i <= dice; i++) {
         results.append(QString::number(AOClient::genRand(1, sides)));
     }
@@ -163,44 +163,44 @@ long long AOClient::parseTime(QString input)
 QString AOClient::getReprimand(bool positive)
 {
     if (positive) {
-        return server->praise_list[genRand(0, server->praise_list.size() - 1)];
+        return ConfigManager::praiseList()[genRand(0, ConfigManager::praiseList().size() - 1)];
         }
     else {
-        return server->reprimands_list[genRand(0, server->reprimands_list.size() - 1)];
+        return ConfigManager::reprimandsList()[genRand(0, ConfigManager::reprimandsList().size() - 1)];
         }
 }
 
 bool AOClient::checkPasswordRequirements(QString username, QString password)
 {
     QString decoded_password = decodeMessage(password);
-    if (!server->password_requirements)
+    if (!ConfigManager::passwordRequirements())
         return true;
 
-    if (server->password_minimum_length > decoded_password.length())
+    if (ConfigManager::passwordMinLength() > decoded_password.length())
         return false;
 
-    if (server->password_maximum_length < decoded_password.length() && server->password_maximum_length != 0)
+    if (ConfigManager::passwordMaxLength() < decoded_password.length() && ConfigManager::passwordMaxLength() != 0)
         return false;
 
-    else if (server->password_require_mixed_case) {
+    else if (ConfigManager::passwordRequireMixCase()) {
         if (decoded_password.toLower() == decoded_password)
             return false;
         if (decoded_password.toUpper() == decoded_password)
             return false;
     }
-    else if (server->password_require_numbers) {
+    else if (ConfigManager::passwordRequireNumbers()) {
         QRegularExpression regex("[0123456789]");
         QRegularExpressionMatch match = regex.match(decoded_password);
         if (!match.hasMatch())
             return false;
     }
-    else if (server->password_require_special_characters) {
+    else if (ConfigManager::passwordRequireSpecialCharacters()) {
         QRegularExpression regex("[~!@#$%^&*_-+=`|\\(){}\[]:;\"'<>,.?/]");
         QRegularExpressionMatch match = regex.match(decoded_password);
         if (!match.hasMatch())
             return false;
     }
-    else if (!server->password_can_contain_username) {
+    else if (!ConfigManager::passwordCanContainUsername()) {
         if (decoded_password.contains(username))
             return false;
     }

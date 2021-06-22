@@ -79,7 +79,7 @@ void Logger::addEntry(
     if (m_buffer.length() < m_maxLength) {
         m_buffer.enqueue(l_logEntry);
 
-        if (m_logType == "full") {
+        if (m_logType == DataTypes::LogType::FULL) {
            flush();
         }
     }
@@ -98,14 +98,13 @@ void Logger::flush()
 
     QFile l_logfile;
 
-    if (m_logType == "modcall") {
+    switch (m_logType) {
+    case DataTypes::LogType::MODCALL:
         l_logfile.setFileName(QString("logs/report_%1_%2.log").arg(m_areaName, (QDateTime::currentDateTime().toString("yyyy-MM-dd_hhmmss"))));
-    }
-    else if (m_logType == "full") {
+        break;
+    case DataTypes::LogType::FULL:
         l_logfile.setFileName(QString("logs/%1.log").arg(QDate::currentDate().toString("yyyy-MM-dd")));
-    }
-    else {
-        qCritical("Invalid logger set!");
+        break;
     }
 
     if (l_logfile.open(QIODevice::WriteOnly | QIODevice::Append)) {
