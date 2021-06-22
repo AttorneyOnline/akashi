@@ -34,13 +34,13 @@ DBManager::DBManager() :
 QPair<bool, QString> DBManager::isIPBanned(QString ipid)
 {
     QSqlQuery query;
-    query.prepare("SELECT * FROM BANS WHERE IPID = ? ORDER BY TIME DESC");
+    query.prepare("SELECT TIME,REASON,DURATION FROM BANS WHERE IPID = ? ORDER BY TIME DESC");
     query.addBindValue(ipid);
     query.exec();
     if (query.first()) {
-        long long ban_time = query.value(4).toLongLong();
-        QString reason = query.value(5).toString();
-        long long duration = query.value(6).toLongLong();
+        long long ban_time = query.value(0).toLongLong();
+        QString reason = query.value(1).toString();
+        long long duration = query.value(2).toLongLong();
         if (duration == -2)
             return {true, reason};
         long long current_time = QDateTime::currentDateTime().toSecsSinceEpoch();
@@ -54,13 +54,13 @@ QPair<bool, QString> DBManager::isIPBanned(QString ipid)
 QPair<bool, QString> DBManager::isHDIDBanned(QString hdid)
 {
     QSqlQuery query;
-    query.prepare("SELECT * FROM BANS WHERE HDID = ? ORDER BY TIME DESC");
+    query.prepare("SELECT TIME,REASON,DURATION FROM BANS WHERE HDID = ? ORDER BY TIME DESC");
     query.addBindValue(hdid);
     query.exec();
     if (query.first()) {
-        long long ban_time = query.value(4).toLongLong();
-        QString reason = query.value(5).toString();
-        long long duration = query.value(6).toLongLong();
+        long long ban_time = query.value(0).toLongLong();
+        QString reason = query.value(1).toString();
+        long long duration = query.value(2).toLongLong();
         if (duration == -2)
             return {true, reason};
         long long current_time = QDateTime::currentDateTime().toSecsSinceEpoch();
