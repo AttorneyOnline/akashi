@@ -31,7 +31,7 @@ DBManager::DBManager() :
         updateDB(db_version);
 }
 
-std::pair<bool, QString> DBManager::isIPBanned(QString ipid)
+QPair<bool, QString> DBManager::isIPBanned(QString ipid)
 {
     QSqlQuery query;
     query.prepare("SELECT * FROM BANS WHERE IPID = ? ORDER BY TIME DESC");
@@ -51,7 +51,7 @@ std::pair<bool, QString> DBManager::isIPBanned(QString ipid)
     else return {false, nullptr};
 }
 
-std::pair<bool, QString> DBManager::isHDIDBanned(QString hdid)
+QPair<bool, QString> DBManager::isHDIDBanned(QString hdid)
 {
     QSqlQuery query;
     query.prepare("SELECT * FROM BANS WHERE HDID = ? ORDER BY TIME DESC");

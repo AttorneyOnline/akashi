@@ -696,7 +696,7 @@ class AreaData : public QObject {
      * * First, a `QStringList` that is the packet of the statement that was advanced to.
      * * Then, a `TestimonyProgress` value that describes how the advancement happened.
      */
-    std::pair<QStringList, AreaData::TestimonyProgress> jumpToStatement(int f_position);
+    QPair<QStringList, AreaData::TestimonyProgress> jumpToStatement(int f_position);
 
     /**
      * @brief Returns a copy of the judgelog in the area.

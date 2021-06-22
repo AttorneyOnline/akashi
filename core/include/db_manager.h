@@ -64,7 +64,7 @@ public:
      * * First, a `bool` that is true if the query could return at least one such record.
      * * Then, a `QString` that is the reason for the ban.
      */
-    std::pair<bool, QString> isIPBanned(QString ipid);
+    QPair<bool, QString> isIPBanned(QString ipid);
 
     /**
      * @brief Checks if there is a record in the Bans table with the given hardware ID.
@@ -75,7 +75,7 @@ public:
      * * First, a `bool` that is true if the query could return at least one such record.
      * * Then, a `QString` that is the reason for the ban.
      */
-    std::pair<bool, QString> isHDIDBanned(QString hdid);
+    QPair<bool, QString> isHDIDBanned(QString hdid);
 
     /**
      * @brief Gets the ID number of a given ban.
