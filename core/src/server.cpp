@@ -52,7 +52,7 @@ void Server::start()
     }
     
     if (ConfigManager::discordWebhookEnabled()) {
-        discord = new Discord(webhook_url, webhook_content, webhook_sendfile, this);
+        discord = new Discord(this);
         connect(this, &Server::modcallWebhookRequest,
                 discord, &Discord::onModcallWebhookRequested);
     }

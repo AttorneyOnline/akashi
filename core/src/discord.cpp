@@ -17,17 +17,15 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/discord.h"
 
-Discord::Discord(const QUrl &f_webhook_url, const QString &f_webhook_content, const bool &f_webhook_sendfile, QObject* parent) :
-    QObject(parent),
-    m_webhook_content(f_webhook_content),
-    m_webhook_sendfile(f_webhook_sendfile)
+Discord::Discord(QObject* parent) :
+    QObject(parent)
 {
-    if (!QUrl(f_webhook_url).isValid())
+    if (!QUrl(ConfigManager::discordWebhookUrl()).isValid())
         qWarning("Invalid webhook URL!");
     m_nam = new QNetworkAccessManager();
     connect(m_nam, &QNetworkAccessManager::finished,
             this, &Discord::onReplyFinished);
-    m_request.setUrl(f_webhook_url);
+    m_request.setUrl(QUrl(ConfigManager::discordWebhookUrl()));
 }
 
 void Discord::onModcallWebhookRequested(const QString &f_name, const QString &f_area, const QString &f_reason, const QQueue<QString> &f_buffer)
@@ -35,7 +33,7 @@ void Discord::onModcallWebhookRequested(const QString &f_name, const QString &f_
     QJsonDocument l_json = constructModcallJson(f_name, f_area, f_reason);
     postJsonWebhook(l_json);
 
-    if (m_webhook_sendfile) {
+    if (ConfigManager::discordWebhookSendFile()) {
         QHttpMultiPart *l_multipart = constructLogMultipart(f_buffer);
         postMultipartWebhook(*l_multipart);
     }
@@ -52,8 +50,8 @@ QJsonDocument Discord::constructModcallJson(const QString &f_name, const QString
     };
     l_array.append(l_object);
     l_json["embeds"] = l_array;
-    if (!m_webhook_content.isEmpty())
-        l_json["content"] = m_webhook_content;
+    if (!ConfigManager::discordWebhookContent().isEmpty())
+        l_json["content"] = ConfigManager::discordWebhookContent();
 
     return QJsonDocument(l_json);
 }
