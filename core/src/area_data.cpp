@@ -403,7 +403,7 @@ void AreaData::removeStatement(int f_position)
     --m_statement;
 }
 
-std::pair<QStringList, AreaData::TestimonyProgress> AreaData::jumpToStatement(int f_position)
+QPair<QStringList, AreaData::TestimonyProgress> AreaData::jumpToStatement(int f_position)
 {
     m_statement = f_position;
 

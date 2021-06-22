@@ -79,8 +79,12 @@ void AOClient::cmdBan(int argc, QStringList argv)
 
     if (kick_counter > 1)
         sendServerMessage("Kicked " + QString::number(kick_counter) + " clients with matching ipids.");
-    if (!ban_logged)
-        sendServerMessage("User with ipid not found!");
+
+    // We're banning someone not connected.
+    if (!ban_logged) {
+        server->db_manager->addBan(ban);
+        sendServerMessage("Banned " + ban.ipid + " for reason: " + ban.reason);
+    }
 }
 
 void AOClient::cmdKick(int argc, QStringList argv)

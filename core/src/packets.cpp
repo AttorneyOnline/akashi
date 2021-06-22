@@ -27,8 +27,9 @@ void AOClient::pktDefault(AreaData* area, int argc, QStringList argv, AOPacket p
 void AOClient::pktHardwareId(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
     hwid = argv[0];
-    if(server->db_manager->isHDIDBanned(hwid)) {
-        sendPacket("BD", {server->db_manager->getBanReason(hwid) + "\nBan ID: " + QString::number(server->db_manager->getBanID(hwid))});
+    auto ban = server->db_manager->isHDIDBanned(hwid);
+    if (ban.first) {
+        sendPacket("BD", {ban.second + "\nBan ID: " + QString::number(server->db_manager->getBanID(hwid))});
         socket->close();
         return;
     }
@@ -318,16 +319,17 @@ void AOClient::pktWebSocketIp(AreaData* area, int argc, QStringList argv, AOPack
     // Special packet to set remote IP from the webao proxy
     // Only valid if from a local ip
     if (remote_ip.isLoopback()) {
-        if(server->db_manager->isIPBanned(QHostAddress(argv[0]))) {
-            sendPacket("BD", {server->db_manager->getBanReason(QHostAddress(argv[0]))});
-            socket->close();
-            return;
-        }
 #ifdef NET_DEBUG
         qDebug() << "ws ip set to" << argv[0];
 #endif
         remote_ip = QHostAddress(argv[0]);
         calculateIpid();
+        auto ban = server->db_manager->isIPBanned(ipid);
+        if (ban.first) {
+            sendPacket("BD", {ban.second});
+            socket->close();
+            return;
+        }
 
         int multiclient_count = 0;
         for (AOClient* joined_client : server->clients) {
