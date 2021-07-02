@@ -1,4 +1,0 @@
-1#-#Hobo_Phoenix#hobo-normal#~~\n-- Sample Recording --#wit#1#0#22#1#0#0#0#0#3##-1#0#0#0<and>0#0#0#0#0#0#-^(b)hobo-normal^(a)hobo-normal^#-^(b)hobo-normal^(a)hobo-normal^#-^(b)hobo-normal^(a)hobo-normal^#0#||
-1#-#Hobo_Phoenix#hobo-normal#This is a sample recording to test the loading and saving of testimonies.#wit#1#0#22#1#0#0#0#0#1##-1#0#0#0<and>0#0#0#0#0#0#-^(b)hobo-normal^(a)hobo-normal^#-^(b)hobo-normal^(a)hobo-normal^#-^(b)hobo-normal^(a)hobo-normal^#0#||
-1#-#Hobo_Phoenix#hobo-bigeyed#If you are reading this your server supports testimony loading correctly.#wit#1#0#22#1#0#0#0#0#1##-1#0#0#0<and>0#0#0#0#0#0#-^(b)hobo-bigeyed^(a)hobo-bigeyed^#-^(b)hobo-bigeyed^(a)hobo-bigeyed^#-^(b)hobo-bigeyed^(a)hobo-bigeyed^#0#||
-1#-#Hobo_Phoenix#hobo-bigeyed#There is nothing else to be read here.#wit#1#0#22#1#0#0#0#0#1##-1#0#0#0<and>0#0#0#0#0#0#-^(b)hobo-bigeyed^(a)hobo-bigeyed^#-^(b)hobo-bigeyed^(a)hobo-bigeyed^#-^(b)hobo-bigeyed^(a)hobo-bigeyed^#0#||
