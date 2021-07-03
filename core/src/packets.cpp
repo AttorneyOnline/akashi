@@ -112,7 +112,7 @@ void AOClient::pktLoadingDone(AreaData* area, int argc, QStringList argv, AOPack
     sendPacket("HP", {"1", QString::number(area->defHP())});
     sendPacket("HP", {"2", QString::number(area->proHP())});
     sendPacket("FA", server->area_names);
-    sendPacket("OPPASS", {"DEADBEEF"});
+    //Here lies OPPASS, the genius of FanatSors who send the modpass to everyone in plain text.
     sendPacket("DONE");
     sendPacket("BN", {area->background()});
   
