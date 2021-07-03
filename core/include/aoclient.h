@@ -1987,7 +1987,7 @@ class AOClient : public QObject {
         {"randomchar",         {ACLFlags.value("NONE"),         0, &AOClient::cmdRandomChar}},
         {"switch",             {ACLFlags.value("NONE"),         1, &AOClient::cmdSwitch}},
         {"toggleglobal",       {ACLFlags.value("NONE"),         0, &AOClient::cmdToggleGlobal}},
-        {"mods",               {ACLFlags.value("NONE"),         0, &AOClient::cmdMods}},
+        {"mods",               {ACLFlags.value("MODCHAT"),      0, &AOClient::cmdMods}},
         {"help",               {ACLFlags.value("NONE"),         0, &AOClient::cmdHelp}},
         {"status",             {ACLFlags.value("NONE"),         1, &AOClient::cmdStatus}},
         {"forcepos",           {ACLFlags.value("CM"),           2, &AOClient::cmdForcePos}},
