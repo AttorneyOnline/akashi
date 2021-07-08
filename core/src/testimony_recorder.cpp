@@ -77,12 +77,11 @@ void AOClient::clearTestimony()
     area->clearTestimony();
 }
 
-bool AOClient::checkTestimonySymbols(QString message)
+bool AOClient::checkTestimonySymbols(const QString& message)
 {
     if (message.contains('>') || message.contains('<')) {
         sendServerMessage("Unable to add statements containing '>' or '<'.");
         return true;
     }
-    else
-        return false;
+    return false;
 }

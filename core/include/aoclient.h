@@ -1912,8 +1912,7 @@ class AOClient : public QObject {
      *
      * @return True if it contains '<' or '>' symbols, otherwise false.
      */
-
-    bool checkTestimonySymbols(QString message);
+    bool checkTestimonySymbols(const QString& message);
     ///@}
 
     /**
