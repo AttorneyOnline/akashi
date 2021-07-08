@@ -45,7 +45,8 @@ SOURCES += \
     src/server.cpp \
     src/testimony_recorder.cpp \
     src/ws_client.cpp \
-    src/ws_proxy.cpp
+    src/ws_proxy.cpp \
+    src/http_advertiser.cpp
 
 HEADERS += include/advertiser.h \
     include/aoclient.h \
@@ -58,4 +59,5 @@ HEADERS += include/advertiser.h \
     include/logger.h \
     include/server.h \
     include/ws_client.h \
-    include/ws_proxy.h
+    include/ws_proxy.h \
+    include/http_advertiser.h

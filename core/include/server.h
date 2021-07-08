@@ -25,6 +25,7 @@
 #include "include/db_manager.h"
 #include "include/discord.h"
 #include "include/config_manager.h"
+#include "include/http_advertiser.h"
 
 #include <QCoreApplication>
 #include <QDebug>
@@ -228,6 +229,17 @@ class Server : public QObject {
     void reloadRequest(QString p_name, QString p_desc);
 
     /**
+     * @brief Sends all necessary info for the new advertiser.
+     * @param f_name Servername.
+     * @param f_description Serverdescription.
+     * @param f_port Client port.
+     * @param f_ws_port Optional Websocket proxy port.
+     * @param f_players Maximum amount of clients.
+     * @param f_master_url URL of the advertisement target.
+     */
+    void reloadHTTPRequest(QString f_name, QString f_description, int f_port, int f_ws_port, int f_players, QUrl f_master_url, bool f_debug);
+
+    /**
      * @brief Sends a modcall webhook request, emitted by AOClient::pktModcall.
      *
      * @param f_name The character or OOC name of the client who sent the modcall.
@@ -254,6 +266,16 @@ class Server : public QObject {
      * @brief Handles Discord webhooks.
      */
     Discord* discord;
+
+    /**
+     * @brief Handles HTTP server advertising.
+     */
+    HTTPAdvertiser* httpAdvertiser;
+
+    /**
+     * @brief Advertises the server in a regular intervall.
+     */
+    QTimer* httpAdvertiserTimer;
 
     /**
      * @brief The port through which the server will accept TCP connections.
