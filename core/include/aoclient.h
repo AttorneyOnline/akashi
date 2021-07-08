@@ -1905,6 +1905,15 @@ class AOClient : public QObject {
      */
     bool checkPasswordRequirements(QString username, QString password);
     
+    /**
+     * @brief Checks if a testimony contains '<' or '>'.
+     *
+     * @param message The IC Message that might contain unproper symbols.
+     *
+     * @return True if it contains '<' or '>' symbols, otherwise false.
+     */
+
+    bool checkTestimonySymbols(QString message);
     ///@}
 
     /**
