@@ -303,17 +303,17 @@ class ConfigManager {
     static QStringList gimpList();
 
     /**
-     * @brief advertise_server HTTP advertiser is not constructed if this is false.
+     * @brief Returns if the HTTP advertiser is constructed or not.
      */
     static bool advertiseHTTPServer();
 
     /**
-     * @brief advertise_debug Allows HTTP advertiser to print debug info.
+     * @brief Returns if the HTTP advertiser prints debug info to console.
      */
     static bool advertiserHTTPDebug();
 
     /**
-     * @brief advertiser_ip IP or URL of the masterserver
+     * @brief Returns the IP or URL of the masterserver.
      */
     static QUrl advertiserHTTPIP();
 
