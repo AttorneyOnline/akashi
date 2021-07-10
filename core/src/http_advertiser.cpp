@@ -7,23 +7,29 @@ HTTPAdvertiser::HTTPAdvertiser()
             this, &HTTPAdvertiser::msRequestFinished);
 }
 
+HTTPAdvertiser::~HTTPAdvertiser()
+{
+    m_manager->deleteLater();
+}
+
 void HTTPAdvertiser::msAdvertiseServer()
 {
     if (m_masterserver.isValid()) {
 
-        QNetworkRequest request((QUrl (m_masterserver)));
+        QUrl url(m_masterserver);
+        QNetworkRequest request(url);
         request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
         QJsonObject json;
         json["port"] = m_port;
-        if (!(m_ws_port == -1)) {
+        if (m_ws_port != -1) {
             json["ws_port"] = m_ws_port;
         }
 
         json["players"] = m_players;
         json["name"] = m_name;
 
-        if (!(m_description.isEmpty())) {
+        if (!m_description.isEmpty()) {
         json["description"] = m_description;
         }
 

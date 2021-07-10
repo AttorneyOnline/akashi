@@ -34,17 +34,22 @@ public:
      */
     explicit HTTPAdvertiser();
 
+
+    /**
+     *  @brief Deconstructor for the HTTP_Advertiser class. Yes, that's it. Can't say more about it.
+     */
+    ~HTTPAdvertiser();
+
 public slots:
 
     /**
-     * @brief msAdvertiseServer Establishes a connection with masterserver to
-     *        register or update the listing on the masterserver.
+     * @brief Establishes a connection with masterserver to register or update the listing on the masterserver.
      */
     void msAdvertiseServer();
 
     /**
-     * @brief msRequestFinished Reads the information send as a reply for further
-     *        error handling.
+     * @brief Reads the information send as a reply for further error handling.
+     * @param reply Response data from the masterserver. Information contained is send to the console if debug is enabled.
      */
     void msRequestFinished(QNetworkReply *reply);
 
@@ -62,42 +67,42 @@ public slots:
 private:
 
     /**
-     * @brief m_manager NetworkAccessManager for HTTP Advertiser.
+     * @brief Pointer to the network manager, necessary to execute POST requests to the masterserver.
      */
     QNetworkAccessManager* m_manager;
 
     /**
-     * @brief m_name Current name of the server.
+     * @brief Name of the server send to the masterserver. Changing this will change the display name in the serverlist
      */
     QString m_name;
 
     /**
-     * @brief m_description Current description of the server.
+     * @brief Description of the server that is displayed in the client when the server is selected.
      */
     QString m_description;
 
     /**
-     * @brief m_port Current port for AO2-Clients.
+     * @brief Client port for the AO2-Client.
      */
     int m_port;
 
     /**
-     * @brief m_ws_port Websocket proxy port for WebAO-Clients.
+     * @brief Websocket proxy port for WebAO users.
      */
     int m_ws_port;
 
     /**
-     * @brief m_players Maximum number of connected clients.
+     * @brief Maximum amount of clients that can be connected to the server.
      */
     int m_players;
 
     /**
-     * @brief m_masterserver URL of the masterserver being advertised to.
+     * @brief URL of the masterserver that m_manager posts to. This is almost never changed.
      */
     QUrl m_masterserver;
 
     /**
-     * @brief m_debug If debug information is displayed in console.
+     * @brief Controls if network replies are printed to console. Should only be true if issues communicating with masterserver appear.
      */
     bool m_debug;
 };
