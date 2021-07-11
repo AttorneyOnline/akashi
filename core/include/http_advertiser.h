@@ -21,6 +21,16 @@
 #include <QtNetwork>
 #include <QObject>
 
+//Don't question this. It needs to be here for some reason.
+struct advertiser_config {
+    QString name;
+    QString description;
+    int port;
+    int ws_port;
+    int players;
+    QUrl masterserver;
+    bool debug;
+};
 
 /**
  * @brief Represents the advertiser of the server. Sends current server information to masterserver.
@@ -54,15 +64,10 @@ public slots:
     void msRequestFinished(QNetworkReply *reply);
 
     /**
-     * @brief setAdvertiserSettings Configures the values being advertised to masterserver.
-     * @param f_name Servername.
-     * @param f_description Serverdescription.
-     * @param f_port Client port.
-     * @param f_ws_port Optional Websocket proxy port.
-     * @param f_players Maximum amount of clients.
-     * @param f_master_url URL of the advertisement target.
+     * @brief Sets the values being advertised to masterserver.
+     * @param config Configuration struct for the advertiser. Always includes ALL settings.
      */
-    void setAdvertiserSettings(QString f_name, QString f_description, int f_port, int f_ws_port, int f_players, QUrl f_master_url, bool f_debug);
+    void setAdvertiserSettings(advertiser_config config);
 
 private:
 

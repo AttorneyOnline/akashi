@@ -139,6 +139,11 @@ class Server : public QObject {
     int getCharID(QString char_name);
 
     /**
+     * @brief Creates an HTTP advertiser config struct and emits it using server::reloadHTTPRequest.
+     */
+    void reloadHTTPAdvertiserConfig();
+
+    /**
      * @brief The collection of all currently connected clients.
      */
     QVector<AOClient*> clients;
@@ -230,14 +235,9 @@ class Server : public QObject {
 
     /**
      * @brief Sends all necessary info for the new advertiser.
-     * @param f_name Servername.
-     * @param f_description Serverdescription.
-     * @param f_port Client port.
-     * @param f_ws_port Optional Websocket proxy port.
-     * @param f_players Maximum amount of clients.
-     * @param f_master_url URL of the advertisement target.
+     * @param Struct that contains all configuration for the advertiser
      */
-    void reloadHTTPRequest(QString f_name, QString f_description, int f_port, int f_ws_port, int f_players, QUrl f_master_url, bool f_debug);
+    void reloadHTTPRequest(struct advertiser_config config);
 
     /**
      * @brief Sends a modcall webhook request, emitted by AOClient::pktModcall.

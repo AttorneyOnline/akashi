@@ -66,9 +66,7 @@ void Server::start()
                 httpAdvertiser, &HTTPAdvertiser::msAdvertiseServer);
         connect(this, &Server::reloadHTTPRequest,
                 httpAdvertiser, &HTTPAdvertiser::setAdvertiserSettings);
-
-        emit reloadHTTPRequest(ConfigManager::serverName(),ConfigManager::serverDescription(),ConfigManager::serverPort(),ConfigManager::webaoPort(),
-                               ConfigManager::maxPlayers(),ConfigManager::advertiserHTTPIP(),ConfigManager::advertiserHTTPDebug());
+        reloadHTTPAdvertiserConfig();
         httpAdvertiserTimer->start(300000);
     }
 
@@ -255,6 +253,19 @@ int Server::getCharID(QString char_name)
         }
     }
     return -1; // character does not exist
+}
+
+void Server::reloadHTTPAdvertiserConfig()
+{
+    advertiser_config config;
+    config.name = ConfigManager::serverName();
+    config.description = ConfigManager::serverDescription();
+    config.port = ConfigManager::serverPort();
+    config.ws_port = ConfigManager::webaoPort();
+    config.players = ConfigManager::maxPlayers();
+    config.masterserver = ConfigManager::advertiserHTTPIP();
+    config.debug = ConfigManager::advertiserHTTPDebug();
+    emit reloadHTTPRequest(config);
 }
 
 void Server::allowMessage()
