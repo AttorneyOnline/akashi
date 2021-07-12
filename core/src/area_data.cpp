@@ -42,7 +42,7 @@ AreaData::AreaData(QString p_name, int p_index) :
     m_isProtected = areas_ini.value("protected_area", "false").toBool();
     m_iniswapAllowed = areas_ini.value("iniswap_allowed", "true").toBool();
     m_bgLocked = areas_ini.value("bg_locked", "false").toBool();
-    QString configured_evi_mod = areas_ini.value("evidence_mod", "FFA").toString().toLower();
+    m_eviMod = QVariant(areas_ini.value("evidence_mod", "FFA").toString().toUpper()).value<EvidenceMod>();
     m_blankpostingAllowed = areas_ini.value("blankposting_allowed","true").toBool();
     m_forceImmediate = areas_ini.value("force_immediate", "false").toBool();
     m_toggleMusic = areas_ini.value("toggle_music", "true").toBool();
@@ -62,15 +62,6 @@ AreaData::AreaData(QString p_name, int p_index) :
     m_timers.append(timer3);
     QTimer* timer4 = new QTimer();
     m_timers.append(timer4);
-
-    if (configured_evi_mod == "cm")
-        m_eviMod = EvidenceMod::CM;
-    else if (configured_evi_mod == "mod")
-        m_eviMod = EvidenceMod::MOD;
-    else if (configured_evi_mod == "hiddencm")
-        m_eviMod = EvidenceMod::HIDDEN_CM;
-    else
-        m_eviMod = EvidenceMod::FFA;
 }
 
 const QMap<QString, AreaData::Status> AreaData::map_statuses = {

@@ -258,8 +258,9 @@ void AOClient::sendPacket(AOPacket packet)
 #endif
     packet.contents.replaceInStrings("#", "<num>")
                    .replaceInStrings("%", "<percent>")
-                   .replaceInStrings("$", "<dollar>")
-                   .replaceInStrings("&", "<and>");
+                   .replaceInStrings("$", "<dollar>");
+    if (packet.header != "LE")
+        packet.contents.replaceInStrings("&", "<and>");
     socket->write(packet.toUtf8());
     socket->flush();
 }

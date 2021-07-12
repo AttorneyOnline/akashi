@@ -162,7 +162,7 @@ int ConfigManager::webaoPort()
 
 DataTypes::AuthType ConfigManager::authType()
 {
-    QString l_auth = m_settings->value("Options/auth", "simple").toString();
+    QString l_auth = m_settings->value("Options/auth", "simple").toString().toUpper();
     return toDataType<DataTypes::AuthType>(l_auth);
 }
 
@@ -184,7 +184,7 @@ int ConfigManager::logBuffer()
 
 DataTypes::LogType ConfigManager::loggingType()
 {
-    QString l_log = m_settings->value("Options/logging", "modcall").toString();
+    QString l_log = m_settings->value("Options/logging", "modcall").toString().toUpper();
     return toDataType<DataTypes::LogType>(l_log);
 }
 

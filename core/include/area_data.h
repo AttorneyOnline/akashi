@@ -109,12 +109,13 @@ class AreaData : public QObject {
     /**
      * @brief The level of "authorisation" needed to be able to modify, add, and remove evidence in the area.
      */
-    enum EvidenceMod{
+    enum class EvidenceMod{
         FFA,
         MOD,
         CM,
         HIDDEN_CM
     };
+    Q_ENUM(EvidenceMod)
 
     /**
      * @var EvidenceMod FFA
