@@ -23,6 +23,9 @@
 #include <QString>
 #include <QStringList>
 
+#include "include/area_data.h"
+#include "include/acl_mask.h"
+
 /**
  * @brief An Attorney Online 2 compatible packet.
  *
@@ -37,14 +40,7 @@ class AOPacket {
      * @param p_header The header for the packet.
      * @param p_contents The contents of the packet.
      */
-    AOPacket(QString p_header, QStringList p_contents);
-
-    /**
-     * @brief AOPacket Interprets a string of a full (header + content) packet into an AOPacket.
-     *
-     * @param packet The string to interpret.
-     */
-    AOPacket(QString packet);
+    AOPacket(QStringList p_contents);
 
     /**
      * @brief Returns the string representation of the packet.
@@ -60,6 +56,16 @@ class AOPacket {
      */
     QByteArray toUtf8();
 
+    QString getHeader() { return header; };
+    QStringList getContents() { return contents; };
+
+    unsigned long long getAclMask() { return acl_mask; };
+    int getMinArgs() { return min_args; };
+
+    virtual void handlePacket(AreaData* area, AOClient& client) const = 0;
+    virtual bool validatePacket() const = 0;
+
+  protected:
     /**
      * @brief The string that indentifies the type of the packet.
      */
@@ -69,6 +75,9 @@ class AOPacket {
      * @brief The list of parameters for the packet. Can be empty.
      */
     QStringList contents;
+
+    unsigned long long acl_mask;
+    int min_args;
 };
 
 #endif // PACKET_MANAGER_H

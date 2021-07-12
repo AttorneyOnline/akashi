@@ -147,8 +147,8 @@ void Server::clientConnected()
 
     if (is_banned) {
         QString reason = ban.second;
-        AOPacket ban_reason("BD", {reason});
-        socket->write(ban_reason.toUtf8());
+        AOPacket* ban_reason = PacketFactory::createPacket("BD", {reason});
+        socket->write(ban_reason->toUtf8());
     }
     if (is_banned || is_at_multiclient_limit) {
         socket->flush();
@@ -166,10 +166,10 @@ void Server::clientConnected()
     });
     connect(socket, &QTcpSocket::readyRead, client, &AOClient::clientData);
 
-    AOPacket decryptor("decryptor", {"NOENCRYPT"}); // This is the infamous workaround for
+    AOPacket* decryptor = PacketFactory::createPacket("decryptor", {"NOENCRYPT"}); // This is the infamous workaround for
                                                     // tsuserver4. It should disable fantacrypt
                                                     // completely in any client 2.4.3 or newer
-    client->sendPacket(decryptor);
+    client->sendPacket(*decryptor);
 #ifdef NET_DEBUG
     qDebug() << client->remote_ip.toString() << "connected";
 #endif
@@ -184,16 +184,16 @@ void Server::updateCharsTaken(AreaData* area)
                                : QStringLiteral("0"));
     }
 
-    AOPacket response_cc("CharsCheck", chars_taken);
+    AOPacket* response_cc = PacketFactory::createPacket("CharsCheck", chars_taken);
 
     for (AOClient* client : clients) {
         if (client->current_area == area->index()){
             if (!client->is_charcursed)
-                client->sendPacket(response_cc);
+                client->sendPacket(*response_cc);
             else {
                 QStringList chars_taken_cursed = getCursedCharsTaken(client, chars_taken);
-                AOPacket response_cc_cursed("CharsCheck", chars_taken_cursed);
-                client->sendPacket(response_cc_cursed);
+                AOPacket* response_cc_cursed = PacketFactory::createPacket("CharsCheck", chars_taken_cursed);
+                client->sendPacket(*response_cc_cursed);
             }
         }
     }
@@ -211,7 +211,7 @@ QStringList Server::getCursedCharsTaken(AOClient* client, QStringList chars_take
     return chars_taken_cursed;
 }
 
-void Server::broadcast(AOPacket packet, int area_index)
+void Server::broadcast(AOPacket& packet, int area_index)
 {
     for (AOClient* client : clients) {
         if (client->current_area == area_index)
@@ -219,7 +219,7 @@ void Server::broadcast(AOPacket packet, int area_index)
     }
 }
 
-void Server::broadcast(AOPacket packet)
+void Server::broadcast(AOPacket& packet)
 {
     for (AOClient* client : clients) {
         client->sendPacket(packet);

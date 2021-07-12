@@ -37,7 +37,12 @@ void AOClient::clientData()
     all_packets.removeLast(); // Remove the entry after the last delimiter
 
     for (QString single_packet : all_packets) {
-        AOPacket packet(single_packet);
+        //AOPacket packet(single_packet);
+        AOPacket* packet = PacketFactory::createPacket(single_packet);
+        if (!packet) {
+            qDebug() << "Unimplemented packet: " << single_packet;
+            continue;
+        }
         handlePacket(packet);
     }
 }
@@ -68,37 +73,36 @@ void AOClient::clientDisconnected()
     arup(ARUPType::CM, true);
 }
 
-void AOClient::handlePacket(AOPacket packet)
+void AOClient::handlePacket(AOPacket* packet)
 {
 #ifdef NET_DEBUG
     qDebug() << "Received packet:" << packet.header << ":" << packet.contents << "args length:" << packet.contents.length();
 #endif
     AreaData* area = server->areas[current_area];
-    PacketInfo info = packets.value(packet.header, {false, 0, &AOClient::pktDefault});
 
-    if (packet.contents.join("").size() > 16384) {
+    if (packet->getContents().join("").size() > 16384) {
         return;
     }
 
-    if (!checkAuth(info.acl_mask)) {
+    if (!checkAuth(packet->getAclMask())) {
         return;
     }
 
-    if (packet.header != "CH") {
+    if (packet->getHeader() != "CH") {
         if (is_afk)
             sendServerMessage("You are no longer AFK.");
         is_afk = false;
         afk_timer->start(ConfigManager::afkTimeout() * 1000);
     }
 
-    if (packet.contents.length() < info.minArgs) {
+    if (packet->getContents().length() < packet->getMinArgs()) {
 #ifdef NET_DEBUG
         qDebug() << "Invalid packet args length. Minimum is" << info.minArgs << "but only" << packet.contents.length() << "were given.";
 #endif
         return;
     }
 
-    (this->*(info.action))(area, packet.contents.length(), packet.contents, packet);
+    packet->handlePacket(area, *this);
 }
 
 void AOClient::changeArea(int new_area)
@@ -239,7 +243,7 @@ void AOClient::arup(ARUPType type, bool broadcast)
         }
     }
     if (broadcast)
-        server->broadcast(AOPacket("ARUP", arup_data));
+        server->broadcast(*PacketFactory::createPacket("ARUP", arup_data));
     else
         sendPacket("ARUP", arup_data);
 }
@@ -251,28 +255,29 @@ void AOClient::fullArup() {
     arup(ARUPType::LOCKED, false);
 }
 
-void AOClient::sendPacket(AOPacket packet)
+void AOClient::sendPacket(AOPacket& packet)
 {
 #ifdef NET_DEBUG
     qDebug() << "Sent packet:" << packet.header << ":" << packet.contents;
 #endif
-    packet.contents.replaceInStrings("#", "<num>")
-                   .replaceInStrings("%", "<percent>")
-                   .replaceInStrings("$", "<dollar>");
-    if (packet.header != "LE")
-        packet.contents.replaceInStrings("&", "<and>");
+    //packet.contents.replaceInStrings("#", "<num>")
+    //               .replaceInStrings("%", "<percent>")
+    //               .replaceInStrings("$", "<dollar>");
+    //if (packet.header != "LE")
+    //    packet.contents.replaceInStrings("&", "<and>");
+    // Make a packet member function to do the above
     socket->write(packet.toUtf8());
     socket->flush();
 }
 
 void AOClient::sendPacket(QString header, QStringList contents)
 {
-    sendPacket(AOPacket(header, contents));
+    sendPacket(*PacketFactory::createPacket(header, contents));
 }
 
 void AOClient::sendPacket(QString header)
 {
-    sendPacket(AOPacket(header, {}));
+    sendPacket(*PacketFactory::createPacket(header, {}));
 }
 
 void AOClient::calculateIpid()
@@ -297,12 +302,12 @@ void AOClient::sendServerMessage(QString message)
 
 void AOClient::sendServerMessageArea(QString message)
 {
-    server->broadcast(AOPacket("CT", {ConfigManager::serverName(), message, "1"}), current_area);
+    server->broadcast(*PacketFactory::createPacket("CT", {ConfigManager::serverName(), message, "1"}), current_area);
 }
 
 void AOClient::sendServerBroadcast(QString message)
 {
-    server->broadcast(AOPacket("CT", {ConfigManager::serverName(), message, "1"}));
+    server->broadcast(*PacketFactory::createPacket("CT", {ConfigManager::serverName(), message, "1"}));
 }
 
 bool AOClient::checkAuth(unsigned long long acl_mask)

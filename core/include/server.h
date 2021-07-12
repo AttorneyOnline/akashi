@@ -19,7 +19,7 @@
 #define SERVER_H
 
 #include "include/aoclient.h"
-#include "include/aopacket.h"
+#include "include/packet/aopacket.h"
 #include "include/area_data.h"
 #include "include/ws_proxy.h"
 #include "include/db_manager.h"
@@ -119,14 +119,14 @@ class Server : public QObject {
      *
      * @note Does nothing if an area by the given index does not exist.
      */
-    void broadcast(AOPacket packet, int area_index);
+    void broadcast(AOPacket &packet, int area_index);
 
     /**
      * @brief Sends a packet to all clients in the server.
      *
      * @param packet The packet to send to the clients.
      */
-    void broadcast(AOPacket packet);
+    void broadcast(AOPacket &packet);
 
     /**
      * @brief Returns the character's character ID (= their index in the character list).

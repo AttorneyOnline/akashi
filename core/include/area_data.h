@@ -19,7 +19,7 @@
 #define AREA_DATA_H
 
 #include "logger.h"
-#include "aopacket.h"
+#include "include/packet/aopacket.h"
 #include "config_manager.h"
 
 #include <QMap>

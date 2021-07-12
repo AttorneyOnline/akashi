@@ -18,7 +18,7 @@
 #ifndef MASTER_H
 #define MASTER_H
 
-#include "include/aopacket.h"
+#include "include/packet/aopacket.h"
 
 #include <QCoreApplication>
 #include <QHostAddress>
