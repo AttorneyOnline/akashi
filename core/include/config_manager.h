@@ -303,6 +303,22 @@ class ConfigManager {
     static QStringList gimpList();
 
     /**
+     * @brief Returns if the HTTP advertiser is constructed or not.
+     */
+    static bool advertiseHTTPServer();
+
+    /**
+     * @brief Returns if the HTTP advertiser prints debug info to console.
+     */
+    static bool advertiserHTTPDebug();
+
+    /**
+     * @brief Returns the IP or URL of the masterserver.
+     */
+    static QUrl advertiserHTTPIP();
+
+
+    /**
      * @brief Sets the server's authorization type.
      *
      * @param f_auth The auth type to set.

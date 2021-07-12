@@ -25,6 +25,7 @@
 #include "include/db_manager.h"
 #include "include/discord.h"
 #include "include/config_manager.h"
+#include "include/http_advertiser.h"
 
 #include <QCoreApplication>
 #include <QDebug>
@@ -138,6 +139,11 @@ class Server : public QObject {
     int getCharID(QString char_name);
 
     /**
+     * @brief Creates an HTTP advertiser config struct and emits it using server::reloadHTTPRequest.
+     */
+    void reloadHTTPAdvertiserConfig();
+
+    /**
      * @brief The collection of all currently connected clients.
      */
     QVector<AOClient*> clients;
@@ -228,6 +234,12 @@ class Server : public QObject {
     void reloadRequest(QString p_name, QString p_desc);
 
     /**
+     * @brief Sends all necessary info for the new advertiser.
+     * @param Struct that contains all configuration for the advertiser
+     */
+    void reloadHTTPRequest(struct advertiser_config config);
+
+    /**
      * @brief Sends a modcall webhook request, emitted by AOClient::pktModcall.
      *
      * @param f_name The character or OOC name of the client who sent the modcall.
@@ -254,6 +266,16 @@ class Server : public QObject {
      * @brief Handles Discord webhooks.
      */
     Discord* discord;
+
+    /**
+     * @brief Handles HTTP server advertising.
+     */
+    HTTPAdvertiser* httpAdvertiser;
+
+    /**
+     * @brief Advertises the server in a regular intervall.
+     */
+    QTimer* httpAdvertiserTimer;
 
     /**
      * @brief The port through which the server will accept TCP connections.

@@ -368,6 +368,21 @@ QStringList ConfigManager::gimpList()
     return m_commands->gimps;
 }
 
+bool ConfigManager::advertiseHTTPServer()
+{
+    return m_settings->value("ModernAdvertiser/advertise","true").toBool();
+}
+
+bool ConfigManager::advertiserHTTPDebug()
+{
+    return m_settings->value("ModernAdvertiser/debug","true").toBool();
+}
+
+QUrl ConfigManager::advertiserHTTPIP()
+{
+    return m_settings->value("ModernAdvertiser/ms_ip","").toUrl();
+}
+
 void ConfigManager::setMotd(const QString f_motd)
 {
     m_settings->setValue("Options/motd", f_motd);

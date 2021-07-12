@@ -29,6 +29,7 @@ Server::Server(int p_port, int p_ws_port, QObject* parent) :
     timer = new QTimer();
 
     db_manager = new DBManager();
+
 }
 
 void Server::start()
@@ -55,6 +56,18 @@ void Server::start()
         discord = new Discord(this);
         connect(this, &Server::modcallWebhookRequest,
                 discord, &Discord::onModcallWebhookRequested);
+    }
+
+    if (ConfigManager::advertiseHTTPServer()) {
+        httpAdvertiserTimer = new QTimer(this);
+        httpAdvertiser = new HTTPAdvertiser();
+
+        connect(httpAdvertiserTimer, &QTimer::timeout,
+                httpAdvertiser, &HTTPAdvertiser::msAdvertiseServer);
+        connect(this, &Server::reloadHTTPRequest,
+                httpAdvertiser, &HTTPAdvertiser::setAdvertiserSettings);
+        reloadHTTPAdvertiserConfig();
+        httpAdvertiserTimer->start(300000);
     }
 
     proxy = new WSProxy(port, ws_port, this);
@@ -240,6 +253,19 @@ int Server::getCharID(QString char_name)
         }
     }
     return -1; // character does not exist
+}
+
+void Server::reloadHTTPAdvertiserConfig()
+{
+    advertiser_config config;
+    config.name = ConfigManager::serverName();
+    config.description = ConfigManager::serverDescription();
+    config.port = ConfigManager::serverPort();
+    config.ws_port = ConfigManager::webaoPort();
+    config.players = ConfigManager::maxPlayers();
+    config.masterserver = ConfigManager::advertiserHTTPIP();
+    config.debug = ConfigManager::advertiserHTTPDebug();
+    emit reloadHTTPRequest(config);
 }
 
 void Server::allowMessage()
