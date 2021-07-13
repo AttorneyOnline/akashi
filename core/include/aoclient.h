@@ -18,7 +18,8 @@
 #ifndef AOCLIENT_H
 #define AOCLIENT_H
 
-#include "include/aopacket.h"
+#include "include/packet/aopacket.h"
+#include "include/packet/packet_factory.h"
 #include "include/server.h"
 #include "include/area_data.h"
 #include "include/db_manager.h"
@@ -208,32 +209,6 @@ class AOClient : public QObject {
      */
     ClientVersion version;
 
-    /**
-      * @brief The authorisation bitflag, representing what permissions a client can have.
-      *
-      * @showinitializer
-      */
-    QMap<QString, unsigned long long> ACLFlags {
-        {"NONE",            0ULL      },
-        {"KICK",            1ULL << 0 },
-        {"BAN",             1ULL << 1 },
-        {"BGLOCK",          1ULL << 2 },
-        {"MODIFY_USERS",    1ULL << 3 },
-        {"CM",              1ULL << 4 },
-        {"GLOBAL_TIMER",    1ULL << 5 },
-        {"EVI_MOD",         1ULL << 6 },
-        {"MOTD",            1ULL << 7 },
-        {"ANNOUNCE",        1ULL << 8 },
-        {"MODCHAT",         1ULL << 9 },
-        {"MUTE",            1ULL << 10},
-        {"UNCM",            1ULL << 11},
-        {"SAVETEST",        1ULL << 12},
-        {"FORCE_CHARSELECT",1ULL << 13},
-        {"BYPASS_LOCKS",    1ULL << 14},
-        {"IGNORE_BGLIST",   1ULL << 15},
-        {"SUPER",          ~0ULL      }
-    };
-
 
     /**
      * @brief A list of 5 casing preferences (def, pro, judge, jury, steno)
@@ -312,7 +287,7 @@ class AOClient : public QObject {
      *
      * @param packet The packet to send.
      */
-    void sendPacket(AOPacket packet);
+    void sendPacket(AOPacket& packet);
 
     /**
      * @overload
@@ -329,7 +304,6 @@ class AOClient : public QObject {
      */
     void onAfkTimeout();
 
-  private:
     /**
      * @brief The TCP socket used to communicate with the client.
      */
@@ -355,7 +329,7 @@ class AOClient : public QObject {
      *
      * @param packet The incoming packet.
      */
-    void handlePacket(AOPacket packet);
+    void handlePacket(AOPacket* packet);
 
     /**
      * @brief Handles an incoming command, checking for authorisation and minimum argument count.
@@ -433,116 +407,6 @@ class AOClient : public QObject {
     bool checkAuth(unsigned long long acl_mask);
 
     /**
-      * @name Packet headers
-      *
-      * @details These functions implement the AO2-style packet handling.
-      * As these should generally be the same across server software, I see no reason to document them specifically.
-      *
-      * You can check out the AO2 network protocol for explanations.
-      *
-      * All packet handling functions share the same parameters:
-      *
-      * @param area The area the client is in. Some packets make use of the client's current area.
-      * @param argc The amount of arguments in the packet, not counting the header. Same as `argv.size()`.
-      * @param argv The arguments in the packet, once again, not counting the header.
-      * @param packet The... arguments in the packet. Yes, exactly the same as `argv`, just packed into an AOPacket.
-      *
-      * @see https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md for the AO2 network protocol.
-      */
-    ///@{
-
-    /// A "default" packet handler, to be used for error checking and copying other packet handlers.
-    void pktDefault(AreaData* area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [hardware ID](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#hard-drive-id).
-    void pktHardwareId(AreaData* area, int argc, QStringList argv, AOPacket packet);
-
-    /**
-     * @brief Implements [feature list](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#feature-list) and
-     * [player count](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#player-count).
-     */
-    void pktSoftwareId(AreaData* area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [resource counts](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#resource-counts).
-    void pktBeginLoad(AreaData* area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [character list](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#character-list).
-    void pktRequestChars(AreaData* area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [music list](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#music-list).
-    void pktRequestMusic(AreaData* area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [the final loading confirmation](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#final-confirmation).
-    void pktLoadingDone(AreaData* area, int argc, QStringList argv, AOPacket packet);
-
-    /**
-      * @brief Implements character passwording. This is not on the netcode documentation as of writing.
-      *
-      * @todo Link packet details when it gets into the netcode documentation.
-      */
-    void pktCharPassword(AreaData* area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [character selection](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#choose-character).
-    void pktSelectChar(AreaData* area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [the in-character messaging hell](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#in-character-message).
-    void pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [out-of-character messages](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#out-of-character-message).
-    void pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [the keepalive packet](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#keep-alive).
-    void pktPing(AreaData* area, int argc, QStringList argv, AOPacket packet);
-
-    /**
-      * @brief Implements [music](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#music) and
-      * [area changing](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#switch-area).
-      */
-    void pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPacket packet);
-
-
-    /**
-      * @brief Implements [the witness testimony / cross examination / judge decision popups]
-      * (https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#witness-testimonycross-examination-wtce).
-      */
-    void pktWtCe(AreaData* area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [penalty bars](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#penalty-health-bars).
-    void pktHpBar(AreaData* area, int argc, QStringList argv, AOPacket packet);
-
-    /**
-      * @brief Implements WebSocket IP handling. This is not on the netcode documentation as of writing.
-      *
-      * @todo Link packet details when it gets into the netcode documentation.
-      */
-    void pktWebSocketIp(AreaData* area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [moderator calling](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#call-mod).
-    void pktModCall(AreaData* area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [adding evidence](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#add).
-    void pktAddEvidence(AreaData* area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [removing evidence](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#remove).
-    void pktRemoveEvidence(AreaData* area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [editing evidence](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#edit).
-    void pktEditEvidence(AreaData* area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [updating casing preferences](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#case-preferences-update).
-    void pktSetCase(AreaData* area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [announcing a case](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#case-alert).
-    void pktAnnounceCase(AreaData* area, int argc, QStringList argv, AOPacket packet);
-
-    ///@}
-
-    /**
-      * @name Packet helper functions
-      */
-    ///@{
-
-    /**
      * @brief Calls AOClient::updateEvidenceList() for every client in the current client's area.
      *
      * @param area The current client's area.
@@ -555,15 +419,6 @@ class AOClient : public QObject {
      * @param area The client's area.
      */
     void updateEvidenceList(AreaData* area);
-
-    /**
-     * @brief Attempts to validate that hellish abomination that Attorney Online 2 calls an in-character packet.
-     *
-     * @param packet The packet to validate.
-     *
-     * @return A validated version of the input packet if it is correct, or an `"INVALID"` packet if it is not.
-     */
-    AOPacket validateIcPacket(AOPacket packet);
 
     /**
      * @brief Removes excessive combining characters from a text.
@@ -638,13 +493,6 @@ class AOClient : public QObject {
 
     ///@}
 
-    /// Describes a packet's interpretation details.
-    struct PacketInfo {
-        unsigned long long acl_mask; //!< The permissions necessary for the packet.
-        int minArgs; //!< The minimum arguments needed for the packet to be interpreted correctly / make sense.
-        void (AOClient::*action)(AreaData*, int, QStringList, AOPacket);
-    };
-
     /**
       * @property PacketInfo::action
       *
@@ -664,10 +512,7 @@ class AOClient : public QObject {
       * @tparam QString The header of the packet that uniquely identifies it.
       * @tparam PacketInfo The details of the packet.
       * See @ref PacketInfo "the type's documentation" for more details.
-      */
-    const QMap<QString, PacketInfo> packets {
-        {"HI",      {ACLFlags.value("NONE"), 1,  &AOClient::pktHardwareId     }},
-        {"ID",      {ACLFlags.value("NONE"), 2,  &AOClient::pktSoftwareId     }},
+      *
         {"askchaa", {ACLFlags.value("NONE"), 0,  &AOClient::pktBeginLoad      }},
         {"RC",      {ACLFlags.value("NONE"), 0,  &AOClient::pktRequestChars   }},
         {"RM",      {ACLFlags.value("NONE"), 0,  &AOClient::pktRequestMusic   }},
@@ -687,7 +532,7 @@ class AOClient : public QObject {
         {"EE",      {ACLFlags.value("NONE"), 4,  &AOClient::pktEditEvidence   }},
         {"SETCASE", {ACLFlags.value("NONE"), 7,  &AOClient::pktSetCase        }},
         {"CASEA",   {ACLFlags.value("NONE"), 6,  &AOClient::pktAnnounceCase   }},
-    };
+    };*/
 
     /**
       * @name Authentication

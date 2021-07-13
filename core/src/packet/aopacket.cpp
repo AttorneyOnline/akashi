@@ -15,34 +15,12 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
-#include "include/aopacket.h"
+#include "include/packet/aopacket.h"
 
-AOPacket::AOPacket(QString p_header, QStringList p_contents)
+AOPacket::AOPacket(QStringList p_contents)
+    : contents(p_contents)
 {
-    header = p_header;
-    contents = p_contents;
-}
-
-AOPacket::AOPacket(QString p_packet)
-{
-    if (p_packet.isEmpty())
-        return;
-
-    QStringList packet_contents = p_packet.split("#");
-    if (p_packet.at(0) == '#') {
-        // The header is encrypted with FantaCrypt
-        // This should never happen with AO2 2.4.3 or newer
-        qDebug() << "FantaCrypt packet received";
-        header = "Unknown";
-        packet_contents.append("Unknown");
-        return;
-    }
-    else {
-        header = packet_contents[0];
-    }
-    packet_contents.removeFirst(); // Remove header
-    packet_contents.removeLast();  // Remove anything trailing after delimiter
-    contents = packet_contents;
+    
 }
 
 QString AOPacket::toString()
