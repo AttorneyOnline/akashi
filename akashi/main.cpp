@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
 {
     QCoreApplication app(argc, argv);
     QCoreApplication::setApplicationName("akashi");
-    QCoreApplication::setApplicationVersion("banana");
+    QCoreApplication::setApplicationVersion("coconut (1.3)");
     std::atexit(cleanup);
 
     // Verify server configuration is sound.
