@@ -104,6 +104,16 @@ private:
      * @brief The WebSocket representing an incoming connection.
      */
     QWebSocket* web_socket;
+
+    /**
+     * @brief Stores partial packets in case they don't all come through the TCP socket at once
+     */
+    QByteArray partial_packet;
+
+    /**
+     * @brief Flag that is set when packets are segmented
+     */
+    bool is_segmented = false;
 };
 
 #endif // WS_CLIENT_H
