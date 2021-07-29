@@ -113,9 +113,12 @@ void AOClient::cmdKick(int argc, QStringList argv)
 
 void AOClient::cmdMods(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
     QStringList entries;
     int online_count = 0;
-    for (AOClient* client : server->clients) {
+    for (AOClient* client : qAsConst(server->clients)) {
         if (client->authenticated) {
             entries << "---";
             if (ConfigManager::authType() != DataTypes::AuthType::SIMPLE)
@@ -134,6 +137,9 @@ void AOClient::cmdMods(int argc, QStringList argv)
 
 void AOClient::cmdHelp(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
     QStringList entries;
     entries << "Allowed commands:";
     QMap<QString, CommandInfo>::const_iterator i;
@@ -165,6 +171,9 @@ void AOClient::cmdMOTD(int argc, QStringList argv)
 
 void AOClient::cmdBans(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
     QStringList recent_bans;
     recent_bans << "Last 5 bans:";
     recent_bans << "-----";
@@ -188,6 +197,8 @@ void AOClient::cmdBans(int argc, QStringList argv)
 
 void AOClient::cmdUnBan(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     bool ok;
     int target_ban = argv[0].toInt(&ok);
     if (!ok) {
@@ -202,11 +213,16 @@ void AOClient::cmdUnBan(int argc, QStringList argv)
 
 void AOClient::cmdAbout(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
     sendPacket("CT", {"The akashi dev team", "Thank you for using akashi! Made with love by scatterflower, with help from in1tiate, Salanto, and mangosarentliterature. akashi " + QCoreApplication::applicationVersion() + ". For documentation and reporting issues, see the source: https://github.com/AttorneyOnline/akashi"});
 }
 
 void AOClient::cmdMute(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     bool conv_ok = false;
     int uid = argv[0].toInt(&conv_ok);
     if (!conv_ok) {
@@ -232,6 +248,8 @@ void AOClient::cmdMute(int argc, QStringList argv)
 
 void AOClient::cmdUnMute(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     bool conv_ok = false;
     int uid = argv[0].toInt(&conv_ok);
     if (!conv_ok) {
@@ -257,6 +275,8 @@ void AOClient::cmdUnMute(int argc, QStringList argv)
 
 void AOClient::cmdOocMute(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     bool conv_ok = false;
     int uid = argv[0].toInt(&conv_ok);
     if (!conv_ok) {
@@ -282,6 +302,8 @@ void AOClient::cmdOocMute(int argc, QStringList argv)
 
 void AOClient::cmdOocUnMute(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     bool conv_ok = false;
     int uid = argv[0].toInt(&conv_ok);
     if (!conv_ok) {
@@ -307,6 +329,8 @@ void AOClient::cmdOocUnMute(int argc, QStringList argv)
 
 void AOClient::cmdBlockWtce(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     bool conv_ok = false;
     int uid = argv[0].toInt(&conv_ok);
     if (!conv_ok) {
@@ -332,6 +356,8 @@ void AOClient::cmdBlockWtce(int argc, QStringList argv)
 
 void AOClient::cmdUnBlockWtce(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     bool conv_ok = false;
     int uid = argv[0].toInt(&conv_ok);
     if (!conv_ok) {
@@ -357,6 +383,9 @@ void AOClient::cmdUnBlockWtce(int argc, QStringList argv)
 
 void AOClient::cmdAllowBlankposting(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
     QString sender_name = ooc_name;
     AreaData* area = server->areas[current_area];
     area->toggleBlankposting();
@@ -390,7 +419,8 @@ void AOClient::cmdBanInfo(int argc, QStringList argv)
         return;
     }
     QString id = argv[0];
-    for (DBManager::BanInfo ban : server->db_manager->getBanInfo(lookup_type, id)) {
+    const QList<DBManager::BanInfo> bans = server->db_manager->getBanInfo(lookup_type, id);
+    for (const DBManager::BanInfo &ban : bans) {
         QString banned_until;
         if (ban.duration == -2)
             banned_until = "The heat death of the universe";
@@ -410,6 +440,9 @@ void AOClient::cmdBanInfo(int argc, QStringList argv)
 
 void AOClient::cmdReload(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
     ConfigManager::reloadSettings();
     emit server->reloadRequest(ConfigManager::serverName(), ConfigManager::serverDescription());
     server->reloadHTTPAdvertiserConfig();
@@ -418,6 +451,9 @@ void AOClient::cmdReload(int argc, QStringList argv)
 
 void AOClient::cmdForceImmediate(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
     AreaData* area = server->areas[current_area];
     area->toggleImmediate();
     QString state = area->forceImmediate() ? "on." : "off.";
@@ -426,6 +462,9 @@ void AOClient::cmdForceImmediate(int argc, QStringList argv)
 
 void AOClient::cmdAllowIniswap(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
     AreaData* area = server->areas[current_area];
     area->toggleIniswap();
     QString state = area->iniswapAllowed() ? "allowed." : "disallowed.";
@@ -434,6 +473,8 @@ void AOClient::cmdAllowIniswap(int argc, QStringList argv)
 
 void AOClient::cmdPermitSaving(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     AOClient* client = server->getClientByID(argv[0].toInt());
     if (client == nullptr) {
         sendServerMessage("Invalid ID.");

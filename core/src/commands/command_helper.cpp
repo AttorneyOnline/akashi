@@ -22,6 +22,9 @@
 
 void AOClient::cmdDefault(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
     sendServerMessage("Invalid command.");
     return;
 }

@@ -102,6 +102,8 @@ void AOClient::cmdUnCM(int argc, QStringList argv)
 
 void AOClient::cmdInvite(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     AreaData* area = server->areas[current_area];
     bool ok;
     int invited_id = argv[0].toInt(&ok);
@@ -122,6 +124,8 @@ void AOClient::cmdInvite(int argc, QStringList argv)
 
 void AOClient::cmdUnInvite(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     AreaData* area = server->areas[current_area];
     bool ok;
     int uninvited_id = argv[0].toInt(&ok);
@@ -146,6 +150,9 @@ void AOClient::cmdUnInvite(int argc, QStringList argv)
 
 void AOClient::cmdLock(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
     AreaData* area = server->areas[current_area];
     if (area->lockStatus() == AreaData::LockStatus::LOCKED) {
         sendServerMessage("This area is already locked.");
@@ -153,7 +160,7 @@ void AOClient::cmdLock(int argc, QStringList argv)
     }
     sendServerMessageArea("This area is now locked.");
     area->lock();
-    for (AOClient* client : server->clients) {
+    for (AOClient* client : qAsConst(server->clients)) { // qAsConst here avoids detaching the container
         if (client->current_area == current_area && client->joined) {
             area->invite(client->id);
         }
@@ -163,6 +170,9 @@ void AOClient::cmdLock(int argc, QStringList argv)
 
 void AOClient::cmdSpectatable(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
     AreaData* area = server->areas[current_area];
     if (area->lockStatus() == AreaData::LockStatus::SPECTATABLE) {
         sendServerMessage("This area is already in spectate mode.");
@@ -170,7 +180,7 @@ void AOClient::cmdSpectatable(int argc, QStringList argv)
     }
     sendServerMessageArea("This area is now spectatable.");
     area->spectatable();
-    for (AOClient* client : server->clients) {
+    for (AOClient* client : qAsConst(server->clients)) {
         if (client->current_area == current_area && client->joined) {
             area->invite(client->id);
         }
@@ -180,6 +190,9 @@ void AOClient::cmdSpectatable(int argc, QStringList argv)
 
 void AOClient::cmdUnLock(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
     AreaData* area = server->areas[current_area];
     if (area->lockStatus() == AreaData::LockStatus::FREE) {
         sendServerMessage("This area is not locked.");
@@ -192,6 +205,9 @@ void AOClient::cmdUnLock(int argc, QStringList argv)
 
 void AOClient::cmdGetAreas(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
     QStringList entries;
     entries.append("== Area List ==");
     for (int i = 0; i < server->area_names.length(); i++) {
@@ -203,12 +219,17 @@ void AOClient::cmdGetAreas(int argc, QStringList argv)
 
 void AOClient::cmdGetArea(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
     QStringList entries = buildAreaList(current_area);
     sendServerMessage(entries.join("\n"));
 }
 
 void AOClient::cmdArea(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     bool ok;
     int new_area = argv[0].toInt(&ok);
     if (!ok || new_area >= server->areas.size() || new_area < 0) {
@@ -220,6 +241,8 @@ void AOClient::cmdArea(int argc, QStringList argv)
 
 void AOClient::cmdAreaKick(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     bool ok;
     int idx = argv[0].toInt(&ok);
     if (!ok) {
@@ -237,6 +260,8 @@ void AOClient::cmdAreaKick(int argc, QStringList argv)
 
 void AOClient::cmdSetBackground(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     AreaData* area = server->areas[current_area];
     if (authenticated || !area->bgLocked()) {
         if (server->backgrounds.contains(argv[0]) || area->ignoreBgList() == true) {
@@ -255,6 +280,9 @@ void AOClient::cmdSetBackground(int argc, QStringList argv)
 
 void AOClient::cmdBgLock(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
     AreaData* area = server->areas[current_area];
 
     if (area->bgLocked() == false) {
@@ -266,6 +294,9 @@ void AOClient::cmdBgLock(int argc, QStringList argv)
 
 void AOClient::cmdBgUnlock(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
     AreaData* area = server->areas[current_area];
 
     if (area->bgLocked() == true) {
@@ -277,6 +308,8 @@ void AOClient::cmdBgUnlock(int argc, QStringList argv)
 
 void AOClient::cmdStatus(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     AreaData* area = server->areas[current_area];
     QString arg = argv[0].toLower();
 
@@ -290,6 +323,9 @@ void AOClient::cmdStatus(int argc, QStringList argv)
 
 void AOClient::cmdJudgeLog(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
     AreaData* area = server->areas[current_area];
     if (area->judgelog().isEmpty()) {
         sendServerMessage("There have been no judge actions in this area.");
@@ -308,6 +344,9 @@ void AOClient::cmdJudgeLog(int argc, QStringList argv)
 
 void AOClient::cmdIgnoreBgList(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
     AreaData* area = server->areas[current_area];
     area->toggleIgnoreBgList();
     QString state = area->ignoreBgList() ? "ignored." : "enforced.";

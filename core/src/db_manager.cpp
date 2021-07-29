@@ -26,7 +26,9 @@ DBManager::DBManager() :
         qCritical() << "Database Error:" << db.lastError();
     db_version = checkVersion();
     QSqlQuery create_ban_table("CREATE TABLE IF NOT EXISTS bans ('ID' INTEGER, 'IPID' TEXT, 'HDID' TEXT, 'IP' TEXT, 'TIME' INTEGER, 'REASON' TEXT, 'DURATION' INTEGER, 'MODERATOR' TEXT, PRIMARY KEY('ID' AUTOINCREMENT))");
+    create_ban_table.exec();
     QSqlQuery create_user_table("CREATE TABLE IF NOT EXISTS users ('ID' INTEGER, 'USERNAME' TEXT, 'SALT' TEXT, 'PASSWORD' TEXT, 'ACL' TEXT, PRIMARY KEY('ID' AUTOINCREMENT))");
+    create_user_table.exec();
     if (db_version != DB_VERSION)
         updateDB(db_version);
 }
@@ -380,6 +382,7 @@ void DBManager::updateDB(int current_version)
     switch (current_version) {
     case 0:
         QSqlQuery("ALTER TABLE bans ADD COLUMN MODERATOR TEXT");
+        Q_FALLTHROUGH();
     case 1:
         QSqlQuery ("PRAGMA user_version = " + QString::number(DB_VERSION));
         break;

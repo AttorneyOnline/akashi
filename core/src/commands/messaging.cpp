@@ -22,15 +22,18 @@
 
 void AOClient::cmdPos(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     changePosition(argv[0]);
     updateEvidenceList(server->areas[current_area]);
 }
 
 void AOClient::cmdForcePos(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     bool ok;
     QList<AOClient*> targets;
-    AreaData* area = server->areas[current_area];
     int target_id = argv[1].toInt(&ok);
     int forced_clients = 0;
     if (!ok && argv[1] != "*") {
@@ -48,7 +51,7 @@ void AOClient::cmdForcePos(int argc, QStringList argv)
     }
 
     else if (argv[1] == "*") { // force all clients in the area
-        for (AOClient* client : server->clients) {
+        for (AOClient* client : qAsConst(server->clients)) {
             if (client->current_area == current_area)
                 targets.append(client);
         }
@@ -63,10 +66,12 @@ void AOClient::cmdForcePos(int argc, QStringList argv)
 
 void AOClient::cmdG(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     QString sender_name = ooc_name;
     QString sender_area = server->area_names.value(current_area);
     QString sender_message = argv.join(" ");
-    for (AOClient* client : server->clients) {
+    for (AOClient* client : qAsConst(server->clients)) {
         if (client->global_enabled)
             client->sendPacket("CT", {"[G][" + sender_area + "]" + sender_name, sender_message});
     }
@@ -75,9 +80,11 @@ void AOClient::cmdG(int argc, QStringList argv)
 
 void AOClient::cmdNeed(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     QString sender_area = server->area_names.value(current_area);
     QString sender_message = argv.join(" ");
-    for (AOClient* client : server->clients) {
+    for (AOClient* client : qAsConst(server->clients)) {
         if (client->advert_enabled) {
             client->sendServerMessage({"=== Advert ===\n[" + sender_area + "] needs " + sender_message+ "."});
         }
@@ -86,6 +93,8 @@ void AOClient::cmdNeed(int argc, QStringList argv)
 
 void AOClient::cmdSwitch(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     int selected_char_id = server->getCharID(argv.join(" "));
     if (selected_char_id == -1) {
         sendServerMessage("That does not look like a valid character.");
@@ -101,6 +110,9 @@ void AOClient::cmdSwitch(int argc, QStringList argv)
 
 void AOClient::cmdRandomChar(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
     AreaData* area = server->areas[current_area];
     int selected_char_id;
     bool taken = true;
@@ -117,13 +129,18 @@ void AOClient::cmdRandomChar(int argc, QStringList argv)
 
 void AOClient::cmdToggleGlobal(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
     global_enabled = !global_enabled;
     QString str_en = global_enabled ? "shown" : "hidden";
     sendServerMessage("Global chat set to " + str_en);
 }
 
-void AOClient::cmdPM(int arc, QStringList argv)
+void AOClient::cmdPM(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     bool ok;
     int target_id = argv.takeFirst().toInt(&ok); // using takeFirst removes the ID from our list of arguments...
     if (!ok) {
@@ -145,14 +162,18 @@ void AOClient::cmdPM(int arc, QStringList argv)
 
 void AOClient::cmdAnnounce(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     sendServerBroadcast("=== Announcement ===\r\n" + argv.join(" ") + "\r\n=============");
 }
 
 void AOClient::cmdM(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     QString sender_name = ooc_name;
     QString sender_message = argv.join(" ");
-    for (AOClient* client : server->clients) {
+    for (AOClient* client : qAsConst(server->clients)) {
         if (client->checkAuth(ACLFlags.value("MODCHAT")))
             client->sendPacket("CT", {"[M]" + sender_name, sender_message});
     }
@@ -161,10 +182,12 @@ void AOClient::cmdM(int argc, QStringList argv)
 
 void AOClient::cmdGM(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     QString sender_name = ooc_name;
     QString sender_area = server->area_names.value(current_area);
     QString sender_message = argv.join(" ");
-    for (AOClient* client : server->clients) {
+    for (AOClient* client : qAsConst(server->clients)) {
         if (client->global_enabled) {
             client->sendPacket("CT", {"[G][" + sender_area + "]" + "["+sender_name+"][M]", sender_message});
         }
@@ -173,6 +196,8 @@ void AOClient::cmdGM(int argc, QStringList argv)
 
 void AOClient::cmdLM(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     QString sender_name = ooc_name;
     QString sender_message = argv.join(" ");
     server->broadcast(AOPacket("CT", {"["+sender_name+"][M]", sender_message}), current_area);
@@ -180,6 +205,8 @@ void AOClient::cmdLM(int argc, QStringList argv)
 
 void AOClient::cmdGimp(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     bool conv_ok = false;
     int uid = argv[0].toInt(&conv_ok);
     if (!conv_ok) {
@@ -205,6 +232,8 @@ void AOClient::cmdGimp(int argc, QStringList argv)
 
 void AOClient::cmdUnGimp(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     bool conv_ok = false;
     int uid = argv[0].toInt(&conv_ok);
     if (!conv_ok) {
@@ -230,6 +259,8 @@ void AOClient::cmdUnGimp(int argc, QStringList argv)
 
 void AOClient::cmdDisemvowel(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     bool conv_ok = false;
     int uid = argv[0].toInt(&conv_ok);
     if (!conv_ok) {
@@ -255,6 +286,8 @@ void AOClient::cmdDisemvowel(int argc, QStringList argv)
 
 void AOClient::cmdUnDisemvowel(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     bool conv_ok = false;
     int uid = argv[0].toInt(&conv_ok);
     if (!conv_ok) {
@@ -280,6 +313,8 @@ void AOClient::cmdUnDisemvowel(int argc, QStringList argv)
 
 void AOClient::cmdShake(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     bool conv_ok = false;
     int uid = argv[0].toInt(&conv_ok);
     if (!conv_ok) {
@@ -305,6 +340,8 @@ void AOClient::cmdShake(int argc, QStringList argv)
 
 void AOClient::cmdUnShake(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     bool conv_ok = false;
     int uid = argv[0].toInt(&conv_ok);
     if (!conv_ok) {
@@ -330,6 +367,9 @@ void AOClient::cmdUnShake(int argc, QStringList argv)
 
 void AOClient::cmdMutePM(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
     pm_mute = !pm_mute;
     QString str_en = pm_mute ? "muted" : "unmuted";
     sendServerMessage("PM's are now " + str_en);
@@ -337,6 +377,9 @@ void AOClient::cmdMutePM(int argc, QStringList argv)
 
 void AOClient::cmdToggleAdverts(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
     advert_enabled = !advert_enabled;
     QString str_en = advert_enabled ? "on" : "off";
     sendServerMessage("Advertisements turned " + str_en);
@@ -344,6 +387,9 @@ void AOClient::cmdToggleAdverts(int argc, QStringList argv)
 
 void AOClient::cmdAfk(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
     is_afk = true;
     sendServerMessage("You are now AFK.");
 }
@@ -377,7 +423,7 @@ void AOClient::cmdCharCurse(int argc, QStringList argv)
         QStringList char_names = argv.join(" ").split(",");
 
         target->charcurse_list.clear();
-        for (QString char_name : char_names) {
+        for (const QString &char_name : qAsConst(char_names)) {
             int char_id = server->getCharID(char_name);
             if (char_id == -1) {
                 sendServerMessage("Could not find character: " + char_name);
@@ -405,6 +451,8 @@ void AOClient::cmdCharCurse(int argc, QStringList argv)
 
 void AOClient::cmdUnCharCurse(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     bool conv_ok = false;
     int uid = argv[0].toInt(&conv_ok);
     if (!conv_ok) {
@@ -459,6 +507,8 @@ void AOClient::cmdCharSelect(int argc, QStringList argv)
 
 void AOClient::cmdA(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     bool ok;
     int area_id = argv[0].toInt(&ok);
     if (!ok) {
@@ -480,6 +530,8 @@ void AOClient::cmdA(int argc, QStringList argv)
 
 void AOClient::cmdS(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     int all_areas = server->areas.size() - 1;
     QString sender_name = ooc_name;
     QString ooc_message = argv.join(" ");
@@ -492,6 +544,9 @@ void AOClient::cmdS(int argc, QStringList argv)
 
 void AOClient::cmdFirstPerson(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
     first_person = !first_person;
     QString str_en = first_person ? "enabled" : "disabled";
     sendServerMessage("First person mode " + str_en + ".");
