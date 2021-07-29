@@ -231,6 +231,10 @@ void AOClient::cmdAreaKick(int argc, QStringList argv)
         sendServerMessage("No client with that ID found.");
         return;
     }
+    else if (client_to_kick->current_area != current_area) {
+        sendServerMessage("That client is not in this area.");
+        return;
+    }
     client_to_kick->changeArea(0);
     sendServerMessage("Client " + argv[0] + " kicked back to area 0.");
 }
