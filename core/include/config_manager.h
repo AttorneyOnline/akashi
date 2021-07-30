@@ -224,13 +224,30 @@ class ConfigManager {
      * @return See short description.
      */
     static bool discordBanWebhookEnabled();
-
+    
     /**
      * @brief Returns the Discord Ban Webhook URL.
      *
      * @return See short description.
      */
     static QString discordBanWebhookUrl();
+
+    /**
+     * @brief Returns if the Webhook sends an alive message.
+     */
+    static bool discordUptimeEnabled();
+
+    /**
+     * @brief Returns the time between posting.
+     */
+    static int discordUptimeTime();
+
+    /**
+     * @brief Returns the Discord Uptime Webhook URL.
+     * 
+     * @return See sshort description.
+     */
+    static QString discordUptimeWebhookUrl();
 
     /**
      * @brief Returns true if password requirements should be enforced.
@@ -330,7 +347,6 @@ class ConfigManager {
      * @brief Returns the IP or URL of the masterserver.
      */
     static QUrl advertiserHTTPIP();
-
 
     /**
      * @brief Sets the server's authorization type.

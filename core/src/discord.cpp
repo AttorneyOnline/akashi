@@ -23,6 +23,17 @@ Discord::Discord(QObject* parent) :
     m_nam = new QNetworkAccessManager();
     connect(m_nam, &QNetworkAccessManager::finished,
             this, &Discord::onReplyFinished);
+
+    if (ConfigManager::discordUptimeEnabled()){
+        m_uptimePostTimer = new QTimer;
+        m_uptimeInterval = ConfigManager::discordUptimeTime() * 60000;
+        m_uptimeCounter = 0;
+
+        connect(m_uptimePostTimer, &QTimer::timeout,
+                this, &Discord::onUptimeWebhookRequested);
+        m_uptimePostTimer->start(m_uptimeInterval);
+        onUptimeWebhookRequested();
+    }
 }
 
 void Discord::onModcallWebhookRequested(const QString &f_name, const QString &f_area, const QString &f_reason, const QQueue<QString> &f_buffer)
@@ -42,6 +53,20 @@ void Discord::onBanWebhookRequested(const QString &f_ipid, const QString &f_mode
     m_request.setUrl(QUrl(ConfigManager::discordBanWebhookUrl()));
     QJsonDocument l_json = constructBanJson(f_ipid,f_moderator, f_duration, f_reason, f_banID);
     postJsonWebhook(l_json);
+}
+
+void Discord::onUptimeWebhookRequested()
+{
+    ulong l_expiredTimeSeconds = (m_uptimeCounter * m_uptimeInterval) / 1000;
+    int minutes = (l_expiredTimeSeconds / 60) % 60;
+    int hours = (l_expiredTimeSeconds / (60 * 60)) % 24;
+    int days = (l_expiredTimeSeconds / (60 * 60 * 24)) % 365;
+
+    m_request.setUrl(QUrl(ConfigManager::discordUptimeWebhookUrl()));
+    QString f_timeExpired = QString::number(days) + " days, " + QString::number(hours) + " hours and " + QString::number(minutes) + " minutes.";
+    QJsonDocument l_json = constructUptimeJson(f_timeExpired);
+    postJsonWebhook(l_json);
+    m_uptimeCounter++;
 }
 
 QJsonDocument Discord::constructModcallJson(const QString &f_name, const QString &f_area, const QString &f_reason) const
@@ -69,6 +94,21 @@ QJsonDocument Discord::constructBanJson(const QString &f_ipid, const QString &f_
         {"color", "13312842"},
         {"title", "Ban issued by " + f_moderator},
         {"description", "Client IPID : " + f_ipid + "\nBan ID: " + QString::number(f_banID) + "\nBan reason : " + f_reason +"\nBanned until : " +f_duration}
+    };
+    l_array.append(l_object);
+    l_json["embeds"] = l_array;
+
+    return QJsonDocument(l_json);
+}
+
+QJsonDocument Discord::constructUptimeJson(const QString& f_timeExpired)
+{
+    QJsonObject l_json;
+    QJsonArray l_array;
+    QJsonObject l_object {
+        {"color", "13312842"},
+        {"title", "Your server is still running!"},
+        {"description", "Hello World!\nYour server has been online for " + f_timeExpired}
     };
     l_array.append(l_object);
     l_json["embeds"] = l_array;
