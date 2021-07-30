@@ -163,7 +163,7 @@ bool AreaData::invite(int f_clientId)
 
 bool AreaData::uninvite(int f_clientId)
 {
-    if (m_invited.contains(f_clientId)) {
+    if (!m_invited.contains(f_clientId)) {
         return false;
     }
 
