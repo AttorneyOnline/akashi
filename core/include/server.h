@@ -249,6 +249,9 @@ class Server : public QObject {
      */
     void modcallWebhookRequest(const QString& f_name, const QString& f_area, const QString& f_reason, const QQueue<QString>& f_buffer);
 
+
+    void banWebhookRequest(const QString& f_ipid, const QString& f_moderator, const QString& f_duration, const QString& f_reason, const int& f_banID);
+
   private:
     /**
      * @brief The proxy used for WebSocket connections.
