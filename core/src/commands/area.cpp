@@ -226,6 +226,10 @@ void AOClient::cmdAreaKick(int argc, QStringList argv)
         sendServerMessage("That does not look like a valid ID.");
         return;
     }
+    if (server->areas[current_area]->owners().contains(idx)) {
+        sendServerMessage("You cannot kick another CM!");
+        return;
+    }
     AOClient* client_to_kick = server->getClientByID(idx);
     if (client_to_kick == nullptr) {
         sendServerMessage("No client with that ID found.");
