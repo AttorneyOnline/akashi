@@ -220,6 +220,7 @@ void AOClient::cmdArea(int argc, QStringList argv)
 
 void AOClient::cmdAreaKick(int argc, QStringList argv)
 {
+    AreaData* area = server->areas[current_area];
     bool ok;
     int idx = argv[0].toInt(&ok);
     if (!ok) {
@@ -236,6 +237,8 @@ void AOClient::cmdAreaKick(int argc, QStringList argv)
         return;
     }
     client_to_kick->changeArea(0);
+    area->uninvite(client_to_kick->id);
+
     sendServerMessage("Client " + argv[0] + " kicked back to area 0.");
 }
 
