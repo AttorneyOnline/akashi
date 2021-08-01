@@ -119,17 +119,12 @@ void Server::start()
 void Server::clientConnected()
 {
     QTcpSocket* socket = server->nextPendingConnection();
-    int user_id;
     QList<int> user_ids;
     for (AOClient* client : clients) {
         user_ids.append(client->id);
     }
-    for (user_id = 0; user_id <= player_count; user_id++) {
-        if (user_ids.contains(user_id))
-            continue;
-        else
-            break;
-    }
+    int user_id = -1;
+    do { user_id = QRandomGenerator::global()->bounded(0, ConfigManager::maxPlayers()); } while(user_ids.contains(user_id)); // collision mitigation
     AOClient* client = new AOClient(this, socket, this, user_id);
 
     int multiclient_count = 1;
