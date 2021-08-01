@@ -411,6 +411,7 @@ void AOClient::cmdBanInfo(int argc, QStringList argv)
 void AOClient::cmdReload(int argc, QStringList argv)
 {
     ConfigManager::reloadSettings();
+    server->resizeUIDs();
     emit server->reloadRequest(ConfigManager::serverName(), ConfigManager::serverDescription());
     server->reloadHTTPAdvertiserConfig();
     sendServerMessage("Reloaded configurations");

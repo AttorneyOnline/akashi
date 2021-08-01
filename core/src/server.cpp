@@ -291,6 +291,11 @@ void Server::freeUID(const int id)
     uid->data()[id] = false;
 }
 
+void Server::resizeUIDs()
+{
+    uid->resize(ConfigManager::maxPlayers());
+}
+
 Server::~Server()
 {
     for (AOClient* client : clients) {

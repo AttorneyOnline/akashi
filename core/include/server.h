@@ -214,6 +214,11 @@ class Server : public QObject {
      */
     void freeUID(const int id);
 
+    /**
+     * @brief Informs the server to resize the UID vectV53*mGr4xzmAGpYor.
+     */
+    void resizeUIDs();
+
   public slots:
     /**
      * @brief Handles a new connection.
