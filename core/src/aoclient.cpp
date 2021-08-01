@@ -66,6 +66,8 @@ void AOClient::clientDisconnected()
     if (l_updateLocks)
         arup(ARUPType::LOCKED, true);
     arup(ARUPType::CM, true);
+
+    server->freeUID(id);
 }
 
 void AOClient::handlePacket(AOPacket packet)

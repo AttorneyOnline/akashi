@@ -207,6 +207,13 @@ class Server : public QObject {
      */
     bool can_send_ic_messages = true;
 
+    /**
+     * @brief Frees the given UID, allowing it to be taken by new clients.
+     *
+     * @param id The UID to free.
+     */
+    void freeUID(const int id);
+
   public slots:
     /**
      * @brief Handles a new connection.
@@ -286,6 +293,11 @@ class Server : public QObject {
      * @brief The port through which the server will accept WebSocket connections.
      */
     int ws_port;
+
+    /**
+     * @brief A vector containing possible UIDs and whether or not they have been taken.
+     */
+    QVector<bool>* uid;
 };
 
 #endif // SERVER_H

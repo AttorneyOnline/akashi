@@ -114,22 +114,35 @@ void Server::start()
         areas.insert(i, new AreaData(area_name, i));
     }
     connect(&next_message_timer, SIGNAL(timeout()), this, SLOT(allowMessage()));
+
+    uid = new QVector<bool>(ConfigManager::maxPlayers(), false);
 }
 
 void Server::clientConnected()
 {
     QTcpSocket* socket = server->nextPendingConnection();
-    int user_id;
-    QList<int> user_ids;
-    for (AOClient* client : clients) {
-        user_ids.append(client->id);
+    int user_id = uid->indexOf(false);
+
+    if (user_id == -1) {
+        qWarning("Player limit exceeded!");
+        socket->flush();
+        socket->close();
+        return;
     }
-    for (user_id = 0; user_id <= player_count; user_id++) {
-        if (user_ids.contains(user_id))
-            continue;
-        else
-            break;
+
+    // This should be impossible. If it does somehow happen, raise a warning and grab a new UID.
+    else if (uid->data()[user_id] == true) {
+        qWarning("A client attempted to take a taken UID!");
+        user_id = uid->indexOf(false);
+        if (user_id == -1 || uid->data()[user_id == true]) {
+            qWarning("An error occured when assigning UID. Client could not find a valid ID.");
+            socket->flush();
+            socket->close();
+            return;
+        }
     }
+    uid->data()[user_id] = true;
+
     AOClient* client = new AOClient(this, socket, this, user_id);
 
     int multiclient_count = 1;
@@ -271,6 +284,11 @@ void Server::reloadHTTPAdvertiserConfig()
 void Server::allowMessage()
 {
     can_send_ic_messages = true;
+}
+
+void Server::freeUID(const int id)
+{
+    uid->data()[id] = false;
 }
 
 Server::~Server()
