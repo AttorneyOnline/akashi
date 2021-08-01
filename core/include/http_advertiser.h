@@ -32,6 +32,14 @@ struct advertiser_config {
     bool debug;
 };
 
+struct update_advertiser_config {
+    QString name;
+    QString description;
+    int players;
+    QUrl masterserver;
+    bool debug;
+};
+
 /**
  * @brief Represents the advertiser of the server. Sends current server information to masterserver.
  */
@@ -68,6 +76,12 @@ public slots:
      * @param config Configuration struct for the advertiser. Always includes ALL settings.
      */
     void setAdvertiserSettings(advertiser_config config);
+
+    /**
+     * @brief Sets the updated values being advertiser to masterserver.
+     * @param config Configuration struct for the advertiser. Only includes partial information, as ports can't be changed.
+     */
+    void updateAdvertiserSettings(update_advertiser_config config);
 
 private:
 
