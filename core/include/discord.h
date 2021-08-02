@@ -72,6 +72,18 @@ public:
     QJsonDocument constructModcallJson(const QString& f_name, const QString& f_area, const QString& f_reason) const;
 
     /**
+     * @brief Constructs a new JSON document for bans.
+     *
+     * @param f_ipid The IPID of the client.
+     * @param f_moderator The name of the moderator banning.
+     * @param f_duration The date the ban expires.
+     * @param f_reason The reason of the ban.
+     *
+     * @return A JSON document for the ban.
+     */
+    QJsonDocument constructBanJson(const QString& f_ipid, const QString& f_moderator, const QString& f_duration, const QString& f_reason, const int& f_banID);
+
+    /**
      * @brief Constructs a new QHttpMultiPart document for log files.
      *
      * @param f_buffer The area's log buffer.
@@ -90,6 +102,16 @@ public slots:
      * @param f_buffer The area's log buffer.
      */
     void onModcallWebhookRequested(const QString& f_name, const QString& f_area, const QString& f_reason, const QQueue<QString>& f_buffer);
+
+    /**
+     * @brief Handles a ban webhook request.
+     *
+     * @param f_ipid The IPID of the client.
+     * @param f_moderator The name of the moderator banning.
+     * @param f_duration The date the ban expires.
+     * @param f_reason The reason of the ban.
+     */
+    void onBanWebhookRequested(const QString& f_ipid, const QString& f_moderator, const QString& f_duration, const QString& f_reason, const int& f_banID);
 
 private:
     /**

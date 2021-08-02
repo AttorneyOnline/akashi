@@ -219,6 +219,13 @@ class ConfigManager {
     static bool discordWebhookSendFile();
 
     /**
+     * @brief Returns true if the discord ban webhook is enabled.
+     *
+     * @return See short description.
+     */
+    static bool discordBanWebhookEnabled();
+
+    /**
      * @brief Returns true if password requirements should be enforced.
      *
      * @return See short description.

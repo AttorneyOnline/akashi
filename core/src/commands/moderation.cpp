@@ -72,9 +72,13 @@ void AOClient::cmdBan(int argc, QStringList argv)
         else {
             ban_duration = "The heat death of the universe.";
         }
-        client->sendPacket("KB", {ban.reason + "\nID: " + QString::number(server->db_manager->getBanID(ban.ip)) + "\nUntil: " + ban_duration});
+        int ban_id = server->db_manager->getBanID(ban.ip);
+        client->sendPacket("KB", {ban.reason + "\nID: " + QString::number(ban_id) + "\nUntil: " + ban_duration});
         client->socket->close();
         kick_counter++;
+
+        if (ConfigManager::discordBanWebhookEnabled())
+            emit server->banWebhookRequest(ban.ipid, ban.moderator, ban_duration, ban.reason, ban_id);
     }
 
     if (kick_counter > 1)

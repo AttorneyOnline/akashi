@@ -56,6 +56,8 @@ void Server::start()
         discord = new Discord(this);
         connect(this, &Server::modcallWebhookRequest,
                 discord, &Discord::onModcallWebhookRequested);
+        connect(this, &Server::banWebhookRequest,
+                discord, &Discord::onBanWebhookRequested);
     }
 
     if (ConfigManager::advertiseHTTPServer()) {
