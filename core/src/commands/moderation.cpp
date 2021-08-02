@@ -412,7 +412,7 @@ void AOClient::cmdReload(int argc, QStringList argv)
 {
     ConfigManager::reloadSettings();
     emit server->reloadRequest(ConfigManager::serverName(), ConfigManager::serverDescription());
-    server->reloadHTTPAdvertiserConfig();
+    server->updateHTTPAdvertiserConfig();
     sendServerMessage("Reloaded configurations");
 }
 

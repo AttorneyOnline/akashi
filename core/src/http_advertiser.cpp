@@ -79,4 +79,13 @@ void HTTPAdvertiser::setAdvertiserSettings(advertiser_config config)
     msAdvertiseServer();
 }
 
+void HTTPAdvertiser::updateAdvertiserSettings(update_advertiser_config config)
+{
+    m_name = config.name;
+    m_description = config.description;
+    m_players = config.players;
+    m_masterserver = config.masterserver;
+    m_debug = config.debug;
+}
+
 
