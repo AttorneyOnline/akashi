@@ -282,7 +282,7 @@ void AreaData::log(const QString &f_clientName_r, const QString &f_clientIpid_r,
     auto l_header = f_packet_r.header;
 
     if (l_header == "MS") {
-        m_logger->logIC(f_clientName_r, f_clientIpid_r, f_packet_r.contents.at(4));
+        m_logger->logIC(f_clientName_r, f_clientIpid_r, f_packet_r.contents.at(4), f_packet_r.contents.at(15));
     } else if (l_header == "CT") {
         m_logger->logOOC(f_clientName_r, f_clientIpid_r, f_packet_r.contents.at(1));
     } else if (l_header == "ZZ") {

@@ -20,9 +20,9 @@
 
 #include "include/logger.h"
 
-void Logger::logIC(const QString& f_charName_r, const QString& f_ipid_r, const QString& f_message_r)
+void Logger::logIC(const QString& f_charName_r, const QString& f_ipid_r, const QString& f_message_r, const QString& f_showname_r)
 {
-    addEntry(f_charName_r, f_ipid_r, "IC", f_message_r);
+    addEntry((f_charName_r + " (" + f_showname_r + ") "), f_ipid_r, "IC", f_message_r);
 }
 
 void Logger::logOOC(const QString& f_charName_r, const QString& f_ipid_r, const QString& f_message_r)
