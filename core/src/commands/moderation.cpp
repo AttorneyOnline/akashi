@@ -514,3 +514,11 @@ void AOClient::cmdUpdateBan(int argc, QStringList argv)
     }
     sendServerMessage("Ban updated.");
 }
+
+void AOClient::cmdNotice(int argc, QStringList argv)
+{
+    QString message = "A moderator sent this notice:\n\n" + argv.join(" ");
+    sendServerMessageArea(message);
+    server->broadcast(AOPacket("BB", {message}), current_area);
+
+}
