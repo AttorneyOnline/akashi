@@ -520,5 +520,10 @@ void AOClient::cmdNotice(int argc, QStringList argv)
     QString message = "A moderator sent this notice:\n\n" + argv.join(" ");
     sendServerMessageArea(message);
     server->broadcast(AOPacket("BB", {message}), current_area);
-
+}
+void AOClient::cmdNoticeGlobal(int argc, QStringList argv)
+{
+    QString message = "A moderator sent this server-wide notice:\n\n" + argv.join(" ");
+    sendServerBroadcast(message);
+    server->broadcast(AOPacket("BB", {message}));
 }
