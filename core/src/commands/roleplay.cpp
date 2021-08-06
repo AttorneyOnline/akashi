@@ -28,7 +28,7 @@ void AOClient::cmdFlip(int argc, QStringList argv)
     QString sender_name = ooc_name;
     QStringList faces = {"heads","tails"};
     QString face = faces[AOClient::genRand(0,1)];
-    sendServerMessage(sender_name + " flipped a coin and got " + face + ".");
+    sendServerMessageArea(sender_name + " flipped a coin and got " + face + ".");
 }
 
 void AOClient::cmdRoll(int argc, QStringList argv)

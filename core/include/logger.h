@@ -52,7 +52,7 @@ public slots:
      * @param f_ipid_r The IPID of the aforementioned client.
      * @param f_message_r The text of the IC message.
      */
-    void logIC(const QString& f_charName_r, const QString& f_ipid_r, const QString& f_message_r);
+    void logIC(const QString& f_charName_r, const QString& f_ipid_r, const QString& f_message_r, const QString& f_showname);
 
     /**
      * @brief Logs an OOC message.

@@ -141,7 +141,12 @@ class Server : public QObject {
     /**
      * @brief Creates an HTTP advertiser config struct and emits it using server::reloadHTTPRequest.
      */
-    void reloadHTTPAdvertiserConfig();
+    void setHTTPAdvertiserConfig();
+
+    /**
+     * @brief Updates the modern advertiser configuration on configuration reload.
+     */
+    void updateHTTPAdvertiserConfig();
 
     /**
      * @brief The collection of all currently connected clients.
@@ -234,10 +239,16 @@ class Server : public QObject {
     void reloadRequest(QString p_name, QString p_desc);
 
     /**
-     * @brief Sends all necessary info for the new advertiser.
+     * @brief Sends all necessary info for the modern advertiser.
      * @param Struct that contains all configuration for the advertiser
      */
-    void reloadHTTPRequest(struct advertiser_config config);
+    void setHTTPConfiguration(struct advertiser_config config);
+
+    /**
+     * @brief Sends a partial update to the modern advertiser.
+     * @param Struct that contains partial information about the server to update the advertised information.
+     */
+    void updateHTTPConfiguration(struct update_advertiser_config config);
 
     /**
      * @brief Sends a modcall webhook request, emitted by AOClient::pktModcall.
@@ -248,6 +259,9 @@ class Server : public QObject {
      * @param f_buffer The area's log buffer.
      */
     void modcallWebhookRequest(const QString& f_name, const QString& f_area, const QString& f_reason, const QQueue<QString>& f_buffer);
+
+
+    void banWebhookRequest(const QString& f_ipid, const QString& f_moderator, const QString& f_duration, const QString& f_reason, const int& f_banID);
 
   private:
     /**

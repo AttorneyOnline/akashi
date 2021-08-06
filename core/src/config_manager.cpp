@@ -285,6 +285,11 @@ bool ConfigManager::discordWebhookSendFile()
     return m_settings->value("Discord/webhook_sendfile", false).toBool();
 }
 
+bool ConfigManager::discordBanWebhookEnabled()
+{
+    return m_settings->value("Discord/webhook_ban_enabled", false).toBool();
+}
+
 bool ConfigManager::passwordRequirements()
 {
     return m_settings->value("Password/password_requirements", true).toBool();

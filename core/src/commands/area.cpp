@@ -243,10 +243,16 @@ void AOClient::cmdAreaKick(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
 
+    AreaData* area = server->areas[current_area];
+
     bool ok;
     int idx = argv[0].toInt(&ok);
     if (!ok) {
         sendServerMessage("That does not look like a valid ID.");
+        return;
+    }
+    if (server->areas[current_area]->owners().contains(idx)) {
+        sendServerMessage("You cannot kick another CM!");
         return;
     }
     AOClient* client_to_kick = server->getClientByID(idx);
@@ -254,7 +260,13 @@ void AOClient::cmdAreaKick(int argc, QStringList argv)
         sendServerMessage("No client with that ID found.");
         return;
     }
+    else if (client_to_kick->current_area != current_area) {
+        sendServerMessage("That client is not in this area.");
+        return;
+    }
     client_to_kick->changeArea(0);
+    area->uninvite(client_to_kick->id);
+
     sendServerMessage("Client " + argv[0] + " kicked back to area 0.");
 }
 
@@ -264,7 +276,7 @@ void AOClient::cmdSetBackground(int argc, QStringList argv)
 
     AreaData* area = server->areas[current_area];
     if (authenticated || !area->bgLocked()) {
-        if (server->backgrounds.contains(argv[0]) || area->ignoreBgList() == true) {
+        if (server->backgrounds.contains(argv[0], Qt::CaseInsensitive) || area->ignoreBgList() == true) {
             area->background() = argv[0];
             server->broadcast(AOPacket("BN", {argv[0]}), current_area);
             sendServerMessageArea(current_char + " changed the background to " + argv[0]);

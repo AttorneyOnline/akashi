@@ -56,6 +56,8 @@ void Server::start()
         discord = new Discord(this);
         connect(this, &Server::modcallWebhookRequest,
                 discord, &Discord::onModcallWebhookRequested);
+        connect(this, &Server::banWebhookRequest,
+                discord, &Discord::onBanWebhookRequested);
     }
 
     if (ConfigManager::advertiseHTTPServer()) {
@@ -64,9 +66,11 @@ void Server::start()
 
         connect(httpAdvertiserTimer, &QTimer::timeout,
                 httpAdvertiser, &HTTPAdvertiser::msAdvertiseServer);
-        connect(this, &Server::reloadHTTPRequest,
+        connect(this, &Server::setHTTPConfiguration,
                 httpAdvertiser, &HTTPAdvertiser::setAdvertiserSettings);
-        reloadHTTPAdvertiserConfig();
+        connect(this, &Server::updateHTTPConfiguration,
+                httpAdvertiser, &HTTPAdvertiser::updateAdvertiserSettings);
+        setHTTPAdvertiserConfig();
         httpAdvertiserTimer->start(300000);
     }
 
@@ -255,7 +259,7 @@ int Server::getCharID(QString char_name)
     return -1; // character does not exist
 }
 
-void Server::reloadHTTPAdvertiserConfig()
+void Server::setHTTPAdvertiserConfig()
 {
     advertiser_config config;
     config.name = ConfigManager::serverName();
@@ -265,7 +269,19 @@ void Server::reloadHTTPAdvertiserConfig()
     config.players = ConfigManager::maxPlayers();
     config.masterserver = ConfigManager::advertiserHTTPIP();
     config.debug = ConfigManager::advertiserHTTPDebug();
-    emit reloadHTTPRequest(config);
+    emit setHTTPConfiguration(config);
+}
+
+void Server::updateHTTPAdvertiserConfig()
+{
+    update_advertiser_config config;
+    config.name = ConfigManager::serverName();
+    config.description = ConfigManager::serverDescription();
+    config.players = ConfigManager::maxPlayers();
+    config.masterserver = ConfigManager::advertiserHTTPIP();
+    config.debug = ConfigManager::advertiserHTTPDebug();
+    emit updateHTTPConfiguration(config);
+
 }
 
 void Server::allowMessage()
