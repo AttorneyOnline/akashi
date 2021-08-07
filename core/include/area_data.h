@@ -467,6 +467,13 @@ class AreaData : public QObject {
     QString background() const;
 
     /**
+     * @brief Sets the background of the area.
+     *
+     * @see #AOClient::cmdSetBackground and #m_background
+     */
+    void setBackground(const QString f_background);
+
+    /**
      * @brief Returns if custom shownames are allowed in the area.
      *
      * @return See short description.
