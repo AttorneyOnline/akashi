@@ -30,6 +30,17 @@
 #include <QSqlError>
 #include <QSqlQuery>
 
+#if defined(_WIN32)
+  #include <io.h>
+  #define access(pathname, mode) _access(pathname, mode)
+
+#elif __unix__
+  #include <unistd.h>
+
+#else
+  #define access(pathname, mode) 1
+
+#endif
 /**
  * @brief A class used to handle database interaction.
  *
