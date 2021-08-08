@@ -29,18 +29,8 @@
 #include <QSqlDriver>
 #include <QSqlError>
 #include <QSqlQuery>
+#include <QFileInfo>
 
-#if defined(_WIN32)
-  #include <io.h>
-  #define access(pathname, mode) _access(pathname, mode)
-
-#elif defined(__unix__)
-  #include <unistd.h>
-
-#else
-  #define access(pathname, mode) 1
-
-#endif
 /**
  * @brief A class used to handle database interaction.
  *

@@ -20,8 +20,12 @@
 DBManager::DBManager() :
     DRIVER("QSQLITE")
 {
-    if(!access("config/akashi.db", R_OK | W_OK))
+    QFileInfo *db_info = new QFileInfo;
+    *db_info = QFileInfo("config/akashi.db");
+    if(!(db_info->isReadable()) || !(db_info->isWritable()))
         qCritical() << "Database Error: Missing permissions. Check if \"config/akashi.db\" is writable.\n";
+    delete db_info;
+    
 
     db = QSqlDatabase::addDatabase(DRIVER);
     db.setDatabaseName("config/akashi.db");
