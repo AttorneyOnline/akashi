@@ -34,7 +34,7 @@
   #include <io.h>
   #define access(pathname, mode) _access(pathname, mode)
 
-#elif __unix__
+#elif defined(__unix__)
   #include <unistd.h>
 
 #else
