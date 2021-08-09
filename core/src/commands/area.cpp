@@ -251,7 +251,7 @@ void AOClient::cmdSetBackground(int argc, QStringList argv)
     AreaData* area = server->areas[current_area];
     if (authenticated || !area->bgLocked()) {
         if (server->backgrounds.contains(argv[0], Qt::CaseInsensitive) || area->ignoreBgList() == true) {
-            area->background() = argv[0];
+            area->setBackground(argv[0]);
             server->broadcast(AOPacket("BN", {argv[0]}), current_area);
             sendServerMessageArea(current_char + " changed the background to " + argv[0]);
         }

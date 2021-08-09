@@ -528,6 +528,11 @@ QString AreaData::background() const
     return m_background;
 }
 
+void AreaData::setBackground(const QString f_background)
+{
+    m_background = f_background;
+}
+
 bool AreaData::ignoreBgList()
 {
     return m_ignoreBgList;
