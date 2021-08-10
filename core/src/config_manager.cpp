@@ -270,9 +270,9 @@ bool ConfigManager::discordWebhookEnabled()
     return m_settings->value("Discord/webhook_enabled", false).toBool();
 }
 
-QString ConfigManager::discordWebhookUrl()
+QString ConfigManager::discordModcallWebhookUrl()
 {
-    return m_settings->value("Discord/webhook_url", "").toString();
+    return m_settings->value("Discord/webhook_modcall_url", "").toString();
 }
 
 QString ConfigManager::discordWebhookContent()
@@ -280,14 +280,19 @@ QString ConfigManager::discordWebhookContent()
     return m_settings->value("Discord/webhook_content", "").toString();
 }
 
-bool ConfigManager::discordWebhookSendFile()
+bool ConfigManager::discordModcallWebhookSendFile()
 {
-    return m_settings->value("Discord/webhook_sendfile", false).toBool();
+    return m_settings->value("Discord/webhook_modcall_sendfile", false).toBool();
 }
 
 bool ConfigManager::discordBanWebhookEnabled()
 {
     return m_settings->value("Discord/webhook_ban_enabled", false).toBool();
+}
+
+QString ConfigManager::discordBanWebhookUrl()
+{
+    return m_settings->value("Discord/webhook_ban_url", "").toString();
 }
 
 bool ConfigManager::passwordRequirements()

@@ -20,20 +20,18 @@
 Discord::Discord(QObject* parent) :
     QObject(parent)
 {
-    if (!QUrl(ConfigManager::discordWebhookUrl()).isValid())
-        qWarning("Invalid webhook URL!");
     m_nam = new QNetworkAccessManager();
     connect(m_nam, &QNetworkAccessManager::finished,
             this, &Discord::onReplyFinished);
-    m_request.setUrl(QUrl(ConfigManager::discordWebhookUrl()));
 }
 
 void Discord::onModcallWebhookRequested(const QString &f_name, const QString &f_area, const QString &f_reason, const QQueue<QString> &f_buffer)
 {
+    m_request.setUrl(QUrl(ConfigManager::discordModcallWebhookUrl()));
     QJsonDocument l_json = constructModcallJson(f_name, f_area, f_reason);
     postJsonWebhook(l_json);
 
-    if (ConfigManager::discordWebhookSendFile()) {
+    if (ConfigManager::discordModcallWebhookSendFile()) {
         QHttpMultiPart *l_multipart = constructLogMultipart(f_buffer);
         postMultipartWebhook(*l_multipart);
     }
@@ -41,6 +39,7 @@ void Discord::onModcallWebhookRequested(const QString &f_name, const QString &f_
 
 void Discord::onBanWebhookRequested(const QString &f_ipid, const QString &f_moderator, const QString &f_duration, const QString &f_reason, const int &f_banID)
 {
+    m_request.setUrl(QUrl(ConfigManager::discordBanWebhookUrl()));
     QJsonDocument l_json = constructBanJson(f_ipid,f_moderator, f_duration, f_reason, f_banID);
     postJsonWebhook(l_json);
 }
