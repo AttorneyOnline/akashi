@@ -109,7 +109,9 @@ void AOClient::cmdInvite(int argc, QStringList argv)
         sendServerMessage("That does not look like a valid ID.");
         return;
     }
-    else if (server->getClientByID(invited_id) == nullptr) {
+
+    AOClient* target_client = server->getClientByID(invited_id);
+    if (target_client == nullptr) {
         sendServerMessage("No client with that ID found.");
         return;
     }
@@ -118,6 +120,7 @@ void AOClient::cmdInvite(int argc, QStringList argv)
         return;
     }
     sendServerMessage("You invited ID " + argv[0]);
+    target_client->sendServerMessage("You were invited and given access to " + area->name());
 }
 
 void AOClient::cmdUnInvite(int argc, QStringList argv)
