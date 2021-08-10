@@ -29,6 +29,7 @@
 #include <QSqlDriver>
 #include <QSqlError>
 #include <QSqlQuery>
+#include <QFileInfo>
 
 /**
  * @brief A class used to handle database interaction.
