@@ -141,6 +141,7 @@ void AOClient::cmdPM(int arc, QStringList argv)
     }
     QString message = argv.join(" "); //...which means it will not end up as part of the message
     target_client->sendServerMessage("Message from " + ooc_name + " (" + QString::number(id) + "): " + message);
+    sendServerMessage("PM sent to " + QString::number(target_id) +". Message: " + message);
 }
 
 void AOClient::cmdAnnounce(int argc, QStringList argv)
