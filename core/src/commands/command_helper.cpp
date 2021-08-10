@@ -212,7 +212,8 @@ bool AOClient::checkPasswordRequirements(QString username, QString password)
 void AOClient::sendNotice(QString notice, bool global)
 {
     QString message = "A moderator sent this ";
-    message += (global ? "server-wide " : "");
+    if (global)
+        message += "server-wide ";
     message += "notice:\n\n" + notice;
     sendServerMessageArea(message);
     AOPacket packet("BB", {message});
