@@ -1929,6 +1929,16 @@ class AOClient : public QObject {
      * @return True if the password meets the requirements, otherwise false.
      */
     bool checkPasswordRequirements(QString username, QString password);
+
+    /**
+     * @brief Sends a server notice.
+     *
+     * @param notice The notice to send out.
+     *
+     * @param global Whether or not the notice should be server-wide.
+     */
+    void sendNotice(QString notice, bool global = false);
+
     
     /**
      * @brief Checks if a testimony contains '<' or '>'.

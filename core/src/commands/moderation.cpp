@@ -517,13 +517,9 @@ void AOClient::cmdUpdateBan(int argc, QStringList argv)
 
 void AOClient::cmdNotice(int argc, QStringList argv)
 {
-    QString message = "A moderator sent this notice:\n\n" + argv.join(" ");
-    sendServerMessageArea(message);
-    server->broadcast(AOPacket("BB", {message}), current_area);
+    sendNotice(argv.join(" "));
 }
 void AOClient::cmdNoticeGlobal(int argc, QStringList argv)
 {
-    QString message = "A moderator sent this server-wide notice:\n\n" + argv.join(" ");
-    sendServerBroadcast(message);
-    server->broadcast(AOPacket("BB", {message}));
+    sendNotice(argv.join(" "), true);
 }
