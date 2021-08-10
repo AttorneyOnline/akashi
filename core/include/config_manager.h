@@ -202,7 +202,7 @@ class ConfigManager {
      *
      * @return See short description.
      */
-    static QString discordWebhookUrl();
+    static QString discordModcallWebhookUrl();
 
     /**
      * @brief Returns the discord webhook content.
@@ -216,7 +216,7 @@ class ConfigManager {
      *
      * @return See short description.
      */
-    static bool discordWebhookSendFile();
+    static bool discordModcallWebhookSendFile();
 
     /**
      * @brief Returns true if the discord ban webhook is enabled.
@@ -224,6 +224,13 @@ class ConfigManager {
      * @return See short description.
      */
     static bool discordBanWebhookEnabled();
+
+    /**
+     * @brief Returns the Discord Ban Webhook URL.
+     *
+     * @return See short description.
+     */
+    static QString discordBanWebhookUrl();
 
     /**
      * @brief Returns true if password requirements should be enforced.
