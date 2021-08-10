@@ -231,6 +231,7 @@ class AOClient : public QObject {
         {"FORCE_CHARSELECT",1ULL << 13},
         {"BYPASS_LOCKS",    1ULL << 14},
         {"IGNORE_BGLIST",   1ULL << 15},
+        {"SEND_NOTICE",     1ULL << 16},
         {"SUPER",          ~0ULL      }
     };
 
@@ -1223,6 +1224,30 @@ class AOClient : public QObject {
      */
     void cmdUpdateBan(int argc, QStringList argv);
 
+    /**
+     * @brief Pops up a notice for all clients in the targeted area with a given message.
+     *
+     * @details The only argument is the message to send. This command only works on clients with support for the BB#%
+     *
+     * generic message box packet (i.e. Attorney Online versions 2.9 and up). To support earlier versions (as well as to make the message
+     *
+     * re-readable if a user clicks out of it too fast) the message will also be sent in OOC to all affected clients.
+     *
+     * @iscommand
+     */
+    void cmdNotice(int argc, QStringList argv);
+
+    /**
+     * @brief Pops up a notice for all clients in the server with a given message.
+     *
+     * @details Unlike cmdNotice, this command will send its notice to every client connected to the server.
+     *
+     * @see #cmdNotice
+     *
+     * @iscommand
+     */
+    void cmdNoticeGlobal(int argc, QStringList argv);
+
     ///@}
 
     /**
@@ -1904,6 +1929,16 @@ class AOClient : public QObject {
      * @return True if the password meets the requirements, otherwise false.
      */
     bool checkPasswordRequirements(QString username, QString password);
+
+    /**
+     * @brief Sends a server notice.
+     *
+     * @param notice The notice to send out.
+     *
+     * @param global Whether or not the notice should be server-wide.
+     */
+    void sendNotice(QString notice, bool global = false);
+
     
     /**
      * @brief Checks if a testimony contains '<' or '>'.
@@ -2074,7 +2109,9 @@ class AOClient : public QObject {
         {"update_ban",         {ACLFlags.value("BAN"),          3, &AOClient::cmdUpdateBan}},
         {"changepass",         {ACLFlags.value("NONE"),         1, &AOClient::cmdChangePassword}},
         {"ignorebglist",       {ACLFlags.value("IGNORE_BGLIST"),0, &AOClient::cmdIgnoreBgList}},
-        {"ignore_bglist",      {ACLFlags.value("IGNORE_BGLIST"),0, &AOClient::cmdIgnoreBgList}}
+        {"ignore_bglist",      {ACLFlags.value("IGNORE_BGLIST"),0, &AOClient::cmdIgnoreBgList}},
+        {"notice",             {ACLFlags.value("SEND_NOTICE"),  1, &AOClient::cmdNotice}},
+        {"noticeg",            {ACLFlags.value("SEND_NOTICE"),  1, &AOClient::cmdNoticeGlobal}},
     };
 
     /**
