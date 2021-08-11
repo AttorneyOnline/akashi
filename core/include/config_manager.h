@@ -191,11 +191,18 @@ class ConfigManager {
     static int diceMaxDice();
 
     /**
-     * @brief Returns true if the discord webhook is enabled.
+     * @brief Returns true if the discord webhook integration is enabled.
      *
      * @return See short description.
      */
     static bool discordWebhookEnabled();
+
+    /**
+     * @brief Returns true if the discord modcall webhook is enabled.
+     *
+     * @return See short description.
+     */
+    static bool discordModcallWebhookEnabled();
 
     /**
      * @brief Returns the discord webhook URL.
@@ -405,6 +412,11 @@ private:
      * @brief Stores all server configuration values.
      */
     static QSettings* m_settings;
+
+    /**
+     * @brief Stores all discord webhook configuration values.
+     */
+    static QSettings* m_discord;
 
     /**
      * @brief Returns a stringlist with the contents of a .txt file from config/text/.
