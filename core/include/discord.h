@@ -82,6 +82,13 @@ public:
      * @return A JSON document for the ban.
      */
     QJsonDocument constructBanJson(const QString& f_ipid, const QString& f_moderator, const QString& f_duration, const QString& f_reason, const int& f_banID);
+    /**
+     * @brief Constructs a new JSON document for the server alive message.
+     * @param f_timeExpired formatted uptime as a string.
+     *
+     * @return A JSON document for the alive notification.
+     */
+    QJsonDocument constructUptimeJson(const QString& f_timeExpired);
 
     /**
      * @brief Constructs a new QHttpMultiPart document for log files.
@@ -113,6 +120,11 @@ public slots:
      */
     void onBanWebhookRequested(const QString& f_ipid, const QString& f_moderator, const QString& f_duration, const QString& f_reason, const int& f_banID);
 
+    /**
+     * @brief Handles a uptime webhook request.
+     */
+    void onUptimeWebhookRequested();
+
 private:
     /**
      * @brief The QNetworkAccessManager for webhooks.
@@ -123,6 +135,22 @@ private:
      * @brief The QNetworkRequest for webhooks.
      */
     QNetworkRequest m_request;
+
+    /**
+     * @brief Timer to post a message that the server is still alive.
+     */
+    QTimer* m_uptimePostTimer;
+
+    /**
+     * @brief Stores how long the interval between postings is.
+     **/
+    int m_uptimeInterval;
+
+    /**
+     * @brief Proof that Salanto does not know what he is doing.
+     * @details Counts how often the server alive counter has been posted.
+     */
+    int m_uptimeCounter;
 
 private slots:
     /**

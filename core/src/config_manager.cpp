@@ -295,6 +295,27 @@ QString ConfigManager::discordBanWebhookUrl()
     return m_settings->value("Discord/webhook_ban_url", "").toString();
 }
 
+bool ConfigManager::discordUptimeEnabled()
+{
+    return m_settings->value("Discord/webhook_uptime_enabled","false").toBool();
+}
+
+int ConfigManager::discordUptimeTime()
+{
+    bool ok;
+    int l_aliveTime = m_settings->value("Discord/webhook_uptime_time","60").toInt(&ok);
+    if (!ok) {
+        qWarning("alive_time is not an int");
+        l_aliveTime = 60;
+    }
+    return l_aliveTime;
+}
+
+QString ConfigManager::discordUptimeWebhookUrl()
+{
+    return m_settings->value("Discord/webhook_uptime_url", "").toString();
+}
+
 bool ConfigManager::passwordRequirements()
 {
     return m_settings->value("Password/password_requirements", true).toBool();
