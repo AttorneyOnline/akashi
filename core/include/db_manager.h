@@ -20,11 +20,9 @@
 
 #define DB_VERSION 1
 
-#include <QDebug>
 #include <QDateTime>
 #include <QHostAddress>
 #include <QMessageAuthenticationCode>
-#include <QString>
 #include <QSqlDatabase>
 #include <QSqlDriver>
 #include <QSqlError>
@@ -41,7 +39,8 @@
  * differently than the average user.
  * This comes in two forms, when the user's client is banned, and when the user is a moderator.
  */
-class DBManager{
+class DBManager : public QObject {
+    Q_OBJECT
 public:
     /**
      * @brief Constructor for the DBManager class.
