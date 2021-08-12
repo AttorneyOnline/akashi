@@ -20,6 +20,7 @@
 QSettings* ConfigManager::m_settings = new QSettings("config/config.ini", QSettings::IniFormat);
 QSettings* ConfigManager::m_discord = new QSettings("config/discord.ini", QSettings::IniFormat);
 ConfigManager::CommandSettings* ConfigManager::m_commands = new CommandSettings();
+QElapsedTimer* ConfigManager::m_uptimeTimer = new QElapsedTimer;
 
 bool ConfigManager::verifyServerConfig()
 {
@@ -85,8 +86,7 @@ bool ConfigManager::verifyServerConfig()
     m_commands->reprimands = (loadConfigFile("reprimands"));
     m_commands->gimps = (loadConfigFile("gimp"));
 
-    uptimeTimer = new QElapsedTimer;
-    uptimeTimer->start();
+    m_uptimeTimer->start();
 
     return true;
 }
@@ -426,7 +426,7 @@ QUrl ConfigManager::advertiserHTTPIP()
 
 qint64 ConfigManager::uptime()
 {
-    return uptimeTimer->elapsed();
+    return m_uptimeTimer->elapsed();
 }
 
 void ConfigManager::setMotd(const QString f_motd)

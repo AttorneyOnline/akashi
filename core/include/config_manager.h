@@ -425,16 +425,16 @@ private:
     static QSettings* m_discord;
 
     /**
+     * @brief Pointer to QElapsedTimer to track the uptime of the server.
+     */
+    static QElapsedTimer* m_uptimeTimer;
+
+    /**
      * @brief Returns a stringlist with the contents of a .txt file from config/text/.
      *
      * @param Name of the file to load.
      */
     static QStringList loadConfigFile(const QString filename);
-
-    /**
-     * @brief Pointer to QElapsedTimer to track the uptime of the server.
-     */
-    static QElapsedTimer* uptimeTimer;
 };
 
 
