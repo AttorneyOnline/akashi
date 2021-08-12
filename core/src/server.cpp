@@ -287,7 +287,7 @@ void Server::handleDiscordIntegration()
 {
     if (discord != nullptr) {
         discord->deleteLater();
-        return;
+        discord = nullptr;
     }
 
     if (ConfigManager::discordWebhookEnabled()) {

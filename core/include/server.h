@@ -293,7 +293,7 @@ class Server : public QObject {
     /**
      * @brief Handles Discord webhooks.
      */
-    Discord* discord;
+    Discord* discord = nullptr;
 
     /**
      * @brief Handles HTTP server advertising.

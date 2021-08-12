@@ -141,17 +141,6 @@ private:
      */
     QTimer* m_uptimePostTimer;
 
-    /**
-     * @brief Stores how long the interval between postings is.
-     **/
-    int m_uptimeInterval;
-
-    /**
-     * @brief Proof that Salanto does not know what he is doing.
-     * @details Counts how often the server alive counter has been posted.
-     */
-    int m_uptimeCounter;
-
 private slots:
     /**
      * @brief Handles a network reply from a webhook POST request.
