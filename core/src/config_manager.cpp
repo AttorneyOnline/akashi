@@ -85,6 +85,9 @@ bool ConfigManager::verifyServerConfig()
     m_commands->reprimands = (loadConfigFile("reprimands"));
     m_commands->gimps = (loadConfigFile("gimp"));
 
+    uptimeTimer = new QElapsedTimer;
+    uptimeTimer->start();
+
     return true;
 }
 
@@ -419,6 +422,11 @@ bool ConfigManager::advertiserHTTPDebug()
 QUrl ConfigManager::advertiserHTTPIP()
 {
     return m_settings->value("ModernAdvertiser/ms_ip","").toUrl();
+}
+
+qint64 ConfigManager::uptime()
+{
+    return uptimeTimer->elapsed();
 }
 
 void ConfigManager::setMotd(const QString f_motd)

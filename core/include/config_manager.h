@@ -29,6 +29,7 @@
 #include <QSettings>
 #include <QUrl>
 #include <QMetaEnum>
+#include <QElapsedTimer>
 
 /**
  * @brief The config file handler class.
@@ -356,6 +357,11 @@ class ConfigManager {
     static QUrl advertiserHTTPIP();
 
     /**
+     * @brief Returns the uptime of the server in miliseconds.
+     */
+    static qint64 uptime();
+
+    /**
      * @brief Sets the server's authorization type.
      *
      * @param f_auth The auth type to set.
@@ -424,6 +430,11 @@ private:
      * @param Name of the file to load.
      */
     static QStringList loadConfigFile(const QString filename);
+
+    /**
+     * @brief Pointer to QElapsedTimer to track the uptime of the server.
+     */
+    static QElapsedTimer* uptimeTimer;
 };
 
 
