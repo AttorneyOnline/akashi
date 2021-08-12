@@ -228,6 +228,13 @@ class Server : public QObject {
      */
     void allowMessage();
 
+    /**
+     * @brief Method to construct and reconstruct Discord Webhook Integration.
+     *
+     * @details Constructs or rebuilds Discord Object during server startup and configuration reload.
+     */
+    void handleDiscordIntegration();
+
   signals:
 
     /**

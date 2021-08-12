@@ -52,13 +52,7 @@ void Server::start()
         qDebug() << "Server listening on" << port;
     }
     
-    if (ConfigManager::discordWebhookEnabled()) {
-        discord = new Discord(this);
-        connect(this, &Server::modcallWebhookRequest,
-                discord, &Discord::onModcallWebhookRequested);
-        connect(this, &Server::banWebhookRequest,
-                discord, &Discord::onBanWebhookRequested);
-    }
+    handleDiscordIntegration();
 
     if (ConfigManager::advertiseHTTPServer()) {
         httpAdvertiserTimer = new QTimer(this);
@@ -287,6 +281,27 @@ void Server::updateHTTPAdvertiserConfig()
 void Server::allowMessage()
 {
     can_send_ic_messages = true;
+}
+
+void Server::handleDiscordIntegration()
+{
+    if (discord != nullptr) {
+        discord->deleteLater();
+        return;
+    }
+
+    if (ConfigManager::discordWebhookEnabled()) {
+        discord = new Discord(this);
+
+        if (ConfigManager::discordModcallWebhookEnabled())
+        connect(this, &Server::modcallWebhookRequest,
+                discord, &Discord::onModcallWebhookRequested);
+
+        if (ConfigManager::discordBanWebhookEnabled())
+        connect(this, &Server::banWebhookRequest,
+                discord, &Discord::onBanWebhookRequested);
+    }
+    return;
 }
 
 Server::~Server()
