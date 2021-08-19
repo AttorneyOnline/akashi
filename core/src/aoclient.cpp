@@ -23,6 +23,11 @@ void AOClient::clientData()
         socket->close();
     }
 
+    if (last_read == 0) { // i.e. this is the first packet we've been sent
+        if (!socket->waitForConnected(1000)) {
+            socket->close();
+        }
+    }
     QString data = QString::fromUtf8(socket->readAll());
     last_read = data.size();
 
