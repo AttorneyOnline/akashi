@@ -2181,7 +2181,7 @@ class AOClient : public QObject {
     /**
      * @brief The size, in bytes, of the last data the client sent to the server.
      */
-    int last_read;
+    int last_read = 0;
 
     /**
      * @brief A helper function for logging in a client as moderator.
