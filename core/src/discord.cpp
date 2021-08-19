@@ -24,13 +24,9 @@ Discord::Discord(QObject* parent) :
     connect(m_nam, &QNetworkAccessManager::finished,
             this, &Discord::onReplyFinished);
 
-    if (ConfigManager::discordUptimeEnabled()){
-        m_uptimePostTimer = new QTimer;
-        connect(m_uptimePostTimer, &QTimer::timeout,
-                this, &Discord::onUptimeWebhookRequested);
-        m_uptimePostTimer->start(ConfigManager::discordUptimeTime() * 60000);
-        onUptimeWebhookRequested();
-    }
+    m_uptimePostTimer = new QTimer;
+    connect(m_uptimePostTimer, &QTimer::timeout,
+        this, &Discord::onUptimeWebhookRequested);
 }
 
 void Discord::onModcallWebhookRequested(const QString &f_name, const QString &f_area, const QString &f_reason, const QQueue<QString> &f_buffer)
@@ -161,4 +157,15 @@ void Discord::onReplyFinished(QNetworkReply *f_reply)
 Discord::~Discord()
 {
     m_nam->deleteLater();
+}
+
+void Discord::startUptimeTimer()
+{
+    m_uptimePostTimer->start(ConfigManager::discordUptimeTime() * 60000);
+    onUptimeWebhookRequested();
+}
+
+void Discord::stopUptimeTimer()
+{
+    m_uptimePostTimer->stop();
 }

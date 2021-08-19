@@ -47,6 +47,67 @@ public:
     ~Discord();
 
     /**
+     * @brief Method to start the Uptime Webhook posting timer.
+     */
+    void startUptimeTimer();
+
+    /**
+     * @brief Method to stop the Uptime Webhook posting timer.
+     */
+    void stopUptimeTimer();
+
+
+public slots:
+    /**
+     * @brief Handles a modcall webhook request.
+     *
+     * @param f_name The name of the modcall sender.
+     * @param f_area The name of the area the modcall was sent from.
+     * @param f_reason The reason for the modcall.
+     * @param f_buffer The area's log buffer.
+     */
+    void onModcallWebhookRequested(const QString& f_name, const QString& f_area, const QString& f_reason, const QQueue<QString>& f_buffer);
+
+    /**
+     * @brief Handles a ban webhook request.
+     *
+     * @param f_ipid The IPID of the client.
+     * @param f_moderator The name of the moderator banning.
+     * @param f_duration The date the ban expires.
+     * @param f_reason The reason of the ban.
+     */
+    void onBanWebhookRequested(const QString& f_ipid, const QString& f_moderator, const QString& f_duration, const QString& f_reason, const int& f_banID);
+
+    /**
+     * @brief Handles a uptime webhook request.
+     */
+    void onUptimeWebhookRequested();
+
+private:
+    /**
+     * @brief The QNetworkAccessManager for webhooks.
+     */
+    QNetworkAccessManager* m_nam;
+
+    /**
+     * @brief The QNetworkRequest for webhooks.
+     */
+    QNetworkRequest m_request;
+
+    /**
+     * @brief Timer to post a message that the server is still alive.
+     */
+    QTimer* m_uptimePostTimer;
+
+private slots:
+    /**
+     * @brief Handles a network reply from a webhook POST request.
+     *
+     * @param f_reply Pointer to the QNetworkReply created by the webhook POST request.
+     */
+    void onReplyFinished(QNetworkReply* f_reply);
+
+    /**
      * @brief Sends a webhook POST request with the given JSON document.
      *
      * @param f_json The JSON document to send.
@@ -98,56 +159,6 @@ public:
      * @return A QHttpMultiPart containing the log file.
      */
     QHttpMultiPart* constructLogMultipart(const QQueue<QString>& f_buffer) const;
-
-public slots:
-    /**
-     * @brief Handles a modcall webhook request.
-     *
-     * @param f_name The name of the modcall sender.
-     * @param f_area The name of the area the modcall was sent from.
-     * @param f_reason The reason for the modcall.
-     * @param f_buffer The area's log buffer.
-     */
-    void onModcallWebhookRequested(const QString& f_name, const QString& f_area, const QString& f_reason, const QQueue<QString>& f_buffer);
-
-    /**
-     * @brief Handles a ban webhook request.
-     *
-     * @param f_ipid The IPID of the client.
-     * @param f_moderator The name of the moderator banning.
-     * @param f_duration The date the ban expires.
-     * @param f_reason The reason of the ban.
-     */
-    void onBanWebhookRequested(const QString& f_ipid, const QString& f_moderator, const QString& f_duration, const QString& f_reason, const int& f_banID);
-
-    /**
-     * @brief Handles a uptime webhook request.
-     */
-    void onUptimeWebhookRequested();
-
-private:
-    /**
-     * @brief The QNetworkAccessManager for webhooks.
-     */
-    QNetworkAccessManager* m_nam;
-
-    /**
-     * @brief The QNetworkRequest for webhooks.
-     */
-    QNetworkRequest m_request;
-
-    /**
-     * @brief Timer to post a message that the server is still alive.
-     */
-    QTimer* m_uptimePostTimer;
-
-private slots:
-    /**
-     * @brief Handles a network reply from a webhook POST request.
-     *
-     * @param f_reply Pointer to the QNetworkReply created by the webhook POST request.
-     */
-    void onReplyFinished(QNetworkReply* f_reply);
 };
 
 #endif // DISCORD_H
