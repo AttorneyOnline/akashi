@@ -217,7 +217,7 @@ class ConfigManager {
      *
      * @return See short description.
      */
-    static QString discordWebhookContent();
+    static QString discordModcallWebhookContent();
 
     /**
      * @brief Returns true if the discord webhook should send log files.
