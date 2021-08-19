@@ -228,6 +228,13 @@ class Server : public QObject {
      */
     void allowMessage();
 
+    /**
+     * @brief Method to construct and reconstruct Discord Webhook Integration.
+     *
+     * @details Constructs or rebuilds Discord Object during server startup and configuration reload.
+     */
+    void handleDiscordIntegration();
+
   signals:
 
     /**
@@ -260,7 +267,14 @@ class Server : public QObject {
      */
     void modcallWebhookRequest(const QString& f_name, const QString& f_area, const QString& f_reason, const QQueue<QString>& f_buffer);
 
-
+    /**
+     * @brief Sends a ban webhook request, emitted by AOClient::cmdBan
+     * @param f_ipid The IPID of the banned client.
+     * @param f_moderator The moderator who issued the ban.
+     * @param f_duration The duration of the ban in a human readable format.
+     * @param f_reason The reason for the ban.
+     * @param f_banID The ID of the issued ban.
+     */
     void banWebhookRequest(const QString& f_ipid, const QString& f_moderator, const QString& f_duration, const QString& f_reason, const int& f_banID);
 
   private:

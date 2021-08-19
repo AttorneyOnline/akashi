@@ -29,6 +29,7 @@
 #include <QSettings>
 #include <QUrl>
 #include <QMetaEnum>
+#include <QElapsedTimer>
 
 /**
  * @brief The config file handler class.
@@ -191,11 +192,18 @@ class ConfigManager {
     static int diceMaxDice();
 
     /**
-     * @brief Returns true if the discord webhook is enabled.
+     * @brief Returns true if the discord webhook integration is enabled.
      *
      * @return See short description.
      */
     static bool discordWebhookEnabled();
+
+    /**
+     * @brief Returns true if the discord modcall webhook is enabled.
+     *
+     * @return See short description.
+     */
+    static bool discordModcallWebhookEnabled();
 
     /**
      * @brief Returns the discord webhook URL.
@@ -349,6 +357,11 @@ class ConfigManager {
     static QUrl advertiserHTTPIP();
 
     /**
+     * @brief Returns the uptime of the server in miliseconds.
+     */
+    static qint64 uptime();
+
+    /**
      * @brief Sets the server's authorization type.
      *
      * @param f_auth The auth type to set.
@@ -405,6 +418,16 @@ private:
      * @brief Stores all server configuration values.
      */
     static QSettings* m_settings;
+
+    /**
+     * @brief Stores all discord webhook configuration values.
+     */
+    static QSettings* m_discord;
+
+    /**
+     * @brief Pointer to QElapsedTimer to track the uptime of the server.
+     */
+    static QElapsedTimer* m_uptimeTimer;
 
     /**
      * @brief Returns a stringlist with the contents of a .txt file from config/text/.

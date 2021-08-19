@@ -24,16 +24,9 @@ Discord::Discord(QObject* parent) :
     connect(m_nam, &QNetworkAccessManager::finished,
             this, &Discord::onReplyFinished);
 
-    if (ConfigManager::discordUptimeEnabled()){
-        m_uptimePostTimer = new QTimer;
-        m_uptimeInterval = ConfigManager::discordUptimeTime() * 60000;
-        m_uptimeCounter = 0;
-
-        connect(m_uptimePostTimer, &QTimer::timeout,
-                this, &Discord::onUptimeWebhookRequested);
-        m_uptimePostTimer->start(m_uptimeInterval);
-        onUptimeWebhookRequested();
-    }
+    m_uptimePostTimer = new QTimer;
+    connect(m_uptimePostTimer, &QTimer::timeout,
+        this, &Discord::onUptimeWebhookRequested);
 }
 
 void Discord::onModcallWebhookRequested(const QString &f_name, const QString &f_area, const QString &f_reason, const QQueue<QString> &f_buffer)
@@ -57,7 +50,7 @@ void Discord::onBanWebhookRequested(const QString &f_ipid, const QString &f_mode
 
 void Discord::onUptimeWebhookRequested()
 {
-    ulong l_expiredTimeSeconds = (m_uptimeCounter * m_uptimeInterval) / 1000;
+    qint64 l_expiredTimeSeconds = ConfigManager::uptime() / 1000;
     int minutes = (l_expiredTimeSeconds / 60) % 60;
     int hours = (l_expiredTimeSeconds / (60 * 60)) % 24;
     int days = (l_expiredTimeSeconds / (60 * 60 * 24)) % 365;
@@ -66,7 +59,6 @@ void Discord::onUptimeWebhookRequested()
     QString f_timeExpired = QString::number(days) + " days, " + QString::number(hours) + " hours and " + QString::number(minutes) + " minutes.";
     QJsonDocument l_json = constructUptimeJson(f_timeExpired);
     postJsonWebhook(l_json);
-    m_uptimeCounter++;
 }
 
 QJsonDocument Discord::constructModcallJson(const QString &f_name, const QString &f_area, const QString &f_reason) const
@@ -107,8 +99,8 @@ QJsonDocument Discord::constructUptimeJson(const QString& f_timeExpired)
     QJsonArray l_array;
     QJsonObject l_object {
         {"color", "13312842"},
-        {"title", "Your server is still running!"},
-        {"description", "Hello World!\nYour server has been online for " + f_timeExpired}
+        {"title", "Your server is online!"},
+        {"description", "Your server has been online for " + f_timeExpired}
     };
     l_array.append(l_object);
     l_json["embeds"] = l_array;
@@ -165,4 +157,15 @@ void Discord::onReplyFinished(QNetworkReply *f_reply)
 Discord::~Discord()
 {
     m_nam->deleteLater();
+}
+
+void Discord::startUptimeTimer()
+{
+    m_uptimePostTimer->start(ConfigManager::discordUptimeTime() * 60000);
+    onUptimeWebhookRequested();
+}
+
+void Discord::stopUptimeTimer()
+{
+    m_uptimePostTimer->stop();
 }

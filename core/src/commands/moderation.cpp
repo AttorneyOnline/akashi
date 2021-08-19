@@ -417,6 +417,7 @@ void AOClient::cmdReload(int argc, QStringList argv)
     ConfigManager::reloadSettings();
     emit server->reloadRequest(ConfigManager::serverName(), ConfigManager::serverDescription());
     server->updateHTTPAdvertiserConfig();
+    server->handleDiscordIntegration();
     sendServerMessage("Reloaded configurations");
 }
 
