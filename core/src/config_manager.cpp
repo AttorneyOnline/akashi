@@ -17,6 +17,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/config_manager.h"
 
+#include <include/config_manager.h>
+
 QSettings* ConfigManager::m_settings = new QSettings("config/config.ini", QSettings::IniFormat);
 QSettings* ConfigManager::m_discord = new QSettings("config/discord.ini", QSettings::IniFormat);
 ConfigManager::CommandSettings* ConfigManager::m_commands = new CommandSettings();
@@ -285,9 +287,9 @@ QString ConfigManager::discordModcallWebhookUrl()
     return m_discord->value("Discord/webhook_modcall_url", "").toString();
 }
 
-QString ConfigManager::discordWebhookContent()
+QString ConfigManager::discordModcallWebhookContent()
 {
-    return m_discord->value("Discord/webhook_content", "").toString();
+    return m_discord->value("Discord/webhook_modcall_content", "").toString();
 }
 
 bool ConfigManager::discordModcallWebhookSendFile()

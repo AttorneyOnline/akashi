@@ -71,9 +71,11 @@ QJsonDocument Discord::constructModcallJson(const QString &f_name, const QString
         {"description", f_reason}
     };
     l_array.append(l_object);
+
+    if (!ConfigManager::discordModcallWebhookContent().isEmpty())
+    l_json["content"] = ConfigManager::discordModcallWebhookContent();
     l_json["embeds"] = l_array;
-    if (!ConfigManager::discordWebhookContent().isEmpty())
-        l_json["content"] = ConfigManager::discordWebhookContent();
+
 
     return QJsonDocument(l_json);
 }
