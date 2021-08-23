@@ -24,26 +24,82 @@
 #include "include/config_manager.h"
 #include "include/logger/u_logger_datatypes.h"
 
+/**
+ * @brief The Universal Logger class to provide a common place to handle, store and write logs to file.
+ */
 class ULogger : public QObject
 {
     Q_OBJECT
 public:
+    /**
+     * @brief Constructor for the universal logger. Determines which writer is initially created.
+     * @param Pointer to the Server.
+     */
     ULogger(QObject* parent = nullptr);
+
+    /**
+     * @brief Deconstructor of the universal logger. Deletes its writer before deconstruction.
+     */
     virtual ~ULogger();
 
 public slots:
 
+    /**
+     * @brief Adds an IC log entry to the area buffer and writes it to the respective log format.
+     * @param MessageLog containing client information and the actual message.
+     */
     void logIC(MessageLog f_log);
+
+    /**
+     * @brief Adds an OOC log entry to the area buffer and writes it to the respective log format.
+     * @param MessageLog containing client information and the actual message.
+     */
     void logOOC(MessageLog f_log);
+
+    /**
+     * @brief Adds an login attempt to the area buffer and writes it to the respective log format.
+     * @param LoginLog containing info about the login attempt.
+     */
     void logLogin(LoginLog f_log);
+
+    /**
+     * @brief Adds a command usage to the area buffer and writes it to the respective log format.
+     * @param ComandLog containing information about the command and parameter used.
+     */
     void logCMD(CommandLog f_log);
+
+    /**
+     * @brief Adds a player kick to the area buffer and writes it to the respective log format.
+     * @param ModerativeLog containing information about the client kicked and who kicked them.
+     */
     void logKick(ModerativeLog f_log);
+
+    /**
+     * @brief Adds a player ban to the area buffer and writes it to the respective log format.
+     * @param ModerativeLog containing information about the client banned and who banned them.
+     */
     void logBan(ModerativeLog f_log);
+
+    /**
+     * @brief Logs any connection attempt to the server, wether sucessful or not.
+     * @param ConnectionLog containing information on who connected and if the connection was successful.
+     */
     void logConnectionAttempt(ConnectionLog f_log);
 
 private:
 
+    /**
+     * @brief Updates the area buffer with a new entry, moving old ones if the buffer exceesed the maximum size.
+     * @param Name of the area which buffer is modified.
+     * @param Formatted QString to be added into the buffer.
+     */
     void updateAreaBuffer(const QString& f_area, const QString& f_entry);
+
+    /**
+     * @brief Returns the buffer of a respective area. Primarily used by the Discord Webhook.
+     * @param Name of the area which buffer is requested.
+     */
+    QQueue<QString> buffer(QString f_areaName);
 
     /**
      * @brief QMap of all available area buffers.

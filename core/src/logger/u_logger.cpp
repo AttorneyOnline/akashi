@@ -57,3 +57,13 @@ void ULogger::logConnectionAttempt(ConnectionLog f_log)
 {
 
 }
+
+void ULogger::updateAreaBuffer(const QString &f_area, const QString &f_entry)
+{
+
+}
+
+QQueue<QString> ULogger::buffer(QString f_areaName)
+{
+
+}
