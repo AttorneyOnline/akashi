@@ -58,9 +58,17 @@ void ULogger::logConnectionAttempt(ConnectionLog f_log)
 
 }
 
-void ULogger::updateAreaBuffer(const QString &f_area, const QString &f_entry)
+void ULogger::updateAreaBuffer(const QString& f_area, const QString& f_entry)
 {
-
+    QQueue<QString>f_buffer = m_bufferMap.value(f_area);
+    if (f_buffer.length() < ConfigManager::logBuffer()) {
+        f_buffer.enqueue(f_entry);
+    }
+    else {
+        f_buffer.dequeue();
+        f_buffer.enqueue(f_entry);
+    }
+    m_bufferMap.insert(f_area, f_buffer);
 }
 
 QQueue<QString> ULogger::buffer(const QString& f_areaName)
