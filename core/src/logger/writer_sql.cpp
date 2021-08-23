@@ -20,6 +20,16 @@
 WriterSQL::WriterSQL(QObject* parent) :
     QObject(parent), DRIVER("QSQLITE")
 {
+    l_dir.setPath("logs/");
+    if (!l_dir.exists()) {
+        l_dir.mkpath(".");
+    }
+
+    l_dir.setPath("logs/database");
+    if (!l_dir.exists()) {
+        l_dir.mkpath(".");
+    }
+
     const QString db_filename = "logs/database/log.db";
 
     QFileInfo db_info(db_filename);
@@ -35,11 +45,20 @@ WriterSQL::WriterSQL(QObject* parent) :
     QSqlQuery create_chat_events_table("CREATE TABLE IF NOT EXISTS chat_events ('event_time' DATETIME DEFAULT CURRENT_TIMESTAMP, 'ipid' TEXT, 'room_name' TEXT,'event_type' TEXT, 'char_name' TEXT, 'ic_name' TEXT, 'message' TEXT NOT NULL);");
     create_chat_events_table.exec();
 
-    QSqlQuery create_connection_events_table("CREATE TABLE IF NOT EXISTS users ('event time' DATETIME DEFAULT CURRENT_TIMESTAMP, 'ipid' TEXT, 'ip_address' TEXT, 'hdid' TEXT);");
+    QSqlQuery create_connection_events_table("CREATE TABLE IF NOT EXISTS connection_events ('event time' DATETIME DEFAULT CURRENT_TIMESTAMP, 'ipid' TEXT, 'ip_address' TEXT, 'hdid' TEXT);");
     create_connection_events_table.exec();
 }
 
 WriterSQL::~WriterSQL()
 {
     log_db.close();
+}
+
+void WriterSQL::execLogScript(QSqlQuery query)
+{
+    query.exec();
+    QSqlError error = query.lastError();
+    if (error.isValid()) {
+        qDebug() << "Database Error:" + error.text();
+    }
 }

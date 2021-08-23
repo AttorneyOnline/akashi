@@ -65,11 +65,6 @@ private:
     QSqlDatabase log_db;
 
     /**
-     * @brief Filename of the logfile used.
-     */
-    QFile l_logfile;
-
-    /**
      * @brief Directory where logfiles will be stored.
      */
     QDir l_dir;
