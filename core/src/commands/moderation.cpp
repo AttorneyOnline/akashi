@@ -559,9 +559,13 @@ void AOClient::cmdUpdateBan(int argc, QStringList argv)
 
 void AOClient::cmdNotice(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     sendNotice(argv.join(" "));
 }
 void AOClient::cmdNoticeGlobal(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     sendNotice(argv.join(" "), true);
 }
