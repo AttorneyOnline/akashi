@@ -17,8 +17,12 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/config_manager.h"
 
+#include <include/config_manager.h>
+
 QSettings* ConfigManager::m_settings = new QSettings("config/config.ini", QSettings::IniFormat);
+QSettings* ConfigManager::m_discord = new QSettings("config/discord.ini", QSettings::IniFormat);
 ConfigManager::CommandSettings* ConfigManager::m_commands = new CommandSettings();
+QElapsedTimer* ConfigManager::m_uptimeTimer = new QElapsedTimer;
 
 bool ConfigManager::verifyServerConfig()
 {
@@ -84,12 +88,15 @@ bool ConfigManager::verifyServerConfig()
     m_commands->reprimands = (loadConfigFile("reprimands"));
     m_commands->gimps = (loadConfigFile("gimp"));
 
+    m_uptimeTimer->start();
+
     return true;
 }
 
 void ConfigManager::reloadSettings()
 {
     m_settings->sync();
+    m_discord->sync();
 }
 
 QStringList ConfigManager::loadConfigFile(const QString filename)
@@ -267,27 +274,58 @@ int ConfigManager::diceMaxDice()
 
 bool ConfigManager::discordWebhookEnabled()
 {
-    return m_settings->value("Discord/webhook_enabled", false).toBool();
+    return m_discord->value("Discord/webhook_enabled", false).toBool();
 }
 
-QString ConfigManager::discordWebhookUrl()
+bool ConfigManager::discordModcallWebhookEnabled()
 {
-    return m_settings->value("Discord/webhook_url", "").toString();
+    return m_discord->value("Discord/webhook_modcall_enabled", false).toBool();
 }
 
-QString ConfigManager::discordWebhookContent()
+QString ConfigManager::discordModcallWebhookUrl()
 {
-    return m_settings->value("Discord/webhook_content", "").toString();
+    return m_discord->value("Discord/webhook_modcall_url", "").toString();
 }
 
-bool ConfigManager::discordWebhookSendFile()
+QString ConfigManager::discordModcallWebhookContent()
 {
-    return m_settings->value("Discord/webhook_sendfile", false).toBool();
+    return m_discord->value("Discord/webhook_modcall_content", "").toString();
+}
+
+bool ConfigManager::discordModcallWebhookSendFile()
+{
+    return m_discord->value("Discord/webhook_modcall_sendfile", false).toBool();
 }
 
 bool ConfigManager::discordBanWebhookEnabled()
 {
-    return m_settings->value("Discord/webhook_ban_enabled", false).toBool();
+    return m_discord->value("Discord/webhook_ban_enabled", false).toBool();
+}
+
+QString ConfigManager::discordBanWebhookUrl()
+{
+    return m_discord->value("Discord/webhook_ban_url", "").toString();
+}
+
+bool ConfigManager::discordUptimeEnabled()
+{
+    return m_discord->value("Discord/webhook_uptime_enabled","false").toBool();
+}
+
+int ConfigManager::discordUptimeTime()
+{
+    bool ok;
+    int l_aliveTime = m_discord->value("Discord/webhook_uptime_time","60").toInt(&ok);
+    if (!ok) {
+        qWarning("alive_time is not an int");
+        l_aliveTime = 60;
+    }
+    return l_aliveTime;
+}
+
+QString ConfigManager::discordUptimeWebhookUrl()
+{
+    return m_discord->value("Discord/webhook_uptime_url", "").toString();
 }
 
 bool ConfigManager::passwordRequirements()
@@ -386,6 +424,11 @@ bool ConfigManager::advertiserHTTPDebug()
 QUrl ConfigManager::advertiserHTTPIP()
 {
     return m_settings->value("ModernAdvertiser/ms_ip","").toUrl();
+}
+
+qint64 ConfigManager::uptime()
+{
+    return m_uptimeTimer->elapsed();
 }
 
 void ConfigManager::setMotd(const QString f_motd)

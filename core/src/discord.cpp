@@ -20,20 +20,22 @@
 Discord::Discord(QObject* parent) :
     QObject(parent)
 {
-    if (!QUrl(ConfigManager::discordWebhookUrl()).isValid())
-        qWarning("Invalid webhook URL!");
     m_nam = new QNetworkAccessManager();
     connect(m_nam, &QNetworkAccessManager::finished,
             this, &Discord::onReplyFinished);
-    m_request.setUrl(QUrl(ConfigManager::discordWebhookUrl()));
+
+    m_uptimePostTimer = new QTimer;
+    connect(m_uptimePostTimer, &QTimer::timeout,
+        this, &Discord::onUptimeWebhookRequested);
 }
 
 void Discord::onModcallWebhookRequested(const QString &f_name, const QString &f_area, const QString &f_reason, const QQueue<QString> &f_buffer)
 {
+    m_request.setUrl(QUrl(ConfigManager::discordModcallWebhookUrl()));
     QJsonDocument l_json = constructModcallJson(f_name, f_area, f_reason);
     postJsonWebhook(l_json);
 
-    if (ConfigManager::discordWebhookSendFile()) {
+    if (ConfigManager::discordModcallWebhookSendFile()) {
         QHttpMultiPart *l_multipart = constructLogMultipart(f_buffer);
         postMultipartWebhook(*l_multipart);
     }
@@ -41,7 +43,21 @@ void Discord::onModcallWebhookRequested(const QString &f_name, const QString &f_
 
 void Discord::onBanWebhookRequested(const QString &f_ipid, const QString &f_moderator, const QString &f_duration, const QString &f_reason, const int &f_banID)
 {
+    m_request.setUrl(QUrl(ConfigManager::discordBanWebhookUrl()));
     QJsonDocument l_json = constructBanJson(f_ipid,f_moderator, f_duration, f_reason, f_banID);
+    postJsonWebhook(l_json);
+}
+
+void Discord::onUptimeWebhookRequested()
+{
+    qint64 l_expiredTimeSeconds = ConfigManager::uptime() / 1000;
+    int minutes = (l_expiredTimeSeconds / 60) % 60;
+    int hours = (l_expiredTimeSeconds / (60 * 60)) % 24;
+    int days = (l_expiredTimeSeconds / (60 * 60 * 24)) % 365;
+
+    m_request.setUrl(QUrl(ConfigManager::discordUptimeWebhookUrl()));
+    QString f_timeExpired = QString::number(days) + " days, " + QString::number(hours) + " hours and " + QString::number(minutes) + " minutes.";
+    QJsonDocument l_json = constructUptimeJson(f_timeExpired);
     postJsonWebhook(l_json);
 }
 
@@ -55,9 +71,11 @@ QJsonDocument Discord::constructModcallJson(const QString &f_name, const QString
         {"description", f_reason}
     };
     l_array.append(l_object);
+
+    if (!ConfigManager::discordModcallWebhookContent().isEmpty())
+    l_json["content"] = ConfigManager::discordModcallWebhookContent();
     l_json["embeds"] = l_array;
-    if (!ConfigManager::discordWebhookContent().isEmpty())
-        l_json["content"] = ConfigManager::discordWebhookContent();
+
 
     return QJsonDocument(l_json);
 }
@@ -70,6 +88,21 @@ QJsonDocument Discord::constructBanJson(const QString &f_ipid, const QString &f_
         {"color", "13312842"},
         {"title", "Ban issued by " + f_moderator},
         {"description", "Client IPID : " + f_ipid + "\nBan ID: " + QString::number(f_banID) + "\nBan reason : " + f_reason +"\nBanned until : " +f_duration}
+    };
+    l_array.append(l_object);
+    l_json["embeds"] = l_array;
+
+    return QJsonDocument(l_json);
+}
+
+QJsonDocument Discord::constructUptimeJson(const QString& f_timeExpired)
+{
+    QJsonObject l_json;
+    QJsonArray l_array;
+    QJsonObject l_object {
+        {"color", "13312842"},
+        {"title", "Your server is online!"},
+        {"description", "Your server has been online for " + f_timeExpired}
     };
     l_array.append(l_object);
     l_json["embeds"] = l_array;
@@ -128,4 +161,15 @@ void Discord::onReplyFinished(QNetworkReply *f_reply)
 Discord::~Discord()
 {
     m_nam->deleteLater();
+}
+
+void Discord::startUptimeTimer()
+{
+    m_uptimePostTimer->start(ConfigManager::discordUptimeTime() * 60000);
+    onUptimeWebhookRequested();
+}
+
+void Discord::stopUptimeTimer()
+{
+    m_uptimePostTimer->stop();
 }

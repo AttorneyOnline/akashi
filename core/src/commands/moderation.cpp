@@ -450,6 +450,7 @@ void AOClient::cmdReload(int argc, QStringList argv)
     ConfigManager::reloadSettings();
     emit server->reloadRequest(ConfigManager::serverName(), ConfigManager::serverDescription());
     server->updateHTTPAdvertiserConfig();
+    server->handleDiscordIntegration();
     sendServerMessage("Reloaded configurations");
 }
 
@@ -554,4 +555,13 @@ void AOClient::cmdUpdateBan(int argc, QStringList argv)
         return;
     }
     sendServerMessage("Ban updated.");
+}
+
+void AOClient::cmdNotice(int argc, QStringList argv)
+{
+    sendNotice(argv.join(" "));
+}
+void AOClient::cmdNoticeGlobal(int argc, QStringList argv)
+{
+    sendNotice(argv.join(" "), true);
 }

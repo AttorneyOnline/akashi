@@ -417,7 +417,7 @@ void AOClient::pktModCall(AreaData* area, int argc, QStringList argv, AOPacket p
     }
     area->log(current_char, ipid, packet);
 
-    if (ConfigManager::discordWebhookEnabled()) {
+    if (ConfigManager::discordModcallWebhookEnabled()) {
         QString name = ooc_name;
         if (ooc_name.isEmpty())
             name = current_char;

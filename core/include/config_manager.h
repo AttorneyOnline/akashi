@@ -29,6 +29,7 @@
 #include <QSettings>
 #include <QUrl>
 #include <QMetaEnum>
+#include <QElapsedTimer>
 
 /**
  * @brief The config file handler class.
@@ -191,32 +192,39 @@ class ConfigManager {
     static int diceMaxDice();
 
     /**
-     * @brief Returns true if the discord webhook is enabled.
+     * @brief Returns true if the discord webhook integration is enabled.
      *
      * @return See short description.
      */
     static bool discordWebhookEnabled();
 
     /**
+     * @brief Returns true if the discord modcall webhook is enabled.
+     *
+     * @return See short description.
+     */
+    static bool discordModcallWebhookEnabled();
+
+    /**
      * @brief Returns the discord webhook URL.
      *
      * @return See short description.
      */
-    static QString discordWebhookUrl();
+    static QString discordModcallWebhookUrl();
 
     /**
      * @brief Returns the discord webhook content.
      *
      * @return See short description.
      */
-    static QString discordWebhookContent();
+    static QString discordModcallWebhookContent();
 
     /**
      * @brief Returns true if the discord webhook should send log files.
      *
      * @return See short description.
      */
-    static bool discordWebhookSendFile();
+    static bool discordModcallWebhookSendFile();
 
     /**
      * @brief Returns true if the discord ban webhook is enabled.
@@ -224,6 +232,30 @@ class ConfigManager {
      * @return See short description.
      */
     static bool discordBanWebhookEnabled();
+    
+    /**
+     * @brief Returns the Discord Ban Webhook URL.
+     *
+     * @return See short description.
+     */
+    static QString discordBanWebhookUrl();
+
+    /**
+     * @brief Returns if the Webhook sends an alive message.
+     */
+    static bool discordUptimeEnabled();
+
+    /**
+     * @brief Returns the time between posting.
+     */
+    static int discordUptimeTime();
+
+    /**
+     * @brief Returns the Discord Uptime Webhook URL.
+     * 
+     * @return See sshort description.
+     */
+    static QString discordUptimeWebhookUrl();
 
     /**
      * @brief Returns true if password requirements should be enforced.
@@ -324,6 +356,10 @@ class ConfigManager {
      */
     static QUrl advertiserHTTPIP();
 
+    /**
+     * @brief Returns the uptime of the server in miliseconds.
+     */
+    static qint64 uptime();
 
     /**
      * @brief Sets the server's authorization type.
@@ -382,6 +418,16 @@ private:
      * @brief Stores all server configuration values.
      */
     static QSettings* m_settings;
+
+    /**
+     * @brief Stores all discord webhook configuration values.
+     */
+    static QSettings* m_discord;
+
+    /**
+     * @brief Pointer to QElapsedTimer to track the uptime of the server.
+     */
+    static QElapsedTimer* m_uptimeTimer;
 
     /**
      * @brief Returns a stringlist with the contents of a .txt file from config/text/.

@@ -111,7 +111,9 @@ void AOClient::cmdInvite(int argc, QStringList argv)
         sendServerMessage("That does not look like a valid ID.");
         return;
     }
-    else if (server->getClientByID(invited_id) == nullptr) {
+
+    AOClient* target_client = server->getClientByID(invited_id);
+    if (target_client == nullptr) {
         sendServerMessage("No client with that ID found.");
         return;
     }
@@ -120,6 +122,7 @@ void AOClient::cmdInvite(int argc, QStringList argv)
         return;
     }
     sendServerMessage("You invited ID " + argv[0]);
+    target_client->sendServerMessage("You were invited and given access to " + area->name());
 }
 
 void AOClient::cmdUnInvite(int argc, QStringList argv)
@@ -133,7 +136,9 @@ void AOClient::cmdUnInvite(int argc, QStringList argv)
         sendServerMessage("That does not look like a valid ID.");
         return;
     }
-    else if (server->getClientByID(uninvited_id) == nullptr) {
+
+    AOClient* target_client = server->getClientByID(uninvited_id);
+    if (target_client == nullptr) {
         sendServerMessage("No client with that ID found.");
         return;
     }
@@ -146,6 +151,7 @@ void AOClient::cmdUnInvite(int argc, QStringList argv)
         return;
     }
     sendServerMessage("You uninvited ID " + argv[0]);
+    target_client->sendServerMessage("You were uninvited from " + area->name());
 }
 
 void AOClient::cmdLock(int argc, QStringList argv)
@@ -274,12 +280,13 @@ void AOClient::cmdSetBackground(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
 
+    QString f_background = argv.join(" ");
     AreaData* area = server->areas[current_area];
     if (authenticated || !area->bgLocked()) {
-        if (server->backgrounds.contains(argv[0], Qt::CaseInsensitive) || area->ignoreBgList() == true) {
-            area->background() = argv[0];
-            server->broadcast(AOPacket("BN", {argv[0]}), current_area);
-            sendServerMessageArea(current_char + " changed the background to " + argv[0]);
+        if (server->backgrounds.contains(f_background, Qt::CaseInsensitive) || area->ignoreBgList() == true) {
+            area->setBackground(f_background);
+            server->broadcast(AOPacket("BN", {f_background}), current_area);
+            sendServerMessageArea(current_char + " changed the background to " + f_background);
         }
         else {
             sendServerMessage("Invalid background name.");
