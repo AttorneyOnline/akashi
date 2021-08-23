@@ -22,3 +22,38 @@ ULogger::ULogger(QObject* parent) :
 {
 
 }
+
+void ULogger::logIC(MessageLog f_log)
+{
+
+}
+
+void ULogger::logOOC(MessageLog f_log)
+{
+
+}
+
+void ULogger::logLogin(LoginLog f_log)
+{
+
+}
+
+void ULogger::logCMD(CommandLog f_log)
+{
+
+}
+
+void ULogger::logKick(ModerativeLog f_log)
+{
+
+}
+
+void ULogger::logBan(ModerativeLog f_log)
+{
+
+}
+
+void ULogger::logConnectionAttempt(ConnectionLog f_log)
+{
+
+}

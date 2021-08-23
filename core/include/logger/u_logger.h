@@ -17,7 +17,12 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #ifndef U_LOGGER_H
 #define U_LOGGER_H
+
 #include <QObject>
+#include <QMap>
+#include <QQueue>
+#include "include/config_manager.h"
+#include "include/logger/u_logger_datatypes.h"
 
 class ULogger : public QObject
 {
@@ -26,6 +31,26 @@ public:
     ULogger(QObject* parent = nullptr);
     virtual ~ULogger();
 
+public slots:
+
+    void logIC(MessageLog f_log);
+    void logOOC(MessageLog f_log);
+    void logLogin(LoginLog f_log);
+    void logCMD(CommandLog f_log);
+    void logKick(ModerativeLog f_log);
+    void logBan(ModerativeLog f_log);
+    void logConnectionAttempt(ConnectionLog f_log);
+
+private:
+
+    void updateAreaBuffer(const QString& f_area, const QString& f_entry);
+
+    /**
+     * @brief QMap of all available area buffers.
+     *
+     * @details This QMap uses the area name as the index key to access its respective buffer.
+     */
+    QMap<QString, QQueue<QString>> m_bufferMap;
 };
 
 #endif //U_LOGGER_H

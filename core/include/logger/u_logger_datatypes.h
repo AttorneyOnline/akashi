@@ -21,21 +21,27 @@
 #include <QString>
 #include "include/area_data.h"
 
+/**
+ * @brief Convenience class to transport IC and OOC messages to the logger.
+ */
 class MessageLog {
 public:
-
     explicit MessageLog();
     struct m_content {
-      QString charname;
-      QString oocname;
-      int charID;
-      QString IPID;
-      QString HDID;
+      QString charName;
+      QString oocName;
+      QString ipid;
+      QString hdid;
       QString message;
       AreaData* area;
     };
 };
 
+/**
+ * @brief Convenience class to transport information of moderator actions to the logger
+ *
+ * @details The only two moderator commands who take advantage of this are ban and kick.
+ */
 class ModerativeLog {
 public:
     explicit ModerativeLog();
@@ -45,7 +51,54 @@ public:
         QString hdid;
         QString targetName;
         QString targetOOCName;
+        QString targetIPID;
+        QString targetHDID;
         AreaData* area;
+    };
+};
+
+/**
+ * @brief Convenience class to transport command usage information to the logger.
+ */
+class CommandLog {
+public:
+    explicit CommandLog();
+    struct m_content {
+        QString charName;
+        QString oocName;
+        QString ipid;
+        QString hdid;
+        QString command;
+        QString cmdArgs;
+        AreaData* area;
+    };
+};
+
+/**
+ * @brief Convenience class to transport login attempt information to the logger.
+ */
+class LoginLog {
+    explicit LoginLog();
+    struct m_content {
+        QString charName;
+        QString oocName;
+        QString ipid;
+        QString hdid;
+        bool success;
+        QString modname;
+    };
+};
+
+/**
+ * @brief Convenience class to transport connection event information to the logger.
+ */
+class ConnectionLog {
+    explicit ConnectionLog();
+    struct m_conntent {
+        QString ip_address;
+        QString hdid;
+        QString ipid;
+        bool success;
     };
 };
 
