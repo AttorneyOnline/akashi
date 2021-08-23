@@ -99,7 +99,7 @@ private:
      * @brief Returns the buffer of a respective area. Primarily used by the Discord Webhook.
      * @param Name of the area which buffer is requested.
      */
-    QQueue<QString> buffer(QString f_areaName);
+    QQueue<QString> buffer(const QString &f_areaName);
 
     /**
      * @brief QMap of all available area buffers.

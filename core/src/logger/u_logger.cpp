@@ -63,7 +63,7 @@ void ULogger::updateAreaBuffer(const QString &f_area, const QString &f_entry)
 
 }
 
-QQueue<QString> ULogger::buffer(QString f_areaName)
+QQueue<QString> ULogger::buffer(const QString& f_areaName)
 {
-
+    return m_bufferMap.value(f_areaName);
 }
