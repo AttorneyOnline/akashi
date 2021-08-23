@@ -29,6 +29,7 @@ WriterFull::WriterFull(QObject* parent) :
 void WriterFull::flush(const QString f_entry)
 {
     l_logfile.setFileName(QString("logs/%1.log").arg(QDate::currentDate().toString("yyyy-MM-dd")));
+
     if (l_logfile.open(QIODevice::WriteOnly | QIODevice::Append)) {
         QTextStream file_stream(&l_logfile);
         file_stream << f_entry;

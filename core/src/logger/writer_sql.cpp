@@ -18,7 +18,28 @@
 #include "include/logger/writer_sql.h"
 
 WriterSQL::WriterSQL(QObject* parent) :
-    QObject(parent)
+    QObject(parent), DRIVER("QSQLITE")
 {
+    const QString db_filename = "logs/database/log.db";
 
-};
+    QFileInfo db_info(db_filename);
+    if(!db_info.isReadable() || !db_info.isWritable())
+        qCritical() << tr("Database Error: Missing permissions. Check if \"%1\" is writable.").arg(db_filename);
+
+    log_db = QSqlDatabase::addDatabase(DRIVER);
+    log_db.setDatabaseName("logs/database/log.db");
+
+    if (!log_db.open())
+        qCritical() << "Database Error:" << log_db.lastError();
+
+    QSqlQuery create_chat_events_table("CREATE TABLE IF NOT EXISTS chat_events ('event_time' DATETIME DEFAULT CURRENT_TIMESTAMP, 'ipid' TEXT, 'room_name' TEXT,'event_type' TEXT, 'char_name' TEXT, 'ic_name' TEXT, 'message' TEXT NOT NULL);");
+    create_chat_events_table.exec();
+
+    QSqlQuery create_connection_events_table("CREATE TABLE IF NOT EXISTS users ('event time' DATETIME DEFAULT CURRENT_TIMESTAMP, 'ipid' TEXT, 'ip_address' TEXT, 'hdid' TEXT);");
+    create_connection_events_table.exec();
+}
+
+WriterSQL::~WriterSQL()
+{
+    log_db.close();
+}

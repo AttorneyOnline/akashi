@@ -18,15 +18,51 @@
 #ifndef WRITER_MODCALL_H
 #define WRITER_MODCALL_H
 #include <QObject>
+#include <QFile>
+#include <QDir>
+#include <QDateTime>
+#include <QTextStream>
+#include <QQueue>
 
+
+/**
+ * @brief A class to handle file interaction when writing the modcall buffer.
+ */
 class WriterModcall : public QObject
 {
     Q_OBJECT
 public:
+    /**
+     * @brief Constructor for modcall logwriter
+     *
+     * @param QObject pointer to the parent object.
+     */
     WriterModcall(QObject* parent = nullptr);;
+
+    /**
+     * @brief Deconstructor for modcall logwriter.
+     *
+     * @details Doesn't really do anything, but its here for completeness sake.
+     */
     virtual ~WriterModcall() {}
 
-};
+    /**
+     * @brief Function to write area buffer into a logfile.
+     * @param QQueue of the area that will be written into the logfile.
+     * @param Name of the area for the filename.
+     */
+    void flush(const QString f_areaName, QQueue<QString> f_buffer);
 
+private:
+    /**
+     * @brief Filename of the logfile used.
+     */
+    QFile l_logfile;
+
+    /**
+     * @brief Directory where logfiles will be stored.
+     */
+    QDir l_dir;
+};
 
 #endif //WRITER_MODCALL_H

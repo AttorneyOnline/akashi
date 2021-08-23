@@ -17,15 +17,62 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #ifndef WRITER_SQL_H
 #define WRITER_SQL_H
-#include <QObject>
 
+#include <QObject>
+#include <QDir>
+#include <QSqlDatabase>
+#include <QSqlDriver>
+#include <QSqlError>
+#include <QSqlQuery>
+#include <QFileInfo>
+#include <QDebug>
+
+/**
+ * @brief A class to handle database interaction when executing SQL statements in SQL mode.
+ */
 class WriterSQL : public QObject
 {
     Q_OBJECT
 public:
-    WriterSQL(QObject* parent = nullptr);;
-    virtual ~WriterSQL() {}
+    /**
+     * @brief Constructor for SQL logwriter
+     *
+     * @param QObject pointer to the parent object.
+     */
+    WriterSQL(QObject* parent = nullptr);
 
+    /**
+     * @brief Deconstructor for SQL logwriter. Closes the underlying database
+     */
+    virtual ~WriterSQL();;
+
+    /**
+     * @brief Function to execute SQL queries on the log database.
+     * @param SQL query execute d on the log database.
+     */
+    void execLogScript(QSqlQuery query);
+
+private:
+
+    /**
+     * @brief The name of the database connection driver.
+     */
+    const QString DRIVER;
+
+    /**
+     * @brief The backing database that stores user details.
+     */
+    QSqlDatabase log_db;
+
+    /**
+     * @brief Filename of the logfile used.
+     */
+    QFile l_logfile;
+
+    /**
+     * @brief Directory where logfiles will be stored.
+     */
+    QDir l_dir;
 };
 
 #endif //WRITER_SQL_H

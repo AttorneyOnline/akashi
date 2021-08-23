@@ -24,7 +24,7 @@
 #include <QTextStream>
 
 /**
- * @brief A class for handling all log writing in the full logging mode.
+ * @brief A class to handle file interaction when writing in full log mode.
  */
 class WriterFull : public QObject
 {
@@ -33,10 +33,7 @@ public:
     /**
      * @brief Constructor for full logwriter
      *
-     * @details While this could've been a simple function, making it an object allows me to easier check runtime requirements
-     *          when reloading the logger. It also helps split the complex stucture of a logger into easier segments.
-     *
-     * @param QPObject pointer to the parent object.
+     * @param QObject pointer to the parent object.
      */
     WriterFull(QObject* parent = nullptr);;
 
@@ -47,9 +44,8 @@ public:
      */
     virtual ~WriterFull() {}
 
-public:
     /**
-     * @brief Slot for u_logger to connect to when full logging is used.
+     * @brief Function to write log entry into a logfile.
      * @param Preformatted QString which will be written into the logfile.
      */
     void flush(const QString f_entry);
