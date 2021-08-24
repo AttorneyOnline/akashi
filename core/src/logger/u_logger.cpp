@@ -23,39 +23,39 @@ ULogger::ULogger(QObject* parent) :
 
 }
 
-void ULogger::logIC(MessageLog f_log)
+void ULogger::logIC()
 {
-    Q_UNUSED(f_log)
+
 }
 
-void ULogger::logOOC(MessageLog f_log)
+void ULogger::logOOC()
 {
-    Q_UNUSED(f_log)
+
 }
 
-void ULogger::logLogin(LoginLog f_log)
+void ULogger::logLogin()
 {
-    Q_UNUSED(f_log)
+
 }
 
-void ULogger::logCMD(CommandLog f_log)
+void ULogger::logCMD()
 {
-    Q_UNUSED(f_log)
+
 }
 
-void ULogger::logKick(ModerativeLog f_log)
+void ULogger::logKick()
 {
-    Q_UNUSED(f_log)
+
 }
 
-void ULogger::logBan(ModerativeLog f_log)
+void ULogger::logBan()
 {
-    Q_UNUSED(f_log)
+
 }
 
-void ULogger::logConnectionAttempt(ConnectionLog f_log)
+void ULogger::logConnectionAttempt()
 {
-    Q_UNUSED(f_log)
+
 }
 
 void ULogger::updateAreaBuffer(const QString& f_areaName, const QString& f_entry)

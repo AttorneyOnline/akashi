@@ -22,7 +22,6 @@
 #include <QMap>
 #include <QQueue>
 #include "include/config_manager.h"
-#include "include/logger/u_logger_datatypes.h"
 
 /**
  * @brief The Universal Logger class to provide a common place to handle, store and write logs to file.
@@ -48,43 +47,43 @@ public slots:
      * @brief Adds an IC log entry to the area buffer and writes it to the respective log format.
      * @param MessageLog containing client information and the actual message.
      */
-    void logIC(MessageLog f_log);
+    void logIC();
 
     /**
      * @brief Adds an OOC log entry to the area buffer and writes it to the respective log format.
      * @param MessageLog containing client information and the actual message.
      */
-    void logOOC(MessageLog f_log);
+    void logOOC();
 
     /**
      * @brief Adds an login attempt to the area buffer and writes it to the respective log format.
      * @param LoginLog containing info about the login attempt.
      */
-    void logLogin(LoginLog f_log);
+    void logLogin();
 
     /**
      * @brief Adds a command usage to the area buffer and writes it to the respective log format.
      * @param ComandLog containing information about the command and parameter used.
      */
-    void logCMD(CommandLog f_log);
+    void logCMD();
 
     /**
      * @brief Adds a player kick to the area buffer and writes it to the respective log format.
      * @param ModerativeLog containing information about the client kicked and who kicked them.
      */
-    void logKick(ModerativeLog f_log);
+    void logKick();
 
     /**
      * @brief Adds a player ban to the area buffer and writes it to the respective log format.
      * @param ModerativeLog containing information about the client banned and who banned them.
      */
-    void logBan(ModerativeLog f_log);
+    void logBan();
 
     /**
      * @brief Logs any connection attempt to the server, wether sucessful or not.
      * @param ConnectionLog containing information on who connected and if the connection was successful.
      */
-    void logConnectionAttempt(ConnectionLog f_log);
+    void logConnectionAttempt();
 
 private:
 

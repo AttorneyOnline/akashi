@@ -66,7 +66,6 @@ HEADERS += include/advertiser.h \
     include/ws_proxy.h \
     include/http_advertiser.h \
     include/logger/u_logger.h \
-    include/logger/u_logger_datatypes.h \
     include/logger/writer_modcall.h \
     include/logger/writer_full.h \
     include/logger/writer_sql.h
