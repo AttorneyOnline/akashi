@@ -23,6 +23,9 @@
 #include <QQueue>
 #include <QDateTime>
 #include "include/config_manager.h"
+#include "include/logger/writer_full.h"
+#include "include/logger/writer_modcall.h"
+#include "include/logger/writer_sql.h"
 
 /**
  * @brief The Universal Logger class to provide a common place to handle, store and write logs to file.
@@ -105,6 +108,21 @@ private:
      * @details This QMap uses the area name as the index key to access its respective buffer.
      */
     QMap<QString, QQueue<QString>> m_bufferMap;
+
+    /**
+     * @brief Pointer to modcall writer. Handles QQueue delogging into area specific file.
+     */
+    WriterModcall* writerModcall;
+
+    /**
+     * @brief Pointer to full writer. Handles single messages in one file.
+     */
+    WriterFull* writerFull;
+
+    /**
+     * @brief Pointer to SQL writer. Handles execution of log SQL queries.
+     */
+    WriterSQL* writerSQL;
 };
 
 #endif //U_LOGGER_H

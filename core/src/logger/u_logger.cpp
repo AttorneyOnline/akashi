@@ -21,6 +21,14 @@ ULogger::ULogger(QObject* parent) :
     QObject(parent)
 {
 
+    switch (ConfigManager::loggingType()) {
+        case DataTypes::LogType::MODCALL :
+            writerModcall = new WriterModcall;
+        case DataTypes::LogType::FULL :
+            writerFull = new WriterFull;
+        case DataTypes::LogType::SQL :
+            writerSQL = new WriterSQL;
+    }
 }
 
 void ULogger::logIC(const QString& f_charName, const QString& f_oocName, const QString& f_ipid,
