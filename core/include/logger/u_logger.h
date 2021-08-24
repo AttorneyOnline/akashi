@@ -21,6 +21,7 @@
 #include <QObject>
 #include <QMap>
 #include <QQueue>
+#include <QDateTime>
 #include "include/config_manager.h"
 
 /**
@@ -46,23 +47,26 @@ public slots:
     /**
      * @brief Adds an IC log entry to the area buffer and writes it to the respective log format.
      */
-    void logIC(const QString& f_charName, const QString& f_oocName, const QString& f_ipid, const QString& f_areaName);
+    void logIC(const QString& f_charName, const QString& f_oocName, const QString& f_ipid,
+               const QString& f_areaName, const QString &f_message);
 
     /**
      * @brief Adds an OOC log entry to the area buffer and writes it to the respective log format.
      */
-    void logOOC(const QString& f_charName, const QString& f_oocName, const QString& f_ipid, const QString& f_areaName);
+    void logOOC(const QString& f_charName, const QString& f_oocName, const QString& f_ipid,
+                const QString& f_areaName, const QString& f_message);
 
     /**
      * @brief Adds an login attempt to the area buffer and writes it to the respective log format.
      */
     void logLogin(const QString& f_charName, const QString& f_oocName, const QString& f_moderatorName,
-                  const QString& f_ipid, bool& f_sucees);
+                  const QString& f_ipid, const QString &f_areaName, const bool& f_success);
 
     /**
      * @brief Adds a command usage to the area buffer and writes it to the respective log format.
      */
-    void logCMD(const QString& f_charName, const QString& f_oocName, const QString f_command, const QString f_Args);
+    void logCMD(const QString& f_charName, const QString &f_ipid, const QString& f_oocName, const QString f_command,
+                const QStringList f_args, const QString f_areaName);
 
     /**
      * @brief Adds a player kick to the area buffer and writes it to the respective log format.
@@ -73,12 +77,12 @@ public slots:
      * @brief Adds a player ban to the area buffer and writes it to the respective log format.
      */
     void logBan(const QString& f_moderator, const QString& f_targetIPID, const QString& f_targetName, const QString f_targetOOCName,
-                const QDateTime& duration);
+                const QString &f_duration);
 
     /**
      * @brief Logs any connection attempt to the server, wether sucessful or not.
      */
-    void logConnectionAttempt(const QString &ip_address, const QString &ipid, const QString &hdid);
+    void logConnectionAttempt(const QString &f_ip_address, const QString &f_ipid, const QString &f_hdid);
 
 private:
 
@@ -87,7 +91,7 @@ private:
      * @param Name of the area which buffer is modified.
      * @param Formatted QString to be added into the buffer.
      */
-    void updateAreaBuffer(const QString& f_areaName, const QString& f_entry);
+    void updateAreaBuffer(const QString& f_areaName, const QString& f_logEntry);
 
     /**
      * @brief Returns the buffer of a respective area. Primarily used by the Discord Webhook.
