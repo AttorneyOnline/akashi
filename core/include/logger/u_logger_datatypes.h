@@ -35,6 +35,7 @@ public:
       QString message;
       AreaData* area;
     };
+    m_content content;
 };
 
 /**
@@ -55,6 +56,7 @@ public:
         QString targetHDID;
         AreaData* area;
     };
+    m_content content;
 };
 
 /**
@@ -72,12 +74,14 @@ public:
         QString cmdArgs;
         AreaData* area;
     };
+    m_content content;
 };
 
 /**
  * @brief Convenience class to transport login attempt information to the logger.
  */
 class LoginLog {
+public:
     explicit LoginLog();
     struct m_content {
         QString charName;
@@ -87,19 +91,22 @@ class LoginLog {
         bool success;
         QString modname;
     };
+    m_content content;
 };
 
 /**
  * @brief Convenience class to transport connection event information to the logger.
  */
 class ConnectionLog {
+public:
     explicit ConnectionLog();
-    struct m_conntent {
+    struct m_content {
         QString ip_address;
         QString hdid;
         QString ipid;
         bool success;
     };
+    m_content content;
 };
 
 #endif // U_LOGGER_DATATYPES_H

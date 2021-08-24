@@ -25,42 +25,42 @@ ULogger::ULogger(QObject* parent) :
 
 void ULogger::logIC(MessageLog f_log)
 {
-
+    Q_UNUSED(f_log)
 }
 
 void ULogger::logOOC(MessageLog f_log)
 {
-
+    Q_UNUSED(f_log)
 }
 
 void ULogger::logLogin(LoginLog f_log)
 {
-
+    Q_UNUSED(f_log)
 }
 
 void ULogger::logCMD(CommandLog f_log)
 {
-
+    Q_UNUSED(f_log)
 }
 
 void ULogger::logKick(ModerativeLog f_log)
 {
-
+    Q_UNUSED(f_log)
 }
 
 void ULogger::logBan(ModerativeLog f_log)
 {
-
+    Q_UNUSED(f_log)
 }
 
 void ULogger::logConnectionAttempt(ConnectionLog f_log)
 {
-
+    Q_UNUSED(f_log)
 }
 
-void ULogger::updateAreaBuffer(const QString& f_area, const QString& f_entry)
+void ULogger::updateAreaBuffer(const QString& f_areaName, const QString& f_entry)
 {
-    QQueue<QString>f_buffer = m_bufferMap.value(f_area);
+    QQueue<QString>f_buffer = m_bufferMap.value(f_areaName);
     if (f_buffer.length() < ConfigManager::logBuffer()) {
         f_buffer.enqueue(f_entry);
     }
@@ -68,7 +68,7 @@ void ULogger::updateAreaBuffer(const QString& f_area, const QString& f_entry)
         f_buffer.dequeue();
         f_buffer.enqueue(f_entry);
     }
-    m_bufferMap.insert(f_area, f_buffer);
+    m_bufferMap.insert(f_areaName, f_buffer);
 }
 
 QQueue<QString> ULogger::buffer(const QString& f_areaName)

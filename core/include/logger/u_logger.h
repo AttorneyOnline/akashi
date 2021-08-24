@@ -93,7 +93,7 @@ private:
      * @param Name of the area which buffer is modified.
      * @param Formatted QString to be added into the buffer.
      */
-    void updateAreaBuffer(const QString& f_area, const QString& f_entry);
+    void updateAreaBuffer(const QString& f_areaName, const QString& f_entry);
 
     /**
      * @brief Returns the buffer of a respective area. Primarily used by the Discord Webhook.
