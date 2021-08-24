@@ -45,45 +45,40 @@ public slots:
 
     /**
      * @brief Adds an IC log entry to the area buffer and writes it to the respective log format.
-     * @param MessageLog containing client information and the actual message.
      */
-    void logIC();
+    void logIC(const QString& f_charName, const QString& f_oocName, const QString& f_ipid, const QString& f_areaName);
 
     /**
      * @brief Adds an OOC log entry to the area buffer and writes it to the respective log format.
-     * @param MessageLog containing client information and the actual message.
      */
-    void logOOC();
+    void logOOC(const QString& f_charName, const QString& f_oocName, const QString& f_ipid, const QString& f_areaName);
 
     /**
      * @brief Adds an login attempt to the area buffer and writes it to the respective log format.
-     * @param LoginLog containing info about the login attempt.
      */
-    void logLogin();
+    void logLogin(const QString& f_charName, const QString& f_oocName, const QString& f_moderatorName,
+                  const QString& f_ipid, bool& f_sucees);
 
     /**
      * @brief Adds a command usage to the area buffer and writes it to the respective log format.
-     * @param ComandLog containing information about the command and parameter used.
      */
-    void logCMD();
+    void logCMD(const QString& f_charName, const QString& f_oocName, const QString f_command, const QString f_Args);
 
     /**
      * @brief Adds a player kick to the area buffer and writes it to the respective log format.
-     * @param ModerativeLog containing information about the client kicked and who kicked them.
      */
-    void logKick();
+    void logKick(const QString& f_moderator, const QString& f_targetIPID, const QString& f_targetName, const QString f_targetOOCName);
 
     /**
      * @brief Adds a player ban to the area buffer and writes it to the respective log format.
-     * @param ModerativeLog containing information about the client banned and who banned them.
      */
-    void logBan();
+    void logBan(const QString& f_moderator, const QString& f_targetIPID, const QString& f_targetName, const QString f_targetOOCName,
+                const QDateTime& duration);
 
     /**
      * @brief Logs any connection attempt to the server, wether sucessful or not.
-     * @param ConnectionLog containing information on who connected and if the connection was successful.
      */
-    void logConnectionAttempt();
+    void logConnectionAttempt(const QString &ip_address, const QString &ipid, const QString &hdid);
 
 private:
 
