@@ -24,10 +24,13 @@ ULogger::ULogger(QObject* parent) :
     switch (ConfigManager::loggingType()) {
         case DataTypes::LogType::MODCALL :
             writerModcall = new WriterModcall;
+            break;
         case DataTypes::LogType::FULL :
             writerFull = new WriterFull;
+            break;
         case DataTypes::LogType::SQL :
             writerSQL = new WriterSQL;
+            break;
     }
 }
 
@@ -99,7 +102,18 @@ void ULogger::logBan(const QString &f_moderator, const QString &f_targetIPID, co
     QString l_logEntry = QStringLiteral("[%1][BAN][%2][%3(%4)][%5][%6]")
             .arg(l_time, f_moderator, f_targetName, f_targetOOCName, f_targetIPID, f_duration);
     updateAreaBuffer("SERVER",l_logEntry);
+}
 
+void ULogger::logModcall(const QString &f_charName, const QString &f_ipid, const QString &f_oocName, const QString &f_areaName)
+{
+    QString l_time = QDateTime::currentDateTime().toString("ddd MMMM d yyyy | hh:mm:ss");
+    QString l_logEvent = QStringLiteral("[%1][%2][MODCALL][%5][%3(%4)]")
+            .arg(l_time, f_areaName, f_charName, f_oocName, f_ipid);
+    updateAreaBuffer(f_areaName, l_logEvent);
+
+    if (ConfigManager::loggingType() == DataTypes::LogType::MODCALL) {
+        writerModcall->flush(f_areaName, buffer(f_areaName));
+    }
 }
 
 void ULogger::logConnectionAttempt(const QString& f_ip_address, const QString& f_ipid, const QString& f_hdid)

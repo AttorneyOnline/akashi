@@ -83,6 +83,11 @@ public slots:
                 const QString &f_duration);
 
     /**
+     * @brief Adds a modcall event to the area buffer, also triggers modcall writing.
+     */
+    void logModcall(const QString& f_charName, const QString &f_ipid, const QString& f_oocName, const QString& f_areaName);
+
+    /**
      * @brief Logs any connection attempt to the server, wether sucessful or not.
      */
     void logConnectionAttempt(const QString &f_ip_address, const QString &f_ipid, const QString &f_hdid);
