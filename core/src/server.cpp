@@ -69,6 +69,8 @@ void Server::start()
         httpAdvertiserTimer->start(300000);
     }
 
+    logger = new ULogger(this);
+
     proxy = new WSProxy(port, ws_port, this);
     if(ws_port != -1)
         proxy->start();

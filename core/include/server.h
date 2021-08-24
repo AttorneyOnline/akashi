@@ -26,6 +26,7 @@
 #include "include/discord.h"
 #include "include/config_manager.h"
 #include "include/http_advertiser.h"
+#include "include/logger/u_logger.h"
 
 #include <QCoreApplication>
 #include <QDebug>
@@ -304,6 +305,11 @@ class Server : public QObject {
      * @brief Advertises the server in a regular intervall.
      */
     QTimer* httpAdvertiserTimer;
+
+    /**
+     * @brief Handles the universal log framework.
+     */
+    ULogger* logger;
 
     /**
      * @brief The port through which the server will accept TCP connections.

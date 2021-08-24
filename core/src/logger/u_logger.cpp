@@ -34,6 +34,21 @@ ULogger::ULogger(QObject* parent) :
     }
 }
 
+ULogger::~ULogger()
+{
+    switch (ConfigManager::loggingType()) {
+        case DataTypes::LogType::MODCALL :
+            writerModcall->deleteLater();
+            break;
+        case DataTypes::LogType::FULL :
+            writerFull->deleteLater();
+            break;
+        case DataTypes::LogType::SQL :
+            writerSQL->deleteLater();
+            break;
+    }
+}
+
 void ULogger::logIC(const QString& f_charName, const QString& f_oocName, const QString& f_ipid,
                     const QString& f_areaName, const QString& f_message)
 {

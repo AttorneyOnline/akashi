@@ -2189,6 +2189,49 @@ class AOClient : public QObject {
      * @param message The OOC message the client has sent.
      */
     void loginAttempt(QString message);
+
+  signals:
+
+    /**
+     * @brief Signal connected to universal logger. Sends IC chat usage to the logger.
+     */
+    void logIC(const QString& f_charName, const QString& f_oocName, const QString& f_ipid,
+               const QString& f_areaName, const QString &f_message);
+
+    /**
+     * @brief Signal connected to universal logger. Sends OOC chat usage to the logger.
+     */
+    void logOOC(const QString& f_charName, const QString& f_oocName, const QString& f_ipid,
+                const QString& f_areaName, const QString& f_message);
+
+    /**
+     * @brief Signal connected to universal logger. Sends login attempt to the logger.
+     */
+    void logLogin(const QString& f_charName, const QString& f_oocName, const QString& f_moderatorName,
+                  const QString& f_ipid, const QString &f_areaName, const bool& f_success);
+
+    /**
+     * @brief Signal connected to universal logger. Sends command usage to the logger.
+     */
+    void logCMD(const QString& f_charName, const QString &f_ipid, const QString& f_oocName, const QString f_command,
+                const QStringList f_args, const QString f_areaName);
+
+    /**
+     * @brief Signal connected to universal logger. Sends player kick information to the logger.
+     */
+    void logKick(const QString& f_moderator, const QString& f_targetIPID, const QString& f_targetName, const QString f_targetOOCName);
+
+    /**
+     * @brief Signal connected to universal logger. Sends ban information to the logger.
+     */
+    void logBan(const QString& f_moderator, const QString& f_targetIPID, const QString& f_targetName, const QString f_targetOOCName,
+                const QString &f_duration);
+
+    /**
+     * @brief Signal connected to universal logger. Sends modcall information to the logger, triggering a write of the buffer
+     *        when modcall logging is used.
+     */
+    void logModcall(const QString& f_charName, const QString &f_ipid, const QString& f_oocName, const QString& f_areaName);
 };
 
 #endif // AOCLIENT_H
