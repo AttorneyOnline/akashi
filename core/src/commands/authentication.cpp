@@ -22,6 +22,9 @@
 
 void AOClient::cmdLogin(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
     if (authenticated) {
         sendServerMessage("You are already logged in!");
         return;
@@ -48,6 +51,9 @@ void AOClient::cmdLogin(int argc, QStringList argv)
 
 void AOClient::cmdChangeAuth(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
     if (ConfigManager::authType() == DataTypes::AuthType::SIMPLE) {
         change_auth_started = true;
         sendServerMessage("WARNING!\nThis command will change how logging in as a moderator works.\nOnly proceed if you know what you are doing\nUse the command /rootpass to set the password for your root account.");
@@ -56,6 +62,8 @@ void AOClient::cmdChangeAuth(int argc, QStringList argv)
 
 void AOClient::cmdSetRootPass(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     if (!change_auth_started)
         return;
 
@@ -83,6 +91,8 @@ void AOClient::cmdSetRootPass(int argc, QStringList argv)
 
 void AOClient::cmdAddUser(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     if (!checkPasswordRequirements(argv[0], argv[1])) {
         sendServerMessage("Password does not meet server requirements.");
         return;
@@ -105,6 +115,8 @@ void AOClient::cmdAddUser(int argc, QStringList argv)
 
 void AOClient::cmdRemoveUser(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     if (server->db_manager->deleteUser(argv[0]))
         sendServerMessage("Successfully removed user " + argv[0] + ".");
     else
@@ -115,10 +127,11 @@ void AOClient::cmdListPerms(int argc, QStringList argv)
 {
     unsigned long long user_acl = server->db_manager->getACL(moderator_name);
     QStringList message;
+    const QStringList keys = ACLFlags.keys();
     if (argc == 0) {
         // Just print out all permissions available to the user.
         message.append("You have been given the following permissions:");
-        for (QString perm : ACLFlags.keys()) {
+        for (const QString &perm : keys) {
             if (perm == "NONE"); // don't need to list this one
             else if (perm == "SUPER") {
                 if (user_acl == ACLFlags.value("SUPER")) // This has to be checked separately, because SUPER & anything will always be truthy
@@ -142,7 +155,7 @@ void AOClient::cmdListPerms(int argc, QStringList argv)
             return;
         }
 
-        for (QString perm : ACLFlags.keys()) {
+        for (const QString &perm : keys) {
             if ((ACLFlags.value(perm) & acl) != 0 && perm != "SUPER") {
                 message.append(perm);
             }
@@ -153,10 +166,13 @@ void AOClient::cmdListPerms(int argc, QStringList argv)
 
 void AOClient::cmdAddPerms(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     unsigned long long user_acl = server->db_manager->getACL(moderator_name);
     argv[1] = argv[1].toUpper();
+    const QStringList keys = ACLFlags.keys();
 
-    if (!ACLFlags.keys().contains(argv[1])) {
+    if (!keys.contains(argv[1])) {
         sendServerMessage("That permission doesn't exist!");
         return;
     }
@@ -187,10 +203,14 @@ void AOClient::cmdAddPerms(int argc, QStringList argv)
 
 void AOClient::cmdRemovePerms(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     unsigned long long user_acl = server->db_manager->getACL(moderator_name);
     argv[1] = argv[1].toUpper();
 
-    if (!ACLFlags.keys().contains(argv[1])) {
+    const QStringList keys = ACLFlags.keys();
+
+    if (!keys.contains(argv[1])) {
         sendServerMessage("That permission doesn't exist!");
         return;
     }
@@ -226,12 +246,18 @@ void AOClient::cmdRemovePerms(int argc, QStringList argv)
 
 void AOClient::cmdListUsers(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
     QStringList users = server->db_manager->getUsers();
     sendServerMessage("All users:\n" + users.join("\n"));
 }
 
 void AOClient::cmdLogout(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
     if (!authenticated) {
         sendServerMessage("You are not logged in!");
         return;

@@ -43,7 +43,7 @@ void WSClient::onTcpData()
     // Workaround for WebAO bug needing every packet in its own message
     QStringList all_packets = QString::fromUtf8(tcp_message).split("%");
     all_packets.removeLast(); // Remove empty space after final delimiter
-    for(QString packet : all_packets) {
+    for(const QString &packet : qAsConst(all_packets)) {
         web_socket->sendTextMessage(packet + "%");
     }
 }

@@ -22,7 +22,7 @@ WSProxy::WSProxy(int p_local_port, int p_ws_port, QObject* parent) :
     local_port(p_local_port),
     ws_port(p_ws_port)
 {
-    server = new QWebSocketServer(QStringLiteral(""),
+    server = new QWebSocketServer(QLatin1String(""),
                                   QWebSocketServer::NonSecureMode, this);
     connect(server, &QWebSocketServer::newConnection, this,
             &WSProxy::wsConnected);

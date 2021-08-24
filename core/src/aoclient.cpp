@@ -41,7 +41,7 @@ void AOClient::clientData()
     QStringList all_packets = data.split("%");
     all_packets.removeLast(); // Remove the entry after the last delimiter
 
-    for (QString single_packet : all_packets) {
+    for (const QString &single_packet : qAsConst(all_packets)) {
         AOPacket packet(single_packet);
         handlePacket(packet);
     }
@@ -64,7 +64,7 @@ void AOClient::clientDisconnected()
 
     bool l_updateLocks = false;
 
-    for (AreaData* area : server->areas) {
+    for (AreaData* area : qAsConst(server->areas)) {
         l_updateLocks = l_updateLocks || area->removeOwner(id);
     }
 
@@ -138,7 +138,8 @@ void AOClient::changeArea(int new_area)
     if (character_taken) {
         sendPacket("DONE");
     }
-    for (QTimer* timer : server->areas[current_area]->timers()) {
+    const QList<QTimer*> timers = server->areas[current_area]->timers();
+    for (QTimer* timer : timers) {
         int timer_id = server->areas[current_area]->timers().indexOf(timer) + 1;
         if (timer->isActive()) {
             sendPacket("TI", {QString::number(timer_id), "2"});
@@ -209,7 +210,7 @@ void AOClient::arup(ARUPType type, bool broadcast)
 {
     QStringList arup_data;
     arup_data.append(QString::number(type));
-    for (AreaData* area : server->areas) {
+    for (AreaData* area : qAsConst(server->areas)) {
         switch(type) {
             case ARUPType::PLAYER_COUNT: {
                 arup_data.append(QString::number(area->playerCount()));
@@ -225,7 +226,8 @@ void AOClient::arup(ARUPType type, bool broadcast)
                     arup_data.append("FREE");
                 else {
                     QStringList area_owners;
-                    for (int owner_id : area->owners()) {
+                    const QList<int> owner_ids = area->owners();
+                    for (int owner_id : owner_ids) {
                         AOClient* owner = server->getClientByID(owner_id);
                         area_owners.append("[" + QString::number(owner->id) + "] " + owner->current_char);
                     }

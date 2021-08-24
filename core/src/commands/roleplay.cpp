@@ -22,6 +22,9 @@
 
 void AOClient::cmdFlip(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
     QString sender_name = ooc_name;
     QStringList faces = {"heads","tails"};
     QString face = faces[AOClient::genRand(0,1)];
@@ -129,6 +132,8 @@ void AOClient::cmdTimer(int argc, QStringList argv)
 
 void AOClient::cmdNoteCard(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     AreaData* area = server->areas[current_area];
     QString notecard = argv.join(" ");
     area->addNotecard(current_char, notecard);
@@ -137,6 +142,9 @@ void AOClient::cmdNoteCard(int argc, QStringList argv)
 
 void AOClient::cmdNoteCardClear(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
     AreaData* area = server->areas[current_area];
     if (!area->addNotecard(current_char, QString())) {
         sendServerMessageArea(current_char + " erased their note card.");
@@ -145,6 +153,9 @@ void AOClient::cmdNoteCardClear(int argc, QStringList argv)
 
 void AOClient::cmdNoteCardReveal(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
     AreaData* area = server->areas[current_area];
     const QStringList l_notecards = area->getNotecards();
 
@@ -161,12 +172,14 @@ void AOClient::cmdNoteCardReveal(int argc, QStringList argv)
 
 void AOClient::cmd8Ball(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     if (ConfigManager::magic8BallAnswers().isEmpty()) {
         qWarning() << "8ball.txt is empty!";
         sendServerMessage("8ball.txt is empty.");
         }
     else {
-        QString response = ConfigManager::magic8BallAnswers()[(genRand(1, ConfigManager::magic8BallAnswers().size() - 1))];
+        QString response = ConfigManager::magic8BallAnswers().at((genRand(1, ConfigManager::magic8BallAnswers().size() - 1)));
         QString sender_name = ooc_name;
         QString sender_message = argv.join(" ");
 
@@ -176,8 +189,10 @@ void AOClient::cmd8Ball(int argc, QStringList argv)
 
 void AOClient::cmdSubTheme(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     QString subtheme = argv.join(" ");
-    for (AOClient* client : server->clients) {
+    for (AOClient* client : qAsConst(server->clients)) {
         if (client->current_area == current_area)
             client->sendPacket("ST", {subtheme, "1"});
     }

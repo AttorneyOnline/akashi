@@ -19,13 +19,22 @@
 
 void AOClient::pktDefault(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    Q_UNUSED(area);
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
 #ifdef NET_DEBUG
     qDebug() << "Unimplemented packet:" << packet.header << packet.contents;
+#else
+    Q_UNUSED(packet);
 #endif
 }
 
 void AOClient::pktHardwareId(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    Q_UNUSED(area);
+    Q_UNUSED(argc);
+    Q_UNUSED(packet);
+
     hwid = argv[0];
     auto ban = server->db_manager->isHDIDBanned(hwid);
     if (ban.first) {
@@ -38,7 +47,9 @@ void AOClient::pktHardwareId(AreaData* area, int argc, QStringList argv, AOPacke
 
 void AOClient::pktSoftwareId(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
-
+    Q_UNUSED(area);
+    Q_UNUSED(argc);
+    Q_UNUSED(packet);
 
     // Full feature list as of AO 2.8.5
     // The only ones that are critical to ensuring the server works are
@@ -73,6 +84,11 @@ void AOClient::pktSoftwareId(AreaData* area, int argc, QStringList argv, AOPacke
 
 void AOClient::pktBeginLoad(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    Q_UNUSED(area);
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+    Q_UNUSED(packet);
+
     // Evidence isn't loaded during this part anymore
     // As a result, we can always send "0" for evidence length
     // Client only cares about what it gets from LE
@@ -81,16 +97,30 @@ void AOClient::pktBeginLoad(AreaData* area, int argc, QStringList argv, AOPacket
 
 void AOClient::pktRequestChars(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    Q_UNUSED(area);
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+    Q_UNUSED(packet);
+
     sendPacket("SC", server->characters);
 }
 
 void AOClient::pktRequestMusic(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    Q_UNUSED(area);
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+    Q_UNUSED(packet);
+
     sendPacket("SM", server->area_names + server->music_list);
 }
 
 void AOClient::pktLoadingDone(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+    Q_UNUSED(packet);
+
     if (hwid == "") {
         // No early connecting!
         socket->close();
@@ -126,7 +156,8 @@ void AOClient::pktLoadingDone(AreaData* area, int argc, QStringList argv, AOPack
     else {
         sendPacket("TI", {"0", "3"});
     }
-    for (QTimer* timer : area->timers()) {
+    const QList<QTimer*> timers = area->timers();
+    for (QTimer* timer : timers) {
         int timer_id = area->timers().indexOf(timer) + 1;
         if (timer->isActive()) {
             sendPacket("TI", {QString::number(timer_id), "2"});
@@ -140,16 +171,23 @@ void AOClient::pktLoadingDone(AreaData* area, int argc, QStringList argv, AOPack
 
 void AOClient::pktCharPassword(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    Q_UNUSED(area);
+    Q_UNUSED(argc);
+    Q_UNUSED(packet);
+
     password = argv[0];
 }
 
 void AOClient::pktSelectChar(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    Q_UNUSED(area);
+    Q_UNUSED(argc);
+    Q_UNUSED(packet);
+
     bool argument_ok;
     int selected_char_id = argv[1].toInt(&argument_ok);
     if (!argument_ok) {
         selected_char_id = -1;
-        return;
     }
 
     if (changeCharacter(selected_char_id))
@@ -158,6 +196,9 @@ void AOClient::pktSelectChar(AreaData* area, int argc, QStringList argv, AOPacke
 
 void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
     if (is_muted) {
         sendServerMessage("You cannot speak while muted.");
         return;
@@ -184,6 +225,9 @@ void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket pa
 
 void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(packet);
+
     if (is_ooc_muted) {
         sendServerMessage("You are OOC muted, and cannot speak.");
         return;
@@ -226,6 +270,11 @@ void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket p
 
 void AOClient::pktPing(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    Q_UNUSED(area);
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+    Q_UNUSED(packet);
+
     // Why does this packet exist
     // At least Crystal made it useful
     // It is now used for ping measurement
@@ -234,6 +283,8 @@ void AOClient::pktPing(AreaData* area, int argc, QStringList argv, AOPacket pack
 
 void AOClient::pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    Q_UNUSED(packet);
+
     // Due to historical reasons, this
     // packet has two functions:
     // Change area, and set music.
@@ -242,7 +293,7 @@ void AOClient::pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPack
     // argument is a valid song
     QString argument = argv[0];
 
-    for (QString song : server->music_list) {
+    for (const QString &song : qAsConst(server->music_list)) {
         if (song == argument || song == "~stop.mp3") { // ~stop.mp3 is a dummy track used by 2.9+
             // We have a song here
             if (is_dj_blocked) {
@@ -282,6 +333,9 @@ void AOClient::pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPack
 
 void AOClient::pktWtCe(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
     if (is_wtce_blocked) {
         sendServerMessage("You are blocked from using the judge controls.");
         return;
@@ -295,6 +349,9 @@ void AOClient::pktWtCe(AreaData* area, int argc, QStringList argv, AOPacket pack
 
 void AOClient::pktHpBar(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(packet);
+
     if (is_wtce_blocked) {
         sendServerMessage("You are blocked from using the judge controls.");
         return;
@@ -316,6 +373,10 @@ void AOClient::pktHpBar(AreaData* area, int argc, QStringList argv, AOPacket pac
 
 void AOClient::pktWebSocketIp(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    Q_UNUSED(area);
+    Q_UNUSED(argc);
+    Q_UNUSED(packet);
+
     // Special packet to set remote IP from the webao proxy
     // Only valid if from a local ip
     if (remote_ip.isLoopback()) {
@@ -332,7 +393,7 @@ void AOClient::pktWebSocketIp(AreaData* area, int argc, QStringList argv, AOPack
         }
 
         int multiclient_count = 0;
-        for (AOClient* joined_client : server->clients) {
+        for (AOClient* joined_client : qAsConst(server->clients)) {
             if (remote_ip.isEqual(joined_client->remote_ip))
                 multiclient_count++;
         }
@@ -346,7 +407,10 @@ void AOClient::pktWebSocketIp(AreaData* area, int argc, QStringList argv, AOPack
 
 void AOClient::pktModCall(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
-    for (AOClient* client : server->clients) {
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
+    for (AOClient* client : qAsConst(server->clients)) {
         if (client->authenticated)
             client->sendPacket(packet);
     }
@@ -365,6 +429,9 @@ void AOClient::pktModCall(AreaData* area, int argc, QStringList argv, AOPacket p
 
 void AOClient::pktAddEvidence(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(packet);
+
     if (!checkEvidenceAccess(area))
         return;
     AreaData::Evidence evi = {argv[0], argv[1], argv[2]};
@@ -374,6 +441,9 @@ void AOClient::pktAddEvidence(AreaData* area, int argc, QStringList argv, AOPack
 
 void AOClient::pktRemoveEvidence(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(packet);
+
     if (!checkEvidenceAccess(area))
         return;
     bool is_int = false;
@@ -386,6 +456,9 @@ void AOClient::pktRemoveEvidence(AreaData* area, int argc, QStringList argv, AOP
 
 void AOClient::pktEditEvidence(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(packet);
+
     if (!checkEvidenceAccess(area))
         return;
     bool is_int = false;
@@ -399,6 +472,10 @@ void AOClient::pktEditEvidence(AreaData* area, int argc, QStringList argv, AOPac
 
 void AOClient::pktSetCase(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    Q_UNUSED(area);
+    Q_UNUSED(argc);
+    Q_UNUSED(packet);
+
     QList<bool> prefs_list;
     for (int i = 2; i <=6; i++) {
         bool is_int = false;
@@ -412,6 +489,10 @@ void AOClient::pktSetCase(AreaData* area, int argc, QStringList argv, AOPacket p
 
 void AOClient::pktAnnounceCase(AreaData* area, int argc, QStringList argv, AOPacket packet)
 {
+    Q_UNUSED(area);
+    Q_UNUSED(argc);
+    Q_UNUSED(packet);
+
     QString case_title = argv[0];
     QStringList needed_roles;
     QList<bool> needs_list;
@@ -434,9 +515,18 @@ void AOClient::pktAnnounceCase(AreaData* area, int argc, QStringList argv, AOPac
 
     QList<AOClient*> clients_to_alert;
     // here lies morton, RIP
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+    QSet<bool> needs_set(needs_list.begin(), needs_list.end());
+#else
     QSet<bool> needs_set = needs_list.toSet();
-    for (AOClient* client : server->clients) {
+#endif
+    for (AOClient* client : qAsConst(server->clients)) {
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+        QSet<bool> matches(client->casing_preferences.begin(), client->casing_preferences.end());
+        matches.intersect(needs_set);
+#else
         QSet<bool> matches = client->casing_preferences.toSet().intersect(needs_set);
+#endif
         if (!matches.isEmpty() && !clients_to_alert.contains(client))
             clients_to_alert.append(client);
     }
@@ -452,7 +542,7 @@ void AOClient::pktAnnounceCase(AreaData* area, int argc, QStringList argv, AOPac
 
 void AOClient::sendEvidenceList(AreaData* area)
 {
-    for (AOClient* client : server->clients) {
+    for (AOClient* client : qAsConst(server->clients)) {
         if (client->current_area == current_area)
             client->updateEvidenceList(area);
     }
@@ -463,7 +553,8 @@ void AOClient::updateEvidenceList(AreaData* area)
     QStringList evidence_list;
     QString evidence_format("%1&%2&%3");
 
-    for (AreaData::Evidence evidence : area->evidence()) {
+    const QList<AreaData::Evidence> area_evidence = area->evidence();
+    for (const AreaData::Evidence &evidence : area_evidence) {
         if (!checkAuth(ACLFlags.value("CM")) && area->eviMod() == AreaData::EvidenceMod::HIDDEN_CM) {
             QRegularExpression regex("<owner=(.*?)>");
             QRegularExpressionMatch match = regex.match(evidence.description);
@@ -475,10 +566,7 @@ void AOClient::updateEvidenceList(AreaData* area)
             }
             // no match = show it to all
         }
-        evidence_list.append(evidence_format
-            .arg(evidence.name)
-            .arg(evidence.description)
-            .arg(evidence.image));
+        evidence_list.append(evidence_format.arg(evidence.name, evidence.description, evidence.image));
     }
 
     sendPacket(AOPacket("LE", evidence_list));
@@ -504,7 +592,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         return invalid;
 
     QList<QVariant> incoming_args;
-    for (QString arg : packet.contents) {
+    for (const QString &arg : qAsConst(packet.contents)) {
         incoming_args.append(QVariant(arg));
     }
 
@@ -555,7 +643,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     }
 
     if (is_gimped) {
-        QString gimp_message = ConfigManager::gimpList()[(genRand(1, ConfigManager::gimpList().size() - 1))];
+        QString gimp_message = ConfigManager::gimpList().at((genRand(1, ConfigManager::gimpList().size() - 1)));
         incoming_msg = gimp_message;
     }
 
@@ -678,7 +766,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         QString other_emote = "0";
         QString other_offset = "0";
         QString other_flip = "0";
-        for (AOClient* client : server->clients) {
+        for (AOClient* client : qAsConst(server->clients)) {
             if (client->pairing_with == char_id
                     && other_charid != char_id
                     && client->char_id == pairing_with
@@ -825,10 +913,12 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
             case AreaData::TestimonyProgress::LOOPED:
             {
                 sendServerMessageArea("Last statement reached. Looping to first statement.");
+                break;
             }
             case AreaData::TestimonyProgress::STAYED_AT_FIRST:
             {
                 sendServerMessage("First statement reached.");
+                Q_FALLTHROUGH();
             }
             case AreaData::TestimonyProgress::OK:
             default:

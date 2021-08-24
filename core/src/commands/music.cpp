@@ -22,6 +22,8 @@
 
 void AOClient::cmdPlay(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     if (is_dj_blocked) {
         sendServerMessage("You are blocked from changing the music.");
         return;
@@ -36,6 +38,9 @@ void AOClient::cmdPlay(int argc, QStringList argv)
 
 void AOClient::cmdCurrentMusic(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
     AreaData* area = server->areas[current_area];
     if (area->currentMusic() != "" && area->currentMusic() != "~stop.mp3") // dummy track for stopping music
         sendServerMessage("The current song is " + area->currentMusic() + " played by " + area->musicPlayerBy());
@@ -45,6 +50,8 @@ void AOClient::cmdCurrentMusic(int argc, QStringList argv)
 
 void AOClient::cmdBlockDj(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     bool conv_ok = false;
     int uid = argv[0].toInt(&conv_ok);
     if (!conv_ok) {
@@ -70,6 +77,8 @@ void AOClient::cmdBlockDj(int argc, QStringList argv)
 
 void AOClient::cmdUnBlockDj(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+
     bool conv_ok = false;
     int uid = argv[0].toInt(&conv_ok);
     if (!conv_ok) {
@@ -95,6 +104,9 @@ void AOClient::cmdUnBlockDj(int argc, QStringList argv)
 
 void AOClient::cmdToggleMusic(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
     AreaData* area = server->areas[current_area];
     area->toggleMusic();
     QString state = area->isMusicAllowed() ? "allowed." : "disallowed.";

@@ -28,7 +28,7 @@ bool ConfigManager::verifyServerConfig()
 {
     // Verify directories
     QStringList l_directories{"config/", "config/text/"};
-    for (QString l_directory : l_directories) {
+    for (const QString &l_directory : l_directories) {
         if (!dirExists(QFileInfo(l_directory))) {
                 qCritical() << l_directory + " does not exist!";
                 return false;
@@ -38,7 +38,7 @@ bool ConfigManager::verifyServerConfig()
     // Verify config files
     QStringList l_config_files{"config/config.ini", "config/areas.ini", "config/backgrounds.txt", "config/characters.txt", "config/music.txt",
                               "config/text/8ball.txt", "config/text/gimp.txt", "config/text/praise.txt", "config/text/reprimands.txt"};
-    for (QString l_file : l_config_files) {
+    for (const QString &l_file : l_config_files) {
         if (!fileExists(QFileInfo(l_file))) {
             qCritical() << l_file + " does not exist!";
             return false;

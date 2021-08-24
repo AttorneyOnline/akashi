@@ -37,7 +37,7 @@ public:
      * @param f_max_length The maximum amount of entries the Logger can store at once.
      */
     Logger(QString f_area_name, int f_max_length, const DataTypes::LogType& f_logType_r) :
-        m_areaName(f_area_name), m_maxLength(f_max_length), m_logType(f_logType_r) {};
+        m_maxLength(f_max_length), m_areaName(f_area_name), m_logType(f_logType_r) {};
 
     /**
      *@brief Returns a copy of the logger's buffer.

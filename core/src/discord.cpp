@@ -117,7 +117,7 @@ QHttpMultiPart* Discord::constructLogMultipart(const QQueue<QString> &f_buffer) 
     l_file.setRawHeader(QByteArray("Content-Disposition"), QByteArray("form-data; name=\"file\"; filename=\"log.txt\""));
     l_file.setRawHeader(QByteArray("Content-Type"), QByteArray("plain/text"));
     QString l_log;
-    for (QString log_entry : f_buffer) {
+    for (const QString &log_entry : f_buffer) {
         l_log.append(log_entry + "\n");
     }
     l_file.setBody(l_log.toUtf8());
@@ -153,6 +153,8 @@ void Discord::onReplyFinished(QNetworkReply *f_reply)
     f_reply->deleteLater();
 #ifdef DISCORD_DEBUG
     QDebug() << l_data;
+#else
+    Q_UNUSED(l_data);
 #endif
 }
 
