@@ -57,7 +57,8 @@ void AOClient::cmdBan(int argc, QStringList argv)
         break;
     }
 
-    for (AOClient* client : server->getClientsByIpid(ban.ipid)) {
+    const QList<AOClient*> targets = server->getClientsByIpid(ban.ipid);
+    for (AOClient* client : targets) {
         if (!ban_logged) {
             ban.ip = client->remote_ip;
             ban.hdid = client->hwid;
@@ -103,7 +104,8 @@ void AOClient::cmdKick(int argc, QStringList argv)
         }
     }
 
-    for (AOClient* client : server->getClientsByIpid(target_ipid)) {
+    const QList<AOClient*> targets = server->getClientsByIpid(target_ipid);
+    for (AOClient* client : targets) {
         client->sendPacket("KK", {reason});
         client->socket->close();
         kick_counter++;
@@ -181,7 +183,8 @@ void AOClient::cmdBans(int argc, QStringList argv)
     QStringList recent_bans;
     recent_bans << "Last 5 bans:";
     recent_bans << "-----";
-    for (DBManager::BanInfo ban : server->db_manager->getRecentBans()) {
+    const QList<DBManager::BanInfo> bans_list = server->db_manager->getRecentBans();
+    for (const DBManager::BanInfo &ban : bans_list) {
         QString banned_until;
         if (ban.duration == -2)
             banned_until = "The heat death of the universe";

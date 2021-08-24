@@ -41,7 +41,7 @@ void AOClient::clientData()
     QStringList all_packets = data.split("%");
     all_packets.removeLast(); // Remove the entry after the last delimiter
 
-    for (QString single_packet : all_packets) {
+    for (const QString &single_packet : qAsConst(all_packets)) {
         AOPacket packet(single_packet);
         handlePacket(packet);
     }
@@ -64,7 +64,7 @@ void AOClient::clientDisconnected()
 
     bool l_updateLocks = false;
 
-    for (AreaData* area : server->areas) {
+    for (AreaData* area : qAsConst(server->areas)) {
         l_updateLocks = l_updateLocks || area->removeOwner(id);
     }
 

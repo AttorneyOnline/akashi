@@ -99,6 +99,26 @@ private:
      */
     QTimer* m_uptimePostTimer;
 
+    /**
+     * @brief Constructs a new JSON document for modcalls.
+     *
+     * @param f_name The name of the modcall sender.
+     * @param f_area The name of the area the modcall was sent from.
+     * @param f_reason The reason for the modcall.
+     *
+     * @return A JSON document for the modcall.
+     */
+    QJsonDocument constructModcallJson(const QString& f_name, const QString& f_area, const QString& f_reason) const;
+
+    /**
+     * @brief Constructs a new QHttpMultiPart document for log files.
+     *
+     * @param f_buffer The area's log buffer.
+     *
+     * @return A QHttpMultiPart containing the log file.
+     */
+    QHttpMultiPart* constructLogMultipart(const QQueue<QString>& f_buffer) const;
+
 private slots:
     /**
      * @brief Handles a network reply from a webhook POST request.
@@ -121,16 +141,7 @@ private slots:
      */
     void postMultipartWebhook(QHttpMultiPart& f_multipart);
 
-    /**
-     * @brief Constructs a new JSON document for modcalls.
-     *
-     * @param f_name The name of the modcall sender.
-     * @param f_area The name of the area the modcall was sent from.
-     * @param f_reason The reason for the modcall.
-     *
-     * @return A JSON document for the modcall.
-     */
-    QJsonDocument constructModcallJson(const QString& f_name, const QString& f_area, const QString& f_reason) const;
+
 
     /**
      * @brief Constructs a new JSON document for bans.
@@ -151,14 +162,6 @@ private slots:
      */
     QJsonDocument constructUptimeJson(const QString& f_timeExpired);
 
-    /**
-     * @brief Constructs a new QHttpMultiPart document for log files.
-     *
-     * @param f_buffer The area's log buffer.
-     *
-     * @return A QHttpMultiPart containing the log file.
-     */
-    QHttpMultiPart* constructLogMultipart(const QQueue<QString>& f_buffer) const;
 };
 
 #endif // DISCORD_H

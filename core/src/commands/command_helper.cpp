@@ -47,7 +47,7 @@ QStringList AOClient::buildAreaList(int area_idx)
             break;
     }
     entries.append("[" + QString::number(area->playerCount()) + " users][" + QVariant::fromValue(area->status()).toString().replace("_", "-") + "]");
-    for (AOClient* client : server->clients) {
+    for (AOClient* client : qAsConst(server->clients)) {
         if (client->current_area == area_idx && client->joined) {
             QString char_entry = "[" + QString::number(client->id) + "] " + client->current_char;
             if (client->current_char == "")
@@ -168,10 +168,10 @@ long long AOClient::parseTime(QString input)
 QString AOClient::getReprimand(bool positive)
 {
     if (positive) {
-        return ConfigManager::praiseList()[genRand(0, ConfigManager::praiseList().size() - 1)];
+        return ConfigManager::praiseList().at(genRand(0, ConfigManager::praiseList().size() - 1));
         }
     else {
-        return ConfigManager::reprimandsList()[genRand(0, ConfigManager::reprimandsList().size() - 1)];
+        return ConfigManager::reprimandsList().at(genRand(0, ConfigManager::reprimandsList().size() - 1));
         }
 }
 

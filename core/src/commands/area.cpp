@@ -336,7 +336,8 @@ void AOClient::cmdStatus(int argc, QStringList argv)
         arup(ARUPType::STATUS, true);
         server->broadcast(AOPacket("CT", {ConfigManager::serverName(), current_char + " changed status to " + arg.toUpper(), "1"}), current_area);
     } else {
-        sendServerMessage("That does not look like a valid status. Valid statuses are " + AreaData::map_statuses.keys().join(", "));
+        const QStringList keys = AreaData::map_statuses.keys();
+        sendServerMessage("That does not look like a valid status. Valid statuses are " + keys.join(", "));
     }
 }
 

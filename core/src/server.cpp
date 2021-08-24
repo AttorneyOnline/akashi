@@ -101,7 +101,7 @@ void Server::start()
     std::sort(area_names.begin(), area_names.end(), [] (const QString &a, const QString &b) {return a.split(":")[0].toInt() < b.split(":")[0].toInt();});
     QStringList sanitized_area_names;
     QStringList raw_area_names = area_names;
-    for (QString area_name : area_names) {
+    for (const QString &area_name : qAsConst(area_names)) {
         QStringList name_split = area_name.split(":");
         name_split.removeFirst();
         QString area_name_sanitized = name_split.join(":");
@@ -120,7 +120,7 @@ void Server::clientConnected()
     QTcpSocket* socket = server->nextPendingConnection();
     int user_id;
     QList<int> user_ids;
-    for (AOClient* client : clients) {
+    for (AOClient* client : qAsConst(clients)) {
         user_ids.append(client->id);
     }
     for (user_id = 0; user_id <= player_count; user_id++) {
@@ -136,7 +136,7 @@ void Server::clientConnected()
     client->calculateIpid();
     auto ban = db_manager->isIPBanned(client->getIpid());
     bool is_banned = ban.first;
-    for (AOClient* joined_client : clients) {
+    for (AOClient* joined_client : qAsConst(clients)) {
         if (client->remote_ip.isEqual(joined_client->remote_ip))
             multiclient_count++;
     }
@@ -177,7 +177,7 @@ void Server::clientConnected()
 void Server::updateCharsTaken(AreaData* area)
 {
     QStringList chars_taken;
-    for (QString cur_char : characters) {
+    for (const QString &cur_char : qAsConst(characters)) {
         chars_taken.append(area->charactersTaken().contains(getCharID(cur_char))
                                ? QStringLiteral("-1")
                                : QStringLiteral("0"));
@@ -185,7 +185,7 @@ void Server::updateCharsTaken(AreaData* area)
 
     AOPacket response_cc("CharsCheck", chars_taken);
 
-    for (AOClient* client : clients) {
+    for (AOClient* client : qAsConst(clients)) {
         if (client->current_area == area->index()){
             if (!client->is_charcursed)
                 client->sendPacket(response_cc);
@@ -212,7 +212,7 @@ QStringList Server::getCursedCharsTaken(AOClient* client, QStringList chars_take
 
 void Server::broadcast(AOPacket packet, int area_index)
 {
-    for (AOClient* client : clients) {
+    for (AOClient* client : qAsConst(clients)) {
         if (client->current_area == area_index)
             client->sendPacket(packet);
     }
@@ -220,7 +220,7 @@ void Server::broadcast(AOPacket packet, int area_index)
 
 void Server::broadcast(AOPacket packet)
 {
-    for (AOClient* client : clients) {
+    for (AOClient* client : qAsConst(clients)) {
         client->sendPacket(packet);
     }
 }
@@ -228,7 +228,7 @@ void Server::broadcast(AOPacket packet)
 QList<AOClient*> Server::getClientsByIpid(QString ipid)
 {
     QList<AOClient*> return_clients;
-    for (AOClient* client : clients) {
+    for (AOClient* client : qAsConst(clients)) {
         if (client->getIpid() == ipid)
             return_clients.append(client);
     }
@@ -237,7 +237,7 @@ QList<AOClient*> Server::getClientsByIpid(QString ipid)
 
 AOClient* Server::getClientByID(int id)
 {
-    for (AOClient* client : clients) {
+    for (AOClient* client : qAsConst(clients)) {
         if (client->id == id)
             return client;
     }
@@ -246,7 +246,7 @@ AOClient* Server::getClientByID(int id)
 
 int Server::getCharID(QString char_name)
 {
-    for (QString character : characters) {
+    for (const QString &character : qAsConst(characters)) {
         if (character.toLower() == char_name.toLower()) {
             return characters.indexOf(QRegExp(character, Qt::CaseInsensitive));
         }
@@ -308,7 +308,7 @@ void Server::handleDiscordIntegration()
 
 Server::~Server()
 {
-    for (AOClient* client : clients) {
+    for (AOClient* client : qAsConst(clients)) {
         client->deleteLater();
     }
     server->deleteLater();

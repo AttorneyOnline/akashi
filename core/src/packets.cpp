@@ -188,7 +188,6 @@ void AOClient::pktSelectChar(AreaData* area, int argc, QStringList argv, AOPacke
     int selected_char_id = argv[1].toInt(&argument_ok);
     if (!argument_ok) {
         selected_char_id = -1;
-        return;
     }
 
     if (changeCharacter(selected_char_id))
@@ -294,7 +293,7 @@ void AOClient::pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPack
     // argument is a valid song
     QString argument = argv[0];
 
-    for (QString song : server->music_list) {
+    for (const QString &song : qAsConst(server->music_list)) {
         if (song == argument || song == "~stop.mp3") { // ~stop.mp3 is a dummy track used by 2.9+
             // We have a song here
             if (is_dj_blocked) {
@@ -394,7 +393,7 @@ void AOClient::pktWebSocketIp(AreaData* area, int argc, QStringList argv, AOPack
         }
 
         int multiclient_count = 0;
-        for (AOClient* joined_client : server->clients) {
+        for (AOClient* joined_client : qAsConst(server->clients)) {
             if (remote_ip.isEqual(joined_client->remote_ip))
                 multiclient_count++;
         }
@@ -411,7 +410,7 @@ void AOClient::pktModCall(AreaData* area, int argc, QStringList argv, AOPacket p
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    for (AOClient* client : server->clients) {
+    for (AOClient* client : qAsConst(server->clients)) {
         if (client->authenticated)
             client->sendPacket(packet);
     }
@@ -543,7 +542,7 @@ void AOClient::pktAnnounceCase(AreaData* area, int argc, QStringList argv, AOPac
 
 void AOClient::sendEvidenceList(AreaData* area)
 {
-    for (AOClient* client : server->clients) {
+    for (AOClient* client : qAsConst(server->clients)) {
         if (client->current_area == current_area)
             client->updateEvidenceList(area);
     }
@@ -554,7 +553,8 @@ void AOClient::updateEvidenceList(AreaData* area)
     QStringList evidence_list;
     QString evidence_format("%1&%2&%3");
 
-    for (AreaData::Evidence evidence : area->evidence()) {
+    const QList<AreaData::Evidence> area_evidence = area->evidence();
+    for (const AreaData::Evidence &evidence : area_evidence) {
         if (!checkAuth(ACLFlags.value("CM")) && area->eviMod() == AreaData::EvidenceMod::HIDDEN_CM) {
             QRegularExpression regex("<owner=(.*?)>");
             QRegularExpressionMatch match = regex.match(evidence.description);
@@ -566,10 +566,7 @@ void AOClient::updateEvidenceList(AreaData* area)
             }
             // no match = show it to all
         }
-        evidence_list.append(evidence_format
-            .arg(evidence.name)
-            .arg(evidence.description)
-            .arg(evidence.image));
+        evidence_list.append(evidence_format.arg(evidence.name, evidence.description, evidence.image));
     }
 
     sendPacket(AOPacket("LE", evidence_list));
@@ -595,7 +592,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         return invalid;
 
     QList<QVariant> incoming_args;
-    for (QString arg : packet.contents) {
+    for (const QString &arg : qAsConst(packet.contents)) {
         incoming_args.append(QVariant(arg));
     }
 
@@ -646,7 +643,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     }
 
     if (is_gimped) {
-        QString gimp_message = ConfigManager::gimpList()[(genRand(1, ConfigManager::gimpList().size() - 1))];
+        QString gimp_message = ConfigManager::gimpList().at((genRand(1, ConfigManager::gimpList().size() - 1)));
         incoming_msg = gimp_message;
     }
 
@@ -769,7 +766,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         QString other_emote = "0";
         QString other_offset = "0";
         QString other_flip = "0";
-        for (AOClient* client : server->clients) {
+        for (AOClient* client : qAsConst(server->clients)) {
             if (client->pairing_with == char_id
                     && other_charid != char_id
                     && client->char_id == pairing_with
