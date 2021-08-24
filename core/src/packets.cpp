@@ -252,7 +252,11 @@ void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket p
         return;
     AOPacket final_packet("CT", {ooc_name, message, "0"});
     if(message.at(0) == '/') {
+#if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
         QStringList cmd_argv = message.split(" ", QString::SplitBehavior::SkipEmptyParts);
+#else
+        QStringList cmd_argv = message.split(" ", Qt::SkipEmptyParts);
+#endif
         QString command = cmd_argv[0].trimmed().toLower();
         command = command.right(command.length() - 1);
         cmd_argv.removeFirst();
