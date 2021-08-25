@@ -18,7 +18,6 @@
 #ifndef AREA_DATA_H
 #define AREA_DATA_H
 
-#include "logger.h"
 #include "aopacket.h"
 #include "config_manager.h"
 

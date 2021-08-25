@@ -284,6 +284,11 @@ void Server::updateHTTPAdvertiserConfig()
 
 }
 
+QQueue<QString> Server::getAreaBuffer(const QString &f_areaName)
+{
+    return logger->buffer(f_areaName);
+}
+
 void Server::allowMessage()
 {
     can_send_ic_messages = true;

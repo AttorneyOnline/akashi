@@ -134,7 +134,7 @@ void ULogger::logModcall(const QString &f_charName, const QString &f_ipid, const
 void ULogger::logConnectionAttempt(const QString& f_ip_address, const QString& f_ipid, const QString& f_hwid)
 {
     QString l_time = QDateTime::currentDateTime().toString("ddd MMMM d yyyy | hh:mm:ss");
-    QString l_logEntry = QStringLiteral("[%1][CONNECT][%2][%3]\n")
+    QString l_logEntry = QStringLiteral("[%1][CONNECT][%2][%3][%4]\n")
             .arg(l_time, f_ip_address, f_ipid, f_hwid);
     updateAreaBuffer("SERVER",l_logEntry);
 }

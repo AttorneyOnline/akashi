@@ -45,6 +45,12 @@ public:
      */
     virtual ~ULogger();
 
+    /**
+     * @brief Returns the buffer of a respective area. Primarily used by the Discord Webhook.
+     * @param Name of the area which buffer is requested.
+     */
+    QQueue<QString> buffer(const QString &f_areaName);
+
 public slots:
 
     /**
@@ -99,12 +105,6 @@ private:
      * @param Formatted QString to be added into the buffer.
      */
     void updateAreaBuffer(const QString& f_areaName, const QString& f_logEntry);
-
-    /**
-     * @brief Returns the buffer of a respective area. Primarily used by the Discord Webhook.
-     * @param Name of the area which buffer is requested.
-     */
-    QQueue<QString> buffer(const QString &f_areaName);
 
     /**
      * @brief QMap of all available area buffers.

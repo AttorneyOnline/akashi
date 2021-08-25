@@ -40,7 +40,6 @@ SOURCES += \
     src/config_manager.cpp \
     src/db_manager.cpp \
     src/discord.cpp \
-    src/logger.cpp \
     src/packets.cpp \
     src/server.cpp \
     src/testimony_recorder.cpp \
@@ -60,7 +59,6 @@ HEADERS += include/advertiser.h \
     include/data_types.h \
     include/db_manager.h \
     include/discord.h \
-    include/logger.h \
     include/server.h \
     include/ws_client.h \
     include/ws_proxy.h \

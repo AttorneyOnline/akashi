@@ -150,6 +150,11 @@ class Server : public QObject {
     void updateHTTPAdvertiserConfig();
 
     /**
+     * @brief Getter for an area specific buffer from the logger.
+     */
+    QQueue<QString> getAreaBuffer(const QString& f_areaName);
+
+    /**
      * @brief The collection of all currently connected clients.
      */
     QVector<AOClient*> clients;
