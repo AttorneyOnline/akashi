@@ -100,6 +100,9 @@ void Logger::flush()
     case DataTypes::LogType::FULL:
         l_logfile.setFileName(QString("logs/%1.log").arg(QDate::currentDate().toString("yyyy-MM-dd")));
         break;
+    case DataTypes::LogType::SQL:
+
+        break;
     }
 
     if (l_logfile.open(QIODevice::WriteOnly | QIODevice::Append)) {

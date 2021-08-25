@@ -278,7 +278,20 @@ class Server : public QObject {
      */
     void banWebhookRequest(const QString& f_ipid, const QString& f_moderator, const QString& f_duration, const QString& f_reason, const int& f_banID);
 
+    /**
+     * @brief Signal connected to universal logger. Logs a client connection attempt.
+     * @param f_ip_address The IP Address of the incoming connection.
+     * @param f_ipid The IPID of the incoming connection.
+     * @param f_hdid The HDID of the incoming connection.
+     */
+    void logConnectionAttempt(const QString& f_ip_address, const QString& f_ipid);
+
   private:
+    /**
+     * @brief Connects new AOClient to the logger.
+     **/
+    void hookupLogger(AOClient* client);
+
     /**
      * @brief The proxy used for WebSocket connections.
      *
