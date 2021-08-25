@@ -284,7 +284,7 @@ class Server : public QObject {
      * @param f_ipid The IPID of the incoming connection.
      * @param f_hdid The HDID of the incoming connection.
      */
-    void logConnectionAttempt(const QString& f_ip_address, const QString& f_ipid);
+    void logConnectionAttempt(const QString& f_ip_address, const QString& f_ipid, const QString& f_hwid);
 
   private:
     /**

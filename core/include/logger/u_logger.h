@@ -90,7 +90,7 @@ public slots:
     /**
      * @brief Logs any connection attempt to the server, wether sucessful or not.
      */
-    void logConnectionAttempt(const QString &f_ip_address, const QString &f_ipid);
+    void logConnectionAttempt(const QString& f_ip_address, const QString& f_ipid, const QString& f_hwid);
 
 private:
 

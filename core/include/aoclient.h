@@ -76,6 +76,15 @@ class AOClient : public QObject {
     QString getIpid() const;
 
     /**
+     * @brief Getter for the client's HWID.
+     *
+     * @return The HWID.
+     *
+     * @see #hwid
+     */
+    QString getHwid() const;
+
+    /**
      * @brief Calculates the client's IPID based on a hashed version of its IP.
      */
     void calculateIpid();

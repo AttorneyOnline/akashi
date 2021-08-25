@@ -43,6 +43,7 @@ void AOClient::pktHardwareId(AreaData* area, int argc, QStringList argv, AOPacke
         return;
     }
     sendPacket("ID", {QString::number(id), "akashi", QCoreApplication::applicationVersion()});
+    emit server->logConnectionAttempt(remote_ip.toString(), ipid, hwid);
 }
 
 void AOClient::pktSoftwareId(AreaData* area, int argc, QStringList argv, AOPacket packet)
