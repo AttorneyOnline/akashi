@@ -74,13 +74,12 @@ public slots:
     /**
      * @brief Adds a player kick to the area buffer and writes it to the respective log format.
      */
-    void logKick(const QString& f_moderator, const QString& f_targetIPID, const QString& f_targetName, const QString f_targetOOCName);
+    void logKick(const QString& f_moderator, const QString& f_targetIPID);
 
     /**
      * @brief Adds a player ban to the area buffer and writes it to the respective log format.
      */
-    void logBan(const QString& f_moderator, const QString& f_targetIPID, const QString& f_targetName, const QString f_targetOOCName,
-                const QString &f_duration);
+    void logBan(const QString& f_moderator, const QString& f_targetIPID, const QString &f_duration);
 
     /**
      * @brief Adds a modcall event to the area buffer, also triggers modcall writing.

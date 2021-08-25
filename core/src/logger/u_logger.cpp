@@ -103,19 +103,19 @@ void ULogger::logCMD(const QString& f_charName,const QString& f_ipid, const QStr
     updateAreaBuffer(f_areaName,l_logEntry);
 }
 
-void ULogger::logKick(const QString& f_moderator, const QString& f_targetIPID, const QString& f_targetName, const QString f_targetOOCName)
+void ULogger::logKick(const QString& f_moderator, const QString& f_targetIPID)
 {
     QString l_time = QDateTime::currentDateTime().toString("ddd MMMM d yyyy | hh:mm:ss");
-    QString l_logEntry = QStringLiteral("[%1][KICK][%2][%3][%4(%5)]")
-            .arg(l_time, f_moderator, f_targetIPID, f_targetName, f_targetOOCName);
+    QString l_logEntry = QStringLiteral("[%1][%2][KICK][%3]")
+            .arg(l_time, f_moderator, f_targetIPID);
     updateAreaBuffer("SERVER",l_logEntry);
 }
 
-void ULogger::logBan(const QString &f_moderator, const QString &f_targetIPID, const QString &f_targetName, const QString f_targetOOCName, const QString &f_duration)
+void ULogger::logBan(const QString &f_moderator, const QString &f_targetIPID, const QString &f_duration)
 {
     QString l_time = QDateTime::currentDateTime().toString("ddd MMMM d yyyy | hh:mm:ss");
-    QString l_logEntry = QStringLiteral("[%1][BAN][%2][%3(%4)][%5][%6]")
-            .arg(l_time, f_moderator, f_targetName, f_targetOOCName, f_targetIPID, f_duration);
+    QString l_logEntry = QStringLiteral("[%1][%2][BAN][%3][%4]")
+            .arg(l_time, f_moderator, f_targetIPID, f_duration);
     updateAreaBuffer("SERVER",l_logEntry);
 }
 

@@ -2228,13 +2228,12 @@ class AOClient : public QObject {
     /**
      * @brief Signal connected to universal logger. Sends player kick information to the logger.
      */
-    void logKick(const QString& f_moderator, const QString& f_targetIPID, const QString& f_targetName, const QString f_targetOOCName);
+    void logKick(const QString& f_moderator, const QString& f_targetIPID, const QString& f_reason);
 
     /**
      * @brief Signal connected to universal logger. Sends ban information to the logger.
      */
-    void logBan(const QString& f_moderator, const QString& f_targetIPID, const QString& f_targetName, const QString f_targetOOCName,
-                const QString &f_duration);
+    void logBan(const QString& f_moderator, const QString& f_targetIPID, const QString &f_duration, const QString& f_reason);
 
     /**
      * @brief Signal connected to universal logger. Sends modcall information to the logger, triggering a write of the buffer

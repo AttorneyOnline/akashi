@@ -78,6 +78,7 @@ void AOClient::cmdBan(int argc, QStringList argv)
         client->socket->close();
         kick_counter++;
 
+        emit logBan(ban.moderator,ban.ipid,ban_duration,ban.reason);
         if (ConfigManager::discordBanWebhookEnabled())
             emit server->banWebhookRequest(ban.ipid, ban.moderator, ban_duration, ban.reason, ban_id);
     }
@@ -111,8 +112,15 @@ void AOClient::cmdKick(int argc, QStringList argv)
         kick_counter++;
     }
 
-    if (kick_counter > 0)
+    if (kick_counter > 0) {
+        if (ConfigManager::authType() == DataTypes::AuthType::ADVANCED){
+            emit logKick(moderator_name, target_ipid, reason);
+        }
+        else {
+            emit logKick("Moderator",target_ipid,reason);
+        }
         sendServerMessage("Kicked " + QString::number(kick_counter) + " client(s) with ipid " + target_ipid + " for reason: " + reason);
+    }
     else
         sendServerMessage("User with ipid not found!");
 }

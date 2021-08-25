@@ -218,6 +218,7 @@ void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket pa
 
     area->log(current_char, ipid, validated_packet);
     server->broadcast(validated_packet, current_area);
+    emit logIC((current_char + " " + showname), ooc_name,ipid,server->areas[current_area]->name(),last_message);
     area->updateLastICMessage(validated_packet.contents);
 
     server->can_send_ic_messages = false;
@@ -265,12 +266,14 @@ void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket p
 
         handleCommand(command, cmd_argc, cmd_argv);
         area->logCmd(current_char, ipid, command, cmd_argv);
+        emit logCMD((current_char + " " + showname),ipid, ooc_name,command,cmd_argv,server->areas[current_area]->name());
         return;
     }
     else {
         server->broadcast(final_packet, current_area);
     }
     area->log(current_char, ipid, final_packet);
+    emit logOOC((current_char + " " + showname), ooc_name, ipid,server->areas[current_area]->name(),message);
 }
 
 void AOClient::pktPing(AreaData* area, int argc, QStringList argv, AOPacket packet)
@@ -420,6 +423,7 @@ void AOClient::pktModCall(AreaData* area, int argc, QStringList argv, AOPacket p
             client->sendPacket(packet);
     }
     area->log(current_char, ipid, packet);
+    emit logModcall((current_char + " " + showname),ipid, ooc_name, server->areas[current_area]->name());
 
     if (ConfigManager::discordModcallWebhookEnabled()) {
         QString name = ooc_name;
