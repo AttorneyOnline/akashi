@@ -996,6 +996,7 @@ void AOClient::loginAttempt(QString message)
             sendServerMessage("Incorrect password.");
         }
         server->areas.value(current_area)->logLogin(current_char, ipid, authenticated, "moderator");
+        emit logLogin((current_char + " " + showname),ooc_name,"Moderator", ipid, server->areas.value(current_area)->name(),authenticated);
         break;
     case DataTypes::AuthType::ADVANCED:
         QStringList login = message.split(" ");
@@ -1019,7 +1020,7 @@ void AOClient::loginAttempt(QString message)
             sendPacket("AUTH", {"0"}); // Client: "Login unsuccessful."
             sendServerMessage("Incorrect password.");
         }
-        server->areas.value(current_area)->logLogin(current_char, ipid, authenticated, username);
+        emit logLogin((current_char + " " + showname),ooc_name,username, ipid, server->areas.value(current_area)->name(),authenticated);
         break;
     }
     sendServerMessage("Exiting login prompt.");
