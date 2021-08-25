@@ -25,7 +25,6 @@
 #include "include/config_manager.h"
 #include "include/logger/writer_full.h"
 #include "include/logger/writer_modcall.h"
-#include "include/logger/writer_sql.h"
 
 /**
  * @brief The Universal Logger class to provide a common place to handle, store and write logs to file.
@@ -122,11 +121,6 @@ private:
      * @brief Pointer to full writer. Handles single messages in one file.
      */
     WriterFull* writerFull;
-
-    /**
-     * @brief Pointer to SQL writer. Handles execution of log SQL queries.
-     */
-    WriterSQL* writerSQL;
 };
 
 #endif //U_LOGGER_H

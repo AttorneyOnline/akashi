@@ -42,7 +42,6 @@ public:
     enum class LogType {
         MODCALL,
         FULL,
-        SQL
     };
     Q_ENUM(LogType)
 };

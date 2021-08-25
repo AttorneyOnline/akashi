@@ -27,9 +27,6 @@ ULogger::ULogger(QObject* parent) :
         case DataTypes::LogType::FULL :
             writerFull = new WriterFull;
             break;
-        case DataTypes::LogType::SQL :
-            writerSQL = new WriterSQL;
-            break;
     }
 }
 
@@ -41,9 +38,6 @@ ULogger::~ULogger()
             break;
         case DataTypes::LogType::FULL :
             writerFull->deleteLater();
-            break;
-        case DataTypes::LogType::SQL :
-            writerSQL->deleteLater();
             break;
     }
 }

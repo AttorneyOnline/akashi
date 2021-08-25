@@ -48,8 +48,7 @@ SOURCES += \
     src/http_advertiser.cpp \
     src/logger/u_logger.cpp \
     src/logger/writer_modcall.cpp \
-    src/logger/writer_full.cpp \
-    src/logger/writer_sql.cpp
+    src/logger/writer_full.cpp
 
 HEADERS += include/advertiser.h \
     include/aoclient.h \
@@ -65,5 +64,4 @@ HEADERS += include/advertiser.h \
     include/http_advertiser.h \
     include/logger/u_logger.h \
     include/logger/writer_modcall.h \
-    include/logger/writer_full.h \
-    include/logger/writer_sql.h
+    include/logger/writer_full.h
