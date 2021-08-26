@@ -50,10 +50,8 @@ AreaData::AreaData(QString p_name, int p_index) :
     m_ignoreBgList = areas_ini.value("ignore_bglist", "false").toBool();
     areas_ini.endGroup();
     int log_size = ConfigManager::logBuffer();
-    DataTypes::LogType l_logType = ConfigManager::loggingType();
     if (log_size == 0)
         log_size = 500;
-    m_logger = new Logger(m_name, log_size, l_logType);
     QTimer* timer1 = new QTimer();
     m_timers.append(timer1);
     QTimer* timer2 = new QTimer();
@@ -277,42 +275,9 @@ void AreaData::toggleMusic()
     m_toggleMusic = !m_toggleMusic;
 }
 
-void AreaData::log(const QString &f_clientName_r, const QString &f_clientIpid_r, const AOPacket &f_packet_r) const
-{
-    auto l_header = f_packet_r.header;
-
-    if (l_header == "MS") {
-        m_logger->logIC(f_clientName_r, f_clientIpid_r, f_packet_r.contents.at(4), f_packet_r.contents.at(15));
-    } else if (l_header == "CT") {
-        m_logger->logOOC(f_clientName_r, f_clientIpid_r, f_packet_r.contents.at(1));
-    } else if (l_header == "ZZ") {
-        m_logger->logModcall(f_clientName_r, f_clientIpid_r, f_packet_r.contents.at(0));
-    }
-}
-
-void AreaData::logLogin(const QString &f_clientName_r, const QString &f_clientIpid_r, bool f_success, const QString& f_modname_r) const
-{
-    m_logger->logLogin(f_clientName_r, f_clientIpid_r, f_success, f_modname_r);
-}
-
-void AreaData::logCmd(const QString &f_clientName_r, const QString &f_clientIpid_r, const QString &f_command_r, const QStringList &f_cmdArgs_r) const
-{
-    m_logger->logCmd(f_clientName_r, f_clientIpid_r, f_command_r, f_cmdArgs_r);
-}
-
-void AreaData::flushLogs() const
-{
-    m_logger->flush();
-}
-
 void AreaData::setEviMod(const EvidenceMod &f_eviMod_r)
 {
     m_eviMod = f_eviMod_r;
-}
-
-QQueue<QString> AreaData::buffer() const
-{
-    return m_logger->buffer();
 }
 
 void AreaData::setTestimonyRecording(const TestimonyRecording &f_testimonyRecording_r)

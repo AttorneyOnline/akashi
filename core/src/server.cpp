@@ -69,6 +69,10 @@ void Server::start()
         httpAdvertiserTimer->start(300000);
     }
 
+    logger = new ULogger(this);
+    connect(this, &Server::logConnectionAttempt,
+            logger, &ULogger::logConnectionAttempt);
+
     proxy = new WSProxy(port, ws_port, this);
     if(ws_port != -1)
         proxy->start();
@@ -169,6 +173,7 @@ void Server::clientConnected()
                                                     // tsuserver4. It should disable fantacrypt
                                                     // completely in any client 2.4.3 or newer
     client->sendPacket(decryptor);
+    hookupLogger(client);
 #ifdef NET_DEBUG
     qDebug() << client->remote_ip.toString() << "connected";
 #endif
@@ -279,6 +284,11 @@ void Server::updateHTTPAdvertiserConfig()
 
 }
 
+QQueue<QString> Server::getAreaBuffer(const QString &f_areaName)
+{
+    return logger->buffer(f_areaName);
+}
+
 void Server::allowMessage()
 {
     can_send_ic_messages = true;
@@ -304,6 +314,24 @@ void Server::handleDiscordIntegration()
             discord->stopUptimeTimer();
     }
     return;
+}
+
+void Server::hookupLogger(AOClient* client)
+{
+    connect(client, &AOClient::logIC,
+            logger, &ULogger::logIC);
+    connect(client, &AOClient::logOOC,
+            logger, &ULogger::logOOC);
+    connect(client, &AOClient::logLogin,
+            logger, &ULogger::logLogin);
+    connect(client, &AOClient::logCMD,
+            logger, &ULogger::logCMD);
+    connect(client, &AOClient::logBan,
+            logger, &ULogger::logBan);
+    connect(client, &AOClient::logKick,
+            logger, &ULogger::logKick);
+    connect(client, &AOClient::logModcall,
+            logger, &ULogger::logModcall);
 }
 
 Server::~Server()

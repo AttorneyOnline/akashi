@@ -15,45 +15,33 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
-#ifndef DATA_TYPES_H
-#define DATA_TYPES_H
+#include "include/logger/writer_modcall.h"
 
-#include <QDebug>
-/**
- * @brief A class for handling several custom data types.
- */
-class DataTypes
+WriterModcall::WriterModcall(QObject* parent) :
+    QObject(parent)
 {
-    Q_GADGET
+    l_dir.setPath("logs/");
+    if (!l_dir.exists()) {
+        l_dir.mkpath(".");
+    }
 
-public:
-    /**
-     * @brief Custom type for authorization types.
-     */
-    enum class AuthType {
-            SIMPLE,
-            ADVANCED
-        };
-    Q_ENUM(AuthType);
+    l_dir.setPath("logs/modcall");
+    if (!l_dir.exists()) {
+        l_dir.mkpath(".");
+    }
+}
 
-    /**
-     * @brief Custom type for logging types.
-     */
-    enum class LogType {
-        MODCALL,
-        FULL,
-    };
-    Q_ENUM(LogType)
+void WriterModcall::flush(const QString f_areaName, QQueue<QString> f_buffer)
+{
+    l_logfile.setFileName(QString("logs/modcall/report_%1_%2.log").arg(f_areaName, (QDateTime::currentDateTime().toString("yyyy-MM-dd_hhmmss"))));
+
+    if (l_logfile.open(QIODevice::WriteOnly | QIODevice::Append)) {
+        QTextStream file_stream(&l_logfile);
+
+        while (!f_buffer.isEmpty())
+            file_stream << f_buffer.dequeue();
+    }
+
+    l_logfile.close();
+
 };
-
-template<typename T>
-T toDataType(const QString& f_string){
-    return QVariant(f_string).value<T>();
-}
-
-template<typename T>
-QString fromDataType(const T& f_t){
-    return QVariant::fromValue(f_t).toString();
-}
-
-#endif // DATA_TYPES_H

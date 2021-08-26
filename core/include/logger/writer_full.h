@@ -15,45 +15,51 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
-#ifndef DATA_TYPES_H
-#define DATA_TYPES_H
+#ifndef WRITER_FULL_H
+#define WRITER_FULL_H
+#include <QObject>
+#include <QFile>
+#include <QDir>
+#include <QDateTime>
+#include <QTextStream>
 
-#include <QDebug>
 /**
- * @brief A class for handling several custom data types.
+ * @brief A class to handle file interaction when writing in full log mode.
  */
-class DataTypes
+class WriterFull : public QObject
 {
-    Q_GADGET
-
+    Q_OBJECT
 public:
     /**
-     * @brief Custom type for authorization types.
+     * @brief Constructor for full logwriter
+     *
+     * @param QObject pointer to the parent object.
      */
-    enum class AuthType {
-            SIMPLE,
-            ADVANCED
-        };
-    Q_ENUM(AuthType);
+    WriterFull(QObject* parent = nullptr);;
 
     /**
-     * @brief Custom type for logging types.
+     * @brief Deconstructor for full logwriter.
+     *
+     * @details Doesn't really do anything, but its here for completeness sake.
      */
-    enum class LogType {
-        MODCALL,
-        FULL,
-    };
-    Q_ENUM(LogType)
+    virtual ~WriterFull() {}
+
+    /**
+     * @brief Function to write log entry into a logfile.
+     * @param Preformatted QString which will be written into the logfile.
+     */
+    void flush(const QString f_entry);
+
+private:
+    /**
+     * @brief Filename of the logfile used. This will always be the time the server starts up.
+     */
+    QFile l_logfile;
+
+    /**
+     * @brief Directory where logfiles will be stored.
+     */
+    QDir l_dir;
 };
 
-template<typename T>
-T toDataType(const QString& f_string){
-    return QVariant(f_string).value<T>();
-}
-
-template<typename T>
-QString fromDataType(const T& f_t){
-    return QVariant::fromValue(f_t).toString();
-}
-
-#endif // DATA_TYPES_H
+#endif //WRITER_FULL_H

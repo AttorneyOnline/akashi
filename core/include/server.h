@@ -26,6 +26,7 @@
 #include "include/discord.h"
 #include "include/config_manager.h"
 #include "include/http_advertiser.h"
+#include "include/logger/u_logger.h"
 
 #include <QCoreApplication>
 #include <QDebug>
@@ -147,6 +148,11 @@ class Server : public QObject {
      * @brief Updates the modern advertiser configuration on configuration reload.
      */
     void updateHTTPAdvertiserConfig();
+
+    /**
+     * @brief Getter for an area specific buffer from the logger.
+     */
+    QQueue<QString> getAreaBuffer(const QString& f_areaName);
 
     /**
      * @brief The collection of all currently connected clients.
@@ -277,7 +283,20 @@ class Server : public QObject {
      */
     void banWebhookRequest(const QString& f_ipid, const QString& f_moderator, const QString& f_duration, const QString& f_reason, const int& f_banID);
 
+    /**
+     * @brief Signal connected to universal logger. Logs a client connection attempt.
+     * @param f_ip_address The IP Address of the incoming connection.
+     * @param f_ipid The IPID of the incoming connection.
+     * @param f_hdid The HDID of the incoming connection.
+     */
+    void logConnectionAttempt(const QString& f_ip_address, const QString& f_ipid, const QString& f_hwid);
+
   private:
+    /**
+     * @brief Connects new AOClient to the logger.
+     **/
+    void hookupLogger(AOClient* client);
+
     /**
      * @brief The proxy used for WebSocket connections.
      *
@@ -304,6 +323,11 @@ class Server : public QObject {
      * @brief Advertises the server in a regular intervall.
      */
     QTimer* httpAdvertiserTimer;
+
+    /**
+     * @brief Handles the universal log framework.
+     */
+    ULogger* logger;
 
     /**
      * @brief The port through which the server will accept TCP connections.

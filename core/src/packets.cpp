@@ -36,6 +36,7 @@ void AOClient::pktHardwareId(AreaData* area, int argc, QStringList argv, AOPacke
     Q_UNUSED(packet);
 
     hwid = argv[0];
+    emit server->logConnectionAttempt(remote_ip.toString(), ipid, hwid);
     auto ban = server->db_manager->isHDIDBanned(hwid);
     if (ban.first) {
         sendPacket("BD", {ban.second + "\nBan ID: " + QString::number(server->db_manager->getBanID(hwid))});
@@ -215,8 +216,8 @@ void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket pa
     if (pos != "")
         validated_packet.contents[5] = pos;
 
-    area->log(current_char, ipid, validated_packet);
     server->broadcast(validated_packet, current_area);
+    emit logIC((current_char + " " + showname), ooc_name,ipid,server->areas[current_area]->name(),last_message);
     area->updateLastICMessage(validated_packet.contents);
 
     server->can_send_ic_messages = false;
@@ -263,13 +264,13 @@ void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket p
         int cmd_argc = cmd_argv.length();
 
         handleCommand(command, cmd_argc, cmd_argv);
-        area->logCmd(current_char, ipid, command, cmd_argv);
+        emit logCMD((current_char + " " + showname),ipid, ooc_name,command,cmd_argv,server->areas[current_area]->name());
         return;
     }
     else {
         server->broadcast(final_packet, current_area);
     }
-    area->log(current_char, ipid, final_packet);
+    emit logOOC((current_char + " " + showname), ooc_name, ipid,area->name(),message);
 }
 
 void AOClient::pktPing(AreaData* area, int argc, QStringList argv, AOPacket packet)
@@ -418,17 +419,16 @@ void AOClient::pktModCall(AreaData* area, int argc, QStringList argv, AOPacket p
         if (client->authenticated)
             client->sendPacket(packet);
     }
-    area->log(current_char, ipid, packet);
+    emit logModcall((current_char + " " + showname),ipid, ooc_name, server->areas[current_area]->name());
 
     if (ConfigManager::discordModcallWebhookEnabled()) {
         QString name = ooc_name;
         if (ooc_name.isEmpty())
             name = current_char;
 
-        emit server->modcallWebhookRequest(name, server->areas[current_area]->name(), packet.contents[0], area->buffer());
+        QString l_areaName = area->name();
+        emit server->modcallWebhookRequest(name, l_areaName, packet.contents[0],server->getAreaBuffer(l_areaName));
     }
-    
-    area->flushLogs();
 }
 
 void AOClient::pktAddEvidence(AreaData* area, int argc, QStringList argv, AOPacket packet)
@@ -990,7 +990,7 @@ void AOClient::loginAttempt(QString message)
             sendPacket("AUTH", {"0"}); // Client: "Login unsuccessful."
             sendServerMessage("Incorrect password.");
         }
-        server->areas.value(current_area)->logLogin(current_char, ipid, authenticated, "moderator");
+        emit logLogin((current_char + " " + showname),ooc_name,"Moderator", ipid, server->areas.value(current_area)->name(),authenticated);
         break;
     case DataTypes::AuthType::ADVANCED:
         QStringList login = message.split(" ");
@@ -1014,7 +1014,7 @@ void AOClient::loginAttempt(QString message)
             sendPacket("AUTH", {"0"}); // Client: "Login unsuccessful."
             sendServerMessage("Incorrect password.");
         }
-        server->areas.value(current_area)->logLogin(current_char, ipid, authenticated, username);
+        emit logLogin((current_char + " " + showname),ooc_name, username, ipid, server->areas.value(current_area)->name(),authenticated);
         break;
     }
     sendServerMessage("Exiting login prompt.");

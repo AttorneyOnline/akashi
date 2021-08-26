@@ -15,45 +15,54 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
-#ifndef DATA_TYPES_H
-#define DATA_TYPES_H
+#ifndef WRITER_MODCALL_H
+#define WRITER_MODCALL_H
+#include <QObject>
+#include <QFile>
+#include <QDir>
+#include <QDateTime>
+#include <QTextStream>
+#include <QQueue>
 
-#include <QDebug>
+
 /**
- * @brief A class for handling several custom data types.
+ * @brief A class to handle file interaction when writing the modcall buffer.
  */
-class DataTypes
+class WriterModcall : public QObject
 {
-    Q_GADGET
-
+    Q_OBJECT
 public:
     /**
-     * @brief Custom type for authorization types.
+     * @brief Constructor for modcall logwriter
+     *
+     * @param QObject pointer to the parent object.
      */
-    enum class AuthType {
-            SIMPLE,
-            ADVANCED
-        };
-    Q_ENUM(AuthType);
+    WriterModcall(QObject* parent = nullptr);;
 
     /**
-     * @brief Custom type for logging types.
+     * @brief Deconstructor for modcall logwriter.
+     *
+     * @details Doesn't really do anything, but its here for completeness sake.
      */
-    enum class LogType {
-        MODCALL,
-        FULL,
-    };
-    Q_ENUM(LogType)
+    virtual ~WriterModcall() {}
+
+    /**
+     * @brief Function to write area buffer into a logfile.
+     * @param QQueue of the area that will be written into the logfile.
+     * @param Name of the area for the filename.
+     */
+    void flush(const QString f_areaName, QQueue<QString> f_buffer);
+
+private:
+    /**
+     * @brief Filename of the logfile used.
+     */
+    QFile l_logfile;
+
+    /**
+     * @brief Directory where logfiles will be stored.
+     */
+    QDir l_dir;
 };
 
-template<typename T>
-T toDataType(const QString& f_string){
-    return QVariant(f_string).value<T>();
-}
-
-template<typename T>
-QString fromDataType(const T& f_t){
-    return QVariant::fromValue(f_t).toString();
-}
-
-#endif // DATA_TYPES_H
+#endif //WRITER_MODCALL_H

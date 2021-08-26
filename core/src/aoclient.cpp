@@ -342,6 +342,8 @@ bool AOClient::checkAuth(unsigned long long acl_mask)
 
 QString AOClient::getIpid() const { return ipid; }
 
+QString AOClient::getHwid() const { return hwid; }
+
 Server* AOClient::getServer() { return server; }
 
 void AOClient::onAfkTimeout()

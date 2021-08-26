@@ -15,45 +15,25 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
-#ifndef DATA_TYPES_H
-#define DATA_TYPES_H
+#include "include/logger/writer_full.h"
 
-#include <QDebug>
-/**
- * @brief A class for handling several custom data types.
- */
-class DataTypes
+WriterFull::WriterFull(QObject* parent) :
+    QObject(parent)
 {
-    Q_GADGET
+    l_dir.setPath("logs/");
+    if (!l_dir.exists()) {
+        l_dir.mkpath(".");
+    }
+}
 
-public:
-    /**
-     * @brief Custom type for authorization types.
-     */
-    enum class AuthType {
-            SIMPLE,
-            ADVANCED
-        };
-    Q_ENUM(AuthType);
+void WriterFull::flush(const QString f_entry)
+{
+    l_logfile.setFileName(QString("logs/%1.log").arg(QDate::currentDate().toString("yyyy-MM-dd")));
 
-    /**
-     * @brief Custom type for logging types.
-     */
-    enum class LogType {
-        MODCALL,
-        FULL,
-    };
-    Q_ENUM(LogType)
+    if (l_logfile.open(QIODevice::WriteOnly | QIODevice::Append)) {
+        QTextStream file_stream(&l_logfile);
+        file_stream << f_entry;
+    }
+    l_logfile.close();
 };
 
-template<typename T>
-T toDataType(const QString& f_string){
-    return QVariant(f_string).value<T>();
-}
-
-template<typename T>
-QString fromDataType(const T& f_t){
-    return QVariant::fromValue(f_t).toString();
-}
-
-#endif // DATA_TYPES_H
