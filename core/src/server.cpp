@@ -84,14 +84,7 @@ void Server::start()
     }
     char_list.close();
 
-    QFile music_file("config/music.txt");
-    music_file.open(QIODevice::ReadOnly | QIODevice::Text);
-    while (!music_file.atEnd()) {
-        music_list.append(music_file.readLine().trimmed());
-    }
-    music_file.close();
-    if(music_list[0].contains(".")) // Add a default category if none exists
-        music_list.insert(0, "==Music==");
+    music_list = ConfigManager::loadMusicList();
 
     QFile bg_file("config/backgrounds.txt");
     bg_file.open(QIODevice::ReadOnly | QIODevice::Text);

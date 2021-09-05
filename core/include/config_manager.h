@@ -30,6 +30,9 @@
 #include <QUrl>
 #include <QMetaEnum>
 #include <QElapsedTimer>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
 
 /**
  * @brief The config file handler class.
@@ -141,6 +144,12 @@ class ConfigManager {
      * @return See short description.
      */
     static DataTypes::LogType loggingType();
+
+    /**
+     * @brief Returns the musiclist from the config folder.
+     * @return See short description.
+     */
+    static QStringList loadMusicList();
 
     /**
      * @brief Returns true if the server should advertise to the master server.

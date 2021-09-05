@@ -195,6 +195,38 @@ DataTypes::LogType ConfigManager::loggingType()
     return toDataType<DataTypes::LogType>(l_log);
 }
 
+QStringList ConfigManager::loadMusicList()
+{
+    QStringList l_musicList;
+
+    QFile music_json("config/music.json");
+    music_json.open(QIODevice::ReadOnly | QIODevice::Text);
+
+    QJsonParseError l_error;
+    QJsonDocument music_list_json = QJsonDocument::fromJson(music_json.readAll(), &l_error);
+    if (!(l_error.error == QJsonParseError::NoError)) { //Non-Terminating error.
+        qWarning() << "Unable to load musiclist. The following error was encounted : " + l_error.errorString();
+        return l_musicList;
+    }
+
+    QJsonArray l_rootArray = music_list_json.array();
+    QJsonObject l_childObj;
+    QJsonArray l_childArray;
+    for (int i = 0; i <= l_rootArray.size() -1; i++){ //Iterate trough entire JSON file to assemble musiclist
+        l_childObj = l_rootArray.at(i).toObject();
+        l_musicList.append(l_childObj["category"].toString());
+        l_childArray = l_childObj["songs"].toArray();
+        for (int i = 0; i <= l_childArray.size() -1; i++){ // Inner for loop because a category can contain multiple songs.
+            l_musicList.append(l_childArray.at(i).toObject()["name"].toString());
+        }
+    }
+    music_json.close();
+    if(l_musicList[0].isEmpty()) // Add a default category if none exists
+        l_musicList[0] = "==Music==";
+
+    return l_musicList;
+}
+
 int ConfigManager::maxStatements()
 {
     bool ok;
