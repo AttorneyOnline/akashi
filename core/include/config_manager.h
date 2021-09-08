@@ -152,6 +152,13 @@ class ConfigManager {
     static QStringList loadMusicList();
 
     /**
+     * @brief Returns the duration of a song in the songlist.
+     * @param The name of the song where duration is requested
+     * @return The duration of the song
+     */
+    static int songInformation(const QString& f_songName);
+
+    /**
      * @brief Returns true if the server should advertise to the master server.
      *
      * @return See short description.
@@ -437,6 +444,11 @@ private:
      * @brief Pointer to QElapsedTimer to track the uptime of the server.
      */
     static QElapsedTimer* m_uptimeTimer;
+
+    /**
+     * @brief Contains the musiclist with time durations.
+     */
+    static QHash<QString,float>* m_musicList;
 
     /**
      * @brief Returns a stringlist with the contents of a .txt file from config/text/.
