@@ -55,7 +55,7 @@ public:
      * @param Preformatted QString which will be written into the logfile
      * @param Area name of the target logfile.
      */
-    void flush(const QString f_entry, const QString f_areaName);
+    void flush(const QString f_entry, const QString f_area_name);
 
 private:
     /**

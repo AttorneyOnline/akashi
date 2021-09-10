@@ -51,7 +51,7 @@ public:
      * @param QQueue of the area that will be written into the logfile.
      * @param Name of the area for the filename.
      */
-    void flush(const QString f_areaName, QQueue<QString> f_buffer);
+    void flush(const QString f_area_name, QQueue<QString> f_buffer);
 
 private:
     /**

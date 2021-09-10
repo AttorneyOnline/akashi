@@ -31,9 +31,9 @@ WriterModcall::WriterModcall(QObject* parent) :
     }
 }
 
-void WriterModcall::flush(const QString f_areaName, QQueue<QString> f_buffer)
+void WriterModcall::flush(const QString f_area_name, QQueue<QString> f_buffer)
 {
-    l_logfile.setFileName(QString("logs/modcall/report_%1_%2.log").arg(f_areaName, (QDateTime::currentDateTime().toString("yyyy-MM-dd_hhmmss"))));
+    l_logfile.setFileName(QString("logs/modcall/report_%1_%2.log").arg(f_area_name, (QDateTime::currentDateTime().toString("yyyy-MM-dd_hhmmss"))));
 
     if (l_logfile.open(QIODevice::WriteOnly | QIODevice::Append)) {
         QTextStream file_stream(&l_logfile);
