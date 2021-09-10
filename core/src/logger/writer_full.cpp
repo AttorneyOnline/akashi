@@ -37,7 +37,7 @@ void WriterFull::flush(const QString f_entry)
     l_logfile.close();
 }
 
-void WriterFull::flushArea(const QString f_entry, const QString f_areaName)
+void WriterFull::flush(const QString f_entry, const QString f_areaName)
 {
     l_logfile.setFileName(QString("logs/%1_%2.log").arg(f_areaName, QDate::currentDate().toString("yyyy-MM-dd")));
 
