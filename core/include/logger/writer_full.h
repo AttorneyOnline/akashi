@@ -50,6 +50,13 @@ public:
      */
     void flush(const QString f_entry);
 
+    /**
+     * @brief Writes log entry into area seperated logfiles.
+     * @param Preformatted QString which will be written into the logfile
+     * @param Area name of the target logfile.
+     */
+    void flushArea(const QString f_entry, const QString f_areaName);
+
 private:
     /**
      * @brief Filename of the logfile used. This will always be the time the server starts up.

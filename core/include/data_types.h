@@ -42,6 +42,7 @@ public:
     enum class LogType {
         MODCALL,
         FULL,
+        FULLAREA
     };
     Q_ENUM(LogType)
 };
