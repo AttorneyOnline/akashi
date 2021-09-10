@@ -25,6 +25,7 @@ ULogger::ULogger(QObject* parent) :
             writerModcall = new WriterModcall;
             break;
         case DataTypes::LogType::FULL :
+        case DataTypes::LogType::FULLAREA :
             writerFull = new WriterFull;
             break;
     }
@@ -37,6 +38,7 @@ ULogger::~ULogger()
             writerModcall->deleteLater();
             break;
         case DataTypes::LogType::FULL :
+        case DataTypes::LogType::FULLAREA :
             writerFull->deleteLater();
             break;
     }
@@ -147,6 +149,9 @@ void ULogger::updateAreaBuffer(const QString& f_areaName, const QString& f_logEn
 
     if (ConfigManager::loggingType() == DataTypes::LogType::FULL){
         writerFull->flush(f_logEntry);
+    }
+    if (ConfigManager::loggingType() == DataTypes::LogType::FULLAREA) {
+        writerFull->flush(f_logEntry, f_areaName);
     }
 }
 
