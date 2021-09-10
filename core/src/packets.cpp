@@ -74,7 +74,7 @@ void AOClient::pktSoftwareId(AreaData* area, int argc, QStringList argv, AOPacke
         version.minor = match.captured(3).toInt();
     }
 
-    sendPacket("PN", {QString::number(server->player_count), QString::number(ConfigManager::maxPlayers())});
+    sendPacket("PN", {QString::number(server->m_player_count), QString::number(ConfigManager::maxPlayers())});
     sendPacket("FL", feature_list);
 
     if (ConfigManager::assetUrl().isValid()) {
@@ -93,7 +93,7 @@ void AOClient::pktBeginLoad(AreaData* area, int argc, QStringList argv, AOPacket
     // Evidence isn't loaded during this part anymore
     // As a result, we can always send "0" for evidence length
     // Client only cares about what it gets from LE
-    sendPacket("SI", {QString::number(server->characters.length()), "0", QString::number(server->area_names.length() + server->music_list.length())});
+    sendPacket("SI", {QString::number(server->m_characters.length()), "0", QString::number(server->m_area_names.length() + server->m_music_list.length())});
 }
 
 void AOClient::pktRequestChars(AreaData* area, int argc, QStringList argv, AOPacket packet)
@@ -103,7 +103,7 @@ void AOClient::pktRequestChars(AreaData* area, int argc, QStringList argv, AOPac
     Q_UNUSED(argv);
     Q_UNUSED(packet);
 
-    sendPacket("SC", server->characters);
+    sendPacket("SC", server->m_characters);
 }
 
 void AOClient::pktRequestMusic(AreaData* area, int argc, QStringList argv, AOPacket packet)
@@ -113,7 +113,7 @@ void AOClient::pktRequestMusic(AreaData* area, int argc, QStringList argv, AOPac
     Q_UNUSED(argv);
     Q_UNUSED(packet);
 
-    sendPacket("SM", server->area_names + server->music_list);
+    sendPacket("SM", server->m_area_names + server->m_music_list);
 }
 
 void AOClient::pktLoadingDone(AreaData* area, int argc, QStringList argv, AOPacket packet)
@@ -132,7 +132,7 @@ void AOClient::pktLoadingDone(AreaData* area, int argc, QStringList argv, AOPack
         return;
     }
 
-    server->player_count++;
+    server->m_player_count++;
     area->clientJoinedArea();
     joined = true;
     server->updateCharsTaken(area);
@@ -142,7 +142,7 @@ void AOClient::pktLoadingDone(AreaData* area, int argc, QStringList argv, AOPack
 
     sendPacket("HP", {"1", QString::number(area->defHP())});
     sendPacket("HP", {"2", QString::number(area->proHP())});
-    sendPacket("FA", server->area_names);
+    sendPacket("FA", server->m_area_names);
     //Here lies OPPASS, the genius of FanatSors who send the modpass to everyone in plain text.
     sendPacket("DONE");
     sendPacket("BN", {area->background()});
@@ -217,7 +217,7 @@ void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket pa
         validated_packet.contents[5] = pos;
 
     server->broadcast(validated_packet, current_area);
-    emit logIC((current_char + " " + showname), ooc_name,ipid,server->areas[current_area]->name(),last_message);
+    emit logIC((current_char + " " + showname), ooc_name,ipid,server->m_areas[current_area]->name(),last_message);
     area->updateLastICMessage(validated_packet.contents);
 
     server->can_send_ic_messages = false;
@@ -264,7 +264,7 @@ void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket p
         int cmd_argc = cmd_argv.length();
 
         handleCommand(command, cmd_argc, cmd_argv);
-        emit logCMD((current_char + " " + showname),ipid, ooc_name,command,cmd_argv,server->areas[current_area]->name());
+        emit logCMD((current_char + " " + showname),ipid, ooc_name,command,cmd_argv,server->m_areas[current_area]->name());
         return;
     }
     else {
@@ -298,7 +298,7 @@ void AOClient::pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPack
     // argument is a valid song
     QString argument = argv[0];
 
-    for (const QString &song : qAsConst(server->music_list)) {
+    for (const QString &song : qAsConst(server->m_music_list)) {
         if (song == argument || song == "~stop.mp3") { // ~stop.mp3 is a dummy track used by 2.9+
             // We have a song here
             if (is_dj_blocked) {
@@ -327,8 +327,8 @@ void AOClient::pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPack
         }
     }
 
-    for (int i = 0; i < server->area_names.length(); i++) {
-        QString area = server->area_names[i];
+    for (int i = 0; i < server->m_area_names.length(); i++) {
+        QString area = server->m_area_names[i];
         if(area == argument) {
             changeArea(i);
             break;
@@ -398,7 +398,7 @@ void AOClient::pktWebSocketIp(AreaData* area, int argc, QStringList argv, AOPack
         }
 
         int multiclient_count = 0;
-        for (AOClient* joined_client : qAsConst(server->clients)) {
+        for (AOClient* joined_client : qAsConst(server->m_clients)) {
             if (remote_ip.isEqual(joined_client->remote_ip))
                 multiclient_count++;
         }
@@ -415,11 +415,11 @@ void AOClient::pktModCall(AreaData* area, int argc, QStringList argv, AOPacket p
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    for (AOClient* client : qAsConst(server->clients)) {
+    for (AOClient* client : qAsConst(server->m_clients)) {
         if (client->authenticated)
             client->sendPacket(packet);
     }
-    emit logModcall((current_char + " " + showname),ipid, ooc_name, server->areas[current_area]->name());
+    emit logModcall((current_char + " " + showname),ipid, ooc_name, server->m_areas[current_area]->name());
 
     if (ConfigManager::discordModcallWebhookEnabled()) {
         QString name = ooc_name;
@@ -524,7 +524,7 @@ void AOClient::pktAnnounceCase(AreaData* area, int argc, QStringList argv, AOPac
 #else
     QSet<bool> needs_set = needs_list.toSet();
 #endif
-    for (AOClient* client : qAsConst(server->clients)) {
+    for (AOClient* client : qAsConst(server->m_clients)) {
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
         QSet<bool> matches(client->casing_preferences.begin(), client->casing_preferences.end());
         matches.intersect(needs_set);
@@ -546,7 +546,7 @@ void AOClient::pktAnnounceCase(AreaData* area, int argc, QStringList argv, AOPac
 
 void AOClient::sendEvidenceList(AreaData* area)
 {
-    for (AOClient* client : qAsConst(server->clients)) {
+    for (AOClient* client : qAsConst(server->m_clients)) {
         if (client->current_area == current_area)
             client->updateEvidenceList(area);
     }
@@ -590,7 +590,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     if (current_char == "" || !joined)
         // Spectators cannot use IC
         return invalid;
-    AreaData* area = server->areas[current_area];
+    AreaData* area = server->m_areas[current_area];
     if (area->lockStatus() == AreaData::LockStatus::SPECTATABLE && !area->invited().contains(id) && !checkAuth(ACLFlags.value("BYPASS_LOCKS")))
         // Non-invited players cannot speak in spectatable areas
         return invalid;
@@ -617,7 +617,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         // Selected char is different from supplied folder name
         // This means the user is INI-swapped
         if (!area->iniswapAllowed()) {
-            if (!server->characters.contains(incoming_args[2].toString(), Qt::CaseInsensitive))
+            if (!server->m_characters.contains(incoming_args[2].toString(), Qt::CaseInsensitive))
                 return invalid;
         }
         qDebug() << "INI swap detected from " << getIpid();
@@ -670,7 +670,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     args.append(incoming_args[5].toString());
     if (pos != incoming_args[5].toString()) {
         pos = incoming_args[5].toString();
-        updateEvidenceList(server->areas[current_area]);
+        updateEvidenceList(server->m_areas[current_area]);
     }
 
     // sfx name
@@ -770,7 +770,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         QString other_emote = "0";
         QString other_offset = "0";
         QString other_flip = "0";
-        for (AOClient* client : qAsConst(server->clients)) {
+        for (AOClient* client : qAsConst(server->m_clients)) {
             if (client->pairing_with == char_id
                     && other_charid != char_id
                     && client->char_id == pairing_with
@@ -990,7 +990,7 @@ void AOClient::loginAttempt(QString message)
             sendPacket("AUTH", {"0"}); // Client: "Login unsuccessful."
             sendServerMessage("Incorrect password.");
         }
-        emit logLogin((current_char + " " + showname),ooc_name,"Moderator", ipid, server->areas.value(current_area)->name(),authenticated);
+        emit logLogin((current_char + " " + showname),ooc_name,"Moderator", ipid, server->m_areas.value(current_area)->name(),authenticated);
         break;
     case DataTypes::AuthType::ADVANCED:
         QStringList login = message.split(" ");
@@ -1014,7 +1014,7 @@ void AOClient::loginAttempt(QString message)
             sendPacket("AUTH", {"0"}); // Client: "Login unsuccessful."
             sendServerMessage("Incorrect password.");
         }
-        emit logLogin((current_char + " " + showname),ooc_name, username, ipid, server->areas.value(current_area)->name(),authenticated);
+        emit logLogin((current_char + " " + showname),ooc_name, username, ipid, server->m_areas.value(current_area)->name(),authenticated);
         break;
     }
     sendServerMessage("Exiting login prompt.");

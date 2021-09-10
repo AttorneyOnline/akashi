@@ -132,7 +132,7 @@ void AOClient::cmdMods(int argc, QStringList argv)
 
     QStringList entries;
     int online_count = 0;
-    for (AOClient* client : qAsConst(server->clients)) {
+    for (AOClient* client : qAsConst(server->m_clients)) {
         if (client->authenticated) {
             entries << "---";
             if (ConfigManager::authType() != DataTypes::AuthType::SIMPLE)
@@ -402,7 +402,7 @@ void AOClient::cmdAllowBlankposting(int argc, QStringList argv)
     Q_UNUSED(argv);
 
     QString sender_name = ooc_name;
-    AreaData* area = server->areas[current_area];
+    AreaData* area = server->m_areas[current_area];
     area->toggleBlankposting();
     if (area->blankpostingAllowed() == false) {
         sendServerMessageArea(sender_name + " has set blankposting in the area to forbidden.");
@@ -470,7 +470,7 @@ void AOClient::cmdForceImmediate(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData* area = server->areas[current_area];
+    AreaData* area = server->m_areas[current_area];
     area->toggleImmediate();
     QString state = area->forceImmediate() ? "on." : "off.";
     sendServerMessage("Forced immediate text processing in this area is now " + state);
@@ -481,7 +481,7 @@ void AOClient::cmdAllowIniswap(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData* area = server->areas[current_area];
+    AreaData* area = server->m_areas[current_area];
     area->toggleIniswap();
     QString state = area->iniswapAllowed() ? "allowed." : "disallowed.";
     sendServerMessage("Iniswapping in this area is now " + state);

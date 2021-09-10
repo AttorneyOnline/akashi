@@ -45,6 +45,53 @@ class ConfigManager {
     static bool verifyServerConfig();
 
     /**
+     * @brief Returns the IP the TCP Server binds to.
+     *
+     * @return See short description
+     */
+    static QString bindIP();
+
+    /**
+     * @brief Returns the character list of the server.
+     *
+     * @return See short description.
+     */
+    static QStringList charlist();
+
+    /**
+     * @brief Returns the a QStringList of the available backgrounds.
+     *
+     * @return See short description.
+     */
+    static QStringList backgrounds();
+
+    /**
+     * @brief Returns a QStringlist of the available songs.
+     *
+     * @return See short description.
+     */
+    static QStringList musiclist();
+
+    /**
+     * @brief Returns the content of
+     * @return
+     */
+    static QSettings *areaData();
+
+    /**
+     * @brief Returns a sanitized QStringList of the areas.
+     *
+     * @return See short description.
+     */
+    static QStringList sanitizedAreaNames();
+
+    /**
+     * @brief Returns the raw arealist
+     *
+     * @return See short description.
+     */
+    static QStringList rawAreaNames();
+    /**
      * @brief Returns true if the server should advertise to the master server.
      *
      * @return See short description.
@@ -423,6 +470,11 @@ private:
      * @brief Stores all discord webhook configuration values.
      */
     static QSettings* m_discord;
+
+    /**
+     * @brief Stores all of the area valus.
+     */
+    static QSettings* m_areas;
 
     /**
      * @brief Pointer to QElapsedTimer to track the uptime of the server.

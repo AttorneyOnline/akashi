@@ -19,24 +19,31 @@
 
 Server::Server(int p_port, int p_ws_port, QObject* parent) :
     QObject(parent),
-    player_count(0),
+    m_player_count(0),
     port(p_port),
     ws_port(p_ws_port)
 {
     server = new QTcpServer(this);
     connect(server, SIGNAL(newConnection()), this, SLOT(clientConnected()));
 
+    proxy = new WSProxy(port, ws_port, this);
+    if(ws_port != -1)
+        proxy->start();
     timer = new QTimer();
 
     db_manager = new DBManager();
 
+    //We create it, even if its not used later on.
+    discord = new Discord(this);
+
+    logger = new ULogger(this);
+    connect(this, &Server::logConnectionAttempt,
+        logger, &ULogger::logConnectionAttempt);
 }
 
 void Server::start()
 {
-    QSettings config("config/config.ini", QSettings::IniFormat);
-    config.beginGroup("Options");
-    QString bind_ip = config.value("ip", "all").toString();
+    QString bind_ip = ConfigManager::bindIP();
     QHostAddress bind_addr;
     if (bind_ip == "all")
         bind_addr = QHostAddress::Any;
@@ -52,9 +59,10 @@ void Server::start()
         qDebug() << "Server listening on" << port;
     }
     
-    discord = new Discord(this);
+    //Checks if any Discord webhooks are enabled.
     handleDiscordIntegration();
 
+    //Construct modern advertiser if enabled in config
     if (ConfigManager::advertiseHTTPServer()) {
         httpAdvertiserTimer = new QTimer(this);
         httpAdvertiser = new HTTPAdvertiser();
@@ -69,53 +77,24 @@ void Server::start()
         httpAdvertiserTimer->start(300000);
     }
 
-    logger = new ULogger(this);
-    connect(this, &Server::logConnectionAttempt,
-            logger, &ULogger::logConnectionAttempt);
+    //Get characters from config file
+    m_characters = ConfigManager::charlist();
 
-    proxy = new WSProxy(port, ws_port, this);
-    if(ws_port != -1)
-        proxy->start();
+    //Get musiclist from config file
+    m_music_list = ConfigManager::musiclist();
 
-    QFile char_list("config/characters.txt");
-    char_list.open(QIODevice::ReadOnly | QIODevice::Text);
-    while (!char_list.atEnd()) {
-        characters.append(char_list.readLine().trimmed());
-    }
-    char_list.close();
+    //Get backgrounds from config file
+    m_backgrounds = ConfigManager::backgrounds();
 
-    QFile music_file("config/music.txt");
-    music_file.open(QIODevice::ReadOnly | QIODevice::Text);
-    while (!music_file.atEnd()) {
-        music_list.append(music_file.readLine().trimmed());
-    }
-    music_file.close();
-    if(music_list[0].contains(".")) // Add a default category if none exists
-        music_list.insert(0, "==Music==");
-
-    QFile bg_file("config/backgrounds.txt");
-    bg_file.open(QIODevice::ReadOnly | QIODevice::Text);
-    while (!bg_file.atEnd()) {
-        backgrounds.append(bg_file.readLine().trimmed());
-    }
-    bg_file.close();
-
-    QSettings areas_ini("config/areas.ini", QSettings::IniFormat);
-    area_names = areas_ini.childGroups(); // invisibly does a lexicographical sort, because Qt is great like that
-    std::sort(area_names.begin(), area_names.end(), [] (const QString &a, const QString &b) {return a.split(":")[0].toInt() < b.split(":")[0].toInt();});
-    QStringList sanitized_area_names;
-    QStringList raw_area_names = area_names;
-    for (const QString &area_name : qAsConst(area_names)) {
-        QStringList name_split = area_name.split(":");
-        name_split.removeFirst();
-        QString area_name_sanitized = name_split.join(":");
-        sanitized_area_names.append(area_name_sanitized);
-    }
-    area_names = sanitized_area_names;
+    //Assembles the area list
+    m_area_names = ConfigManager::sanitizedAreaNames();
+    QStringList raw_area_names = ConfigManager::rawAreaNames();
     for (int i = 0; i < raw_area_names.length(); i++) {
         QString area_name = raw_area_names[i];
-        areas.insert(i, new AreaData(area_name, i));
+        m_areas.insert(i, new AreaData(area_name, i));
     }
+
+    //Rate-Limiter for IC-Chat
     connect(&next_message_timer, SIGNAL(timeout()), this, SLOT(allowMessage()));
 }
 
@@ -124,10 +103,10 @@ void Server::clientConnected()
     QTcpSocket* socket = server->nextPendingConnection();
     int user_id;
     QList<int> user_ids;
-    for (AOClient* client : qAsConst(clients)) {
+    for (AOClient* client : qAsConst(m_clients)) {
         user_ids.append(client->id);
     }
-    for (user_id = 0; user_id <= player_count; user_id++) {
+    for (user_id = 0; user_id <= m_player_count; user_id++) {
         if (user_ids.contains(user_id))
             continue;
         else
@@ -140,7 +119,7 @@ void Server::clientConnected()
     client->calculateIpid();
     auto ban = db_manager->isIPBanned(client->getIpid());
     bool is_banned = ban.first;
-    for (AOClient* joined_client : qAsConst(clients)) {
+    for (AOClient* joined_client : qAsConst(m_clients)) {
         if (client->remote_ip.isEqual(joined_client->remote_ip))
             multiclient_count++;
     }
@@ -160,11 +139,11 @@ void Server::clientConnected()
         return;
     }
 
-    clients.append(client);
+    m_clients.append(client);
     connect(socket, &QTcpSocket::disconnected, client,
             &AOClient::clientDisconnected);
     connect(socket, &QTcpSocket::disconnected, this, [=] {
-        clients.removeAll(client);
+        m_clients.removeAll(client);
         client->deleteLater();
     });
     connect(socket, &QTcpSocket::readyRead, client, &AOClient::clientData);
@@ -182,7 +161,7 @@ void Server::clientConnected()
 void Server::updateCharsTaken(AreaData* area)
 {
     QStringList chars_taken;
-    for (const QString &cur_char : qAsConst(characters)) {
+    for (const QString &cur_char : qAsConst(m_characters)) {
         chars_taken.append(area->charactersTaken().contains(getCharID(cur_char))
                                ? QStringLiteral("-1")
                                : QStringLiteral("0"));
@@ -190,7 +169,7 @@ void Server::updateCharsTaken(AreaData* area)
 
     AOPacket response_cc("CharsCheck", chars_taken);
 
-    for (AOClient* client : qAsConst(clients)) {
+    for (AOClient* client : qAsConst(m_clients)) {
         if (client->current_area == area->index()){
             if (!client->is_charcursed)
                 client->sendPacket(response_cc);
@@ -217,7 +196,7 @@ QStringList Server::getCursedCharsTaken(AOClient* client, QStringList chars_take
 
 void Server::broadcast(AOPacket packet, int area_index)
 {
-    for (AOClient* client : qAsConst(clients)) {
+    for (AOClient* client : qAsConst(m_clients)) {
         if (client->current_area == area_index)
             client->sendPacket(packet);
     }
@@ -225,7 +204,7 @@ void Server::broadcast(AOPacket packet, int area_index)
 
 void Server::broadcast(AOPacket packet)
 {
-    for (AOClient* client : qAsConst(clients)) {
+    for (AOClient* client : qAsConst(m_clients)) {
         client->sendPacket(packet);
     }
 }
@@ -233,7 +212,7 @@ void Server::broadcast(AOPacket packet)
 QList<AOClient*> Server::getClientsByIpid(QString ipid)
 {
     QList<AOClient*> return_clients;
-    for (AOClient* client : qAsConst(clients)) {
+    for (AOClient* client : qAsConst(m_clients)) {
         if (client->getIpid() == ipid)
             return_clients.append(client);
     }
@@ -242,7 +221,7 @@ QList<AOClient*> Server::getClientsByIpid(QString ipid)
 
 AOClient* Server::getClientByID(int id)
 {
-    for (AOClient* client : qAsConst(clients)) {
+    for (AOClient* client : qAsConst(m_clients)) {
         if (client->id == id)
             return client;
     }
@@ -251,9 +230,9 @@ AOClient* Server::getClientByID(int id)
 
 int Server::getCharID(QString char_name)
 {
-    for (const QString &character : qAsConst(characters)) {
+    for (const QString &character : qAsConst(m_characters)) {
         if (character.toLower() == char_name.toLower()) {
-            return characters.indexOf(QRegExp(character, Qt::CaseInsensitive));
+            return m_characters.indexOf(QRegExp(character, Qt::CaseInsensitive));
         }
     }
     return -1; // character does not exist
@@ -336,7 +315,7 @@ void Server::hookupLogger(AOClient* client)
 
 Server::~Server()
 {
-    for (AOClient* client : qAsConst(clients)) {
+    for (AOClient* client : qAsConst(m_clients)) {
         client->deleteLater();
     }
     server->deleteLater();

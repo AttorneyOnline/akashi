@@ -43,7 +43,7 @@ void AOClient::cmdRollP(int argc, QStringList argv)
 
 void AOClient::cmdTimer(int argc, QStringList argv)
 {
-    AreaData* area = server->areas[current_area];
+    AreaData* area = server->m_areas[current_area];
 
     // Called without arguments
     // Shows a brief of all timers
@@ -134,7 +134,7 @@ void AOClient::cmdNoteCard(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
 
-    AreaData* area = server->areas[current_area];
+    AreaData* area = server->m_areas[current_area];
     QString notecard = argv.join(" ");
     area->addNotecard(current_char, notecard);
     sendServerMessageArea(current_char + " wrote a note card.");
@@ -145,7 +145,7 @@ void AOClient::cmdNoteCardClear(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData* area = server->areas[current_area];
+    AreaData* area = server->m_areas[current_area];
     if (!area->addNotecard(current_char, QString())) {
         sendServerMessageArea(current_char + " erased their note card.");
     }
@@ -156,7 +156,7 @@ void AOClient::cmdNoteCardReveal(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData* area = server->areas[current_area];
+    AreaData* area = server->m_areas[current_area];
     const QStringList l_notecards = area->getNotecards();
 
     if (l_notecards.isEmpty()) {
@@ -192,7 +192,7 @@ void AOClient::cmdSubTheme(int argc, QStringList argv)
     Q_UNUSED(argc);
 
     QString subtheme = argv.join(" ");
-    for (AOClient* client : qAsConst(server->clients)) {
+    for (AOClient* client : qAsConst(server->m_clients)) {
         if (client->current_area == current_area)
             client->sendPacket("ST", {subtheme, "1"});
     }

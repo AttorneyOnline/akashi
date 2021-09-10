@@ -28,7 +28,7 @@ void AOClient::cmdPlay(int argc, QStringList argv)
         sendServerMessage("You are blocked from changing the music.");
         return;
     }
-    AreaData* area = server->areas[current_area];
+    AreaData* area = server->m_areas[current_area];
     QString song = argv.join(" ");
     area->currentMusic() = song;
     area->musicPlayerBy() = showname;
@@ -41,7 +41,7 @@ void AOClient::cmdCurrentMusic(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData* area = server->areas[current_area];
+    AreaData* area = server->m_areas[current_area];
     if (area->currentMusic() != "" && area->currentMusic() != "~stop.mp3") // dummy track for stopping music
         sendServerMessage("The current song is " + area->currentMusic() + " played by " + area->musicPlayerBy());
     else
@@ -107,7 +107,7 @@ void AOClient::cmdToggleMusic(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData* area = server->areas[current_area];
+    AreaData* area = server->m_areas[current_area];
     area->toggleMusic();
     QString state = area->isMusicAllowed() ? "allowed." : "disallowed.";
     sendServerMessage("Music in this area is now " + state);
