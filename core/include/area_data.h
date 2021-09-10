@@ -767,62 +767,6 @@ class AreaData : public QObject {
     void toggleMusic();
 
     /**
-     * @brief Logs a packet in the area's logger.
-     *
-     * @details Logs IC, OOC and modcall packets. Anything else is discarded.
-     *
-     * This function is a convenience function over the Logger's log functions.
-     *
-     * If you wish to log a login attempt, use logLogin() instead.
-     *
-     * @param f_clientName_r The showname of the packet sender's character.
-     * @param f_clientIpid_r The IPID of the packet sender.
-     * @param f_packet_r The packet that was sent.
-     */
-    void log(const QString& f_clientName_r, const QString& f_clientIpid_r, const AOPacket& f_packet_r) const;
-
-    /**
-     * @brief Logs a moderator login attempt.
-     *
-     * @details This is not a duplicated function! When a client uses the `/login` command to log in, the command call
-     * itself is logged with logCmd(), but the outcome of that call is logged here.
-     *
-     * If there was a way to login *without* the command, only this would be logged.
-     *
-     * @param f_clientName_r The showname of the login attempt sender's character.
-     * @param f_clientIpid_r The IPID of the client attempting login.
-     * @param f_success The outcome of the login attempt.
-     * @param f_modname_r The moderator name the client attempted to log in with.
-     */
-    void logLogin(const QString &f_clientName_r, const QString &f_clientIpid_r, bool f_success, const QString& f_modname_r) const;
-
-    /**
-     * @brief Logs a command in the area logger.
-     *
-     * @details When a client sends any packet containing `/`, it is sent to this function instead of log().
-     *
-     * @param f_clientName_r The showname of the command sender's character.
-     * @param f_clientIpid_r The IPID of the command sender.
-     * @param f_command_r The command that was sent.
-     * @param f_cmdArgs_r The arguments of the command
-     */
-    void logCmd(const QString& f_clientName_r, const QString& f_clientIpid_r, const QString& f_command_r, const QStringList& f_cmdArgs_r) const;
-
-    /**
-     * @brief Convenience function over Logger::flush().
-     */
-    void flushLogs() const;
-
-    /**
-     * @brief Returns a copy of the underlying logger's buffer.
-     *
-     * @return See short description.
-     *
-     * @see #m_ignoreBgList
-     */
-    QQueue<QString> buffer() const;
-
-    /**
      * @brief Returns whether the BG list is ignored in this araa.
      *
      * @return See short description.
