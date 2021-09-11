@@ -529,7 +529,7 @@ void AOClient::pktAnnounceCase(AreaData* area, int argc, QStringList argv, AOPac
         QSet<bool> l_matches(l_client->m_casing_preferences.begin(), l_client->m_casing_preferences.end());
         l_matches.intersect(l_needs_set);
 #else
-        QSet<bool> matches = client->casing_preferences.toSet().intersect(needs_set);
+        QSet<bool> l_matches = l_client->m_casing_preferences.toSet().intersect(l_needs_set);
 #endif
         if (!l_matches.isEmpty() && !l_clients_to_alert.contains(l_client))
             l_clients_to_alert.append(l_client);
