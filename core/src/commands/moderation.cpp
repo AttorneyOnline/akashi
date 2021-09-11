@@ -22,104 +22,104 @@
 
 void AOClient::cmdBan(int argc, QStringList argv)
 {
-    QString args_str = argv[2];
+    QString l_args_str = argv[2];
     if (argc > 3) {
         for (int i = 3; i < argc; i++)
-            args_str += " " + argv[i];
+            l_args_str += " " + argv[i];
     }
 
-    DBManager::BanInfo ban;
+    DBManager::BanInfo l_ban;
 
-    long long duration_seconds = 0;
+    long long l_duration_seconds = 0;
     if (argv[1] == "perma")
-        duration_seconds = -2;
+        l_duration_seconds = -2;
     else
-        duration_seconds = parseTime(argv[1]);
+        l_duration_seconds = parseTime(argv[1]);
 
-    if (duration_seconds == -1) {
+    if (l_duration_seconds == -1) {
         sendServerMessage("Invalid time format. Format example: 1h30m");
         return;
     }
 
-    ban.duration = duration_seconds;
-    ban.ipid = argv[0];
-    ban.reason = args_str;
-    ban.time = QDateTime::currentDateTime().toSecsSinceEpoch();
-    bool ban_logged = false;
-    int kick_counter = 0;
+    l_ban.duration = l_duration_seconds;
+    l_ban.ipid = argv[0];
+    l_ban.reason = l_args_str;
+    l_ban.time = QDateTime::currentDateTime().toSecsSinceEpoch();
+    bool l_ban_logged = false;
+    int l_kick_counter = 0;
 
     switch (ConfigManager::authType()) {
     case DataTypes::AuthType::SIMPLE:
-        ban.moderator = "moderator";
+        l_ban.moderator = "moderator";
         break;
     case DataTypes::AuthType::ADVANCED:
-        ban.moderator = moderator_name;
+        l_ban.moderator = m_moderator_name;
         break;
     }
 
-    const QList<AOClient*> targets = server->getClientsByIpid(ban.ipid);
-    for (AOClient* client : targets) {
-        if (!ban_logged) {
-            ban.ip = client->remote_ip;
-            ban.hdid = client->hwid;
-            server->db_manager->addBan(ban);
-            sendServerMessage("Banned user with ipid " + ban.ipid + " for reason: " + ban.reason);
-            ban_logged = true;
+    const QList<AOClient*> l_targets = server->getClientsByIpid(l_ban.ipid);
+    for (AOClient* client : l_targets) {
+        if (!l_ban_logged) {
+            l_ban.ip = client->m_remote_ip;
+            l_ban.hdid = client->m_hwid;
+            server->db_manager->addBan(l_ban);
+            sendServerMessage("Banned user with ipid " + l_ban.ipid + " for reason: " + l_ban.reason);
+            l_ban_logged = true;
         }
-        QString ban_duration;
-        if (!(ban.duration == -2)) {
-            ban_duration = QDateTime::fromSecsSinceEpoch(ban.time).addSecs(ban.duration).toString("MM/dd/yyyy, hh:mm");
+        QString l_ban_duration;
+        if (!(l_ban.duration == -2)) {
+            l_ban_duration = QDateTime::fromSecsSinceEpoch(l_ban.time).addSecs(l_ban.duration).toString("MM/dd/yyyy, hh:mm");
         }
         else {
-            ban_duration = "The heat death of the universe.";
+            l_ban_duration = "The heat death of the universe.";
         }
-        int ban_id = server->db_manager->getBanID(ban.ip);
-        client->sendPacket("KB", {ban.reason + "\nID: " + QString::number(ban_id) + "\nUntil: " + ban_duration});
-        client->socket->close();
-        kick_counter++;
+        int l_ban_id = server->db_manager->getBanID(l_ban.ip);
+        client->sendPacket("KB", {l_ban.reason + "\nID: " + QString::number(l_ban_id) + "\nUntil: " + l_ban_duration});
+        client->m_socket->close();
+        l_kick_counter++;
 
-        emit logBan(ban.moderator,ban.ipid,ban_duration,ban.reason);
+        emit logBan(l_ban.moderator,l_ban.ipid,l_ban_duration,l_ban.reason);
         if (ConfigManager::discordBanWebhookEnabled())
-            emit server->banWebhookRequest(ban.ipid, ban.moderator, ban_duration, ban.reason, ban_id);
+            emit server->banWebhookRequest(l_ban.ipid, l_ban.moderator, l_ban_duration, l_ban.reason, l_ban_id);
     }
 
-    if (kick_counter > 1)
-        sendServerMessage("Kicked " + QString::number(kick_counter) + " clients with matching ipids.");
+    if (l_kick_counter > 1)
+        sendServerMessage("Kicked " + QString::number(l_kick_counter) + " clients with matching ipids.");
 
     // We're banning someone not connected.
-    if (!ban_logged) {
-        server->db_manager->addBan(ban);
-        sendServerMessage("Banned " + ban.ipid + " for reason: " + ban.reason);
+    if (!l_ban_logged) {
+        server->db_manager->addBan(l_ban);
+        sendServerMessage("Banned " + l_ban.ipid + " for reason: " + l_ban.reason);
     }
 }
 
 void AOClient::cmdKick(int argc, QStringList argv)
 {
-    QString target_ipid = argv[0];
-    QString reason = argv[1];
-    int kick_counter = 0;
+    QString l_target_ipid = argv[0];
+    QString l_reason = argv[1];
+    int l_kick_counter = 0;
 
     if (argc > 2) {
         for (int i = 2; i < argv.length(); i++) {
-            reason += " " + argv[i];
+            l_reason += " " + argv[i];
         }
     }
 
-    const QList<AOClient*> targets = server->getClientsByIpid(target_ipid);
-    for (AOClient* client : targets) {
-        client->sendPacket("KK", {reason});
-        client->socket->close();
-        kick_counter++;
+    const QList<AOClient*> l_targets = server->getClientsByIpid(l_target_ipid);
+    for (AOClient* client : l_targets) {
+        client->sendPacket("KK", {l_reason});
+        client->m_socket->close();
+        l_kick_counter++;
     }
 
-    if (kick_counter > 0) {
+    if (l_kick_counter > 0) {
         if (ConfigManager::authType() == DataTypes::AuthType::ADVANCED){
-            emit logKick(moderator_name, target_ipid, reason);
+            emit logKick(m_moderator_name, l_target_ipid, l_reason);
         }
         else {
-            emit logKick("Moderator",target_ipid,reason);
+            emit logKick("Moderator", l_target_ipid, l_reason);
         }
-        sendServerMessage("Kicked " + QString::number(kick_counter) + " client(s) with ipid " + target_ipid + " for reason: " + reason);
+        sendServerMessage("Kicked " + QString::number(l_kick_counter) + " client(s) with ipid " + l_target_ipid + " for reason: " + l_reason);
     }
     else
         sendServerMessage("User with ipid not found!");
@@ -130,23 +130,23 @@ void AOClient::cmdMods(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    QStringList entries;
-    int online_count = 0;
-    for (AOClient* client : qAsConst(server->m_clients)) {
-        if (client->authenticated) {
-            entries << "---";
+    QStringList l_entries;
+    int l_online_count = 0;
+    for (AOClient* l_client : qAsConst(server->m_clients)) {
+        if (l_client->m_authenticated) {
+            l_entries << "---";
             if (ConfigManager::authType() != DataTypes::AuthType::SIMPLE)
-                entries << "Moderator: " + client->moderator_name;
-            entries << "OOC name: " + client->ooc_name;
-            entries << "ID: " + QString::number(client->id);
-            entries << "Area: " + QString::number(client->current_area);
-            entries << "Character: " + client->current_char;
-            online_count++;
+                l_entries << "Moderator: " + l_client->m_moderator_name;
+            l_entries << "OOC name: " + l_client->m_ooc_name;
+            l_entries << "ID: " + QString::number(l_client->m_id);
+            l_entries << "Area: " + QString::number(l_client->m_current_area);
+            l_entries << "Character: " + l_client->m_current_char;
+            l_online_count++;
         }
     }
-    entries << "---";
-    entries << "Total online: " << QString::number(online_count);
-    sendServerMessage(entries.join("\n"));
+    l_entries << "---";
+    l_entries << "Total online: " << QString::number(l_online_count);
+    sendServerMessage(l_entries.join("\n"));
 }
 
 void AOClient::cmdHelp(int argc, QStringList argv)
@@ -154,16 +154,16 @@ void AOClient::cmdHelp(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    QStringList entries;
-    entries << "Allowed commands:";
+    QStringList l_entries;
+    l_entries << "Allowed commands:";
     QMap<QString, CommandInfo>::const_iterator i;
     for (i = commands.constBegin(); i!= commands.constEnd(); ++i) {
         CommandInfo info = i.value();
         if (checkAuth(info.acl_mask)) { // if we are allowed to use this command
-            entries << "/" + i.key();
+            l_entries << "/" + i.key();
         }
     }
-    sendServerMessage(entries.join("\n"));
+    sendServerMessage(l_entries.join("\n"));
 }
 
 void AOClient::cmdMOTD(int argc, QStringList argv)
@@ -173,8 +173,8 @@ void AOClient::cmdMOTD(int argc, QStringList argv)
     }
     else if (argc > 0) {
         if (checkAuth(ACLFlags.value("MOTD"))) {
-            QString MOTD = argv.join(" ");
-            ConfigManager::setMotd(MOTD);
+            QString l_MOTD = argv.join(" ");
+            ConfigManager::setMotd(l_MOTD);
             sendServerMessage("MOTD has been changed.");
         }
         else {
@@ -188,26 +188,26 @@ void AOClient::cmdBans(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    QStringList recent_bans;
-    recent_bans << "Last 5 bans:";
-    recent_bans << "-----";
-    const QList<DBManager::BanInfo> bans_list = server->db_manager->getRecentBans();
-    for (const DBManager::BanInfo &ban : bans_list) {
-        QString banned_until;
-        if (ban.duration == -2)
-            banned_until = "The heat death of the universe";
+    QStringList l_recent_bans;
+    l_recent_bans << "Last 5 bans:";
+    l_recent_bans << "-----";
+    const QList<DBManager::BanInfo> l_bans_list = server->db_manager->getRecentBans();
+    for (const DBManager::BanInfo &l_ban : l_bans_list) {
+        QString l_banned_until;
+        if (l_ban.duration == -2)
+            l_banned_until = "The heat death of the universe";
         else
-            banned_until = QDateTime::fromSecsSinceEpoch(ban.time).addSecs(ban.duration).toString("MM/dd/yyyy, hh:mm");
-        recent_bans << "Ban ID: " + QString::number(ban.id);
-        recent_bans << "Affected IPID: " + ban.ipid;
-        recent_bans << "Affected HDID: " + ban.hdid;
-        recent_bans << "Reason for ban: " + ban.reason;
-        recent_bans << "Date of ban: " + QDateTime::fromSecsSinceEpoch(ban.time).toString("MM/dd/yyyy, hh:mm");
-        recent_bans << "Ban lasts until: " + banned_until;
-        recent_bans << "Moderator: " + ban.moderator;
-        recent_bans << "-----";
+            l_banned_until = QDateTime::fromSecsSinceEpoch(l_ban.time).addSecs(l_ban.duration).toString("MM/dd/yyyy, hh:mm");
+        l_recent_bans << "Ban ID: " + QString::number(l_ban.id);
+        l_recent_bans << "Affected IPID: " + l_ban.ipid;
+        l_recent_bans << "Affected HDID: " + l_ban.hdid;
+        l_recent_bans << "Reason for ban: " + l_ban.reason;
+        l_recent_bans << "Date of ban: " + QDateTime::fromSecsSinceEpoch(l_ban.time).toString("MM/dd/yyyy, hh:mm");
+        l_recent_bans << "Ban lasts until: " + l_banned_until;
+        l_recent_bans << "Moderator: " + l_ban.moderator;
+        l_recent_bans << "-----";
     }
-    sendServerMessage(recent_bans.join("\n"));
+    sendServerMessage(l_recent_bans.join("\n"));
 }
 
 void AOClient::cmdUnBan(int argc, QStringList argv)
@@ -215,12 +215,12 @@ void AOClient::cmdUnBan(int argc, QStringList argv)
     Q_UNUSED(argc);
 
     bool ok;
-    int target_ban = argv[0].toInt(&ok);
+    int l_target_ban = argv[0].toInt(&ok);
     if (!ok) {
         sendServerMessage("Invalid ban ID.");
         return;
     }
-    else if (server->db_manager->invalidateBan(target_ban))
+    else if (server->db_manager->invalidateBan(l_target_ban))
         sendServerMessage("Successfully invalidated ban " + argv[0] + ".");
     else
         sendServerMessage("Couldn't invalidate ban " + argv[0] + ", are you sure it exists?");
@@ -239,26 +239,26 @@ void AOClient::cmdMute(int argc, QStringList argv)
     Q_UNUSED(argc);
 
     bool conv_ok = false;
-    int uid = argv[0].toInt(&conv_ok);
+    int l_uid = argv[0].toInt(&conv_ok);
     if (!conv_ok) {
         sendServerMessage("Invalid user ID.");
         return;
     }
 
-    AOClient* target = server->getClientByID(uid);
+    AOClient* target = server->getClientByID(l_uid);
 
     if (target == nullptr) {
         sendServerMessage("No client with that ID found.");
         return;
     }
 
-    if (target->is_muted)
+    if (target->m_is_muted)
         sendServerMessage("That player is already muted!");
     else {
         sendServerMessage("Muted player.");
         target->sendServerMessage("You were muted by a moderator. " + getReprimand());
     }
-    target->is_muted = true;
+    target->m_is_muted = true;
 }
 
 void AOClient::cmdUnMute(int argc, QStringList argv)
@@ -266,26 +266,26 @@ void AOClient::cmdUnMute(int argc, QStringList argv)
     Q_UNUSED(argc);
 
     bool conv_ok = false;
-    int uid = argv[0].toInt(&conv_ok);
+    int l_uid = argv[0].toInt(&conv_ok);
     if (!conv_ok) {
         sendServerMessage("Invalid user ID.");
         return;
     }
 
-    AOClient* target = server->getClientByID(uid);
+    AOClient* l_target = server->getClientByID(l_uid);
 
-    if (target == nullptr) {
+    if (l_target == nullptr) {
         sendServerMessage("No client with that ID found.");
         return;
     }
 
-    if (!target->is_muted)
+    if (!l_target->m_is_muted)
         sendServerMessage("That player is not muted!");
     else {
         sendServerMessage("Unmuted player.");
-        target->sendServerMessage("You were unmuted by a moderator. " + getReprimand(true));
+        l_target->sendServerMessage("You were unmuted by a moderator. " + getReprimand(true));
     }
-    target->is_muted = false;
+    l_target->m_is_muted = false;
 }
 
 void AOClient::cmdOocMute(int argc, QStringList argv)
@@ -293,26 +293,26 @@ void AOClient::cmdOocMute(int argc, QStringList argv)
     Q_UNUSED(argc);
 
     bool conv_ok = false;
-    int uid = argv[0].toInt(&conv_ok);
+    int l_uid = argv[0].toInt(&conv_ok);
     if (!conv_ok) {
         sendServerMessage("Invalid user ID.");
         return;
     }
 
-    AOClient* target = server->getClientByID(uid);
+    AOClient* l_target = server->getClientByID(l_uid);
 
-    if (target == nullptr) {
+    if (l_target == nullptr) {
         sendServerMessage("No client with that ID found.");
         return;
     }
 
-    if (target->is_ooc_muted)
+    if (l_target->m_is_ooc_muted)
         sendServerMessage("That player is already OOC muted!");
     else {
         sendServerMessage("OOC muted player.");
-        target->sendServerMessage("You were OOC muted by a moderator. " + getReprimand());
+        l_target->sendServerMessage("You were OOC muted by a moderator. " + getReprimand());
     }
-    target->is_ooc_muted = true;
+    l_target->m_is_ooc_muted = true;
 }
 
 void AOClient::cmdOocUnMute(int argc, QStringList argv)
@@ -320,26 +320,26 @@ void AOClient::cmdOocUnMute(int argc, QStringList argv)
     Q_UNUSED(argc);
 
     bool conv_ok = false;
-    int uid = argv[0].toInt(&conv_ok);
+    int l_uid = argv[0].toInt(&conv_ok);
     if (!conv_ok) {
         sendServerMessage("Invalid user ID.");
         return;
     }
 
-    AOClient* target = server->getClientByID(uid);
+    AOClient* l_target = server->getClientByID(l_uid);
 
-    if (target == nullptr) {
+    if (l_target == nullptr) {
         sendServerMessage("No client with that ID found.");
         return;
     }
 
-    if (!target->is_ooc_muted)
+    if (!l_target->m_is_ooc_muted)
         sendServerMessage("That player is not OOC muted!");
     else {
         sendServerMessage("OOC unmuted player.");
-        target->sendServerMessage("You were OOC unmuted by a moderator. " + getReprimand(true));
+        l_target->sendServerMessage("You were OOC unmuted by a moderator. " + getReprimand(true));
     }
-    target->is_ooc_muted = false;
+    l_target->m_is_ooc_muted = false;
 }
 
 void AOClient::cmdBlockWtce(int argc, QStringList argv)
@@ -347,26 +347,26 @@ void AOClient::cmdBlockWtce(int argc, QStringList argv)
     Q_UNUSED(argc);
 
     bool conv_ok = false;
-    int uid = argv[0].toInt(&conv_ok);
+    int l_uid = argv[0].toInt(&conv_ok);
     if (!conv_ok) {
         sendServerMessage("Invalid user ID.");
         return;
     }
 
-    AOClient* target = server->getClientByID(uid);
+    AOClient* l_target = server->getClientByID(l_uid);
 
-    if (target == nullptr) {
+    if (l_target == nullptr) {
         sendServerMessage("No client with that ID found.");
         return;
     }
 
-    if (target->is_wtce_blocked)
+    if (l_target->m_is_wtce_blocked)
         sendServerMessage("That player is already judge blocked!");
     else {
         sendServerMessage("Revoked player's access to judge controls.");
-        target->sendServerMessage("A moderator revoked your judge controls access. " + getReprimand());
+        l_target->sendServerMessage("A moderator revoked your judge controls access. " + getReprimand());
     }
-    target->is_wtce_blocked = true;
+    l_target->m_is_wtce_blocked = true;
 }
 
 void AOClient::cmdUnBlockWtce(int argc, QStringList argv)
@@ -374,26 +374,26 @@ void AOClient::cmdUnBlockWtce(int argc, QStringList argv)
     Q_UNUSED(argc);
 
     bool conv_ok = false;
-    int uid = argv[0].toInt(&conv_ok);
+    int l_uid = argv[0].toInt(&conv_ok);
     if (!conv_ok) {
         sendServerMessage("Invalid user ID.");
         return;
     }
 
-    AOClient* target = server->getClientByID(uid);
+    AOClient* l_target = server->getClientByID(l_uid);
 
-    if (target == nullptr) {
+    if (l_target == nullptr) {
         sendServerMessage("No client with that ID found.");
         return;
     }
 
-    if (!target->is_wtce_blocked)
+    if (!l_target->m_is_wtce_blocked)
         sendServerMessage("That player is not judge blocked!");
     else {
         sendServerMessage("Restored player's access to judge controls.");
-        target->sendServerMessage("A moderator restored your judge controls access. " + getReprimand(true));
+        l_target->sendServerMessage("A moderator restored your judge controls access. " + getReprimand(true));
     }
-    target->is_wtce_blocked = false;
+    l_target->m_is_wtce_blocked = false;
 }
 
 void AOClient::cmdAllowBlankposting(int argc, QStringList argv)
@@ -401,30 +401,30 @@ void AOClient::cmdAllowBlankposting(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    QString sender_name = ooc_name;
-    AreaData* area = server->m_areas[current_area];
-    area->toggleBlankposting();
-    if (area->blankpostingAllowed() == false) {
-        sendServerMessageArea(sender_name + " has set blankposting in the area to forbidden.");
+    QString l_sender_name = m_ooc_name;
+    AreaData* l_area = server->m_areas[m_current_area];
+    l_area->toggleBlankposting();
+    if (l_area->blankpostingAllowed() == false) {
+        sendServerMessageArea(l_sender_name + " has set blankposting in the area to forbidden.");
     }
     else {
-        sendServerMessageArea(sender_name + " has set blankposting in the area to allowed.");
+        sendServerMessageArea(l_sender_name + " has set blankposting in the area to allowed.");
     }
 }
 
 void AOClient::cmdBanInfo(int argc, QStringList argv)
 {
-    QStringList ban_info;
-    ban_info << ("Ban Info for " + argv[0]);
-    ban_info << "-----";
-    QString lookup_type;
+    QStringList l_ban_info;
+    l_ban_info << ("Ban Info for " + argv[0]);
+    l_ban_info << "-----";
+    QString l_lookup_type;
 
     if (argc == 1) {
-       lookup_type = "banid";
+       l_lookup_type = "banid";
     }
     else if (argc == 2) {
-        lookup_type = argv[1];
-        if (!((lookup_type == "banid") || (lookup_type == "ipid") || (lookup_type == "hdid"))) {
+        l_lookup_type = argv[1];
+        if (!((l_lookup_type == "banid") || (l_lookup_type == "ipid") || (l_lookup_type == "hdid"))) {
             sendServerMessage("Invalid ID type.");
             return;
         }
@@ -433,24 +433,24 @@ void AOClient::cmdBanInfo(int argc, QStringList argv)
         sendServerMessage("Invalid command.");
         return;
     }
-    QString id = argv[0];
-    const QList<DBManager::BanInfo> bans = server->db_manager->getBanInfo(lookup_type, id);
-    for (const DBManager::BanInfo &ban : bans) {
-        QString banned_until;
-        if (ban.duration == -2)
-            banned_until = "The heat death of the universe";
+    QString l_id = argv[0];
+    const QList<DBManager::BanInfo> l_bans = server->db_manager->getBanInfo(l_lookup_type, l_id);
+    for (const DBManager::BanInfo &l_ban : l_bans) {
+        QString l_banned_until;
+        if (l_ban.duration == -2)
+            l_banned_until = "The heat death of the universe";
         else
-            banned_until = QDateTime::fromSecsSinceEpoch(ban.time).addSecs(ban.duration).toString("MM/dd/yyyy, hh:mm");
-        ban_info << "Ban ID: " + QString::number(ban.id);
-        ban_info << "Affected IPID: " + ban.ipid;
-        ban_info << "Affected HDID: " + ban.hdid;
-        ban_info << "Reason for ban: " + ban.reason;
-        ban_info << "Date of ban: " + QDateTime::fromSecsSinceEpoch(ban.time).toString("MM/dd/yyyy, hh:mm");
-        ban_info << "Ban lasts until: " + banned_until;
-        ban_info << "Moderator: " + ban.moderator;
-        ban_info << "-----";
+            l_banned_until = QDateTime::fromSecsSinceEpoch(l_ban.time).addSecs(l_ban.duration).toString("MM/dd/yyyy, hh:mm");
+        l_ban_info << "Ban ID: " + QString::number(l_ban.id);
+        l_ban_info << "Affected IPID: " + l_ban.ipid;
+        l_ban_info << "Affected HDID: " + l_ban.hdid;
+        l_ban_info << "Reason for ban: " + l_ban.reason;
+        l_ban_info << "Date of ban: " + QDateTime::fromSecsSinceEpoch(l_ban.time).toString("MM/dd/yyyy, hh:mm");
+        l_ban_info << "Ban lasts until: " + l_banned_until;
+        l_ban_info << "Moderator: " + l_ban.moderator;
+        l_ban_info << "-----";
     }
-    sendServerMessage(ban_info.join("\n"));
+    sendServerMessage(l_ban_info.join("\n"));
 }
 
 void AOClient::cmdReload(int argc, QStringList argv)
@@ -470,10 +470,10 @@ void AOClient::cmdForceImmediate(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData* area = server->m_areas[current_area];
-    area->toggleImmediate();
-    QString state = area->forceImmediate() ? "on." : "off.";
-    sendServerMessage("Forced immediate text processing in this area is now " + state);
+    AreaData* l_area = server->m_areas[m_current_area];
+    l_area->toggleImmediate();
+    QString l_state = l_area->forceImmediate() ? "on." : "off.";
+    sendServerMessage("Forced immediate text processing in this area is now " + l_state);
 }
 
 void AOClient::cmdAllowIniswap(int argc, QStringList argv)
@@ -481,9 +481,9 @@ void AOClient::cmdAllowIniswap(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData* area = server->m_areas[current_area];
-    area->toggleIniswap();
-    QString state = area->iniswapAllowed() ? "allowed." : "disallowed.";
+    AreaData* l_area = server->m_areas[m_current_area];
+    l_area->toggleIniswap();
+    QString state = l_area->iniswapAllowed() ? "allowed." : "disallowed.";
     sendServerMessage("Iniswapping in this area is now " + state);
 }
 
@@ -491,77 +491,77 @@ void AOClient::cmdPermitSaving(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
 
-    AOClient* client = server->getClientByID(argv[0].toInt());
-    if (client == nullptr) {
+    AOClient* l_client = server->getClientByID(argv[0].toInt());
+    if (l_client == nullptr) {
         sendServerMessage("Invalid ID.");
         return;
     }
-    client->testimony_saving = true;
+    l_client->m_testimony_saving = true;
+    sendServerMessage("Testimony saving has been enabled for client " + QString::number(l_client->m_id));
 }
 
 void AOClient::cmdKickUid(int argc, QStringList argv)
 {
-    QString reason = argv[1];
+    QString l_reason = argv[1];
 
     if (argc > 2) {
         for (int i = 2; i < argv.length(); i++) {
-            reason += " " + argv[i];
+            l_reason += " " + argv[i];
         }
     }
 
     bool conv_ok = false;
-    int uid = argv[0].toInt(&conv_ok);
+    int l_uid = argv[0].toInt(&conv_ok);
     if (!conv_ok) {
         sendServerMessage("Invalid user ID.");
         return;
     }
 
-    AOClient* target = server->getClientByID(uid);
-    if (target == nullptr) {
+    AOClient* l_target = server->getClientByID(l_uid);
+    if (l_target == nullptr) {
         sendServerMessage("No client with that ID found.");
         return;
     }
-    target->sendPacket("KK", {reason});
-    target->socket->close();
-    sendServerMessage("Kicked client with UID " + argv[0] + " for reason: " + reason);
+    l_target->sendPacket("KK", {l_reason});
+    l_target->m_socket->close();
+    sendServerMessage("Kicked client with UID " + argv[0] + " for reason: " + l_reason);
 }
 
 void AOClient::cmdUpdateBan(int argc, QStringList argv)
 {
     bool conv_ok = false;
-    int ban_id = argv[0].toInt(&conv_ok);
+    int l_ban_id = argv[0].toInt(&conv_ok);
     if (!conv_ok) {
         sendServerMessage("Invalid ban ID.");
         return;
     }
-    QVariant updated_info;
+    QVariant l_updated_info;
     if (argv[1] == "duration") {
-        long long duration_seconds = 0;
+        long long l_duration_seconds = 0;
         if (argv[2] == "perma")
-            duration_seconds = -2;
+            l_duration_seconds = -2;
         else
-            duration_seconds = parseTime(argv[2]);
-
-        if (duration_seconds == -1) {
+            l_duration_seconds = parseTime(argv[2]);
+        if (l_duration_seconds == -1) {
             sendServerMessage("Invalid time format. Format example: 1h30m");
             return;
         }
-        updated_info = QVariant(duration_seconds);
+        l_updated_info = QVariant(l_duration_seconds);
 
     }
     else if (argv[1] == "reason") {
-        QString args_str = argv[2];
+        QString l_args_str = argv[2];
         if (argc > 3) {
             for (int i = 3; i < argc; i++)
-                args_str += " " + argv[i];
+                l_args_str += " " + argv[i];
         }
-        updated_info = QVariant(args_str);
+        l_updated_info = QVariant(l_args_str);
     }
     else {
         sendServerMessage("Invalid update type.");
         return;
     }
-    if (!server->db_manager->updateBan(ban_id, argv[1], updated_info)) {
+    if (!server->db_manager->updateBan(l_ban_id, argv[1], l_updated_info)) {
         sendServerMessage("There was an error updating the ban. Please confirm the ban ID is valid.");
         return;
     }

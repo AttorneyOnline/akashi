@@ -104,7 +104,7 @@ void Server::clientConnected()
     int user_id;
     QList<int> user_ids;
     for (AOClient* client : qAsConst(m_clients)) {
-        user_ids.append(client->id);
+        user_ids.append(client->m_id);
     }
     for (user_id = 0; user_id <= m_player_count; user_id++) {
         if (user_ids.contains(user_id))
@@ -120,11 +120,11 @@ void Server::clientConnected()
     auto ban = db_manager->isIPBanned(client->getIpid());
     bool is_banned = ban.first;
     for (AOClient* joined_client : qAsConst(m_clients)) {
-        if (client->remote_ip.isEqual(joined_client->remote_ip))
+        if (client->m_remote_ip.isEqual(joined_client->m_remote_ip))
             multiclient_count++;
     }
 
-    if (multiclient_count > ConfigManager::multiClientLimit() && !client->remote_ip.isLoopback()) // TODO: make this configurable
+    if (multiclient_count > ConfigManager::multiClientLimit() && !client->m_remote_ip.isLoopback()) // TODO: make this configurable
         is_at_multiclient_limit = true;
 
     if (is_banned) {
@@ -170,8 +170,8 @@ void Server::updateCharsTaken(AreaData* area)
     AOPacket response_cc("CharsCheck", chars_taken);
 
     for (AOClient* client : qAsConst(m_clients)) {
-        if (client->current_area == area->index()){
-            if (!client->is_charcursed)
+        if (client->m_current_area == area->index()){
+            if (!client->m_is_charcursed)
                 client->sendPacket(response_cc);
             else {
                 QStringList chars_taken_cursed = getCursedCharsTaken(client, chars_taken);
@@ -186,7 +186,7 @@ QStringList Server::getCursedCharsTaken(AOClient* client, QStringList chars_take
 {
     QStringList chars_taken_cursed;
     for (int i = 0; i < chars_taken.length(); i++) {
-        if (!client->charcurse_list.contains(i))
+        if (!client->m_charcurse_list.contains(i))
             chars_taken_cursed.append("-1");
         else
             chars_taken_cursed.append(chars_taken.value(i));
@@ -197,7 +197,7 @@ QStringList Server::getCursedCharsTaken(AOClient* client, QStringList chars_take
 void Server::broadcast(AOPacket packet, int area_index)
 {
     for (AOClient* client : qAsConst(m_clients)) {
-        if (client->current_area == area_index)
+        if (client->m_current_area == area_index)
             client->sendPacket(packet);
     }
 }
@@ -222,7 +222,7 @@ QList<AOClient*> Server::getClientsByIpid(QString ipid)
 AOClient* Server::getClientByID(int id)
 {
     for (AOClient* client : qAsConst(m_clients)) {
-        if (client->id == id)
+        if (client->m_id == id)
             return client;
     }
     return nullptr;

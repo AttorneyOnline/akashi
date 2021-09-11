@@ -34,6 +34,8 @@
 #include <QRandomGenerator>
 #endif
 
+class Server;
+
 /**
  * @brief Represents a client connected to the server running Attorney Online 2 or one of its derivatives.
  */
@@ -51,7 +53,7 @@ class AOClient : public QObject {
     AOClient(Server* p_server, QTcpSocket* p_socket, QObject* parent = nullptr, int user_id = 0)
         : QObject(parent), m_id(user_id), m_remote_ip(p_socket->peerAddress()), m_password(""),
           m_joined(false), m_current_area(0), m_current_char(""), m_socket(p_socket), server(p_server),
-          is_partial(false), last_wtce_time(0) {
+          is_partial(false), m_last_wtce_time(0) {
         m_afk_timer = new QTimer;
         m_afk_timer->setSingleShot(true);
         connect(m_afk_timer, SIGNAL(timeout()), this, SLOT(onAfkTimeout()));
@@ -1894,7 +1896,7 @@ class AOClient : public QObject {
      * @return The parsed text, converted into their respective durations, summed up, then converted into seconds.
      */
     long long parseTime(QString input);
-    QString getReprimand(bool positive = false);
+    QString getReprimand(bool f_positive = false);
 
     /**
      * @brief Adds the last send IC-Message to QVector of the respective area.
@@ -1935,7 +1937,7 @@ class AOClient : public QObject {
      *
      * @return True if the password meets the requirements, otherwise false.
      */
-    bool checkPasswordRequirements(QString username, QString password);
+    bool checkPasswordRequirements(QString f_username, QString f_password);
 
     /**
      * @brief Sends a server notice.
@@ -1944,7 +1946,7 @@ class AOClient : public QObject {
      *
      * @param global Whether or not the notice should be server-wide.
      */
-    void sendNotice(QString notice, bool global = false);
+    void sendNotice(QString f_notice, bool f_global = false);
 
     
     /**
@@ -2143,14 +2145,14 @@ class AOClient : public QObject {
      * @details Generated based on the client's own supplied hardware ID.
      * The client supplied hardware ID is generally a machine unique ID.
      */
-    QString hwid;
+    QString m_hwid;
 
     /**
      * @brief The IPID of the client.
      *
      * @details Generated based on the client's IP, but cannot be reversed to identify the client's IP.
      */
-    QString ipid;
+    QString m_ipid;
 
     /**
      * @brief The time in seconds since the client last sent a Witness Testimony / Cross Examination
@@ -2158,14 +2160,14 @@ class AOClient : public QObject {
      *
      * @details Used to filter out potential spam.
      */
-    long last_wtce_time;
+    long m_last_wtce_time;
 
     /**
      * @brief The text of the last in-character message that was sent by the client.
      *
      * @details Used to determine if the incoming message is a duplicate.
      */
-    QString last_message;
+    QString m_last_message;
 
     /**
      * @brief A helper function to add recorded packets to an area's judgelog.
