@@ -34,8 +34,6 @@
 #include <QRandomGenerator>
 #endif
 
-class Server;
-
 /**
  * @brief Represents a client connected to the server running Attorney Online 2 or one of its derivatives.
  */
@@ -51,12 +49,12 @@ class AOClient : public QObject {
      * @param parent Qt-based parent, passed along to inherited constructor from QObject.
      */
     AOClient(Server* p_server, QTcpSocket* p_socket, QObject* parent = nullptr, int user_id = 0)
-        : QObject(parent), id(user_id), remote_ip(p_socket->peerAddress()), password(""),
-          joined(false), current_area(0), current_char(""), socket(p_socket), server(p_server),
+        : QObject(parent), m_id(user_id), m_remote_ip(p_socket->peerAddress()), m_password(""),
+          m_joined(false), m_current_area(0), m_current_char(""), m_socket(p_socket), server(p_server),
           is_partial(false), last_wtce_time(0) {
-        afk_timer = new QTimer;
-        afk_timer->setSingleShot(true);
-        connect(afk_timer, SIGNAL(timeout()), this, SLOT(onAfkTimeout()));
+        m_afk_timer = new QTimer;
+        m_afk_timer->setSingleShot(true);
+        connect(m_afk_timer, SIGNAL(timeout()), this, SLOT(onAfkTimeout()));
     };
 
     /**
@@ -103,17 +101,17 @@ class AOClient : public QObject {
     /**
      * @brief The user ID of the client.
      */
-    int id;
+    int m_id;
 
     /**
      * @brief The IP address of the client.
      */
-    QHostAddress remote_ip;
+    QHostAddress m_remote_ip;
 
     /**
      * @brief The stored character password for the client, used to be able to select passworded characters.
      */
-    QString password;
+    QString m_password;
 
     /**
      * @brief True if the client is actually in the server.
@@ -124,78 +122,78 @@ class AOClient : public QObject {
      * The purpose of this variable is to determine if the user isn't just doing that, but has actually double-clicked the server, and
      * its client has sent the standard handshake packets, which does signify that the client intended to 'join' this server.
      */
-    bool joined;
+    bool m_joined;
 
     /**
      * @brief The ID of the area the client is currently in.
      */
-    int current_area;
+    int m_current_area;
 
     /**
      * @brief The internal name of the character the client is currently using.
      */
-    QString current_char;
+    QString m_current_char;
 
     /**
      * @brief The internal name of the character the client is iniswapped to.
      *
      * @note This will be the same as current_char if the client is not iniswapped.
      */
-    QString current_iniswap;
+    QString m_current_iniswap;
 
     /**
      * @brief If true, the client is a logged-in moderator.
      */
-    bool authenticated = false;
+    bool m_authenticated = false;
 
     /**
      * @brief If using advanced authentication, this is the moderator name that the client has logged in with.
      */
-    QString moderator_name = "";
+    QString m_moderator_name = "";
 
     /**
      * @brief The out-of-character name of the client, generally the nickname of the user themself.
      */
-    QString ooc_name = "";
+    QString m_ooc_name = "";
 
     /**
      * @brief The custom showname of the client, used when "renaming" already existing characters in-character.
      */
-    QString showname = "";
+    QString m_showname = "";
 
     /**
      * @brief If true, the client is willing to receive global messages.
      *
      * @see AOClient::cmdG and AOClient::cmdToggleGlobal
      */
-    bool global_enabled = true;
+    bool m_global_enabled = true;
 
     /**
      * @brief If true, the client's messages will be sent in first-person mode.
      *
      * @see AOClient::cmdFirstPerson
      */
-    bool first_person = false;
+    bool m_first_person = false;
 
     /**
      * @brief If true, the client may not use in-character chat.
      */
-    bool is_muted = false;
+    bool m_is_muted = false;
   
     /**
      * @brief If true, the client may not use out-of-character chat.
      */
-    bool is_ooc_muted = false;
+    bool m_is_ooc_muted = false;
   
     /**
      * @brief If true, the client may not use the music list.
      */
-    bool is_dj_blocked = false;
+    bool m_is_dj_blocked = false;
   
     /**
      * @brief If true, the client may not use the judge controls.
      */
-    bool is_wtce_blocked = false;
+    bool m_is_wtce_blocked = false;
     
     /**
      * @brief Represents the client's client software, and its version.
@@ -215,7 +213,7 @@ class AOClient : public QObject {
      *
      * @see The struct itself for more details.
      */
-    ClientVersion version;
+    ClientVersion m_version;
 
     /**
       * @brief The authorisation bitflag, representing what permissions a client can have.
@@ -248,63 +246,63 @@ class AOClient : public QObject {
     /**
      * @brief A list of 5 casing preferences (def, pro, judge, jury, steno)
      */
-    QList<bool> casing_preferences = {false, false, false, false, false};
+    QList<bool> m_casing_preferences = {false, false, false, false, false};
 
     /**
      * @brief If true, the client's in-character messages will have their word order randomised.
      */
-    bool is_shaken = false;
+    bool m_is_shaken = false;
 
     /**
      * @brief If true, the client's in-character messages will have their vowels (English alphabet only) removed.
      */
-    bool is_disemvoweled = false;
+    bool m_is_disemvoweled = false;
 
     /**
      * @brief If true, the client's in-character messages will be overwritten by a randomly picked predetermined message.
      */
-    bool is_gimped = false;
+    bool m_is_gimped = false;
 
     /**
      * @brief If true, the client will be marked as AFK in /getarea. Automatically applied when a configurable
      * amount of time has passed since the last interaction, or manually applied by /afk.
      */
-    bool is_afk = false;
+    bool m_is_afk = false;
 
     /**
      * @brief If true, the client will not recieve PM messages.
      */
-    bool pm_mute = false;
+    bool m_pm_mute = false;
 
     /**
      * @brief If true, the client will recieve advertisements.
      */
-    bool advert_enabled = true;
+    bool m_advert_enabled = true;
 
     /**
      * @brief If true, the client is restricted to only changing into certain characters.
      */
-    bool is_charcursed = false;
+    bool m_is_charcursed = false;
 
     /**
      * @brief Timer for tracking user interaction. Automatically restarted whenever a user interacts (i.e. sends any packet besides CH)
      */
-    QTimer* afk_timer;
+    QTimer* m_afk_timer;
 
     /**
      * @brief The list of char IDs a charcursed player is allowed to switch to.
      */
-    QList<int> charcurse_list;
+    QList<int> m_charcurse_list;
 
     /**
      * @brief Temporary client permission if client is allowed to save a testimony to server storage.
      */
-    bool testimony_saving = false;
+    bool m_testimony_saving = false;
 
     /**
      * @brief If true, the client's next OOC message will be interpreted as a moderator login.
      */
-    bool is_logging_in = false;
+    bool m_is_logging_in = false;
 
   public slots:
     /**
@@ -343,7 +341,7 @@ class AOClient : public QObject {
     /**
      * @brief The TCP socket used to communicate with the client.
      */
-    QTcpSocket* socket;
+    QTcpSocket* m_socket;
 
     /**
      * @brief A pointer to the Server, used for updating server variables that depend on the client (e.g. amount of players in an area).
@@ -609,7 +607,7 @@ class AOClient : public QObject {
      *
      * In general, the client assumes that this is a continuous block starting from 0.
      */
-    int char_id = -1;
+    int m_char_id = -1;
 
     /**
      * @brief The character ID of the other character that the client wants to pair up with.
@@ -618,7 +616,7 @@ class AOClient : public QObject {
      * Furthermore, the owner of that character ID must also do the reverse to this client, making their `pairing_with` equal
      * to this client's character ID.
      */
-    int pairing_with = -1;
+    int m_pairing_with = -1;
 
     /**
      * @brief The name of the emote last used by the client. No extension.
@@ -626,7 +624,7 @@ class AOClient : public QObject {
      * @details This is used for pairing mainly, for the server to be able to craft a smooth-looking transition from one
      * paired-up client talking to the next.
      */
-    QString emote = "";
+    QString m_emote = "";
 
     /**
      * @brief The amount the client was last offset by.
@@ -634,17 +632,17 @@ class AOClient : public QObject {
      * @details This used to be just a plain number ranging from -100 to 100, but then Crystal mangled it by building some extra data into it.
      * Cheers, love.
      */
-    QString offset = "";
+    QString m_offset = "";
 
     /**
      * @brief The last flipped state of the client.
      */
-    QString flipping = "";
+    QString m_flipping = "";
 
     /**
      * @brief The last reported position of the client.
      */
-    QString pos = "";
+    QString m_pos = "";
 
     ///@}
 
