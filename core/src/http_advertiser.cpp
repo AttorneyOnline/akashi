@@ -20,20 +20,20 @@ void HTTPAdvertiser::msAdvertiseServer()
         QNetworkRequest request(url);
         request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
-        QJsonObject json;
-        json["port"] = m_port;
+        QJsonObject l_json;
+        l_json["port"] = m_port;
         if (m_ws_port != -1) {
-            json["ws_port"] = m_ws_port;
+            l_json["ws_port"] = m_ws_port;
         }
 
-        json["players"] = m_players;
-        json["name"] = m_name;
+        l_json["players"] = m_players;
+        l_json["name"] = m_name;
 
         if (!m_description.isEmpty()) {
-        json["description"] = m_description;
+        l_json["description"] = m_description;
         }
 
-        m_manager->post(request, QJsonDocument(json).toJson());
+        m_manager->post(request, QJsonDocument(l_json).toJson());
 
         if (m_debug)
             qDebug().noquote() << "Advertised Server";
@@ -45,25 +45,25 @@ void HTTPAdvertiser::msAdvertiseServer()
 
 }
 
-void HTTPAdvertiser::msRequestFinished(QNetworkReply *reply)
+void HTTPAdvertiser::msRequestFinished(QNetworkReply *f_reply)
 {
     if (m_debug) {
-        if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 200) {
+        if (f_reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 200) {
             qDebug().noquote() << "Succesfully advertised server.";
         }
         else {
-            QJsonDocument json = QJsonDocument::fromJson(reply->readAll());
+            QJsonDocument json = QJsonDocument::fromJson(f_reply->readAll());
             if (json.isNull()) {
-                qCritical().noquote() << "Invalid JSON response from" << reply->url();
-                reply->deleteLater();
+                qCritical().noquote() << "Invalid JSON response from" << f_reply->url();
+                f_reply->deleteLater();
                 return;
             }
 
-            qDebug().noquote() << "Got valid response from" << reply->url();
+            qDebug().noquote() << "Got valid response from" << f_reply->url();
             qDebug() << json;
         }
     }
-    reply->deleteLater();
+    f_reply->deleteLater();
 }
 
 void HTTPAdvertiser::setAdvertiserSettings(advertiser_config config)

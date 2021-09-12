@@ -157,22 +157,22 @@ class Server : public QObject {
     /**
      * @brief The collection of all currently connected clients.
      */
-    QVector<AOClient*> clients;
+    QVector<AOClient*> m_clients;
 
     /**
      * @brief The overall player count in the server.
      */
-    int player_count;
+    int m_player_count;
 
     /**
      * @brief The characters available on the server to use.
      */
-    QStringList characters;
+    QStringList m_characters;
 
     /**
      * @brief The areas on the server.
      */
-    QVector<AreaData*> areas;
+    QVector<AreaData*> m_areas;
 
     /**
      * @brief The names of the areas on the server.
@@ -180,7 +180,7 @@ class Server : public QObject {
      * @details Equivalent to iterating over #areas and getting the area names individually, but grouped together
      * here for faster access.
      */
-    QStringList area_names;
+    QStringList m_area_names;
 
     /**
      * @brief The available songs on the server.
@@ -188,12 +188,12 @@ class Server : public QObject {
      * @details Does **not** include the area names, the actual music list packet should be constructed from
      * #area_names and this combined.
      */
-    QStringList music_list;
+    QStringList m_music_list;
 
     /**
      * @brief The backgrounds on the server that may be used in areas.
      */
-    QStringList backgrounds;
+    QStringList m_backgrounds;
 
     /**
      * @brief The database manager on the server, used to store users' bans and authorisation details.

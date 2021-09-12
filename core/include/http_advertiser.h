@@ -69,7 +69,7 @@ public slots:
      * @brief Reads the information send as a reply for further error handling.
      * @param reply Response data from the masterserver. Information contained is send to the console if debug is enabled.
      */
-    void msRequestFinished(QNetworkReply *reply);
+    void msRequestFinished(QNetworkReply *f_reply);
 
     /**
      * @brief Sets the values being advertised to masterserver.

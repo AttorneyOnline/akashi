@@ -21,6 +21,7 @@
 
 QSettings* ConfigManager::m_settings = new QSettings("config/config.ini", QSettings::IniFormat);
 QSettings* ConfigManager::m_discord = new QSettings("config/discord.ini", QSettings::IniFormat);
+QSettings* ConfigManager::m_areas = new QSettings("config/areas.ini", QSettings::IniFormat);
 ConfigManager::CommandSettings* ConfigManager::m_commands = new CommandSettings();
 QElapsedTimer* ConfigManager::m_uptimeTimer = new QElapsedTimer;
 
@@ -93,6 +94,75 @@ bool ConfigManager::verifyServerConfig()
     return true;
 }
 
+QString ConfigManager::bindIP()
+{
+    return m_settings->value("Options/bind_ip","all").toString();
+}
+
+QStringList ConfigManager::charlist()
+{
+    QStringList l_charlist;
+    QFile l_file("config/characters.txt");
+    l_file.open(QIODevice::ReadOnly | QIODevice::Text);
+    while (!l_file.atEnd()) {
+        l_charlist.append(l_file.readLine().trimmed());
+    }
+    l_file.close();
+
+    return l_charlist;
+}
+
+QStringList ConfigManager::backgrounds()
+{
+    QStringList l_backgrounds;
+    QFile l_file("config/backgrounds.txt");
+    l_file.open(QIODevice::ReadOnly | QIODevice::Text);
+    while (!l_file.atEnd()) {
+        l_backgrounds.append(l_file.readLine().trimmed());
+    }
+    l_file.close();
+
+    return l_backgrounds;
+}
+
+QStringList ConfigManager::musiclist()
+{
+    QStringList l_music_list;
+    QFile l_file("config/music.txt");
+    l_file.open(QIODevice::ReadOnly | QIODevice::Text);
+    while (!l_file.atEnd()) {
+        l_music_list.append(l_file.readLine().trimmed());
+    }
+    l_file.close();
+    if(l_music_list[0].contains(".")) // Add a default category if none exists
+        l_music_list.insert(0, "==Music==");
+    return l_music_list;
+}
+
+QSettings* ConfigManager::areaData()
+{
+    return m_areas;
+}
+
+QStringList ConfigManager::sanitizedAreaNames()
+{
+    QStringList l_area_names = m_areas->childGroups(); // invisibly does a lexicographical sort, because Qt is great like that
+    std::sort(l_area_names.begin(), l_area_names.end(), [] (const QString &a, const QString &b) {return a.split(":")[0].toInt() < b.split(":")[0].toInt();});
+    QStringList l_sanitized_area_names;
+    for (const QString &areaName : qAsConst(l_area_names)) {
+        QStringList l_nameSplit = areaName.split(":");
+        l_nameSplit.removeFirst();
+        QString l_area_name_sanitized = l_nameSplit.join(":");
+        l_sanitized_area_names.append(l_area_name_sanitized);
+    }
+    return l_sanitized_area_names;
+}
+
+QStringList ConfigManager::rawAreaNames()
+{
+    return m_areas->childGroups();
+}
+
 void ConfigManager::reloadSettings()
 {
     m_settings->sync();
@@ -102,12 +172,12 @@ void ConfigManager::reloadSettings()
 QStringList ConfigManager::loadConfigFile(const QString filename)
 {
     QStringList stringlist;
-    QFile file("config/text/" + filename + ".txt");
-    file.open(QIODevice::ReadOnly | QIODevice::Text);
-    while (!(file.atEnd())) {
-        stringlist.append(file.readLine().trimmed());
+    QFile l_file("config/text/" + filename + ".txt");
+    l_file.open(QIODevice::ReadOnly | QIODevice::Text);
+    while (!(l_file.atEnd())) {
+        stringlist.append(l_file.readLine().trimmed());
     }
-    file.close();
+    l_file.close();
     return stringlist;
 }
 

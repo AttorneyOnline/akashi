@@ -24,16 +24,16 @@ void AOClient::cmdPlay(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
 
-    if (is_dj_blocked) {
+    if (m_is_dj_blocked) {
         sendServerMessage("You are blocked from changing the music.");
         return;
     }
-    AreaData* area = server->areas[current_area];
-    QString song = argv.join(" ");
-    area->currentMusic() = song;
-    area->musicPlayerBy() = showname;
-    AOPacket music_change("MC", {song, QString::number(server->getCharID(current_char)), showname, "1", "0"});
-    server->broadcast(music_change, current_area);
+    AreaData* l_area = server->m_areas[m_current_area];
+    QString l_song = argv.join(" ");
+    l_area->currentMusic() = l_song;
+    l_area->musicPlayerBy() = m_showname;
+    AOPacket music_change("MC", {l_song, QString::number(server->getCharID(m_current_char)), m_showname, "1", "0"});
+    server->broadcast(music_change, m_current_area);
 }
 
 void AOClient::cmdCurrentMusic(int argc, QStringList argv)
@@ -41,9 +41,9 @@ void AOClient::cmdCurrentMusic(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData* area = server->areas[current_area];
-    if (area->currentMusic() != "" && area->currentMusic() != "~stop.mp3") // dummy track for stopping music
-        sendServerMessage("The current song is " + area->currentMusic() + " played by " + area->musicPlayerBy());
+    AreaData* l_area = server->m_areas[m_current_area];
+    if (l_area->currentMusic() != "" && l_area->currentMusic() != "~stop.mp3") // dummy track for stopping music
+        sendServerMessage("The current song is " + l_area->currentMusic() + " played by " + l_area->musicPlayerBy());
     else
         sendServerMessage("There is no music playing.");
 }
@@ -53,26 +53,26 @@ void AOClient::cmdBlockDj(int argc, QStringList argv)
     Q_UNUSED(argc);
 
     bool conv_ok = false;
-    int uid = argv[0].toInt(&conv_ok);
+    int l_uid = argv[0].toInt(&conv_ok);
     if (!conv_ok) {
         sendServerMessage("Invalid user ID.");
         return;
     }
 
-    AOClient* target = server->getClientByID(uid);
+    AOClient* l_target = server->getClientByID(l_uid);
 
-    if (target == nullptr) {
+    if (l_target == nullptr) {
         sendServerMessage("No client with that ID found.");
         return;
     }
 
-    if (target->is_dj_blocked)
+    if (l_target->m_is_dj_blocked)
         sendServerMessage("That player is already DJ blocked!");
     else {
         sendServerMessage("DJ blocked player.");
-        target->sendServerMessage("You were blocked from changing the music by a moderator. " + getReprimand());
+        l_target->sendServerMessage("You were blocked from changing the music by a moderator. " + getReprimand());
     }
-    target->is_dj_blocked = true;
+    l_target->m_is_dj_blocked = true;
 }
 
 void AOClient::cmdUnBlockDj(int argc, QStringList argv)
@@ -80,26 +80,26 @@ void AOClient::cmdUnBlockDj(int argc, QStringList argv)
     Q_UNUSED(argc);
 
     bool conv_ok = false;
-    int uid = argv[0].toInt(&conv_ok);
+    int l_uid = argv[0].toInt(&conv_ok);
     if (!conv_ok) {
         sendServerMessage("Invalid user ID.");
         return;
     }
 
-    AOClient* target = server->getClientByID(uid);
+    AOClient* l_target = server->getClientByID(l_uid);
 
-    if (target == nullptr) {
+    if (l_target == nullptr) {
         sendServerMessage("No client with that ID found.");
         return;
     }
 
-    if (!target->is_dj_blocked)
+    if (!l_target->m_is_dj_blocked)
         sendServerMessage("That player is not DJ blocked!");
     else {
         sendServerMessage("DJ permissions restored to player.");
-        target->sendServerMessage("A moderator restored your music permissions. " + getReprimand(true));
+        l_target->sendServerMessage("A moderator restored your music permissions. " + getReprimand(true));
     }
-    target->is_dj_blocked = false;
+    l_target->m_is_dj_blocked = false;
 }
 
 void AOClient::cmdToggleMusic(int argc, QStringList argv)
@@ -107,8 +107,8 @@ void AOClient::cmdToggleMusic(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData* area = server->areas[current_area];
-    area->toggleMusic();
-    QString state = area->isMusicAllowed() ? "allowed." : "disallowed.";
-    sendServerMessage("Music in this area is now " + state);
+    AreaData* l_area = server->m_areas[m_current_area];
+    l_area->toggleMusic();
+    QString l_state = l_area->isMusicAllowed() ? "allowed." : "disallowed.";
+    sendServerMessage("Music in this area is now " + l_state);
 }

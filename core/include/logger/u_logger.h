@@ -55,41 +55,41 @@ public slots:
     /**
      * @brief Adds an IC log entry to the area buffer and writes it to the respective log format.
      */
-    void logIC(const QString& f_charName, const QString& f_oocName, const QString& f_ipid,
-               const QString& f_areaName, const QString &f_message);
+    void logIC(const QString& f_char_name, const QString& f_ooc_name, const QString& f_ipid,
+               const QString& f_area_name, const QString &f_message);
 
     /**
      * @brief Adds an OOC log entry to the area buffer and writes it to the respective log format.
      */
     void logOOC(const QString& f_charName, const QString& f_oocName, const QString& f_ipid,
-                const QString& f_areaName, const QString& f_message);
+                const QString& f_area_name, const QString& f_message);
 
     /**
      * @brief Adds an login attempt to the area buffer and writes it to the respective log format.
      */
-    void logLogin(const QString& f_charName, const QString& f_oocName, const QString& f_moderatorName,
-                  const QString& f_ipid, const QString &f_areaName, const bool& f_success);
+    void logLogin(const QString& f_char_name, const QString& f_ooc_name, const QString& f_moderator_name,
+                  const QString& f_ipid, const QString &f_area_name, const bool& f_success);
 
     /**
      * @brief Adds a command usage to the area buffer and writes it to the respective log format.
      */
-    void logCMD(const QString& f_charName, const QString &f_ipid, const QString& f_oocName, const QString f_command,
-                const QStringList f_args, const QString f_areaName);
+    void logCMD(const QString& f_char_name, const QString &f_ipid, const QString& f_ooc_name, const QString& f_command,
+                const QStringList& f_args, const QString& f_area_name);
 
     /**
      * @brief Adds a player kick to the area buffer and writes it to the respective log format.
      */
-    void logKick(const QString& f_moderator, const QString& f_targetIPID);
+    void logKick(const QString& f_moderator, const QString& f_target_ipid);
 
     /**
      * @brief Adds a player ban to the area buffer and writes it to the respective log format.
      */
-    void logBan(const QString& f_moderator, const QString& f_targetIPID, const QString &f_duration);
+    void logBan(const QString& f_moderator, const QString& f_target_ipid, const QString &f_duration);
 
     /**
      * @brief Adds a modcall event to the area buffer, also triggers modcall writing.
      */
-    void logModcall(const QString& f_charName, const QString &f_ipid, const QString& f_oocName, const QString& f_areaName);
+    void logModcall(const QString& f_charName, const QString &f_ipid, const QString& f_oocName, const QString& f_area_name);
 
     /**
      * @brief Logs any connection attempt to the server, wether sucessful or not.
@@ -103,7 +103,7 @@ private:
      * @param Name of the area which buffer is modified.
      * @param Formatted QString to be added into the buffer.
      */
-    void updateAreaBuffer(const QString& f_areaName, const QString& f_logEntry);
+    void updateAreaBuffer(const QString& f_areaName, const QString& f_log_entry);
 
     /**
      * @brief QMap of all available area buffers.
