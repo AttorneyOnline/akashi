@@ -429,6 +429,11 @@ QString AreaData::musicPlayerBy() const
     return m_musicPlayedBy;
 }
 
+void AreaData::setMusicPlayedBy(const QString& f_music_player)
+{
+    m_musicPlayedBy = f_music_player;
+}
+
 void AreaData::changeMusic(const QString &f_source_r, const QString &f_newSong_r)
 {
     m_currentMusic = f_newSong_r;
@@ -438,6 +443,11 @@ void AreaData::changeMusic(const QString &f_source_r, const QString &f_newSong_r
 QString AreaData::currentMusic() const
 {
     return m_currentMusic;
+}
+
+void AreaData::setCurrentMusic(QString f_current_song)
+{
+    m_currentMusic = f_current_song;
 }
 
 int AreaData::proHP() const
@@ -517,6 +527,10 @@ void AreaData::toggleIgnoreBgList()
 void AreaData::toggleJukebox()
 {
     m_jukebox = !m_jukebox;
+    if (!m_jukebox) {
+        m_jukebox_queue.clear();
+        m_jukebox_timer->stop();
+    }
 }
 
 bool AreaData::addJukeboxSong(QString f_song)
@@ -525,6 +539,8 @@ bool AreaData::addJukeboxSong(QString f_song)
         if (m_jukebox_queue.size() == 0) {
             emit playJukeboxSong(AOPacket("MC",{f_song,QString::number(-1)}), index());
             m_jukebox_timer->start(ConfigManager::songInformation(f_song) * 1000);
+            setCurrentMusic(f_song);
+            setMusicPlayedBy("Jukebox");
         }
         m_jukebox_queue.append(f_song);
         return true;
@@ -550,6 +566,6 @@ void AreaData::switchJukeboxSong()
         m_jukebox_queue.remove(l_random_index);
         m_jukebox_queue.squeeze();
     }
-    currentMusic() = l_song_name;
-    musicPlayerBy() = "Jukebox";
+    setCurrentMusic(l_song_name);
+    setMusicPlayedBy("Jukebox");
 }

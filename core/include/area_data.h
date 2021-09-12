@@ -578,6 +578,15 @@ class AreaData : public QObject {
     QString currentMusic() const;
 
     /**
+     * @brief Sets the music currently being played in the area.
+     *
+     * @param Name of the song being played.
+     *
+     * @see #m_currentMusic
+     */
+    void setCurrentMusic(QString f_current_song);
+
+    /**
      * @brief Returns the showname of the client who played the music in the area.
      *
      * @return See short description.
@@ -585,6 +594,15 @@ class AreaData : public QObject {
      * @see #m_musicPlayedBy
      */
     QString musicPlayerBy() const;
+
+    /**
+     * @brief Sets the showname of the client who played the music in the area.
+     *
+     * @param Showname of the client.
+     *
+     * @see #m_musicPlayedBy
+     */
+    void setMusicPlayedBy(const QString& f_music_player);
 
     /**
      * @brief Changes the music being played in the area.

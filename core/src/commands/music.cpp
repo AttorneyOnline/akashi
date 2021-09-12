@@ -41,7 +41,7 @@ void AOClient::cmdCurrentMusic(int argc, QStringList argv)
     Q_UNUSED(argv);
 
     AreaData* l_area = server->m_areas[m_current_area];
-    if (l_area->currentMusic() != "" && l_area->currentMusic() != "~stop.mp3") // dummy track for stopping music
+    if (!l_area->currentMusic().isEmpty() && !l_area->currentMusic().contains("~stop.mp3")) // dummy track for stopping music
         sendServerMessage("The current song is " + l_area->currentMusic() + " played by " + l_area->musicPlayerBy());
     else
         sendServerMessage("There is no music playing.");
