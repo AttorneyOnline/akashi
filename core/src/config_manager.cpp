@@ -24,6 +24,7 @@ QSettings* ConfigManager::m_discord = new QSettings("config/discord.ini", QSetti
 QSettings* ConfigManager::m_areas = new QSettings("config/areas.ini", QSettings::IniFormat);
 ConfigManager::CommandSettings* ConfigManager::m_commands = new CommandSettings();
 QElapsedTimer* ConfigManager::m_uptimeTimer = new QElapsedTimer;
+QHash<QString,float>* ConfigManager::m_musicList = new QHash<QString,float>;
 
 bool ConfigManager::verifyServerConfig()
 {
@@ -127,16 +128,52 @@ QStringList ConfigManager::backgrounds()
 
 QStringList ConfigManager::musiclist()
 {
-    QStringList l_music_list;
-    QFile l_file("config/music.txt");
-    l_file.open(QIODevice::ReadOnly | QIODevice::Text);
-    while (!l_file.atEnd()) {
-        l_music_list.append(l_file.readLine().trimmed());
+    QFile l_music_json("config/music.json");
+    l_music_json.open(QIODevice::ReadOnly | QIODevice::Text);
+
+    QJsonParseError l_error;
+    QJsonDocument l_music_list_json = QJsonDocument::fromJson(l_music_json.readAll(), &l_error);
+    if (!(l_error.error == QJsonParseError::NoError)) { //Non-Terminating error.
+        qWarning() << "Unable to load musiclist. The following error was encounted : " + l_error.errorString();
+        return QStringList {}; //Server can still run without music.
     }
-    l_file.close();
-    if(l_music_list[0].contains(".")) // Add a default category if none exists
-        l_music_list.insert(0, "==Music==");
-    return l_music_list;
+
+    // Akashi expects the musiclist to be contained in a JSON array, even if its only a single category.
+    QJsonArray l_Json_root_array = l_music_list_json.array();
+    QJsonObject l_child_obj;
+    QJsonArray l_child_array;
+    for (int i = 0; i <= l_Json_root_array.size() -1; i++){ //Iterate trough entire JSON file to assemble musiclist
+        l_child_obj = l_Json_root_array.at(i).toObject();
+
+        //Technically not a requirement, but neat for organisation.
+        QString l_category_name = l_child_obj["category"].toString();
+        if (!l_category_name.isEmpty()) {
+            m_musicList->insert(l_category_name,0);
+        }
+        else {
+            qWarning() << "Category name not set. This may cause the musiclist to be displayed incorrectly.";
+        }
+
+        l_child_array = l_child_obj["songs"].toArray();
+        for (int i = 0; i <= l_child_array.size() -1; i++){ // Inner for loop because a category can contain multiple songs.
+            QJsonObject l_song_obj = l_child_array.at(i).toObject();
+            QString l_song_name = l_song_obj["name"].toString();
+            int l_song_duration = l_song_obj["length"].toVariant().toFloat();
+         m_musicList->insert(l_song_name,l_song_duration);
+        }
+    }
+    l_music_json.close();
+
+    QStringList l_musiclist = m_musicList->keys();
+    if(!l_musiclist[0].contains("==")) // Add a default category if none exists
+        l_musiclist.insert(0,"==Music==");
+
+    return l_musiclist;
+}
+
+int ConfigManager::songInformation(const QString &f_songName)
+{
+    return m_musicList->value(f_songName);
 }
 
 QSettings* ConfigManager::areaData()
