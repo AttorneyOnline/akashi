@@ -117,7 +117,7 @@ void AOClient::cmdToggleJukebox(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    if (checkAuth(ACLFlags.value("CM")) | m_authenticated) {
+    if (checkAuth(ACLFlags.value("CM")) | checkAuth(ACLFlags.value("Jukebox"))) {
         AreaData* l_area = server->m_areas.value(m_current_area);
         l_area->toggleJukebox();
         QString l_state = l_area->isjukeboxEnabled() ? "enabled." : "disabled.";

@@ -241,6 +241,7 @@ class AOClient : public QObject {
         {"BYPASS_LOCKS",    1ULL << 14},
         {"IGNORE_BGLIST",   1ULL << 15},
         {"SEND_NOTICE",     1ULL << 16},
+        {"JUKEBOX",         1ULL << 17},
         {"SUPER",          ~0ULL      }
     };
 
