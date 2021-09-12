@@ -1809,6 +1809,13 @@ class AOClient : public QObject {
      */
     void cmdToggleMusic(int argc, QStringList argv);
 
+    /**
+     * @brief cmdToggleJukebox Toggles jukebox status in the current area.
+     *
+     * @details No arguments.
+     */
+    void cmdToggleJukebox(int argc, QStringList argv);
+
     ///@}
 
     /**
@@ -2121,6 +2128,7 @@ class AOClient : public QObject {
         {"ignore_bglist",      {ACLFlags.value("IGNORE_BGLIST"),0, &AOClient::cmdIgnoreBgList}},
         {"notice",             {ACLFlags.value("SEND_NOTICE"),  1, &AOClient::cmdNotice}},
         {"noticeg",            {ACLFlags.value("SEND_NOTICE"),  1, &AOClient::cmdNoticeGlobal}},
+        {"togglejukebox",      {ACLFlags.value("None"),         0, &AOClient::cmdToggleJukebox}},
     };
 
     /**

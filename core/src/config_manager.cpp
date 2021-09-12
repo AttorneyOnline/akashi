@@ -142,6 +142,7 @@ QStringList ConfigManager::musiclist()
     QJsonArray l_Json_root_array = l_music_list_json.array();
     QJsonObject l_child_obj;
     QJsonArray l_child_array;
+    QStringList l_musiclist;
     for (int i = 0; i <= l_Json_root_array.size() -1; i++){ //Iterate trough entire JSON file to assemble musiclist
         l_child_obj = l_Json_root_array.at(i).toObject();
 
@@ -149,6 +150,7 @@ QStringList ConfigManager::musiclist()
         QString l_category_name = l_child_obj["category"].toString();
         if (!l_category_name.isEmpty()) {
             m_musicList->insert(l_category_name,0);
+            l_musiclist.append(l_category_name);
         }
         else {
             qWarning() << "Category name not set. This may cause the musiclist to be displayed incorrectly.";
@@ -160,11 +162,11 @@ QStringList ConfigManager::musiclist()
             QString l_song_name = l_song_obj["name"].toString();
             int l_song_duration = l_song_obj["length"].toVariant().toFloat();
          m_musicList->insert(l_song_name,l_song_duration);
+         l_musiclist.append(l_song_name);
         }
     }
     l_music_json.close();
 
-    QStringList l_musiclist = m_musicList->keys();
     if(!l_musiclist[0].contains("==")) // Add a default category if none exists
         l_musiclist.insert(0,"==Music==");
 

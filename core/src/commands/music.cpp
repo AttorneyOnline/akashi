@@ -16,7 +16,6 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/aoclient.h"
-
 // This file is for commands under the music category in aoclient.h
 // Be sure to register the command in the header before adding it here!
 
@@ -111,4 +110,20 @@ void AOClient::cmdToggleMusic(int argc, QStringList argv)
     l_area->toggleMusic();
     QString l_state = l_area->isMusicAllowed() ? "allowed." : "disallowed.";
     sendServerMessage("Music in this area is now " + l_state);
+}
+
+void AOClient::cmdToggleJukebox(int argc, QStringList argv)
+{
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
+    if (checkAuth(ACLFlags.value("CM")) | m_authenticated) {
+        AreaData* l_area = server->m_areas.value(m_current_area);
+        l_area->toggleJukebox();
+        QString l_state = l_area->isjukeboxEnabled() ? "enabled." : "disabled.";
+        sendServerMessageArea("The jukebox in this area has been " + l_state);
+    }
+    else {
+        sendServerMessage("You do not have permission to change the jukebox status.");
+    }
 }
