@@ -61,7 +61,7 @@ public slots:
     /**
      * @brief Adds an OOC log entry to the area buffer and writes it to the respective log format.
      */
-    void logOOC(const QString& f_charName, const QString& f_oocName, const QString& f_ipid,
+    void logOOC(const QString& f_char_Name, const QString& f_ooc_name, const QString& f_ipid,
                 const QString& f_area_name, const QString& f_message);
 
     /**
@@ -89,7 +89,7 @@ public slots:
     /**
      * @brief Adds a modcall event to the area buffer, also triggers modcall writing.
      */
-    void logModcall(const QString& f_charName, const QString &f_ipid, const QString& f_oocName, const QString& f_area_name);
+    void logModcall(const QString& f_char_name, const QString &f_ipid, const QString& f_ooc_name, const QString& f_area_name);
 
     /**
      * @brief Logs any connection attempt to the server, wether sucessful or not.
