@@ -559,7 +559,7 @@ void AreaData::switchJukeboxSong()
     QString l_song_name;
     if(m_jukebox_queue.size() == 1) {
         l_song_name = m_jukebox_queue[0];
-        emit playJukeboxSong(AOPacket("MC",{l_song_name,QString::number(-1)}), m_index);
+        emit playJukeboxSong(AOPacket("MC",{l_song_name,"-1"}), m_index);
         m_jukebox_timer->start(ConfigManager::songInformation(l_song_name) * 1000);
     }
     else {
