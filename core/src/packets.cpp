@@ -322,12 +322,11 @@ void AOClient::pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPack
 
             //Jukebox intercepts the direct playing of messages.
             if (area->isjukeboxEnabled()) {
-                if (area->addJukeboxSong(l_final_song))
-                    sendServerMessage("Song added to jukebox.");
-                else
-                    sendServerMessage("Unable to add. Song already in jukebox.");
+                QString l_jukebox_reply = area->addJukeboxSong(l_final_song);
+                sendServerMessage(l_jukebox_reply);
                 return;
             }
+
 
             AOPacket l_music_change("MC", {l_final_song, argv[1], m_showname, "1", "0", l_effects});
             area->setCurrentMusic(l_final_song);

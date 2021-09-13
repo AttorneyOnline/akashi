@@ -814,7 +814,7 @@ class AreaData : public QObject {
     /**
      * @brief Adds a song to the Jukeboxs queue.
      */
-    bool addJukeboxSong(QString f_song);
+    QString addJukeboxSong(QString f_song);
 
   public slots:
 
