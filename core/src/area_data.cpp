@@ -548,7 +548,7 @@ QString AreaData::addJukeboxSong(QString f_song)
                 return "Song added to Jukebox.";
             }
             else {
-                return "Unable to add song. Duration shorther than 1.";
+                return "Unable to add song. Duration shorter than 1.";
             }
     }
     return "Unable to add song. Song already in Jukebox.";
