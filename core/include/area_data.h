@@ -27,6 +27,7 @@
 #include <QDebug>
 #include <QTimer>
 #include <QElapsedTimer>
+#include <QRandomGenerator>
 
 class Logger;
 
@@ -294,6 +295,15 @@ class AreaData : public QObject {
      * @see #m_locked
      */
     LockStatus lockStatus() const;
+
+    /**
+     * @brief Returns the jukebox status of the area.
+     *
+     * @return See short description.
+     *
+     * @see #m_jukebox
+     */
+    bool isjukeboxEnabled() const;
 
     /**
      * @brief Locks the area, setting it to LOCKED.
@@ -568,6 +578,15 @@ class AreaData : public QObject {
     QString currentMusic() const;
 
     /**
+     * @brief Sets the music currently being played in the area.
+     *
+     * @param Name of the song being played.
+     *
+     * @see #m_currentMusic
+     */
+    void setCurrentMusic(QString f_current_song);
+
+    /**
      * @brief Returns the showname of the client who played the music in the area.
      *
      * @return See short description.
@@ -575,6 +594,15 @@ class AreaData : public QObject {
      * @see #m_musicPlayedBy
      */
     QString musicPlayerBy() const;
+
+    /**
+     * @brief Sets the showname of the client who played the music in the area.
+     *
+     * @param Showname of the client.
+     *
+     * @see #m_musicPlayedBy
+     */
+    void setMusicPlayedBy(const QString& f_music_player);
 
     /**
      * @brief Changes the music being played in the area.
@@ -778,6 +806,30 @@ class AreaData : public QObject {
      */
     void toggleIgnoreBgList();
 
+    /**
+     * @brief Toggles wether the jukebox is enabled or not.
+     */
+    void toggleJukebox();
+
+    /**
+     * @brief Adds a song to the Jukeboxs queue.
+     */
+    QString addJukeboxSong(QString f_song);
+
+  public slots:
+
+    /**
+     * @brief Plays a random song from the jukebox. Plays the same if only one is left.
+     */
+    void switchJukeboxSong();
+
+  signals:
+
+    /**
+     * @brief Changes the song in the current area when the jukebox timer expires.
+     */
+    void playJukeboxSong(AOPacket f_packet, int f_area_index);
+
 private:
     /**
      * @brief The list of timers available in the area.
@@ -966,6 +1018,28 @@ private:
      * @brief Whether or not to ignore the server defined background list. If true, any background can be set in an area.
      */
     bool m_ignoreBgList;
+
+    // Jukebox specific members
+    /**
+     * @brief Stores the songs added to the jukebox to be played.
+     *
+     * @details This contains the names of each song, noteworthy is that none of the songs are able to be entered twice.
+     *
+     */
+    QVector<QString> m_jukebox_queue;
+
+    /**
+     * @brief Triggers the playing of the next song once the last song has fully played.
+     *
+     * @details While this may be considered bad design, I do not care.
+     *          It triggers a direct broadcast of the MC packet in the area.
+     */
+    QTimer* m_jukebox_timer;
+
+    /**
+     * @brief Wether or not the jukebox is enabled in this area.
+     */
+    bool m_jukebox;
 };
 
 #endif // AREA_DATA_H

@@ -48,6 +48,7 @@ AreaData::AreaData(QString p_name, int p_index) :
     m_toggleMusic = areas_ini->value("toggle_music", "true").toBool();
     m_shownameAllowed = areas_ini->value("shownames_allowed", "true").toBool();
     m_ignoreBgList = areas_ini->value("ignore_bglist", "false").toBool();
+    m_jukebox = areas_ini->value("jukebox_enabled", "false").toBool();
     areas_ini->endGroup();
     QTimer* timer1 = new QTimer();
     m_timers.append(timer1);
@@ -57,6 +58,9 @@ AreaData::AreaData(QString p_name, int p_index) :
     m_timers.append(timer3);
     QTimer* timer4 = new QTimer();
     m_timers.append(timer4);
+    m_jukebox_timer = new QTimer();
+    connect(m_jukebox_timer, &QTimer::timeout,
+            this, &AreaData::switchJukeboxSong);
 }
 
 const QMap<QString, AreaData::Status> AreaData::map_statuses = {
@@ -129,6 +133,11 @@ bool AreaData::isProtected() const
 AreaData::LockStatus AreaData::lockStatus() const
 {
     return m_locked;
+}
+
+bool AreaData::isjukeboxEnabled() const
+{
+    return m_jukebox;
 }
 
 void AreaData::lock()
@@ -420,6 +429,11 @@ QString AreaData::musicPlayerBy() const
     return m_musicPlayedBy;
 }
 
+void AreaData::setMusicPlayedBy(const QString& f_music_player)
+{
+    m_musicPlayedBy = f_music_player;
+}
+
 void AreaData::changeMusic(const QString &f_source_r, const QString &f_newSong_r)
 {
     m_currentMusic = f_newSong_r;
@@ -429,6 +443,11 @@ void AreaData::changeMusic(const QString &f_source_r, const QString &f_newSong_r
 QString AreaData::currentMusic() const
 {
     return m_currentMusic;
+}
+
+void AreaData::setCurrentMusic(QString f_current_song)
+{
+    m_currentMusic = f_current_song;
 }
 
 int AreaData::proHP() const
@@ -503,4 +522,54 @@ bool AreaData::ignoreBgList()
 void AreaData::toggleIgnoreBgList()
 {
     m_ignoreBgList = !m_ignoreBgList;
+}
+
+void AreaData::toggleJukebox()
+{
+    m_jukebox = !m_jukebox;
+    if (!m_jukebox) {
+        m_jukebox_queue.clear();
+        m_jukebox_timer->stop();
+    }
+}
+
+QString AreaData::addJukeboxSong(QString f_song)
+{
+    if(!m_jukebox_queue.contains(f_song)) {
+        if (m_jukebox_queue.size() == 0) {
+            int l_song_duration = ConfigManager::songInformation(f_song);
+            if (l_song_duration >= 0) {
+                emit playJukeboxSong(AOPacket("MC",{f_song,QString::number(-1)}), index());
+                m_jukebox_timer->start(l_song_duration * 1000);
+                setCurrentMusic(f_song);
+                setMusicPlayedBy("Jukebox");
+                m_jukebox_queue.append(f_song);
+                return "Song added to Jukebox.";
+            }
+        }
+        return "Unable to add song. Duration shorther than 1.";
+    }
+    else {
+        return "Unable to add song. Song already in Jukebox.";
+    }
+}
+
+void AreaData::switchJukeboxSong()
+{
+    QString l_song_name;
+    if(m_jukebox_queue.size() == 1) {
+        l_song_name = m_jukebox_queue[0];
+        emit playJukeboxSong(AOPacket("MC",{l_song_name,"-1"}), m_index);
+        m_jukebox_timer->start(ConfigManager::songInformation(l_song_name) * 1000);
+    }
+    else {
+        int l_random_index = QRandomGenerator::system()->bounded(m_jukebox_queue.size() -1);
+        l_song_name = m_jukebox_queue[l_random_index];
+        emit playJukeboxSong(AOPacket("MC",{l_song_name,QString::number(-1)}), m_index);
+        m_jukebox_timer->start(ConfigManager::songInformation(m_jukebox_queue[l_random_index]) * 1000);
+        m_jukebox_queue.remove(l_random_index);
+        m_jukebox_queue.squeeze();
+    }
+    setCurrentMusic(l_song_name);
+    setMusicPlayedBy("Jukebox");
 }

@@ -319,9 +319,18 @@ void AOClient::pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPack
                 l_final_song = "~stop.mp3";
             else
                 l_final_song = l_argument;
+
+            //Jukebox intercepts the direct playing of messages.
+            if (area->isjukeboxEnabled()) {
+                QString l_jukebox_reply = area->addJukeboxSong(l_final_song);
+                sendServerMessage(l_jukebox_reply);
+                return;
+            }
+
+
             AOPacket l_music_change("MC", {l_final_song, argv[1], m_showname, "1", "0", l_effects});
-            area->currentMusic() = l_final_song;
-            area->musicPlayerBy() = m_showname;
+            area->setCurrentMusic(l_final_song);
+            area->setMusicPlayedBy(m_showname);
             server->broadcast(l_music_change, m_current_area);
             return;
         }

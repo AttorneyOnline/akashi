@@ -91,7 +91,10 @@ void Server::start()
     QStringList raw_area_names = ConfigManager::rawAreaNames();
     for (int i = 0; i < raw_area_names.length(); i++) {
         QString area_name = raw_area_names[i];
-        m_areas.insert(i, new AreaData(area_name, i));
+        AreaData* l_area = new AreaData(area_name, i);
+        m_areas.insert(i, l_area);
+        connect(l_area, &AreaData::playJukeboxSong,
+                this, QOverload<AOPacket,int>::of(&Server::broadcast));
     }
 
     //Rate-Limiter for IC-Chat

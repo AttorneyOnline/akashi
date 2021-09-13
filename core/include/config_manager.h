@@ -31,6 +31,11 @@
 #include <QMetaEnum>
 #include <QElapsedTimer>
 
+//JSON loading requirements
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
+
 /**
  * @brief The config file handler class.
  */
@@ -73,10 +78,18 @@ class ConfigManager {
     static QStringList musiclist();
 
     /**
-     * @brief Returns the content of
-     * @return
+     * @brief Returns the duration of a song in the songlist.
+     * @param The name of the song where duration is requested
+     * @return The duration of the song
      */
-    static QSettings *areaData();
+    static int songInformation(const QString& f_songName);
+
+    /**
+     * @brief Returns the content of
+     *
+     * @return See short description.
+     */
+    static QSettings* areaData();
 
     /**
      * @brief Returns a sanitized QStringList of the areas.
@@ -91,6 +104,7 @@ class ConfigManager {
      * @return See short description.
      */
     static QStringList rawAreaNames();
+
     /**
      * @brief Returns true if the server should advertise to the master server.
      *
@@ -480,6 +494,11 @@ private:
      * @brief Pointer to QElapsedTimer to track the uptime of the server.
      */
     static QElapsedTimer* m_uptimeTimer;
+
+    /**
+     * @brief Contains the musiclist with time durations.
+     */
+    static QHash<QString,float>* m_musicList;
 
     /**
      * @brief Returns a stringlist with the contents of a .txt file from config/text/.
