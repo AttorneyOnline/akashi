@@ -99,6 +99,9 @@ void Server::start()
 
     //Loads the command help information. This is not stored inside the server.
     ConfigManager::loadCommandHelp();
+    
+    //Get IP bans
+    m_ipban_list = ConfigManager::iprangeBans();
 
     //Rate-Limiter for IC-Chat
     connect(&next_message_timer, SIGNAL(timeout()), this, SLOT(allowMessage()));
@@ -140,6 +143,15 @@ void Server::clientConnected()
     }
     if (is_banned || is_at_multiclient_limit) {
         socket->flush();
+        client->deleteLater();
+        socket->close();
+        return;
+    }
+
+    if (isIPBanned(client->m_remote_ip)){
+        QString l_reason = "Your IP has been banned by a moderator.";
+        AOPacket l_ban_reason("BD", {l_reason});
+        socket->write(l_ban_reason.toUtf8());
         client->deleteLater();
         socket->close();
         return;
@@ -317,6 +329,18 @@ void Server::hookupLogger(AOClient* client)
             logger, &ULogger::logKick);
     connect(client, &AOClient::logModcall,
             logger, &ULogger::logModcall);
+}
+
+bool Server::isIPBanned(QHostAddress f_remote_IP)
+{
+    bool l_match_found = false;
+    for(const QString &l_ipban : qAsConst(m_ipban_list)) {
+        if (f_remote_IP.isInSubnet(QHostAddress::parseSubnet(l_ipban))) {
+            l_match_found = true;
+            break;
+        }
+    }
+    return l_match_found;
 }
 
 Server::~Server()

@@ -196,6 +196,11 @@ class Server : public QObject {
     QStringList m_backgrounds;
 
     /**
+     * @brief Collection of all IPs that are banned.
+     */
+    QStringList m_ipban_list;
+
+    /**
      * @brief The database manager on the server, used to store users' bans and authorisation details.
      */
     DBManager* db_manager;
@@ -296,6 +301,11 @@ class Server : public QObject {
      * @brief Connects new AOClient to the logger.
      **/
     void hookupLogger(AOClient* client);
+
+    /**
+     * @brief Checks if an IP is in a subnet of the IPBanlist.
+     **/
+    bool isIPBanned(QHostAddress f_remote_IP);
 
     /**
      * @brief The proxy used for WebSocket connections.
