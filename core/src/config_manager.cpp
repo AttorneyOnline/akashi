@@ -25,6 +25,7 @@ QSettings* ConfigManager::m_areas = new QSettings("config/areas.ini", QSettings:
 ConfigManager::CommandSettings* ConfigManager::m_commands = new CommandSettings();
 QElapsedTimer* ConfigManager::m_uptimeTimer = new QElapsedTimer;
 QHash<QString,float>* ConfigManager::m_musicList = new QHash<QString,float>;
+QHash<QString,ConfigManager::help>* ConfigManager::m_commands_help = new QHash<QString,ConfigManager::help>;
 
 bool ConfigManager::verifyServerConfig()
 {
@@ -39,7 +40,8 @@ bool ConfigManager::verifyServerConfig()
 
     // Verify config files
     QStringList l_config_files{"config/config.ini", "config/areas.ini", "config/backgrounds.txt", "config/characters.txt", "config/music.json",
-                               "config/discord.ini", "config/text/8ball.txt", "config/text/gimp.txt", "config/text/praise.txt", "config/text/reprimands.txt"};
+                               "config/discord.ini", "config/text/8ball.txt", "config/text/gimp.txt", "config/text/praise.txt",
+                               "config/text/reprimands.txt","config/text/commandhelp.json"};
     for (const QString &l_file : l_config_files) {
         if (!fileExists(QFileInfo(l_file))) {
             qCritical() << l_file + " does not exist!";
@@ -171,6 +173,38 @@ QStringList ConfigManager::musiclist()
         l_musiclist.insert(0,"==Music==");
 
     return l_musiclist;
+}
+
+void ConfigManager::loadcommandHelp()
+{
+    QFile l_music_json("config/text/commandhelp.json");
+    l_music_json.open(QIODevice::ReadOnly | QIODevice::Text);
+
+    QJsonParseError l_error;
+    QJsonDocument l_music_list_json = QJsonDocument::fromJson(l_music_json.readAll(), &l_error);
+    if (!(l_error.error == QJsonParseError::NoError)) { //Non-Terminating error.
+        qWarning() << "Unable to help information. The following error was encounted : " + l_error.errorString();
+    }
+
+    // Akashi expects the helpfile to contain multiple entires, so it always checks for an array first.
+    QJsonArray l_Json_root_array = l_music_list_json.array();
+    QJsonObject l_child_obj;
+
+    for (int i = 0; i <= l_Json_root_array.size() -1; i++){
+        l_child_obj = l_Json_root_array.at(i).toObject();
+        QString l_name = l_child_obj["name"].toString();
+        QString l_usage = l_child_obj["usage"].toString();
+        QString l_text = l_child_obj["text"].toString();
+
+        if (!l_name.isEmpty()) {
+            help l_help_information;
+            l_help_information.usage = l_usage;
+            l_help_information.text = l_text;
+
+            m_commands_help->insert(l_name,l_help_information);
+            qDebug() << commandHelp("foo").text;
+        }
+    }
 }
 
 int ConfigManager::songInformation(const QString &f_songName)
@@ -538,6 +572,11 @@ QUrl ConfigManager::advertiserHTTPIP()
 qint64 ConfigManager::uptime()
 {
     return m_uptimeTimer->elapsed();
+}
+
+ConfigManager::help ConfigManager::commandHelp(QString f_command_name)
+{
+    return m_commands_help->value(f_command_name);
 }
 
 void ConfigManager::setMotd(const QString f_motd)

@@ -1,0 +1,7 @@
+[
+  {
+    "name": "foo",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  }
+]

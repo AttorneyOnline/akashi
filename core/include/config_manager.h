@@ -78,6 +78,13 @@ class ConfigManager {
     static QStringList musiclist();
 
     /**
+     * @brief Loads help information into m_help_information.
+     *
+     * @return See short description.
+     */
+    static void loadcommandHelp();
+
+    /**
      * @brief Returns the duration of a song in the songlist.
      * @param The name of the song where duration is requested
      * @return The duration of the song
@@ -423,6 +430,22 @@ class ConfigManager {
     static qint64 uptime();
 
     /**
+     * @brief A struct that contains the help information for a command.
+     *        It's split in the syntax and the explanation text.
+     */
+     struct help {
+        QString usage;
+        QString text;
+    };
+
+    /**
+     * @brief Returns a struct with the help information of the command.
+     *
+     * @return See short description.
+     */
+    static help commandHelp(QString f_command_name);
+
+    /**
      * @brief Sets the server's authorization type.
      *
      * @param f_auth The auth type to set.
@@ -499,6 +522,11 @@ private:
      * @brief Contains the musiclist with time durations.
      */
     static QHash<QString,float>* m_musicList;
+
+    /**
+     * @brief QHash containing the help information for all commands registered to the server.
+     */
+    static QHash<QString,help>* m_commands_help;
 
     /**
      * @brief Returns a stringlist with the contents of a .txt file from config/text/.
