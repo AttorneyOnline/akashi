@@ -3,5 +3,640 @@
     "name": "foo",
     "usage": "/foo <bar> [baz|qux]",
     "text": "A sample explanation."
-  }
+  },
+  {
+    "name": "foo",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "foo",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "login",
+    "usage": "/login",
+    "text": "Activates the login dialogue to enter your credentials. This command takes no arguments."
+  },
+  {
+    "name": "getareas",
+    "usage": "/getareas",
+    "text": "Lists all clients in all areas. This command takes no arguments."
+  },
+  {
+    "name": "getarea",
+    "usage": "/getarea",
+    "text": "Lists all clients in the area the caller is in. This command takes no arguments."
+  },
+  {
+    "name": "ban",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "kick",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "changeauth",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "rootpass",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "background",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "bg",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "bglock",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "bgunlock",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "adduser",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "listperms",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "addperm",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "removeperm",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "listusers",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "logout",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "pos",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "g",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "need",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "coinflip",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "roll",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "rollp",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "doc",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "cleardoc",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "cm",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "uncm",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "invite",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "uninvite",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "lock",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "area_lock",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "spectatable",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "area_spectate",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "unlock",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "area_unlock",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "timer",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "play",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "areakick",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "area_kick",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "randomchar",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "switch",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "toggleglobal",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "mods",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "commands",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "status",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "forcepos",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "currentmusic",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "pm",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "evidence_mod",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "motd",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "announce",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "m",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "gm",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "mute",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "unmute",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "bans",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "unban",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "removeuser",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "subtheme",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "about",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "evidence_swap",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "notecard",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "notecardreveal",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "notecard_reveal",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "notecardclear",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "notecard_clear",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "8ball",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "lm",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "judgelog",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "allowblankposting",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "allow_blankposting",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "gimp",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "ungimp",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "baninfo",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "testify",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "testimony",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "examine",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "pause",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "delete",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "update",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "add",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "reload",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "disemvovel",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "undisemvovel",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "shake",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "unshake",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "forceimmediate",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "force_noint_pres",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "allowiniswap",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "allow_iniswap",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "afk",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "savetestimony",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "loadtestimony",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "permitsaving",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "mutepm",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "oocmute",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "ooc_mute",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "oocunmute",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "ooc_unmute",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "blockwtce",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "block_wtce",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "unblockwtce",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "unlock_wtce",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "blockdj",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "block_dj",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "unblockdj",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "unblock_dj",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "charcurse",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "uncharcurse",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "charselect",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "togglemusic",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "a",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "s",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "kickuid",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "kick_uid",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "firstperson",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "updateban",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "update_ban",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "changepass",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "ignorebglist",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "ignore_bglist",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "notice",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "noticeg",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "togglejukebox",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
+  {
+    "name": "help",
+    "usage": "/foo <bar> [baz|qux]",
+    "text": "A sample explanation."
+  },
 ]

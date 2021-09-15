@@ -1001,6 +1001,13 @@ class AOClient : public QObject {
      *
      * @iscommand
      */
+    void cmdCommands(int argc, QStringList argv);
+
+    /**
+     * @brief Lists help information to the command requested. Includes syntax and brief explanation.
+     *
+     * @details Takes the command name as an argument.
+     */
     void cmdHelp(int argc, QStringList argv);
 
     /**
@@ -2048,7 +2055,7 @@ class AOClient : public QObject {
         {"switch",             {ACLFlags.value("NONE"),         1, &AOClient::cmdSwitch}},
         {"toggleglobal",       {ACLFlags.value("NONE"),         0, &AOClient::cmdToggleGlobal}},
         {"mods",               {ACLFlags.value("NONE"),         0, &AOClient::cmdMods}},
-        {"help",               {ACLFlags.value("NONE"),         0, &AOClient::cmdHelp}},
+        {"commands",           {ACLFlags.value("NONE"),         0, &AOClient::cmdCommands}},
         {"status",             {ACLFlags.value("NONE"),         1, &AOClient::cmdStatus}},
         {"forcepos",           {ACLFlags.value("CM"),           2, &AOClient::cmdForcePos}},
         {"currentmusic",       {ACLFlags.value("NONE"),         0, &AOClient::cmdCurrentMusic}},
@@ -2130,6 +2137,7 @@ class AOClient : public QObject {
         {"notice",             {ACLFlags.value("SEND_NOTICE"),  1, &AOClient::cmdNotice}},
         {"noticeg",            {ACLFlags.value("SEND_NOTICE"),  1, &AOClient::cmdNoticeGlobal}},
         {"togglejukebox",      {ACLFlags.value("None"),         0, &AOClient::cmdToggleJukebox}},
+        {"help",               {ACLFlags.value("NONE"),         1, &AOClient::cmdHelp}}
     };
 
     /**

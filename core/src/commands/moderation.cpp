@@ -149,7 +149,7 @@ void AOClient::cmdMods(int argc, QStringList argv)
     sendServerMessage(l_entries.join("\n"));
 }
 
-void AOClient::cmdHelp(int argc, QStringList argv)
+void AOClient::cmdCommands(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
     Q_UNUSED(argv);
@@ -164,6 +164,17 @@ void AOClient::cmdHelp(int argc, QStringList argv)
         }
     }
     sendServerMessage(l_entries.join("\n"));
+}
+
+void AOClient::cmdHelp(int argc, QStringList argv)
+{
+    if(argc > 1) {
+        sendServerMessage("Too many arguments. Please only use the command name.");
+    }
+
+    QString l_command_name = argv[0];
+    ConfigManager::help l_command_info = ConfigManager::commandHelp(l_command_name);
+    sendServerMessage("==Help==\n" +l_command_info.usage + "\n" + l_command_info.text);
 }
 
 void AOClient::cmdMOTD(int argc, QStringList argv)
