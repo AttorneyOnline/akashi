@@ -200,6 +200,7 @@ void AOClient::handleCommand(QString command, int argc, QStringList argv)
 
     if (argc < l_info.minArgs) {
         sendServerMessage("Invalid command syntax.");
+        sendServerMessage("The expected syntax for this command is: \n" + ConfigManager::commandHelp(command).usage);
         return;
     }
 
