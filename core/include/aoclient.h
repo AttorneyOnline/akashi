@@ -1604,6 +1604,14 @@ class AOClient : public QObject {
      * @iscommand
      */
     void cmdUnCharCurse(int argc, QStringList argv);
+
+    /**
+     * @brief Forces a client into the charselect screen.
+     *
+     * @details The only argument is the **target's ID** whom the client wants to force into charselect.
+     *
+     * @iscommand
+     */
     void cmdCharSelect(int argc, QStringList argv);
 
     /**
@@ -1818,7 +1826,7 @@ class AOClient : public QObject {
     void cmdToggleMusic(int argc, QStringList argv);
 
     /**
-     * @brief cmdToggleJukebox Toggles jukebox status in the current area.
+     * @brief Toggles jukebox status in the current area.
      *
      * @details No arguments.
      */

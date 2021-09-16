@@ -361,193 +361,193 @@
    },
    {
       "name":"gimp",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/gimp [ClientID]",
+      "text":"Replaces a target client's in-character messages with strings randomly selected from gimp.txt. Takes the client id as the only argument."
    },
    {
       "name":"ungimp",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/ungimp [ClientID]",
+      "text":"Allows a gimped client to speak normally. User needs to be gimped to be ungimped. Takes the client id as the only argument."
    },
    {
       "name":"baninfo",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/baninfo [BanID]",
+      "text":"Looks up info on a ban."
    },
    {
       "name":"testify",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/testify",
+      "text":"Enables the testimony recorder in the area. The next message will automatically be used as the title of the testimony. This command takes no arguments."
    },
    {
       "name":"testimony",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/testimony",
+      "text":"Outputs the contents of the testimony recorder into OOC. This command takes no arguments."
    },
    {
       "name":"examine",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/testify",
+      "text":"Switches the testimony recorder into playback mode. If no testimony has been recorded, this command can't be used. This command takes no arguments."
    },
    {
       "name":"pause",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/pause",
+      "text":"Pauses testimony playback. This command takes no arguments."
    },
    {
       "name":"delete",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/delete",
+      "text":"Deletes the currently displayed testimony message from the testimony recorder. This command takes no arguments."
    },
    {
       "name":"update",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/update",
+      "text":"Updates the currently displayed testimony message with the next message said in IC chat. This command takes no arguments."
    },
    {
       "name":"add",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/add",
+      "text":"Adds the next IC message into the testimony recorder after the currently displayed message. This command takes no arguments."
    },
    {
       "name":"reload",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/reload",
+      "text":"Reloads the server configuration. This command takes no arguments."
    },
    {
       "name":"disemvovel",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/disemvovel [ClientID]",
+      "text":"Disemvovels a user, removing vovels from their IC messages. Takes the client ID as argument."
    },
    {
       "name":"undisemvovel",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"undisemvovel [ClientID]",
+      "text":"Removes the disemvovel from a user, allowing them to use vowels again."
    },
    {
       "name":"shake",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/shake [ClientID]",
+      "text":"Scrambles the words of a target client's in-character messages. The only argument is the client ID"
    },
    {
       "name":"unshake",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/unshake [ClientID",
+      "text":"llows a shaken client to speak normally."
    },
    {
       "name":"forceimmediate",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/forceimmediate",
+      "text":"Toggles immediate text processing in the current area. This command takes no arguments."
    },
    {
       "name":"force_noint_pres",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/force_noint_pres",
+      "text":"Toggles immediate text processing in the current area. This command takes no arguments."
    },
    {
       "name":"allowiniswap",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/allowiniswap",
+      "text":"Toggles whether iniswaps are allowed in the current area. This command takes no arguments."
    },
    {
       "name":"allow_iniswap",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/allow_iniswap",
+      "text":"Toggles whether iniswaps are allowed in the current area. This command takes no arguments."
    },
    {
       "name":"afk",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/afk",
+      "text":"Toggles whether this client is considered AFK. This command takes no arguments."
    },
    {
       "name":"savetestimony",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/savetestimony [Name]",
+      "text":"Saves a testimony recording to the servers storage. Argument is the name of the testimony."
    },
    {
       "name":"loadtestimony",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/loadtestimony [Name]",
+      "text":"oads testimony for the testimony replay. Argument is the testimony name."
    },
    {
       "name":"permitsaving",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/permitsaving [ClientID]",
+      "text":"Grants a client the temporary permission to save a testimony. Argument is the client ID"
    },
    {
       "name":"mutepm",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/mutepm",
+      "text":"oggles whether a client will recieve private messages or not. This command takes no arguments."
    },
    {
       "name":"oocmute",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/oocmute [ClientID]",
+      "text":"OOC-mutes a client. Argument is the client ID."
    },
    {
       "name":"ooc_mute",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/ooc_mute [ClientID]",
+      "text":"OOC-mutes a client. Argument is the client ID."
    },
    {
       "name":"oocunmute",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/oocunmute [ClientID",
+      "text":"Removes the OOC-muted status from a client. Argument is the client ID."
    },
    {
       "name":"ooc_unmute",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/ooc_unmute [ClientID]",
+      "text":"Removes the OOC-muted status from a client. Argument is the client ID."
    },
    {
       "name":"blockwtce",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/blockwtce [ClientID]",
+      "text":"WTCE-blocks a client. Argument is the client ID."
    },
    {
       "name":"block_wtce",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/block_wtce [ClientID]",
+      "text":"WTCE-blocks a client. Argument is the client ID."
    },
    {
       "name":"unblockwtce",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/unblockwtce [ClientID]",
+      "text":"WTCE-unblocks a client. Argument is the client ID."
    },
    {
       "name":"unlock_wtce",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/unblock_wtce [ClientID]",
+      "text":"WTCE-unblocks a client. Argument is the client ID."
    },
    {
       "name":"blockdj",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/blockdj [ClientID]",
+      "text":"DJ-blocks a client. Argument is the client ID."
    },
    {
       "name":"block_dj",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"block_dj [ClientID]",
+      "text":"DJ-blocks a client. Argument is the client ID."
    },
    {
       "name":"unblockdj",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/unblockdj [ClientID]",
+      "text":"Removes the DJ-blocked status from a client. Argument is the client ID."
    },
    {
       "name":"unblock_dj",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/unblock_dj [ClientID]",
+      "text":"Removes the DJ-blocked status from a client. Argument is the client ID."
    },
    {
       "name":"charcurse",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/charcurse [ClientID|CharacterName]",
+      "text":"Restricts a target client to a set of characters that they can switch from, blocking them from other characters."
    },
    {
       "name":"uncharcurse",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"uncharcurse [ClientID]",
+      "text":"Removes the charcurse status from a client. Argument is the ClientID"
    },
    {
       "name":"charselect",
@@ -556,77 +556,77 @@
    },
    {
       "name":"togglemusic",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/tooglemusic",
+      "text":"Toggles music playing in the current area. This command takes no arguments."
    },
    {
       "name":"a",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/a [Area|Message]",
+      "text":"Sends a message to an area that you a CM in."
    },
    {
       "name":"s",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/s [Message]",
+      "text":"Send a message to all areas that you are a CM in."
    },
    {
       "name":"kickuid",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/kickuid [UserID|Message]",
+      "text":"Kicks a client from the server, forcibly severing its connection to the server. This command only kicks the client with the user ID. Argument is the User ID."
    },
    {
       "name":"kick_uid",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/kick_uid [UserID|Message]",
+      "text":"Kicks a client from the server, forcibly severing its connection to the server. This command only kicks the client with the user ID. Argument is the User ID."
    },
    {
       "name":"firstperson",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/firstperson",
+      "text":"Toggle whether the client's messages will be sent in first person mode. This command takes no arguments."
    },
    {
       "name":"updateban",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/updateban [BanID|Field|UpdateValue]",
+      "text":"Updates a ban in the database, changing either its reason or duration. First argument is the ban ID. Second is the field, 'reason' or 'duration'. Last argument is either the new duration or reason."
    },
    {
       "name":"update_ban",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/update_ban [BanID|Field|UpdateValue]",
+      "text":"Updates a ban in the database, changing either its reason or duration. First argument is the ban ID. Second is the field, 'reason' or 'duration'. Last argument is either the new duration or reason."
    },
    {
       "name":"changepass",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/changepass [Password|*Moderator]",
+      "text":"Changes a moderator's password. First argument is the new password. Optional second argument is the moderator name."
    },
    {
       "name":"ignorebglist",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/ignorebglist",
+      "text":"Toggles whether the BG list is ignored in an area. This command takes no arguments."
    },
    {
       "name":"ignore_bglist",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/ignore_bglist",
+      "text":"Toggles whether the BG list is ignored in an area. This command takes no arguments."
    },
    {
       "name":"notice",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/notice [Message]",
+      "text":"Pops up a notice for all clients in the targeted area with a given message. Only argument is the message."
    },
    {
       "name":"noticeg",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/noticeg [Message]",
+      "text":"Pops up a notice for all clients in the server with a given message. Only argument is the message."
    },
    {
       "name":"togglejukebox",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/togglejukebox",
+      "text":"Enables/Disables the Jukebox in the area. This command takes no arguments."
    },
    {
       "name":"help",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/help [CommandName]",
+      "text":"Shows you information about a command, if available. Only argument is the command name."
    }
 ]
