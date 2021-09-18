@@ -97,6 +97,9 @@ void Server::start()
                 this, QOverload<AOPacket,int>::of(&Server::broadcast));
     }
 
+    //Loads the command help information. This is not stored inside the server.
+    ConfigManager::loadCommandHelp();
+
     //Rate-Limiter for IC-Chat
     connect(&next_message_timer, SIGNAL(timeout()), this, SLOT(allowMessage()));
 }
