@@ -21,12 +21,12 @@
    },
    {
       "name":"ban",
-      "usage":"/ban [IPID|Duration|Reason]",
-      "text":"Bans a client from the server, orcibly disconnecting them and disallowing their return."
+      "usage":"/ban <IPID> <Duration> <Reason>",
+      "text":"Bans a client from the server, forcibly disconnecting them and disallowing their return."
    },
    {
       "name":"kick",
-      "usage":"/kick [IPID|Reason]",
+      "usage":"/kick <IPID> <Reason>",
       "text":"Kicks a client from the server, forcibly disconnecting them."
    },
    {
@@ -36,17 +36,17 @@
    },
    {
       "name":"rootpass",
-      "usage":"/rootpass [Password]",
+      "usage":"/rootpass <Password>",
       "text":"Sets the root user's password."
    },
    {
       "name":"background",
-      "usage":"/background [Name]",
+      "usage":"/background <Background>",
       "text":"Changes the background of the current area."
    },
    {
       "name":"bg",
-      "usage":"/bg [Name]",
+      "usage":"/bg <Background>",
       "text":"Changes the background of the current area."
    },
    {
@@ -61,22 +61,22 @@
    },
    {
       "name":"adduser",
-      "usage":"/adduser [Username|Password]",
+      "usage":"/adduser <Username> <Password>",
       "text":"Adds a user to the moderators in advanced authorisation type."
    },
    {
       "name":"listperms",
-      "usage":"/listperms *[Username]",
+      "usage":"/listperms 'Username'",
       "text":"Lists the permission of a given user. When called with an argument it shows the user's permission."
    },
    {
       "name":"addperm",
-      "usage":"/addperm[Username|Permission]",
+      "usage":"/addperm <Username> <Permission>",
       "text":"Adds permissions to a given user."
    },
    {
       "name":"removeperm",
-      "usage":"/removeperm {Username|Permission]",
+      "usage":"/removeperm <Username> <Permission>",
       "text":"Removes permissions from a given user."
    },
    {
@@ -91,17 +91,17 @@
    },
    {
       "name":"pos",
-      "usage":"/pos [Position]",
+      "usage":"/pos <Position>",
       "text":"Changes the client's position."
    },
    {
       "name":"g",
-      "usage":"/g [Message]",
+      "usage":"/g <Message>",
       "text":"Sends a global message (i.e., all clients in the server will be able to see it)."
    },
    {
       "name":"need",
-      "usage":"/need [Message]",
+      "usage":"/need <Message>",
       "text":"A global message expressing that the client needs something (generally: players for something)."
    },
    {
@@ -111,17 +111,17 @@
    },
    {
       "name":"roll",
-      "usage":"/roll [Faces|Dice]",
+      "usage":"/roll 'face' 'die'",
       "text":"Rools dice and sends the results to the area. The first argument is the amount of faces each die should have. The second argument is the amount of dice that should be rolled. Both arguments are optional."
    },
    {
       "name":"rollp",
-      "usage":"/foo <bar> [baz|qux]",
+      "usage":"/rollp 'face' 'die'",
       "text":"Rolls dice, but sends the results in private to the roller. The first argument is the amount of faces each die should have. The second argument is the amount of dice that should be rolled. Both arguments are optional."
    },
    {
       "name":"doc",
-      "usage":"/doc [Link/Text]",
+      "usage":"/doc <document>",
       "text":"Sets the `/doc` to a custom text."
    },
    {
@@ -131,7 +131,7 @@
    },
    {
       "name":"cm",
-      "usage":"/cm *[ID]",
+      "usage":"/cm 'ID'",
       "text":"Promotes a client to CM status. If called with a user ID as an argument, and the caller is a CM, promotes the target client to CM status."
    },
    {
@@ -141,13 +141,13 @@
    },
    {
       "name":"invite",
-      "usage":"/invite [ID]",
+      "usage":"/invite <ID>",
       "text":"Invites a client to the area."
    },
    {
       "name":"uninvite",
-      "usage":"/uninvite [ID]",
-      "text":"Uninvites a client to the area."
+      "usage":"/uninvite <ID>",
+      "text":"Uninvites a client from. the area."
    },
    {
       "name":"lock",
@@ -181,22 +181,22 @@
    },
    {
       "name":"timer",
-      "usage":"/timer *[TimerID|Duration]",
+      "usage":"/timer 'Timer' 'Duration'",
       "text":"Gets or sets the global or one of the area-specific timers. If called without arguments, sends an out-of-character message listing the statuses of both the global timer and the area-specific timers. If called with one argument, and that argument is between `0` and `4` (inclusive on both ends), sends an out-of-character message about the status of the given timer, where `0` is the global timer, and the remaining numbers are the first, second, third and fourth timers in the current area."
    },
    {
       "name":"play",
-      "usage":"/play [Song]",
+      "usage":"/play <Song>",
       "text":"Plays music in the area. Can play either a local file or a URL."
    },
    {
       "name":"areakick",
-      "usage":"/areakick [ID]",
+      "usage":"/areakick <ID>",
       "text":"Kicks a client from the area, moving them back to the default area."
    },
    {
       "name":"area_kick",
-      "usage":"/area_kick [ID]",
+      "usage":"/area_kick <ID>",
       "text":"Kicks a client from the area, moving them back to the default area."
    },
    {
@@ -206,7 +206,7 @@
    },
    {
       "name":"switch",
-      "usage":"/switch [CharacterID]",
+      "usage":"/switch <ID>",
       "text":"Switches to a different character based on character ID."
    },
    {
@@ -226,13 +226,13 @@
    },
    {
       "name":"status",
-      "usage":"/status [Status]",
+      "usage":"/status <Status>",
       "text":"Changes the status of the current area."
    },
    {
       "name":"forcepos",
-      "usage":"/forcepos [ID|Position]",
-      "text":"Forces a client, or all clients in the area, to a specific position. The first argument is the client's ID or * for all client. The second argument is the position to force the clients to."
+      "usage":"/forcepos <ID> <Position>",
+      "text":"Forces a client, or all clients in the area, to a specific position. The first argument is the client's ID or * for all clients. The second argument is the position to force the clients to."
    },
    {
       "name":"currentmusic",
@@ -241,42 +241,42 @@
    },
    {
       "name":"pm",
-      "usage":"/pm [ID|Message]",
+      "usage":"/pm <ID> <Message>",
       "text":"Sends a direct message to another client on the server based on ID."
    },
    {
       "name":"evidence_mod",
-      "usage":"/evidence_mod [EvidenceMod]",
+      "usage":"/evidence_mod <EvidenceMod>",
       "text":"Changes the evidence mod in the area."
    },
    {
       "name":"motd",
-      "usage":"/motd *[Message]",
-      "text":"Gets or sets the server's Message Of The Day. If called without argument, gets the MOTD. If it has a message, sets the message as the MOTD."
+      "usage":"/motd 'Message'",
+      "text":"Gets or sets the server's Message Of The Day. If called without an argument, gets the MOTD. If it has a message, sets the message as the MOTD."
    },
    {
       "name":"announce",
-      "usage":"/announce [Message]",
+      "usage":"/announce <Message>",
       "text":"Sends out a decorated global message, for announcements."
    },
    {
       "name":"m",
-      "usage":"/m [Message]",
+      "usage":"/m <Message>",
       "text":"Sends a message in the server-wide, moderator only chat."
    },
    {
       "name":"gm",
-      "usage":"/gm [Message]",
+      "usage":"/gm <Message>",
       "text":"Sends out a global message that is marked with an `[M]` to mean it is coming from a moderator."
    },
    {
       "name":"mute",
-      "usage":"/mute [ClientID]",
+      "usage":"/mute <ID>",
       "text":"Mutes a client."
    },
    {
       "name":"unmute",
-      "usage":"/unmute [ClientID]",
+      "usage":"/unmute <ID>",
       "text":"Removes the muted status from a client."
    },
    {
@@ -286,17 +286,17 @@
    },
    {
       "name":"unban",
-      "usage":"/unban [BanID]",
+      "usage":"/unban <ID>",
       "text":"Removes a ban from the database."
    },
    {
       "name":"removeuser",
-      "usage":"/removeuser [Username]",
+      "usage":"/removeuser <Username>",
       "text":"Removes a user from the moderators in `advanced` authorisation type."
    },
    {
       "name":"subtheme",
-      "usage":"/subtheme [Theme]",
+      "usage":"/subtheme <Theme>",
       "text":"Changes the subtheme of the clients in the current area."
    },
    {
@@ -306,13 +306,13 @@
    },
    {
       "name":"evidence_swap",
-      "usage":"/foo [EvidenceID|EvidenceID]",
+      "usage":"/evidence_swap <EvidenceID> <EvidenceID>",
       "text":"Changes position of two pieces of evidence in the area."
    },
    {
       "name":"notecard",
-      "usage":"/notecard [Message]",
-      "text":"Writes a note card in the current area. he note card is not readable until all note cards in the area are revealed by a CM. A message will appear to all clients in the area indicating that a note card has been written."
+      "usage":"/notecard <Message>",
+      "text":"Writes a notecard in the current area. The notecard is not readable until all note cards in the area are revealed by a CM. A message will appear to all clients in the area indicating that a notecard has been written."
    },
    {
       "name":"notecardreveal",
@@ -327,21 +327,21 @@
    {
       "name":"notecardclear",
       "usage":"/notecardclear",
-      "text":"Erases the client's note card from the area's list of cards. A message will appear to all clients in the area indicating that a note card has been erased. This command takes no arguments."
+      "text":"Erases the client's notecard from the area's list of cards. A message will appear to all clients in the area indicating that a notecard has been erased. This command takes no arguments."
    },
    {
       "name":"notecard_clear",
       "usage":"/notecard_clear",
-      "text":"Erases the client's note card from the area's list of cards. A message will appear to all clients in the area indicating that a note card has been erased. This command takes no arguments."
+      "text":"Erases the client's notecard from the area's list of cards. A message will appear to all clients in the area indicating that a notecard has been erased. This command takes no arguments."
    },
    {
       "name":"8ball",
-      "usage":"/8ball [Question]",
+      "usage":"/8ball <Question>",
       "text":"Randomly selects an answer from 8ball.txt to a question."
    },
    {
       "name":"lm",
-      "usage":"/lm [Message]",
+      "usage":"/lm <Message>",
       "text":"Sends out a local message that is marked with an `[M]` to mean it is coming from a moderator."
    },
    {
@@ -352,26 +352,26 @@
    {
       "name":"allowblankposting",
       "usage":"allowblankposting",
-      "text":"Toggle whether or not in-character messages purely consisting of spaces are allowed. Takes no arguments. Against all common sense this also allows you to disable blankposting."
+      "text":"Toggle whether or not in-character messages purely consisting of spaces are allowed. Takes no arguments. Against all common sense, this also allows you to disable blankposting."
    },
    {
       "name":"allow_blankposting",
       "usage":"/allow_blankposting",
-      "text":"Toggle whether or not in-character messages purely consisting of spaces are allowed. Takes no arguments. Against all common sense this also allows you to disable blankposting."
+      "text":"Toggle whether or not in-character messages purely consisting of spaces are allowed. Takes no arguments. Against all common sense, this also allows you to disable blankposting."
    },
    {
       "name":"gimp",
-      "usage":"/gimp [ClientID]",
+      "usage":"/gimp <ID>",
       "text":"Replaces a target client's in-character messages with strings randomly selected from gimp.txt. Takes the client id as the only argument."
    },
    {
       "name":"ungimp",
-      "usage":"/ungimp [ClientID]",
-      "text":"Allows a gimped client to speak normally. User needs to be gimped to be ungimped. Takes the client id as the only argument."
+      "usage":"/ungimp <ID>",
+      "text":"Allows a gimped client to speak normally. The user needs to be gimped to be ungimped. Takes the client id as the only argument."
    },
    {
       "name":"baninfo",
-      "usage":"/baninfo [BanID]",
+      "usage":"/baninfo <BanID>",
       "text":"Looks up info on a ban."
    },
    {
@@ -416,22 +416,22 @@
    },
    {
       "name":"disemvovel",
-      "usage":"/disemvovel [ClientID]",
-      "text":"Disemvovels a user, removing vovels from their IC messages. Takes the client ID as argument."
+      "usage":"/disemvovel <ID>",
+      "text":"Disemvovels a user, removing vowels from their IC messages. Takes the client ID as an argument."
    },
    {
       "name":"undisemvovel",
-      "usage":"undisemvovel [ClientID]",
+      "usage":"undisemvovel <ID>",
       "text":"Removes the disemvovel from a user, allowing them to use vowels again."
    },
    {
       "name":"shake",
-      "usage":"/shake [ClientID]",
+      "usage":"/shake <ID>",
       "text":"Scrambles the words of a target client's in-character messages. The only argument is the client ID"
    },
    {
       "name":"unshake",
-      "usage":"/unshake [ClientID",
+      "usage":"/unshake <ID>",
       "text":"llows a shaken client to speak normally."
    },
    {
@@ -447,7 +447,7 @@
    {
       "name":"allowiniswap",
       "usage":"/allowiniswap",
-      "text":"Toggles whether iniswaps are allowed in the current area. This command takes no arguments."
+      "text":"Toggles whether iniswaps are allowed in the current area. For no apparent reason, this also can be used to disable it. This command takes no arguments."
    },
    {
       "name":"allow_iniswap",
@@ -461,98 +461,98 @@
    },
    {
       "name":"savetestimony",
-      "usage":"/savetestimony [Name]",
-      "text":"Saves a testimony recording to the servers storage. Argument is the name of the testimony."
+      "usage":"/savetestimony <Name>",
+      "text":"Saves a testimony recording to the server's storage. Argument is the name of the testimony."
    },
    {
       "name":"loadtestimony",
-      "usage":"/loadtestimony [Name]",
-      "text":"oads testimony for the testimony replay. Argument is the testimony name."
+      "usage":"/loadtestimony <Name>",
+      "text":"Loads testimony for the testimony replay. Argument is the testimony name."
    },
    {
       "name":"permitsaving",
-      "usage":"/permitsaving [ClientID]",
+      "usage":"/permitsaving <ID>",
       "text":"Grants a client the temporary permission to save a testimony. Argument is the client ID"
    },
    {
       "name":"mutepm",
       "usage":"/mutepm",
-      "text":"oggles whether a client will recieve private messages or not. This command takes no arguments."
+      "text":"Toggles whether a client will recieve private messages or not. This command takes no arguments."
    },
    {
       "name":"oocmute",
-      "usage":"/oocmute [ClientID]",
+      "usage":"/oocmute <ID>",
       "text":"OOC-mutes a client. Argument is the client ID."
    },
    {
       "name":"ooc_mute",
-      "usage":"/ooc_mute [ClientID]",
+      "usage":"/ooc_mute <ID>",
       "text":"OOC-mutes a client. Argument is the client ID."
    },
    {
       "name":"oocunmute",
-      "usage":"/oocunmute [ClientID",
+      "usage":"/oocunmute <ID>",
       "text":"Removes the OOC-muted status from a client. Argument is the client ID."
    },
    {
       "name":"ooc_unmute",
-      "usage":"/ooc_unmute [ClientID]",
+      "usage":"/ooc_unmute <ID>",
       "text":"Removes the OOC-muted status from a client. Argument is the client ID."
    },
    {
       "name":"blockwtce",
-      "usage":"/blockwtce [ClientID]",
+      "usage":"/blockwtce <ID>",
       "text":"WTCE-blocks a client. Argument is the client ID."
    },
    {
       "name":"block_wtce",
-      "usage":"/block_wtce [ClientID]",
+      "usage":"/block_wtce <ID>",
       "text":"WTCE-blocks a client. Argument is the client ID."
    },
    {
       "name":"unblockwtce",
-      "usage":"/unblockwtce [ClientID]",
+      "usage":"/unblockwtce <ID>",
       "text":"WTCE-unblocks a client. Argument is the client ID."
    },
    {
       "name":"unlock_wtce",
-      "usage":"/unblock_wtce [ClientID]",
+      "usage":"/unblock_wtce <ID>",
       "text":"WTCE-unblocks a client. Argument is the client ID."
    },
    {
       "name":"blockdj",
-      "usage":"/blockdj [ClientID]",
+      "usage":"/blockdj <ID>",
       "text":"DJ-blocks a client. Argument is the client ID."
    },
    {
       "name":"block_dj",
-      "usage":"block_dj [ClientID]",
+      "usage":"block_dj <ID>",
       "text":"DJ-blocks a client. Argument is the client ID."
    },
    {
       "name":"unblockdj",
-      "usage":"/unblockdj [ClientID]",
+      "usage":"/unblockdj <ID>",
       "text":"Removes the DJ-blocked status from a client. Argument is the client ID."
    },
    {
       "name":"unblock_dj",
-      "usage":"/unblock_dj [ClientID]",
+      "usage":"/unblock_dj <ID>",
       "text":"Removes the DJ-blocked status from a client. Argument is the client ID."
    },
    {
       "name":"charcurse",
-      "usage":"/charcurse [ClientID|CharacterName]",
+      "usage":"/charcurse <ClientID> <CharacterName>",
       "text":"Restricts a target client to a set of characters that they can switch from, blocking them from other characters."
    },
    {
       "name":"uncharcurse",
-      "usage":"uncharcurse [ClientID]",
+      "usage":"uncharcurse <ID>",
       "text":"Removes the charcurse status from a client. Argument is the ClientID"
    },
    {
       "name":"charselect",
-      "usage":"/foo <bar> [baz|qux]",
-      "text":"A sample explanation."
+      "usage":"/charselect 'ID'",
+      "text":"Forces yourself into the charselect screen. If used with a client ID, it forces that client back into the charselect screen."
    },
    {
       "name":"togglemusic",
@@ -561,22 +561,22 @@
    },
    {
       "name":"a",
-      "usage":"/a [Area|Message]",
+      "usage":"/a <Area> <Message>",
       "text":"Sends a message to an area that you a CM in."
    },
    {
       "name":"s",
-      "usage":"/s [Message]",
+      "usage":"/s <Message>",
       "text":"Send a message to all areas that you are a CM in."
    },
    {
       "name":"kickuid",
-      "usage":"/kickuid [UserID|Message]",
+      "usage":"/kickuid <ID> <Message>",
       "text":"Kicks a client from the server, forcibly severing its connection to the server. This command only kicks the client with the user ID. Argument is the User ID."
    },
    {
       "name":"kick_uid",
-      "usage":"/kick_uid [UserID|Message]",
+      "usage":"/kick_uid <ID> <Message>",
       "text":"Kicks a client from the server, forcibly severing its connection to the server. This command only kicks the client with the user ID. Argument is the User ID."
    },
    {
@@ -586,18 +586,18 @@
    },
    {
       "name":"updateban",
-      "usage":"/updateban [BanID|Field|UpdateValue]",
+      "usage":"/updateban <BanID> <Field> [Duration|Reason]",
       "text":"Updates a ban in the database, changing either its reason or duration. First argument is the ban ID. Second is the field, 'reason' or 'duration'. Last argument is either the new duration or reason."
    },
    {
       "name":"update_ban",
-      "usage":"/update_ban [BanID|Field|UpdateValue]",
+      "usage":"/update_ban <BanID> <Field> [Duration|Reason]",
       "text":"Updates a ban in the database, changing either its reason or duration. First argument is the ban ID. Second is the field, 'reason' or 'duration'. Last argument is either the new duration or reason."
    },
    {
       "name":"changepass",
-      "usage":"/changepass [Password|*Moderator]",
-      "text":"Changes a moderator's password. First argument is the new password. Optional second argument is the moderator name."
+      "usage":"/changepass <Password> 'Moderator'",
+      "text":"Changes a moderator's password. The first argument is the new password. The optional second argument is the moderator name."
    },
    {
       "name":"ignorebglist",
@@ -611,13 +611,13 @@
    },
    {
       "name":"notice",
-      "usage":"/notice [Message]",
-      "text":"Pops up a notice for all clients in the targeted area with a given message. Only argument is the message."
+      "usage":"/notice <Message>",
+      "text":"Pops up a notice for all clients in the targeted area with a given message. The only argument is the message."
    },
    {
       "name":"noticeg",
-      "usage":"/noticeg [Message]",
-      "text":"Pops up a notice for all clients in the server with a given message. Only argument is the message."
+      "usage":"/noticeg <Message>",
+      "text":"Pops up a notice for all clients in the server with a given message. The only argument is the message."
    },
    {
       "name":"togglejukebox",
@@ -626,7 +626,7 @@
    },
    {
       "name":"help",
-      "usage":"/help [CommandName]",
-      "text":"Shows you information about a command, if available. Only argument is the command name."
+      "usage":"/help <Command>",
+      "text":"Shows you information about a command, if available. The only argument is the command name. About Syntax : <Argument> are mandatory arguments. 'Argument' are optional arguments. [Argument|OtherArgument] is that two argument types are valid, but only one can be used."
    }
 ]

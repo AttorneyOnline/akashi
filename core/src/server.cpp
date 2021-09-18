@@ -98,7 +98,7 @@ void Server::start()
     }
 
     //Loads the command help information. This is not stored inside the server.
-    ConfigManager::loadcommandHelp();
+    ConfigManager::loadCommandHelp();
 
     //Rate-Limiter for IC-Chat
     connect(&next_message_timer, SIGNAL(timeout()), this, SLOT(allowMessage()));

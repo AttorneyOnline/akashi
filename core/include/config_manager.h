@@ -82,7 +82,7 @@ class ConfigManager {
      *
      * @return See short description.
      */
-    static void loadcommandHelp();
+    static void loadCommandHelp();
 
     /**
      * @brief Returns the duration of a song in the songlist.
