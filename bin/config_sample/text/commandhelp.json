@@ -591,7 +591,7 @@
    },
    {
       "name":"update_ban",
-      "usage":"/update_ban <BanID> <Field> [Duration|Reason]",
+      "usage":"/update_ban <BanID> ['duration'|'reason'] <New Value>",
       "text":"Updates a ban in the database, changing either its reason or duration. First argument is the ban ID. Second is the field, 'reason' or 'duration'. Last argument is either the new duration or reason."
    },
    {
