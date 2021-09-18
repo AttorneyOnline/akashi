@@ -541,9 +541,9 @@ QString AreaData::addJukeboxSong(QString f_song)
                 if (m_jukebox_queue.size() == 0) {
                     emit playJukeboxSong(AOPacket("MC",{f_song,QString::number(-1)}), index());
                     m_jukebox_timer->start(l_song_duration * 1000);
+                    setCurrentMusic(f_song);
+                    setMusicPlayedBy("Jukebox");
                 }
-                setCurrentMusic(f_song);
-                setMusicPlayedBy("Jukebox");
                 m_jukebox_queue.append(f_song);
                 return "Song added to Jukebox.";
             }
