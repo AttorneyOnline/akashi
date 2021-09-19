@@ -633,5 +633,5 @@
       "name":"clearcm",
       "usage":"/clearcm",
       "text":"Removes all CMs from the current area. This command takes no arguments."
-   },
+   }
 ]
