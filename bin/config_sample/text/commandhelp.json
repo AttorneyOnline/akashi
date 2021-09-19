@@ -628,5 +628,10 @@
       "name":"help",
       "usage":"/help <Command>",
       "text":"Shows you information about a command, if available. The only argument is the command name. About Syntax : <Argument> are mandatory arguments. 'Argument' are optional arguments. [Argument|OtherArgument] is that two argument types are valid, but only one can be used."
-   }
+   },
+   {
+      "name":"clearcm",
+      "usage":"/clearcm",
+      "text":"Removes all CMs from the current area. This command takes no arguments."
+   },
 ]

@@ -1265,6 +1265,15 @@ class AOClient : public QObject {
      */
     void cmdNoticeGlobal(int argc, QStringList argv);
 
+    /**
+     * @brief Removes all CMs from the current area.
+     *
+     * @details This command is a bandaid fix to the issue that clients may end up ghosting when improperly disconnected from the server.
+     *
+     * @iscommand
+     */
+    void cmdClearCM(int argc, QStringList argv);
+
     ///@}
 
     /**
@@ -2145,7 +2154,8 @@ class AOClient : public QObject {
         {"notice",             {ACLFlags.value("SEND_NOTICE"),  1, &AOClient::cmdNotice}},
         {"noticeg",            {ACLFlags.value("SEND_NOTICE"),  1, &AOClient::cmdNoticeGlobal}},
         {"togglejukebox",      {ACLFlags.value("None"),         0, &AOClient::cmdToggleJukebox}},
-        {"help",               {ACLFlags.value("NONE"),         1, &AOClient::cmdHelp}}
+        {"help",               {ACLFlags.value("NONE"),         1, &AOClient::cmdHelp}},
+        {"clearcm",            {ACLFlags.value("KICK"),         0, &AOClient::cmdClearCM}}
     };
 
     /**
