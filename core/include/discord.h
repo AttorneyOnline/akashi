@@ -141,8 +141,6 @@ private slots:
      */
     void postMultipartWebhook(QHttpMultiPart& f_multipart);
 
-
-
     /**
      * @brief Constructs a new JSON document for bans.
      *

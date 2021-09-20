@@ -321,9 +321,16 @@ class ConfigManager {
     /**
      * @brief Returns the Discord Uptime Webhook URL.
      * 
-     * @return See sshort description.
+     * @return See short description.
      */
     static QString discordUptimeWebhookUrl();
+
+    /**
+     * @brief Returns a user configurable color code for the embeed object.s
+     *
+     * @return See short description.
+     */
+    static QString discordWebhookColor();
 
     /**
      * @brief Returns true if password requirements should be enforced.

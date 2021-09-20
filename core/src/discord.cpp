@@ -66,7 +66,7 @@ QJsonDocument Discord::constructModcallJson(const QString &f_name, const QString
     QJsonObject l_json;
     QJsonArray l_array;
     QJsonObject l_object {
-        {"color", "13312842"},
+        {"color", ConfigManager::discordWebhookColor()},
         {"title", f_name + " filed a modcall in " + f_area},
         {"description", f_reason}
     };
@@ -85,7 +85,7 @@ QJsonDocument Discord::constructBanJson(const QString &f_ipid, const QString &f_
     QJsonObject l_json;
     QJsonArray l_array;
     QJsonObject l_object {
-        {"color", "13312842"},
+        {"color", ConfigManager::discordWebhookColor()},
         {"title", "Ban issued by " + f_moderator},
         {"description", "Client IPID : " + f_ipid + "\nBan ID: " + QString::number(f_banID) + "\nBan reason : " + f_reason +"\nBanned until : " +f_duration}
     };
@@ -100,7 +100,7 @@ QJsonDocument Discord::constructUptimeJson(const QString& f_timeExpired)
     QJsonObject l_json;
     QJsonArray l_array;
     QJsonObject l_object {
-        {"color", "13312842"},
+        {"color", ConfigManager::discordWebhookColor()},
         {"title", "Your server is online!"},
         {"description", "Your server has been online for " + f_timeExpired}
     };
