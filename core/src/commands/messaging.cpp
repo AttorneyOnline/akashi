@@ -493,16 +493,22 @@ void AOClient::cmdCharSelect(int argc, QStringList argv)
 
         bool ok = false;
         int l_target_id = argv[0].toInt(&ok);
-        if (!ok)
+        if (!ok) {
+            sendServerMessage("This ID does not look valid. Please use the client ID.");
             return;
+        }
 
         AOClient* l_target = server->getClientByID(l_target_id);
 
-        if (l_target == nullptr)
+        if (l_target == nullptr) {
+            sendServerMessage("Unable to locate client with ID " + QString::number(l_target_id) + ".");
             return;
+        }
 
         l_target->changeCharacter(-1);
         l_target->sendPacket("DONE");
+        sendServerMessage("Client has been forced into character select!");
+
     }
 }
 
