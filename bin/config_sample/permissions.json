@@ -1,0 +1,438 @@
+[
+  {
+    "command": "login",
+    "aclflag": "NONE"
+  },
+  {
+    "command": "getareas",
+    "aclflag": "NONE"
+  },
+  {
+    "command": "getarea",
+    "aclflag": "NONE"
+  },
+  {
+    "command": "ban",
+    "aclflag": "BAN"
+  },
+  {
+    "command": "kick",
+    "aclflag": "KICK"
+  },
+  {
+    "command": "changeauth",
+    "aclflag": "SUPER"
+  },
+  {
+    "command": "rootpass",
+    "aclflag": "SUPER"
+  },
+  {
+    "command": "background",
+    "aclflag": "NONE"
+  },
+  {
+    "command": "bglock",
+    "aclflag": "BGLOCK"
+  },
+  {
+    "command": "bgunlock",
+    "aclflag": "BGLOCK"
+  },
+  {
+    "command": "adduser",
+    "aclflag": "MODIFY_USERS"
+  },
+  {
+    "command": "listperms",
+    "aclflag": "NONE"
+  },
+  {
+    "command": "addperm",
+    "aclflag": "MODIFY_USERS"
+  },
+  {
+    "command": "removeperm",
+    "aclflag": "MODIFY_USERS"
+  },
+  {
+    "command": "listusers",
+    "aclflag": "MODIFY_USERS"
+  },
+  {
+    "command": "logout",
+    "aclflag": "NONE"
+  },
+  {
+    "command": "pos",
+    "aclflag": "NONE"
+  },
+  {
+    "command": "g",
+    "aclflag": "NONE"
+  },
+  {
+    "command": "need",
+    "aclflag": "NONE"
+  },
+  {
+    "command": "coinflip",
+    "aclflag": "NONE"
+  },
+  {
+    "command": "roll",
+    "aclflag": "NONE"
+  },
+  {
+    "command": "rollp",
+    "aclflag": "NONE"
+  },
+  {
+    "command": "doc",
+    "aclflag": "NONE"
+  },
+  {
+    "command": "cleardoc",
+    "aclflag": "NONE"
+  },
+  {
+    "command": "cm",
+    "aclflag": "NONE"
+  },
+  {
+    "command": "uncm",
+    "aclflag": "CM"
+  },
+  {
+    "command": "invite",
+    "aclflag": "CM"
+  },
+  {
+    "command": "uninvite",
+    "aclflag": "CM"
+  },
+  {
+    "command": "lock",
+    "aclflag": "CM"
+  },
+  {
+    "command": "spectatable",
+    "aclflag": "CM"
+  },
+  {
+    "command": "unlock",
+    "aclflag": "CM"
+  },
+  {
+    "command": "timer",
+    "aclflag": "CM"
+  },
+  {
+    "command": "area",
+    "aclflag": "NONE"
+  },
+  {
+    "command": "play",
+    "aclflag": "CM"
+  },
+  {
+    "command": "areakick",
+    "aclflag": "CM"
+  },
+  {
+    "command": "randomchar",
+    "aclflag": "NONE"
+  },
+  {
+    "command": "switch",
+    "aclflag": "NONE"
+  },
+  {
+    "command": "toggleglobal",
+    "aclflag": "NONE"
+  },
+  {
+    "command": "mods",
+    "aclflag": "NONE"
+  },
+  {
+    "command": "commands",
+    "aclflag": "NONE"
+  },
+  {
+    "command": "status",
+    "aclflag": "NONE"
+  },
+  {
+    "command": "forcepos",
+    "aclflag": "CM"
+  },
+  {
+    "command": "currentmusic",
+    "aclflag": "NONE"
+  },
+  {
+    "command": "pm",
+    "aclflag": "NONE"
+  },
+  {
+    "command": "evidence_mod",
+    "aclflag": "EVI_MOD"
+  },
+  {
+    "command": "motd",
+    "aclflag": "NONE"
+  },
+  {
+    "command": "announce",
+    "aclflag": "ANNOUNCE"
+  },
+  {
+    "command": "m",
+    "aclflag": "MODCHAT"
+  },
+  {
+    "command": "gm",
+    "aclflag": "MODCHAT"
+  },
+  {
+    "command": "mute",
+    "aclflag": "MUTE"
+  },
+  {
+    "command": "unmute",
+    "aclflag": "MUTE"
+  },
+  {
+    "command": "bans",
+    "aclflag": "BAN"
+  },
+  {
+    "command": "unban",
+    "aclflag": "BAN"
+  },
+  {
+    "command": "removeuser",
+    "aclflag": "MODIFY_USERS"
+  },
+  {
+    "command": "subtheme",
+    "aclflag": "CM"
+  },
+  {
+    "command": "about",
+    "aclflag": "NONE"
+  },
+  {
+    "command": "evidence_swap",
+    "aclflag": "CM"
+  },
+  {
+    "command": "notecard",
+    "aclflag": "NONE"
+  },
+  {
+    "command": "notecardreveal",
+    "aclflag": "CM"
+  },
+  {
+    "command": "notecardclear",
+    "aclflag": "NONE"
+  },
+  {
+    "command": "8ball",
+    "aclflag": "NONE"
+  },
+  {
+    "command": "lm",
+    "aclflag": "MODCHAT"
+  },
+  {
+    "command": "judgelog",
+    "aclflag": "CM"
+  },
+  {
+    "command": "allowblankposting",
+    "aclflag": "MODCHAT"
+  },
+  {
+    "command": "gimp",
+    "aclflag": "MUTE"
+  },
+  {
+    "command": "ungimp",
+    "aclflag": "MUTE"
+  },
+  {
+    "command": "baninfo",
+    "aclflag": "BAN"
+  },
+  {
+    "command": "testify",
+    "aclflag": "CM"
+  },
+  {
+    "command": "testimony",
+    "aclflag": "NONE"
+  },
+  {
+    "command": "examine",
+    "aclflag": "CM"
+  },
+  {
+    "command": "pause",
+    "aclflag": "CM"
+  },
+  {
+    "command": "delete",
+    "aclflag": "CM"
+  },
+  {
+    "command": "update",
+    "aclflag": "CM"
+  },
+  {
+    "command": "add",
+    "aclflag": "CM"
+  },
+  {
+    "command": "reload",
+    "aclflag": "SUPER"
+  },
+  {
+    "command": "disemvowel",
+    "aclflag": "MUTE"
+  },
+  {
+    "command": "undisemvowel",
+    "aclflag": "MUTE"
+  },
+  {
+    "command": "shake",
+    "aclflag": "MUTE"
+  },
+  {
+    "command": "unshake",
+    "aclflag": "MUTE"
+  },
+  {
+    "command": "forceimmediate",
+    "aclflag": "CM"
+  },
+  {
+    "command": "allowiniswap",
+    "aclflag": "CM"
+  },
+  {
+    "command": "afk",
+    "aclflag": "NONE"
+  },
+  {
+    "command": "savetestimony",
+    "aclflag": "NONE"
+  },
+  {
+    "command": "loadtestimony",
+    "aclflag": "CM"
+  },
+  {
+    "command": "permitsaving",
+    "aclflag": "MODCHAT"
+  },
+  {
+    "command": "mutepm",
+    "aclflag": "NONE"
+  },
+  {
+    "command": "toggleadverts",
+    "aclflag": "NONE"
+  },
+  {
+    "command": "oocmute",
+    "aclflag": "MUTE"
+  },
+  {
+    "command": "oocunmute",
+    "aclflag": "MUTE"
+  },
+  {
+    "command": "blockwtce",
+    "aclflag": "MUTE"
+  },
+  {
+    "command": "unblockwtce",
+    "aclflag": "MUTE"
+  },
+  {
+    "command": "blockdj",
+    "aclflag": "MUTE"
+  },
+  {
+    "command": "unblockdj",
+    "aclflag": "MUTE"
+  },
+  {
+    "command": "charcurse",
+    "aclflag": "MUTE"
+  },
+  {
+    "command": "uncharcurse",
+    "aclflag": "MUTE"
+  },
+  {
+    "command": "charselect",
+    "aclflag": "NONE"
+  },
+  {
+    "command": "togglemusic",
+    "aclflag": "CM"
+  },
+  {
+    "command": "a",
+    "aclflag": "NONE"
+  },
+  {
+    "command": "s",
+    "aclflag": "NONE"
+  },
+  {
+    "command": "kickuid",
+    "aclflag": "KICK"
+  },
+  {
+    "command": "firstperson",
+    "aclflag": "NONE"
+  },
+  {
+    "command": "updateban",
+    "aclflag": "BAN"
+  },
+  {
+    "command": "changepass",
+    "aclflag": "NONE"
+  },
+  {
+    "command": "ignorebglist",
+    "aclflag": "IGNORE_BGLIST"
+  },
+  {
+    "command": "notice",
+    "aclflag": "SEND_NOTICE"
+  },
+  {
+    "command": "noticeg",
+    "aclflag": "SEND_NOTICE"
+  },
+  {
+    "command": "togglejukebox",
+    "aclflag": "None"
+  },
+  {
+    "command": "help",
+    "aclflag": "NONE"
+  },
+  {
+    "command": "clearcm",
+    "aclflag": "KICK"
+  }
+]
