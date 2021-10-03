@@ -86,6 +86,9 @@ void Server::start()
     //Get backgrounds from config file
     m_backgrounds = ConfigManager::backgrounds();
 
+    //Prepare ACL cache for client creation
+    ConfigManager::loadACLCache();
+
     //Assembles the area list
     m_area_names = ConfigManager::sanitizedAreaNames();
     QStringList raw_area_names = ConfigManager::rawAreaNames();

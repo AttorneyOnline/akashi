@@ -40,7 +40,7 @@ bool ConfigManager::verifyServerConfig()
 
     // Verify config files
     QStringList l_config_files{"config/config.ini", "config/areas.ini", "config/backgrounds.txt", "config/characters.txt", "config/music.json",
-                               "config/discord.ini", "config/text/8ball.txt", "config/text/gimp.txt", "config/text/praise.txt",
+                               "config/discord.ini", "config/permissions.json", "config/text/8ball.txt", "config/text/gimp.txt", "config/text/praise.txt",
                                "config/text/reprimands.txt","config/text/commandhelp.json"};
     for (const QString &l_file : l_config_files) {
         if (!fileExists(QFileInfo(l_file))) {
@@ -206,6 +206,32 @@ void ConfigManager::loadCommandHelp()
     }
 }
 
+void ConfigManager::loadACLCache()
+{
+    QFile l_acl_json("config/permissions.json");
+    l_acl_json.open(QIODevice::ReadOnly | QIODevice::Text);
+
+    QJsonParseError l_error;
+    QJsonDocument l_acl_document = QJsonDocument::fromJson(l_acl_json.readAll(), &l_error);
+    if (!(l_error.error == QJsonParseError::NoError)) { //Non-Terminating error.
+        qCritical() << "Unable to load command permissions. The following error occurred: " + l_error.errorString();
+    }
+    QJsonArray l_acl_root_array = l_acl_document.array();
+    QJsonObject l_obj;
+
+    for (int i = 0; i <= l_acl_root_array.size() -1; i++){
+        l_obj = l_acl_root_array.at(i).toObject();
+        QString l_name = l_obj["command"].toString();
+        QString l_acl = l_obj["aclflag"].toString().toUpper();
+
+        if (l_acl.isEmpty()) {
+            qWarning() << "Missing permission value for " + l_name + ". Defaulting to NONE.";
+            l_acl = "NONE";
+        }
+        m_acl_cache->insert(l_name,l_acl);
+    }
+}
+
 int ConfigManager::songInformation(const QString &f_songName)
 {
     return m_musicList->value(f_songName);
@@ -233,6 +259,11 @@ QStringList ConfigManager::sanitizedAreaNames()
 QStringList ConfigManager::rawAreaNames()
 {
     return m_areas->childGroups();
+}
+
+QString ConfigManager::aclPermission(QString f_command_name)
+{
+    return m_acl_cache->value(f_command_name);
 }
 
 void ConfigManager::reloadSettings()

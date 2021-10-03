@@ -84,6 +84,12 @@ class ConfigManager {
      */
     static void loadCommandHelp();
 
+
+    /**
+     * @brief Loads ACL permissions for each command into server memory.
+     */
+    static void loadACLCache();
+
     /**
      * @brief Returns the duration of a song in the songlist.
      * @param The name of the song where duration is requested
@@ -111,6 +117,13 @@ class ConfigManager {
      * @return See short description.
      */
     static QStringList rawAreaNames();
+
+    /**
+     * @brief Returns the ACL permission of a command.
+     * @param The name of the command.
+     * @return ACL permission as a QString.
+     */
+    static QString aclPermission(QString f_command_name);
 
     /**
      * @brief Returns true if the server should advertise to the master server.
@@ -534,6 +547,11 @@ private:
      * @brief QHash containing the help information for all commands registered to the server.
      */
     static QHash<QString,help>* m_commands_help;
+
+    /**
+     * @brief QHash caching the ACL permissions used on AOClient creation.
+     */
+    static QHash<QString,QString>* m_acl_cache;
 
     /**
      * @brief Returns a stringlist with the contents of a .txt file from config/text/.
