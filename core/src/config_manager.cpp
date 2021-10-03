@@ -26,6 +26,7 @@ ConfigManager::CommandSettings* ConfigManager::m_commands = new CommandSettings(
 QElapsedTimer* ConfigManager::m_uptimeTimer = new QElapsedTimer;
 QHash<QString,float>* ConfigManager::m_musicList = new QHash<QString,float>;
 QHash<QString,ConfigManager::help>* ConfigManager::m_commands_help = new QHash<QString,ConfigManager::help>;
+QHash<QString,QString>* ConfigManager::m_acl_cache = new QHash<QString,QString>;
 
 bool ConfigManager::verifyServerConfig()
 {
