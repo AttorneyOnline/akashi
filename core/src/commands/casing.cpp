@@ -126,8 +126,8 @@ void AOClient::cmdExamine(int argc, QStringList argv)
     if (l_area->testimony().size() -1 > 0)
     {
         l_area->restartTestimony();
-        server->broadcast(AOPacket("RT",{"testimony2"}), m_current_area);
-        server->broadcast(AOPacket("MS", {l_area->testimony()[0]}), m_current_area);
+        emit broadcastToArea(AOPacket("RT",{"testimony2"}), m_current_area);
+        emit broadcastToArea(AOPacket("MS", {l_area->testimony()[0]}), m_current_area);
         return;
     }
     if (l_area->testimonyRecording() == AreaData::TestimonyRecording::PLAYBACK)
@@ -189,7 +189,7 @@ void AOClient::cmdPauseTestimony(int argc, QStringList argv)
 
     AreaData* l_area = server->m_areas[m_current_area];
     l_area->setTestimonyRecording(AreaData::TestimonyRecording::STOPPED);
-    server->broadcast(AOPacket("RT",{"testimony1", "1"}), m_current_area);
+    emit broadcastToArea(AOPacket("RT",{"testimony1", "1"}), m_current_area);
     sendServerMessage("Testimony has been stopped.");
 }
 

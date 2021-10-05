@@ -19,12 +19,11 @@
 #define AOCLIENT_H
 
 #include "include/aopacket.h"
-#include "include/server.h"
+#include "include/server_data.h"
 #include "include/area_data.h"
 #include "include/db_manager.h"
 
 #include <algorithm>
-
 #include <QHostAddress>
 #include <QTcpSocket>
 #include <QDateTime>
@@ -33,8 +32,6 @@
 #if QT_VERSION > QT_VERSION_CHECK(5, 10, 0)
 #include <QRandomGenerator>
 #endif
-
-class Server;
 
 /**
  * @brief Represents a client connected to the server running Attorney Online 2 or one of its derivatives.
@@ -45,18 +42,18 @@ class AOClient : public QObject {
     /**
      * @brief Creates an instance of the AOClient class.
      *
-     * @param p_server A pointer to the Server instance where the client is joining to.
+     * @param p_server A pointer to the Server Data instance.
      * @param p_socket The socket associated with the AOClient.
      * @param user_id The user ID of the client.
      * @param parent Qt-based parent, passed along to inherited constructor from QObject.
      */
-    AOClient(Server* p_server, QTcpSocket* p_socket, QObject* parent = nullptr, int user_id = 0)
+    AOClient(ServerData* p_server, QTcpSocket* p_socket, QObject* parent = nullptr, int user_id = 0)
         : QObject(parent), m_id(user_id), m_remote_ip(p_socket->peerAddress()), m_password(""),
           m_joined(false), m_current_area(0), m_current_char(""), m_socket(p_socket), server(p_server),
           is_partial(false), m_last_wtce_time(0) {
         m_afk_timer = new QTimer;
         m_afk_timer->setSingleShot(true);
-        connect(m_afk_timer, SIGNAL(timeout()), this, SLOT(onAfkTimeout()));
+        connect(m_afk_timer, &QTimer::timeout, this, &AOClient::onAfkTimeout);
     };
 
     /**
@@ -88,17 +85,6 @@ class AOClient : public QObject {
      * @brief Calculates the client's IPID based on a hashed version of its IP.
      */
     void calculateIpid();
-
-    /**
-     * @brief Getter for the pointer to the server.
-     *
-     * @return See brief description.
-     *
-     * @note Unused. There isn't really a point to this existing, either.
-     *
-     * @see #server
-     */
-    Server* getServer();
 
     /**
      * @brief The user ID of the client.
@@ -349,7 +335,7 @@ class AOClient : public QObject {
     /**
      * @brief A pointer to the Server, used for updating server variables that depend on the client (e.g. amount of players in an area).
      */
-    Server* server;
+    ServerData* server;
 
     /**
      * @brief The type of area update, used for area update (ARUP) packets.
@@ -2275,6 +2261,50 @@ class AOClient : public QObject {
      *        when modcall logging is used.
      */
     void logModcall(const QString& f_charName, const QString &f_ipid, const QString& f_oocName, const QString& f_areaName);
+
+    /**
+    * @brief Signals a ban webhook request to the server.
+    * @param f_ipid IPID of the client being banned.
+    * @param f_moderator Moderator issuing the ban.
+    * @param f_ban_duration The duration of the ban.
+    * @param f_reason The reason of the ban.
+    * @param f_ban_id The ban ID.
+    */
+    void banWebhookRequest(const QString& f_ipid, const QString& f_moderator, const QString& f_ban_duration, const QString& f_reason, const int& f_ban_id);
+
+    /**
+     * @brief Signals a modcall webhook request to the server.
+     * @param f_name OOC Name/Showname of the client issuing the modcall.
+     * @param f_area_name Name of the area the a mod has been called in.
+     * @param f_reason Reason of the modcall.
+     */
+    void modcallWebhookRequest(const QString& f_name, const QString& f_area_name, const QString& f_reason);
+
+    /**
+     * @brief Signals a connection attempt to the server to be logged.
+     * @param f_remote_ip IP-Address of the server.
+     * @param f_ipid Calculated IPID of the client.
+     * @param f_hwid Hardware ID of the client connecting.
+     */
+    void logConnectionAttempt(const QString& f_remote_ip, const QString& f_ipid, const QString& f_hwid);
+
+    /**
+     * @brief Signals the distribution of a packet to the area the client is located in.
+     * @param Packet to be send to the entire server.
+     * @param ID of the area the client is currently located in.
+     */
+    void broadcastToArea(AOPacket f_packet, int f_current_area);
+
+    /**
+     * @brief Signals the distribution of a packet to the entire server.
+     * @param Packet to be send to the entire server.
+     */
+    void broadcastToServer(AOPacket f_packet);
+
+    /**
+     * @brief Issues a reload request to the server.
+     */
+    void reloadServer();
 };
 
 #endif // AOCLIENT_H

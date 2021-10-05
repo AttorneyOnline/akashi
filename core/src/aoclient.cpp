@@ -247,7 +247,7 @@ void AOClient::arup(ARUPType type, bool broadcast)
         }
     }
     if (broadcast)
-        server->broadcast(AOPacket("ARUP", l_arup_data));
+        emit broadcastToServer(AOPacket("ARUP", l_arup_data));
     else
         sendPacket("ARUP", l_arup_data);
 }
@@ -305,12 +305,12 @@ void AOClient::sendServerMessage(QString message)
 
 void AOClient::sendServerMessageArea(QString message)
 {
-    server->broadcast(AOPacket("CT", {ConfigManager::serverName(), message, "1"}), m_current_area);
+    emit broadcastToArea(AOPacket("CT", {ConfigManager::serverName(), message, "1"}), m_current_area);
 }
 
 void AOClient::sendServerBroadcast(QString message)
 {
-    server->broadcast(AOPacket("CT", {ConfigManager::serverName(), message, "1"}));
+    emit broadcastToServer(AOPacket("CT", {ConfigManager::serverName(), message, "1"}));
 }
 
 bool AOClient::checkAuth(unsigned long long acl_mask)
@@ -344,8 +344,6 @@ bool AOClient::checkAuth(unsigned long long acl_mask)
 QString AOClient::getIpid() const { return m_ipid; }
 
 QString AOClient::getHwid() const { return m_hwid; }
-
-Server* AOClient::getServer() { return server; }
 
 void AOClient::onAfkTimeout()
 {

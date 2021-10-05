@@ -27,6 +27,7 @@
 #include "include/config_manager.h"
 #include "include/http_advertiser.h"
 #include "include/logger/u_logger.h"
+#include "include/server_data.h"
 
 #include <QCoreApplication>
 #include <QDebug>
@@ -76,60 +77,6 @@ class Server : public QObject {
     void start();
 
     /**
-     * @brief Gets a pointer to a client by IPID.
-     *
-     * @param ipid The IPID to look for.
-     *
-     * @return A pointer to the client if found, a nullpointer if not.
-     *
-     * @see Server::getClientsByIpid() to get all clients ran by the same user.
-     */
-    AOClient* getClient(QString ipid);
-
-    /**
-     * @brief Gets a list of pointers to all clients with the given IPID.
-     *
-     * @param ipid The IPID to look for.
-     *
-     * @return A list of clients whose IPID match. List may be empty.
-     */
-    QList<AOClient*> getClientsByIpid(QString ipid);
-    
-    /**
-     * @brief Gets a pointer to a client by user ID.
-     *
-     * @param id The user ID to look for.
-     *
-     * @return A pointer to the client if found, a nullpointer if not.
-     */
-    AOClient* getClientByID(int id);
-
-    /**
-     * @brief Updates which characters are taken in the given area, and sends out an update packet to
-     * all clients present the area.
-     *
-     * @param area The area in which to update the list of characters.
-     */
-    void updateCharsTaken(AreaData* area);
-
-    /**
-     * @brief Sends a packet to all clients in a given area.
-     *
-     * @param packet The packet to send to the clients.
-     * @param area_index The index of the area to look for clients in.
-     *
-     * @note Does nothing if an area by the given index does not exist.
-     */
-    void broadcast(AOPacket packet, int area_index);
-
-    /**
-     * @brief Sends a packet to all clients in the server.
-     *
-     * @param packet The packet to send to the clients.
-     */
-    void broadcast(AOPacket packet);
-
-    /**
      * @brief Returns the character's character ID (= their index in the character list).
      *
      * @param char_name The 'internal' name for the character whose character ID to look up. This is equivalent to
@@ -154,70 +101,6 @@ class Server : public QObject {
      */
     QQueue<QString> getAreaBuffer(const QString& f_areaName);
 
-    /**
-     * @brief The collection of all currently connected clients.
-     */
-    QVector<AOClient*> m_clients;
-
-    /**
-     * @brief The overall player count in the server.
-     */
-    int m_player_count;
-
-    /**
-     * @brief The characters available on the server to use.
-     */
-    QStringList m_characters;
-
-    /**
-     * @brief The areas on the server.
-     */
-    QVector<AreaData*> m_areas;
-
-    /**
-     * @brief The names of the areas on the server.
-     *
-     * @details Equivalent to iterating over #areas and getting the area names individually, but grouped together
-     * here for faster access.
-     */
-    QStringList m_area_names;
-
-    /**
-     * @brief The available songs on the server.
-     *
-     * @details Does **not** include the area names, the actual music list packet should be constructed from
-     * #area_names and this combined.
-     */
-    QStringList m_music_list;
-
-    /**
-     * @brief The backgrounds on the server that may be used in areas.
-     */
-    QStringList m_backgrounds;
-
-    /**
-     * @brief The database manager on the server, used to store users' bans and authorisation details.
-     */
-    DBManager* db_manager;
-
-    /**
-     * @brief The server-wide global timer.
-     */
-    QTimer* timer;
-
-
-    QStringList getCursedCharsTaken(AOClient* client, QStringList chars_taken);
-
-    /**
-     * @brief Timer until the next IC message can be sent.
-     */
-    QTimer next_message_timer;
-
-    /**
-     * @brief If false, IC messages will be rejected.
-     */
-    bool can_send_ic_messages = true;
-
   public slots:
     /**
      * @brief Handles a new connection.
@@ -235,11 +118,44 @@ class Server : public QObject {
     void allowMessage();
 
     /**
-     * @brief Method to construct and reconstruct Discord Webhook Integration.
-     *
-     * @details Constructs or rebuilds Discord Object during server startup and configuration reload.
+     * @brief Reloads the server information on SUPER user request.
      */
-    void handleDiscordIntegration();
+    void onReloadRequest();
+
+    /**
+     * @brief Sends a packet to all clients in a given area.
+     *
+     * @param packet The packet to send to the clients.
+     * @param area_index The index of the area to look for clients in.
+     *
+     * @note Does nothing if an area by the given index does not exist.
+     */
+    void broadcast(AOPacket packet, int area_index);
+
+    /**
+     * @brief Sends a packet to all clients in the server.
+     *
+     * @param packet The packet to send to the clients.
+     */
+    void broadcast(AOPacket packet);
+
+    /**
+     * @brief onModcallWebhookRequest
+     * @param Name of the client requesting a mod presence.
+     * @param Area of the modcall happening.
+     * @param Reason for the modcall.
+     */
+    void onModcallWebhookRequest(const QString& f_name, const QString& f_area, const QString& f_reason);
+
+    /**
+    * @brief Signals a ban webhook request to the server.
+    * @param f_ipid IPID of the client being banned.
+    * @param f_moderator Moderator issuing the ban.
+    * @param f_ban_duration The duration of the ban.
+    * @param f_reason The reason of the ban.
+    * @param f_ban_id The ban ID.
+    */
+    void onBanWebhookRequest(const QString& f_ipid, const QString& f_moderator, const QString& f_ban_duration, const QString& f_reason, const int& f_ban_id);
 
   signals:
 
@@ -283,19 +199,18 @@ class Server : public QObject {
      */
     void banWebhookRequest(const QString& f_ipid, const QString& f_moderator, const QString& f_duration, const QString& f_reason, const int& f_banID);
 
-    /**
-     * @brief Signal connected to universal logger. Logs a client connection attempt.
-     * @param f_ip_address The IP Address of the incoming connection.
-     * @param f_ipid The IPID of the incoming connection.
-     * @param f_hdid The HDID of the incoming connection.
-     */
-    void logConnectionAttempt(const QString& f_ip_address, const QString& f_ipid, const QString& f_hwid);
-
   private:
     /**
-     * @brief Connects new AOClient to the logger.
+     * @brief Connects new AOClient to required signals.
      **/
-    void hookupLogger(AOClient* client);
+    void hookupAOClient(AOClient* client);
+
+    /**
+     * @brief Method to construct and reconstruct Discord Webhook Integration.
+     *
+     * @details Constructs or rebuilds Discord Object during server startup and configuration reload.
+     */
+    void handleDiscordIntegration();
 
     /**
      * @brief The proxy used for WebSocket connections.
@@ -338,6 +253,8 @@ class Server : public QObject {
      * @brief The port through which the server will accept WebSocket connections.
      */
     int ws_port;
+
+    ServerData* server_data;
 };
 
 #endif // SERVER_H

@@ -80,7 +80,7 @@ void AOClient::cmdBan(int argc, QStringList argv)
 
         emit logBan(l_ban.moderator,l_ban.ipid,l_ban_duration,l_ban.reason);
         if (ConfigManager::discordBanWebhookEnabled())
-            emit server->banWebhookRequest(l_ban.ipid, l_ban.moderator, l_ban_duration, l_ban.reason, l_ban_id);
+            banWebhookRequest(l_ban.ipid, l_ban.moderator, l_ban_duration, l_ban.reason, l_ban_id);
     }
 
     if (l_kick_counter > 1)
@@ -242,7 +242,7 @@ void AOClient::cmdAbout(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    sendPacket("CT", {"The akashi dev team", "Thank you for using akashi! Made with love by scatterflower, with help from in1tiate, Salanto, and mangosarentliterature. akashi " + QCoreApplication::applicationVersion() + ". For documentation and reporting issues, see the source: https://github.com/AttorneyOnline/akashi"});
+    sendPacket("CT", {"The akashi dev team", "Thank you for using akashi! Made with love by scatterflower, with help from in1tiate, Salanto, and mangosarentliterature. akashi Coconut 1.3. For documentation and reporting issues, see the source: https://github.com/AttorneyOnline/akashi"});
 }
 
 void AOClient::cmdMute(int argc, QStringList argv)
@@ -469,11 +469,7 @@ void AOClient::cmdReload(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    ConfigManager::reloadSettings();
-    emit server->reloadRequest(ConfigManager::serverName(), ConfigManager::serverDescription());
-    server->updateHTTPAdvertiserConfig();
-    server->handleDiscordIntegration();
-    server->m_music_list = ConfigManager::musiclist();
+    emit reloadServer();;
     sendServerMessage("Reloaded configurations");
 }
 

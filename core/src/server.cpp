@@ -19,7 +19,6 @@
 
 Server::Server(int p_port, int p_ws_port, QObject* parent) :
     QObject(parent),
-    m_player_count(0),
     port(p_port),
     ws_port(p_ws_port)
 {
@@ -29,16 +28,17 @@ Server::Server(int p_port, int p_ws_port, QObject* parent) :
     proxy = new WSProxy(port, ws_port, this);
     if(ws_port != -1)
         proxy->start();
-    timer = new QTimer();
 
-    db_manager = new DBManager();
+    server_data = new ServerData;
+
+    server_data->timer = new QTimer();
+
+    server_data->db_manager = new DBManager();
 
     //We create it, even if its not used later on.
     discord = new Discord(this);
 
     logger = new ULogger(this);
-    connect(this, &Server::logConnectionAttempt,
-        logger, &ULogger::logConnectionAttempt);
 }
 
 void Server::start()
@@ -78,21 +78,21 @@ void Server::start()
     }
 
     //Get characters from config file
-    m_characters = ConfigManager::charlist();
+    server_data->m_characters = ConfigManager::charlist();
 
     //Get musiclist from config file
-    m_music_list = ConfigManager::musiclist();
+    server_data->m_music_list = ConfigManager::musiclist();
 
     //Get backgrounds from config file
-    m_backgrounds = ConfigManager::backgrounds();
+    server_data->m_backgrounds = ConfigManager::backgrounds();
 
     //Assembles the area list
-    m_area_names = ConfigManager::sanitizedAreaNames();
+    server_data->m_area_names = ConfigManager::sanitizedAreaNames();
     QStringList raw_area_names = ConfigManager::rawAreaNames();
     for (int i = 0; i < raw_area_names.length(); i++) {
         QString area_name = raw_area_names[i];
         AreaData* l_area = new AreaData(area_name, i);
-        m_areas.insert(i, l_area);
+        server_data->m_areas.insert(i, l_area);
         connect(l_area, &AreaData::playJukeboxSong,
                 this, QOverload<AOPacket,int>::of(&Server::broadcast));
     }
@@ -101,7 +101,7 @@ void Server::start()
     ConfigManager::loadCommandHelp();
 
     //Rate-Limiter for IC-Chat
-    connect(&next_message_timer, SIGNAL(timeout()), this, SLOT(allowMessage()));
+    connect(&server_data->next_message_timer, SIGNAL(timeout()), this, SLOT(allowMessage()));
 }
 
 void Server::clientConnected()
@@ -109,23 +109,23 @@ void Server::clientConnected()
     QTcpSocket* socket = server->nextPendingConnection();
     int user_id;
     QList<int> user_ids;
-    for (AOClient* client : qAsConst(m_clients)) {
+    for (AOClient* client : qAsConst(server_data->m_clients)) {
         user_ids.append(client->m_id);
     }
-    for (user_id = 0; user_id <= m_player_count; user_id++) {
+    for (user_id = 0; user_id <= server_data->m_player_count; user_id++) {
         if (user_ids.contains(user_id))
             continue;
         else
             break;
     }
-    AOClient* client = new AOClient(this, socket, this, user_id);
+    AOClient* client = new AOClient(server_data, socket, this, user_id);
 
     int multiclient_count = 1;
     bool is_at_multiclient_limit = false;
     client->calculateIpid();
-    auto ban = db_manager->isIPBanned(client->getIpid());
+    auto ban = server_data->db_manager->isIPBanned(client->getIpid());
     bool is_banned = ban.first;
-    for (AOClient* joined_client : qAsConst(m_clients)) {
+    for (AOClient* joined_client : qAsConst(server_data->m_clients)) {
         if (client->m_remote_ip.isEqual(joined_client->m_remote_ip))
             multiclient_count++;
     }
@@ -145,64 +145,28 @@ void Server::clientConnected()
         return;
     }
 
-    m_clients.append(client);
+    server_data->m_clients.append(client);
+    server_data->m_clients.append(client);
     connect(socket, &QTcpSocket::disconnected, client,
             &AOClient::clientDisconnected);
     connect(socket, &QTcpSocket::disconnected, this, [=] {
-        m_clients.removeAll(client);
+        server_data->m_clients.removeAll(client);
         client->deleteLater();
     });
     connect(socket, &QTcpSocket::readyRead, client, &AOClient::clientData);
-
     AOPacket decryptor("decryptor", {"NOENCRYPT"}); // This is the infamous workaround for
                                                     // tsuserver4. It should disable fantacrypt
                                                     // completely in any client 2.4.3 or newer
     client->sendPacket(decryptor);
-    hookupLogger(client);
+    hookupAOClient(client);
 #ifdef NET_DEBUG
     qDebug() << client->remote_ip.toString() << "connected";
 #endif
 }
 
-void Server::updateCharsTaken(AreaData* area)
-{
-    QStringList chars_taken;
-    for (const QString &cur_char : qAsConst(m_characters)) {
-        chars_taken.append(area->charactersTaken().contains(getCharID(cur_char))
-                               ? QStringLiteral("-1")
-                               : QStringLiteral("0"));
-    }
-
-    AOPacket response_cc("CharsCheck", chars_taken);
-
-    for (AOClient* client : qAsConst(m_clients)) {
-        if (client->m_current_area == area->index()){
-            if (!client->m_is_charcursed)
-                client->sendPacket(response_cc);
-            else {
-                QStringList chars_taken_cursed = getCursedCharsTaken(client, chars_taken);
-                AOPacket response_cc_cursed("CharsCheck", chars_taken_cursed);
-                client->sendPacket(response_cc_cursed);
-            }
-        }
-    }
-}
-
-QStringList Server::getCursedCharsTaken(AOClient* client, QStringList chars_taken)
-{
-    QStringList chars_taken_cursed;
-    for (int i = 0; i < chars_taken.length(); i++) {
-        if (!client->m_charcurse_list.contains(i))
-            chars_taken_cursed.append("-1");
-        else
-            chars_taken_cursed.append(chars_taken.value(i));
-    }
-    return chars_taken_cursed;
-}
-
 void Server::broadcast(AOPacket packet, int area_index)
 {
-    for (AOClient* client : qAsConst(m_clients)) {
+    for (AOClient* client : qAsConst(server_data->m_clients)) {
         if (client->m_current_area == area_index)
             client->sendPacket(packet);
     }
@@ -210,38 +174,19 @@ void Server::broadcast(AOPacket packet, int area_index)
 
 void Server::broadcast(AOPacket packet)
 {
-    for (AOClient* client : qAsConst(m_clients)) {
+    for (AOClient* client : qAsConst(server_data->m_clients)) {
         client->sendPacket(packet);
     }
 }
 
-QList<AOClient*> Server::getClientsByIpid(QString ipid)
+void Server::onModcallWebhookRequest(const QString &f_name, const QString &f_area, const QString &f_reason)
 {
-    QList<AOClient*> return_clients;
-    for (AOClient* client : qAsConst(m_clients)) {
-        if (client->getIpid() == ipid)
-            return_clients.append(client);
-    }
-    return return_clients;
+    emit modcallWebhookRequest(f_name, f_area, f_reason, getAreaBuffer(f_area));
 }
 
-AOClient* Server::getClientByID(int id)
+void Server::onBanWebhookRequest(const QString& f_ipid, const QString& f_moderator, const QString& f_ban_duration, const QString& f_reason, const int& f_ban_id)
 {
-    for (AOClient* client : qAsConst(m_clients)) {
-        if (client->m_id == id)
-            return client;
-    }
-    return nullptr;
-}
-
-int Server::getCharID(QString char_name)
-{
-    for (const QString &character : qAsConst(m_characters)) {
-        if (character.toLower() == char_name.toLower()) {
-            return m_characters.indexOf(QRegExp(character, Qt::CaseInsensitive));
-        }
-    }
-    return -1; // character does not exist
+    emit banWebhookRequest(f_ipid, f_moderator, f_ban_duration, f_reason, f_ban_id);
 }
 
 void Server::setHTTPAdvertiserConfig()
@@ -276,7 +221,16 @@ QQueue<QString> Server::getAreaBuffer(const QString &f_areaName)
 
 void Server::allowMessage()
 {
-    can_send_ic_messages = true;
+    server_data->can_send_ic_messages = true;
+}
+
+void Server::onReloadRequest()
+{
+    ConfigManager::reloadSettings();
+    emit reloadRequest(ConfigManager::serverName(), ConfigManager::serverDescription());
+    server_data->m_music_list = ConfigManager::musiclist();
+    updateHTTPAdvertiserConfig();
+    handleDiscordIntegration();
 }
 
 void Server::handleDiscordIntegration()
@@ -301,32 +255,34 @@ void Server::handleDiscordIntegration()
     return;
 }
 
-void Server::hookupLogger(AOClient* client)
+void Server::hookupAOClient(AOClient* client)
 {
-    connect(client, &AOClient::logIC,
-            logger, &ULogger::logIC);
-    connect(client, &AOClient::logOOC,
-            logger, &ULogger::logOOC);
-    connect(client, &AOClient::logLogin,
-            logger, &ULogger::logLogin);
-    connect(client, &AOClient::logCMD,
-            logger, &ULogger::logCMD);
-    connect(client, &AOClient::logBan,
-            logger, &ULogger::logBan);
-    connect(client, &AOClient::logKick,
-            logger, &ULogger::logKick);
-    connect(client, &AOClient::logModcall,
-            logger, &ULogger::logModcall);
+    //Broadcast functions are overloaded.
+    connect(client, &AOClient::broadcastToArea, this, QOverload<AOPacket,int>::of(&Server::broadcast));
+    connect(client, &AOClient::broadcastToServer, this, QOverload<AOPacket>::of(&Server::broadcast));
+    connect(client, &AOClient::reloadServer, this, &Server::onReloadRequest);
+
+    //Relevant Discord Webhook connections.
+    connect(client, &AOClient::modcallWebhookRequest, this, &Server::onModcallWebhookRequest);
+    connect(client, &AOClient::banWebhookRequest, this, &Server::onBanWebhookRequest);
+
+    //This needs to be connected per client.
+    connect(client, &AOClient::logIC, logger, &ULogger::logIC);
+    connect(client, &AOClient::logOOC, logger, &ULogger::logOOC);
+    connect(client, &AOClient::logLogin, logger, &ULogger::logLogin);
+    connect(client, &AOClient::logCMD, logger, &ULogger::logCMD);
+    connect(client, &AOClient::logBan, logger, &ULogger::logBan);
+    connect(client, &AOClient::logKick, logger, &ULogger::logKick);
+    connect(client, &AOClient::logModcall, logger, &ULogger::logModcall);
+    connect(client, &AOClient::logConnectionAttempt, logger, &ULogger::logConnectionAttempt);
 }
 
 Server::~Server()
 {
-    for (AOClient* client : qAsConst(m_clients)) {
+    for (AOClient* client : qAsConst(server_data->m_clients)) {
         client->deleteLater();
     }
     server->deleteLater();
     proxy->deleteLater();
     discord->deleteLater();
-
-    delete db_manager;
 }

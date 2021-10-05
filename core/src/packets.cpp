@@ -36,14 +36,14 @@ void AOClient::pktHardwareId(AreaData* area, int argc, QStringList argv, AOPacke
     Q_UNUSED(packet);
 
     m_hwid = argv[0];
-    emit server->logConnectionAttempt(m_remote_ip.toString(), m_ipid, m_hwid);
+    emit logConnectionAttempt(m_remote_ip.toString(), m_ipid, m_hwid);
     auto l_ban = server->db_manager->isHDIDBanned(m_hwid);
     if (l_ban.first) {
         sendPacket("BD", {l_ban.second + "\nBan ID: " + QString::number(server->db_manager->getBanID(m_hwid))});
         m_socket->close();
         return;
     }
-    sendPacket("ID", {QString::number(m_id), "akashi", QCoreApplication::applicationVersion()});
+    sendPacket("ID", {QString::number(m_id), "akashi", "Coconut 1.3"});
 }
 
 void AOClient::pktSoftwareId(AreaData* area, int argc, QStringList argv, AOPacket packet)
@@ -216,7 +216,7 @@ void AOClient::pktIcChat(AreaData* area, int argc, QStringList argv, AOPacket pa
     if (m_pos != "")
         validated_packet.contents[5] = m_pos;
 
-    server->broadcast(validated_packet, m_current_area);
+    emit broadcastToArea(validated_packet, m_current_area);
     emit logIC((m_current_char + " " + m_showname), m_ooc_name, m_ipid,server->m_areas[m_current_area]->name(), m_last_message);
     area->updateLastICMessage(validated_packet.contents);
 
@@ -268,7 +268,7 @@ void AOClient::pktOocChat(AreaData* area, int argc, QStringList argv, AOPacket p
         return;
     }
     else {
-        server->broadcast(final_packet, m_current_area);
+        emit broadcastToArea(final_packet, m_current_area);
     }
     emit logOOC((m_current_char + " " + m_showname), m_ooc_name, m_ipid, area->name(), l_message);
 }
@@ -331,7 +331,7 @@ void AOClient::pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPack
             AOPacket l_music_change("MC", {l_final_song, argv[1], m_showname, "1", "0", l_effects});
             area->setCurrentMusic(l_final_song);
             area->setMusicPlayedBy(m_showname);
-            server->broadcast(l_music_change, m_current_area);
+            emit broadcastToArea(l_music_change, m_current_area);
             return;
         }
     }
@@ -357,7 +357,7 @@ void AOClient::pktWtCe(AreaData* area, int argc, QStringList argv, AOPacket pack
     if (QDateTime::currentDateTime().toSecsSinceEpoch() - m_last_wtce_time <= 5)
         return;
     m_last_wtce_time = QDateTime::currentDateTime().toSecsSinceEpoch();
-    server->broadcast(packet, m_current_area);
+    emit broadcastToArea(packet, m_current_area);
     updateJudgeLog(area, this, "WT/CE");
 }
 
@@ -372,15 +372,17 @@ void AOClient::pktHpBar(AreaData* area, int argc, QStringList argv, AOPacket pac
     }
     int l_newValue = argv.at(1).toInt();
 
-    if (argv[0] == "1") {
+    switch (argv[0].toInt()) {
+        case 1 :
         area->changeHP(AreaData::Side::DEFENCE, l_newValue);
-    }
-    else if (argv[0] == "2") {
+        break;
+        case 2:
         area->changeHP(AreaData::Side::PROSECUTOR, l_newValue);
+        break;
     }
 
-    server->broadcast(AOPacket("HP", {"1", QString::number(area->defHP())}), area->index());
-    server->broadcast(AOPacket("HP", {"2", QString::number(area->proHP())}), area->index());
+    emit broadcastToArea(AOPacket("HP", {"1", QString::number(area->defHP())}), area->index());
+    emit broadcastToArea(AOPacket("HP", {"2", QString::number(area->proHP())}), area->index());
 
     updateJudgeLog(area, this, "updated the penalties");
 }
@@ -436,7 +438,7 @@ void AOClient::pktModCall(AreaData* area, int argc, QStringList argv, AOPacket p
             l_name = m_current_char;
 
         QString l_areaName = area->name();
-        emit server->modcallWebhookRequest(l_name, l_areaName, packet.contents[0],server->getAreaBuffer(l_areaName));
+        emit modcallWebhookRequest(l_name, l_areaName, packet.contents[0]);
     }
 }
 
@@ -881,7 +883,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         if (area->statement() == -1) {
             l_args[4] = "~~\\n-- " + l_args[4] + " --";
             l_args[14] = "3";
-            server->broadcast(AOPacket("RT",{"testimony1"}), m_current_area);
+            emit broadcastToArea(AOPacket("RT",{"testimony1"}), m_current_area);
         }
         addStatement(l_args);
     }

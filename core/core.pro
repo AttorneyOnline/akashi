@@ -42,6 +42,7 @@ SOURCES += \
     src/discord.cpp \
     src/packets.cpp \
     src/server.cpp \
+    src/server_data.cpp \
     src/testimony_recorder.cpp \
     src/ws_client.cpp \
     src/ws_proxy.cpp \
@@ -59,6 +60,7 @@ HEADERS += include/advertiser.h \
     include/db_manager.h \
     include/discord.h \
     include/server.h \
+    include/server_data.h \
     include/ws_client.h \
     include/ws_proxy.h \
     include/http_advertiser.h \

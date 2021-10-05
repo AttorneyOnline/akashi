@@ -220,7 +220,7 @@ void AOClient::sendNotice(QString f_notice, bool f_global)
     sendServerMessageArea(l_message);
     AOPacket l_packet("BB", {l_message});
     if (f_global)
-        server->broadcast(l_packet);
+        emit broadcastToServer(l_packet);
     else
-        server->broadcast(l_packet, m_current_area);
+        emit broadcastToArea(l_packet, m_current_area);
 }

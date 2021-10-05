@@ -32,7 +32,7 @@ void AOClient::cmdPlay(int argc, QStringList argv)
     l_area->currentMusic() = l_song;
     l_area->musicPlayerBy() = m_showname;
     AOPacket music_change("MC", {l_song, QString::number(server->getCharID(m_current_char)), m_showname, "1", "0"});
-    server->broadcast(music_change, m_current_area);
+    emit broadcastToArea(music_change, m_current_area);
 }
 
 void AOClient::cmdCurrentMusic(int argc, QStringList argv)

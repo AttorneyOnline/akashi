@@ -100,8 +100,8 @@ void AOClient::cmdTimer(int argc, QStringList argv)
         l_requested_timer->start();
         sendServerMessage("Set timer " + QString::number(l_timer_id) + " to " + argv[1] + ".");
         AOPacket l_update_timer("TI", {QString::number(l_timer_id), "0", QString::number(QTime(0,0).msecsTo(l_requested_time))});
-        l_is_global ? server->broadcast(l_show_timer) : server->broadcast(l_show_timer, m_current_area); // Show the timer
-        l_is_global ? server->broadcast(l_update_timer) : server->broadcast(l_update_timer, m_current_area);
+        l_is_global ? emit broadcastToServer(l_show_timer) : emit broadcastToArea(l_show_timer, m_current_area); // Show the timer
+        l_is_global ? emit broadcastToServer(l_update_timer) : emit broadcastToArea(l_update_timer, m_current_area);
         return;
     }
     // Otherwise, update the state of the timer
@@ -110,22 +110,22 @@ void AOClient::cmdTimer(int argc, QStringList argv)
             l_requested_timer->start();
             sendServerMessage("Started timer " + QString::number(l_timer_id) + ".");
             AOPacket l_update_timer("TI", {QString::number(l_timer_id), "0", QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(l_requested_timer->remainingTime())))});
-            l_is_global ? server->broadcast(l_show_timer) : server->broadcast(l_show_timer, m_current_area);
-            l_is_global ? server->broadcast(l_update_timer) : server->broadcast(l_update_timer, m_current_area);
+            l_is_global ? emit broadcastToServer(l_show_timer) : emit broadcastToArea(l_show_timer, m_current_area);
+            l_is_global ? emit broadcastToServer(l_update_timer) : emit broadcastToArea(l_update_timer, m_current_area);
         }
         else if (argv[1] == "pause" || argv[1] == "stop") {
             l_requested_timer->setInterval(l_requested_timer->remainingTime());
             l_requested_timer->stop();
             sendServerMessage("Stopped timer " + QString::number(l_timer_id) + ".");
             AOPacket l_update_timer("TI", {QString::number(l_timer_id), "1", QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(l_requested_timer->interval())))});
-            l_is_global ? server->broadcast(l_update_timer) : server->broadcast(l_update_timer, m_current_area);
+            l_is_global ? emit broadcastToServer(l_update_timer) : emit broadcastToArea(l_update_timer, m_current_area);
         }
         else if (argv[1] == "hide" || argv[1] == "unset") {
             l_requested_timer->setInterval(0);
             l_requested_timer->stop();
             sendServerMessage("Hid timer " + QString::number(l_timer_id) + ".");
             // Hide the timer
-            l_is_global ? server->broadcast(l_hide_timer) : server->broadcast(l_hide_timer, m_current_area);
+            l_is_global ? emit broadcastToServer(l_hide_timer) : emit broadcastToArea(l_hide_timer, m_current_area);
         }
     }
 }
