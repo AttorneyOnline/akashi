@@ -98,7 +98,7 @@ void AOClient::handlePacket(AOPacket packet)
 
     if (packet.contents.length() < l_info.minArgs) {
 #ifdef NET_DEBUG
-        qDebug() << "Invalid packet args length. Minimum is" << info.minArgs << "but only" << packet.contents.length() << "were given.";
+        qDebug() << "Invalid packet args length. Minimum is" << l_info.minArgs << "but only" << packet.contents.length() << "were given.";
 #endif
         return;
     }
@@ -341,9 +341,13 @@ bool AOClient::checkAuth(unsigned long long acl_mask)
 }
 
 
-QString AOClient::getIpid() const { return m_ipid; }
+QString AOClient::getIpid() const {
+    return m_ipid;
+}
 
-QString AOClient::getHwid() const { return m_hwid; }
+QString AOClient::getHwid() const {
+    return m_hwid;
+}
 
 void AOClient::onAfkTimeout()
 {

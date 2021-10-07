@@ -38,7 +38,7 @@ public:
     /**
      * @brief The overall player count in the server.
      */
-    int m_player_count;
+    int m_player_count = 0;
 
     /**
      * @brief The characters available on the server to use.
