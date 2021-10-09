@@ -23,7 +23,7 @@
 void AOClient::cmdDoc(int argc, QStringList argv)
 {
     QString l_sender_name = m_ooc_name;
-    AreaData* l_area = server->m_areas[m_current_area];
+    AreaData* l_area = p_server_data->m_areas[m_current_area];
     if (argc == 0) {
         sendServerMessage("Document: " + l_area->document());
     }
@@ -39,7 +39,7 @@ void AOClient::cmdClearDoc(int argc, QStringList argv)
     Q_UNUSED(argv);
 
     QString l_sender_name = m_ooc_name;
-    AreaData* l_area = server->m_areas[m_current_area];
+    AreaData* l_area = p_server_data->m_areas[m_current_area];
     l_area->changeDoc("No document.");
     sendServerMessageArea(l_sender_name + " cleared the document.");
 }
@@ -48,7 +48,7 @@ void AOClient::cmdEvidenceMod(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
 
-    AreaData* l_area = server->m_areas[m_current_area];
+    AreaData* l_area = p_server_data->m_areas[m_current_area];
     argv[0] = argv[0].toLower();
     if (argv[0] == "cm")
         l_area->setEviMod(AreaData::EvidenceMod::CM);
@@ -72,7 +72,7 @@ void AOClient::cmdEvidence_Swap(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
 
-    AreaData* l_area = server->m_areas[m_current_area];
+    AreaData* l_area = p_server_data->m_areas[m_current_area];
     int l_ev_size = l_area->evidence().size() -1;
 
     if (l_ev_size < 0) {
@@ -106,7 +106,7 @@ void AOClient::cmdTestify(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData* l_area = server->m_areas[m_current_area];
+    AreaData* l_area = p_server_data->m_areas[m_current_area];
     if (l_area->testimonyRecording() == AreaData::TestimonyRecording::RECORDING) {
         sendServerMessage("Testimony recording is already in progress. Please stop it before starting a new one.");
     }
@@ -122,7 +122,7 @@ void AOClient::cmdExamine(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData* l_area = server->m_areas[m_current_area];
+    AreaData* l_area = p_server_data->m_areas[m_current_area];
     if (l_area->testimony().size() -1 > 0)
     {
         l_area->restartTestimony();
@@ -141,7 +141,7 @@ void AOClient::cmdTestimony(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-   AreaData* l_area = server->m_areas[m_current_area];
+   AreaData* l_area = p_server_data->m_areas[m_current_area];
    if (l_area->testimony().size() -1 < 1) {
        sendServerMessage("Unable to display empty testimony.");
        return;
@@ -162,7 +162,7 @@ void AOClient::cmdDeleteStatement(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData* l_area = server->m_areas[m_current_area];
+    AreaData* l_area = p_server_data->m_areas[m_current_area];
     int l_c_statement = l_area->statement();
     if (l_area->testimony().size() - 1 == 0) {
         sendServerMessage("Unable to delete statement. No statements saved in this area.");
@@ -178,7 +178,7 @@ void AOClient::cmdUpdateStatement(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    server->m_areas[m_current_area]->setTestimonyRecording(AreaData::TestimonyRecording::UPDATE);
+    p_server_data->m_areas[m_current_area]->setTestimonyRecording(AreaData::TestimonyRecording::UPDATE);
     sendServerMessage("The next IC-Message will replace the last displayed replay message.");
 }
 
@@ -187,7 +187,7 @@ void AOClient::cmdPauseTestimony(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData* l_area = server->m_areas[m_current_area];
+    AreaData* l_area = p_server_data->m_areas[m_current_area];
     l_area->setTestimonyRecording(AreaData::TestimonyRecording::STOPPED);
     emit broadcastToArea(AOPacket("RT",{"testimony1", "1"}), m_current_area);
     sendServerMessage("Testimony has been stopped.");
@@ -198,8 +198,8 @@ void AOClient::cmdAddStatement(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    if (server->m_areas[m_current_area]->statement() < ConfigManager::maxStatements()) {
-        server->m_areas[m_current_area]->setTestimonyRecording(AreaData::TestimonyRecording::ADD);
+    if (p_server_data->m_areas[m_current_area]->statement() < ConfigManager::maxStatements()) {
+        p_server_data->m_areas[m_current_area]->setTestimonyRecording(AreaData::TestimonyRecording::ADD);
         sendServerMessage("The next IC-Message will be inserted into the testimony.");
     }
     else
@@ -218,7 +218,7 @@ void AOClient::cmdSaveTestimony(int argc, QStringList argv)
         l_permission_found = true;
 
     if (l_permission_found) {
-        AreaData* l_area = server->m_areas[m_current_area];
+        AreaData* l_area = p_server_data->m_areas[m_current_area];
         if (l_area->testimony().size() -1 <= 0) {
             sendServerMessage("Can't save an empty testimony.");
             return;
@@ -257,7 +257,7 @@ void AOClient::cmdLoadTestimony(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
 
-    AreaData* l_area = server->m_areas[m_current_area];
+    AreaData* l_area = p_server_data->m_areas[m_current_area];
     QDir l_dir_testimony("storage/testimony");
     if (!l_dir_testimony.exists()) {
         sendServerMessage("Unable to load testimonies. Testimony storage not found.");

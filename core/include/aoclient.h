@@ -47,9 +47,9 @@ class AOClient : public QObject {
      * @param user_id The user ID of the client.
      * @param parent Qt-based parent, passed along to inherited constructor from QObject.
      */
-    AOClient(ServerData* p_server, QTcpSocket* p_socket, QObject* parent = nullptr, int user_id = 0)
+    AOClient(ServerData* p_server_data, QTcpSocket* p_socket, QObject* parent = nullptr, int user_id = 0)
         : QObject(parent), m_id(user_id), m_remote_ip(p_socket->peerAddress()), m_password(""),
-          m_joined(false), m_current_area(0), m_current_char(""), m_socket(p_socket), server(p_server),
+          m_joined(false), m_current_area(0), m_current_char(""), m_socket(p_socket), p_server_data(p_server_data),
           is_partial(false), m_last_wtce_time(0) {
         m_afk_timer = new QTimer;
         m_afk_timer->setSingleShot(true);
@@ -335,7 +335,7 @@ class AOClient : public QObject {
     /**
      * @brief A pointer to the Server, used for updating server variables that depend on the client (e.g. amount of players in an area).
      */
-    ServerData* server;
+    ServerData* p_server_data;
 
     /**
      * @brief The type of area update, used for area update (ARUP) packets.

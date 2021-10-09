@@ -32,8 +32,8 @@ void AOClient::cmdDefault(int argc, QStringList argv)
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;
-    QString area_name = server->m_area_names[area_idx];
-    AreaData* area = server->m_areas[area_idx];
+    QString area_name = p_server_data->m_area_names[area_idx];
+    AreaData* area = p_server_data->m_areas[area_idx];
     entries.append("=== " + area_name + " ===");
     switch (area->lockStatus()) {
         case AreaData::LockStatus::LOCKED:
@@ -47,7 +47,7 @@ QStringList AOClient::buildAreaList(int area_idx)
             break;
     }
     entries.append("[" + QString::number(area->playerCount()) + " users][" + QVariant::fromValue(area->status()).toString().replace("_", "-") + "]");
-    for (AOClient* client : qAsConst(server->m_clients)) {
+    for (AOClient* client : qAsConst(p_server_data->m_clients)) {
         if (client->m_current_area == area_idx && client->m_joined) {
             QString char_entry = "[" + QString::number(client->m_id) + "] " + client->m_current_char;
             if (client->m_current_char == "")
@@ -100,12 +100,12 @@ void AOClient::diceThrower(int argc, QStringList argv, bool p_roll)
 
 QString AOClient::getAreaTimer(int area_idx, int timer_idx)
 {
-    AreaData* l_area = server->m_areas[area_idx];
+    AreaData* l_area = p_server_data->m_areas[area_idx];
     QTimer* l_timer;
     QString l_timer_name = (timer_idx == 0) ? "Global timer" : "Timer " + QString::number(timer_idx);
 
     if (timer_idx == 0)
-        l_timer = server->timer;
+        l_timer = p_server_data->timer;
     else if (timer_idx > 0 && timer_idx <= 4)
         l_timer = l_area->timers().at(timer_idx - 1);
     else

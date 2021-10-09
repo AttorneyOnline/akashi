@@ -43,7 +43,7 @@ void AOClient::cmdRollP(int argc, QStringList argv)
 
 void AOClient::cmdTimer(int argc, QStringList argv)
 {
-    AreaData* l_area = server->m_areas[m_current_area];
+    AreaData* l_area = p_server_data->m_areas[m_current_area];
 
     // Called without arguments
     // Shows a brief of all timers
@@ -83,7 +83,7 @@ void AOClient::cmdTimer(int argc, QStringList argv)
             sendServerMessage("You are not authorized to alter the global timer.");
             return;
         }
-        l_requested_timer = server->timer;
+        l_requested_timer = p_server_data->timer;
     }
     else
         l_requested_timer = l_area->timers().at(l_timer_id - 1);
@@ -134,7 +134,7 @@ void AOClient::cmdNoteCard(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
 
-    AreaData* l_area = server->m_areas[m_current_area];
+    AreaData* l_area = p_server_data->m_areas[m_current_area];
     QString l_notecard = argv.join(" ");
     l_area->addNotecard(m_current_char, l_notecard);
     sendServerMessageArea(m_current_char + " wrote a note card.");
@@ -145,7 +145,7 @@ void AOClient::cmdNoteCardClear(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData* l_area = server->m_areas[m_current_area];
+    AreaData* l_area = p_server_data->m_areas[m_current_area];
     if (!l_area->addNotecard(m_current_char, QString())) {
         sendServerMessageArea(m_current_char + " erased their note card.");
     }
@@ -156,7 +156,7 @@ void AOClient::cmdNoteCardReveal(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData* l_area = server->m_areas[m_current_area];
+    AreaData* l_area = p_server_data->m_areas[m_current_area];
     const QStringList l_notecards = l_area->getNotecards();
 
     if (l_notecards.isEmpty()) {
@@ -192,7 +192,7 @@ void AOClient::cmdSubTheme(int argc, QStringList argv)
     Q_UNUSED(argc);
 
     QString l_subtheme = argv.join(" ");
-    for (AOClient* l_client : qAsConst(server->m_clients)) {
+    for (AOClient* l_client : qAsConst(p_server_data->m_clients)) {
         if (l_client->m_current_area == m_current_area)
             l_client->sendPacket("ST", {l_subtheme, "1"});
     }

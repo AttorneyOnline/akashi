@@ -57,12 +57,12 @@ void AOClient::cmdBan(int argc, QStringList argv)
         break;
     }
 
-    const QList<AOClient*> l_targets = server->getClientsByIpid(l_ban.ipid);
+    const QList<AOClient*> l_targets = p_server_data->getClientsByIpid(l_ban.ipid);
     for (AOClient* client : l_targets) {
         if (!l_ban_logged) {
             l_ban.ip = client->m_remote_ip;
             l_ban.hdid = client->m_hwid;
-            server->db_manager->addBan(l_ban);
+            p_server_data->db_manager->addBan(l_ban);
             sendServerMessage("Banned user with ipid " + l_ban.ipid + " for reason: " + l_ban.reason);
             l_ban_logged = true;
         }
@@ -73,7 +73,7 @@ void AOClient::cmdBan(int argc, QStringList argv)
         else {
             l_ban_duration = "The heat death of the universe.";
         }
-        int l_ban_id = server->db_manager->getBanID(l_ban.ip);
+        int l_ban_id = p_server_data->db_manager->getBanID(l_ban.ip);
         client->sendPacket("KB", {l_ban.reason + "\nID: " + QString::number(l_ban_id) + "\nUntil: " + l_ban_duration});
         client->m_socket->close();
         l_kick_counter++;
@@ -88,7 +88,7 @@ void AOClient::cmdBan(int argc, QStringList argv)
 
     // We're banning someone not connected.
     if (!l_ban_logged) {
-        server->db_manager->addBan(l_ban);
+        p_server_data->db_manager->addBan(l_ban);
         sendServerMessage("Banned " + l_ban.ipid + " for reason: " + l_ban.reason);
     }
 }
@@ -105,7 +105,7 @@ void AOClient::cmdKick(int argc, QStringList argv)
         }
     }
 
-    const QList<AOClient*> l_targets = server->getClientsByIpid(l_target_ipid);
+    const QList<AOClient*> l_targets = p_server_data->getClientsByIpid(l_target_ipid);
     for (AOClient* client : l_targets) {
         client->sendPacket("KK", {l_reason});
         client->m_socket->close();
@@ -132,7 +132,7 @@ void AOClient::cmdMods(int argc, QStringList argv)
 
     QStringList l_entries;
     int l_online_count = 0;
-    for (AOClient* l_client : qAsConst(server->m_clients)) {
+    for (AOClient* l_client : qAsConst(p_server_data->m_clients)) {
         if (l_client->m_authenticated) {
             l_entries << "---";
             if (ConfigManager::authType() != DataTypes::AuthType::SIMPLE)
@@ -202,7 +202,7 @@ void AOClient::cmdBans(int argc, QStringList argv)
     QStringList l_recent_bans;
     l_recent_bans << "Last 5 bans:";
     l_recent_bans << "-----";
-    const QList<DBManager::BanInfo> l_bans_list = server->db_manager->getRecentBans();
+    const QList<DBManager::BanInfo> l_bans_list = p_server_data->db_manager->getRecentBans();
     for (const DBManager::BanInfo &l_ban : l_bans_list) {
         QString l_banned_until;
         if (l_ban.duration == -2)
@@ -231,7 +231,7 @@ void AOClient::cmdUnBan(int argc, QStringList argv)
         sendServerMessage("Invalid ban ID.");
         return;
     }
-    else if (server->db_manager->invalidateBan(l_target_ban))
+    else if (p_server_data->db_manager->invalidateBan(l_target_ban))
         sendServerMessage("Successfully invalidated ban " + argv[0] + ".");
     else
         sendServerMessage("Couldn't invalidate ban " + argv[0] + ", are you sure it exists?");
@@ -256,7 +256,7 @@ void AOClient::cmdMute(int argc, QStringList argv)
         return;
     }
 
-    AOClient* target = server->getClientByID(l_uid);
+    AOClient* target = p_server_data->getClientByID(l_uid);
 
     if (target == nullptr) {
         sendServerMessage("No client with that ID found.");
@@ -283,7 +283,7 @@ void AOClient::cmdUnMute(int argc, QStringList argv)
         return;
     }
 
-    AOClient* l_target = server->getClientByID(l_uid);
+    AOClient* l_target = p_server_data->getClientByID(l_uid);
 
     if (l_target == nullptr) {
         sendServerMessage("No client with that ID found.");
@@ -310,7 +310,7 @@ void AOClient::cmdOocMute(int argc, QStringList argv)
         return;
     }
 
-    AOClient* l_target = server->getClientByID(l_uid);
+    AOClient* l_target = p_server_data->getClientByID(l_uid);
 
     if (l_target == nullptr) {
         sendServerMessage("No client with that ID found.");
@@ -337,7 +337,7 @@ void AOClient::cmdOocUnMute(int argc, QStringList argv)
         return;
     }
 
-    AOClient* l_target = server->getClientByID(l_uid);
+    AOClient* l_target = p_server_data->getClientByID(l_uid);
 
     if (l_target == nullptr) {
         sendServerMessage("No client with that ID found.");
@@ -364,7 +364,7 @@ void AOClient::cmdBlockWtce(int argc, QStringList argv)
         return;
     }
 
-    AOClient* l_target = server->getClientByID(l_uid);
+    AOClient* l_target = p_server_data->getClientByID(l_uid);
 
     if (l_target == nullptr) {
         sendServerMessage("No client with that ID found.");
@@ -391,7 +391,7 @@ void AOClient::cmdUnBlockWtce(int argc, QStringList argv)
         return;
     }
 
-    AOClient* l_target = server->getClientByID(l_uid);
+    AOClient* l_target = p_server_data->getClientByID(l_uid);
 
     if (l_target == nullptr) {
         sendServerMessage("No client with that ID found.");
@@ -413,7 +413,7 @@ void AOClient::cmdAllowBlankposting(int argc, QStringList argv)
     Q_UNUSED(argv);
 
     QString l_sender_name = m_ooc_name;
-    AreaData* l_area = server->m_areas[m_current_area];
+    AreaData* l_area = p_server_data->m_areas[m_current_area];
     l_area->toggleBlankposting();
     if (l_area->blankpostingAllowed() == false) {
         sendServerMessageArea(l_sender_name + " has set blankposting in the area to forbidden.");
@@ -445,7 +445,7 @@ void AOClient::cmdBanInfo(int argc, QStringList argv)
         return;
     }
     QString l_id = argv[0];
-    const QList<DBManager::BanInfo> l_bans = server->db_manager->getBanInfo(l_lookup_type, l_id);
+    const QList<DBManager::BanInfo> l_bans = p_server_data->db_manager->getBanInfo(l_lookup_type, l_id);
     for (const DBManager::BanInfo &l_ban : l_bans) {
         QString l_banned_until;
         if (l_ban.duration == -2)
@@ -478,7 +478,7 @@ void AOClient::cmdForceImmediate(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData* l_area = server->m_areas[m_current_area];
+    AreaData* l_area = p_server_data->m_areas[m_current_area];
     l_area->toggleImmediate();
     QString l_state = l_area->forceImmediate() ? "on." : "off.";
     sendServerMessage("Forced immediate text processing in this area is now " + l_state);
@@ -489,7 +489,7 @@ void AOClient::cmdAllowIniswap(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData* l_area = server->m_areas[m_current_area];
+    AreaData* l_area = p_server_data->m_areas[m_current_area];
     l_area->toggleIniswap();
     QString state = l_area->iniswapAllowed() ? "allowed." : "disallowed.";
     sendServerMessage("Iniswapping in this area is now " + state);
@@ -499,7 +499,7 @@ void AOClient::cmdPermitSaving(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
 
-    AOClient* l_client = server->getClientByID(argv[0].toInt());
+    AOClient* l_client = p_server_data->getClientByID(argv[0].toInt());
     if (l_client == nullptr) {
         sendServerMessage("Invalid ID.");
         return;
@@ -525,7 +525,7 @@ void AOClient::cmdKickUid(int argc, QStringList argv)
         return;
     }
 
-    AOClient* l_target = server->getClientByID(l_uid);
+    AOClient* l_target = p_server_data->getClientByID(l_uid);
     if (l_target == nullptr) {
         sendServerMessage("No client with that ID found.");
         return;
@@ -569,7 +569,7 @@ void AOClient::cmdUpdateBan(int argc, QStringList argv)
         sendServerMessage("Invalid update type.");
         return;
     }
-    if (!server->db_manager->updateBan(l_ban_id, argv[1], l_updated_info)) {
+    if (!p_server_data->db_manager->updateBan(l_ban_id, argv[1], l_updated_info)) {
         sendServerMessage("There was an error updating the ban. Please confirm the ban ID is valid.");
         return;
     }
@@ -594,7 +594,7 @@ void AOClient::cmdClearCM(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData* l_area = server->m_areas.value(m_current_area);
+    AreaData* l_area = p_server_data->m_areas.value(m_current_area);
     foreach (int l_client_id,l_area->owners()) {
         l_area->removeOwner(l_client_id);
     }

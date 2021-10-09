@@ -86,7 +86,7 @@ void AOClient::cmdSetRootPass(int argc, QStringList argv)
 #endif
     QString l_salt = QStringLiteral("%1").arg(l_salt_number, 16, 16, QLatin1Char('0'));
 
-    server->db_manager->createUser("root", l_salt, argv[0], ACLFlags.value("SUPER"));
+    p_server_data->db_manager->createUser("root", l_salt, argv[0], ACLFlags.value("SUPER"));
 }
 
 void AOClient::cmdAddUser(int argc, QStringList argv)
@@ -107,7 +107,7 @@ void AOClient::cmdAddUser(int argc, QStringList argv)
 #endif
     QString l_salt = QStringLiteral("%1").arg(l_salt_number, 16, 16, QLatin1Char('0'));
 
-    if (server->db_manager->createUser(argv[0], l_salt, argv[1], ACLFlags.value("NONE")))
+    if (p_server_data->db_manager->createUser(argv[0], l_salt, argv[1], ACLFlags.value("NONE")))
         sendServerMessage("Created user " + argv[0] + ".\nUse /addperm to modify their permissions.");
     else
         sendServerMessage("Unable to create user " + argv[0] + ".\nDoes a user with that name already exist?");
@@ -117,7 +117,7 @@ void AOClient::cmdRemoveUser(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
 
-    if (server->db_manager->deleteUser(argv[0]))
+    if (p_server_data->db_manager->deleteUser(argv[0]))
         sendServerMessage("Successfully removed user " + argv[0] + ".");
     else
         sendServerMessage("Unable to remove user " + argv[0] + ".\nDoes it exist?");
@@ -125,7 +125,7 @@ void AOClient::cmdRemoveUser(int argc, QStringList argv)
 
 void AOClient::cmdListPerms(int argc, QStringList argv)
 {
-    unsigned long long l_user_acl = server->db_manager->getACL(m_moderator_name);
+    unsigned long long l_user_acl = p_server_data->db_manager->getACL(m_moderator_name);
     QStringList l_message;
     const QStringList l_keys = ACLFlags.keys();
     if (argc == 0) {
@@ -149,7 +149,7 @@ void AOClient::cmdListPerms(int argc, QStringList argv)
         }
 
         l_message.append("User " + argv[0] + " has the following permissions:");
-        unsigned long long l_acl = server->db_manager->getACL(argv[0]);
+        unsigned long long l_acl = p_server_data->db_manager->getACL(argv[0]);
         if (l_acl == 0) {
             sendServerMessage("This user either doesn't exist, or has no permissions set.");
             return;
@@ -168,7 +168,7 @@ void AOClient::cmdAddPerms(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
 
-    unsigned long long l_user_acl = server->db_manager->getACL(m_moderator_name);
+    unsigned long long l_user_acl = p_server_data->db_manager->getACL(m_moderator_name);
     argv[1] = argv[1].toUpper();
     const QStringList l_keys = ACLFlags.keys();
 
@@ -191,7 +191,7 @@ void AOClient::cmdAddPerms(int argc, QStringList argv)
 
     unsigned long long l_newperm = ACLFlags.value(argv[1]);
     if ((l_newperm & l_user_acl) != 0) {
-        if (server->db_manager->updateACL(argv[0], l_newperm, true))
+        if (p_server_data->db_manager->updateACL(argv[0], l_newperm, true))
             sendServerMessage("Successfully added permission " + argv[1] + " to user " + argv[0]);
         else
             sendServerMessage(argv[0] + " wasn't found!");
@@ -205,7 +205,7 @@ void AOClient::cmdRemovePerms(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
 
-    unsigned long long l_user_acl = server->db_manager->getACL(m_moderator_name);
+    unsigned long long l_user_acl = p_server_data->db_manager->getACL(m_moderator_name);
     argv[1] = argv[1].toUpper();
 
     const QStringList l_keys = ACLFlags.keys();
@@ -234,7 +234,7 @@ void AOClient::cmdRemovePerms(int argc, QStringList argv)
 
     unsigned long long l_newperm = ACLFlags.value(argv[1]);
     if ((l_newperm & l_user_acl) != 0) {
-        if (server->db_manager->updateACL(argv[0], l_newperm, false))
+        if (p_server_data->db_manager->updateACL(argv[0], l_newperm, false))
             sendServerMessage("Successfully removed permission " + argv[1] + " from user " + argv[0]);
         else
             sendServerMessage(argv[0] + " wasn't found!");
@@ -249,7 +249,7 @@ void AOClient::cmdListUsers(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    QStringList l_users = server->db_manager->getUsers();
+    QStringList l_users = p_server_data->db_manager->getUsers();
     sendServerMessage("All users:\n" + l_users.join("\n"));
 }
 
@@ -293,7 +293,7 @@ void AOClient::cmdChangePassword(int argc, QStringList argv)
         return;
     }
 
-    if (server->db_manager->updatePassword(l_username, l_password)) {
+    if (p_server_data->db_manager->updatePassword(l_username, l_password)) {
         sendServerMessage("Successfully changed password.");
     }
     else {

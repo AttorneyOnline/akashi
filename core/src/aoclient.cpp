@@ -53,18 +53,18 @@ void AOClient::clientDisconnected()
     qDebug() << remote_ip.toString() << "disconnected";
 #endif
     if (m_joined) {
-        server->m_player_count--;
-        server->m_areas[m_current_area]->clientLeftArea(server->getCharID(m_current_char));
+        p_server_data->m_player_count--;
+        p_server_data->m_areas[m_current_area]->clientLeftArea(p_server_data->getCharID(m_current_char));
         arup(ARUPType::PLAYER_COUNT, true);
     }
 
     if (m_current_char != "") {
-        server->updateCharsTaken(server->m_areas[m_current_area]);
+        p_server_data->updateCharsTaken(p_server_data->m_areas[m_current_area]);
     }
 
     bool l_updateLocks = false;
 
-    for (AreaData* l_area : qAsConst(server->m_areas)) {
+    for (AreaData* l_area : qAsConst(p_server_data->m_areas)) {
         l_updateLocks = l_updateLocks || l_area->removeOwner(m_id);
     }
 
@@ -78,7 +78,7 @@ void AOClient::handlePacket(AOPacket packet)
 #ifdef NET_DEBUG
     qDebug() << "Received packet:" << packet.header << ":" << packet.contents << "args length:" << packet.contents.length();
 #endif
-    AreaData* l_area = server->m_areas[m_current_area];
+    AreaData* l_area = p_server_data->m_areas[m_current_area];
     PacketInfo l_info = packets.value(packet.header, {false, 0, &AOClient::pktDefault});
 
     if (packet.contents.join("").size() > 16384) {
@@ -109,38 +109,38 @@ void AOClient::handlePacket(AOPacket packet)
 void AOClient::changeArea(int new_area)
 {
     if (m_current_area == new_area) {
-        sendServerMessage("You are already in area " + server->m_area_names[m_current_area]);
+        sendServerMessage("You are already in area " + p_server_data->m_area_names[m_current_area]);
         return;
     }
-    if (server->m_areas[new_area]->lockStatus() == AreaData::LockStatus::LOCKED && !server->m_areas[new_area]->invited().contains(m_id) && !checkAuth(ACLFlags.value("BYPASS_LOCKS"))) {
-        sendServerMessage("Area " + server->m_area_names[new_area] + " is locked.");
+    if (p_server_data->m_areas[new_area]->lockStatus() == AreaData::LockStatus::LOCKED && !p_server_data->m_areas[new_area]->invited().contains(m_id) && !checkAuth(ACLFlags.value("BYPASS_LOCKS"))) {
+        sendServerMessage("Area " + p_server_data->m_area_names[new_area] + " is locked.");
         return;
     }
 
     if (m_current_char != "") {
-        server->m_areas[m_current_area]->changeCharacter(server->getCharID(m_current_char), -1);
-        server->updateCharsTaken(server->m_areas[m_current_area]);
+        p_server_data->m_areas[m_current_area]->changeCharacter(p_server_data->getCharID(m_current_char), -1);
+        p_server_data->updateCharsTaken(p_server_data->m_areas[m_current_area]);
     }
-    server->m_areas[m_current_area]->clientLeftArea(m_char_id);
+    p_server_data->m_areas[m_current_area]->clientLeftArea(m_char_id);
     bool l_character_taken = false;
-    if (server->m_areas[new_area]->charactersTaken().contains(server->getCharID(m_current_char))) {
+    if (p_server_data->m_areas[new_area]->charactersTaken().contains(p_server_data->getCharID(m_current_char))) {
         m_current_char = "";
         m_char_id = -1;
         l_character_taken = true;
     }
-    server->m_areas[new_area]->clientJoinedArea(m_char_id);
+    p_server_data->m_areas[new_area]->clientJoinedArea(m_char_id);
     m_current_area = new_area;
     arup(ARUPType::PLAYER_COUNT, true);
-    sendEvidenceList(server->m_areas[new_area]);
-    sendPacket("HP", {"1", QString::number(server->m_areas[new_area]->defHP())});
-    sendPacket("HP", {"2", QString::number(server->m_areas[new_area]->proHP())});
-    sendPacket("BN", {server->m_areas[new_area]->background()});
+    sendEvidenceList(p_server_data->m_areas[new_area]);
+    sendPacket("HP", {"1", QString::number(p_server_data->m_areas[new_area]->defHP())});
+    sendPacket("HP", {"2", QString::number(p_server_data->m_areas[new_area]->proHP())});
+    sendPacket("BN", {p_server_data->m_areas[new_area]->background()});
     if (l_character_taken) {
         sendPacket("DONE");
     }
-    const QList<QTimer*> l_timers = server->m_areas[m_current_area]->timers();
+    const QList<QTimer*> l_timers = p_server_data->m_areas[m_current_area]->timers();
     for (QTimer* l_timer : l_timers) {
-        int l_timer_id = server->m_areas[m_current_area]->timers().indexOf(l_timer) + 1;
+        int l_timer_id = p_server_data->m_areas[m_current_area]->timers().indexOf(l_timer) + 1;
         if (l_timer->isActive()) {
             sendPacket("TI", {QString::number(l_timer_id), "2"});
             sendPacket("TI", {QString::number(l_timer_id), "0", QString::number(QTime(0,0).msecsTo(QTime(0,0).addMSecs(l_timer->remainingTime())))});
@@ -149,33 +149,33 @@ void AOClient::changeArea(int new_area)
             sendPacket("TI", {QString::number(l_timer_id), "3"});
         }
     }
-    sendServerMessage("You moved to area " + server->m_area_names[m_current_area]);
-    if (server->m_areas[m_current_area]->lockStatus() == AreaData::LockStatus::SPECTATABLE)
-        sendServerMessage("Area " + server->m_area_names[m_current_area] + " is spectate-only; to chat IC you will need to be invited by the CM.");
+    sendServerMessage("You moved to area " + p_server_data->m_area_names[m_current_area]);
+    if (p_server_data->m_areas[m_current_area]->lockStatus() == AreaData::LockStatus::SPECTATABLE)
+        sendServerMessage("Area " + p_server_data->m_area_names[m_current_area] + " is spectate-only; to chat IC you will need to be invited by the CM.");
 }
 
 bool AOClient::changeCharacter(int char_id)
 {
-    AreaData* l_area = server->m_areas[m_current_area];
+    AreaData* l_area = p_server_data->m_areas[m_current_area];
 
-    if(char_id >= server->m_characters.length())
+    if(char_id >= p_server_data->m_characters.length())
         return false;
 
     if (m_is_charcursed && !m_charcurse_list.contains(char_id)) {
         return false;
     }
     
-    bool l_successfulChange = l_area->changeCharacter(server->getCharID(m_current_char), char_id);
+    bool l_successfulChange = l_area->changeCharacter(p_server_data->getCharID(m_current_char), char_id);
 
     if (char_id < 0) {
         m_current_char = "";
     }
 
     if (l_successfulChange == true) {
-        QString l_char_selected = server->m_characters[char_id];
+        QString l_char_selected = p_server_data->m_characters[char_id];
         m_current_char = l_char_selected;
         m_pos = "";
-        server->updateCharsTaken(l_area);
+        p_server_data->updateCharsTaken(l_area);
         sendPacket("PV", {QString::number(m_id), "CID", QString::number(char_id)});
         return true;
     }
@@ -211,7 +211,7 @@ void AOClient::arup(ARUPType type, bool broadcast)
 {
     QStringList l_arup_data;
     l_arup_data.append(QString::number(type));
-    for (AreaData* l_area : qAsConst(server->m_areas)) {
+    for (AreaData* l_area : qAsConst(p_server_data->m_areas)) {
         switch(type) {
             case ARUPType::PLAYER_COUNT: {
                 l_arup_data.append(QString::number(l_area->playerCount()));
@@ -229,7 +229,7 @@ void AOClient::arup(ARUPType type, bool broadcast)
                     QStringList l_area_owners;
                     const QList<int> l_owner_ids = l_area->owners();
                     for (int l_owner_id : l_owner_ids) {
-                        AOClient* l_owner = server->getClientByID(l_owner_id);
+                        AOClient* l_owner = p_server_data->getClientByID(l_owner_id);
                         l_area_owners.append("[" + QString::number(l_owner->m_id) + "] " + l_owner->m_current_char);
                     }
                     l_arup_data.append(l_area_owners.join(", "));
@@ -320,7 +320,7 @@ bool AOClient::checkAuth(unsigned long long acl_mask)
 #endif
     if (acl_mask != ACLFlags.value("NONE")) {
         if (acl_mask == ACLFlags.value("CM")) {
-            AreaData* l_area = server->m_areas[m_current_area];
+            AreaData* l_area = p_server_data->m_areas[m_current_area];
             if (l_area->owners().contains(m_id))
                 return true;
         }
@@ -332,7 +332,7 @@ bool AOClient::checkAuth(unsigned long long acl_mask)
             return m_authenticated;
             break;
         case DataTypes::AuthType::ADVANCED:
-            unsigned long long l_user_acl = server->db_manager->getACL(m_moderator_name);
+            unsigned long long l_user_acl = p_server_data->db_manager->getACL(m_moderator_name);
             return (l_user_acl & acl_mask) != 0;
             break;
         }

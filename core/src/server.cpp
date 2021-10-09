@@ -146,7 +146,6 @@ void Server::clientConnected()
     }
 
     server_data->m_clients.append(client);
-    server_data->m_clients.append(client);
     connect(socket, &QTcpSocket::disconnected, client,
             &AOClient::clientDisconnected);
     connect(socket, &QTcpSocket::disconnected, this, [=] {
