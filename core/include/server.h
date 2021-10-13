@@ -150,6 +150,11 @@ class Server : public QObject {
     void updateHTTPAdvertiserConfig();
 
     /**
+     * @brief Checks if an IP is in a subnet of the IPBanlist.
+     **/
+    bool isIPBanned(QHostAddress f_remote_IP);
+
+    /**
      * @brief Getter for an area specific buffer from the logger.
      */
     QQueue<QString> getAreaBuffer(const QString& f_areaName);
@@ -301,11 +306,6 @@ class Server : public QObject {
      * @brief Connects new AOClient to the logger.
      **/
     void hookupLogger(AOClient* client);
-
-    /**
-     * @brief Checks if an IP is in a subnet of the IPBanlist.
-     **/
-    bool isIPBanned(QHostAddress f_remote_IP);
 
     /**
      * @brief The proxy used for WebSocket connections.
