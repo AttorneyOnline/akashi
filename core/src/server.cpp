@@ -148,7 +148,12 @@ void Server::clientConnected()
         return;
     }
 
-    if (isIPBanned(client->m_remote_ip)){
+    QHostAddress l_remote_ip = client->m_remote_ip;
+    if (l_remote_ip.protocol() == QAbstractSocket::IPv6Protocol) {
+        l_remote_ip = parseToIPv4(l_remote_ip);
+    }
+
+    if (isIPBanned(l_remote_ip)){
         QString l_reason = "Your IP has been banned by a moderator.";
         AOPacket l_ban_reason("BD", {l_reason});
         socket->write(l_ban_reason.toUtf8());
@@ -210,6 +215,17 @@ QStringList Server::getCursedCharsTaken(AOClient* client, QStringList chars_take
             chars_taken_cursed.append(chars_taken.value(i));
     }
     return chars_taken_cursed;
+}
+
+QHostAddress Server::parseToIPv4(QHostAddress f_remote_ip)
+{
+    bool l_ok;
+    QHostAddress l_remote_ip = f_remote_ip;
+    QHostAddress l_temp_remote_ip = QHostAddress(f_remote_ip.toIPv4Address(&l_ok));
+    if (l_ok) {
+        l_remote_ip = l_temp_remote_ip;
+    }
+    return l_remote_ip;
 }
 
 void Server::broadcast(AOPacket packet, int area_index)

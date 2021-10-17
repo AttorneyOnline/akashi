@@ -399,7 +399,12 @@ void AOClient::pktWebSocketIp(AreaData* area, int argc, QStringList argv, AOPack
 #endif
         m_remote_ip = QHostAddress(argv[0]);
 
-        if (server->isIPBanned(m_remote_ip)){
+        QHostAddress l_remote_ip = m_remote_ip;
+        if (l_remote_ip.protocol() == QAbstractSocket::IPv6Protocol) {
+            l_remote_ip = server->parseToIPv4(l_remote_ip);
+        }
+
+        if (server->isIPBanned(l_remote_ip)){
             QString l_reason = "Your IP has been banned by a moderator.";
             AOPacket l_ban_reason("BD", {l_reason});
             m_socket->write(l_ban_reason.toUtf8());

@@ -224,6 +224,11 @@ class Server : public QObject {
     QTimer next_message_timer;
 
     /**
+     * @brief Attempts to parse a IPv6 mapped IPv4 to an IPv4.
+     */
+    QHostAddress parseToIPv4(QHostAddress f_remote_ip);
+
+    /**
      * @brief If false, IC messages will be rejected.
      */
     bool can_send_ic_messages = true;
