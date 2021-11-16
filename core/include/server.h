@@ -76,6 +76,14 @@ class Server : public QObject {
     void start();
 
     /**
+     * @brief Enum to specifc different targets to send altered packets to a specific usergroup.
+     */
+    enum class TARGET_TYPE {
+        AUTHENTICATED
+    };
+    Q_ENUM(TARGET_TYPE)
+
+    /**
      * @brief Gets a pointer to a client by IPID.
      *
      * @param ipid The IPID to look for.
@@ -128,6 +136,14 @@ class Server : public QObject {
      * @param packet The packet to send to the clients.
      */
     void broadcast(AOPacket packet);
+
+    /**
+     * @brief Sends a packet to clients, sends an altered packet to a specific usergroup.
+     * @param The packet to send to the clients.
+     * @param The altered packet to send to the other clients.
+     * @param tENUM to determine the targets of the altered packet.
+     */
+    void broadcast(AOPacket packet, AOPacket other_packet, enum TARGET_TYPE target);
 
     /**
      * @brief Returns the character's character ID (= their index in the character list).

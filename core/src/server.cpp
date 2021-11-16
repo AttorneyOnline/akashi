@@ -215,6 +215,21 @@ void Server::broadcast(AOPacket packet)
     }
 }
 
+void Server::broadcast(AOPacket packet, AOPacket other_packet, TARGET_TYPE target)
+{
+    switch (target) {
+    case TARGET_TYPE::AUTHENTICATED:
+        for (AOClient* client : qAsConst(m_clients)){
+            if (client->m_authenticated) {
+                client->sendPacket(other_packet);
+            }
+            else {
+                client->sendPacket(packet);
+            }
+        }
+    }
+}
+
 QList<AOClient*> Server::getClientsByIpid(QString ipid)
 {
     QList<AOClient*> return_clients;
