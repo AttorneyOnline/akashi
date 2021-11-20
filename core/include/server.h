@@ -79,7 +79,8 @@ class Server : public QObject {
      * @brief Enum to specifc different targets to send altered packets to a specific usergroup.
      */
     enum class TARGET_TYPE {
-        AUTHENTICATED
+        AUTHENTICATED,
+        MODCHAT
     };
     Q_ENUM(TARGET_TYPE)
 
@@ -139,9 +140,21 @@ class Server : public QObject {
 
     /**
      * @brief Sends a packet to clients, sends an altered packet to a specific usergroup.
+     *
      * @param The packet to send to the clients.
+     *
+     * @param ENUM to determine the targets of the altered packet.
+     */
+    void broadcast(AOPacket packet, TARGET_TYPE target);
+
+    /**
+     * @brief Sends a packet to clients, sends an altered packet to a specific usergroup.
+     *
+     * @param The packet to send to the clients.
+     *
      * @param The altered packet to send to the other clients.
-     * @param tENUM to determine the targets of the altered packet.
+     *
+     * @param ENUM to determine the targets of the altered packet.
      */
     void broadcast(AOPacket packet, AOPacket other_packet, enum TARGET_TYPE target);
 

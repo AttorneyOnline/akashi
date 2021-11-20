@@ -173,11 +173,7 @@ void AOClient::cmdM(int argc, QStringList argv)
 
     QString l_sender_name = m_ooc_name;
     QString l_sender_message = argv.join(" ");
-    for (AOClient* client : qAsConst(server->m_clients)) {
-        if (client->checkAuth(ACLFlags.value("MODCHAT")))
-            client->sendPacket("CT", {"[M]" + l_sender_name, l_sender_message});
-    }
-    return;
+    server->broadcast(AOPacket("CT", {"[M]" + l_sender_name, l_sender_message}), Server::TARGET_TYPE::MODCHAT);
 }
 
 void AOClient::cmdGM(int argc, QStringList argv)
@@ -187,11 +183,7 @@ void AOClient::cmdGM(int argc, QStringList argv)
     QString l_sender_name = m_ooc_name;
     QString l_sender_area = server->m_area_names.value(m_current_area);
     QString l_sender_message = argv.join(" ");
-    for (AOClient* l_client : qAsConst(server->m_clients)) {
-        if (l_client->m_global_enabled) {
-            l_client->sendPacket("CT", {"[G][" + l_sender_area + "]" + "["+ l_sender_name+"][M]", l_sender_message});
-        }
-    }
+    server->broadcast(AOPacket("CT", {"[G][" + l_sender_area + "]" + "["+ l_sender_name+"][M]", l_sender_message}),Server::TARGET_TYPE::MODCHAT);
 }
 
 void AOClient::cmdLM(int argc, QStringList argv)

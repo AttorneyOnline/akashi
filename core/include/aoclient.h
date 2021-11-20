@@ -307,6 +307,16 @@ class AOClient : public QObject {
      */
     bool m_is_logging_in = false;
 
+    /**
+     * @brief Checks if the client would be authorised to something based on its necessary permissions.
+     *
+     * @param acl_mask The permissions bitflag that the client's own permissions should be checked against.
+     *
+     * @return True if the client's permissions are high enough for `acl_mask`, or higher than it.
+     * False if the client is missing some permissions.
+     */
+    bool checkAuth(unsigned long long acl_mask);
+
   public slots:
     /**
      * @brief A slot for when the client disconnects from the server.
@@ -432,16 +442,6 @@ class AOClient : public QObject {
      * @param message The text of the message to send.
      */
     void sendServerBroadcast(QString message);
-
-    /**
-     * @brief Checks if the client would be authorised to something based on its necessary permissions.
-     *
-     * @param acl_mask The permissions bitflag that the client's own permissions should be checked against.
-     *
-     * @return True if the client's permissions are high enough for `acl_mask`, or higher than it.
-     * False if the client is missing some permissions.
-     */
-    bool checkAuth(unsigned long long acl_mask);
 
     /**
       * @name Packet headers

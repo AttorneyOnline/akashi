@@ -215,6 +215,21 @@ void Server::broadcast(AOPacket packet)
     }
 }
 
+void Server::broadcast(AOPacket packet, TARGET_TYPE target)
+{
+    switch (target) {
+    case TARGET_TYPE::MODCHAT:
+        for (AOClient* l_client : qAsConst(m_clients)) {
+            if (l_client->checkAuth(l_client->ACLFlags.value("MODCHAT"))) {
+                l_client->sendPacket(packet);
+            }
+        }
+    default:
+        //Unimplemented, so not handled.
+        break;
+    }
+}
+
 void Server::broadcast(AOPacket packet, AOPacket other_packet, TARGET_TYPE target)
 {
     switch (target) {
@@ -227,6 +242,9 @@ void Server::broadcast(AOPacket packet, AOPacket other_packet, TARGET_TYPE targe
                 client->sendPacket(packet);
             }
         }
+    default:
+        //Unimplemented, so not handled.
+        break;
     }
 }
 
