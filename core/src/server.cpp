@@ -217,16 +217,21 @@ void Server::broadcast(AOPacket packet)
 
 void Server::broadcast(AOPacket packet, TARGET_TYPE target)
 {
-    switch (target) {
-    case TARGET_TYPE::MODCHAT:
-        for (AOClient* l_client : qAsConst(m_clients)) {
+    for (AOClient* l_client : qAsConst(m_clients)) {
+        switch (target) {
+        case TARGET_TYPE::MODCHAT:
             if (l_client->checkAuth(l_client->ACLFlags.value("MODCHAT"))) {
                 l_client->sendPacket(packet);
             }
+            break;
+        case TARGET_TYPE::ADVERT:
+            if (l_client->m_advert_enabled) {
+                l_client->sendPacket(packet);
+            }
+            break;
+        default:
+            break;
         }
-    default:
-        //Unimplemented, so not handled.
-        break;
     }
 }
 

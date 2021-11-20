@@ -80,7 +80,8 @@ class Server : public QObject {
      */
     enum class TARGET_TYPE {
         AUTHENTICATED,
-        MODCHAT
+        MODCHAT,
+        ADVERT
     };
     Q_ENUM(TARGET_TYPE)
 

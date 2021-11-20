@@ -71,6 +71,7 @@ void AOClient::cmdG(int argc, QStringList argv)
     QString l_sender_name = m_ooc_name;
     QString l_sender_area = server->m_area_names.value(m_current_area);
     QString l_sender_message = argv.join(" ");
+    //Slightly better readability
     AOPacket l_packet = AOPacket("CT", {"[G][" + m_ipid + "][" + l_sender_area + "]" + l_sender_name, l_sender_message});
     AOPacket l_other_packet = AOPacket("CT", {"[G][" + l_sender_area + "]" + l_sender_name, l_sender_message});
     server->broadcast(l_packet, l_other_packet, Server::TARGET_TYPE::AUTHENTICATED);
@@ -83,11 +84,7 @@ void AOClient::cmdNeed(int argc, QStringList argv)
 
     QString l_sender_area = server->m_area_names.value(m_current_area);
     QString l_sender_message = argv.join(" ");
-    for (AOClient* l_client : qAsConst(server->m_clients)) {
-        if (l_client->m_advert_enabled) {
-            l_client->sendServerMessage({"=== Advert ===\n[" + l_sender_area + "] needs " + l_sender_message+ "."});
-        }
-    }
+    server->broadcast(AOPacket("CT",{"=== Advert ===\n[" + l_sender_area + "] needs " + l_sender_message+ "."}),Server::TARGET_TYPE::ADVERT);
 }
 
 void AOClient::cmdSwitch(int argc, QStringList argv)
