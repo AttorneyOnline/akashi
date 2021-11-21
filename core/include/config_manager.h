@@ -382,6 +382,15 @@ class ConfigManager {
     static bool passwordCanContainUsername();
 
     /**
+     * @brief Returns the logstring for the specified logtype.
+     *
+     * @param Name of the logstring we want.
+     *
+     * @return See short description.
+     */
+    static QString LogText(QString f_logtype);
+
+    /**
      * @brief Returns the duration before a client is considered AFK.
      *
      * @return See short description.
@@ -519,6 +528,11 @@ private:
      * @brief Stores all of the area valus.
      */
     static QSettings* m_areas;
+
+    /**
+     * @brief Stores all adjustable logstrings.
+     */
+    static QSettings* m_logtext;
 
     /**
      * @brief Pointer to QElapsedTimer to track the uptime of the server.

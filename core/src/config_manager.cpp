@@ -22,6 +22,7 @@
 QSettings* ConfigManager::m_settings = new QSettings("config/config.ini", QSettings::IniFormat);
 QSettings* ConfigManager::m_discord = new QSettings("config/discord.ini", QSettings::IniFormat);
 QSettings* ConfigManager::m_areas = new QSettings("config/areas.ini", QSettings::IniFormat);
+QSettings* ConfigManager::m_logtext = new QSettings("config/text/logtext.ini", QSettings::IniFormat);
 ConfigManager::CommandSettings* ConfigManager::m_commands = new CommandSettings();
 QElapsedTimer* ConfigManager::m_uptimeTimer = new QElapsedTimer;
 QHash<QString,float>* ConfigManager::m_musicList = new QHash<QString,float>;
@@ -239,6 +240,7 @@ void ConfigManager::reloadSettings()
 {
     m_settings->sync();
     m_discord->sync();
+    m_logtext->sync();
 }
 
 QStringList ConfigManager::loadConfigFile(const QString filename)
@@ -520,6 +522,11 @@ bool ConfigManager::passwordRequireSpecialCharacters()
 bool ConfigManager::passwordCanContainUsername()
 {
     return m_settings->value("Password/pass_can_contain_username", false).toBool();
+}
+
+QString ConfigManager::LogText(QString f_logtype)
+{
+    return m_logtext->value("LogConfiguration/" + f_logtype,"").toString();
 }
 
 int ConfigManager::afkTimeout()
