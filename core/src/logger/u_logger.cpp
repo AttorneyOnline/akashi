@@ -48,8 +48,7 @@ void ULogger::logIC(const QString& f_char_name, const QString& f_ooc_name, const
                     const QString& f_area_name, const QString& f_message)
 {
     QString l_time = QDateTime::currentDateTime().toString("ddd MMMM d yyyy | hh:mm:ss");
-    QString l_logEntry = QStringLiteral("[%1][%5][IC][%2(%3)][%4]%6\n")
-            .arg(l_time, f_char_name, f_ooc_name, f_ipid, f_area_name, f_message);
+    QString l_logEntry = QString(ConfigManager::LogText("ic") + "\n").arg(l_time, f_char_name, f_ooc_name, f_ipid, f_area_name, f_message);
     updateAreaBuffer(f_area_name,l_logEntry);
 }
 
@@ -57,7 +56,7 @@ void ULogger::logOOC(const QString& f_char_name, const QString& f_ooc_name, cons
                      const QString& f_area_name, const QString& f_message)
 {
     QString l_time = QDateTime::currentDateTime().toString("ddd MMMM d yyyy | hh:mm:ss");
-    QString l_logEntry = QStringLiteral("[%1][%5][OOC][%2(%3)][%4]%6\n")
+    QString l_logEntry = QString(ConfigManager::LogText("ooc") + "\n")
             .arg(l_time, f_char_name, f_ooc_name, f_ipid, f_area_name, f_message);
     updateAreaBuffer(f_area_name,l_logEntry);
 }
@@ -67,7 +66,7 @@ void ULogger::logLogin(const QString& f_char_name, const QString& f_ooc_name, co
 {
     QString l_time = QDateTime::currentDateTime().toString("ddd MMMM d yyyy | hh:mm:ss");
     QString l_success = f_success ? "SUCCESS][" + f_moderator_name : "FAILED][" + f_moderator_name;
-    QString l_logEntry = QStringLiteral("[%1][LOGIN][%2][%3][%4(%5)]\n")
+    QString l_logEntry = QString(ConfigManager::LogText("login") + "\n")
             .arg(l_time, l_success, f_ipid, f_char_name, f_ooc_name);
     updateAreaBuffer(f_area_name, l_logEntry);
 }
@@ -80,19 +79,19 @@ void ULogger::logCMD(const QString& f_char_name,const QString& f_ipid, const QSt
     // Some commands contain sensitive data, like passwords
     // These must be filtered out
     if (f_command == "login") {
-        l_logEntry = QStringLiteral("[%1][%2][LOGIN][%5][%3(%4)]\n")
+        l_logEntry = QString(ConfigManager::LogText("cmdlogin") + "\n")
                 .arg(l_time, f_area_name, f_char_name, f_ooc_name, f_ipid);
     }
     else if (f_command == "rootpass") {
-        l_logEntry = QStringLiteral("[%1][%2][ROOTPASS][%5][%3(%4)]\n")
+        l_logEntry = QString(ConfigManager::LogText("cmdrootpass") + "\n")
                 .arg(l_time, f_area_name, f_char_name, f_ooc_name, f_ipid);
     }
     else if (f_command == "adduser" && !f_args.isEmpty()) {
-        l_logEntry = QStringLiteral("[%1][%2][USERADD][%6][%3(%4)]%5\n")
+        l_logEntry = QString(ConfigManager::LogText("adduser") +  "\n")
                 .arg(l_time, f_area_name, f_char_name, f_ooc_name, f_args.at(0), f_ipid);
     }
     else {
-        l_logEntry = QStringLiteral("[%1][%2][CMD][%7][%3(%4)]/%5 %6\n")
+        l_logEntry = QString(ConfigManager::LogText("cmd") + "\n")
                 .arg(l_time, f_area_name, f_char_name, f_ooc_name, f_command, f_args.join(" "), f_ipid);
     }
     updateAreaBuffer(f_area_name,l_logEntry);
@@ -101,7 +100,7 @@ void ULogger::logCMD(const QString& f_char_name,const QString& f_ipid, const QSt
 void ULogger::logKick(const QString& f_moderator, const QString& f_target_ipid)
 {
     QString l_time = QDateTime::currentDateTime().toString("ddd MMMM d yyyy | hh:mm:ss");
-    QString l_logEntry = QStringLiteral("[%1][%2][KICK][%3]\n")
+    QString l_logEntry = QString(ConfigManager::LogText("kick") + "\n")
             .arg(l_time, f_moderator, f_target_ipid);
     updateAreaBuffer("SERVER",l_logEntry);
 }
@@ -109,7 +108,7 @@ void ULogger::logKick(const QString& f_moderator, const QString& f_target_ipid)
 void ULogger::logBan(const QString &f_moderator, const QString &f_target_ipid, const QString &f_duration)
 {
     QString l_time = QDateTime::currentDateTime().toString("ddd MMMM d yyyy | hh:mm:ss");
-    QString l_logEntry = QStringLiteral("[%1][%2][BAN][%3][%4]\n")
+    QString l_logEntry = QString(ConfigManager::LogText("ban") + "\n")
             .arg(l_time, f_moderator, f_target_ipid, f_duration);
     updateAreaBuffer("SERVER",l_logEntry);
 }
@@ -117,7 +116,7 @@ void ULogger::logBan(const QString &f_moderator, const QString &f_target_ipid, c
 void ULogger::logModcall(const QString &f_char_name, const QString &f_ipid, const QString &f_ooc_name, const QString &f_area_name)
 {
     QString l_time = QDateTime::currentDateTime().toString("ddd MMMM d yyyy | hh:mm:ss");
-    QString l_logEvent = QStringLiteral("[%1][%2][MODCALL][%5][%3(%4)]\n")
+    QString l_logEvent = QString(ConfigManager::LogText("modcall") + "\n")
             .arg(l_time, f_area_name, f_char_name, f_ooc_name, f_ipid);
     updateAreaBuffer(f_area_name, l_logEvent);
 
@@ -129,7 +128,7 @@ void ULogger::logModcall(const QString &f_char_name, const QString &f_ipid, cons
 void ULogger::logConnectionAttempt(const QString& f_ip_address, const QString& f_ipid, const QString& f_hwid)
 {
     QString l_time = QDateTime::currentDateTime().toString("ddd MMMM d yyyy | hh:mm:ss");
-    QString l_logEntry = QStringLiteral("[%1][CONNECT][%2][%3][%4]\n")
+    QString l_logEntry = QString(ConfigManager::LogText("connect") + "\n")
             .arg(l_time, f_ip_address, f_ipid, f_hwid);
     updateAreaBuffer("SERVER",l_logEntry);
 }
