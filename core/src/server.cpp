@@ -215,6 +215,44 @@ void Server::broadcast(AOPacket packet)
     }
 }
 
+void Server::broadcast(AOPacket packet, TARGET_TYPE target)
+{
+    for (AOClient* l_client : qAsConst(m_clients)) {
+        switch (target) {
+        case TARGET_TYPE::MODCHAT:
+            if (l_client->checkAuth(l_client->ACLFlags.value("MODCHAT"))) {
+                l_client->sendPacket(packet);
+            }
+            break;
+        case TARGET_TYPE::ADVERT:
+            if (l_client->m_advert_enabled) {
+                l_client->sendPacket(packet);
+            }
+            break;
+        default:
+            break;
+        }
+    }
+}
+
+void Server::broadcast(AOPacket packet, AOPacket other_packet, TARGET_TYPE target)
+{
+    switch (target) {
+    case TARGET_TYPE::AUTHENTICATED:
+        for (AOClient* client : qAsConst(m_clients)){
+            if (client->m_authenticated) {
+                client->sendPacket(other_packet);
+            }
+            else {
+                client->sendPacket(packet);
+            }
+        }
+    default:
+        //Unimplemented, so not handled.
+        break;
+    }
+}
+
 QList<AOClient*> Server::getClientsByIpid(QString ipid)
 {
     QList<AOClient*> return_clients;

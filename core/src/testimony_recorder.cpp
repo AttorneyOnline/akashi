@@ -43,10 +43,10 @@ void AOClient::addStatement(QStringList packet)
                 area->addStatement(c_statement, packet);
                 area->setTestimonyRecording(AreaData::TestimonyRecording::PLAYBACK);
             }
-            else {
-                sendServerMessage("Unable to add more statements. The maximum amount of statements has been reached.");
-                area->setTestimonyRecording(AreaData::TestimonyRecording::PLAYBACK);
-            }
+        else {
+            sendServerMessage("Unable to add more statements. The maximum amount of statements has been reached.");
+            area->setTestimonyRecording(AreaData::TestimonyRecording::PLAYBACK);
+        }
     }
 }
 
