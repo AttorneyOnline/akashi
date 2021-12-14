@@ -474,6 +474,7 @@ void AOClient::cmdReload(int argc, QStringList argv)
     server->updateHTTPAdvertiserConfig();
     server->handleDiscordIntegration();
     server->m_music_list = ConfigManager::musiclist();
+    server->m_ipban_list = ConfigManager::iprangeBans();
     sendServerMessage("Reloaded configurations");
 }
 

@@ -30,6 +30,7 @@
 #include <QUrl>
 #include <QMetaEnum>
 #include <QElapsedTimer>
+#include <QHostAddress>
 
 //JSON loading requirements
 #include <QJsonDocument>
@@ -111,6 +112,13 @@ class ConfigManager {
      * @return See short description.
      */
     static QStringList rawAreaNames();
+
+    /**
+     * @brief Returns a list of the IPrange bans.
+     *
+     * @return See short description.
+     */
+    static QStringList iprangeBans();
 
     /**
      * @brief Returns true if the server should advertise to the master server.

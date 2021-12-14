@@ -99,6 +99,9 @@ void Server::start()
 
     //Loads the command help information. This is not stored inside the server.
     ConfigManager::loadCommandHelp();
+    
+    //Get IP bans
+    m_ipban_list = ConfigManager::iprangeBans();
 
     //Rate-Limiter for IC-Chat
     connect(&next_message_timer, SIGNAL(timeout()), this, SLOT(allowMessage()));
@@ -140,6 +143,20 @@ void Server::clientConnected()
     }
     if (is_banned || is_at_multiclient_limit) {
         socket->flush();
+        client->deleteLater();
+        socket->close();
+        return;
+    }
+
+    QHostAddress l_remote_ip = client->m_remote_ip;
+    if (l_remote_ip.protocol() == QAbstractSocket::IPv6Protocol) {
+        l_remote_ip = parseToIPv4(l_remote_ip);
+    }
+
+    if (isIPBanned(l_remote_ip)){
+        QString l_reason = "Your IP has been banned by a moderator.";
+        AOPacket l_ban_reason("BD", {l_reason});
+        socket->write(l_ban_reason.toUtf8());
         client->deleteLater();
         socket->close();
         return;
@@ -198,6 +215,17 @@ QStringList Server::getCursedCharsTaken(AOClient* client, QStringList chars_take
             chars_taken_cursed.append(chars_taken.value(i));
     }
     return chars_taken_cursed;
+}
+
+QHostAddress Server::parseToIPv4(QHostAddress f_remote_ip)
+{
+    bool l_ok;
+    QHostAddress l_remote_ip = f_remote_ip;
+    QHostAddress l_temp_remote_ip = QHostAddress(f_remote_ip.toIPv4Address(&l_ok));
+    if (l_ok) {
+        l_remote_ip = l_temp_remote_ip;
+    }
+    return l_remote_ip;
 }
 
 void Server::broadcast(AOPacket packet, int area_index)
@@ -355,6 +383,18 @@ void Server::hookupLogger(AOClient* client)
             logger, &ULogger::logKick);
     connect(client, &AOClient::logModcall,
             logger, &ULogger::logModcall);
+}
+
+bool Server::isIPBanned(QHostAddress f_remote_IP)
+{
+    bool l_match_found = false;
+    for(const QString &l_ipban : qAsConst(m_ipban_list)) {
+        if (f_remote_IP.isInSubnet(QHostAddress::parseSubnet(l_ipban))) {
+            l_match_found = true;
+            break;
+        }
+    }
+    return l_match_found;
 }
 
 Server::~Server()

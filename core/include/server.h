@@ -180,6 +180,11 @@ class Server : public QObject {
     void updateHTTPAdvertiserConfig();
 
     /**
+     * @brief Checks if an IP is in a subnet of the IPBanlist.
+     **/
+    bool isIPBanned(QHostAddress f_remote_IP);
+
+    /**
      * @brief Getter for an area specific buffer from the logger.
      */
     QQueue<QString> getAreaBuffer(const QString& f_areaName);
@@ -226,6 +231,11 @@ class Server : public QObject {
     QStringList m_backgrounds;
 
     /**
+     * @brief Collection of all IPs that are banned.
+     */
+    QStringList m_ipban_list;
+
+    /**
      * @brief The database manager on the server, used to store users' bans and authorisation details.
      */
     DBManager* db_manager;
@@ -242,6 +252,11 @@ class Server : public QObject {
      * @brief Timer until the next IC message can be sent.
      */
     QTimer next_message_timer;
+
+    /**
+     * @brief Attempts to parse a IPv6 mapped IPv4 to an IPv4.
+     */
+    QHostAddress parseToIPv4(QHostAddress f_remote_ip);
 
     /**
      * @brief If false, IC messages will be rejected.

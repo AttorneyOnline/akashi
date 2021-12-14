@@ -236,6 +236,18 @@ QStringList ConfigManager::rawAreaNames()
     return m_areas->childGroups();
 }
 
+QStringList ConfigManager::iprangeBans()
+{
+    QStringList l_iprange_bans;
+    QFile l_file("config/iprange_bans.txt");
+    l_file.open(QIODevice::ReadOnly | QIODevice::Text);
+    while (!(l_file.atEnd())) {
+        l_iprange_bans.append(l_file.readLine().trimmed());
+    }
+    l_file.close();
+    return l_iprange_bans;
+}
+
 void ConfigManager::reloadSettings()
 {
     m_settings->sync();
