@@ -96,6 +96,11 @@ public slots:
      */
     void logConnectionAttempt(const QString& f_ip_address, const QString& f_ipid, const QString& f_hwid);
 
+    /**
+     * @brief Loads template strings for the logger.
+     */
+    void loadLogtext();
+
 private:
 
     /**
@@ -121,6 +126,26 @@ private:
      * @brief Pointer to full writer. Handles single messages in one file.
      */
     WriterFull* writerFull;
+
+    /**
+     * @brief Table that contains template strings for text-based logger format.
+     * @details To keep ConfigManager cleaner the logstrings are loaded from an inifile by name.
+     *          This has the problem of lacking defaults that work for all when the file is missing.
+     *          This QMap contains all default values and overwrites them on logger construction.
+     */
+    QHash<QString,QString>m_logtext {
+        {"ic",          "[%1][%5][IC][%2(%3)][%4]%6"},
+        {"ooc",         "[%1][%5][OOC][%2(%3)][%4]%6"},
+        {"login",       "[%1][LOGIN][%2][%3][%4(%5)]"},
+        {"cmdlogin",    "[%1][%2][LOGIN][%5][%3(%4)]"},
+        {"cmdrootpass", "[%1][%2][ROOTPASS][%5][%3(%4)]"},
+        {"cmdadduser",  "[%1][%2][USERADD][%6][%3(%4)]%5"},
+        {"cmd",         "[%1][%2][CMD][%7][%3(%4)]/%5 %6"},
+        {"kick",        "[%1][%2][KICK][%3]"},
+        {"ban",         "[%1][%2][BAN][%3][%4]"},
+        {"modcall",     "[%1][%2][MODCALL][%5][%3(%4)]"},
+        {"connect",     "[%1][CONNECT][%2][%3][%4]"}
+    };
 };
 
 #endif //U_LOGGER_H
