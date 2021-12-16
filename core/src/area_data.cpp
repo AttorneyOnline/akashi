@@ -26,11 +26,13 @@ AreaData::AreaData(QString p_name, int p_index) :
     m_status(IDLE),
     m_locked(FREE),
     m_document("No document."),
+    m_area_message("No flavour text."),
     m_defHP(10),
     m_proHP(10),
     m_statement(0),
     m_judgelog(),
-    m_lastICMessage()
+    m_lastICMessage(),
+    m_send_area_message(false)
 {
     QStringList name_split = p_name.split(":");
     name_split.removeFirst();
@@ -479,6 +481,24 @@ void AreaData::changeDoc(const QString &f_newDoc_r)
     m_document = f_newDoc_r;
 }
 
+QString AreaData::areaMessage() const
+{
+    return m_area_message;
+}
+
+bool AreaData::sendAreaMessageOnJoin() const
+{
+    return m_send_area_message;
+}
+
+void AreaData::changeAreaMessage(const QString& f_newMessage_r)
+{
+    if(f_newMessage_r.isEmpty())
+        m_area_message = "No flavour text.";
+    else
+        m_area_message = f_newMessage_r;
+}
+
 bool AreaData::bgLocked() const
 {
     return m_bgLocked;
@@ -522,6 +542,11 @@ bool AreaData::ignoreBgList()
 void AreaData::toggleIgnoreBgList()
 {
     m_ignoreBgList = !m_ignoreBgList;
+}
+
+void AreaData::toggleAreaMessageJoin()
+{
+    m_send_area_message = !m_send_area_message;
 }
 
 void AreaData::toggleJukebox()

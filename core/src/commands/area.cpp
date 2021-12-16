@@ -372,3 +372,39 @@ void AOClient::cmdIgnoreBgList(int argc, QStringList argv)
     QString l_state = l_area->ignoreBgList() ? "ignored." : "enforced.";
     sendServerMessage("BG list in this area is now " + l_state);
 }
+
+void AOClient::cmdAreaMessage(int argc, QStringList argv)
+{
+    AreaData* l_area = server->m_areas[m_current_area];
+    if (argc == 0) {
+        sendServerMessage(l_area->areaMessage());
+        return;
+    }
+
+    if (argc >= 1) {
+        l_area->changeAreaMessage(argv.join(" "));
+        sendServerMessage("Updated areas flavour text.");
+    }
+}
+
+void AOClient::cmdToggleAreaMessageOnJoin(int argc, QStringList argv)
+{
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
+    AreaData* l_area = server->m_areas[m_current_area];
+    l_area->toggleAreaMessageJoin();
+    QString l_state = l_area->sendAreaMessageOnJoin() ? "enabled." : "disabled.";
+    sendServerMessage("Sending flavour text on area join is now " +l_state);
+}
+
+void AOClient::cmdClearAreaMessage(int argc, QStringList argv)
+{
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
+    AreaData* l_area = server->m_areas[m_current_area];
+    l_area->changeAreaMessage(QString{});
+    if (l_area->sendAreaMessageOnJoin()) //Turn off the automatic sending.
+        cmdToggleAreaMessageOnJoin(0,QStringList{}); //Dummy values.
+}

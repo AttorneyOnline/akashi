@@ -150,6 +150,9 @@ void AOClient::changeArea(int new_area)
         }
     }
     sendServerMessage("You moved to area " + server->m_area_names[m_current_area]);
+    if (server->m_areas[m_current_area]->sendAreaMessageOnJoin())
+        sendServerMessage(server->m_areas[m_current_area]->areaMessage());
+
     if (server->m_areas[m_current_area]->lockStatus() == AreaData::LockStatus::SPECTATABLE)
         sendServerMessage("Area " + server->m_area_names[m_current_area] + " is spectate-only; to chat IC you will need to be invited by the CM.");
 }
