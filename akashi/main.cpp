@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
 {
     QCoreApplication app(argc, argv);
     QCoreApplication::setApplicationName("akashi");
-    QCoreApplication::setApplicationVersion("durian (1.4)");
+    QCoreApplication::setApplicationVersion("elderberry (1.5)");
     std::atexit(cleanup);
 
     // Verify server configuration is sound.
