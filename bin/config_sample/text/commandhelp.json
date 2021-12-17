@@ -633,5 +633,20 @@
       "name":"clearcm",
       "usage":"/clearcm",
       "text":"Removes all CMs from the current area. This command takes no arguments."
+   },
+   {
+      "name":"togglemessage",
+      "usage":"/togglemessage",
+      "text":"Toggles wether the client shows the area message when joining the current area."
+   },
+   {
+      "name":"clearmessage",
+      "usage":"/clearmessage",
+      "text":"Clears the areas message and disables automatic sending."
+   },
+   {
+      "name":"areamessage",
+      "usage":"/areamessage",
+      "text":"Returns the area message in OOC. If text is entered it updates the current area message."
    }
 ]

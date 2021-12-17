@@ -984,6 +984,33 @@ class AOClient : public QObject {
      */
     void cmdIgnoreBgList(int argc, QStringList argv);
 
+    /**
+     * @brief Returns the area message in OOC. Double to set the current area message.
+     *
+     * @details See short description.
+     *
+     * @iscommand
+     */
+    void cmdAreaMessage(int argc, QStringList argv);
+
+    /**
+     * @brief Clears the areas message and disables automatic sending.
+     *
+     * @details No arguments.
+     *
+     * @iscommand
+     */
+    void cmdClearAreaMessage(int argc, QStringList argv);
+
+    /**
+     * @brief Toggles wether the client shows the area message when joining the current area.
+     *
+     * @details No arguments.
+     *
+     * @iscommand
+     */
+    void cmdToggleAreaMessageOnJoin(int argc, QStringList argv);
+
     ///@}
 
     /**
@@ -2155,7 +2182,10 @@ class AOClient : public QObject {
         {"noticeg",            {ACLFlags.value("SEND_NOTICE"),  1, &AOClient::cmdNoticeGlobal}},
         {"togglejukebox",      {ACLFlags.value("None"),         0, &AOClient::cmdToggleJukebox}},
         {"help",               {ACLFlags.value("NONE"),         1, &AOClient::cmdHelp}},
-        {"clearcm",            {ACLFlags.value("KICK"),         0, &AOClient::cmdClearCM}}
+        {"clearcm",            {ACLFlags.value("KICK"),         0, &AOClient::cmdClearCM}},
+        {"togglemessage",      {ACLFlags.value("CM"),           0, &AOClient::cmdToggleAreaMessageOnJoin}},
+        {"clearmessage",       {ACLFlags.value("CM"),           0, &AOClient::cmdClearAreaMessage}},
+        {"areamessage",        {ACLFlags.value("CM"),           0, &AOClient::cmdAreaMessage}}
     };
 
     /**

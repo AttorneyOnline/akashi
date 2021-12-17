@@ -542,6 +542,29 @@ class AreaData : public QObject {
     void changeDoc(const QString& f_newDoc_r);
 
     /**
+     * @brief Returns the message of the area.
+     *
+     * @return See short description.
+     *
+     * @see #m_area_message
+     */
+    QString areaMessage() const;
+
+    /**
+     * @brief Returns if the area's message should be sent when a user joins the area.
+     *
+     * @return See short description.
+     */
+    bool sendAreaMessageOnJoin() const;
+
+    /**
+     * @brief Changes the area message in the area.
+     *
+     * @param f_newMessage_r The new message.
+     */
+    void changeAreaMessage(const QString& f_newMessage_r);
+
+    /**
      * @brief Returns the value of the Confidence bar for the defence's side.
      *
      * @return The value of the Confidence bar in units of 10%.
@@ -807,6 +830,11 @@ class AreaData : public QObject {
     void toggleIgnoreBgList();
 
     /**
+     * @brief Toggles whether the area message is sent upon joining the area.
+     */
+    void toggleAreaMessageJoin();
+
+    /**
      * @brief Toggles wether the jukebox is enabled or not.
      */
     void toggleJukebox();
@@ -816,7 +844,7 @@ class AreaData : public QObject {
      */
     QString addJukeboxSong(QString f_song);
 
-  public slots:
+public slots:
 
     /**
      * @brief Plays a random song from the jukebox. Plays the same if only one is left.
@@ -933,6 +961,14 @@ private:
     QString m_document;
 
     /**
+     * @brief The message of the area.
+     *
+     * @details The area message has multiple purposes. It can be used to provide general information for
+     * RP or guidance for players joining the area. Unlike document it can be sent on area join. Like a MOTD, but for the area.
+     */
+    QString m_area_message;
+
+    /**
      * @brief The Confidence Gauge's value for the Defence side.
      *
      * @details Unit is 10%, and the values range from 0 (= 0%) to 10 (= 100%).
@@ -1018,6 +1054,11 @@ private:
      * @brief Whether or not to ignore the server defined background list. If true, any background can be set in an area.
      */
     bool m_ignoreBgList;
+
+    /**
+     * @brief Whether or not the area message is sent upon area join.
+     */
+    bool m_send_area_message;
 
     // Jukebox specific members
     /**
