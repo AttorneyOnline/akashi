@@ -469,12 +469,8 @@ void AOClient::cmdReload(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    ConfigManager::reloadSettings();
-    emit server->reloadRequest(ConfigManager::serverName(), ConfigManager::serverDescription());
-    server->updateHTTPAdvertiserConfig();
-    server->handleDiscordIntegration();
-    server->m_music_list = ConfigManager::musiclist();
-    server->m_ipban_list = ConfigManager::iprangeBans();
+    //Todo: Make this a signal when splitting AOClient and Server.
+    server->reloadSettings();
     sendServerMessage("Reloaded configurations");
 }
 

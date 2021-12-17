@@ -228,6 +228,17 @@ QHostAddress Server::parseToIPv4(QHostAddress f_remote_ip)
     return l_remote_ip;
 }
 
+void Server::reloadSettings()
+{
+    ConfigManager::reloadSettings();
+    emit reloadRequest(ConfigManager::serverName(), ConfigManager::serverDescription());
+    updateHTTPAdvertiserConfig();
+    handleDiscordIntegration();
+    logger->loadLogtext();
+    m_music_list = ConfigManager::musiclist();
+    m_ipban_list = ConfigManager::iprangeBans();
+}
+
 void Server::broadcast(AOPacket packet, int area_index)
 {
     for (AOClient* client : qAsConst(m_clients)) {

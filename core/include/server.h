@@ -264,6 +264,12 @@ class Server : public QObject {
     bool can_send_ic_messages = true;
 
   public slots:
+
+    /**
+     * @brief Convenience class to call a reload of available configuraiton elements.
+     */
+    void reloadSettings();
+
     /**
      * @brief Handles a new connection.
      *
