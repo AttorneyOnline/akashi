@@ -551,7 +551,7 @@ class AreaData : public QObject {
     QString areaMessage() const;
 
     /**
-     * @brief Returns if the flavour text is send by joining the area.
+     * @brief Returns if the area's message should be sent when a user joins the area.
      *
      * @return See short description.
      */
@@ -560,7 +560,7 @@ class AreaData : public QObject {
     /**
      * @brief Changes the area message in the area.
      *
-     * @param f_newFlacour_r The new flavour text.
+     * @param f_newMessage_r The new message.
      */
     void changeAreaMessage(const QString& f_newMessage_r);
 
@@ -830,7 +830,7 @@ class AreaData : public QObject {
     void toggleIgnoreBgList();
 
     /**
-     * @brief Toggles wether the area message is send on joining the area.
+     * @brief Toggles whether the area message is sent upon joining the area.
      */
     void toggleAreaMessageJoin();
 
@@ -963,8 +963,8 @@ private:
     /**
      * @brief The message of the area.
      *
-     * @details The area mnessage has multiple purposes. It can be used to provide general information for
-     * RP or guidance for players joining the area. Unlike document it can send on area join.
+     * @details The area message has multiple purposes. It can be used to provide general information for
+     * RP or guidance for players joining the area. Unlike document it can be sent on area join. Like a MOTD, but for the area.
      */
     QString m_area_message;
 
@@ -1056,7 +1056,7 @@ private:
     bool m_ignoreBgList;
 
     /**
-     * @brief Wether or not the area message is send on joining it.
+     * @brief Whether or not the area message is sent upon area join.
      */
     bool m_send_area_message;
 

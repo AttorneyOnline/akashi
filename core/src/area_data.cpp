@@ -26,7 +26,7 @@ AreaData::AreaData(QString p_name, int p_index) :
     m_status(IDLE),
     m_locked(FREE),
     m_document("No document."),
-    m_area_message("No flavour text."),
+    m_area_message("No area message set."),
     m_defHP(10),
     m_proHP(10),
     m_statement(0),
@@ -494,7 +494,7 @@ bool AreaData::sendAreaMessageOnJoin() const
 void AreaData::changeAreaMessage(const QString& f_newMessage_r)
 {
     if(f_newMessage_r.isEmpty())
-        m_area_message = "No flavour text.";
+        m_area_message = "No area message set.";
     else
         m_area_message = f_newMessage_r;
 }

@@ -383,7 +383,7 @@ void AOClient::cmdAreaMessage(int argc, QStringList argv)
 
     if (argc >= 1) {
         l_area->changeAreaMessage(argv.join(" "));
-        sendServerMessage("Updated areas flavour text.");
+        sendServerMessage("Updated this area's message.");
     }
 }
 
@@ -395,7 +395,7 @@ void AOClient::cmdToggleAreaMessageOnJoin(int argc, QStringList argv)
     AreaData* l_area = server->m_areas[m_current_area];
     l_area->toggleAreaMessageJoin();
     QString l_state = l_area->sendAreaMessageOnJoin() ? "enabled." : "disabled.";
-    sendServerMessage("Sending flavour text on area join is now " +l_state);
+    sendServerMessage("Sending message on area join is now " +l_state);
 }
 
 void AOClient::cmdClearAreaMessage(int argc, QStringList argv)
