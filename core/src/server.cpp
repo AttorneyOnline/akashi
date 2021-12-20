@@ -69,11 +69,12 @@ void Server::start()
 
         connect(httpAdvertiserTimer, &QTimer::timeout,
                 httpAdvertiser, &HTTPAdvertiser::msAdvertiseServer);
-        connect(this, &Server::setHTTPConfiguration,
-                httpAdvertiser, &HTTPAdvertiser::setAdvertiserSettings);
+        connect(this, &Server::updatePlayerCount,
+                httpAdvertiser, &HTTPAdvertiser::updatePlayerCount);
         connect(this, &Server::updateHTTPConfiguration,
                 httpAdvertiser, &HTTPAdvertiser::updateAdvertiserSettings);
-        setHTTPAdvertiserConfig();
+        emit updatePlayerCount(m_player_count);
+        httpAdvertiser->msAdvertiseServer();
         httpAdvertiserTimer->start(300000);
     }
 
@@ -232,7 +233,7 @@ void Server::reloadSettings()
 {
     ConfigManager::reloadSettings();
     emit reloadRequest(ConfigManager::serverName(), ConfigManager::serverDescription());
-    updateHTTPAdvertiserConfig();
+    emit updateHTTPConfiguration();
     handleDiscordIntegration();
     logger->loadLogtext();
     m_music_list = ConfigManager::musiclist();
@@ -319,31 +320,6 @@ int Server::getCharID(QString char_name)
         }
     }
     return -1; // character does not exist
-}
-
-void Server::setHTTPAdvertiserConfig()
-{
-    advertiser_config config;
-    config.name = ConfigManager::serverName();
-    config.description = ConfigManager::serverDescription();
-    config.port = ConfigManager::serverPort();
-    config.ws_port = ConfigManager::webaoPort();
-    config.players = ConfigManager::maxPlayers();
-    config.masterserver = ConfigManager::advertiserHTTPIP();
-    config.debug = ConfigManager::advertiserHTTPDebug();
-    emit setHTTPConfiguration(config);
-}
-
-void Server::updateHTTPAdvertiserConfig()
-{
-    update_advertiser_config config;
-    config.name = ConfigManager::serverName();
-    config.description = ConfigManager::serverDescription();
-    config.players = ConfigManager::maxPlayers();
-    config.masterserver = ConfigManager::advertiserHTTPIP();
-    config.debug = ConfigManager::advertiserHTTPDebug();
-    emit updateHTTPConfiguration(config);
-
 }
 
 QQueue<QString> Server::getAreaBuffer(const QString &f_areaName)

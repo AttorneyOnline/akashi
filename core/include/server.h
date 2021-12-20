@@ -170,16 +170,6 @@ class Server : public QObject {
     int getCharID(QString char_name);
 
     /**
-     * @brief Creates an HTTP advertiser config struct and emits it using server::reloadHTTPRequest.
-     */
-    void setHTTPAdvertiserConfig();
-
-    /**
-     * @brief Updates the modern advertiser configuration on configuration reload.
-     */
-    void updateHTTPAdvertiserConfig();
-
-    /**
      * @brief Checks if an IP is in a subnet of the IPBanlist.
      **/
     bool isIPBanned(QHostAddress f_remote_IP);
@@ -303,16 +293,15 @@ class Server : public QObject {
     void reloadRequest(QString p_name, QString p_desc);
 
     /**
-     * @brief Sends all necessary info for the modern advertiser.
-     * @param Struct that contains all configuration for the advertiser
+     * @brief Updates the playercount in the modern advertiser.
      */
-    void setHTTPConfiguration(struct advertiser_config config);
+    void updatePlayerCount(int f_current_players);
 
     /**
-     * @brief Sends a partial update to the modern advertiser.
-     * @param Struct that contains partial information about the server to update the advertised information.
+     * @brief Triggers a partial update of the modern advertiser as some information, such as ports
+     * can't be updated while the server is running.
      */
-    void updateHTTPConfiguration(struct update_advertiser_config config);
+    void updateHTTPConfiguration();
 
     /**
      * @brief Sends a modcall webhook request, emitted by AOClient::pktModcall.

@@ -449,6 +449,12 @@ class ConfigManager {
     static QUrl advertiserHTTPIP();
 
     /**
+     * @brief Returns an optional hostname paramemter for the advertiser.
+     * If used allows user to set a custom IP or domain name.
+     */
+    static QString advertiserHostname();
+
+    /**
      * @brief Returns the uptime of the server in miliseconds.
      */
     static qint64 uptime();

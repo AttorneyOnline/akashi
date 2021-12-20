@@ -54,6 +54,7 @@ void AOClient::clientDisconnected()
 #endif
     if (m_joined) {
         server->m_player_count--;
+        emit server->updatePlayerCount(server->m_player_count);
         server->m_areas[m_current_area]->clientLeftArea(server->getCharID(m_current_char));
         arup(ARUPType::PLAYER_COUNT, true);
     }

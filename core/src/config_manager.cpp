@@ -592,6 +592,11 @@ QUrl ConfigManager::advertiserHTTPIP()
     return m_settings->value("ModernAdvertiser/ms_ip","").toUrl();
 }
 
+QString ConfigManager::advertiserHostname()
+{
+    return m_settings->value("ModernAdvertiser/hostname","").toString();
+}
+
 qint64 ConfigManager::uptime()
 {
     return m_uptimeTimer->elapsed();
