@@ -46,22 +46,9 @@ int main(int argc, char* argv[])
         exit(EXIT_FAILURE);
         QCoreApplication::quit();
     }
-    else {
-        if (ConfigManager::advertiseServer()) {
-            advertiser =
-                new Advertiser(ConfigManager::masterServerIP(), ConfigManager::masterServerPort(),
-                               ConfigManager::webaoPort(), ConfigManager::serverPort(),
-                               ConfigManager::serverName(), ConfigManager::serverDescription());
-            advertiser->contactMasterServer();
-        }
 
-        server = new Server(ConfigManager::serverPort(), ConfigManager::webaoPort());
-
-        if (advertiser != nullptr) {
-            QObject::connect(server, &Server::reloadRequest, advertiser, &Advertiser::reloadRequested);
-        }
-        server->start();
-    }
+    server = new Server(ConfigManager::serverPort(), ConfigManager::webaoPort());
+    server->start();
 
     return app.exec();
 }

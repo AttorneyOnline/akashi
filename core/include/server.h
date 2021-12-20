@@ -285,15 +285,8 @@ class Server : public QObject {
   signals:
 
     /**
-     * @brief Sends the server name and description, emitted by /reload.
-     *
-     * @param p_name The server name.
-     * @param p_desc The server description.
-     */
-    void reloadRequest(QString p_name, QString p_desc);
-
-    /**
-     * @brief Updates the playercount in the modern advertiser.
+     * @brief Sends all necessary info for the modern advertiser.
+     * @param Struct that contains all configuration for the advertiser
      */
     void updatePlayerCount(int f_current_players);
 

@@ -267,11 +267,6 @@ QStringList ConfigManager::loadConfigFile(const QString filename)
     return stringlist;
 }
 
-bool ConfigManager::advertiseServer()
-{
-    return m_settings->value("Options/advertise", true).toBool();
-}
-
 int ConfigManager::maxPlayers()
 {
     bool ok;
@@ -281,16 +276,6 @@ int ConfigManager::maxPlayers()
         l_players = 100;
     }
     return l_players;
-}
-
-QString ConfigManager::masterServerIP()
-{
-    return m_settings->value("Options/ms_ip", "master.aceattorneyonline.com").toString();
-}
-
-int ConfigManager::masterServerPort()
-{
-    return m_settings->value("Options/ms_port", 27016).toInt();
 }
 
 int ConfigManager::serverPort()

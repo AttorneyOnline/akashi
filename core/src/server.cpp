@@ -232,8 +232,7 @@ QHostAddress Server::parseToIPv4(QHostAddress f_remote_ip)
 void Server::reloadSettings()
 {
     ConfigManager::reloadSettings();
-    emit reloadRequest(ConfigManager::serverName(), ConfigManager::serverDescription());
-    emit updateHTTPConfiguration();
+    updateHTTPAdvertiserConfig();
     handleDiscordIntegration();
     logger->loadLogtext();
     m_music_list = ConfigManager::musiclist();

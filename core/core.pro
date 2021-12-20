@@ -25,7 +25,6 @@ DESTDIR = $$PWD/../bin
 #DEFINES += NET_DEBUG
 
 SOURCES += \
-    src/advertiser.cpp \
     src/aoclient.cpp \
     src/aopacket.cpp \
     src/area_data.cpp \
@@ -50,7 +49,7 @@ SOURCES += \
     src/logger/writer_modcall.cpp \
     src/logger/writer_full.cpp
 
-HEADERS += include/advertiser.h \
+HEADERS += \
     include/aoclient.h \
     include/aopacket.h \
     include/area_data.h \

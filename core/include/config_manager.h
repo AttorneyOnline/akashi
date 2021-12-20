@@ -121,32 +121,11 @@ class ConfigManager {
     static QStringList iprangeBans();
 
     /**
-     * @brief Returns true if the server should advertise to the master server.
-     *
-     * @return See short description.
-     */
-    static bool advertiseServer();
-
-    /**
      * @brief Returns the maximum number of players the server will allow.
      *
      * @return See short description.
      */
     static int maxPlayers();
-
-    /**
-     * @brief Returns the IP of the master server to advertise to.
-     *
-     * @return See short description.
-     */
-    static QString masterServerIP();
-
-    /**
-     * @brief Returns the port of the master server to advertise to.
-     *
-     * @return See short description.
-     */
-    static int masterServerPort();
 
     /**
      * @brief Returns the port to listen for connections on.
