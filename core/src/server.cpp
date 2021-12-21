@@ -104,24 +104,33 @@ void Server::start()
     m_ipban_list = ConfigManager::iprangeBans();
 
     //Rate-Limiter for IC-Chat
-    connect(&next_message_timer, SIGNAL(timeout()), this, SLOT(allowMessage()));
+    connect(&next_message_timer, &QTimer::timeout, this, &Server::allowMessage);
+
+    //Prepare player IDs and reference hash.
+    for (int i = 0; i <= ConfigManager::maxPlayers() - 1; i++){
+        m_available_ids.enqueue(i);
+        m_clients_ids.insert(i, nullptr);
+    }
 }
 
 void Server::clientConnected()
 {
     QTcpSocket* socket = server->nextPendingConnection();
-    int user_id;
-    QList<int> user_ids;
-    for (AOClient* client : qAsConst(m_clients)) {
-        user_ids.append(client->m_id);
+
+    //Too many players. Reject connection!
+    //This also enforces the maximum playercount.
+    if (m_available_ids.empty()) {
+        AOPacket disconnect_reason("BD", {"Maximum playercount has been reached."});
+        socket->write(disconnect_reason.toUtf8());
+        socket->flush();
+        socket->close();
+        socket->deleteLater();
+        return;
     }
-    for (user_id = 0; user_id <= m_player_count; user_id++) {
-        if (user_ids.contains(user_id))
-            continue;
-        else
-            break;
-    }
+
+    int user_id = m_available_ids.dequeue();
     AOClient* client = new AOClient(this, socket, this, user_id);
+    m_clients_ids.insert(user_id, client);
 
     int multiclient_count = 1;
     bool is_at_multiclient_limit = false;
@@ -133,7 +142,7 @@ void Server::clientConnected()
             multiclient_count++;
     }
 
-    if (multiclient_count > ConfigManager::multiClientLimit() && !client->m_remote_ip.isLoopback()) // TODO: make this configurable
+    if (multiclient_count > ConfigManager::multiClientLimit() && !client->m_remote_ip.isLoopback())
         is_at_multiclient_limit = true;
 
     if (is_banned) {
@@ -145,6 +154,7 @@ void Server::clientConnected()
         socket->flush();
         client->deleteLater();
         socket->close();
+        markIDFree(user_id);
         return;
     }
 
@@ -159,6 +169,7 @@ void Server::clientConnected()
         socket->write(l_ban_reason.toUtf8());
         client->deleteLater();
         socket->close();
+        markIDFree(user_id);
         return;
     }
 
@@ -175,7 +186,7 @@ void Server::clientConnected()
                                                     // tsuserver4. It should disable fantacrypt
                                                     // completely in any client 2.4.3 or newer
     client->sendPacket(decryptor);
-    hookupLogger(client);
+    hookupAOClient(client);
 #ifdef NET_DEBUG
     qDebug() << client->remote_ip.toString() << "connected";
 #endif
@@ -304,11 +315,7 @@ QList<AOClient*> Server::getClientsByIpid(QString ipid)
 
 AOClient* Server::getClientByID(int id)
 {
-    for (AOClient* client : qAsConst(m_clients)) {
-        if (client->m_id == id)
-            return client;
-    }
-    return nullptr;
+    return m_clients_ids.value(id);
 }
 
 int Server::getCharID(QString char_name)
@@ -378,7 +385,13 @@ void Server::handleDiscordIntegration()
     return;
 }
 
-void Server::hookupLogger(AOClient* client)
+void Server::markIDFree(const int &f_user_id)
+{
+    m_available_ids.enqueue(f_user_id);
+    m_clients_ids.insert(f_user_id, nullptr);
+}
+
+void Server::hookupAOClient(AOClient* client)
 {
     connect(client, &AOClient::logIC,
             logger, &ULogger::logIC);
@@ -394,6 +407,8 @@ void Server::hookupLogger(AOClient* client)
             logger, &ULogger::logKick);
     connect(client, &AOClient::logModcall,
             logger, &ULogger::logModcall);
+    connect(client, &AOClient::clientSuccessfullyDisconnected,
+            this,   &Server::markIDFree);
 }
 
 bool Server::isIPBanned(QHostAddress f_remote_IP)
