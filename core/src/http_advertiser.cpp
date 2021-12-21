@@ -5,6 +5,15 @@ HTTPAdvertiser::HTTPAdvertiser()
     m_manager = new QNetworkAccessManager();
     connect(m_manager, &QNetworkAccessManager::finished,
             this, &HTTPAdvertiser::msRequestFinished);
+
+
+    m_name = ConfigManager::serverName();
+    m_hostname = ConfigManager::advertiserHostname();
+    m_description = ConfigManager::serverDescription();
+    m_port = ConfigManager::serverPort();
+    m_ws_port = ConfigManager::webaoPort();
+    m_masterserver = ConfigManager::advertiserHTTPIP();
+    m_debug = ConfigManager::advertiserHTTPDebug();
 }
 
 HTTPAdvertiser::~HTTPAdvertiser()
@@ -21,6 +30,11 @@ void HTTPAdvertiser::msAdvertiseServer()
         request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
         QJsonObject l_json;
+
+        if (!m_hostname.isEmpty()) {
+            l_json["ip"] = m_hostname;
+        }
+
         l_json["port"] = m_port;
         if (m_ws_port != -1) {
             l_json["ws_port"] = m_ws_port;
@@ -66,26 +80,18 @@ void HTTPAdvertiser::msRequestFinished(QNetworkReply *f_reply)
     f_reply->deleteLater();
 }
 
-void HTTPAdvertiser::setAdvertiserSettings(advertiser_config config)
+void HTTPAdvertiser::updatePlayerCount(int f_current_players)
 {
-    m_name = config.name;
-    m_description = config.description;
-    m_port = config.port;
-    m_ws_port = config.ws_port;
-    m_players = config.players;
-    m_masterserver = config.masterserver;
-    m_debug = config.debug;
-
-    msAdvertiseServer();
+    m_players = f_current_players;
 }
 
-void HTTPAdvertiser::updateAdvertiserSettings(update_advertiser_config config)
+void HTTPAdvertiser::updateAdvertiserSettings()
 {
-    m_name = config.name;
-    m_description = config.description;
-    m_players = config.players;
-    m_masterserver = config.masterserver;
-    m_debug = config.debug;
+    m_name = ConfigManager::serverName();
+    m_hostname = ConfigManager::advertiserHostname();
+    m_description = ConfigManager::serverDescription();
+    m_masterserver = ConfigManager::advertiserHTTPIP();
+    m_debug = ConfigManager::advertiserHTTPDebug();
 }
 
 
