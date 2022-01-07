@@ -2305,6 +2305,11 @@ class AOClient : public QObject {
      *        when modcall logging is used.
      */
     void logModcall(const QString& f_charName, const QString &f_ipid, const QString& f_oocName, const QString& f_areaName);
+
+    /**
+     * @brief Signals the server that the client has disconnected and marks its userID as free again.
+     */
+    void clientSuccessfullyDisconnected(const int& f_user_id);
 };
 
 #endif // AOCLIENT_H

@@ -185,6 +185,17 @@ class Server : public QObject {
     QVector<AOClient*> m_clients;
 
     /**
+     * @brief Collection of all clients with their userID as key.
+     */
+    QHash<int,AOClient*> m_clients_ids;
+
+    /**
+     * @brief Queue of all available IDs for clients. When this is empty the server
+     * rejects any new connection attempt.
+     */
+    QQueue<int> m_available_ids;
+
+    /**
      * @brief The overall player count in the server.
      */
     int m_player_count;
@@ -282,6 +293,11 @@ class Server : public QObject {
      */
     void handleDiscordIntegration();
 
+    /**
+     * @brief Marks a userID as free and ads it back to the available client id queue.
+     */
+    void markIDFree(const int& f_user_id);
+
   signals:
 
     /**
@@ -333,9 +349,9 @@ class Server : public QObject {
 
   private:
     /**
-     * @brief Connects new AOClient to the logger.
+     * @brief Connects new AOClient to logger and disconnect handling.
      **/
-    void hookupLogger(AOClient* client);
+    void hookupAOClient(AOClient* client);
 
     /**
      * @brief The proxy used for WebSocket connections.
