@@ -15,126 +15,100 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
-#ifndef MASTER_H
-#define MASTER_H
+#ifndef ADVERTISER_H
+#define ADVERTISER_H
 
-#include "include/aopacket.h"
-
-#include <QCoreApplication>
-#include <QHostAddress>
-#include <QString>
-#include <QTcpSocket>
-#include <QTimer>
+#include <QtNetwork>
+#include <QObject>
+#include "include/config_manager.h"
 
 /**
- * @brief A communicator class to update the master server on the server's status.
- *
- * @see https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#master-server-protocol
- * for more explanation about how to communicate with the master server.
+ * @brief Represents the advertiser of the server. Sends current server information to masterserver.
  */
-class Advertiser : public QObject {
+class Advertiser : public QObject
+{
     Q_OBJECT
-
-  public:
+public:
     /**
-     * @brief Constructor for the Advertiser class.
-     *
-     * @param p_ip The IP of the master server.
-     * @param p_port The port on which the connection to the master server should be established.
-     * @param p_ws_port The port on which the server will accept connections from clients through WebSocket.
-     * @param p_local_port The port on which the server will accept connections from clients through TCP.
-     * @param p_name The name of the server, as reported in the client's server browser.
-     * @param p_description The description of the server, as reported in the client's server browser.
-     * @param p_parent Qt-based parent, passed along to inherited constructor from QObject.
+     * @brief Constructor for the HTTP_Advertiser class.
      */
-    Advertiser(const QString p_ip, const int p_port, const int p_ws_port, const int p_local_port,
-               const QString p_name, const QString p_description, QObject* p_parent = nullptr) :
-        QObject(p_parent),
-        ip(p_ip),
-        port(p_port),
-        ws_port(p_ws_port),
-        local_port(p_local_port),
-        name(p_name),
-        description(p_description)
-    {};
+    explicit Advertiser();
+
 
     /**
-     * @brief Destructor for the Advertiser class.
-     *
-     * @details Marks the socket used to establish connection to the master server to be deleted later.
+     *  @brief Deconstructor for the HTTP_Advertiser class. Yes, that's it. Can't say more about it.
      */
     ~Advertiser();
 
-    /**
-     * @brief Sets up the socket used for master server connection, establishes connection to the master server.
-     */
-    void contactMasterServer();
-
-  public slots:
-    /**
-     * @brief Handles data that was read from the master server's socket.
-     *
-     * @note Currently does nothing.
-     */
-    void readData();
+public slots:
 
     /**
-     * @brief Announces the server's presence to the master server.
+     * @brief Establishes a connection with masterserver to register or update the listing on the masterserver.
      */
-    void socketConnected();
+    void msAdvertiseServer();
 
     /**
-     * @brief Handles disconnection from the master server through the socket.
-     *
-     * @note Currently does nothing but outputs a line about the disconnection in the debug output.
+     * @brief Reads the information send as a reply for further error handling.
+     * @param reply Response data from the masterserver. Information contained is send to the console if debug is enabled.
      */
-    void socketDisconnected();
+    void msRequestFinished(QNetworkReply *f_reply);
 
     /**
-     * @brief Handles updating the advertiser and recontacting the master server.
-     *
-     * @param p_name The new server name.
-     * @param p_desc The new server description.
+     * @brief Updates the playercount of the server in the advertiser.
      */
-    void reloadRequested(QString p_name, QString p_desc);
-
-  private:
-    /**
-     * @copydoc ConfigManager::server_settings::ms_ip
-     */
-    QString ip;
+    void updatePlayerCount(int f_current_players);
 
     /**
-     * @copydoc ConfigManager::server_settings::ms_port
+     * @brief Updates advertisement values
      */
-    int port;
+    void updateAdvertiserSettings();
+
+private:
 
     /**
-     * @copydoc ConfigManager::server_settings::ws_port
+     * @brief Pointer to the network manager, necessary to execute POST requests to the masterserver.
      */
-    int ws_port;
+    QNetworkAccessManager* m_manager;
 
     /**
-     * @copydoc ConfigManager::server_settings::port
-     *
-     * @bug See #port.
+     * @brief Name of the server send to the masterserver. Changing this will change the display name in the serverlist
      */
-    int local_port;
+    QString m_name;
 
     /**
-     * @copydoc ConfigManager::server_settings::name
+     * @brief Optional hostname of the server. Can either be an IP or a DNS name. Disabled automatic IP detection of ms3.
      */
-    QString name;
+    QString m_hostname;
 
     /**
-     * @copydoc ConfigManager::server_settings::description
+     * @brief Description of the server that is displayed in the client when the server is selected.
      */
-    QString description;
+    QString m_description;
 
     /**
-     * @brief The socket used to establish connection to the master server.
+     * @brief Client port for the AO2-Client.
      */
-    QTcpSocket* socket;
+    int m_port;
+
+    /**
+     * @brief Websocket proxy port for WebAO users.
+     */
+    int m_ws_port;
+
+    /**
+     * @brief Maximum amount of clients that can be connected to the server.
+     */
+    int m_players;
+
+    /**
+     * @brief URL of the masterserver that m_manager posts to. This is almost never changed.
+     */
+    QUrl m_masterserver;
+
+    /**
+     * @brief Controls if network replies are printed to console. Should only be true if issues communicating with masterserver appear.
+     */
+    bool m_debug;
 };
 
-#endif // MASTER_H
+#endif // ADVERTISER_H

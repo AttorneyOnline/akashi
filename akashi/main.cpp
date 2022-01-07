@@ -15,7 +15,6 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
-#include <include/advertiser.h>
 #include <include/server.h>
 #include <include/config_manager.h>
 
@@ -24,12 +23,10 @@
 #include <QCoreApplication>
 #include <QDebug>
 
-Advertiser* advertiser;
 Server* server;
 
 void cleanup() {
     server->deleteLater();
-    advertiser->deleteLater();
 }
 
 int main(int argc, char* argv[])
@@ -47,19 +44,7 @@ int main(int argc, char* argv[])
         QCoreApplication::quit();
     }
     else {
-        if (ConfigManager::advertiseServer()) {
-            advertiser =
-                new Advertiser(ConfigManager::masterServerIP(), ConfigManager::masterServerPort(),
-                               ConfigManager::webaoPort(), ConfigManager::serverPort(),
-                               ConfigManager::serverName(), ConfigManager::serverDescription());
-            advertiser->contactMasterServer();
-        }
-
         server = new Server(ConfigManager::serverPort(), ConfigManager::webaoPort());
-
-        if (advertiser != nullptr) {
-            QObject::connect(server, &Server::reloadRequest, advertiser, &Advertiser::reloadRequested);
-        }
         server->start();
     }
 

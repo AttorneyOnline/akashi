@@ -25,7 +25,7 @@
 #include "include/db_manager.h"
 #include "include/discord.h"
 #include "include/config_manager.h"
-#include "include/http_advertiser.h"
+#include "include/advertiser.h"
 #include "include/logger/u_logger.h"
 
 #include <QCoreApplication>
@@ -373,12 +373,12 @@ class Server : public QObject {
     /**
      * @brief Handles HTTP server advertising.
      */
-    HTTPAdvertiser* httpAdvertiser;
+    Advertiser* ms3_Advertiser;
 
     /**
      * @brief Advertises the server in a regular intervall.
      */
-    QTimer* httpAdvertiserTimer;
+    QTimer* AdvertiserTimer;
 
     /**
      * @brief Handles the universal log framework.

@@ -1,86 +1,97 @@
-//////////////////////////////////////////////////////////////////////////////////////
-//    akashi - a server for Attorney Online 2                                       //
-//    Copyright (C) 2020  scatterflower                                             //
-//                                                                                  //
-//    This program is free software: you can redistribute it and/or modify          //
-//    it under the terms of the GNU Affero General Public License as                //
-//    published by the Free Software Foundation, either version 3 of the            //
-//    License, or (at your option) any later version.                               //
-//                                                                                  //
-//    This program is distributed in the hope that it will be useful,               //
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of                //
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                 //
-//    GNU Affero General Public License for more details.                           //
-//                                                                                  //
-//    You should have received a copy of the GNU Affero General Public License      //
-//    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
-//////////////////////////////////////////////////////////////////////////////////////
 #include "include/advertiser.h"
 
-void Advertiser::contactMasterServer()
+Advertiser::Advertiser()
 {
-    socket = new QTcpSocket(this);
-    connect(socket, &QTcpSocket::readyRead, this, &Advertiser::readData);
-    connect(socket, &QTcpSocket::connected, this, &Advertiser::socketConnected);
-    connect(socket, &QTcpSocket::disconnected, this, &Advertiser::socketDisconnected);
+    m_manager = new QNetworkAccessManager();
+    connect(m_manager, &QNetworkAccessManager::finished,
+            this, &Advertiser::msRequestFinished);
 
-    socket->setSocketOption(QAbstractSocket::KeepAliveOption, 1);
-    socket->connectToHost(ip, port);
-}
 
-void Advertiser::readData()
-{
-    // The information coming back from the MS isn't very useful
-    // However, it can be useful to see it when debugging
-#ifdef NET_DEBUG
-    qDebug() << "From MS:" << socket->readAll();
-#endif
-}
-
-void Advertiser::socketConnected()
-{
-    qDebug("Connected to the master server");
-    QString concat_ports;
-    if (ws_port == -1)
-        concat_ports = QString::number(local_port);
-    else
-        concat_ports =
-            QString::number(local_port) + "&" + QString::number(ws_port);
-
-    AOPacket ao_packet("SCC",
-                       {concat_ports, name, description,
-                        "akashi " + QCoreApplication::applicationVersion()});
-    QByteArray data = ao_packet.toUtf8();
-
-    socket->write(data);
-#ifdef NET_DEBUG
-    qDebug() << "To MS:" << data;
-#endif
-    socket->flush();
-}
-
-void Advertiser::socketDisconnected()
-{
-    qDebug("Connection to master server lost");
-    QTimer timer;
-    while (socket->state() == QAbstractSocket::UnconnectedState) {
-        timer.start(60000);
-        QEventLoop timer_loop;
-        connect(&timer, SIGNAL(timeout()), &timer_loop, SLOT(quit()));
-        timer_loop.exec();
-        socket->connectToHost(ip, port);
-        socket->waitForConnected();
-    }
-}
-
-void Advertiser::reloadRequested(QString p_name, QString p_desc)
-{
-    name = p_name;
-    description = p_desc;
-    socketConnected();
+    m_name = ConfigManager::serverName();
+    m_hostname = ConfigManager::advertiserHostname();
+    m_description = ConfigManager::serverDescription();
+    m_port = ConfigManager::serverPort();
+    m_ws_port = ConfigManager::webaoPort();
+    m_masterserver = ConfigManager::advertiserIP();
+    m_debug = ConfigManager::advertiserDebug();
 }
 
 Advertiser::~Advertiser()
 {
-    socket->deleteLater();
+    m_manager->deleteLater();
 }
+
+void Advertiser::msAdvertiseServer()
+{
+    if (m_masterserver.isValid()) {
+
+        QUrl url(m_masterserver);
+        QNetworkRequest request(url);
+        request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+        QJsonObject l_json;
+
+        if (!m_hostname.isEmpty()) {
+            l_json["ip"] = m_hostname;
+        }
+
+        l_json["port"] = m_port;
+        if (m_ws_port != -1) {
+            l_json["ws_port"] = m_ws_port;
+        }
+
+        l_json["players"] = m_players;
+        l_json["name"] = m_name;
+
+        if (!m_description.isEmpty()) {
+        l_json["description"] = m_description;
+        }
+
+        m_manager->post(request, QJsonDocument(l_json).toJson());
+
+        if (m_debug)
+            qDebug().noquote() << "Advertised Server";
+        return;
+    }
+    if (m_debug)
+        qWarning().noquote() << "Unable to advertise. Masterserver URL '" + m_masterserver.toString() + "' is not valid.";
+    return;
+
+}
+
+void Advertiser::msRequestFinished(QNetworkReply *f_reply)
+{
+    if (m_debug) {
+        if (f_reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 200) {
+            qDebug().noquote() << "Succesfully advertised server.";
+        }
+        else {
+            QJsonDocument json = QJsonDocument::fromJson(f_reply->readAll());
+            if (json.isNull()) {
+                qCritical().noquote() << "Invalid JSON response from" << f_reply->url();
+                f_reply->deleteLater();
+                return;
+            }
+
+            qDebug().noquote() << "Got valid response from" << f_reply->url();
+            qDebug() << json;
+        }
+    }
+    f_reply->deleteLater();
+}
+
+void Advertiser::updatePlayerCount(int f_current_players)
+{
+    m_players = f_current_players;
+}
+
+void Advertiser::updateAdvertiserSettings()
+{
+    m_name = ConfigManager::serverName();
+    m_hostname = ConfigManager::advertiserHostname();
+    m_description = ConfigManager::serverDescription();
+    m_masterserver = ConfigManager::advertiserIP();
+    m_debug = ConfigManager::advertiserDebug();
+}
+
+
