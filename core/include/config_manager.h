@@ -121,32 +121,11 @@ class ConfigManager {
     static QStringList iprangeBans();
 
     /**
-     * @brief Returns true if the server should advertise to the master server.
-     *
-     * @return See short description.
-     */
-    static bool advertiseServer();
-
-    /**
      * @brief Returns the maximum number of players the server will allow.
      *
      * @return See short description.
      */
     static int maxPlayers();
-
-    /**
-     * @brief Returns the IP of the master server to advertise to.
-     *
-     * @return See short description.
-     */
-    static QString masterServerIP();
-
-    /**
-     * @brief Returns the port of the master server to advertise to.
-     *
-     * @return See short description.
-     */
-    static int masterServerPort();
 
     /**
      * @brief Returns the port to listen for connections on.
@@ -434,19 +413,19 @@ class ConfigManager {
     static QStringList gimpList();
 
     /**
-     * @brief Returns if the HTTP advertiser is constructed or not.
+     * @brief Returns if the advertiser is enabled to advertise on ms3.
      */
-    static bool advertiseHTTPServer();
+    static bool advertiseServer();
 
     /**
-     * @brief Returns if the HTTP advertiser prints debug info to console.
+     * @brief Returns if the advertiser prints debug info to console.
      */
-    static bool advertiserHTTPDebug();
+    static bool advertiserDebug();
 
     /**
      * @brief Returns the IP or URL of the masterserver.
      */
-    static QUrl advertiserHTTPIP();
+    static QUrl advertiserIP();
 
     /**
      * @brief Returns an optional hostname paramemter for the advertiser.

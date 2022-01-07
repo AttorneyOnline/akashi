@@ -267,11 +267,6 @@ QStringList ConfigManager::loadConfigFile(const QString filename)
     return stringlist;
 }
 
-bool ConfigManager::advertiseServer()
-{
-    return m_settings->value("Options/advertise", true).toBool();
-}
-
 int ConfigManager::maxPlayers()
 {
     bool ok;
@@ -281,16 +276,6 @@ int ConfigManager::maxPlayers()
         l_players = 100;
     }
     return l_players;
-}
-
-QString ConfigManager::masterServerIP()
-{
-    return m_settings->value("Options/ms_ip", "master.aceattorneyonline.com").toString();
-}
-
-int ConfigManager::masterServerPort()
-{
-    return m_settings->value("Options/ms_port", 27016).toInt();
 }
 
 int ConfigManager::serverPort()
@@ -577,24 +562,25 @@ QStringList ConfigManager::gimpList()
     return m_commands->gimps;
 }
 
-bool ConfigManager::advertiseHTTPServer()
+bool ConfigManager::advertiseServer()
 {
-    return m_settings->value("ModernAdvertiser/advertise","true").toBool();
+    return m_settings->value("Advertiser/advertise","true").toBool();
 }
 
-bool ConfigManager::advertiserHTTPDebug()
+bool ConfigManager::advertiserDebug()
 {
-    return m_settings->value("ModernAdvertiser/debug","true").toBool();
+    return m_settings->value("Advertiser/debug","true").toBool();
 }
 
-QUrl ConfigManager::advertiserHTTPIP()
+QUrl ConfigManager::advertiserIP()
 {
-    return m_settings->value("ModernAdvertiser/ms_ip","").toUrl();
+    qDebug() << m_settings->value("Advertiser/ms_ip","").toUrl();
+    return m_settings->value("Advertiser/ms_ip","").toUrl();
 }
 
 QString ConfigManager::advertiserHostname()
 {
-    return m_settings->value("ModernAdvertiser/hostname","").toString();
+    return m_settings->value("Advertiser/hostname","").toString();
 }
 
 qint64 ConfigManager::uptime()

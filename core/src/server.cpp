@@ -63,19 +63,19 @@ void Server::start()
     handleDiscordIntegration();
 
     //Construct modern advertiser if enabled in config
-    if (ConfigManager::advertiseHTTPServer()) {
-        httpAdvertiserTimer = new QTimer(this);
-        httpAdvertiser = new HTTPAdvertiser();
+    if (ConfigManager::advertiseServer()) {
+        AdvertiserTimer = new QTimer(this);
+        ms3_Advertiser = new Advertiser();
 
-        connect(httpAdvertiserTimer, &QTimer::timeout,
-                httpAdvertiser, &HTTPAdvertiser::msAdvertiseServer);
+        connect(AdvertiserTimer, &QTimer::timeout,
+                ms3_Advertiser, &Advertiser::msAdvertiseServer);
         connect(this, &Server::updatePlayerCount,
-                httpAdvertiser, &HTTPAdvertiser::updatePlayerCount);
+                ms3_Advertiser, &Advertiser::updatePlayerCount);
         connect(this, &Server::updateHTTPConfiguration,
-                httpAdvertiser, &HTTPAdvertiser::updateAdvertiserSettings);
+                ms3_Advertiser, &Advertiser::updateAdvertiserSettings);
         emit updatePlayerCount(m_player_count);
-        httpAdvertiser->msAdvertiseServer();
-        httpAdvertiserTimer->start(300000);
+        ms3_Advertiser->msAdvertiseServer();
+        AdvertiserTimer->start(300000);
     }
 
     //Get characters from config file
@@ -134,7 +134,7 @@ void Server::clientConnected()
             multiclient_count++;
     }
 
-    if (multiclient_count > ConfigManager::multiClientLimit() && !client->m_remote_ip.isLoopback()) // TODO: make this configurable
+    if (multiclient_count > ConfigManager::multiClientLimit() && !client->m_remote_ip.isLoopback())
         is_at_multiclient_limit = true;
 
     if (is_banned) {

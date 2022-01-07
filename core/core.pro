@@ -21,11 +21,10 @@ DESTDIR = $$PWD/../bin
 # In order to do so, uncomment the following line.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-# Enable this to print network messages tothe console
+# Enable this to print network messages to the console
 #DEFINES += NET_DEBUG
 
 SOURCES += \
-    src/advertiser.cpp \
     src/aoclient.cpp \
     src/aopacket.cpp \
     src/area_data.cpp \
@@ -45,13 +44,12 @@ SOURCES += \
     src/testimony_recorder.cpp \
     src/ws_client.cpp \
     src/ws_proxy.cpp \
-    src/http_advertiser.cpp \
+    src/advertiser.cpp \
     src/logger/u_logger.cpp \
     src/logger/writer_modcall.cpp \
     src/logger/writer_full.cpp
 
-HEADERS += include/advertiser.h \
-    include/aoclient.h \
+HEADERS += include/aoclient.h \
     include/aopacket.h \
     include/area_data.h \
     include/config_manager.h \
@@ -61,7 +59,7 @@ HEADERS += include/advertiser.h \
     include/server.h \
     include/ws_client.h \
     include/ws_proxy.h \
-    include/http_advertiser.h \
+    include/advertiser.h \
     include/logger/u_logger.h \
     include/logger/writer_modcall.h \
     include/logger/writer_full.h
