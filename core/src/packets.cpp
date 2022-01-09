@@ -299,42 +299,42 @@ void AOClient::pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPack
     // argument is a valid song
     QString l_argument = argv[0];
 
-    for (const QString &l_song : qAsConst(server->m_music_list)) {
-        if (l_song == l_argument || l_song == "~stop.mp3") { // ~stop.mp3 is a dummy track used by 2.9+
-            // We have a song here
-            if (m_is_dj_blocked) {
-                sendServerMessage("You are blocked from changing the music.");
-                return;
-            }
-            if (!area->isMusicAllowed() && !checkAuth(ACLFlags.value("CM"))) {
-                sendServerMessage("Music is disabled in this area.");
-                return;
-            }
-            QString l_effects;
-            if (argc >= 4)
-                l_effects = argv[3];
-            else
-                l_effects = "0";
-            QString l_final_song;
-            if (!l_argument.contains("."))
-                l_final_song = "~stop.mp3";
-            else
-                l_final_song = l_argument;
-
-            //Jukebox intercepts the direct playing of messages.
-            if (area->isjukeboxEnabled()) {
-                QString l_jukebox_reply = area->addJukeboxSong(l_final_song);
-                sendServerMessage(l_jukebox_reply);
-                return;
-            }
-
-
-            AOPacket l_music_change("MC", {l_final_song, argv[1], m_showname, "1", "0", l_effects});
-            area->setCurrentMusic(l_final_song);
-            area->setMusicPlayedBy(m_showname);
-            server->broadcast(l_music_change, m_current_area);
+    if (server->m_music_list.contains(l_argument) || l_argument == "~stop.mp3") { // ~stop.mp3 is a dummy track used by 2.9+
+        // We have a song here
+        if (m_is_dj_blocked) {
+            sendServerMessage("You are blocked from changing the music.");
             return;
         }
+        if (!area->isMusicAllowed() && !checkAuth(ACLFlags.value("CM"))) {
+            sendServerMessage("Music is disabled in this area.");
+            return;
+        }
+        QString l_effects;
+        if (argc >= 4)
+            l_effects = argv[3];
+        else
+            l_effects = "0";
+        QString l_final_song;
+        if (!l_argument.contains("."))
+            l_final_song = "~stop.mp3";
+        else
+            l_final_song = l_argument;
+
+        //Jukebox intercepts the direct playing of messages.
+        if (area->isjukeboxEnabled()) {
+            QString l_jukebox_reply = area->addJukeboxSong(l_final_song);
+            sendServerMessage(l_jukebox_reply);
+            return;
+        }
+
+        QPair<QString,float> l_song = ConfigManager::songInformation(l_final_song);
+        QString l_real_name = l_song.first;
+        qDebug() << l_real_name;
+        AOPacket l_music_change("MC", {l_real_name, argv[1], m_showname, "1", "0", l_effects});
+        area->setCurrentMusic(l_final_song);
+        area->setMusicPlayedBy(m_showname);
+        server->broadcast(l_music_change, m_current_area);
+        return;
     }
 
     for (int i = 0; i < server->m_area_names.length(); i++) {

@@ -25,7 +25,7 @@ QSettings* ConfigManager::m_areas = new QSettings("config/areas.ini", QSettings:
 QSettings* ConfigManager::m_logtext = new QSettings("config/text/logtext.ini", QSettings::IniFormat);
 ConfigManager::CommandSettings* ConfigManager::m_commands = new CommandSettings();
 QElapsedTimer* ConfigManager::m_uptimeTimer = new QElapsedTimer;
-QHash<QString,float>* ConfigManager::m_musicList = new QHash<QString,float>;
+QHash<QString,QPair<QString,float>>* ConfigManager::m_musicList = new QHash<QString,QPair<QString,float>>;
 QHash<QString,ConfigManager::help>* ConfigManager::m_commands_help = new QHash<QString,ConfigManager::help>;
 
 bool ConfigManager::verifyServerConfig()
@@ -152,7 +152,7 @@ QStringList ConfigManager::musiclist()
         //Technically not a requirement, but neat for organisation.
         QString l_category_name = l_child_obj["category"].toString();
         if (!l_category_name.isEmpty()) {
-            m_musicList->insert(l_category_name,0);
+            m_musicList->insert(l_category_name,{l_category_name,0});
             l_musiclist.append(l_category_name);
         }
         else {
@@ -163,8 +163,12 @@ QStringList ConfigManager::musiclist()
         for (int i = 0; i <= l_child_array.size() -1; i++){ // Inner for loop because a category can contain multiple songs.
             QJsonObject l_song_obj = l_child_array.at(i).toObject();
             QString l_song_name = l_song_obj["name"].toString();
-            int l_song_duration = l_song_obj["length"].toVariant().toFloat();
-         m_musicList->insert(l_song_name,l_song_duration);
+            QString l_real_name = l_song_obj["realname"].toString();
+            if (l_real_name.isEmpty()) {
+                l_real_name = l_song_name;
+            }
+            float l_song_duration = l_song_obj["length"].toVariant().toFloat();
+         m_musicList->insert(l_song_name,{l_real_name,l_song_duration});
          l_musiclist.append(l_song_name);
         }
     }
@@ -207,7 +211,7 @@ void ConfigManager::loadCommandHelp()
     }
 }
 
-int ConfigManager::songInformation(const QString &f_songName)
+QPair<QString,float> ConfigManager::songInformation(const QString &f_songName)
 {
     return m_musicList->value(f_songName);
 }

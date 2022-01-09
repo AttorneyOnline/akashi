@@ -561,11 +561,14 @@ void AreaData::toggleJukebox()
 QString AreaData::addJukeboxSong(QString f_song)
 {
     if(!m_jukebox_queue.contains(f_song)) {
-            int l_song_duration = ConfigManager::songInformation(f_song);
-            if (l_song_duration > 0) {
+            //Retrieve song information.
+            QPair<QString,float> l_song = ConfigManager::songInformation(f_song);
+
+            if (l_song.second > 0) {
                 if (m_jukebox_queue.size() == 0) {
-                    emit playJukeboxSong(AOPacket("MC",{f_song,QString::number(-1)}), index());
-                    m_jukebox_timer->start(l_song_duration * 1000);
+
+                    emit playJukeboxSong(AOPacket("MC",{l_song.first,QString::number(-1)}), index());
+                    m_jukebox_timer->start(l_song.second * 1000);
                     setCurrentMusic(f_song);
                     setMusicPlayedBy("Jukebox");
                 }
@@ -584,14 +587,18 @@ void AreaData::switchJukeboxSong()
     QString l_song_name;
     if(m_jukebox_queue.size() == 1) {
         l_song_name = m_jukebox_queue[0];
-        emit playJukeboxSong(AOPacket("MC",{l_song_name,"-1"}), m_index);
-        m_jukebox_timer->start(ConfigManager::songInformation(l_song_name) * 1000);
+        QPair<QString,float> l_song = ConfigManager::songInformation(l_song_name);
+        emit playJukeboxSong(AOPacket("MC",{l_song.first,"-1"}), m_index);
+        m_jukebox_timer->start(l_song.second * 1000);
     }
     else {
         int l_random_index = QRandomGenerator::system()->bounded(m_jukebox_queue.size() -1);
         l_song_name = m_jukebox_queue[l_random_index];
-        emit playJukeboxSong(AOPacket("MC",{l_song_name,QString::number(-1)}), m_index);
-        m_jukebox_timer->start(ConfigManager::songInformation(m_jukebox_queue[l_random_index]) * 1000);
+
+        QPair<QString,float> l_song = ConfigManager::songInformation(l_song_name);
+        emit playJukeboxSong(AOPacket("MC",{l_song.first,"-1"}), m_index);
+        m_jukebox_timer->start(l_song.second * 1000);
+
         m_jukebox_queue.remove(l_random_index);
         m_jukebox_queue.squeeze();
     }
