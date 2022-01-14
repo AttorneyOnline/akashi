@@ -75,22 +75,24 @@ const QMap<QString, AreaData::Status> AreaData::map_statuses = {
     {"gaming",                  AreaData::Status::GAMING              },
 };
 
-void AreaData::clientLeftArea(int f_charId)
+void AreaData::clientLeftArea(int f_charId, int f_userId)
 {
     --m_playerCount;
 
     if (f_charId != -1) {
         m_charactersTaken.removeAll(f_charId);
     }
+    m_joined_ids.removeAll(f_userId);
 }
 
-void AreaData::clientJoinedArea(int f_charId)
+void AreaData::clientJoinedArea(int f_charId, int f_userId)
 {
     ++m_playerCount;
 
     if (f_charId != -1) {
         m_charactersTaken.append(f_charId);
     }
+    m_joined_ids.append(f_userId);
 }
 
 QList<int> AreaData::owners() const
@@ -577,6 +579,11 @@ QString AreaData::addJukeboxSong(QString f_song)
             }
     }
     return "Unable to add song. Song already in Jukebox.";
+}
+
+QVector<int> AreaData::joinedIDs() const
+{
+    return m_joined_ids;
 }
 
 void AreaData::switchJukeboxSong()

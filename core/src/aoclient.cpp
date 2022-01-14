@@ -55,7 +55,7 @@ void AOClient::clientDisconnected()
     if (m_joined) {
         server->m_player_count--;
         emit server->updatePlayerCount(server->m_player_count);
-        server->m_areas[m_current_area]->clientLeftArea(server->getCharID(m_current_char));
+        server->m_areas[m_current_area]->clientLeftArea(server->getCharID(m_current_char), m_id);
         arup(ARUPType::PLAYER_COUNT, true);
     }
 
@@ -124,14 +124,14 @@ void AOClient::changeArea(int new_area)
         server->m_areas[m_current_area]->changeCharacter(server->getCharID(m_current_char), -1);
         server->updateCharsTaken(server->m_areas[m_current_area]);
     }
-    server->m_areas[m_current_area]->clientLeftArea(m_char_id);
+    server->m_areas[m_current_area]->clientLeftArea(m_char_id, m_id);
     bool l_character_taken = false;
     if (server->m_areas[new_area]->charactersTaken().contains(server->getCharID(m_current_char))) {
         m_current_char = "";
         m_char_id = -1;
         l_character_taken = true;
     }
-    server->m_areas[new_area]->clientJoinedArea(m_char_id);
+    server->m_areas[new_area]->clientJoinedArea(m_char_id, m_id);
     m_current_area = new_area;
     arup(ARUPType::PLAYER_COUNT, true);
     sendEvidenceList(server->m_areas[new_area]);

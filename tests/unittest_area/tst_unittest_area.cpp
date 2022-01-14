@@ -77,17 +77,17 @@ void Area::cleanup()
 void Area::clientJoinLeave()
 {
     {
-        // There must be exactly one client in the area, and it must have a charid of 5.
-        m_area->clientJoinedArea(5);
+        // There must be exactly one client in the area, and it must have a charid of 5 and userid 0.
+        m_area->clientJoinedArea(5,0);
 
-        QCOMPARE(m_area->charactersTaken().size(), 1);
+        QCOMPARE(m_area->joinedIDs().size(), 1);
         QCOMPARE(m_area->charactersTaken().at(0), 5);
     }
     {
         // No clients must be left in the area.
-        m_area->clientLeftArea(5);
+        m_area->clientLeftArea(5,0);
 
-        QCOMPARE(m_area->charactersTaken().size(), 0);
+        QCOMPARE(m_area->joinedIDs().size(), 0);
     }
 }
 
@@ -151,8 +151,8 @@ void Area::changeHP()
 void Area::changeCharacter()
 {
     {
-        // A client with a charid of 6 joins. There's only them in there.
-        m_area->clientJoinedArea(6);
+        // A client with a charid of 6 and userid 0 joins. There's only them in there.
+        m_area->clientJoinedArea(6,0);
 
         QCOMPARE(m_area->charactersTaken().size(), 1);
         QCOMPARE(m_area->charactersTaken().at(0), 6);
