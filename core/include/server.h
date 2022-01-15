@@ -27,6 +27,7 @@
 #include "include/config_manager.h"
 #include "include/advertiser.h"
 #include "include/logger/u_logger.h"
+#include "include/music_manager.h"
 
 #include <QCoreApplication>
 #include <QDebug>
@@ -384,6 +385,11 @@ class Server : public QObject {
      * @brief Handles the universal log framework.
      */
     ULogger* logger;
+
+    /**
+     * @brief Handles all musiclists.
+     */
+    MusicManager* music_manger;
 
     /**
      * @brief The port through which the server will accept TCP connections.

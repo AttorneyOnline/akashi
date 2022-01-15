@@ -76,7 +76,7 @@ class ConfigManager {
      *
      * @return See short description.
      */
-    static QStringList musiclist();
+    static QMap<QString,QPair<QString,float>> musiclist();
 
     /**
      * @brief Loads help information into m_help_information.
@@ -413,6 +413,13 @@ class ConfigManager {
     static QStringList gimpList();
 
     /**
+     * @brief Returns the server approved domain list.
+     *
+     * @return See short description.
+     */
+    static QStringList cdnList();
+
+    /**
      * @brief Returns if the advertiser is enabled to advertise on ms3.
      */
     static bool advertiseServer();
@@ -473,6 +480,7 @@ class ConfigManager {
      */
     static void reloadSettings();
 
+
 private:
     /**
      * @brief Checks if a file exists and is valid.
@@ -500,6 +508,7 @@ private:
         QStringList praises; //!< Contains command praises, found in config/text/praises.txt
         QStringList reprimands; //!< Contains command reprimands, found in config/text/reprimands.txt
         QStringList gimps; //!< Contains phrases for /gimp, found in config/text/gimp.txt
+        QStringList cdns; // !< Contains domains for custom song validation, found in config/text/cdns.txt
     };
 
     /**
@@ -535,7 +544,7 @@ private:
     /**
      * @brief Contains the musiclist with time durations.
      */
-    static QHash<QString,QPair<QString,float>>* m_musicList;
+    static QMap<QString,QPair<QString,float>>* m_musicList;
 
     /**
      * @brief QHash containing the help information for all commands registered to the server.

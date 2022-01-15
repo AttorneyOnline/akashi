@@ -33,6 +33,8 @@ Server::Server(int p_port, int p_ws_port, QObject* parent) :
 
     db_manager = new DBManager();
 
+    music_manger = new MusicManager(ConfigManager::musiclist());
+
     //We create it, even if its not used later on.
     discord = new Discord(this);
 
@@ -82,7 +84,7 @@ void Server::start()
     m_characters = ConfigManager::charlist();
 
     //Get musiclist from config file
-    m_music_list = ConfigManager::musiclist();
+    m_music_list = music_manger->rootMusiclist();
 
     //Get backgrounds from config file
     m_backgrounds = ConfigManager::backgrounds();
@@ -247,7 +249,6 @@ void Server::reloadSettings()
     emit updateHTTPConfiguration();
     handleDiscordIntegration();
     logger->loadLogtext();
-    m_music_list = ConfigManager::musiclist();
     m_ipban_list = ConfigManager::iprangeBans();
 }
 

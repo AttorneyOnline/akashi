@@ -1,6 +1,6 @@
 #include "include/music_manager.h"
 
-MusicManager::MusicManager(QMap<QString, QPair<QString, float> > f_root_list)
+MusicManager::MusicManager(QMap<QString, QPair<QString, float>> f_root_list)
 {
     m_custom_lists = new QHash<int,QMap<QString,QPair<QString,float>>>;
     m_root_list = f_root_list;
@@ -9,6 +9,38 @@ MusicManager::MusicManager(QMap<QString, QPair<QString, float> > f_root_list)
 MusicManager::~MusicManager()
 {
 
+}
+
+QStringList MusicManager::musiclist(int f_area_id)
+{
+    if (m_global_enabled[f_area_id]) {
+        QStringList l_combined_list = m_root_list.keys();
+
+        for (auto iterator = m_custom_lists->value(f_area_id).keyBegin(),
+             end = m_custom_lists->value(f_area_id).keyEnd(); iterator != end; ++iterator)
+        {
+            l_combined_list.append(iterator.operator*());
+        }
+        return l_combined_list;
+
+    }
+    return m_custom_lists->value(f_area_id).keys();
+}
+
+QStringList MusicManager::rootMusiclist()
+{
+    return m_root_list.keys();
+}
+
+bool MusicManager::registerArea(int f_area_id)
+{
+    if(m_custom_lists->contains(f_area_id)) {
+        //This area is already registered. We can't add it.
+        return false;
+    }
+    m_custom_lists->insert(f_area_id,{});
+    m_global_enabled.insert(f_area_id,true);
+    return true;
 }
 
 bool MusicManager::validateSong(QString f_song_name, QStringList f_approved_cdns)
@@ -50,4 +82,47 @@ bool MusicManager::validateSong(QString f_song_name, QStringList f_approved_cdns
     }
 
     return true;
+}
+
+bool MusicManager::addCustomSong(QString f_song_name, QString f_real_name, float f_duration, int f_area_id)
+{
+    //Validate if simple name.
+    QString l_song_name = f_song_name;
+    if (f_song_name.split(".").size() == 1) {
+        l_song_name = l_song_name + ".opus";
+    }
+
+    if (!(validateSong(l_song_name, m_cdns) && validateSong(f_real_name, m_cdns))) {
+        return false;
+    }
+
+    //Avoid conflicts by checking if it exits.
+    if (m_root_list.contains(f_song_name) && m_global_enabled[f_area_id]) {
+        return false;
+    }
+
+    if (m_custom_lists->value(f_area_id).contains(f_song_name)) {
+        return false;
+    }
+
+    //There should be a way to directly insert into the Hash.
+    QMap<QString,QPair<QString,float>> l_custom_list = m_custom_lists->value(f_area_id);
+    l_custom_list.insert(l_song_name,{f_real_name,f_duration});
+    m_custom_lists->insert(f_area_id,l_custom_list);
+    return true;
+}
+
+bool MusicManager::toggleRootEnabled(int f_area_id)
+{
+    m_global_enabled[f_area_id] = !m_global_enabled[f_area_id];
+    if (m_global_enabled[f_area_id]) {
+        m_custom_lists[f_area_id].clear();
+    }
+    return m_global_enabled[f_area_id];
+}
+
+void MusicManager::reloadRequest()
+{
+    m_root_list = ConfigManager::musiclist();
+    m_cdns = ConfigManager::cdnList();
 }

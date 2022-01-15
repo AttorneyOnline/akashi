@@ -22,6 +22,16 @@ private slots:
     void init();
 
     /**
+     * @brief Tests the registration of areas in the music manager.
+     */
+    void registerArea();
+
+    /**
+     * @brief Tests changing whatever, gonna write this later
+     */
+    void toggleRootEnabled();
+
+    /**
      * @brief The data function for validateSong()
      */
     void validateSong_data();
@@ -42,6 +52,45 @@ void MusicListManager::init()
     l_test_list.insert("Announce The Truth (JFA).opus",{"Announce The Truth (JFA).opus",98.5});
 
     m_music_manager = new MusicManager(l_test_list);
+}
+
+void MusicListManager::registerArea()
+{
+    {
+        //We register a single area with the music manager of ID 0.
+        //Creation should work as there are no other areas yet.
+        bool l_creation_success = m_music_manager->registerArea(0);
+        QCOMPARE(l_creation_success,true);
+    }
+    {
+        //Someone tries to register the same area again!
+        //This should fail as this area already exists.
+        bool l_creation_success = m_music_manager->registerArea(0);
+        QCOMPARE(l_creation_success,false);
+    }
+}
+
+void MusicListManager::toggleRootEnabled()
+{
+    {
+        //We register an area of ID0 and toggle the inclusion of global list.
+        //We also add a song we know does not exist yet.
+        m_music_manager->registerArea(0);
+        m_music_manager->addCustomSong("somesong.opus","somesong.opus",0,0);
+        QCOMPARE(m_music_manager->toggleRootEnabled(0), false);
+        QCOMPARE(m_music_manager->musiclist(0).size(), 1);
+    }
+    {
+        //We toggle it again. It should return true now.
+        //Since this is now true, we should have the root list with customs cleared.
+        QCOMPARE(m_music_manager->toggleRootEnabled(0), true);
+        QCOMPARE(m_music_manager->musiclist(0).size(), 3);
+    }
+    {
+        //We now append a valid custom song. We should now have 4 entries on our musiclist.
+        m_music_manager->addCustomSong("somesong.opus","somesong.opus",0,0);
+        QCOMPARE(m_music_manager->musiclist(0).size(), 4);
+    }
 }
 
 void MusicListManager::validateSong_data()
