@@ -41,6 +41,11 @@ private slots:
      */
     void validateSong();
 
+    /**
+     * @brief Tests the addition of custom music.
+     */
+    void addCustomSong();
+
 
 };
 
@@ -74,22 +79,13 @@ void MusicListManager::toggleRootEnabled()
 {
     {
         //We register an area of ID0 and toggle the inclusion of global list.
-        //We also add a song we know does not exist yet.
         m_music_manager->registerArea(0);
-        m_music_manager->addCustomSong("somesong.opus","somesong.opus",0,0);
         QCOMPARE(m_music_manager->toggleRootEnabled(0), false);
-        QCOMPARE(m_music_manager->musiclist(0).size(), 1);
     }
     {
         //We toggle it again. It should return true now.
         //Since this is now true, we should have the root list with customs cleared.
         QCOMPARE(m_music_manager->toggleRootEnabled(0), true);
-        QCOMPARE(m_music_manager->musiclist(0).size(), 3);
-    }
-    {
-        //We now append a valid custom song. We should now have 4 entries on our musiclist.
-        m_music_manager->addCustomSong("somesong.opus","somesong.opus",0,0);
-        QCOMPARE(m_music_manager->musiclist(0).size(), 4);
     }
 }
 
@@ -118,6 +114,44 @@ void MusicListManager::validateSong()
 
     bool l_result = m_music_manager->validateSong(songname, {"my.cdn.com","your.cdn.com"});
     QCOMPARE(expectedResult,l_result);
+}
+
+void MusicListManager::addCustomSong()
+{
+    {
+        //Dummy register.
+        m_music_manager->registerArea(0);
+
+        //We have no custom songs, so musiclist = root_list.size()
+        QCOMPARE(m_music_manager->musiclist(0).size(), 3);
+    }
+    {
+        //We now add a song that's valid. our musiclist is now root_list.size() + custom_list.size()
+        m_music_manager->addCustomSong("mysong","mysong.opus",0,0);
+        QCOMPARE(m_music_manager->musiclist(0).size(), 4);
+    }
+    {
+        //We now add a song that's part of the root list. This should fail and not increase our size.
+        bool l_result = m_music_manager->addCustomSong("Announce The Truth (AJ)","Announce The Truth (AJ).opus",0,0);
+        QCOMPARE(l_result,false);
+        QCOMPARE(m_music_manager->musiclist(0).size(), 4);
+    }
+    {
+        //We now disable the root list. Musiclist is now custom_list.size()
+        m_music_manager->toggleRootEnabled(0);
+        QCOMPARE(m_music_manager->musiclist(0).size(), 1);
+    }
+    {
+        //We now add an item that is on the root list into the custom list. Size is still custom_list.size()
+        bool l_result = m_music_manager->addCustomSong("Announce The Truth (AJ)","Announce The Truth (AJ).opus",0,0);
+        QCOMPARE(l_result,true);
+        QCOMPARE(m_music_manager->musiclist(0).size(), 2);
+    }
+    {
+        //We enable the root list again. This purges the custom list. Size is now root_list.size() again.
+        m_music_manager->toggleRootEnabled(0);
+        QCOMPARE(m_music_manager->musiclist(0).size(), 3);
+    }
 }
 
 }

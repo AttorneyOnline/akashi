@@ -97,7 +97,7 @@ bool MusicManager::addCustomSong(QString f_song_name, QString f_real_name, float
     }
 
     //Avoid conflicts by checking if it exits.
-    if (m_root_list.contains(f_song_name) && m_global_enabled[f_area_id]) {
+    if (m_root_list.contains(l_song_name) && m_global_enabled[f_area_id]) {
         return false;
     }
 
