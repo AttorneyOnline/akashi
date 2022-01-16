@@ -112,6 +112,32 @@ bool MusicManager::addCustomSong(QString f_song_name, QString f_real_name, float
     return true;
 }
 
+bool MusicManager::addCustomCategory(QString f_category_name, int f_area_id)
+{
+    if (f_category_name.split(".").size() > 1) {
+        return false;
+    }
+
+    QString l_category_name = f_category_name;
+    if (!f_category_name.startsWith("==")) {
+        l_category_name = "==" + l_category_name + "==";
+    }
+
+    //Avoid conflicts by checking if it exits.
+    if (m_root_list.contains(l_category_name) && m_global_enabled[f_area_id]) {
+        return false;
+    }
+
+    if (m_custom_lists->value(f_area_id).contains(l_category_name)) {
+        return false;
+    }
+
+    QMap<QString,QPair<QString,float>> l_custom_list = m_custom_lists->value(f_area_id);
+    l_custom_list.insert(l_category_name,{l_category_name,0});
+    m_custom_lists->insert(f_area_id,l_custom_list);
+    return true;
+}
+
 bool MusicManager::toggleRootEnabled(int f_area_id)
 {
     m_global_enabled[f_area_id] = !m_global_enabled[f_area_id];

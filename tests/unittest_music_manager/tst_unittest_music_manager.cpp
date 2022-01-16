@@ -46,6 +46,11 @@ private slots:
      */
     void addCustomSong();
 
+    /**
+     * @brief Tests the addition of a custom category.
+     */
+    void addCustomCategory();
+
 
 };
 
@@ -122,35 +127,72 @@ void MusicListManager::addCustomSong()
         //Dummy register.
         m_music_manager->registerArea(0);
 
-        //We have no custom songs, so musiclist = root_list.size()
+        //No custom songs, so musiclist = root_list.size()
         QCOMPARE(m_music_manager->musiclist(0).size(), 3);
     }
     {
-        //We now add a song that's valid. our musiclist is now root_list.size() + custom_list.size()
+        //Add a song that's valid. The musiclist is now root_list.size() + custom_list.size()
         m_music_manager->addCustomSong("mysong","mysong.opus",0,0);
         QCOMPARE(m_music_manager->musiclist(0).size(), 4);
     }
     {
-        //We now add a song that's part of the root list. This should fail and not increase our size.
+        //Add a song that's part of the root list. This should fail and not increase the size.
         bool l_result = m_music_manager->addCustomSong("Announce The Truth (AJ)","Announce The Truth (AJ).opus",0,0);
         QCOMPARE(l_result,false);
         QCOMPARE(m_music_manager->musiclist(0).size(), 4);
     }
     {
-        //We now disable the root list. Musiclist is now custom_list.size()
+        //Disable the root list. Musiclist is now custom_list.size()
         m_music_manager->toggleRootEnabled(0);
         QCOMPARE(m_music_manager->musiclist(0).size(), 1);
     }
     {
-        //We now add an item that is on the root list into the custom list. Size is still custom_list.size()
+        //Add an item that is in the root list into the custom list. Size is still custom_list.size()
         bool l_result = m_music_manager->addCustomSong("Announce The Truth (AJ)","Announce The Truth (AJ).opus",0,0);
         QCOMPARE(l_result,true);
         QCOMPARE(m_music_manager->musiclist(0).size(), 2);
     }
     {
-        //We enable the root list again. This purges the custom list. Size is now root_list.size() again.
+        //Enable the root list again. This purges the custom list. Size is now root_list.size() again.
         m_music_manager->toggleRootEnabled(0);
         QCOMPARE(m_music_manager->musiclist(0).size(), 3);
+    }
+}
+
+void MusicListManager::addCustomCategory()
+{
+    {
+        //Dummy register.
+        m_music_manager->registerArea(0);
+
+        //Add category to the custom list. Category marker are added manually.
+        bool l_result = m_music_manager->addCustomCategory("Music2",0);
+        QCOMPARE(l_result,true);
+        QCOMPARE(m_music_manager->musiclist(0).size(), 4);
+        QCOMPARE(m_music_manager->musiclist(0).at(3), "==Music2==");
+    }
+    {
+        //Add a category that already exists on root. This should fail and not increase the size of our list.
+        bool l_result = m_music_manager->addCustomCategory("Music",0);
+        QCOMPARE(l_result, false);
+        QCOMPARE(m_music_manager->musiclist(0).size(), 4);
+    }
+    {
+        //We disable the root list. We now insert the category again.
+        m_music_manager->toggleRootEnabled(0);
+        bool l_result = m_music_manager->addCustomCategory("Music",0);
+        QCOMPARE(l_result, true);
+        QCOMPARE(m_music_manager->musiclist(0).size(), 2);
+        QCOMPARE(m_music_manager->musiclist(0).at(1), "==Music==");
+    }
+    {
+        //Global now enabled. We add a song with three ===, this should not append more.
+        m_music_manager->toggleRootEnabled(0);
+        bool l_result = m_music_manager->addCustomCategory("===Music===",0);
+        QCOMPARE(l_result, true);
+        QCOMPARE(m_music_manager->musiclist(0).size(), 4);
+        QCOMPARE(m_music_manager->musiclist(0).at(3), "===Music===");
+
     }
 }
 

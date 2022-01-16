@@ -74,10 +74,22 @@ public:
 
     /**
      * @brief Attempts to add the new song to the custom musiclist.
+     * @param f_song_name Friendly name shown in the clients musiclist.
+     * @param f_real_name Real name/url of the file.
+     * @param f_duration Playtime of the musicfile in seconds.
+     * @param f_area_id Area id of the clients current area.
      *
-     * @return
+     * @return Returns true on success, false on fail.
      */
-    bool addCustomSong(QString f_song_name, QString f_realname, float f_duration, int f_area_id);
+    bool addCustomSong(QString f_song_name, QString f_real_name, float f_duration, int f_area_id);
+
+    /**
+     * @brief Attempts to add the new category to the custom musiclist.
+     * @param f_category_name Category name candidate.
+     *
+     * @return Returns true on saccess, false on fail.
+     */
+    bool addCustomCategory(QString f_category_name, int f_area_id);
 
     /**
      * @brief Toggles wether the root list is included for this area.
