@@ -27,7 +27,7 @@ private slots:
     void registerArea();
 
     /**
-     * @brief Tests changing whatever, gonna write this later
+     * @brief Tests toggling the enabling/disabling of the prepend behaviour of our root list.
      */
     void toggleRootEnabled();
 
@@ -50,6 +50,11 @@ private slots:
      * @brief Tests the addition of a custom category.
      */
     void addCustomCategory();
+
+    /**
+     * @brief Test the sanitisation of the custom list when root prepend is reenabled.
+     */
+    void sanitiseCustomList();
 
 
 };
@@ -152,11 +157,6 @@ void MusicListManager::addCustomSong()
         QCOMPARE(l_result,true);
         QCOMPARE(m_music_manager->musiclist(0).size(), 2);
     }
-    {
-        //Enable the root list again. This purges the custom list. Size is now root_list.size() again.
-        m_music_manager->toggleRootEnabled(0);
-        QCOMPARE(m_music_manager->musiclist(0).size(), 3);
-    }
 }
 
 void MusicListManager::addCustomCategory()
@@ -186,14 +186,35 @@ void MusicListManager::addCustomCategory()
         QCOMPARE(m_music_manager->musiclist(0).at(1), "==Music==");
     }
     {
-        //Global now enabled. We add a song with three ===, this should not append more.
+        //Global now enabled. We add a song with three ===.
         m_music_manager->toggleRootEnabled(0);
         bool l_result = m_music_manager->addCustomCategory("===Music===",0);
         QCOMPARE(l_result, true);
-        QCOMPARE(m_music_manager->musiclist(0).size(), 4);
+        QCOMPARE(m_music_manager->musiclist(0).size(), 5);
         QCOMPARE(m_music_manager->musiclist(0).at(3), "===Music===");
 
     }
+}
+
+void MusicListManager::sanitiseCustomList()
+{
+    //Prepare a dummy area with root list disabled.Insert both non-root and root elements.
+    m_music_manager->registerArea(0);
+    m_music_manager->toggleRootEnabled(0);
+    m_music_manager->addCustomCategory("Music",0);
+    m_music_manager->addCustomCategory("Music2",0);
+    m_music_manager->addCustomSong("Announce The Truth (AJ)","Announce The Truth (AJ).opus",0,0);
+    m_music_manager->addCustomSong("mysong","mysong.opus",0,0);
+
+    //We now only have custom elements.
+    QCOMPARE(m_music_manager->musiclist(0).size(), 4);
+
+    //We reenable the root list. Sanisation should only leave the non-root elements in the custom list.
+    m_music_manager->toggleRootEnabled(0);
+    QCOMPARE(m_music_manager->musiclist(0).size(), 5);
+    QCOMPARE(m_music_manager->musiclist(0).at(3), "==Music2==");
+    QCOMPARE(m_music_manager->musiclist(0).at(4), "mysong.opus");
+
 }
 
 }
