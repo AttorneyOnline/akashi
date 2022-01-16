@@ -141,10 +141,24 @@ bool MusicManager::addCustomCategory(QString f_category_name, int f_area_id)
 bool MusicManager::toggleRootEnabled(int f_area_id)
 {
     m_global_enabled[f_area_id] = !m_global_enabled[f_area_id];
-    if (m_global_enabled[f_area_id]) {
-        m_custom_lists[f_area_id].clear();
+    if (m_global_enabled.value(f_area_id)) {
+        sanitiseCustomList(f_area_id);
     }
-    return m_global_enabled[f_area_id];
+    return m_global_enabled.value(f_area_id);
+}
+
+void MusicManager::sanitiseCustomList(int f_area_id)
+{
+    QMap<QString,QPair<QString,float>> l_sanitised_list;
+    for (auto iterator = m_custom_lists->value(f_area_id).keyBegin(),
+         end = m_custom_lists->value(f_area_id).keyEnd(); iterator != end; ++iterator)
+    {
+        QString l_key = iterator.operator*();
+        if (!m_root_list.contains(l_key)) {
+            l_sanitised_list.insert(l_key, m_custom_lists->value(f_area_id).value(l_key));
+        }
+    }
+    m_custom_lists->insert(f_area_id, l_sanitised_list);
 }
 
 void MusicManager::reloadRequest()

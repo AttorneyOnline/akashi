@@ -98,6 +98,12 @@ public:
      */
     bool toggleRootEnabled(int f_area_id);
 
+    /**
+     * @brief Removes conflicting songnames from the custom list.
+     * @param f_area_id Id of the area this is invoked in.
+     */
+    void sanitiseCustomList(int f_area_id);
+
 public slots:
 
     /**
