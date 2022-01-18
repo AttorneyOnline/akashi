@@ -399,7 +399,7 @@ class Server : public QObject {
     /**
      * @brief Handles all musiclists.
      */
-    MusicManager* music_manger;
+    MusicManager* music_manager;
 
     /**
      * @brief The port through which the server will accept TCP connections.

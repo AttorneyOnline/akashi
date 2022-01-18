@@ -67,17 +67,24 @@ public:
 
     /**
      * @brief Validates the song candidate to be played. If validation fails, false is returned.
+     *
      * @param f_song_name The song to be played. Can be an http/https stream or a local file.
+     *
      * @param f_approved_cdns A list of approved remote content sources.
+     *
      * @return Wether or not the song can be played or added.
      */
     bool validateSong(QString f_song_name, QStringList f_approved_cdns);
 
     /**
      * @brief Attempts to add the new song to the custom musiclist.
+     *
      * @param f_song_name Friendly name shown in the clients musiclist.
+     *
      * @param f_real_name Real name/url of the file.
+     *
      * @param f_duration Playtime of the musicfile in seconds.
+     *
      * @param f_area_id Area id of the clients current area.
      *
      * @return Returns true on success, false on fail.
@@ -86,6 +93,7 @@ public:
 
     /**
      * @brief Attempts to add the new category to the custom musiclist.
+     *
      * @param f_category_name Category name candidate.
      *
      * @return Returns true on saccess, false on fail.
@@ -93,14 +101,25 @@ public:
     bool addCustomCategory(QString f_category_name, int f_area_id);
 
     /**
+     * @brief Removes either a song or a category from the custom list.
+     *
+     * @param Name of the category or song to remove
+     *
+     * @return True on success, false on failure.
+     */
+    bool removeCategorySong(QString f_songcategory_name, int f_area_id);
+
+    /**
      * @brief Toggles wether the root list is included for this area.
      * This also delets the custom llist if it was enabled prior.
-     * @return
+     *
+     * @return Current state of the music list.
      */
     bool toggleRootEnabled(int f_area_id);
 
     /**
      * @brief Removes conflicting songnames from the custom list.
+     *
      * @param f_area_id Id of the area this is invoked in.
      */
     void sanitiseCustomList(int f_area_id);
@@ -120,11 +139,22 @@ public slots:
 signals:
 
     /**
-     * @brief Sends the FM packet with the musiclist of the area it enter.
-     * @param f_packet FM packet with the full musiclist and eventual custom list.
+     * @brief Sends the FM packet with the musiclist of the area when a client enters.
+     *
+     * @param f_packet FM packet with the full musiclist, when enabled, and custom list.
+     *
      * @param f_user_id temporary userid of the incoming client.
      */
     void sendFMPacket(AOPacket f_packet, int f_user_id);
+
+    /**
+     * @brief Sends the FM packet with the musiclist of the area when changes are made.
+     *
+     * @param f_packet FM packet with the full musiclist, when enabled, and eventual custom list.
+     *
+     * @param f_area_index Index of the current area the edit is made in.
+     */
+    void sendAreaFMPacket(AOPacket f_packet, int f_area_index);
 
 private:
 

@@ -33,9 +33,11 @@ Server::Server(int p_port, int p_ws_port, QObject* parent) :
 
     db_manager = new DBManager();
 
-    music_manger = new MusicManager(ConfigManager::musiclist());
-    connect(music_manger, &MusicManager::sendFMPacket,
+    music_manager = new MusicManager(ConfigManager::musiclist());
+    connect(music_manager, &MusicManager::sendFMPacket,
             this, &Server::unicast);
+    connect(music_manager, &MusicManager::sendAreaFMPacket,
+            this, QOverload<AOPacket,int>::of(&Server::broadcast));
 
     //We create it, even if its not used later on.
     discord = new Discord(this);
@@ -86,7 +88,7 @@ void Server::start()
     m_characters = ConfigManager::charlist();
 
     //Get musiclist from config file
-    m_music_list = music_manger->rootMusiclist();
+    m_music_list = music_manager->rootMusiclist();
 
     //Get backgrounds from config file
     m_backgrounds = ConfigManager::backgrounds();
@@ -96,12 +98,12 @@ void Server::start()
     QStringList raw_area_names = ConfigManager::rawAreaNames();
     for (int i = 0; i < raw_area_names.length(); i++) {
         QString area_name = raw_area_names[i];
-        AreaData* l_area = new AreaData(area_name, i, music_manger);
+        AreaData* l_area = new AreaData(area_name, i, music_manager);
         m_areas.insert(i, l_area);
         connect(l_area, &AreaData::sendAreaPacket,
                 this, QOverload<AOPacket,int>::of(&Server::broadcast));
         connect(l_area, &AreaData::userJoinedArea,
-                music_manger, &MusicManager::userJoinedArea);
+                music_manager, &MusicManager::userJoinedArea);
     }
 
     //Loads the command help information. This is not stored inside the server.
