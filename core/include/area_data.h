@@ -20,6 +20,7 @@
 
 #include "aopacket.h"
 #include "config_manager.h"
+#include "music_manager.h"
 
 #include <QMap>
 #include <QString>
@@ -44,7 +45,7 @@ class AreaData : public QObject {
      * and `YYYYYY` is the actual name of the area.
      * @param p_index The index of the area in the area list.
      */
-    AreaData(QString p_name, int p_index);
+    AreaData(QString p_name, int p_index, MusicManager* p_music_manager);
 
     /**
      * @brief The data for evidence in the area.
@@ -865,9 +866,11 @@ public slots:
   signals:
 
     /**
-     * @brief Changes the song in the current area when the jukebox timer expires.
+     * @brief Sends a packet to every client inside the area.
      */
-    void playJukeboxSong(AOPacket f_packet, int f_area_index);
+    void sendAreaPacket(AOPacket f_packet, int f_area_index);
+
+    void sendClientPacket(AOPacket f_packet, int f_client_id);
 
 private:
     /**
@@ -884,6 +887,11 @@ private:
      * @brief The index of the area in the server's area list.
      */
     int m_index;
+
+    /**
+     * @brief Pointer to the global music manager.
+     */
+    MusicManager* m_music_manager;
 
     /**
      * @brief A list of the character IDs of all characters taken.

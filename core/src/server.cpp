@@ -94,10 +94,12 @@ void Server::start()
     QStringList raw_area_names = ConfigManager::rawAreaNames();
     for (int i = 0; i < raw_area_names.length(); i++) {
         QString area_name = raw_area_names[i];
-        AreaData* l_area = new AreaData(area_name, i);
+        AreaData* l_area = new AreaData(area_name, i, music_manger);
         m_areas.insert(i, l_area);
-        connect(l_area, &AreaData::playJukeboxSong,
+        connect(l_area, &AreaData::sendAreaPacket,
                 this, QOverload<AOPacket,int>::of(&Server::broadcast));
+        connect(l_area, &AreaData::sendClientPacket,
+                this, &Server::unicast);
     }
 
     //Loads the command help information. This is not stored inside the server.
@@ -302,6 +304,15 @@ void Server::broadcast(AOPacket packet, AOPacket other_packet, TARGET_TYPE targe
     default:
         //Unimplemented, so not handled.
         break;
+    }
+}
+
+void Server::unicast(AOPacket f_packet, int f_client_id)
+{
+    AOClient* l_client = getClientByID(f_client_id);
+    if (!(l_client == nullptr)) { // This should never happen, but safety first.
+        l_client->sendPacket(f_packet);
+        return;
     }
 }
 
