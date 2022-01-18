@@ -24,6 +24,7 @@
 #include <QPair>
 
 #include <include/config_manager.h>
+#include <include/aopacket.h>
 
 class MusicManager : public QObject
 {
@@ -110,6 +111,20 @@ public slots:
      * @brief Updates the root musiclist and CDN list.
      */
     void reloadRequest();
+
+    /**
+     * @brief Triggers sending of FM packet to client joining a new area.
+     */
+    void userJoinedArea(int f_area_index, int f_user_id);
+
+signals:
+
+    /**
+     * @brief Sends the FM packet with the musiclist of the area it enter.
+     * @param f_packet FM packet with the full musiclist and eventual custom list.
+     * @param f_user_id temporary userid of the incoming client.
+     */
+    void sendFMPacket(AOPacket f_packet, int f_user_id);
 
 private:
 

@@ -870,7 +870,7 @@ public slots:
      */
     void sendAreaPacket(AOPacket f_packet, int f_area_index);
 
-    void sendClientPacket(AOPacket f_packet, int f_client_id);
+    void userJoinedArea(int f_area_index, int f_user_id);
 
 private:
     /**

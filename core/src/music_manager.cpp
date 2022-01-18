@@ -166,3 +166,8 @@ void MusicManager::reloadRequest()
     m_root_list = ConfigManager::musiclist();
     m_cdns = ConfigManager::cdnList();
 }
+
+void MusicManager::userJoinedArea(int f_area_index, int f_user_id)
+{
+    emit sendFMPacket(AOPacket("FM",musiclist(f_area_index)), f_user_id);
+}

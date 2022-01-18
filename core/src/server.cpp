@@ -34,6 +34,8 @@ Server::Server(int p_port, int p_ws_port, QObject* parent) :
     db_manager = new DBManager();
 
     music_manger = new MusicManager(ConfigManager::musiclist());
+    connect(music_manger, &MusicManager::sendFMPacket,
+            this, &Server::unicast);
 
     //We create it, even if its not used later on.
     discord = new Discord(this);
@@ -98,8 +100,8 @@ void Server::start()
         m_areas.insert(i, l_area);
         connect(l_area, &AreaData::sendAreaPacket,
                 this, QOverload<AOPacket,int>::of(&Server::broadcast));
-        connect(l_area, &AreaData::sendClientPacket,
-                this, &Server::unicast);
+        connect(l_area, &AreaData::userJoinedArea,
+                music_manger, &MusicManager::userJoinedArea);
     }
 
     //Loads the command help information. This is not stored inside the server.
