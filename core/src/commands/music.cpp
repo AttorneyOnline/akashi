@@ -127,3 +127,18 @@ void AOClient::cmdToggleJukebox(int argc, QStringList argv)
         sendServerMessage("You do not have permission to change the jukebox status.");
     }
 }
+
+void AOClient::cmdAddSong(int argc, QStringList argv)
+{
+
+}
+
+void AOClient::cmdAddCategory(int argc, QStringList argv)
+{
+
+}
+
+void AOClient::cmdRemoveCategorySong(int argc, QStringList argv)
+{
+
+}

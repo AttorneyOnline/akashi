@@ -109,6 +109,7 @@ bool MusicManager::addCustomSong(QString f_song_name, QString f_real_name, float
     QMap<QString,QPair<QString,float>> l_custom_list = m_custom_lists->value(f_area_id);
     l_custom_list.insert(l_song_name,{f_real_name,f_duration});
     m_custom_lists->insert(f_area_id,l_custom_list);
+    emit sendAreaFMPacket(AOPacket("FM",musiclist(f_area_id)), f_area_id);
     return true;
 }
 
@@ -135,7 +136,19 @@ bool MusicManager::addCustomCategory(QString f_category_name, int f_area_id)
     QMap<QString,QPair<QString,float>> l_custom_list = m_custom_lists->value(f_area_id);
     l_custom_list.insert(l_category_name,{l_category_name,0});
     m_custom_lists->insert(f_area_id,l_custom_list);
+    emit sendAreaFMPacket(AOPacket("FM",musiclist(f_area_id)), f_area_id);
     return true;
+}
+
+bool MusicManager::removeCategorySong(QString f_songcategory_name, int f_area_id)
+{
+    QMap<QString,QPair<QString,float>> l_custom_list;
+    if (l_custom_list.contains(f_songcategory_name)){
+        l_custom_list.remove(f_songcategory_name);
+        m_custom_lists->insert(f_area_id,l_custom_list);
+        return true;
+    }
+    return false;
 }
 
 bool MusicManager::toggleRootEnabled(int f_area_id)
@@ -144,6 +157,7 @@ bool MusicManager::toggleRootEnabled(int f_area_id)
     if (m_global_enabled.value(f_area_id)) {
         sanitiseCustomList(f_area_id);
     }
+    emit sendAreaFMPacket(AOPacket("FM",musiclist(f_area_id)), f_area_id);
     return m_global_enabled.value(f_area_id);
 }
 

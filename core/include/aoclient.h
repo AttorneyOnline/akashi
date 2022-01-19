@@ -1868,6 +1868,12 @@ class AOClient : public QObject {
      */
     void cmdToggleJukebox(int argc, QStringList argv);
 
+    void cmdAddSong(int argc, QStringList argv);
+
+    void cmdAddCategory(int argc, QStringList argv);
+
+    void cmdRemoveCategorySong(int argc, QStringList argv);
+
     ///@}
 
     /**
