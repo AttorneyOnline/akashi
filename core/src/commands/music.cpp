@@ -130,15 +130,18 @@ void AOClient::cmdToggleJukebox(int argc, QStringList argv)
 
 void AOClient::cmdAddSong(int argc, QStringList argv)
 {
-
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
 }
 
 void AOClient::cmdAddCategory(int argc, QStringList argv)
 {
-
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
 }
 
 void AOClient::cmdRemoveCategorySong(int argc, QStringList argv)
 {
-
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
 }

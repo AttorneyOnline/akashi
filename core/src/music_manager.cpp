@@ -142,7 +142,7 @@ bool MusicManager::addCustomCategory(QString f_category_name, int f_area_id)
 
 bool MusicManager::removeCategorySong(QString f_songcategory_name, int f_area_id)
 {
-    QMap<QString,QPair<QString,float>> l_custom_list;
+    QMap<QString,QPair<QString,float>> l_custom_list = m_custom_lists->value(f_area_id);
     if (l_custom_list.contains(f_songcategory_name)){
         l_custom_list.remove(f_songcategory_name);
         m_custom_lists->insert(f_area_id,l_custom_list);

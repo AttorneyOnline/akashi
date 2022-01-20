@@ -56,6 +56,11 @@ private slots:
      */
     void sanitiseCustomList();
 
+    /**
+     * @brief Tests the removing of custom songs and categories.
+     */
+    void removeCategorySong();
+
 
 };
 
@@ -215,6 +220,43 @@ void MusicListManager::sanitiseCustomList()
     QCOMPARE(m_music_manager->musiclist(0).at(3), "==Music2==");
     QCOMPARE(m_music_manager->musiclist(0).at(4), "mysong.opus");
 
+}
+
+void MusicListManager::removeCategorySong()
+{
+    {
+        //Prepare dummy area. Add both custom songs and categories.
+        m_music_manager->registerArea(0);
+        m_music_manager->addCustomCategory("Music2",0);
+        m_music_manager->addCustomSong("mysong","mysong.opus",0,0);
+        m_music_manager->addCustomCategory("Music3",0);
+        m_music_manager->addCustomSong("mysong2","mysong.opus",0,0);
+        QCOMPARE(m_music_manager->musiclist(0).size(), 7);
+    }
+    {
+        //Delete a category that is not custom. This should fail.
+        bool l_success = m_music_manager->removeCategorySong("==Music==",0);
+        QCOMPARE(l_success, false);
+        QCOMPARE(m_music_manager->musiclist(0).size(), 7);
+    }
+    {
+        //Correct category name, wrong format.
+        bool l_success = m_music_manager->removeCategorySong("Music2",0);
+        QCOMPARE(l_success, false);
+        QCOMPARE(m_music_manager->musiclist(0).size(), 7);
+    }
+    {
+        //Correct category name. This should be removed.
+        bool l_success = m_music_manager->removeCategorySong("==Music2==",0);
+        QCOMPARE(l_success, true);
+        QCOMPARE(m_music_manager->musiclist(0).size(), 6);
+    }
+    {
+        //Correct song name. This should be removed. This needs to be with the extension.
+        bool l_success = m_music_manager->removeCategorySong("mysong2.opus",0);
+        QCOMPARE(l_success, true);
+        QCOMPARE(m_music_manager->musiclist(0).size(), 5);
+    }
 }
 
 }
