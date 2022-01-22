@@ -76,7 +76,7 @@ class ConfigManager {
      *
      * @return See short description.
      */
-    static QMap<QString,QPair<QString,float>> musiclist();
+    static QMap<QString,QPair<QString,int>> musiclist();
 
     /**
      * @brief Loads help information into m_help_information.
@@ -544,7 +544,7 @@ private:
     /**
      * @brief Contains the musiclist with time durations.
      */
-    static QMap<QString,QPair<QString,float>>* m_musicList;
+    static QMap<QString,QPair<QString,int>>* m_musicList;
 
     /**
      * @brief QHash containing the help information for all commands registered to the server.

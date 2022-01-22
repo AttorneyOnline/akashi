@@ -25,7 +25,7 @@ QSettings* ConfigManager::m_areas = new QSettings("config/areas.ini", QSettings:
 QSettings* ConfigManager::m_logtext = new QSettings("config/text/logtext.ini", QSettings::IniFormat);
 ConfigManager::CommandSettings* ConfigManager::m_commands = new CommandSettings();
 QElapsedTimer* ConfigManager::m_uptimeTimer = new QElapsedTimer;
-QMap<QString,QPair<QString,float>>* ConfigManager::m_musicList = new QMap<QString,QPair<QString,float>>;
+QMap<QString,QPair<QString,int>>* ConfigManager::m_musicList = new QMap<QString,QPair<QString,int>>;
 QHash<QString,ConfigManager::help>* ConfigManager::m_commands_help = new QHash<QString,ConfigManager::help>;
 
 bool ConfigManager::verifyServerConfig()
@@ -130,7 +130,7 @@ QStringList ConfigManager::backgrounds()
     return l_backgrounds;
 }
 
-QMap<QString,QPair<QString,float>> ConfigManager::musiclist()
+QMap<QString,QPair<QString,int>> ConfigManager::musiclist()
 {
     QFile l_music_json("config/music.json");
     l_music_json.open(QIODevice::ReadOnly | QIODevice::Text);
@@ -139,7 +139,7 @@ QMap<QString,QPair<QString,float>> ConfigManager::musiclist()
     QJsonDocument l_music_list_json = QJsonDocument::fromJson(l_music_json.readAll(), &l_error);
     if (!(l_error.error == QJsonParseError::NoError)) { //Non-Terminating error.
         qWarning() << "Unable to load musiclist. The following error was encounted : " + l_error.errorString();
-        return QMap<QString,QPair<QString,float>>{}; //Server can still run without music.
+        return QMap<QString,QPair<QString,int>>{}; //Server can still run without music.
     }
 
     // Akashi expects the musiclist to be contained in a JSON array, even if its only a single category.
@@ -166,7 +166,7 @@ QMap<QString,QPair<QString,float>> ConfigManager::musiclist()
             if (l_real_name.isEmpty()) {
                 l_real_name = l_song_name;
             }
-            float l_song_duration = l_song_obj["length"].toVariant().toFloat();
+            int l_song_duration = l_song_obj["length"].toVariant().toInt();
          m_musicList->insert(l_song_name,{l_real_name,l_song_duration});
         }
     }

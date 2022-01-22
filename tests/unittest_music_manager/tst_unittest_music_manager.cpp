@@ -61,15 +61,20 @@ private slots:
      */
     void removeCategorySong();
 
+    /**
+     * @brief Tests the retrival of song information.
+     */
+    void songInformation();
+
 
 };
 
 void MusicListManager::init()
 {
-    QMap<QString,QPair<QString,float>> l_test_list;
+    QMap<QString,QPair<QString,int>> l_test_list;
     l_test_list.insert("==Music==",{"==Music==",0});
-    l_test_list.insert("Announce The Truth (AJ).opus",{"Announce The Truth (AJ).opus",59.5});
-    l_test_list.insert("Announce The Truth (JFA).opus",{"Announce The Truth (JFA).opus",98.5});
+    l_test_list.insert("Announce The Truth (AJ).opus",{"Announce The Truth (AJ).opus",59});
+    l_test_list.insert("Announce The Truth (JFA).opus",{"Announce The Truth (JFA).opus",98});
 
     m_music_manager = new MusicManager(l_test_list);
 }
@@ -256,6 +261,28 @@ void MusicListManager::removeCategorySong()
         bool l_success = m_music_manager->removeCategorySong("mysong2.opus",0);
         QCOMPARE(l_success, true);
         QCOMPARE(m_music_manager->musiclist(0).size(), 5);
+    }
+}
+
+void MusicListManager::songInformation()
+{
+    {
+        //Prepare dummy area. Add both custom songs and categories.
+        m_music_manager->registerArea(0);
+        m_music_manager->addCustomCategory("Music2",0);
+        m_music_manager->addCustomSong("mysong","realmysong.opus",47,0);
+        m_music_manager->addCustomCategory("Music3",0);
+        m_music_manager->addCustomSong("mysong2","mysong.opus",42,0);
+    }
+    {
+        QPair<QString,int> l_song_information = m_music_manager->songInformation("mysong.opus",0);
+        QCOMPARE(l_song_information.first, "realmysong.opus");
+        QCOMPARE(l_song_information.second, 47);
+    }
+    {
+        QPair<QString,int> l_song_information = m_music_manager->songInformation("Announce The Truth (AJ).opus",0);
+        QCOMPARE(l_song_information.first, "Announce The Truth (AJ).opus");
+        QCOMPARE(l_song_information.second, 59);
     }
 }
 
