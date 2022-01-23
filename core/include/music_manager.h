@@ -133,6 +133,13 @@ public:
      */
     QPair<QString, int> songInformation(QString f_song_name, int f_area_id);
 
+    /**
+     * @brief Checks if a song is part of the clients current area custom list.
+     *
+     * @return Returns true if the song exists as a custom song.
+     */
+    bool isCustom(int f_area_id, QString f_song_name);
+
 public slots:
 
     /**

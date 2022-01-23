@@ -199,6 +199,14 @@ QPair<QString, int> MusicManager::songInformation(QString f_song_name, int f_are
     return m_custom_lists->value(f_area_id).value(f_song_name);
 }
 
+bool MusicManager::isCustom(int f_area_id, QString f_song_name)
+{
+    if (m_customs_ordered.value(f_area_id).contains(f_song_name, Qt::CaseInsensitive)) {
+        return true;
+    }
+    return false;
+}
+
 void MusicManager::reloadRequest()
 {
     m_root_list = ConfigManager::musiclist();
