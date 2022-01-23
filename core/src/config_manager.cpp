@@ -218,11 +218,6 @@ void ConfigManager::loadCommandHelp()
     }
 }
 
-QPair<QString,float> ConfigManager::songInformation(const QString &f_songName)
-{
-    return m_musicList->value(f_songName);
-}
-
 QSettings* ConfigManager::areaData()
 {
     return m_areas;

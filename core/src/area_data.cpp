@@ -566,7 +566,7 @@ QString AreaData::addJukeboxSong(QString f_song)
 {
     if(!m_jukebox_queue.contains(f_song)) {
             //Retrieve song information.
-            QPair<QString,float> l_song = ConfigManager::songInformation(f_song);
+            QPair<QString,float> l_song = m_music_manager->songInformation(f_song, index());
 
             if (l_song.second > 0) {
                 if (m_jukebox_queue.size() == 0) {
@@ -596,7 +596,7 @@ void AreaData::switchJukeboxSong()
     QString l_song_name;
     if(m_jukebox_queue.size() == 1) {
         l_song_name = m_jukebox_queue[0];
-        QPair<QString,float> l_song = ConfigManager::songInformation(l_song_name);
+        QPair<QString,float> l_song = m_music_manager->songInformation(l_song_name, index());
         emit sendAreaPacket(AOPacket("MC",{l_song.first,"-1"}), m_index);
         m_jukebox_timer->start(l_song.second * 1000);
     }
@@ -604,7 +604,7 @@ void AreaData::switchJukeboxSong()
         int l_random_index = QRandomGenerator::system()->bounded(m_jukebox_queue.size() -1);
         l_song_name = m_jukebox_queue[l_random_index];
 
-        QPair<QString,float> l_song = ConfigManager::songInformation(l_song_name);
+        QPair<QString,float> l_song = m_music_manager->songInformation(l_song_name, index());
         emit sendAreaPacket(AOPacket("MC",{l_song.first,"-1"}), m_index);
         m_jukebox_timer->start(l_song.second * 1000);
 

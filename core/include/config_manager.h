@@ -93,13 +93,6 @@ class ConfigManager {
     static void loadCommandHelp();
 
     /**
-     * @brief Returns the duration of a song in the songlist.
-     * @param The name of the song where duration is requested
-     * @return The duration of the song
-     */
-    static QPair<QString, float> songInformation(const QString& f_songName);
-
-    /**
      * @brief Returns the content of
      *
      * @return See short description.
