@@ -33,7 +33,7 @@ Server::Server(int p_port, int p_ws_port, QObject* parent) :
 
     db_manager = new DBManager();
 
-    music_manager = new MusicManager(ConfigManager::musiclist());
+    music_manager = new MusicManager(this);
     connect(music_manager, &MusicManager::sendFMPacket,
             this, &Server::unicast);
     connect(music_manager, &MusicManager::sendAreaFMPacket,
@@ -104,6 +104,7 @@ void Server::start()
                 this, QOverload<AOPacket,int>::of(&Server::broadcast));
         connect(l_area, &AreaData::userJoinedArea,
                 music_manager, &MusicManager::userJoinedArea);
+        music_manager->registerArea(i);
     }
 
     //Loads the command help information. This is not stored inside the server.

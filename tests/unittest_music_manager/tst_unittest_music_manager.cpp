@@ -66,6 +66,11 @@ private slots:
      */
     void songInformation();
 
+    /**
+     * @brief Tests the retrival of the full musiclist for an area.
+     */
+    void musiclist();
+
 
 };
 
@@ -76,7 +81,7 @@ void MusicListManager::init()
     l_test_list.insert("Announce The Truth (AJ).opus",{"Announce The Truth (AJ).opus",59});
     l_test_list.insert("Announce The Truth (JFA).opus",{"Announce The Truth (JFA).opus",98});
 
-    m_music_manager = new MusicManager(l_test_list);
+    m_music_manager = new MusicManager(nullptr, l_test_list);
 }
 
 void MusicListManager::registerArea()
@@ -283,6 +288,21 @@ void MusicListManager::songInformation()
         QPair<QString,int> l_song_information = m_music_manager->songInformation("Announce The Truth (AJ).opus",0);
         QCOMPARE(l_song_information.first, "Announce The Truth (AJ).opus");
         QCOMPARE(l_song_information.second, 59);
+    }
+}
+
+void MusicListManager::musiclist()
+{
+    {
+        //Prepare dummy area. Add both custom songs and categories.
+        m_music_manager->registerArea(0);
+        m_music_manager->addCustomCategory("Music2",0);
+        m_music_manager->addCustomSong("mysong","realmysong.opus",47,0);
+        m_music_manager->addCustomCategory("Music3",0);
+        m_music_manager->addCustomSong("mysong2","mysong.opus",42,0);
+    }
+    {
+        QCOMPARE(m_music_manager->musiclist(0).size(), 7);
     }
 }
 

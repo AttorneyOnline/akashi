@@ -131,17 +131,62 @@ void AOClient::cmdToggleJukebox(int argc, QStringList argv)
 void AOClient::cmdAddSong(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
-    Q_UNUSED(argv);
+
+    QString l_argv_string = argv.join(" ");
+    QStringList l_argv = l_argv_string.split(",");
+
+    bool l_success = false;
+    if (l_argv.size() == 1) {
+        QString l_song_name = l_argv.value(0);
+        l_success = m_music_manager->addCustomSong(l_song_name, l_song_name, 0, m_current_area);
+    }
+
+    if (l_argv.size() == 2) {
+        QString l_song_name = l_argv.value(0);
+        QString l_true_name = l_argv.value(1);
+        l_success = m_music_manager->addCustomSong(l_song_name, l_true_name, 0, m_current_area);
+    }
+
+    if (l_argv.size() == 3) {
+        QString l_song_name = l_argv.value(0);
+        QString l_true_name = l_argv.value(1);
+        bool ok;
+        int l_song_duration = l_argv.value(2).toInt(&ok);
+        if (!ok)
+            l_song_duration = 0;
+        l_success = m_music_manager->addCustomSong(l_song_name, l_true_name, l_song_duration, m_current_area);
+    }
+
+    if (l_argv.size() >= 4) {
+        sendServerMessage("Too many arguments. Addition of song has failed.");
+        return;
+    }
+
+    QString l_message = l_success ? "failed." : "succeeded.";
+    sendServerMessage("The addition of the song has " + l_message);
 }
 
 void AOClient::cmdAddCategory(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
-    Q_UNUSED(argv);
+    bool l_success = m_music_manager->addCustomCategory(argv.join(" "), m_current_area);
+    QString l_message = l_success ? "failed." : "succeeded.";
+    sendServerMessage("The addition of the category has " + l_message);
 }
 
 void AOClient::cmdRemoveCategorySong(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
+    bool l_success = m_music_manager->removeCategorySong(argv.join(" "), m_current_area);
+    QString l_message = l_success ? "failed." : "succeeded.";
+    sendServerMessage("The removal of the entry has " + l_message);
+}
+
+void AOClient::cmdToggleRootlist(int argc, QStringList argv)
+{
+    Q_UNUSED(argc);
     Q_UNUSED(argv);
+    bool l_status = m_music_manager->toggleRootEnabled(m_current_area);
+    QString l_message = (l_status) ? "enabled." : "disabled.";
+    sendServerMessage("Global musiclist has been " + l_message);
 }
