@@ -81,7 +81,7 @@ void MusicListManager::init()
     l_test_list.insert("Announce The Truth (AJ).opus",{"Announce The Truth (AJ).opus",59});
     l_test_list.insert("Announce The Truth (JFA).opus",{"Announce The Truth (JFA).opus",98});
 
-    m_music_manager = new MusicManager(nullptr, l_test_list);
+    m_music_manager = new MusicManager(nullptr, {"my.cdn.com","your.cdn.com"}, l_test_list);
 }
 
 void MusicListManager::registerArea()
@@ -171,6 +171,11 @@ void MusicListManager::addCustomSong()
         bool l_result = m_music_manager->addCustomSong("Announce The Truth (AJ)","Announce The Truth (AJ).opus",0,0);
         QCOMPARE(l_result,true);
         QCOMPARE(m_music_manager->musiclist(0).size(), 2);
+    }
+    {
+        bool l_result = m_music_manager->addCustomSong("Announce The Truth (AJ)2","https://my.cdn.com/mysong.opus",0,0);
+        QCOMPARE(l_result,true);
+        QCOMPARE(m_music_manager->musiclist(0).size(), 3);
     }
 }
 

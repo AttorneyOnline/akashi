@@ -33,7 +33,7 @@ Server::Server(int p_port, int p_ws_port, QObject* parent) :
 
     db_manager = new DBManager();
 
-    music_manager = new MusicManager(this);
+    music_manager = new MusicManager(this, ConfigManager::cdnList());
     connect(music_manager, &MusicManager::sendFMPacket,
             this, &Server::unicast);
     connect(music_manager, &MusicManager::sendAreaFMPacket,

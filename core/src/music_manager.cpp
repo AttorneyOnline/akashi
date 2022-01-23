@@ -1,11 +1,14 @@
 #include "include/music_manager.h"
 
-MusicManager::MusicManager(QObject *parent, QMap<QString, QPair<QString, int>> f_root_list) :
+MusicManager::MusicManager(QObject *parent, QStringList f_cdns, QMap<QString, QPair<QString, int>> f_root_list) :
     QObject(parent),
-    m_cdns({"cdn.discord.com"}),
     m_root_list(f_root_list)
 {
     m_custom_lists = new QHash<int,QMap<QString,QPair<QString,int>>>;
+    if (!f_cdns.isEmpty()) {
+        m_cdns = f_cdns;
+    }
+    qDebug() << m_cdns;
 }
 
 MusicManager::~MusicManager()
@@ -94,9 +97,11 @@ bool MusicManager::addCustomSong(QString f_song_name, QString f_real_name, int f
         l_song_name = l_song_name + ".opus";
     }
 
-    QStringList l_cdns = m_cdns;
-    qDebug() << m_cdns;
-    if (!(validateSong(l_song_name, l_cdns) && validateSong(f_real_name, l_cdns))) {
+    if (this == nullptr) {
+        qDebug() << "this is a nullptr";
+    }
+
+    if (!(validateSong(l_song_name, m_cdns) && validateSong(f_real_name, m_cdns))) {
         return false;
     }
 
@@ -159,7 +164,7 @@ bool MusicManager::removeCategorySong(QString f_songcategory_name, int f_area_id
 
 bool MusicManager::toggleRootEnabled(int f_area_id)
 {
-    m_global_enabled.insert(!m_global_enabled.value(f_area_id), f_area_id);
+    m_global_enabled.insert(f_area_id, !m_global_enabled.value(f_area_id));
     if (m_global_enabled.value(f_area_id)) {
         sanitiseCustomList(f_area_id);
     }
