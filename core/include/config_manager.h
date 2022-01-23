@@ -79,6 +79,13 @@ class ConfigManager {
     static QMap<QString,QPair<QString,int>> musiclist();
 
     /**
+     * @brief Returns an ordered QList of all basesongs of this server.
+     *
+     * @return See short description.
+     */
+    static QStringList ordered_songs();
+
+    /**
      * @brief Loads help information into m_help_information.
      *
      * @return See short description.
@@ -545,6 +552,11 @@ private:
      * @brief Contains the musiclist with time durations.
      */
     static QMap<QString,QPair<QString,int>>* m_musicList;
+
+    /**
+     * @brief Contains an ordered list for the musiclist.
+     */
+    static QStringList* m_ordered_list;
 
     /**
      * @brief QHash containing the help information for all commands registered to the server.

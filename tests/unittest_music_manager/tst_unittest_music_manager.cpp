@@ -81,7 +81,10 @@ void MusicListManager::init()
     l_test_list.insert("Announce The Truth (AJ).opus",{"Announce The Truth (AJ).opus",59});
     l_test_list.insert("Announce The Truth (JFA).opus",{"Announce The Truth (JFA).opus",98});
 
-    m_music_manager = new MusicManager(nullptr, {"my.cdn.com","your.cdn.com"}, l_test_list);
+    QStringList l_list = {};
+    l_list << "==Music==" << "Announce The Truth (AJ).opus" << "Announce The Truth (JFA).opus";
+
+    m_music_manager = new MusicManager(nullptr, l_list ,{"my.cdn.com","your.cdn.com"}, l_test_list);
 }
 
 void MusicListManager::registerArea()
@@ -211,7 +214,7 @@ void MusicListManager::addCustomCategory()
         bool l_result = m_music_manager->addCustomCategory("===Music===",0);
         QCOMPARE(l_result, true);
         QCOMPARE(m_music_manager->musiclist(0).size(), 5);
-        QCOMPARE(m_music_manager->musiclist(0).at(3), "===Music===");
+        QCOMPARE(m_music_manager->musiclist(0).at(4), "===Music===");
 
     }
 }

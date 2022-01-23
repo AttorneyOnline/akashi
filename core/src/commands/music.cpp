@@ -170,7 +170,7 @@ void AOClient::cmdAddCategory(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
     bool l_success = m_music_manager->addCustomCategory(argv.join(" "), m_current_area);
-    QString l_message = l_success ? "failed." : "succeeded.";
+    QString l_message = l_success ? "succeeded." : "failed.";
     sendServerMessage("The addition of the category has " + l_message);
 }
 
@@ -178,7 +178,7 @@ void AOClient::cmdRemoveCategorySong(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
     bool l_success = m_music_manager->removeCategorySong(argv.join(" "), m_current_area);
-    QString l_message = l_success ? "failed." : "succeeded.";
+    QString l_message = l_success ? "succeeded." : "failed.";
     sendServerMessage("The removal of the entry has " + l_message);
 }
 

@@ -33,12 +33,6 @@ Server::Server(int p_port, int p_ws_port, QObject* parent) :
 
     db_manager = new DBManager();
 
-    music_manager = new MusicManager(this, ConfigManager::cdnList());
-    connect(music_manager, &MusicManager::sendFMPacket,
-            this, &Server::unicast);
-    connect(music_manager, &MusicManager::sendAreaFMPacket,
-            this, QOverload<AOPacket,int>::of(&Server::broadcast));
-
     //We create it, even if its not used later on.
     discord = new Discord(this);
 
@@ -87,11 +81,19 @@ void Server::start()
     //Get characters from config file
     m_characters = ConfigManager::charlist();
 
-    //Get musiclist from config file
-    m_music_list = music_manager->rootMusiclist();
-
     //Get backgrounds from config file
     m_backgrounds = ConfigManager::backgrounds();
+
+    //Build our music manager.
+    ConfigManager::musiclist();
+    music_manager = new MusicManager(this, ConfigManager::ordered_songs(), ConfigManager::cdnList());
+    connect(music_manager, &MusicManager::sendFMPacket,
+            this, &Server::unicast);
+    connect(music_manager, &MusicManager::sendAreaFMPacket,
+            this, QOverload<AOPacket,int>::of(&Server::broadcast));
+
+    //Get musiclist from config file
+    m_music_list = music_manager->rootMusiclist();
 
     //Assembles the area list
     m_area_names = ConfigManager::sanitizedAreaNames();
@@ -139,7 +141,7 @@ void Server::clientConnected()
     }
 
     int user_id = m_available_ids.dequeue();
-    AOClient* client = new AOClient(this, socket, this, user_id);
+    AOClient* client = new AOClient(this, socket, this, user_id, music_manager);
     m_clients_ids.insert(user_id, client);
 
     int multiclient_count = 1;
