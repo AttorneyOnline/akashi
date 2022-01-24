@@ -2209,7 +2209,7 @@ class AOClient : public QObject {
         {"addcategory",        {ACLFlags.value("CM"),           1, &AOClient::cmdAddCategory}},
         {"removeentry",        {ACLFlags.value("CM"),           1, &AOClient::cmdRemoveCategorySong}},
         {"toggleroot",         {ACLFlags.value("CM"),           0, &AOClient::cmdToggleRootlist}},
-        {"clearcustoms",       {ACLFlags.value("CM"),           0, &AOClient::cmdClearCustom}}
+        {"clearcustom",        {ACLFlags.value("CM"),           0, &AOClient::cmdClearCustom}}
     };
 
     /**
