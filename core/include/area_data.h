@@ -215,8 +215,11 @@ class AreaData : public QObject {
      *
      * @param f_charId The character ID of the client who left. The default value is `-1`. If it is left at that,
      * the area will not try to remove any character from the list of characters taken.
+     *
+     * @param f_userId The user ID of the client who left. The default value is '-1', This ID is technically
+     * impossible.
      */
-    void clientLeftArea(int f_charId = -1);
+    void clientLeftArea(int f_charId = -1, int f_userId = -1);
 
     /**
      * @brief A client in the area joined recently.
@@ -225,8 +228,11 @@ class AreaData : public QObject {
      *
      * @param f_charId The character ID of the client who joined. The default value is `-1`. If it is left at that,
      * the area will not add any character to the list of characters taken.
+     *
+     * @param f_userId The user ID of the client who left. The default value is '-1', This ID is technically
+     * impossible.
      */
-    void clientJoinedArea(int f_charId = -1);
+    void clientJoinedArea(int f_charId = -1, int f_userId = -1);
 
     /**
      * @brief Returns a copy of the list of owners of this area.
@@ -844,6 +850,11 @@ class AreaData : public QObject {
      */
     QString addJukeboxSong(QString f_song);
 
+    /**
+     * @brief Returns a constant that includes all currently joined userids.
+     */
+    QVector<int> joinedIDs() const;
+
 public slots:
 
     /**
@@ -1059,6 +1070,11 @@ private:
      * @brief Whether or not the area message is sent upon area join.
      */
     bool m_send_area_message;
+
+    /**
+     * @brief Collection of joined IDs to this area.
+     */
+    QVector<int> m_joined_ids;
 
     // Jukebox specific members
     /**

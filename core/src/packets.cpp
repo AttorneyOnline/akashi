@@ -134,7 +134,7 @@ void AOClient::pktLoadingDone(AreaData* area, int argc, QStringList argv, AOPack
 
     server->m_player_count++;
     emit server->updatePlayerCount(server->m_player_count);
-    area->clientJoinedArea();
+    area->clientJoinedArea(-1, m_id);
     m_joined = true;
     server->updateCharsTaken(area);
 

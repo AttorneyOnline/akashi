@@ -253,9 +253,9 @@ void Server::reloadSettings()
 
 void Server::broadcast(AOPacket packet, int area_index)
 {
-    for (AOClient* client : qAsConst(m_clients)) {
-        if (client->m_current_area == area_index)
-            client->sendPacket(packet);
+    QVector<int> l_client_ids = m_areas.value(area_index)->joinedIDs();
+    for (const int l_client_id : qAsConst(l_client_ids)) {
+        getClientByID(l_client_id)->sendPacket(packet);
     }
 }
 
