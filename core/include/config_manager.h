@@ -37,6 +37,8 @@
 #include <QJsonObject>
 #include <QJsonArray>
 
+typedef QMap<QString,QPair<QString,int>> MusicList;
+
 /**
  * @brief The config file handler class.
  */
@@ -76,7 +78,7 @@ class ConfigManager {
      *
      * @return See short description.
      */
-    static QMap<QString,QPair<QString,int>> musiclist();
+    static MusicList musiclist();
 
     /**
      * @brief Returns an ordered QList of all basesongs of this server.
@@ -544,7 +546,7 @@ private:
     /**
      * @brief Contains the musiclist with time durations.
      */
-    static QMap<QString,QPair<QString,int>>* m_musicList;
+    static MusicList* m_musicList;
 
     /**
      * @brief Contains an ordered list for the musiclist.

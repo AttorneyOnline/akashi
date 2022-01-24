@@ -183,12 +183,12 @@ private:
     /**
      * @brief Contains all custom lists of all areas in the server.
      */
-    QHash<int,QMap<QString,QPair<QString, int>>>* m_custom_lists;
+    QHash<int,MusicList>* m_custom_lists;
 
     /**
      * @brief Server musiclist shared among all areas.
      */
-    QMap<QString,QPair<QString, int>> m_root_list;
+    MusicList m_root_list;
 
     /**
      * @brief QList with the ordered musiclist.

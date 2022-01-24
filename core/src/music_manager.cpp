@@ -114,7 +114,7 @@ bool MusicManager::addCustomSong(QString f_song_name, QString f_real_name, int f
     }
 
     // There should be a way to directly insert into the QMap. Too bad!
-    QMap<QString,QPair<QString,int>> l_custom_list = m_custom_lists->value(f_area_id);
+    MusicList l_custom_list = m_custom_lists->value(f_area_id);
     l_custom_list.insert(l_song_name,{l_real_name,f_duration});
     m_custom_lists->insert(f_area_id,l_custom_list);
     m_customs_ordered.insert(f_area_id,(QStringList {m_customs_ordered.value(f_area_id)} << l_song_name));
@@ -153,7 +153,7 @@ bool MusicManager::addCustomCategory(QString f_category_name, int f_area_id)
 bool MusicManager::removeCategorySong(QString f_songcategory_name, int f_area_id)
 {
     if (!m_root_list.contains(f_songcategory_name)){
-        QMap<QString,QPair<QString,int>> l_custom_list = m_custom_lists->value(f_area_id);
+        MusicList l_custom_list = m_custom_lists->value(f_area_id);
         if (l_custom_list.contains(f_songcategory_name)) {
             l_custom_list.remove(f_songcategory_name);
             m_custom_lists->insert(f_area_id,l_custom_list);
@@ -182,7 +182,7 @@ bool MusicManager::toggleRootEnabled(int f_area_id)
 
 void MusicManager::sanitiseCustomList(int f_area_id)
 {
-    QMap<QString,QPair<QString,int>> l_sanitised_list;
+    MusicList l_sanitised_list;
     QStringList l_sanitised_ordered = m_customs_ordered.value(f_area_id);
     for (auto iterator = m_custom_lists->value(f_area_id).keyBegin(),
          end = m_custom_lists->value(f_area_id).keyEnd(); iterator != end; ++iterator)

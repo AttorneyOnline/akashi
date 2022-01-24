@@ -25,7 +25,7 @@ QSettings* ConfigManager::m_areas = new QSettings("config/areas.ini", QSettings:
 QSettings* ConfigManager::m_logtext = new QSettings("config/text/logtext.ini", QSettings::IniFormat);
 ConfigManager::CommandSettings* ConfigManager::m_commands = new CommandSettings();
 QElapsedTimer* ConfigManager::m_uptimeTimer = new QElapsedTimer;
-QMap<QString,QPair<QString,int>>* ConfigManager::m_musicList = new QMap<QString,QPair<QString,int>>;
+MusicList* ConfigManager::m_musicList = new MusicList;
 QHash<QString,ConfigManager::help>* ConfigManager::m_commands_help = new QHash<QString,ConfigManager::help>;
 QStringList* ConfigManager::m_ordered_list = new QStringList;
 
@@ -131,7 +131,7 @@ QStringList ConfigManager::backgrounds()
     return l_backgrounds;
 }
 
-QMap<QString,QPair<QString,int>> ConfigManager::musiclist()
+MusicList ConfigManager::musiclist()
 {
     QFile l_music_json("config/music.json");
     l_music_json.open(QIODevice::ReadOnly | QIODevice::Text);
