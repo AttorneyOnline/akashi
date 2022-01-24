@@ -126,6 +126,12 @@ public:
     void sanitiseCustomList(int f_area_id);
 
     /**
+     * @brief Removes all entries from the custom list.
+     * @param f_area_id Id of the area custom list.
+     */
+    void clearCustomList(int f_area_id);
+
+    /**
      * @brief Returns song information necessary for the operation of the jukebox.
      * @param Alias name of the song.
      * @param Area of the jukebox checking for information.

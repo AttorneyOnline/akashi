@@ -1862,13 +1862,30 @@ class AOClient : public QObject {
      */
     void cmdToggleJukebox(int argc, QStringList argv);
 
+    /**
+     * @brief Adds a song to the custom list.
+     */
     void cmdAddSong(int argc, QStringList argv);
 
+    /**
+     * @brief Adds a category to the areas custom music list.
+     */
     void cmdAddCategory(int argc, QStringList argv);
 
+    /**
+     * @brief Removes any matching song or category from the custom area.
+     */
     void cmdRemoveCategorySong(int argc, QStringList argv);
 
+    /**
+     * @brief Toggles the prepending behaviour of the servers root musiclist.
+     */
     void cmdToggleRootlist(int argc, QStringList argv);
+
+    /**
+     * @brief Clears the entire custom list of this area.
+     */
+    void cmdClearCustom(int argc, QStringList argv);
 
     ///@}
 
@@ -2191,7 +2208,8 @@ class AOClient : public QObject {
         {"addsong",            {ACLFlags.value("CM"),           1, &AOClient::cmdAddSong}},
         {"addcategory",        {ACLFlags.value("CM"),           1, &AOClient::cmdAddCategory}},
         {"removeentry",        {ACLFlags.value("CM"),           1, &AOClient::cmdRemoveCategorySong}},
-        {"toggleroot",         {ACLFlags.value("CM"),           0, &AOClient::cmdToggleRootlist}}
+        {"toggleroot",         {ACLFlags.value("CM"),           0, &AOClient::cmdToggleRootlist}},
+        {"clearcustoms",       {ACLFlags.value("CM"),           0, &AOClient::cmdClearCustom}}
     };
 
     /**

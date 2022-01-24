@@ -155,8 +155,6 @@ QMap<QString,QPair<QString,int>> ConfigManager::musiclist()
         if (!l_category_name.isEmpty()) {
             m_musicList->insert(l_category_name,{l_category_name,0});
             m_ordered_list->append(l_category_name);
-            qDebug() << *m_ordered_list;
-            qDebug() << l_category_name;
         }
         else {
             qWarning() << "Category name not set. This may cause the musiclist to be displayed incorrectly.";
@@ -172,7 +170,6 @@ QMap<QString,QPair<QString,int>> ConfigManager::musiclist()
             }
             int l_song_duration = l_song_obj["length"].toVariant().toInt();
          m_musicList->insert(l_song_name,{l_real_name,l_song_duration});
-         qDebug() << l_song_name;
          m_ordered_list->append(l_song_name);
         }
     }
@@ -183,7 +180,6 @@ QMap<QString,QPair<QString,int>> ConfigManager::musiclist()
 
 QStringList ConfigManager::ordered_songs()
 {
-    qDebug() <<*m_ordered_list;
     return *m_ordered_list;
 }
 

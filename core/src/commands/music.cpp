@@ -162,7 +162,7 @@ void AOClient::cmdAddSong(int argc, QStringList argv)
         return;
     }
 
-    QString l_message = l_success ? "failed." : "succeeded.";
+    QString l_message = l_success ? "succeeded." : "failed.";
     sendServerMessage("The addition of the song has " + l_message);
 }
 
@@ -189,4 +189,12 @@ void AOClient::cmdToggleRootlist(int argc, QStringList argv)
     bool l_status = m_music_manager->toggleRootEnabled(m_current_area);
     QString l_message = (l_status) ? "enabled." : "disabled.";
     sendServerMessage("Global musiclist has been " + l_message);
+}
+
+void AOClient::cmdClearCustom(int argc, QStringList argv)
+{
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+    m_music_manager->clearCustomList(m_current_area);
+    sendServerMessage("Custom songs have been cleared.");
 }

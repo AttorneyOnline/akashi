@@ -91,7 +91,12 @@ bool MusicManager::addCustomSong(QString f_song_name, QString f_real_name, int f
         l_song_name = l_song_name + ".opus";
     }
 
-    if (!(validateSong(l_song_name, m_cdns) && validateSong(f_real_name, m_cdns))) {
+    QString l_real_name = f_real_name;
+    if (f_real_name.split(".").size() == 1) {
+        l_real_name = l_real_name + ".opus";
+    }
+
+    if (!(validateSong(l_song_name, m_cdns) && validateSong(l_real_name, m_cdns))) {
         return false;
     }
 
@@ -104,9 +109,13 @@ bool MusicManager::addCustomSong(QString f_song_name, QString f_real_name, int f
         return false;
     }
 
+    if (m_customs_ordered.value(f_area_id).contains(l_song_name)){
+        return false;
+    }
+
     //There should be a way to directly insert into the Hash. Too bad.
     QMap<QString,QPair<QString,int>> l_custom_list = m_custom_lists->value(f_area_id);
-    l_custom_list.insert(l_song_name,{f_real_name,f_duration});
+    l_custom_list.insert(l_song_name,{l_real_name,f_duration});
     m_custom_lists->insert(f_area_id,l_custom_list);
     m_customs_ordered.insert(f_area_id,(QStringList {m_customs_ordered.value(f_area_id)} << l_song_name));
     emit sendAreaFMPacket(AOPacket("FM",musiclist(f_area_id)), f_area_id);
@@ -189,6 +198,14 @@ void MusicManager::sanitiseCustomList(int f_area_id)
     }
     m_custom_lists->insert(f_area_id, l_sanitised_list);
     m_customs_ordered.insert(f_area_id, l_sanitised_ordered);
+}
+
+void MusicManager::clearCustomList(int f_area_id)
+{
+    m_custom_lists->remove(f_area_id);
+    m_custom_lists->insert(f_area_id,{});
+    m_customs_ordered.remove(f_area_id);
+    m_customs_ordered.insert(f_area_id, {});
 }
 
 QPair<QString, int> MusicManager::songInformation(QString f_song_name, int f_area_id)
