@@ -62,12 +62,12 @@ private slots:
     void removeCategorySong();
 
     /**
-     * @brief Tests the retrival of song information.
+     * @brief Tests the retrieval of song information.
      */
     void songInformation();
 
     /**
-     * @brief Tests the retrival of the full musiclist for an area.
+     * @brief Tests the retrieval of the full musiclist for an area.
      */
     void musiclist();
 

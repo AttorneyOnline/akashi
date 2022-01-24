@@ -100,7 +100,7 @@ bool MusicManager::addCustomSong(QString f_song_name, QString f_real_name, int f
         return false;
     }
 
-    //Avoid conflicts by checking if it exits.
+    // Avoid conflicts by checking if it exists.
     if (m_root_list.contains(l_song_name) && m_global_enabled[f_area_id]) {
         return false;
     }
@@ -113,7 +113,7 @@ bool MusicManager::addCustomSong(QString f_song_name, QString f_real_name, int f
         return false;
     }
 
-    //There should be a way to directly insert into the Hash. Too bad.
+    // There should be a way to directly insert into the QMap. Too bad!
     QMap<QString,QPair<QString,int>> l_custom_list = m_custom_lists->value(f_area_id);
     l_custom_list.insert(l_song_name,{l_real_name,f_duration});
     m_custom_lists->insert(f_area_id,l_custom_list);
@@ -133,7 +133,7 @@ bool MusicManager::addCustomCategory(QString f_category_name, int f_area_id)
         l_category_name = "==" + l_category_name + "==";
     }
 
-    //Avoid conflicts by checking if it exits.
+    // Avoid conflicts by checking if it exists.
     if (m_root_list.contains(l_category_name) && m_global_enabled.value(f_area_id)) {
         return false;
     }
@@ -165,7 +165,7 @@ bool MusicManager::removeCategorySong(QString f_songcategory_name, int f_area_id
 
             emit sendAreaFMPacket(AOPacket("FM",musiclist(f_area_id)), f_area_id);
             return true;
-        } //Falltrough
+        } // Fallthrough
     }
     return false;
 }
