@@ -50,11 +50,11 @@ bool MusicManager::validateSong(QString f_song_name, QStringList f_approved_cdns
     //Check if URL formatted.
     if (f_song_name.contains("/")) {
         //Only allow HTTPS/HTTP sources.
-        if (f_song_name.startsWith("https://") | f_song_name.startsWith("http://")) {
+        if (f_song_name.startsWith("https://") || f_song_name.startsWith("http://")) {
             for (const QString &l_cdn : qAsConst(f_approved_cdns)) {
                 //Iterate trough all available CDNs to find an approved match
                 if (f_song_name.startsWith("https://" + l_cdn + "/", Qt::CaseInsensitive)
-                        | f_song_name.startsWith("http://" + l_cdn + "/", Qt::CaseInsensitive)) {
+                        || f_song_name.startsWith("http://" + l_cdn + "/", Qt::CaseInsensitive)) {
                     l_cdn_approved = true;
                     break;
                 }

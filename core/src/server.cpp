@@ -317,7 +317,7 @@ void Server::broadcast(AOPacket packet, AOPacket other_packet, TARGET_TYPE targe
 void Server::unicast(AOPacket f_packet, int f_client_id)
 {
     AOClient* l_client = getClientByID(f_client_id);
-    if (!(l_client == nullptr)) { // This should never happen, but safety first.
+    if (l_client != nullptr) { // This should never happen, but safety first.
         l_client->sendPacket(f_packet);
         return;
     }

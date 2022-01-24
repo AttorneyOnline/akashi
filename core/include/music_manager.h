@@ -208,7 +208,7 @@ private:
     /**
      * @brief Contains all server approved content sources.
      */
-    QStringList m_cdns = {"cdn.discord.com"}; //Most people will use Discord anyway, so make it the default.
+    QStringList m_cdns;
 };
 
 #endif // MUSIC_MANAGER_H

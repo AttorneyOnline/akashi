@@ -132,6 +132,11 @@ void AOClient::cmdAddSong(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
 
+    //This needs some explanation.
+    //Akashi has no concept of argument count,so any space is interpreted as a new element
+    //in the QStringList. This works fine until someone enters something with a space.
+    //Since we can't preencode those elements, we join all as a string and use a delimiter
+    //that does not exist in file and URL paths. I decided on the ol' reliable ','.
     QString l_argv_string = argv.join(" ");
     QStringList l_argv = l_argv_string.split(",");
 
