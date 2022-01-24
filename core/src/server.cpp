@@ -323,7 +323,7 @@ int Server::getCharID(QString char_name)
 {
     for (const QString &character : qAsConst(m_characters)) {
         if (character.toLower() == char_name.toLower()) {
-            return m_characters.indexOf(QRegExp(character, Qt::CaseInsensitive));
+            return m_characters.indexOf(QRegExp(character, Qt::CaseInsensitive, QRegExp::FixedString));
         }
     }
     return -1; // character does not exist
