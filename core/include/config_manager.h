@@ -90,7 +90,7 @@ class ConfigManager {
      * @param The name of the song where duration is requested
      * @return The duration of the song
      */
-    static int songInformation(const QString& f_songName);
+    static QPair<QString, float> songInformation(const QString& f_songName);
 
     /**
      * @brief Returns the content of
@@ -535,7 +535,7 @@ private:
     /**
      * @brief Contains the musiclist with time durations.
      */
-    static QHash<QString,float>* m_musicList;
+    static QHash<QString,QPair<QString,float>>* m_musicList;
 
     /**
      * @brief QHash containing the help information for all commands registered to the server.
