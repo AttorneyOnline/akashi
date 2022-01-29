@@ -25,8 +25,9 @@ QSettings* ConfigManager::m_areas = new QSettings("config/areas.ini", QSettings:
 QSettings* ConfigManager::m_logtext = new QSettings("config/text/logtext.ini", QSettings::IniFormat);
 ConfigManager::CommandSettings* ConfigManager::m_commands = new CommandSettings();
 QElapsedTimer* ConfigManager::m_uptimeTimer = new QElapsedTimer;
-QHash<QString,QPair<QString,float>>* ConfigManager::m_musicList = new QHash<QString,QPair<QString,float>>;
+MusicList* ConfigManager::m_musicList = new MusicList;
 QHash<QString,ConfigManager::help>* ConfigManager::m_commands_help = new QHash<QString,ConfigManager::help>;
+QStringList* ConfigManager::m_ordered_list = new QStringList;
 
 bool ConfigManager::verifyServerConfig()
 {
@@ -42,7 +43,7 @@ bool ConfigManager::verifyServerConfig()
     // Verify config files
     QStringList l_config_files{"config/config.ini", "config/areas.ini", "config/backgrounds.txt", "config/characters.txt", "config/music.json",
                                "config/discord.ini", "config/text/8ball.txt", "config/text/gimp.txt", "config/text/praise.txt",
-                               "config/text/reprimands.txt","config/text/commandhelp.json"};
+                               "config/text/reprimands.txt","config/text/commandhelp.json","config/text/cdns.txt"};
     for (const QString &l_file : l_config_files) {
         if (!fileExists(QFileInfo(l_file))) {
             qCritical() << l_file + " does not exist!";
@@ -92,6 +93,7 @@ bool ConfigManager::verifyServerConfig()
     m_commands->praises = (loadConfigFile("praise"));
     m_commands->reprimands = (loadConfigFile("reprimands"));
     m_commands->gimps = (loadConfigFile("gimp"));
+    m_commands->cdns = (loadConfigFile("cdns"));
 
     m_uptimeTimer->start();
 
@@ -129,7 +131,7 @@ QStringList ConfigManager::backgrounds()
     return l_backgrounds;
 }
 
-QStringList ConfigManager::musiclist()
+MusicList ConfigManager::musiclist()
 {
     QFile l_music_json("config/music.json");
     l_music_json.open(QIODevice::ReadOnly | QIODevice::Text);
@@ -138,14 +140,13 @@ QStringList ConfigManager::musiclist()
     QJsonDocument l_music_list_json = QJsonDocument::fromJson(l_music_json.readAll(), &l_error);
     if (!(l_error.error == QJsonParseError::NoError)) { //Non-Terminating error.
         qWarning() << "Unable to load musiclist. The following error was encounted : " + l_error.errorString();
-        return QStringList {}; //Server can still run without music.
+        return QMap<QString,QPair<QString,int>>{}; //Server can still run without music.
     }
 
     // Akashi expects the musiclist to be contained in a JSON array, even if its only a single category.
     QJsonArray l_Json_root_array = l_music_list_json.array();
     QJsonObject l_child_obj;
     QJsonArray l_child_array;
-    QStringList l_musiclist;
     for (int i = 0; i <= l_Json_root_array.size() -1; i++){ //Iterate trough entire JSON file to assemble musiclist
         l_child_obj = l_Json_root_array.at(i).toObject();
 
@@ -153,7 +154,7 @@ QStringList ConfigManager::musiclist()
         QString l_category_name = l_child_obj["category"].toString();
         if (!l_category_name.isEmpty()) {
             m_musicList->insert(l_category_name,{l_category_name,0});
-            l_musiclist.append(l_category_name);
+            m_ordered_list->append(l_category_name);
         }
         else {
             qWarning() << "Category name not set. This may cause the musiclist to be displayed incorrectly.";
@@ -167,17 +168,19 @@ QStringList ConfigManager::musiclist()
             if (l_real_name.isEmpty()) {
                 l_real_name = l_song_name;
             }
-            float l_song_duration = l_song_obj["length"].toVariant().toFloat();
+            int l_song_duration = l_song_obj["length"].toVariant().toInt();
          m_musicList->insert(l_song_name,{l_real_name,l_song_duration});
-         l_musiclist.append(l_song_name);
+         m_ordered_list->append(l_song_name);
         }
     }
     l_music_json.close();
 
-    if(!l_musiclist[0].contains("==")) // Add a default category if none exists
-        l_musiclist.insert(0,"==Music==");
+    return *m_musicList;
+}
 
-    return l_musiclist;
+QStringList ConfigManager::ordered_songs()
+{
+    return *m_ordered_list;
 }
 
 void ConfigManager::loadCommandHelp()
@@ -209,11 +212,6 @@ void ConfigManager::loadCommandHelp()
             m_commands_help->insert(l_name,l_help_information);
         }
     }
-}
-
-QPair<QString,float> ConfigManager::songInformation(const QString &f_songName)
-{
-    return m_musicList->value(f_songName);
 }
 
 QSettings* ConfigManager::areaData()
@@ -564,6 +562,11 @@ QStringList ConfigManager::reprimandsList()
 QStringList ConfigManager::gimpList()
 {
     return m_commands->gimps;
+}
+
+QStringList ConfigManager::cdnList()
+{
+    return m_commands->cdns;
 }
 
 bool ConfigManager::advertiseServer()
