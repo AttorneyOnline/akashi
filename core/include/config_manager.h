@@ -37,6 +37,8 @@
 #include <QJsonObject>
 #include <QJsonArray>
 
+typedef QMap<QString,QPair<QString,int>> MusicList;
+
 /**
  * @brief The config file handler class.
  */
@@ -76,7 +78,14 @@ class ConfigManager {
      *
      * @return See short description.
      */
-    static QStringList musiclist();
+    static MusicList musiclist();
+
+    /**
+     * @brief Returns an ordered QList of all basesongs of this server.
+     *
+     * @return See short description.
+     */
+    static QStringList ordered_songs();
 
     /**
      * @brief Loads help information into m_help_information.
@@ -84,13 +93,6 @@ class ConfigManager {
      * @return See short description.
      */
     static void loadCommandHelp();
-
-    /**
-     * @brief Returns the duration of a song in the songlist.
-     * @param The name of the song where duration is requested
-     * @return The duration of the song
-     */
-    static QPair<QString, float> songInformation(const QString& f_songName);
 
     /**
      * @brief Returns the content of
@@ -413,6 +415,13 @@ class ConfigManager {
     static QStringList gimpList();
 
     /**
+     * @brief Returns the server approved domain list.
+     *
+     * @return See short description.
+     */
+    static QStringList cdnList();
+
+    /**
      * @brief Returns if the advertiser is enabled to advertise on ms3.
      */
     static bool advertiseServer();
@@ -473,6 +482,7 @@ class ConfigManager {
      */
     static void reloadSettings();
 
+
 private:
     /**
      * @brief Checks if a file exists and is valid.
@@ -500,6 +510,7 @@ private:
         QStringList praises; //!< Contains command praises, found in config/text/praises.txt
         QStringList reprimands; //!< Contains command reprimands, found in config/text/reprimands.txt
         QStringList gimps; //!< Contains phrases for /gimp, found in config/text/gimp.txt
+        QStringList cdns; // !< Contains domains for custom song validation, found in config/text/cdns.txt
     };
 
     /**
@@ -535,7 +546,12 @@ private:
     /**
      * @brief Contains the musiclist with time durations.
      */
-    static QHash<QString,QPair<QString,float>>* m_musicList;
+    static MusicList* m_musicList;
+
+    /**
+     * @brief Contains an ordered list for the musiclist.
+     */
+    static QStringList* m_ordered_list;
 
     /**
      * @brief QHash containing the help information for all commands registered to the server.

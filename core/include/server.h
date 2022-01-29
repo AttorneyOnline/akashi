@@ -27,6 +27,7 @@
 #include "include/config_manager.h"
 #include "include/advertiser.h"
 #include "include/logger/u_logger.h"
+#include "include/music_manager.h"
 
 #include <QCoreApplication>
 #include <QDebug>
@@ -126,6 +127,7 @@ class Server : public QObject {
      * @brief Sends a packet to all clients in a given area.
      *
      * @param packet The packet to send to the clients.
+     *
      * @param area_index The index of the area to look for clients in.
      *
      * @note Does nothing if an area by the given index does not exist.
@@ -140,7 +142,7 @@ class Server : public QObject {
     void broadcast(AOPacket packet);
 
     /**
-     * @brief Sends a packet to clients, sends an altered packet to a specific usergroup.
+     * @brief Sends a packet to a specific usergroup..
      *
      * @param The packet to send to the clients.
      *
@@ -158,6 +160,15 @@ class Server : public QObject {
      * @param ENUM to determine the targets of the altered packet.
      */
     void broadcast(AOPacket packet, AOPacket other_packet, enum TARGET_TYPE target);
+
+    /**
+     * @brief Sends a packet to a single client.
+     *
+     * @param The packet send to the client.
+     *
+     * @param The temporary userID of the client.
+     */
+    void unicast(AOPacket f_packet, int f_client_id);
 
     /**
      * @brief Returns the character's character ID (= their index in the character list).
@@ -384,6 +395,11 @@ class Server : public QObject {
      * @brief Handles the universal log framework.
      */
     ULogger* logger;
+
+    /**
+     * @brief Handles all musiclists.
+     */
+    MusicManager* music_manager;
 
     /**
      * @brief The port through which the server will accept TCP connections.
