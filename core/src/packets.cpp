@@ -299,7 +299,7 @@ void AOClient::pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPack
     // argument is a valid song
     QString l_argument = argv[0];
 
-    if (server->m_music_list.contains(l_argument) || m_music_manager->isCustom(m_current_area, l_argument) || l_argument == "~stop.mp3") { // ~stop.mp3 is a dummy track used by 2.9+
+    if (server->m_music_list.contains(l_argument) || l_argument == "~stop.mp3") { // ~stop.mp3 is a dummy track used by 2.9+
         // We have a song here
         if (m_is_dj_blocked) {
             sendServerMessage("You are blocked from changing the music.");
@@ -327,8 +327,9 @@ void AOClient::pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPack
             return;
         }
 
-        QPair<QString,float> l_song = m_music_manager->songInformation(l_final_song, m_current_area);
+        QPair<QString,float> l_song = ConfigManager::songInformation(l_final_song);
         QString l_real_name = l_song.first;
+        qDebug() << l_real_name;
         AOPacket l_music_change("MC", {l_real_name, argv[1], m_showname, "1", "0", l_effects});
         area->setCurrentMusic(l_final_song);
         area->setMusicPlayedBy(m_showname);

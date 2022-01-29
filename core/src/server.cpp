@@ -81,32 +81,21 @@ void Server::start()
     //Get characters from config file
     m_characters = ConfigManager::charlist();
 
+    //Get musiclist from config file
+    m_music_list = ConfigManager::musiclist();
+
     //Get backgrounds from config file
     m_backgrounds = ConfigManager::backgrounds();
-
-    //Build our music manager.
-    ConfigManager::musiclist();
-    music_manager = new MusicManager(this, ConfigManager::ordered_songs(), ConfigManager::cdnList());
-    connect(music_manager, &MusicManager::sendFMPacket,
-            this, &Server::unicast);
-    connect(music_manager, &MusicManager::sendAreaFMPacket,
-            this, QOverload<AOPacket,int>::of(&Server::broadcast));
-
-    //Get musiclist from config file
-    m_music_list = music_manager->rootMusiclist();
 
     //Assembles the area list
     m_area_names = ConfigManager::sanitizedAreaNames();
     QStringList raw_area_names = ConfigManager::rawAreaNames();
     for (int i = 0; i < raw_area_names.length(); i++) {
         QString area_name = raw_area_names[i];
-        AreaData* l_area = new AreaData(area_name, i, music_manager);
+        AreaData* l_area = new AreaData(area_name, i);
         m_areas.insert(i, l_area);
-        connect(l_area, &AreaData::sendAreaPacket,
+        connect(l_area, &AreaData::playJukeboxSong,
                 this, QOverload<AOPacket,int>::of(&Server::broadcast));
-        connect(l_area, &AreaData::userJoinedArea,
-                music_manager, &MusicManager::userJoinedArea);
-        music_manager->registerArea(i);
     }
 
     //Loads the command help information. This is not stored inside the server.
@@ -141,7 +130,7 @@ void Server::clientConnected()
     }
 
     int user_id = m_available_ids.dequeue();
-    AOClient* client = new AOClient(this, socket, this, user_id, music_manager);
+    AOClient* client = new AOClient(this, socket, this, user_id);
     m_clients_ids.insert(user_id, client);
 
     int multiclient_count = 1;
@@ -258,6 +247,7 @@ void Server::reloadSettings()
     emit updateHTTPConfiguration();
     handleDiscordIntegration();
     logger->loadLogtext();
+    m_music_list = ConfigManager::musiclist();
     m_ipban_list = ConfigManager::iprangeBans();
 }
 
@@ -311,15 +301,6 @@ void Server::broadcast(AOPacket packet, AOPacket other_packet, TARGET_TYPE targe
     default:
         //Unimplemented, so not handled.
         break;
-    }
-}
-
-void Server::unicast(AOPacket f_packet, int f_client_id)
-{
-    AOClient* l_client = getClientByID(f_client_id);
-    if (l_client != nullptr) { // This should never happen, but safety first.
-        l_client->sendPacket(f_packet);
-        return;
     }
 }
 

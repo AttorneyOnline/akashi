@@ -646,32 +646,7 @@
    },
    {
       "name":"areamessage",
-      "usage":"/areamessage 'Message'",
+      "usage":"/areamessage",
       "text":"Returns the area message in OOC. If text is entered it updates the current area message."
-   },
-   {
-      "name":"addsong",
-      "usage":"/addsong <Songname>,'TrueName','Duration'",
-      "text":"Adds a song to the custom musiclist. Optionally can be an aliased name to hide a streamlink. Set the duration for the jukebox."
-   },
-   {
-      "name":"addcategory",
-      "usage":"/addsong <Category>",
-      "text":"Adds a category to the custom musiclist."
-   },
-   {
-      "name":"removeentry",
-      "usage":"/removeentry 'Name'",
-      "text":"Removes an entry from the custom musiclist."
-   },
-   {
-      "name":"toggleglobal",
-      "usage":"/toggleglobal",
-      "text":"Changes the behaviour of prepending the server root musiclist to the custom lists of the area."
-   },
-   {
-      "name":"clearcustom",
-      "usage":"/clearcustom",
-      "text":"Removes all custom songs from the area."
    }
 ]

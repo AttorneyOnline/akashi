@@ -347,15 +347,9 @@ bool AOClient::checkAuth(unsigned long long acl_mask)
 }
 
 
-QString AOClient::getIpid() const
-{
-    return m_ipid;
-}
+QString AOClient::getIpid() const { return m_ipid; }
 
-QString AOClient::getHwid() const
-{
-    return m_hwid;
-}
+QString AOClient::getHwid() const { return m_hwid; }
 
 Server* AOClient::getServer() { return server; }
 
@@ -364,26 +358,6 @@ void AOClient::onAfkTimeout()
     if (!m_is_afk)
         sendServerMessage("You are now AFK.");
     m_is_afk = true;
-}
-
-AOClient::AOClient(Server *p_server, QTcpSocket *p_socket, QObject *parent, int user_id, MusicManager *p_manager)
-    : QObject(parent),
-      m_id(user_id),
-      m_remote_ip(p_socket->peerAddress()),
-      m_password(""),
-      m_joined(false),
-      m_current_area(0),
-      m_current_char(""),
-      m_socket(p_socket),
-      server(p_server),
-      is_partial(false),
-      m_last_wtce_time(0),
-      m_music_manager(p_manager)
-{
-    m_afk_timer = new QTimer;
-    m_afk_timer->setSingleShot(true);
-    connect(m_afk_timer, &QTimer::timeout,
-            this, &AOClient::onAfkTimeout);
 }
 
 AOClient::~AOClient() {

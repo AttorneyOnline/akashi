@@ -22,7 +22,6 @@
 #include "include/server.h"
 #include "include/area_data.h"
 #include "include/db_manager.h"
-#include "include/music_manager.h"
 
 #include <algorithm>
 
@@ -51,7 +50,14 @@ class AOClient : public QObject {
      * @param user_id The user ID of the client.
      * @param parent Qt-based parent, passed along to inherited constructor from QObject.
      */
-    AOClient(Server* p_server, QTcpSocket* p_socket, QObject* parent = nullptr, int user_id = 0, MusicManager* p_manager = nullptr);;
+    AOClient(Server* p_server, QTcpSocket* p_socket, QObject* parent = nullptr, int user_id = 0)
+        : QObject(parent), m_id(user_id), m_remote_ip(p_socket->peerAddress()), m_password(""),
+          m_joined(false), m_current_area(0), m_current_char(""), m_socket(p_socket), server(p_server),
+          is_partial(false), m_last_wtce_time(0) {
+        m_afk_timer = new QTimer;
+        m_afk_timer->setSingleShot(true);
+        connect(m_afk_timer, SIGNAL(timeout()), this, SLOT(onAfkTimeout()));
+    };
 
     /**
       * @brief Destructor for the AOClient instance.
@@ -1862,31 +1868,6 @@ class AOClient : public QObject {
      */
     void cmdToggleJukebox(int argc, QStringList argv);
 
-    /**
-     * @brief Adds a song to the custom list.
-     */
-    void cmdAddSong(int argc, QStringList argv);
-
-    /**
-     * @brief Adds a category to the areas custom music list.
-     */
-    void cmdAddCategory(int argc, QStringList argv);
-
-    /**
-     * @brief Removes any matching song or category from the custom area.
-     */
-    void cmdRemoveCategorySong(int argc, QStringList argv);
-
-    /**
-     * @brief Toggles the prepending behaviour of the servers root musiclist.
-     */
-    void cmdToggleRootlist(int argc, QStringList argv);
-
-    /**
-     * @brief Clears the entire custom list of this area.
-     */
-    void cmdClearCustom(int argc, QStringList argv);
-
     ///@}
 
     /**
@@ -2204,12 +2185,7 @@ class AOClient : public QObject {
         {"clearcm",            {ACLFlags.value("KICK"),         0, &AOClient::cmdClearCM}},
         {"togglemessage",      {ACLFlags.value("CM"),           0, &AOClient::cmdToggleAreaMessageOnJoin}},
         {"clearmessage",       {ACLFlags.value("CM"),           0, &AOClient::cmdClearAreaMessage}},
-        {"areamessage",        {ACLFlags.value("CM"),           0, &AOClient::cmdAreaMessage}},
-        {"addsong",            {ACLFlags.value("CM"),           1, &AOClient::cmdAddSong}},
-        {"addcategory",        {ACLFlags.value("CM"),           1, &AOClient::cmdAddCategory}},
-        {"removeentry",        {ACLFlags.value("CM"),           1, &AOClient::cmdRemoveCategorySong}},
-        {"toggleroot",         {ACLFlags.value("CM"),           0, &AOClient::cmdToggleRootlist}},
-        {"clearcustom",        {ACLFlags.value("CM"),           0, &AOClient::cmdClearCustom}}
+        {"areamessage",        {ACLFlags.value("CM"),           0, &AOClient::cmdAreaMessage}}
     };
 
     /**
@@ -2257,11 +2233,6 @@ class AOClient : public QObject {
      * @details Used to determine if the incoming message is a duplicate.
      */
     QString m_last_message;
-
-    /**
-     * @brief Pointer to the servers music manager instance.
-     */
-    MusicManager* m_music_manager;
 
     /**
      * @brief A helper function to add recorded packets to an area's judgelog.
