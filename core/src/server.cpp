@@ -119,8 +119,8 @@ void Server::start()
     connect(&next_message_timer, &QTimer::timeout, this, &Server::allowMessage);
 
     //Prepare player IDs and reference hash.
-    for (int i = 0; i <= ConfigManager::maxPlayers() - 1; i++){
-        m_available_ids.enqueue(i);
+    for (int i = ConfigManager::maxPlayers() -1; i >= 0; i--){
+        m_available_ids.push(i);
         m_clients_ids.insert(i, nullptr);
     }
 }
@@ -140,7 +140,7 @@ void Server::clientConnected()
         return;
     }
 
-    int user_id = m_available_ids.dequeue();
+    int user_id = m_available_ids.pop();
     AOClient* client = new AOClient(this, socket, this, user_id, music_manager);
     m_clients_ids.insert(user_id, client);
 
@@ -382,7 +382,7 @@ void Server::handleDiscordIntegration()
 
 void Server::markIDFree(const int &f_user_id)
 {
-    m_available_ids.enqueue(f_user_id);
+    m_available_ids.push(f_user_id);
     m_clients_ids.insert(f_user_id, nullptr);
 }
 

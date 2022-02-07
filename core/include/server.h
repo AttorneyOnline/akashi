@@ -201,10 +201,10 @@ class Server : public QObject {
     QHash<int,AOClient*> m_clients_ids;
 
     /**
-     * @brief Queue of all available IDs for clients. When this is empty the server
+     * @brief Stack of all available IDs for clients. When this is empty the server
      * rejects any new connection attempt.
      */
-    QQueue<int> m_available_ids;
+    QStack<int> m_available_ids;
 
     /**
      * @brief The overall player count in the server.
