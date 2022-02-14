@@ -75,6 +75,7 @@ void AOClient::pktSoftwareId(AreaData* area, int argc, QStringList argv, AOPacke
     }
 
     sendPacket("PN", {QString::number(server->m_player_count), QString::number(ConfigManager::maxPlayers())});
+    sendPacket("SDESC", {ConfigManager::serverDescription()});
     sendPacket("FL", l_feature_list);
 
     if (ConfigManager::assetUrl().isValid()) {
