@@ -74,7 +74,7 @@ void AOClient::pktSoftwareId(AreaData* area, int argc, QStringList argv, AOPacke
         m_version.minor = l_match.captured(3).toInt();
     }
 
-    sendPacket("PN", {QString::number(server->m_player_count), QString::number(ConfigManager::maxPlayers())});
+    sendPacket("PN", {QString::number(server->m_player_count), QString::number(ConfigManager::maxPlayers()), ConfigManager::serverDescription()});
     sendPacket("FL", l_feature_list);
 
     if (ConfigManager::assetUrl().isValid()) {
