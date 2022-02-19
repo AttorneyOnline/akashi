@@ -888,27 +888,24 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         l_args.append(l_incoming_args[25].toString());
     }
 
-    // 2.9 packet extensions
-    if (incoming_args.length() > 26) {
+    // 2.10 packet extensions
+    if (l_incoming_args.length() > 26) {
         // pre-overlay
-        QString incoming_pre_overlay = incoming_args[26].toString();
-        args.append(incoming_pre_overlay);
-        qDebug() << "pre overlay:" << incoming_pre_overlay;
+        QString l_incoming_pre_overlay = l_incoming_args[26].toString();
+        l_args.append(l_incoming_pre_overlay);
 
         // overlay
-        QString incoming_overlay = incoming_args[27].toString();
-        overlay = incoming_overlay;
-        args.append(incoming_overlay);
-        qDebug() << "overlay:" << incoming_overlay;
+        QString l_incoming_overlay = l_incoming_args[27].toString();
+        m_overlay = l_incoming_overlay;
+        l_args.append(l_incoming_overlay);
 
         // pair overlay
-        int other_charid = pairing_with;
-        QString other_overlay = "";
-        for (AOClient* client : server->clients) {
-            if (client->pairing_with == char_id && other_charid != char_id && client->char_id == pairing_with)
-                other_overlay = client->overlay;
+        QString l_other_overlay = "";
+        for (AOClient* l_client : qAsConst(server->m_clients)) {
+            if (l_client->m_pairing_with == m_char_id && m_pairing_with != m_char_id && l_client->m_char_id == m_pairing_with)
+                l_other_overlay = l_client->m_overlay;
         }
-        args.append(other_overlay);
+        l_args.append(l_other_overlay);
     }
 
     //Testimony playback
