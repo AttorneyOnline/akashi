@@ -19,7 +19,9 @@ jobs:
       
       # Runs a single command using the runners shell
       - name: Install dependencies
-        run: sudo apt-get install qt5-default libqt5websockets5-dev g++ make
+        run: |
+          sudo apt-get update
+          sudo apt-get install qt5-default libqt5websockets5-dev g++ make
 
       # Runs a set of commands using the runners shell
       - name: qmake and build
@@ -28,6 +30,12 @@ jobs:
           qmake
           make
           mv bin/config_sample bin/config
+
+      - name: Run tests
+        run: |
+            for test in bin_tests/*; do
+              LD_LIBRARY_PATH=./bin:$LD_LIBRARY_PATH ./$test
+            done;
           
       - name: Upload binary
         uses: actions/upload-artifact@v2
@@ -52,6 +60,13 @@ jobs:
           nmake
           windeployqt bin\akashi.exe --release --no-opengl-sw
           mv bin\config_sample bin\config
+
+      - name: Run tests
+        run: |
+          for test in bin_tests/*; do
+            LD_LIBRARY_PATH=./bin:$LD_LIBRARY_PATH ./$test
+          done;
+        shell: bash
           
       - name: Upload zip
         uses: actions/upload-artifact@v2

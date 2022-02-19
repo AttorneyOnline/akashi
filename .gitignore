@@ -73,3 +73,8 @@ Thumbs.db
 build/
 bin/akashi
 bin/config/
+bin_tests/
+bin/logs/
+bin/core.lib
+bin/libcore.a
+doxygen/html
