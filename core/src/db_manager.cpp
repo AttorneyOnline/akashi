@@ -203,7 +203,7 @@ bool DBManager::deleteUser(QString username)
     username_exists.addBindValue(username);
     username_exists.exec();
 
-    if (username_exists.first())
+    if (!username_exists.first())
         return false;
 
     QSqlQuery query;
