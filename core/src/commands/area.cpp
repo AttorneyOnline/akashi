@@ -215,7 +215,7 @@ void AOClient::cmdGetAreas(int argc, QStringList argv)
     Q_UNUSED(argv);
 
     QStringList l_entries;
-    l_entries.append("\n== Currently Online: " + QString::number(server->m_player_count));
+    l_entries.append("\n== Currently Online: " + QString::number(server->m_player_count)+ " ==");
     for (int i = 0; i < server->m_area_names.length(); i++) {
         if (server->m_areas.value(i)->playerCount() > 0) {
             QStringList l_cur_area_lines = buildAreaList(i);
