@@ -199,17 +199,18 @@ bool DBManager::createUser(QString username, QString salt, QString password, uns
 bool DBManager::deleteUser(QString username)
 {
     QSqlQuery username_exists;
-    username_exists.prepare("SELECT ACL FROM users WHERE USERNAME = ?");
+    username_exists.prepare("SELECT EXISTS(SELECT USERNAME FROM users WHERE USERNAME = ?");
     username_exists.addBindValue(username);
     username_exists.exec();
-
-    if (!username_exists.first())
+    username_exists.next();
+    if (username_exists.value(0) == 0)
+        //We were unable to locate the username
         return false;
 
     QSqlQuery query;
     query.prepare("DELETE FROM users WHERE USERNAME = ?");
     username_exists.addBindValue(username);
-    username_exists.exec();
+    qDebug() << username_exists.exec();
     return true;
 }
 
