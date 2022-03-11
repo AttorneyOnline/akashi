@@ -198,19 +198,24 @@ bool DBManager::createUser(QString username, QString salt, QString password, uns
 
 bool DBManager::deleteUser(QString username)
 {
+    if (username == "root") {
+        //To prevent lockout scenarios where an admit may accidentally delete root.
+        return false;
+    }
     QSqlQuery username_exists;
-    username_exists.prepare("SELECT EXISTS(SELECT USERNAME FROM users WHERE USERNAME = ?");
+    username_exists.prepare("SELECT EXISTS(SELECT USERNAME FROM users WHERE USERNAME = ?)");
     username_exists.addBindValue(username);
     username_exists.exec();
-    username_exists.next();
-    if (username_exists.value(0) == 0)
-        //We were unable to locate the username
+    username_exists.first();
+    //If EXISTS can't find a record, it returns 0.
+    if (username_exists.value(0).toInt() == 0)
+        //We were unable to locate an entry with this name.
         return false;
 
-    QSqlQuery query;
-    query.prepare("DELETE FROM users WHERE USERNAME = ?");
-    username_exists.addBindValue(username);
-    qDebug() << username_exists.exec();
+    QSqlQuery username_delete;
+    username_delete.prepare("DELETE FROM users WHERE USERNAME = ?");
+    username_delete.addBindValue(username);
+    username_delete.exec();
     return true;
 }
 
