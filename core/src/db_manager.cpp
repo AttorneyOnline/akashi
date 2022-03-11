@@ -199,7 +199,7 @@ bool DBManager::createUser(QString username, QString salt, QString password, uns
 bool DBManager::deleteUser(QString username)
 {
     if (username == "root") {
-        //To prevent lockout scenarios where an admit may accidentally delete root.
+        //To prevent lockout scenarios where an admin may accidentally delete root.
         return false;
     }
     QSqlQuery username_exists;
