@@ -104,6 +104,8 @@ void Server::start()
         m_areas.insert(i, l_area);
         connect(l_area, &AreaData::sendAreaPacket,
                 this, QOverload<AOPacket,int>::of(&Server::broadcast));
+        connect(l_area, &AreaData::sendAreaPacketClient,
+                this, &Server::unicast);
         connect(l_area, &AreaData::userJoinedArea,
                 music_manager, &MusicManager::userJoinedArea);
         music_manager->registerArea(i);

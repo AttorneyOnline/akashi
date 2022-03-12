@@ -95,6 +95,7 @@ void AreaData::clientJoinedArea(int f_charId, int f_userId)
     }
     m_joined_ids.append(f_userId);
     emit userJoinedArea(m_index, f_userId);
+    emit sendAreaPacketClient(AOPacket("MC",{m_currentMusic, QString::number(-1)}), f_userId);
 }
 
 QList<int> AreaData::owners() const
