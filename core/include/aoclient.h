@@ -2097,6 +2097,7 @@ class AOClient : public QObject {
         {"need",               {ACLFlags.value("NONE"),         1, &AOClient::cmdNeed}},
         {"coinflip",           {ACLFlags.value("NONE"),         0, &AOClient::cmdFlip}},
         {"roll",               {ACLFlags.value("NONE"),         0, &AOClient::cmdRoll}},
+        {"r",                  {ACLFlags.value("NONE"),         0, &AOClient::cmdRoll}},
         {"rollp",              {ACLFlags.value("NONE"),         0, &AOClient::cmdRollP}},
         {"doc",                {ACLFlags.value("NONE"),         0, &AOClient::cmdDoc}},
         {"cleardoc",           {ACLFlags.value("NONE"),         0, &AOClient::cmdClearDoc}},
