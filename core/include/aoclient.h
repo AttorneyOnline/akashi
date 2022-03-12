@@ -2076,7 +2076,8 @@ class AOClient : public QObject {
     const QMap<QString, CommandInfo> commands {
         {"login",              {ACLFlags.value("NONE"),         0, &AOClient::cmdLogin}},
         {"getareas",           {ACLFlags.value("NONE"),         0, &AOClient::cmdGetAreas}},
-        {"getarea",            {ACLFlags.value("NONE"),         0, &AOClient::cmdGetArea}},
+        {"gas",                {ACLFlags.value("NONE"),         0, &AOClient::cmdGetAreas}},
+        {"ga",                 {ACLFlags.value("NONE"),         0, &AOClient::cmdGetArea}},
         {"ban",                {ACLFlags.value("BAN"),          3, &AOClient::cmdBan}},
         {"kick",               {ACLFlags.value("KICK"),         2, &AOClient::cmdKick}},
         {"changeauth",         {ACLFlags.value("SUPER"),        0, &AOClient::cmdChangeAuth}},
