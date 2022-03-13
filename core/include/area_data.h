@@ -870,6 +870,25 @@ public slots:
      */
     void sendAreaPacket(AOPacket f_packet, int f_area_index);
 
+    /**
+     * @brief sendAreaPacketClient Sends a packet to the specified client.
+     *
+     * @param f_packet The packe to be send.
+     *
+     * @param f_user_id The user ID of the client.
+     */
+    void sendAreaPacketClient(AOPacket f_packet, int f_user_id);
+
+    /**
+     * @brief userJoinedArea Signals that a new client has joined an area.
+     *
+     * @details This is mostly a signal for more compelex features where multiple managers need to know of the change.
+     *
+     * @param f_area_index Area Index that the client joined in.
+     *
+     *
+     * @param f_user_id The user ID of the client.
+     */
     void userJoinedArea(int f_area_index, int f_user_id);
 
 private:

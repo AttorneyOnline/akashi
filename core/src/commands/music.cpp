@@ -29,8 +29,12 @@ void AOClient::cmdPlay(int argc, QStringList argv)
     }
     AreaData* l_area = server->m_areas[m_current_area];
     QString l_song = argv.join(" ");
-    l_area->currentMusic() = l_song;
-    l_area->musicPlayerBy() = m_showname;
+    if (m_showname.isEmpty()) {
+        l_area->changeMusic(m_current_char, l_song);
+    }
+    else {
+        l_area->changeMusic(m_showname, l_song);
+    }
     AOPacket music_change("MC", {l_song, QString::number(server->getCharID(m_current_char)), m_showname, "1", "0"});
     server->broadcast(music_change, m_current_area);
 }
