@@ -2077,6 +2077,7 @@ class AOClient : public QObject {
         {"login",              {ACLFlags.value("NONE"),         0, &AOClient::cmdLogin}},
         {"getareas",           {ACLFlags.value("NONE"),         0, &AOClient::cmdGetAreas}},
         {"gas",                {ACLFlags.value("NONE"),         0, &AOClient::cmdGetAreas}},
+        {"getarea",            {ACLFlags.value("NONE"),         0, &AOClient::cmdGetArea}},
         {"ga",                 {ACLFlags.value("NONE"),         0, &AOClient::cmdGetArea}},
         {"ban",                {ACLFlags.value("BAN"),          3, &AOClient::cmdBan}},
         {"kick",               {ACLFlags.value("KICK"),         2, &AOClient::cmdKick}},
