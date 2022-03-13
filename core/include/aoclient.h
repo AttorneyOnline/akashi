@@ -2076,7 +2076,8 @@ class AOClient : public QObject {
     const QMap<QString, CommandInfo> commands {
         {"login",              {ACLFlags.value("NONE"),         0, &AOClient::cmdLogin}},
         {"getareas",           {ACLFlags.value("NONE"),         0, &AOClient::cmdGetAreas}},
-        {"getarea",            {ACLFlags.value("NONE"),         0, &AOClient::cmdGetArea}},
+        {"gas",                {ACLFlags.value("NONE"),         0, &AOClient::cmdGetAreas}},
+        {"ga",                 {ACLFlags.value("NONE"),         0, &AOClient::cmdGetArea}},
         {"ban",                {ACLFlags.value("BAN"),          3, &AOClient::cmdBan}},
         {"kick",               {ACLFlags.value("KICK"),         2, &AOClient::cmdKick}},
         {"changeauth",         {ACLFlags.value("SUPER"),        0, &AOClient::cmdChangeAuth}},
@@ -2096,6 +2097,7 @@ class AOClient : public QObject {
         {"need",               {ACLFlags.value("NONE"),         1, &AOClient::cmdNeed}},
         {"coinflip",           {ACLFlags.value("NONE"),         0, &AOClient::cmdFlip}},
         {"roll",               {ACLFlags.value("NONE"),         0, &AOClient::cmdRoll}},
+        {"r",                  {ACLFlags.value("NONE"),         0, &AOClient::cmdRoll}},
         {"rollp",              {ACLFlags.value("NONE"),         0, &AOClient::cmdRollP}},
         {"doc",                {ACLFlags.value("NONE"),         0, &AOClient::cmdDoc}},
         {"cleardoc",           {ACLFlags.value("NONE"),         0, &AOClient::cmdClearDoc}},
