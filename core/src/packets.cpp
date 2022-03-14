@@ -313,6 +313,8 @@ void AOClient::pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPack
         else
             l_effects = "0";
         QString l_final_song;
+
+        //As categories can be used to stop music we need to check if it has a dot for the extension. If not, we assume its a category.
         if (!l_argument.contains("."))
             l_final_song = "~stop.mp3";
         else
@@ -325,12 +327,21 @@ void AOClient::pktChangeMusic(AreaData* area, int argc, QStringList argv, AOPack
             return;
         }
 
-        QPair<QString,float> l_song = m_music_manager->songInformation(l_final_song, m_current_area);
-        QString l_real_name = l_song.first;
-        AOPacket l_music_change("MC", {l_real_name, argv[1], m_showname, "1", "0", l_effects});
-        area->setCurrentMusic(l_final_song);
-        area->setMusicPlayedBy(m_showname);
+        if (l_final_song != "~stop.mp3") {
+            //We might have an aliased song. We check for its real songname and send it to the clients.
+            QPair<QString,float> l_song = m_music_manager->songInformation(l_final_song, m_current_area);
+            l_final_song = l_song.first;
+        }
+        AOPacket l_music_change("MC", {l_final_song, argv[1], m_showname, "1", "0", l_effects});
         server->broadcast(l_music_change, m_current_area);
+
+        //Since we can't ensure a user has their showname set, we check if its empty to prevent
+        //"played by ." in /currentmusic.
+        if (m_showname.isEmpty()) {
+            area->changeMusic(m_current_char,l_final_song);
+            return;
+        }
+        area->changeMusic(m_showname,l_final_song);
         return;
     }
 
