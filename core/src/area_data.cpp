@@ -95,7 +95,9 @@ void AreaData::clientJoinedArea(int f_charId, int f_userId)
     }
     m_joined_ids.append(f_userId);
     emit userJoinedArea(m_index, f_userId);
-    emit sendAreaPacketClient(AOPacket("MC",{m_currentMusic, QString::number(-1)}), f_userId);
+    //The name will never be shown as we are using a spectator ID. Still nice for people who network sniff.
+    //We auto-loop this so you'll never sit in silence unless wanted.
+    emit sendAreaPacketClient(AOPacket("MC",{m_currentMusic, QString::number(-1), ConfigManager::serverName(), QString::number(1)}), f_userId);
 }
 
 QList<int> AreaData::owners() const
