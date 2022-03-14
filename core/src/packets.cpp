@@ -133,14 +133,9 @@ void AOClient::pktLoadingDone(AreaData* area, int argc, QStringList argv, AOPack
     }
 
     server->m_player_count++;
-    emit server->updatePlayerCount(server->m_player_count);
-    area->clientJoinedArea(-1, m_id);
     m_joined = true;
     server->updateCharsTaken(area);
-
-    arup(ARUPType::PLAYER_COUNT, true); // Tell everyone there is a new player
     sendEvidenceList(area);
-
     sendPacket("HP", {"1", QString::number(area->defHP())});
     sendPacket("HP", {"2", QString::number(area->proHP())});
     sendPacket("FA", server->m_area_names);
@@ -169,6 +164,9 @@ void AOClient::pktLoadingDone(AreaData* area, int argc, QStringList argv, AOPack
             sendPacket("TI", {QString::number(l_timer_id), "3"});
         }
     }
+    emit server->updatePlayerCount(server->m_player_count);
+    area->clientJoinedArea(-1, m_id);
+    arup(ARUPType::PLAYER_COUNT, true); // Tell everyone there is a new player
 }
 
 void AOClient::pktCharPassword(AreaData* area, int argc, QStringList argv, AOPacket packet)
