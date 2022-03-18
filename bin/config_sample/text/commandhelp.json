@@ -112,7 +112,7 @@
    {
       "name":"roll",
       "usage":"/roll 'face' 'die'",
-      "text":"Rools dice and sends the results to the area. The first argument is the amount of faces each die should have. The second argument is the amount of dice that should be rolled. Both arguments are optional."
+      "text":"Rolls dice and sends the results to the area. The first argument is the amount of faces each die should have. The second argument is the amount of dice that should be rolled. Both arguments are optional."
    },
    {
       "name":"rollp",
