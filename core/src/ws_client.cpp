@@ -61,8 +61,23 @@ void WSClient::onTcpDisconnect()
 
 void WSClient::onTcpConnect()
 {
-    tcp_socket->write(QString("WSIP#" + web_socket->peerAddress().toString() + "#%").toUtf8());
+    tcp_socket->write(QString("WSIP#" + websocket_ip + "#%").toUtf8());
     tcp_socket->flush();
+}
+
+WSClient::WSClient(QTcpSocket *p_tcp_socket, QWebSocket *p_web_socket, QObject *parent)
+    : QObject(parent),
+      tcp_socket(p_tcp_socket),
+      web_socket(p_web_socket)
+{
+    QNetworkRequest l_request = web_socket->request();
+    if (l_request.hasRawHeader("x-forwarded-for")) {
+        websocket_ip = l_request.rawHeader("x-forwarded-for");
+    }
+    else {
+        websocket_ip = web_socket->peerAddress().toString();
+    }
+    qDebug() << websocket_ip;
 }
 
 WSClient::~WSClient()

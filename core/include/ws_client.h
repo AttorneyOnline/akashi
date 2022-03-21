@@ -44,8 +44,7 @@ public:
      * @pre This class will not connect up the ports to each other in any way. Unless some setup is done, this class
      * by default will never be prompted to read and/or write from/to either of the sockets.
      */
-    WSClient(QTcpSocket* p_tcp_socket, QWebSocket* p_web_socket, QObject* parent = nullptr)
-        : QObject(parent), tcp_socket(p_tcp_socket), web_socket(p_web_socket) {};
+    WSClient(QTcpSocket* p_tcp_socket, QWebSocket* p_web_socket, QObject* parent = nullptr);
 
     /**
       * @brief Destructor for the WSClient class.
@@ -114,6 +113,11 @@ private:
      * @brief Flag that is set when packets are segmented
      */
     bool is_segmented = false;
+
+    /**
+     * @brief The IP send in the WSIP packet
+     */
+    QString websocket_ip;
 };
 
 #endif // WS_CLIENT_H
