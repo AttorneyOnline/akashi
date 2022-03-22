@@ -170,11 +170,15 @@ void AOClient::cmdHelp(int argc, QStringList argv)
 {
     if(argc > 1) {
         sendServerMessage("Too many arguments. Please only use the command name.");
+        return;
     }
 
     QString l_command_name = argv[0];
     ConfigManager::help l_command_info = ConfigManager::commandHelp(l_command_name);
-    sendServerMessage("==Help==\n" +l_command_info.usage + "\n" + l_command_info.text);
+    if (l_command_info.usage.isEmpty() || l_command_info.text.isEmpty()) // my picoseconds :(
+        sendServerMessage("Unable to find the command " + l_command_name + ".");
+    else
+        sendServerMessage("==Help==\n" +l_command_info.usage + "\n" + l_command_info.text);
 }
 
 void AOClient::cmdMOTD(int argc, QStringList argv)

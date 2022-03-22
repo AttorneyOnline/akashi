@@ -185,17 +185,17 @@ QStringList ConfigManager::ordered_songs()
 
 void ConfigManager::loadCommandHelp()
 {
-    QFile l_music_json("config/text/commandhelp.json");
-    l_music_json.open(QIODevice::ReadOnly | QIODevice::Text);
+    QFile l_help_json("config/text/commandhelp.json");
+    l_help_json.open(QIODevice::ReadOnly | QIODevice::Text);
 
     QJsonParseError l_error;
-    QJsonDocument l_music_list_json = QJsonDocument::fromJson(l_music_json.readAll(), &l_error);
+    QJsonDocument l_help_list_json = QJsonDocument::fromJson(l_help_json.readAll(), &l_error);
     if (!(l_error.error == QJsonParseError::NoError)) { //Non-Terminating error.
         qWarning() << "Unable to load help information. The following error occurred: " + l_error.errorString();
     }
 
     // Akashi expects the helpfile to contain multiple entires, so it always checks for an array first.
-    QJsonArray l_Json_root_array = l_music_list_json.array();
+    QJsonArray l_Json_root_array = l_help_list_json.array();
     QJsonObject l_child_obj;
 
     for (int i = 0; i <= l_Json_root_array.size() -1; i++){
