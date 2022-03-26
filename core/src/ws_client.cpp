@@ -70,8 +70,12 @@ WSClient::WSClient(QTcpSocket *p_tcp_socket, QWebSocket *p_web_socket, QObject *
       tcp_socket(p_tcp_socket),
       web_socket(p_web_socket)
 {
+    bool l_is_local = web_socket->peerAddress() == QHostAddress::LocalHost |
+                      web_socket->peerAddress() == QHostAddress::LocalHostIPv6;
+    //TLDR : We check if the header comes trough a proxy/tunnel running locally.
+    //This is to ensure nobody can send those headers from the web.
     QNetworkRequest l_request = web_socket->request();
-    if (l_request.hasRawHeader("x-forwarded-for")) {
+    if (l_request.hasRawHeader("x-forwarded-for") && l_is_local) {
         websocket_ip = l_request.rawHeader("x-forwarded-for");
     }
     else {
