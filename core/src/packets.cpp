@@ -617,6 +617,9 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     // in typical AO fasion, the indicies for the incoming
     // and outgoing packets are different. Just RTFM.
 
+    // This packet can be sent with a minimum required args of 15.
+    // 2.6+ extensions raise this to 19, and 2.8 further raises this to 26.
+
     AOPacket l_invalid("INVALID", {});
     QStringList l_args;
     if (m_current_char == "" || !m_joined)
@@ -770,7 +773,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     l_args.append(QString::number(text_color));
 
     // 2.6 packet extensions
-    if (l_incoming_args.length() > 15) {
+    if (l_incoming_args.length() >= 19) {
         // showname
         QString l_incoming_showname = dezalgo(l_incoming_args[15].toString().trimmed());
         if (!(l_incoming_showname == m_current_char || l_incoming_showname.isEmpty()) && !area->shownameAllowed()) {
@@ -855,7 +858,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     }
 
     // 2.8 packet extensions
-    if (l_incoming_args.length() > 19) {
+    if (l_incoming_args.length() >= 26) {
         // sfx looping
         int l_sfx_loop = l_incoming_args[19].toInt();
         if (l_sfx_loop != 0 && l_sfx_loop != 1)
