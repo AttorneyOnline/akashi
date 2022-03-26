@@ -77,7 +77,6 @@ WSClient::WSClient(QTcpSocket *p_tcp_socket, QWebSocket *p_web_socket, QObject *
     else {
         websocket_ip = web_socket->peerAddress().toString();
     }
-    qDebug() << websocket_ip;
 }
 
 WSClient::~WSClient()
