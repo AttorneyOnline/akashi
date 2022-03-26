@@ -33,7 +33,7 @@ int main(int argc, char* argv[])
 {
     QCoreApplication app(argc, argv);
     QCoreApplication::setApplicationName("akashi");
-    QCoreApplication::setApplicationVersion("elderberry (1.5)");
+    QCoreApplication::setApplicationVersion("fig (1.6)");
     std::atexit(cleanup);
 
     // Verify server configuration is sound.
