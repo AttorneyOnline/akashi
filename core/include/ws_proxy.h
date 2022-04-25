@@ -18,19 +18,21 @@
 #ifndef WS_PROXY_H
 #define WS_PROXY_H
 
-#include "include/ws_client.h"
-
+#include <QHostAddress>
 #include <QMap>
 #include <QTcpSocket>
 #include <QtWebSockets/QtWebSockets>
-#include <QHostAddress>
+
+class WSClient;
 
 /**
  * @brief Handles WebSocket connections by redirecting data sent through them through a local TCP connection
  * for common handling.
  */
-class WSProxy : public QObject {
+class WSProxy : public QObject
+{
     Q_OBJECT
+
   public:
     /**
      * @brief Creates a WSProxy instance.
@@ -40,13 +42,13 @@ class WSProxy : public QObject {
      * @param p_ws_port The WebSocket port. Should the same that is opened for WebSockets connections.
      * @param parent Qt-based parent, passed along to inherited constructor from QObject.
      */
-    WSProxy(int p_local_port, int p_ws_port, QObject* parent);
+    WSProxy(int p_local_port, int p_ws_port, QObject *parent);
 
     /**
-      * @brief Destructor for the WSProxy class.
-      *
-      * @details Marks the WebSocket server that is used to handle the proxy process to be deleted later.
-      */
+     * @brief Destructor for the WSProxy class.
+     *
+     * @details Marks the WebSocket server that is used to handle the proxy process to be deleted later.
+     */
     ~WSProxy();
 
     /**
@@ -54,7 +56,7 @@ class WSProxy : public QObject {
      */
     void start();
 
-public slots:
+  public slots:
     /**
      * @brief Sets up the proxy process to the newly connected WebSocket.
      *
@@ -66,12 +68,12 @@ public slots:
     /**
      * @brief The WebSocket server listening to incoming WebSocket connections.
      */
-    QWebSocketServer* server;
+    QWebSocketServer *server;
 
     /**
      * @brief Every client connected through WebSocket.
      */
-    QVector<WSClient*> clients;
+    QVector<WSClient *> clients;
 
     /**
      * @brief The TCP port that the WebSocket connections will be redirected through.

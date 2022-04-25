@@ -11,14 +11,14 @@ namespace unittests {
 class MusicListManager : public QObject
 {
     Q_OBJECT
-public :
 
-    MusicManager* m_music_manager;
+  public:
+    MusicManager *m_music_manager;
 
-private slots:
+  private slots:
     /**
-    * @brief Initialises every tests with creating a new MusicManager with a small sample root list.
-    */
+     * @brief Initialises every tests with creating a new MusicManager with a small sample root list.
+     */
     void init();
 
     /**
@@ -70,56 +70,56 @@ private slots:
      * @brief Tests the retrieval of the full musiclist for an area.
      */
     void musiclist();
-
-
 };
 
 void MusicListManager::init()
 {
-    QMap<QString,QPair<QString,int>> l_test_list;
-    l_test_list.insert("==Music==",{"==Music==",0});
-    l_test_list.insert("Announce The Truth (AJ).opus",{"Announce The Truth (AJ).opus",59});
-    l_test_list.insert("Announce The Truth (JFA).opus",{"Announce The Truth (JFA).opus",98});
+    QMap<QString, QPair<QString, int>> l_test_list;
+    l_test_list.insert("==Music==", {"==Music==", 0});
+    l_test_list.insert("Announce The Truth (AJ).opus", {"Announce The Truth (AJ).opus", 59});
+    l_test_list.insert("Announce The Truth (JFA).opus", {"Announce The Truth (JFA).opus", 98});
 
     QStringList l_list = {};
-    l_list << "==Music==" << "Announce The Truth (AJ).opus" << "Announce The Truth (JFA).opus";
+    l_list << "==Music=="
+           << "Announce The Truth (AJ).opus"
+           << "Announce The Truth (JFA).opus";
 
-    m_music_manager = new MusicManager(nullptr, l_list ,{"my.cdn.com","your.cdn.com"}, l_test_list);
+    m_music_manager = new MusicManager(l_list, {"my.cdn.com", "your.cdn.com"}, l_test_list, nullptr);
 }
 
 void MusicListManager::registerArea()
 {
     {
-        //We register a single area with the music manager of ID 0.
-        //Creation should work as there are no other areas yet.
+        // We register a single area with the music manager of ID 0.
+        // Creation should work as there are no other areas yet.
         bool l_creation_success = m_music_manager->registerArea(0);
-        QCOMPARE(l_creation_success,true);
+        QCOMPARE(l_creation_success, true);
     }
     {
-        //Someone tries to register the same area again!
-        //This should fail as this area already exists.
+        // Someone tries to register the same area again!
+        // This should fail as this area already exists.
         bool l_creation_success = m_music_manager->registerArea(0);
-        QCOMPARE(l_creation_success,false);
+        QCOMPARE(l_creation_success, false);
     }
 }
 
 void MusicListManager::toggleRootEnabled()
 {
     {
-        //We register an area of ID0 and toggle the inclusion of global list.
+        // We register an area of ID0 and toggle the inclusion of global list.
         m_music_manager->registerArea(0);
         QCOMPARE(m_music_manager->toggleRootEnabled(0), false);
     }
     {
-        //We toggle it again. It should return true now.
-        //Since this is now true, we should have the root list with customs cleared.
+        // We toggle it again. It should return true now.
+        // Since this is now true, we should have the root list with customs cleared.
         QCOMPARE(m_music_manager->toggleRootEnabled(0), true);
     }
 }
 
 void MusicListManager::validateSong_data()
 {
-    //Songname can also be the realname.
+    // Songname can also be the realname.
     QTest::addColumn<QString>("songname");
     QTest::addColumn<bool>("expectedResult");
 
@@ -137,47 +137,47 @@ void MusicListManager::validateSong_data()
 
 void MusicListManager::validateSong()
 {
-    QFETCH(QString,songname);
-    QFETCH(bool,expectedResult);
+    QFETCH(QString, songname);
+    QFETCH(bool, expectedResult);
 
-    bool l_result = m_music_manager->validateSong(songname, {"my.cdn.com","your.cdn.com"});
-    QCOMPARE(expectedResult,l_result);
+    bool l_result = m_music_manager->validateSong(songname, {"my.cdn.com", "your.cdn.com"});
+    QCOMPARE(expectedResult, l_result);
 }
 
 void MusicListManager::addCustomSong()
 {
     {
-        //Dummy register.
+        // Dummy register.
         m_music_manager->registerArea(0);
 
-        //No custom songs, so musiclist = root_list.size()
+        // No custom songs, so musiclist = root_list.size()
         QCOMPARE(m_music_manager->musiclist(0).size(), 3);
     }
     {
-        //Add a song that's valid. The musiclist is now root_list.size() + custom_list.size()
-        m_music_manager->addCustomSong("mysong","mysong.opus",0,0);
+        // Add a song that's valid. The musiclist is now root_list.size() + custom_list.size()
+        m_music_manager->addCustomSong("mysong", "mysong.opus", 0, 0);
         QCOMPARE(m_music_manager->musiclist(0).size(), 4);
     }
     {
-        //Add a song that's part of the root list. This should fail and not increase the size.
-        bool l_result = m_music_manager->addCustomSong("Announce The Truth (AJ)","Announce The Truth (AJ).opus",0,0);
-        QCOMPARE(l_result,false);
+        // Add a song that's part of the root list. This should fail and not increase the size.
+        bool l_result = m_music_manager->addCustomSong("Announce The Truth (AJ)", "Announce The Truth (AJ).opus", 0, 0);
+        QCOMPARE(l_result, false);
         QCOMPARE(m_music_manager->musiclist(0).size(), 4);
     }
     {
-        //Disable the root list. Musiclist is now custom_list.size()
+        // Disable the root list. Musiclist is now custom_list.size()
         m_music_manager->toggleRootEnabled(0);
         QCOMPARE(m_music_manager->musiclist(0).size(), 1);
     }
     {
-        //Add an item that is in the root list into the custom list. Size is still custom_list.size()
-        bool l_result = m_music_manager->addCustomSong("Announce The Truth (AJ)","Announce The Truth (AJ).opus",0,0);
-        QCOMPARE(l_result,true);
+        // Add an item that is in the root list into the custom list. Size is still custom_list.size()
+        bool l_result = m_music_manager->addCustomSong("Announce The Truth (AJ)", "Announce The Truth (AJ).opus", 0, 0);
+        QCOMPARE(l_result, true);
         QCOMPARE(m_music_manager->musiclist(0).size(), 2);
     }
     {
-        bool l_result = m_music_manager->addCustomSong("Announce The Truth (AJ)2","https://my.cdn.com/mysong.opus",0,0);
-        QCOMPARE(l_result,true);
+        bool l_result = m_music_manager->addCustomSong("Announce The Truth (AJ)2", "https://my.cdn.com/mysong.opus", 0, 0);
+        QCOMPARE(l_result, true);
         QCOMPARE(m_music_manager->musiclist(0).size(), 3);
     }
 }
@@ -185,93 +185,91 @@ void MusicListManager::addCustomSong()
 void MusicListManager::addCustomCategory()
 {
     {
-        //Dummy register.
+        // Dummy register.
         m_music_manager->registerArea(0);
 
-        //Add category to the custom list. Category marker are added manually.
-        bool l_result = m_music_manager->addCustomCategory("Music2",0);
-        QCOMPARE(l_result,true);
+        // Add category to the custom list. Category marker are added manually.
+        bool l_result = m_music_manager->addCustomCategory("Music2", 0);
+        QCOMPARE(l_result, true);
         QCOMPARE(m_music_manager->musiclist(0).size(), 4);
         QCOMPARE(m_music_manager->musiclist(0).at(3), "==Music2==");
     }
     {
-        //Add a category that already exists on root. This should fail and not increase the size of our list.
-        bool l_result = m_music_manager->addCustomCategory("Music",0);
+        // Add a category that already exists on root. This should fail and not increase the size of our list.
+        bool l_result = m_music_manager->addCustomCategory("Music", 0);
         QCOMPARE(l_result, false);
         QCOMPARE(m_music_manager->musiclist(0).size(), 4);
     }
     {
-        //We disable the root list. We now insert the category again.
+        // We disable the root list. We now insert the category again.
         m_music_manager->toggleRootEnabled(0);
-        bool l_result = m_music_manager->addCustomCategory("Music",0);
+        bool l_result = m_music_manager->addCustomCategory("Music", 0);
         QCOMPARE(l_result, true);
         QCOMPARE(m_music_manager->musiclist(0).size(), 2);
         QCOMPARE(m_music_manager->musiclist(0).at(1), "==Music==");
     }
     {
-        //Global now enabled. We add a song with three ===.
+        // Global now enabled. We add a song with three ===.
         m_music_manager->toggleRootEnabled(0);
-        bool l_result = m_music_manager->addCustomCategory("===Music===",0);
+        bool l_result = m_music_manager->addCustomCategory("===Music===", 0);
         QCOMPARE(l_result, true);
         QCOMPARE(m_music_manager->musiclist(0).size(), 5);
         QCOMPARE(m_music_manager->musiclist(0).at(4), "===Music===");
-
     }
 }
 
 void MusicListManager::sanitiseCustomList()
 {
-    //Prepare a dummy area with root list disabled.Insert both non-root and root elements.
+    // Prepare a dummy area with root list disabled.Insert both non-root and root elements.
     m_music_manager->registerArea(0);
     m_music_manager->toggleRootEnabled(0);
-    m_music_manager->addCustomCategory("Music",0);
-    m_music_manager->addCustomCategory("Music2",0);
-    m_music_manager->addCustomSong("Announce The Truth (AJ)","Announce The Truth (AJ).opus",0,0);
-    m_music_manager->addCustomSong("mysong","mysong.opus",0,0);
+    m_music_manager->addCustomCategory("Music", 0);
+    m_music_manager->addCustomCategory("Music2", 0);
+    m_music_manager->addCustomSong("Announce The Truth (AJ)", "Announce The Truth (AJ).opus", 0, 0);
+    m_music_manager->addCustomSong("mysong", "mysong.opus", 0, 0);
 
-    //We now only have custom elements.
+    // We now only have custom elements.
     QCOMPARE(m_music_manager->musiclist(0).size(), 4);
 
-    //We reenable the root list. Sanisation should only leave the non-root elements in the custom list.
+    // We reenable the root list. Sanisation should only leave the non-root elements in the custom list.
     m_music_manager->toggleRootEnabled(0);
     QCOMPARE(m_music_manager->musiclist(0).size(), 5);
     QCOMPARE(m_music_manager->musiclist(0).at(3), "==Music2==");
     QCOMPARE(m_music_manager->musiclist(0).at(4), "mysong.opus");
-
 }
 
 void MusicListManager::removeCategorySong()
 {
     {
-        //Prepare dummy area. Add both custom songs and categories.
+        // Prepare dummy area. Add both custom songs and categories.
         m_music_manager->registerArea(0);
-        m_music_manager->addCustomCategory("Music2",0);
-        m_music_manager->addCustomSong("mysong","mysong.opus",0,0);
-        m_music_manager->addCustomCategory("Music3",0);
-        m_music_manager->addCustomSong("mysong2","mysong.opus",0,0);
+        m_music_manager->addCustomCategory("Music2", 0);
+        m_music_manager->addCustomSong("mysong", "mysong.opus", 0, 0);
+        m_music_manager->addCustomCategory("Music3", 0);
+        m_music_manager->addCustomSong("mysong2", "mysong.opus", 0, 0);
         QCOMPARE(m_music_manager->musiclist(0).size(), 7);
     }
     {
-        //Delete a category that is not custom. This should fail.
-        bool l_success = m_music_manager->removeCategorySong("==Music==",0);
+        // Delete a category that is not custom. This should fail.
+        bool l_success = m_music_manager->removeCategorySong("==Music==", 0);
         QCOMPARE(l_success, false);
         QCOMPARE(m_music_manager->musiclist(0).size(), 7);
     }
     {
-        //Correct category name, wrong format.
-        bool l_success = m_music_manager->removeCategorySong("Music2",0);
+        // Correct category name, wrong format.
+        bool l_success = m_music_manager->removeCategorySong("Music2", 0);
         QCOMPARE(l_success, false);
         QCOMPARE(m_music_manager->musiclist(0).size(), 7);
     }
     {
-        //Correct category name. This should be removed.
-        bool l_success = m_music_manager->removeCategorySong("==Music2==",0);
+        // Correct category name. This should be removed.
+        bool l_success = m_music_manager->removeCategorySong("==Music2==", 0);
         QCOMPARE(l_success, true);
         QCOMPARE(m_music_manager->musiclist(0).size(), 6);
     }
     {
-        //Correct song name. This should be removed. This needs to be with the extension.
-        bool l_success = m_music_manager->removeCategorySong("mysong2.opus",0);
+        // Correct song name. This should be removed. This needs to be with the extension.
+        bool l_success = m_music_manager->removeCategorySong("mysong2.opus", 0);
         QCOMPARE(l_success, true);
         QCOMPARE(m_music_manager->musiclist(0).size(), 5);
     }
@@ -280,20 +278,20 @@ void MusicListManager::removeCategorySong()
 void MusicListManager::songInformation()
 {
     {
-        //Prepare dummy area. Add both custom songs and categories.
+        // Prepare dummy area. Add both custom songs and categories.
         m_music_manager->registerArea(0);
-        m_music_manager->addCustomCategory("Music2",0);
-        m_music_manager->addCustomSong("mysong","realmysong.opus",47,0);
-        m_music_manager->addCustomCategory("Music3",0);
-        m_music_manager->addCustomSong("mysong2","mysong.opus",42,0);
+        m_music_manager->addCustomCategory("Music2", 0);
+        m_music_manager->addCustomSong("mysong", "realmysong.opus", 47, 0);
+        m_music_manager->addCustomCategory("Music3", 0);
+        m_music_manager->addCustomSong("mysong2", "mysong.opus", 42, 0);
     }
     {
-        QPair<QString,int> l_song_information = m_music_manager->songInformation("mysong.opus",0);
+        QPair<QString, int> l_song_information = m_music_manager->songInformation("mysong.opus", 0);
         QCOMPARE(l_song_information.first, "realmysong.opus");
         QCOMPARE(l_song_information.second, 47);
     }
     {
-        QPair<QString,int> l_song_information = m_music_manager->songInformation("Announce The Truth (AJ).opus",0);
+        QPair<QString, int> l_song_information = m_music_manager->songInformation("Announce The Truth (AJ).opus", 0);
         QCOMPARE(l_song_information.first, "Announce The Truth (AJ).opus");
         QCOMPARE(l_song_information.second, 59);
     }
@@ -302,12 +300,12 @@ void MusicListManager::songInformation()
 void MusicListManager::musiclist()
 {
     {
-        //Prepare dummy area. Add both custom songs and categories.
+        // Prepare dummy area. Add both custom songs and categories.
         m_music_manager->registerArea(0);
-        m_music_manager->addCustomCategory("Music2",0);
-        m_music_manager->addCustomSong("mysong","realmysong.opus",47,0);
-        m_music_manager->addCustomCategory("Music3",0);
-        m_music_manager->addCustomSong("mysong2","mysong.opus",42,0);
+        m_music_manager->addCustomCategory("Music2", 0);
+        m_music_manager->addCustomSong("mysong", "realmysong.opus", 47, 0);
+        m_music_manager->addCustomCategory("Music3", 0);
+        m_music_manager->addCustomSong("mysong2", "mysong.opus", 42, 0);
     }
     {
         QCOMPARE(m_music_manager->musiclist(0).size(), 7);

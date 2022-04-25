@@ -29,7 +29,8 @@
  * @see https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md for a general explanation
  * on Attorney Online 2's network protocol.
  */
-class AOPacket {
+class AOPacket
+{
   public:
     /**
      * @brief Creates an AOPacket with the given header and contents.

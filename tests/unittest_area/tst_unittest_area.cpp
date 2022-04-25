@@ -14,13 +14,13 @@ class Area : public QObject
 {
     Q_OBJECT
 
-public:
+  public:
     /**
      * @brief An AreaData pointer to test with.
      */
-    AreaData* m_area;
+    AreaData *m_area;
 
-private slots:
+  private slots:
     /**
      * @brief Initialises every tests with creating a new area with the title "Test Area", and the index of 0.
      */
@@ -78,14 +78,14 @@ void Area::clientJoinLeave()
 {
     {
         // There must be exactly one client in the area, and it must have a charid of 5 and userid 0.
-        m_area->clientJoinedArea(5,0);
+        m_area->clientJoinedArea(5, 0);
 
         QCOMPARE(m_area->joinedIDs().size(), 1);
         QCOMPARE(m_area->charactersTaken().at(0), 5);
     }
     {
         // No clients must be left in the area.
-        m_area->clientLeftArea(5,0);
+        m_area->clientLeftArea(5, 0);
 
         QCOMPARE(m_area->joinedIDs().size(), 0);
     }
@@ -143,7 +143,8 @@ void Area::changeHP()
 
     if (AreaData::Side::DEFENCE == side) {
         QCOMPARE(expectedHP, m_area->defHP());
-    } else {
+    }
+    else {
         QCOMPARE(expectedHP, m_area->proHP());
     }
 }
@@ -152,7 +153,7 @@ void Area::changeCharacter()
 {
     {
         // A client with a charid of 6 and userid 0 joins. There's only them in there.
-        m_area->clientJoinedArea(6,0);
+        m_area->clientJoinedArea(6, 0);
 
         QCOMPARE(m_area->charactersTaken().size(), 1);
         QCOMPARE(m_area->charactersTaken().at(0), 6);
@@ -211,8 +212,7 @@ void Area::testimony()
 
     {
         // Add all statements, and check that they're added.
-        for (const auto& l_statement : l_testimony)
-        {
+        for (const auto &l_statement : l_testimony) {
             m_area->recordStatement(l_statement);
 
             QCOMPARE(l_statement, m_area->testimony().at(m_area->statement() - 1));
@@ -223,22 +223,22 @@ void Area::testimony()
         m_area->jumpToStatement(1);
 
         for (int i = 1; i < l_testimony.size() - 1; i++) {
-           const auto& l_results = m_area->jumpToStatement(m_area->statement() + 1);
+            const auto &l_results = m_area->jumpToStatement(m_area->statement() + 1);
 
-           QCOMPARE(l_results.first, l_testimony.at(i + 1));
-           QCOMPARE(l_results.second, AreaData::TestimonyProgress::OK);
+            QCOMPARE(l_results.first, l_testimony.at(i + 1));
+            QCOMPARE(l_results.second, AreaData::TestimonyProgress::OK);
         }
     }
     {
         // Next advancement loops the testimony.
-        const auto& l_results = m_area->jumpToStatement(m_area->statement() + 1);
+        const auto &l_results = m_area->jumpToStatement(m_area->statement() + 1);
 
         QCOMPARE(l_results.first, l_testimony.at(1));
         QCOMPARE(l_results.second, AreaData::TestimonyProgress::LOOPED);
     }
     {
         // Going back makes the testimony stay at the first statement.
-        const auto& l_results = m_area->jumpToStatement(m_area->statement() - 1);
+        const auto &l_results = m_area->jumpToStatement(m_area->statement() - 1);
 
         QCOMPARE(l_results.first, l_testimony.at(1));
         QCOMPARE(l_results.second, AreaData::TestimonyProgress::STAYED_AT_FIRST);

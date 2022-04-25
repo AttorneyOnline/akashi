@@ -17,10 +17,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #ifndef WRITER_FULL_H
 #define WRITER_FULL_H
-#include <QObject>
-#include <QFile>
-#include <QDir>
 #include <QDateTime>
+#include <QDir>
+#include <QFile>
+#include <QObject>
 #include <QTextStream>
 
 /**
@@ -29,13 +29,15 @@
 class WriterFull : public QObject
 {
     Q_OBJECT
-public:
+
+  public:
     /**
      * @brief Constructor for full logwriter
      *
      * @param QObject pointer to the parent object.
      */
-    WriterFull(QObject* parent = nullptr);;
+    WriterFull(QObject *parent = nullptr);
+    ;
 
     /**
      * @brief Deconstructor for full logwriter.
@@ -57,7 +59,7 @@ public:
      */
     void flush(const QString f_entry, const QString f_area_name);
 
-private:
+  private:
     /**
      * @brief Filename of the logfile used. This will always be the time the server starts up.
      */
@@ -69,4 +71,4 @@ private:
     QDir l_dir;
 };
 
-#endif //WRITER_FULL_H
+#endif // WRITER_FULL_H

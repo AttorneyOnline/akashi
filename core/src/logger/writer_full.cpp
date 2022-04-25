@@ -17,7 +17,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/logger/writer_full.h"
 
-WriterFull::WriterFull(QObject* parent) :
+WriterFull::WriterFull(QObject *parent) :
     QObject(parent)
 {
     l_dir.setPath("logs/");
@@ -47,4 +47,3 @@ void WriterFull::flush(const QString f_entry, const QString f_area_name)
     }
     l_logfile.close();
 };
-

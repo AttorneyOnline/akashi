@@ -15,21 +15,22 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
-#include <include/server.h>
 #include <include/config_manager.h>
+#include <include/server.h>
 
 #include <cstdlib>
 
 #include <QCoreApplication>
 #include <QDebug>
 
-Server* server;
+Server *server;
 
-void cleanup() {
+void cleanup()
+{
     server->deleteLater();
 }
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
     QCoreApplication app(argc, argv);
     QCoreApplication::setApplicationName("akashi");

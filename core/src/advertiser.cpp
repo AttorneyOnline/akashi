@@ -17,12 +17,13 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/advertiser.h"
 
+#include "include/config_manager.h"
+
 Advertiser::Advertiser()
 {
     m_manager = new QNetworkAccessManager();
     connect(m_manager, &QNetworkAccessManager::finished,
             this, &Advertiser::msRequestFinished);
-
 
     m_name = ConfigManager::serverName();
     m_hostname = ConfigManager::advertiserHostname();
@@ -61,7 +62,7 @@ void Advertiser::msAdvertiseServer()
         l_json["name"] = m_name;
 
         if (!m_description.isEmpty()) {
-        l_json["description"] = m_description;
+            l_json["description"] = m_description;
         }
 
         m_manager->post(request, QJsonDocument(l_json).toJson());
@@ -73,7 +74,6 @@ void Advertiser::msAdvertiseServer()
     if (m_debug)
         qWarning().noquote() << "Unable to advertise. Masterserver URL '" + m_masterserver.toString() + "' is not valid.";
     return;
-
 }
 
 void Advertiser::msRequestFinished(QNetworkReply *f_reply)
@@ -110,5 +110,3 @@ void Advertiser::updateAdvertiserSettings()
     m_masterserver = ConfigManager::advertiserIP();
     m_debug = ConfigManager::advertiserDebug();
 }
-
-

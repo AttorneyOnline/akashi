@@ -17,7 +17,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/logger/writer_modcall.h"
 
-WriterModcall::WriterModcall(QObject* parent) :
+WriterModcall::WriterModcall(QObject *parent) :
     QObject(parent)
 {
     l_dir.setPath("logs/");
@@ -43,5 +43,4 @@ void WriterModcall::flush(const QString f_area_name, QQueue<QString> f_buffer)
     }
 
     l_logfile.close();
-
 };

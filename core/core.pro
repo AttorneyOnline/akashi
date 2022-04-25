@@ -58,6 +58,7 @@ HEADERS += include/aoclient.h \
     include/db_manager.h \
     include/discord.h \
     include/server.h \
+    include/typedefs.h \
     include/ws_client.h \
     include/ws_proxy.h \
     include/advertiser.h \
