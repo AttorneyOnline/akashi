@@ -19,15 +19,15 @@
 
 #include <include/config_manager.h>
 
-QSettings* ConfigManager::m_settings = new QSettings("config/config.ini", QSettings::IniFormat);
-QSettings* ConfigManager::m_discord = new QSettings("config/discord.ini", QSettings::IniFormat);
-QSettings* ConfigManager::m_areas = new QSettings("config/areas.ini", QSettings::IniFormat);
-QSettings* ConfigManager::m_logtext = new QSettings("config/text/logtext.ini", QSettings::IniFormat);
-ConfigManager::CommandSettings* ConfigManager::m_commands = new CommandSettings();
-QElapsedTimer* ConfigManager::m_uptimeTimer = new QElapsedTimer;
-MusicList* ConfigManager::m_musicList = new MusicList;
-QHash<QString,ConfigManager::help>* ConfigManager::m_commands_help = new QHash<QString,ConfigManager::help>;
-QStringList* ConfigManager::m_ordered_list = new QStringList;
+QSettings *ConfigManager::m_settings = new QSettings("config/config.ini", QSettings::IniFormat);
+QSettings *ConfigManager::m_discord = new QSettings("config/discord.ini", QSettings::IniFormat);
+QSettings *ConfigManager::m_areas = new QSettings("config/areas.ini", QSettings::IniFormat);
+QSettings *ConfigManager::m_logtext = new QSettings("config/text/logtext.ini", QSettings::IniFormat);
+ConfigManager::CommandSettings *ConfigManager::m_commands = new CommandSettings();
+QElapsedTimer *ConfigManager::m_uptimeTimer = new QElapsedTimer;
+MusicList *ConfigManager::m_musicList = new MusicList;
+QHash<QString, ConfigManager::help> *ConfigManager::m_commands_help = new QHash<QString, ConfigManager::help>;
+QStringList *ConfigManager::m_ordered_list = new QStringList;
 
 bool ConfigManager::verifyServerConfig()
 {
@@ -35,15 +35,15 @@ bool ConfigManager::verifyServerConfig()
     QStringList l_directories{"config/", "config/text/"};
     for (const QString &l_directory : l_directories) {
         if (!dirExists(QFileInfo(l_directory))) {
-                qCritical() << l_directory + " does not exist!";
-                return false;
+            qCritical() << l_directory + " does not exist!";
+            return false;
         }
     }
 
     // Verify config files
     QStringList l_config_files{"config/config.ini", "config/areas.ini", "config/backgrounds.txt", "config/characters.txt", "config/music.json",
                                "config/discord.ini", "config/text/8ball.txt", "config/text/gimp.txt", "config/text/praise.txt",
-                               "config/text/reprimands.txt","config/text/commandhelp.json","config/text/cdns.txt"};
+                               "config/text/reprimands.txt", "config/text/commandhelp.json", "config/text/cdns.txt"};
     for (const QString &l_file : l_config_files) {
         if (!fileExists(QFileInfo(l_file))) {
             qCritical() << l_file + " does not exist!";
@@ -94,6 +94,8 @@ bool ConfigManager::verifyServerConfig()
     m_commands->reprimands = (loadConfigFile("reprimands"));
     m_commands->gimps = (loadConfigFile("gimp"));
     m_commands->cdns = (loadConfigFile("cdns"));
+    if (m_commands->cdns.isEmpty())
+        m_commands->cdns = QStringList{"cdn.discord.com"};
 
     m_uptimeTimer->start();
 
@@ -102,7 +104,7 @@ bool ConfigManager::verifyServerConfig()
 
 QString ConfigManager::bindIP()
 {
-    return m_settings->value("Options/bind_ip","all").toString();
+    return m_settings->value("Options/bind_ip", "all").toString();
 }
 
 QStringList ConfigManager::charlist()
@@ -138,22 +140,22 @@ MusicList ConfigManager::musiclist()
 
     QJsonParseError l_error;
     QJsonDocument l_music_list_json = QJsonDocument::fromJson(l_music_json.readAll(), &l_error);
-    if (!(l_error.error == QJsonParseError::NoError)) { //Non-Terminating error.
+    if (!(l_error.error == QJsonParseError::NoError)) { // Non-Terminating error.
         qWarning() << "Unable to load musiclist. The following error was encounted : " + l_error.errorString();
-        return QMap<QString,QPair<QString,int>>{}; //Server can still run without music.
+        return QMap<QString, QPair<QString, int>>{}; // Server can still run without music.
     }
 
     // Akashi expects the musiclist to be contained in a JSON array, even if its only a single category.
     QJsonArray l_Json_root_array = l_music_list_json.array();
     QJsonObject l_child_obj;
     QJsonArray l_child_array;
-    for (int i = 0; i <= l_Json_root_array.size() -1; i++){ //Iterate trough entire JSON file to assemble musiclist
+    for (int i = 0; i <= l_Json_root_array.size() - 1; i++) { // Iterate trough entire JSON file to assemble musiclist
         l_child_obj = l_Json_root_array.at(i).toObject();
 
-        //Technically not a requirement, but neat for organisation.
+        // Technically not a requirement, but neat for organisation.
         QString l_category_name = l_child_obj["category"].toString();
         if (!l_category_name.isEmpty()) {
-            m_musicList->insert(l_category_name,{l_category_name,0});
+            m_musicList->insert(l_category_name, {l_category_name, 0});
             m_ordered_list->append(l_category_name);
         }
         else {
@@ -161,7 +163,7 @@ MusicList ConfigManager::musiclist()
         }
 
         l_child_array = l_child_obj["songs"].toArray();
-        for (int i = 0; i <= l_child_array.size() -1; i++){ // Inner for loop because a category can contain multiple songs.
+        for (int i = 0; i <= l_child_array.size() - 1; i++) { // Inner for loop because a category can contain multiple songs.
             QJsonObject l_song_obj = l_child_array.at(i).toObject();
             QString l_song_name = l_song_obj["name"].toString();
             QString l_real_name = l_song_obj["realname"].toString();
@@ -169,8 +171,8 @@ MusicList ConfigManager::musiclist()
                 l_real_name = l_song_name;
             }
             int l_song_duration = l_song_obj["length"].toVariant().toInt();
-         m_musicList->insert(l_song_name,{l_real_name,l_song_duration});
-         m_ordered_list->append(l_song_name);
+            m_musicList->insert(l_song_name, {l_real_name, l_song_duration});
+            m_ordered_list->append(l_song_name);
         }
     }
     l_music_json.close();
@@ -190,7 +192,7 @@ void ConfigManager::loadCommandHelp()
 
     QJsonParseError l_error;
     QJsonDocument l_help_list_json = QJsonDocument::fromJson(l_help_json.readAll(), &l_error);
-    if (!(l_error.error == QJsonParseError::NoError)) { //Non-Terminating error.
+    if (!(l_error.error == QJsonParseError::NoError)) { // Non-Terminating error.
         qWarning() << "Unable to load help information. The following error occurred: " + l_error.errorString();
     }
 
@@ -198,7 +200,7 @@ void ConfigManager::loadCommandHelp()
     QJsonArray l_Json_root_array = l_help_list_json.array();
     QJsonObject l_child_obj;
 
-    for (int i = 0; i <= l_Json_root_array.size() -1; i++){
+    for (int i = 0; i <= l_Json_root_array.size() - 1; i++) {
         l_child_obj = l_Json_root_array.at(i).toObject();
         QString l_name = l_child_obj["name"].toString();
         QString l_usage = l_child_obj["usage"].toString();
@@ -209,12 +211,12 @@ void ConfigManager::loadCommandHelp()
             l_help_information.usage = l_usage;
             l_help_information.text = l_text;
 
-            m_commands_help->insert(l_name,l_help_information);
+            m_commands_help->insert(l_name, l_help_information);
         }
     }
 }
 
-QSettings* ConfigManager::areaData()
+QSettings *ConfigManager::areaData()
 {
     return m_areas;
 }
@@ -222,7 +224,7 @@ QSettings* ConfigManager::areaData()
 QStringList ConfigManager::sanitizedAreaNames()
 {
     QStringList l_area_names = m_areas->childGroups(); // invisibly does a lexicographical sort, because Qt is great like that
-    std::sort(l_area_names.begin(), l_area_names.end(), [] (const QString &a, const QString &b) {return a.split(":")[0].toInt() < b.split(":")[0].toInt();});
+    std::sort(l_area_names.begin(), l_area_names.end(), [](const QString &a, const QString &b) { return a.split(":")[0].toInt() < b.split(":")[0].toInt(); });
     QStringList l_sanitized_area_names;
     for (const QString &areaName : qAsConst(l_area_names)) {
         QStringList l_nameSplit = areaName.split(":");
@@ -452,13 +454,13 @@ QString ConfigManager::discordBanWebhookUrl()
 
 bool ConfigManager::discordUptimeEnabled()
 {
-    return m_discord->value("Discord/webhook_uptime_enabled","false").toBool();
+    return m_discord->value("Discord/webhook_uptime_enabled", "false").toBool();
 }
 
 int ConfigManager::discordUptimeTime()
 {
     bool ok;
-    int l_aliveTime = m_discord->value("Discord/webhook_uptime_time","60").toInt(&ok);
+    int l_aliveTime = m_discord->value("Discord/webhook_uptime_time", "60").toInt(&ok);
     if (!ok) {
         qWarning("alive_time is not an int");
         l_aliveTime = 60;
@@ -532,7 +534,7 @@ bool ConfigManager::passwordCanContainUsername()
 
 QString ConfigManager::LogText(QString f_logtype)
 {
-    return m_logtext->value("LogConfiguration/" + f_logtype,"").toString();
+    return m_logtext->value("LogConfiguration/" + f_logtype, "").toString();
 }
 
 int ConfigManager::afkTimeout()
@@ -578,23 +580,23 @@ QStringList ConfigManager::cdnList()
 
 bool ConfigManager::advertiseServer()
 {
-    return m_settings->value("Advertiser/advertise","true").toBool();
+    return m_settings->value("Advertiser/advertise", "true").toBool();
 }
 
 bool ConfigManager::advertiserDebug()
 {
-    return m_settings->value("Advertiser/debug","true").toBool();
+    return m_settings->value("Advertiser/debug", "true").toBool();
 }
 
 QUrl ConfigManager::advertiserIP()
 {
-    qDebug() << m_settings->value("Advertiser/ms_ip","").toUrl();
-    return m_settings->value("Advertiser/ms_ip","").toUrl();
+    qDebug() << m_settings->value("Advertiser/ms_ip", "").toUrl();
+    return m_settings->value("Advertiser/ms_ip", "").toUrl();
 }
 
 QString ConfigManager::advertiserHostname()
 {
-    return m_settings->value("Advertiser/hostname","").toString();
+    return m_settings->value("Advertiser/hostname", "").toString();
 }
 
 qint64 ConfigManager::uptime()

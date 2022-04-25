@@ -18,9 +18,12 @@
 
 #include <algorithm>
 
+#include "include/aopacket.h"
 #include "include/area_data.h"
+#include "include/config_manager.h"
+#include "include/music_manager.h"
 
-AreaData::AreaData(QString p_name, int p_index, MusicManager* p_music_manager = nullptr) :
+AreaData::AreaData(QString p_name, int p_index, MusicManager *p_music_manager = nullptr) :
     m_index(p_index),
     m_music_manager(p_music_manager),
     m_playerCount(0),
@@ -38,7 +41,7 @@ AreaData::AreaData(QString p_name, int p_index, MusicManager* p_music_manager = 
     QStringList name_split = p_name.split(":");
     name_split.removeFirst();
     m_name = name_split.join(":");
-    QSettings* areas_ini = ConfigManager::areaData();
+    QSettings *areas_ini = ConfigManager::areaData();
     areas_ini->setIniCodec("UTF-8");
     areas_ini->beginGroup(p_name);
     m_background = areas_ini->value("background", "gs4").toString();
@@ -46,20 +49,22 @@ AreaData::AreaData(QString p_name, int p_index, MusicManager* p_music_manager = 
     m_iniswapAllowed = areas_ini->value("iniswap_allowed", "true").toBool();
     m_bgLocked = areas_ini->value("bg_locked", "false").toBool();
     m_eviMod = QVariant(areas_ini->value("evidence_mod", "FFA").toString().toUpper()).value<EvidenceMod>();
-    m_blankpostingAllowed = areas_ini->value("blankposting_allowed","true").toBool();
+    m_blankpostingAllowed = areas_ini->value("blankposting_allowed", "true").toBool();
+    m_area_message = areas_ini->value("area_message").toString();
+    m_send_area_message = areas_ini->value("send_area_message_on_join", false).toBool();
     m_forceImmediate = areas_ini->value("force_immediate", "false").toBool();
     m_toggleMusic = areas_ini->value("toggle_music", "true").toBool();
     m_shownameAllowed = areas_ini->value("shownames_allowed", "true").toBool();
     m_ignoreBgList = areas_ini->value("ignore_bglist", "false").toBool();
     m_jukebox = areas_ini->value("jukebox_enabled", "false").toBool();
     areas_ini->endGroup();
-    QTimer* timer1 = new QTimer();
+    QTimer *timer1 = new QTimer();
     m_timers.append(timer1);
-    QTimer* timer2 = new QTimer();
+    QTimer *timer2 = new QTimer();
     m_timers.append(timer2);
-    QTimer* timer3 = new QTimer();
+    QTimer *timer3 = new QTimer();
     m_timers.append(timer3);
-    QTimer* timer4 = new QTimer();
+    QTimer *timer4 = new QTimer();
     m_timers.append(timer4);
     m_jukebox_timer = new QTimer();
     connect(m_jukebox_timer, &QTimer::timeout,
@@ -67,13 +72,13 @@ AreaData::AreaData(QString p_name, int p_index, MusicManager* p_music_manager = 
 }
 
 const QMap<QString, AreaData::Status> AreaData::map_statuses = {
-    {"idle",                    AreaData::Status::IDLE                },
-    {"rp",                      AreaData::Status::RP                  },
-    {"casing",                  AreaData::Status::CASING              },
-    {"lfp",                     AreaData::Status::LOOKING_FOR_PLAYERS },
-    {"looking-for-players",     AreaData::Status::LOOKING_FOR_PLAYERS },
-    {"recess",                  AreaData::Status::RECESS              },
-    {"gaming",                  AreaData::Status::GAMING              },
+    {"idle", AreaData::Status::IDLE},
+    {"rp", AreaData::Status::RP},
+    {"casing", AreaData::Status::CASING},
+    {"lfp", AreaData::Status::LOOKING_FOR_PLAYERS},
+    {"looking-for-players", AreaData::Status::LOOKING_FOR_PLAYERS},
+    {"recess", AreaData::Status::RECESS},
+    {"gaming", AreaData::Status::GAMING},
 };
 
 void AreaData::clientLeftArea(int f_charId, int f_userId)
@@ -95,9 +100,9 @@ void AreaData::clientJoinedArea(int f_charId, int f_userId)
     }
     m_joined_ids.append(f_userId);
     emit userJoinedArea(m_index, f_userId);
-    //The name will never be shown as we are using a spectator ID. Still nice for people who network sniff.
-    //We auto-loop this so you'll never sit in silence unless wanted.
-    emit sendAreaPacketClient(AOPacket("MC",{m_currentMusic, QString::number(-1), ConfigManager::serverName(), QString::number(1)}), f_userId);
+    // The name will never be shown as we are using a spectator ID. Still nice for people who network sniff.
+    // We auto-loop this so you'll never sit in silence unless wanted.
+    emit sendAreaPacketClient(AOPacket("MC", {m_currentMusic, QString::number(-1), ConfigManager::serverName(), QString::number(1)}), f_userId);
 }
 
 QList<int> AreaData::owners() const
@@ -238,7 +243,7 @@ QList<AreaData::Evidence> AreaData::evidence() const
 void AreaData::swapEvidence(int f_eviId1, int f_eviId2)
 {
 #if QT_VERSION < QT_VERSION_CHECK(5, 13, 0)
-    //swapItemsAt does not exist in Qt older than 5.13
+    // swapItemsAt does not exist in Qt older than 5.13
     m_evidence.swap(f_eviId1, f_eviId2);
 #else
     m_evidence.swapItemsAt(f_eviId1, f_eviId2);
@@ -323,7 +328,7 @@ void AreaData::toggleImmediate()
     m_forceImmediate = !m_forceImmediate;
 }
 
-const QStringList& AreaData::lastICMessage() const
+const QStringList &AreaData::lastICMessage() const
 {
     return m_lastICMessage;
 }
@@ -391,7 +396,7 @@ QPair<QStringList, AreaData::TestimonyProgress> AreaData::jumpToStatement(int f_
     }
 }
 
-const QVector<QStringList>& AreaData::testimony() const
+const QVector<QStringList> &AreaData::testimony() const
 {
     return m_testimony;
 }
@@ -438,7 +443,7 @@ QString AreaData::musicPlayerBy() const
     return m_musicPlayedBy;
 }
 
-void AreaData::setMusicPlayedBy(const QString& f_music_player)
+void AreaData::setMusicPlayedBy(const QString &f_music_player)
 {
     m_musicPlayedBy = f_music_player;
 }
@@ -468,7 +473,8 @@ void AreaData::changeHP(AreaData::Side f_side, int f_newHP)
 {
     if (f_side == Side::DEFENCE) {
         m_defHP = std::min(std::max(0, f_newHP), 10);
-    } else if(f_side == Side::PROSECUTOR) {
+    }
+    else if (f_side == Side::PROSECUTOR) {
         m_proHP = std::min(std::max(0, f_newHP), 10);
     }
 }
@@ -490,7 +496,7 @@ void AreaData::changeDoc(const QString &f_newDoc_r)
 
 QString AreaData::areaMessage() const
 {
-    return m_area_message;
+    return m_area_message.isEmpty() ? "No area message set." : m_area_message;
 }
 
 bool AreaData::sendAreaMessageOnJoin() const
@@ -498,12 +504,14 @@ bool AreaData::sendAreaMessageOnJoin() const
     return m_send_area_message;
 }
 
-void AreaData::changeAreaMessage(const QString& f_newMessage_r)
+void AreaData::changeAreaMessage(const QString &f_newMessage_r)
 {
-    if(f_newMessage_r.isEmpty())
-        m_area_message = "No area message set.";
-    else
-        m_area_message = f_newMessage_r;
+    m_area_message = f_newMessage_r;
+}
+
+void AreaData::clearAreaMessage()
+{
+    changeAreaMessage(QString{});
 }
 
 bool AreaData::bgLocked() const
@@ -567,24 +575,24 @@ void AreaData::toggleJukebox()
 
 QString AreaData::addJukeboxSong(QString f_song)
 {
-    if(!m_jukebox_queue.contains(f_song)) {
-            //Retrieve song information.
-            QPair<QString,float> l_song = m_music_manager->songInformation(f_song, index());
+    if (!m_jukebox_queue.contains(f_song)) {
+        // Retrieve song information.
+        QPair<QString, float> l_song = m_music_manager->songInformation(f_song, index());
 
-            if (l_song.second > 0) {
-                if (m_jukebox_queue.size() == 0) {
+        if (l_song.second > 0) {
+            if (m_jukebox_queue.size() == 0) {
 
-                    emit sendAreaPacket(AOPacket("MC",{l_song.first,QString::number(-1)}), index());
-                    m_jukebox_timer->start(l_song.second * 1000);
-                    setCurrentMusic(f_song);
-                    setMusicPlayedBy("Jukebox");
-                }
-                m_jukebox_queue.append(f_song);
-                return "Song added to Jukebox.";
+                emit sendAreaPacket(AOPacket("MC", {l_song.first, QString::number(-1)}), index());
+                m_jukebox_timer->start(l_song.second * 1000);
+                setCurrentMusic(f_song);
+                setMusicPlayedBy("Jukebox");
             }
-            else {
-                return "Unable to add song. Duration shorter than 1.";
-            }
+            m_jukebox_queue.append(f_song);
+            return "Song added to Jukebox.";
+        }
+        else {
+            return "Unable to add song. Duration shorter than 1.";
+        }
     }
     return "Unable to add song. Song already in Jukebox.";
 }
@@ -597,18 +605,18 @@ QVector<int> AreaData::joinedIDs() const
 void AreaData::switchJukeboxSong()
 {
     QString l_song_name;
-    if(m_jukebox_queue.size() == 1) {
+    if (m_jukebox_queue.size() == 1) {
         l_song_name = m_jukebox_queue[0];
-        QPair<QString,float> l_song = m_music_manager->songInformation(l_song_name, index());
-        emit sendAreaPacket(AOPacket("MC",{l_song.first,"-1"}), m_index);
+        QPair<QString, float> l_song = m_music_manager->songInformation(l_song_name, index());
+        emit sendAreaPacket(AOPacket("MC", {l_song.first, "-1"}), m_index);
         m_jukebox_timer->start(l_song.second * 1000);
     }
     else {
-        int l_random_index = QRandomGenerator::system()->bounded(m_jukebox_queue.size() -1);
+        int l_random_index = QRandomGenerator::system()->bounded(m_jukebox_queue.size() - 1);
         l_song_name = m_jukebox_queue[l_random_index];
 
-        QPair<QString,float> l_song = m_music_manager->songInformation(l_song_name, index());
-        emit sendAreaPacket(AOPacket("MC",{l_song.first,"-1"}), m_index);
+        QPair<QString, float> l_song = m_music_manager->songInformation(l_song_name, index());
+        emit sendAreaPacket(AOPacket("MC", {l_song.first, "-1"}), m_index);
         m_jukebox_timer->start(l_song.second * 1000);
 
         m_jukebox_queue.remove(l_random_index);

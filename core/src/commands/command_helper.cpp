@@ -17,6 +17,11 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/aoclient.h"
 
+#include "include/aopacket.h"
+#include "include/area_data.h"
+#include "include/config_manager.h"
+#include "include/server.h"
+
 // This file is for functions used by various commands, defined in the command helper function category in aoclient.h
 // Be sure to register the command in the header before adding it here!
 
@@ -32,33 +37,34 @@ void AOClient::cmdDefault(int argc, QStringList argv)
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;
-    QString area_name = server->m_area_names[area_idx];
-    AreaData* area = server->m_areas[area_idx];
+    QString area_name = server->getAreaName(area_idx);
+    AreaData *area = server->getAreaById(area_idx);
     entries.append("=== " + area_name + " ===");
     switch (area->lockStatus()) {
-        case AreaData::LockStatus::LOCKED:
-            entries.append("[LOCKED]");
-            break;
-        case AreaData::LockStatus::SPECTATABLE:
-            entries.append("[SPECTATABLE]");
-            break;
-        case AreaData::LockStatus::FREE:
-        default:
-            break;
+    case AreaData::LockStatus::LOCKED:
+        entries.append("[LOCKED]");
+        break;
+    case AreaData::LockStatus::SPECTATABLE:
+        entries.append("[SPECTATABLE]");
+        break;
+    case AreaData::LockStatus::FREE:
+    default:
+        break;
     }
     entries.append("[" + QString::number(area->playerCount()) + " users][" + QVariant::fromValue(area->status()).toString().replace("_", "-") + "]");
-    for (AOClient* client : qAsConst(server->m_clients)) {
-        if (client->m_current_area == area_idx && client->m_joined) {
-            QString char_entry = "[" + QString::number(client->m_id) + "] " + client->m_current_char;
-            if (client->m_current_char == "")
+    const QVector<AOClient *> l_clients = server->getClients();
+    for (AOClient *l_client : l_clients) {
+        if (l_client->m_current_area == area_idx && l_client->hasJoined()) {
+            QString char_entry = "[" + QString::number(l_client->m_id) + "] " + l_client->m_current_char;
+            if (l_client->m_current_char == "")
                 char_entry += "Spectator";
-            if (client->m_showname != "")
-                char_entry += " (" + client->m_showname + ")";
-            if (area->owners().contains(client->m_id))
+            if (l_client->m_showname != "")
+                char_entry += " (" + l_client->m_showname + ")";
+            if (area->owners().contains(l_client->m_id))
                 char_entry.insert(0, "[CM] ");
             if (m_authenticated)
-                char_entry += " (" + client->getIpid() + "): " + client->m_ooc_name;
-            if (client->m_is_afk)
+                char_entry += " (" + l_client->getIpid() + "): " + l_client->m_ooc_name;
+            if (l_client->m_is_afk)
                 char_entry += " [AFK]";
             entries.append(char_entry);
         }
@@ -100,8 +106,8 @@ void AOClient::diceThrower(int argc, QStringList argv, bool p_roll)
 
 QString AOClient::getAreaTimer(int area_idx, int timer_idx)
 {
-    AreaData* l_area = server->m_areas[area_idx];
-    QTimer* l_timer;
+    AreaData *l_area = server->getAreaById(area_idx);
+    QTimer *l_timer;
     QString l_timer_name = (timer_idx == 0) ? "Global timer" : "Timer " + QString::number(timer_idx);
 
     if (timer_idx == 0)
@@ -112,7 +118,7 @@ QString AOClient::getAreaTimer(int area_idx, int timer_idx)
         return "Invalid timer ID.";
 
     if (l_timer->isActive()) {
-        QTime l_current_time = QTime(0,0).addMSecs(l_timer->remainingTime());
+        QTime l_current_time = QTime(0, 0).addMSecs(l_timer->remainingTime());
 
         return l_timer_name + " is at " + l_current_time.toString("hh:mm:ss.zzz");
     }
@@ -168,10 +174,10 @@ QString AOClient::getReprimand(bool f_positive)
 {
     if (f_positive) {
         return ConfigManager::praiseList().at(genRand(0, ConfigManager::praiseList().size() - 1));
-        }
+    }
     else {
         return ConfigManager::reprimandsList().at(genRand(0, ConfigManager::reprimandsList().size() - 1));
-        }
+    }
 }
 
 bool AOClient::checkPasswordRequirements(QString f_username, QString f_password)

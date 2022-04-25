@@ -21,13 +21,13 @@
 #define DB_VERSION 1
 
 #include <QDateTime>
+#include <QFileInfo>
 #include <QHostAddress>
 #include <QMessageAuthenticationCode>
 #include <QSqlDatabase>
 #include <QSqlDriver>
 #include <QSqlError>
 #include <QSqlQuery>
-#include <QFileInfo>
 
 /**
  * @brief A class used to handle database interaction.
@@ -39,9 +39,11 @@
  * differently than the average user.
  * This comes in two forms, when the user's client is banned, and when the user is a moderator.
  */
-class DBManager : public QObject {
+class DBManager : public QObject
+{
     Q_OBJECT
-public:
+
+  public:
     /**
      * @brief Constructor for the DBManager class.
      *
@@ -51,8 +53,8 @@ public:
     DBManager();
 
     /**
-      * @brief Destructor for the DBManager class. Closes the underlying database.
-      */
+     * @brief Destructor for the DBManager class. Closes the underlying database.
+     */
     ~DBManager();
 
     /**
@@ -95,15 +97,16 @@ public:
     /**
      * @brief Details about a ban.
      */
-    struct BanInfo {
-        QString ipid; //!< The banned user's IPID.
-        QHostAddress ip; //!< The banned user's IP.
-        QString hdid; //!< The banned user's hardware ID.
+    struct BanInfo
+    {
+        QString ipid;       //!< The banned user's IPID.
+        QHostAddress ip;    //!< The banned user's IP.
+        QString hdid;       //!< The banned user's hardware ID.
         unsigned long time; //!< The time the ban was registered.
-        QString reason; //!< The reason given for the ban by the moderator who registered it.
+        QString reason;     //!< The reason given for the ban by the moderator who registered it.
         long long duration; //!< The duration of the ban, in seconds.
-        int id; //!< The unique ID of the ban.
-        QString moderator; //!< The moderator who issued the ban.
+        int id;             //!< The unique ID of the ban.
+        QString moderator;  //!< The moderator who issued the ban.
     };
 
     /**
@@ -250,7 +253,7 @@ public:
      */
     bool updatePassword(QString username, QString password);
 
-private:
+  private:
     /**
      * @brief The name of the database connection driver.
      */

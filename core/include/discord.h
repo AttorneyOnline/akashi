@@ -18,17 +18,19 @@
 #ifndef DISCORD_H
 #define DISCORD_H
 
-#include <QtNetwork>
 #include <QCoreApplication>
-#include "config_manager.h"
+#include <QtNetwork>
+
+class ConfigManager;
 
 /**
  * @brief A class for handling all Discord webhook requests.
  */
-class Discord : public QObject {
+class Discord : public QObject
+{
     Q_OBJECT
 
-public:
+  public:
     /**
      * @brief Constructor for the Discord object
      *
@@ -37,13 +39,13 @@ public:
      * @param f_webhook_sendfile Whether or not to send a file containing area logs with the webhook POST request.
      * @param parent Qt-based parent, passed along to inherited constructor from QObject.
      */
-    Discord(QObject* parent = nullptr);
+    Discord(QObject *parent = nullptr);
 
     /**
-      * @brief Deconstructor for the Discord class.
-      *
-      * @details Marks the nam to be deleted later.
-      */
+     * @brief Deconstructor for the Discord class.
+     *
+     * @details Marks the nam to be deleted later.
+     */
     ~Discord();
 
     /**
@@ -56,8 +58,7 @@ public:
      */
     void stopUptimeTimer();
 
-
-public slots:
+  public slots:
     /**
      * @brief Handles a modcall webhook request.
      *
@@ -66,7 +67,7 @@ public slots:
      * @param f_reason The reason for the modcall.
      * @param f_buffer The area's log buffer.
      */
-    void onModcallWebhookRequested(const QString& f_name, const QString& f_area, const QString& f_reason, const QQueue<QString>& f_buffer);
+    void onModcallWebhookRequested(const QString &f_name, const QString &f_area, const QString &f_reason, const QQueue<QString> &f_buffer);
 
     /**
      * @brief Handles a ban webhook request.
@@ -76,18 +77,18 @@ public slots:
      * @param f_duration The date the ban expires.
      * @param f_reason The reason of the ban.
      */
-    void onBanWebhookRequested(const QString& f_ipid, const QString& f_moderator, const QString& f_duration, const QString& f_reason, const int& f_banID);
+    void onBanWebhookRequested(const QString &f_ipid, const QString &f_moderator, const QString &f_duration, const QString &f_reason, const int &f_banID);
 
     /**
      * @brief Handles a uptime webhook request.
      */
     void onUptimeWebhookRequested();
 
-private:
+  private:
     /**
      * @brief The QNetworkAccessManager for webhooks.
      */
-    QNetworkAccessManager* m_nam;
+    QNetworkAccessManager *m_nam;
 
     /**
      * @brief The QNetworkRequest for webhooks.
@@ -97,7 +98,7 @@ private:
     /**
      * @brief Timer to post a message that the server is still alive.
      */
-    QTimer* m_uptimePostTimer;
+    QTimer *m_uptimePostTimer;
 
     /**
      * @brief Constructs a new JSON document for modcalls.
@@ -108,7 +109,7 @@ private:
      *
      * @return A JSON document for the modcall.
      */
-    QJsonDocument constructModcallJson(const QString& f_name, const QString& f_area, const QString& f_reason) const;
+    QJsonDocument constructModcallJson(const QString &f_name, const QString &f_area, const QString &f_reason) const;
 
     /**
      * @brief Constructs a new QHttpMultiPart document for log files.
@@ -117,29 +118,29 @@ private:
      *
      * @return A QHttpMultiPart containing the log file.
      */
-    QHttpMultiPart* constructLogMultipart(const QQueue<QString>& f_buffer) const;
+    QHttpMultiPart *constructLogMultipart(const QQueue<QString> &f_buffer) const;
 
-private slots:
+  private slots:
     /**
      * @brief Handles a network reply from a webhook POST request.
      *
      * @param f_reply Pointer to the QNetworkReply created by the webhook POST request.
      */
-    void onReplyFinished(QNetworkReply* f_reply);
+    void onReplyFinished(QNetworkReply *f_reply);
 
     /**
      * @brief Sends a webhook POST request with the given JSON document.
      *
      * @param f_json The JSON document to send.
      */
-    void postJsonWebhook(const QJsonDocument& f_json);
+    void postJsonWebhook(const QJsonDocument &f_json);
 
     /**
      * @brief Sends a webhook POST request with the given QHttpMultiPart.
      *
      * @param f_multipart The QHttpMultiPart to send.
      */
-    void postMultipartWebhook(QHttpMultiPart& f_multipart);
+    void postMultipartWebhook(QHttpMultiPart &f_multipart);
 
     /**
      * @brief Constructs a new JSON document for bans.
@@ -151,15 +152,14 @@ private slots:
      *
      * @return A JSON document for the ban.
      */
-    QJsonDocument constructBanJson(const QString& f_ipid, const QString& f_moderator, const QString& f_duration, const QString& f_reason, const int& f_banID);
+    QJsonDocument constructBanJson(const QString &f_ipid, const QString &f_moderator, const QString &f_duration, const QString &f_reason, const int &f_banID);
     /**
      * @brief Constructs a new JSON document for the server alive message.
      * @param f_timeExpired formatted uptime as a string.
      *
      * @return A JSON document for the alive notification.
      */
-    QJsonDocument constructUptimeJson(const QString& f_timeExpired);
-
+    QJsonDocument constructUptimeJson(const QString &f_timeExpired);
 };
 
 #endif // DISCORD_H

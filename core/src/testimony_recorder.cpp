@@ -17,12 +17,16 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/aoclient.h"
 
+#include "include/area_data.h"
+#include "include/config_manager.h"
+#include "include/server.h"
+
 void AOClient::addStatement(QStringList packet)
 {
     if (checkTestimonySymbols(packet[4])) {
         return;
     }
-    AreaData* area = server->m_areas[m_current_area];
+    AreaData *area = server->getAreaById(m_current_area);
     int c_statement = area->statement();
     if (c_statement >= -1) {
         if (area->testimonyRecording() == AreaData::TestimonyRecording::RECORDING) {
@@ -39,10 +43,10 @@ void AOClient::addStatement(QStringList packet)
             }
         }
         else if (area->testimonyRecording() == AreaData::TestimonyRecording::ADD) {
-                packet[14] = "1";
-                area->addStatement(c_statement, packet);
-                area->setTestimonyRecording(AreaData::TestimonyRecording::PLAYBACK);
-            }
+            packet[14] = "1";
+            area->addStatement(c_statement, packet);
+            area->setTestimonyRecording(AreaData::TestimonyRecording::PLAYBACK);
+        }
         else {
             sendServerMessage("Unable to add more statements. The maximum amount of statements has been reached.");
             area->setTestimonyRecording(AreaData::TestimonyRecording::PLAYBACK);
@@ -55,7 +59,7 @@ QStringList AOClient::updateStatement(QStringList packet)
     if (checkTestimonySymbols(packet[4])) {
         return packet;
     }
-    AreaData* area = server->m_areas[m_current_area];
+    AreaData *area = server->getAreaById(m_current_area);
     int c_statement = area->statement();
     area->setTestimonyRecording(AreaData::TestimonyRecording::PLAYBACK);
     if (c_statement <= 0 || area->testimony()[c_statement].empty())
@@ -71,11 +75,11 @@ QStringList AOClient::updateStatement(QStringList packet)
 
 void AOClient::clearTestimony()
 {
-    AreaData* area = server->m_areas[m_current_area];
+    AreaData *area = server->getAreaById(m_current_area);
     area->clearTestimony();
 }
 
-bool AOClient::checkTestimonySymbols(const QString& message)
+bool AOClient::checkTestimonySymbols(const QString &message)
 {
     if (message.contains('>') || message.contains('<')) {
         sendServerMessage("Unable to add statements containing '>' or '<'.");

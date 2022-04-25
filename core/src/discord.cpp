@@ -17,7 +17,9 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/discord.h"
 
-Discord::Discord(QObject* parent) :
+#include "include/config_manager.h"
+
+Discord::Discord(QObject *parent) :
     QObject(parent)
 {
     m_nam = new QNetworkAccessManager();
@@ -26,7 +28,7 @@ Discord::Discord(QObject* parent) :
 
     m_uptimePostTimer = new QTimer;
     connect(m_uptimePostTimer, &QTimer::timeout,
-        this, &Discord::onUptimeWebhookRequested);
+            this, &Discord::onUptimeWebhookRequested);
 }
 
 void Discord::onModcallWebhookRequested(const QString &f_name, const QString &f_area, const QString &f_reason, const QQueue<QString> &f_buffer)
@@ -44,7 +46,7 @@ void Discord::onModcallWebhookRequested(const QString &f_name, const QString &f_
 void Discord::onBanWebhookRequested(const QString &f_ipid, const QString &f_moderator, const QString &f_duration, const QString &f_reason, const int &f_banID)
 {
     m_request.setUrl(QUrl(ConfigManager::discordBanWebhookUrl()));
-    QJsonDocument l_json = constructBanJson(f_ipid,f_moderator, f_duration, f_reason, f_banID);
+    QJsonDocument l_json = constructBanJson(f_ipid, f_moderator, f_duration, f_reason, f_banID);
     postJsonWebhook(l_json);
 }
 
@@ -65,17 +67,15 @@ QJsonDocument Discord::constructModcallJson(const QString &f_name, const QString
 {
     QJsonObject l_json;
     QJsonArray l_array;
-    QJsonObject l_object {
+    QJsonObject l_object{
         {"color", ConfigManager::discordWebhookColor()},
         {"title", f_name + " filed a modcall in " + f_area},
-        {"description", f_reason}
-    };
+        {"description", f_reason}};
     l_array.append(l_object);
 
     if (!ConfigManager::discordModcallWebhookContent().isEmpty())
-    l_json["content"] = ConfigManager::discordModcallWebhookContent();
+        l_json["content"] = ConfigManager::discordModcallWebhookContent();
     l_json["embeds"] = l_array;
-
 
     return QJsonDocument(l_json);
 }
@@ -84,35 +84,33 @@ QJsonDocument Discord::constructBanJson(const QString &f_ipid, const QString &f_
 {
     QJsonObject l_json;
     QJsonArray l_array;
-    QJsonObject l_object {
+    QJsonObject l_object{
         {"color", ConfigManager::discordWebhookColor()},
         {"title", "Ban issued by " + f_moderator},
-        {"description", "Client IPID : " + f_ipid + "\nBan ID: " + QString::number(f_banID) + "\nBan reason : " + f_reason +"\nBanned until : " +f_duration}
-    };
+        {"description", "Client IPID : " + f_ipid + "\nBan ID: " + QString::number(f_banID) + "\nBan reason : " + f_reason + "\nBanned until : " + f_duration}};
     l_array.append(l_object);
     l_json["embeds"] = l_array;
 
     return QJsonDocument(l_json);
 }
 
-QJsonDocument Discord::constructUptimeJson(const QString& f_timeExpired)
+QJsonDocument Discord::constructUptimeJson(const QString &f_timeExpired)
 {
     QJsonObject l_json;
     QJsonArray l_array;
-    QJsonObject l_object {
+    QJsonObject l_object{
         {"color", ConfigManager::discordWebhookColor()},
         {"title", "Your server is online!"},
-        {"description", "Your server has been online for " + f_timeExpired}
-    };
+        {"description", "Your server has been online for " + f_timeExpired}};
     l_array.append(l_object);
     l_json["embeds"] = l_array;
 
     return QJsonDocument(l_json);
 }
 
-QHttpMultiPart* Discord::constructLogMultipart(const QQueue<QString> &f_buffer) const
+QHttpMultiPart *Discord::constructLogMultipart(const QQueue<QString> &f_buffer) const
 {
-    QHttpMultiPart* l_multipart = new QHttpMultiPart();
+    QHttpMultiPart *l_multipart = new QHttpMultiPart();
     QHttpPart l_file;
     l_file.setRawHeader(QByteArray("Content-Disposition"), QByteArray("form-data; name=\"file\"; filename=\"log.txt\""));
     l_file.setRawHeader(QByteArray("Content-Type"), QByteArray("plain/text"));
@@ -143,7 +141,7 @@ void Discord::postMultipartWebhook(QHttpMultiPart &f_multipart)
         return;
     }
     m_request.setHeader(QNetworkRequest::ContentTypeHeader, "multipart/form-data; boundary=" + f_multipart.boundary());
-    QNetworkReply* l_reply = m_nam->post(m_request, &f_multipart);
+    QNetworkReply *l_reply = m_nam->post(m_request, &f_multipart);
     f_multipart.setParent(l_reply);
 }
 

@@ -18,25 +18,27 @@
 #ifndef AREA_DATA_H
 #define AREA_DATA_H
 
-#include "aopacket.h"
-#include "config_manager.h"
-#include "music_manager.h"
-
-#include <QMap>
-#include <QString>
-#include <QSettings>
 #include <QDebug>
-#include <QTimer>
 #include <QElapsedTimer>
+#include <QMap>
 #include <QRandomGenerator>
+#include <QSettings>
+#include <QString>
+#include <QTimer>
 
+#include "include/aopacket.h"
+
+class ConfigManager;
 class Logger;
+class MusicManager;
 
 /**
  * @brief Represents an area on the server, a distinct "room" for people to chat in.
  */
-class AreaData : public QObject {
-  Q_OBJECT
+class AreaData : public QObject
+{
+    Q_OBJECT
+
   public:
     /**
      * @brief Constructor for the AreaData class.
@@ -45,15 +47,16 @@ class AreaData : public QObject {
      * and `YYYYYY` is the actual name of the area.
      * @param p_index The index of the area in the area list.
      */
-    AreaData(QString p_name, int p_index, MusicManager* p_music_manager);
+    AreaData(QString p_name, int p_index, MusicManager *p_music_manager);
 
     /**
      * @brief The data for evidence in the area.
      */
-    struct Evidence {
-        QString name; //!< The name of the evidence, shown when hovered over clientside.
+    struct Evidence
+    {
+        QString name;        //!< The name of the evidence, shown when hovered over clientside.
         QString description; //!< The longer description of the evidence, when the user opens the evidence window.
-        QString image; //!< A path originating from `base/evidence/` that points to an image file.
+        QString image;       //!< A path originating from `base/evidence/` that points to an image file.
     };
 
     /**
@@ -62,13 +65,14 @@ class AreaData : public QObject {
      * @details This is purely aesthetic, and serves no functional purpose from a gameplay perspective.
      * It's only benefit is giving the users a rough idea as to what is going on in an area.
      */
-    enum Status {
-      IDLE, //!< The area is currently not busy with anything, or the area is empty.
-      RP, //!< There is some (non-Ace Attorney-related) roleplay going on in the area.
-      CASING, //!< An Ace Attorney or Danganronpa-styled case is currently being held in the area.
-      LOOKING_FOR_PLAYERS, //!< Something is being planned in the area, but it needs more players.
-      RECESS, //!< The area is currently taking a break from casing, but will continue later.
-      GAMING //!< The users inside the area are playing some game outside of AO, and are using the area to communicate.
+    enum Status
+    {
+        IDLE,                //!< The area is currently not busy with anything, or the area is empty.
+        RP,                  //!< There is some (non-Ace Attorney-related) roleplay going on in the area.
+        CASING,              //!< An Ace Attorney or Danganronpa-styled case is currently being held in the area.
+        LOOKING_FOR_PLAYERS, //!< Something is being planned in the area, but it needs more players.
+        RECESS,              //!< The area is currently taking a break from casing, but will continue later.
+        GAMING               //!< The users inside the area are playing some game outside of AO, and are using the area to communicate.
     };
 
     /// Exposes the metadata of the Status enum.
@@ -77,10 +81,11 @@ class AreaData : public QObject {
     /**
      * @brief Determines who may traverse and communicate in the area.
      */
-    enum LockStatus {
-      FREE,
-      LOCKED,
-      SPECTATABLE
+    enum LockStatus
+    {
+        FREE,
+        LOCKED,
+        SPECTATABLE
     };
 
     /**
@@ -110,7 +115,8 @@ class AreaData : public QObject {
     /**
      * @brief The level of "authorisation" needed to be able to modify, add, and remove evidence in the area.
      */
-    enum class EvidenceMod{
+    enum class EvidenceMod
+    {
         FFA,
         MOD,
         CM,
@@ -144,7 +150,8 @@ class AreaData : public QObject {
     /**
      * @brief The five "states" the testimony recording system can have in an area.
      */
-    enum TestimonyRecording{
+    enum TestimonyRecording
+    {
         STOPPED,
         RECORDING,
         UPDATE,
@@ -190,17 +197,19 @@ class AreaData : public QObject {
      * @brief Determines how the testimony progressed after advancement was called in a direction
      * (Either to next or previous statement).
      */
-    enum class TestimonyProgress {
-        OK, //!< The expected statement was selected.
-        LOOPED, //!< The "next" statement would have been beyond the testimony's limits, so the first one was selected.
+    enum class TestimonyProgress
+    {
+        OK,              //!< The expected statement was selected.
+        LOOPED,          //!< The "next" statement would have been beyond the testimony's limits, so the first one was selected.
         STAYED_AT_FIRST, //!< The "previous" statement would have been before the first, so the selection stayed at the first.
     };
 
     /**
      * @brief Determines a side. Self-explanatory.
      */
-    enum class Side {
-        DEFENCE, //!< Self-explanatory.
+    enum class Side
+    {
+        DEFENCE,    //!< Self-explanatory.
         PROSECUTOR, //!< Self-explanatory.
     };
 
@@ -411,7 +420,7 @@ class AreaData : public QObject {
      *
      * @param f_evi_r The evidence to append.
      */
-    void appendEvidence(const Evidence& f_evi_r);
+    void appendEvidence(const Evidence &f_evi_r);
 
     /**
      * @brief Deletes a piece of evidence from the list of evidence.
@@ -426,7 +435,7 @@ class AreaData : public QObject {
      * @param f_eviId The ID of the evidence to replace.
      * @param f_newEvi_r The new piece of evidence that will replace the aforementioned one.
      */
-    void replaceEvidence(int f_eviId, const Evidence& f_newEvi_r);
+    void replaceEvidence(int f_eviId, const Evidence &f_newEvi_r);
 
     /**
      * @brief Returns the status of the area.
@@ -444,7 +453,7 @@ class AreaData : public QObject {
      *
      * @see #map_statuses
      */
-    bool changeStatus(const QString& f_newStatus_r);
+    bool changeStatus(const QString &f_newStatus_r);
 
     /**
      * @brief Returns a copy of the list of invited clients.
@@ -546,7 +555,7 @@ class AreaData : public QObject {
      *
      * @see #m_document
      */
-    void changeDoc(const QString& f_newDoc_r);
+    void changeDoc(const QString &f_newDoc_r);
 
     /**
      * @brief Returns the message of the area.
@@ -569,7 +578,12 @@ class AreaData : public QObject {
      *
      * @param f_newMessage_r The new message.
      */
-    void changeAreaMessage(const QString& f_newMessage_r);
+    void changeAreaMessage(const QString &f_newMessage_r);
+
+    /**
+     * @brief Clear the area message in the area.
+     */
+    void clearAreaMessage();
 
     /**
      * @brief Returns the value of the Confidence bar for the defence's side.
@@ -632,7 +646,7 @@ class AreaData : public QObject {
      *
      * @see #m_musicPlayedBy
      */
-    void setMusicPlayedBy(const QString& f_music_player);
+    void setMusicPlayedBy(const QString &f_music_player);
 
     /**
      * @brief Changes the music being played in the area.
@@ -640,7 +654,7 @@ class AreaData : public QObject {
      * @param f_source_r The showname of the client who initiated the music change.
      * @param f_newSong_r The name of the new song that is going to be played in the area.
      */
-    void changeMusic(const QString& f_source_r, const QString& f_newSong_r);
+    void changeMusic(const QString &f_source_r, const QString &f_newSong_r);
 
     /**
      * @brief Returns the evidence mod in the area.
@@ -666,7 +680,7 @@ class AreaData : public QObject {
      *
      * @return True if the notecard didn't replace a previous one, false if it did.
      */
-    bool addNotecard(const QString& f_owner_r, const QString& f_notecard_r);
+    bool addNotecard(const QString &f_owner_r, const QString &f_notecard_r);
 
     /**
      * @brief Returns the list of notecards recorded in the area.
@@ -708,7 +722,7 @@ class AreaData : public QObject {
      *
      * @note Unlike most other getters, this one returns a reference, as it is expected to be used frequently.
      */
-    const QVector<QStringList>& testimony() const;
+    const QVector<QStringList> &testimony() const;
 
     /**
      * @brief Returns the index of the currently examined statement in the testimony.
@@ -722,7 +736,7 @@ class AreaData : public QObject {
      *
      * @param f_newStatement_r The IC message packet to append to the testimony vector.
      */
-    void recordStatement(const QStringList& f_newStatement_r);
+    void recordStatement(const QStringList &f_newStatement_r);
 
     /**
      * @brief Adds a statement into the testimony to a given position.
@@ -730,7 +744,7 @@ class AreaData : public QObject {
      * @param f_position The index to insert the statement to.
      * @param f_newStatement_r The IC message packet to insert.
      */
-    void addStatement(int f_position, const QStringList& f_newStatement_r);
+    void addStatement(int f_position, const QStringList &f_newStatement_r);
 
     /**
      * @brief Replaces an already existing statement in the testimony in a given position with a new one.
@@ -738,7 +752,7 @@ class AreaData : public QObject {
      * @param f_position The index of the statement to replace.
      * @param f_newStatement_r The IC message packet to insert in the old one's stead.
      */
-    void replaceStatement(int f_position, const QStringList& f_newStatement_r);
+    void replaceStatement(int f_position, const QStringList &f_newStatement_r);
 
     /**
      * @brief Removes a statement from the testimony at a given position, and moves the statement index one backward.
@@ -780,21 +794,21 @@ class AreaData : public QObject {
      *
      * @param f_newLog_r The new line to append to the judgelog.
      */
-    void appendJudgelog(const QString& f_newLog_r);
+    void appendJudgelog(const QString &f_newLog_r);
 
     /**
      * @brief Returns the last IC message sent in the area.
      *
      * @return See short description.
      */
-    const QStringList& lastICMessage() const;
+    const QStringList &lastICMessage() const;
 
     /**
      * @brief Updates the last IC message sent in the area.
      *
      * @param f_lastMessage_r The new last IC message.
      */
-    void updateLastICMessage(const QStringList& f_lastMessage_r);
+    void updateLastICMessage(const QStringList &f_lastMessage_r);
 
     /**
      * @brief Returns whether ~~non-interrupting~~ immediate messages are forced in the area.
@@ -856,7 +870,7 @@ class AreaData : public QObject {
      */
     QVector<int> joinedIDs() const;
 
-public slots:
+  public slots:
 
     /**
      * @brief Plays a random song from the jukebox. Plays the same if only one is left.
@@ -891,11 +905,11 @@ public slots:
      */
     void userJoinedArea(int f_area_index, int f_user_id);
 
-private:
+  private:
     /**
      * @brief The list of timers available in the area.
      */
-    QList<QTimer*> m_timers;
+    QList<QTimer *> m_timers;
 
     /**
      * @brief The user-facing and internal name of the area.
@@ -910,7 +924,7 @@ private:
     /**
      * @brief Pointer to the global music manager.
      */
-    MusicManager* m_music_manager;
+    MusicManager *m_music_manager;
 
     /**
      * @brief A list of the character IDs of all characters taken.
@@ -1036,7 +1050,7 @@ private:
     /**
      * @brief A pointer to a Logger, used to send requests to log data.
      */
-    Logger* m_logger;
+    Logger *m_logger;
 
     /**
      * @brief The evidence mod of the area.
@@ -1061,22 +1075,20 @@ private:
      */
     TestimonyRecording m_testimonyRecording;
 
-
     QVector<QStringList> m_testimony; //!< Vector of all statements saved. Index 0 is always the title of the testimony.
-    int m_statement; //!< Keeps track of the currently played statement.
+    int m_statement;                  //!< Keeps track of the currently played statement.
 
     /**
-    * @brief The judgelog of an area.
-    *
-    * @details This list contains up to 10 recorded packets of the most recent judge actions (WT/CE or penalty updates) in an area.
-    */
+     * @brief The judgelog of an area.
+     *
+     * @details This list contains up to 10 recorded packets of the most recent judge actions (WT/CE or penalty updates) in an area.
+     */
     QStringList m_judgelog;
 
     /**
      * @brief The last IC packet sent in an area.
      */
     QStringList m_lastICMessage;
-
 
     /**
      * @brief Whether or not to force immediate text processing in this area.
@@ -1118,7 +1130,7 @@ private:
      * @details While this may be considered bad design, I do not care.
      *          It triggers a direct broadcast of the MC packet in the area.
      */
-    QTimer* m_jukebox_timer;
+    QTimer *m_jukebox_timer;
 
     /**
      * @brief Wether or not the jukebox is enabled in this area.
