@@ -17,7 +17,9 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/ws_proxy.h"
 
-WSProxy::WSProxy(int p_local_port, int p_ws_port, QObject* parent) :
+#include "include/ws_client.h"
+
+WSProxy::WSProxy(int p_local_port, int p_ws_port, QObject *parent) :
     QObject(parent),
     local_port(p_local_port),
     ws_port(p_ws_port)
@@ -30,18 +32,19 @@ WSProxy::WSProxy(int p_local_port, int p_ws_port, QObject* parent) :
 
 void WSProxy::start()
 {
-    if(!server->listen(QHostAddress::Any, ws_port)) {
+    if (!server->listen(QHostAddress::Any, ws_port)) {
         qDebug() << "WebSocket proxy failed to start: " << server->errorString();
-    } else {
+    }
+    else {
         qDebug() << "WebSocket proxy listening";
     }
 }
 
 void WSProxy::wsConnected()
 {
-    QWebSocket* new_ws = server->nextPendingConnection();
-    QTcpSocket* new_tcp = new QTcpSocket(this);
-    WSClient* client = new WSClient(new_tcp, new_ws, this);
+    QWebSocket *new_ws = server->nextPendingConnection();
+    QTcpSocket *new_tcp = new QTcpSocket(this);
+    WSClient *client = new WSClient(new_tcp, new_ws, this);
     clients.append(client);
 
     connect(new_ws, &QWebSocket::textMessageReceived, client, &WSClient::onWsData);

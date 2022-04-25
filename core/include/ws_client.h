@@ -19,9 +19,9 @@
 #define WS_CLIENT_H
 
 #include <QObject>
-#include <QtWebSockets/QtWebSockets>
-#include <QTcpSocket>
 #include <QString>
+#include <QTcpSocket>
+#include <QtWebSockets/QtWebSockets>
 
 /**
  * @brief Represents a WebSocket client (generally WebAO) connected to the server.
@@ -31,9 +31,11 @@
  *
  * This class is a very thin layer -- see WSProxy for the actual mechanics of this WebSocket-to-TCP proxy solution.
  */
-class WSClient : public QObject {
+class WSClient : public QObject
+{
     Q_OBJECT
-public:
+
+  public:
     /**
      * @brief Creates an instance of the WSClient class.
      *
@@ -44,15 +46,15 @@ public:
      * @pre This class will not connect up the ports to each other in any way. Unless some setup is done, this class
      * by default will never be prompted to read and/or write from/to either of the sockets.
      */
-    WSClient(QTcpSocket* p_tcp_socket, QWebSocket* p_web_socket, QObject* parent = nullptr);
+    WSClient(QTcpSocket *p_tcp_socket, QWebSocket *p_web_socket, QObject *parent = nullptr);
 
     /**
-      * @brief Destructor for the WSClient class.
-      *
-      * @details Marks the TCP and WebSocket for later deletion.
-      */
+     * @brief Destructor for the WSClient class.
+     *
+     * @details Marks the TCP and WebSocket for later deletion.
+     */
     ~WSClient();
-public slots:
+  public slots:
     /**
      * @brief A slot that can be signalled when #tcp_socket has data ready for reading.
      * Will read all data in the socket.
@@ -92,17 +94,16 @@ public slots:
      */
     void onTcpConnect();
 
-
-private:
+  private:
     /**
      * @brief The local TCP socket used as a proxy to connect with the server.
      */
-    QTcpSocket* tcp_socket;
+    QTcpSocket *tcp_socket;
 
     /**
      * @brief The WebSocket representing an incoming connection.
      */
-    QWebSocket* web_socket;
+    QWebSocket *web_socket;
 
     /**
      * @brief Stores partial packets in case they don't all come through the TCP socket at once

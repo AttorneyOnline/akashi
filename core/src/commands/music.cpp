@@ -16,6 +16,12 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/aoclient.h"
+
+#include "include/aopacket.h"
+#include "include/area_data.h"
+#include "include/music_manager.h"
+#include "include/server.h"
+
 // This file is for commands under the music category in aoclient.h
 // Be sure to register the command in the header before adding it here!
 
@@ -27,7 +33,7 @@ void AOClient::cmdPlay(int argc, QStringList argv)
         sendServerMessage("You are blocked from changing the music.");
         return;
     }
-    AreaData* l_area = server->m_areas[m_current_area];
+    AreaData *l_area = server->getAreaById(m_current_area);
     QString l_song = argv.join(" ");
     if (m_showname.isEmpty()) {
         l_area->changeMusic(m_current_char, l_song);
@@ -44,7 +50,7 @@ void AOClient::cmdCurrentMusic(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData* l_area = server->m_areas[m_current_area];
+    AreaData *l_area = server->getAreaById(m_current_area);
     if (!l_area->currentMusic().isEmpty() && !l_area->currentMusic().contains("~stop.mp3")) // dummy track for stopping music
         sendServerMessage("The current song is " + l_area->currentMusic() + " played by " + l_area->musicPlayerBy());
     else
@@ -62,7 +68,7 @@ void AOClient::cmdBlockDj(int argc, QStringList argv)
         return;
     }
 
-    AOClient* l_target = server->getClientByID(l_uid);
+    AOClient *l_target = server->getClientByID(l_uid);
 
     if (l_target == nullptr) {
         sendServerMessage("No client with that ID found.");
@@ -89,7 +95,7 @@ void AOClient::cmdUnBlockDj(int argc, QStringList argv)
         return;
     }
 
-    AOClient* l_target = server->getClientByID(l_uid);
+    AOClient *l_target = server->getClientByID(l_uid);
 
     if (l_target == nullptr) {
         sendServerMessage("No client with that ID found.");
@@ -110,7 +116,7 @@ void AOClient::cmdToggleMusic(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData* l_area = server->m_areas[m_current_area];
+    AreaData *l_area = server->getAreaById(m_current_area);
     l_area->toggleMusic();
     QString l_state = l_area->isMusicAllowed() ? "allowed." : "disallowed.";
     sendServerMessage("Music in this area is now " + l_state);
@@ -122,7 +128,7 @@ void AOClient::cmdToggleJukebox(int argc, QStringList argv)
     Q_UNUSED(argv);
 
     if (checkAuth(ACLFlags.value("CM")) | checkAuth(ACLFlags.value("Jukebox"))) {
-        AreaData* l_area = server->m_areas.value(m_current_area);
+        AreaData *l_area = server->getAreaById(m_current_area);
         l_area->toggleJukebox();
         QString l_state = l_area->isjukeboxEnabled() ? "enabled." : "disabled.";
         sendServerMessageArea("The jukebox in this area has been " + l_state);
@@ -136,11 +142,11 @@ void AOClient::cmdAddSong(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
 
-    //This needs some explanation.
-    //Akashi has no concept of argument count,so any space is interpreted as a new element
-    //in the QStringList. This works fine until someone enters something with a space.
-    //Since we can't preencode those elements, we join all as a string and use a delimiter
-    //that does not exist in file and URL paths. I decided on the ol' reliable ','.
+    // This needs some explanation.
+    // Akashi has no concept of argument count,so any space is interpreted as a new element
+    // in the QStringList. This works fine until someone enters something with a space.
+    // Since we can't preencode those elements, we join all as a string and use a delimiter
+    // that does not exist in file and URL paths. I decided on the ol' reliable ','.
     QString l_argv_string = argv.join(" ");
     QStringList l_argv = l_argv_string.split(",");
 

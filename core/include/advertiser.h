@@ -18,9 +18,8 @@
 #ifndef ADVERTISER_H
 #define ADVERTISER_H
 
-#include <QtNetwork>
 #include <QObject>
-#include "include/config_manager.h"
+#include <QtNetwork>
 
 /**
  * @brief Represents the advertiser of the server. Sends current server information to masterserver.
@@ -28,19 +27,19 @@
 class Advertiser : public QObject
 {
     Q_OBJECT
-public:
+
+  public:
     /**
      * @brief Constructor for the HTTP_Advertiser class.
      */
     explicit Advertiser();
-
 
     /**
      *  @brief Deconstructor for the HTTP_Advertiser class. Yes, that's it. Can't say more about it.
      */
     ~Advertiser();
 
-public slots:
+  public slots:
 
     /**
      * @brief Establishes a connection with masterserver to register or update the listing on the masterserver.
@@ -63,12 +62,11 @@ public slots:
      */
     void updateAdvertiserSettings();
 
-private:
-
+  private:
     /**
      * @brief Pointer to the network manager, necessary to execute POST requests to the masterserver.
      */
-    QNetworkAccessManager* m_manager;
+    QNetworkAccessManager *m_manager;
 
     /**
      * @brief Name of the server send to the masterserver. Changing this will change the display name in the serverlist

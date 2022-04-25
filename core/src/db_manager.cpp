@@ -26,8 +26,8 @@ DBManager::DBManager() :
         qWarning().noquote() << tr("Database Info: Database not found. Attempting to create new database.");
     }
     else {
-        //We should only check if a file is readable/writeable when it actually exists.
-        if(!db_info.isReadable() || !db_info.isWritable())
+        // We should only check if a file is readable/writeable when it actually exists.
+        if (!db_info.isReadable() || !db_info.isWritable())
             qCritical() << tr("Database Error: Missing permissions. Check if \"%1\" is writable.").arg(db_filename);
     }
 
@@ -59,9 +59,11 @@ QPair<bool, QString> DBManager::isIPBanned(QString ipid)
         long long current_time = QDateTime::currentDateTime().toSecsSinceEpoch();
         if (ban_time + duration > current_time)
             return {true, reason};
-        else return {false, nullptr};
+        else
+            return {false, nullptr};
     }
-    else return {false, nullptr};
+    else
+        return {false, nullptr};
 }
 
 QPair<bool, QString> DBManager::isHDIDBanned(QString hdid)
@@ -79,9 +81,11 @@ QPair<bool, QString> DBManager::isHDIDBanned(QString hdid)
         long long current_time = QDateTime::currentDateTime().toSecsSinceEpoch();
         if (ban_time + duration > current_time)
             return {true, reason};
-        else return {false, nullptr};
+        else
+            return {false, nullptr};
     }
-    else return {false, nullptr};
+    else
+        return {false, nullptr};
 }
 
 int DBManager::getBanID(QString hdid)
@@ -97,7 +101,6 @@ int DBManager::getBanID(QString hdid)
         return -1;
     }
 }
-
 
 int DBManager::getBanID(QHostAddress ip)
 {
@@ -199,7 +202,7 @@ bool DBManager::createUser(QString username, QString salt, QString password, uns
 bool DBManager::deleteUser(QString username)
 {
     if (username == "root") {
-        //To prevent lockout scenarios where an admin may accidentally delete root.
+        // To prevent lockout scenarios where an admin may accidentally delete root.
         return false;
     }
 
@@ -209,9 +212,9 @@ bool DBManager::deleteUser(QString username)
         username_exists.addBindValue(username);
         username_exists.exec();
         username_exists.first();
-        //If EXISTS can't find a record, it returns 0.
+        // If EXISTS can't find a record, it returns 0.
         if (username_exists.value(0).toInt() == 0)
-            //We were unable to locate an entry with this name.
+            // We were unable to locate an entry with this name.
             return false;
     }
     {
@@ -405,7 +408,7 @@ void DBManager::updateDB(int current_version)
         QSqlQuery("ALTER TABLE bans ADD COLUMN MODERATOR TEXT");
         Q_FALLTHROUGH();
     case 1:
-        QSqlQuery ("PRAGMA user_version = " + QString::number(DB_VERSION));
+        QSqlQuery("PRAGMA user_version = " + QString::number(DB_VERSION));
         break;
     }
 }
