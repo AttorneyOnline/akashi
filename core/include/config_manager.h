@@ -228,6 +228,13 @@ class ConfigManager
     static int messageFloodguard();
 
     /**
+     * @brief Returns the duration of the global message floodguard.
+     *
+     * @return See short description.
+     */
+    static int globalMessageFloodguard();
+
+    /**
      * @brief Returns the URL where the server should retrieve remote assets from.
      *
      * @return See short description.

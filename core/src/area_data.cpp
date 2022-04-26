@@ -69,6 +69,8 @@ AreaData::AreaData(QString p_name, int p_index, MusicManager *p_music_manager = 
     m_jukebox_timer = new QTimer();
     connect(m_jukebox_timer, &QTimer::timeout,
             this, &AreaData::switchJukeboxSong);
+    m_message_floodguard_timer = new QTimer(this);
+    connect(m_message_floodguard_timer, &QTimer::timeout, this, &AreaData::allowMessage);
 }
 
 const QMap<QString, AreaData::Status> AreaData::map_statuses = {
@@ -288,6 +290,17 @@ QList<int> AreaData::invited() const
 bool AreaData::isMusicAllowed() const
 {
     return m_toggleMusic;
+}
+
+bool AreaData::isMessageAllowed() const
+{
+    return m_can_send_ic_messages;
+}
+
+void AreaData::startMessageFloodguard(int f_duration)
+{
+    m_can_send_ic_messages = false;
+    m_message_floodguard_timer->start(f_duration);
 }
 
 void AreaData::toggleMusic()
@@ -624,4 +637,9 @@ void AreaData::switchJukeboxSong()
     }
     setCurrentMusic(l_song_name);
     setMusicPlayedBy("Jukebox");
+}
+
+void AreaData::allowMessage()
+{
+    m_can_send_ic_messages = true;
 }
