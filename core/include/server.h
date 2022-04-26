@@ -300,7 +300,7 @@ class Server : public QObject
      *
      * @return True if expired; false otherwise.
      */
-    bool isMessageAllowed();
+    bool isMessageAllowed() const;
 
     /**
      * @brief Starts a global timer that determines whatever a game message may be broadcasted or not.

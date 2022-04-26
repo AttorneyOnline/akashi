@@ -210,7 +210,7 @@ void AOClient::pktIcChat(AreaData *area, int argc, QStringList argv, AOPacket pa
         return;
     }
 
-    if (!server->isMessageAllowed()) {
+    if (!area->isMessageAllowed() || !server->isMessageAllowed()) {
         return;
     }
 
@@ -225,7 +225,8 @@ void AOClient::pktIcChat(AreaData *area, int argc, QStringList argv, AOPacket pa
     emit logIC((m_current_char + " " + m_showname), m_ooc_name, m_ipid, server->getAreaById(m_current_area)->name(), m_last_message);
     area->updateLastICMessage(validated_packet.contents);
 
-    server->startMessageFloodguard(ConfigManager::messageFloodguard());
+    area->startMessageFloodguard(ConfigManager::messageFloodguard());
+    server->startMessageFloodguard(ConfigManager::globalMessageFloodguard());
 }
 
 void AOClient::pktOocChat(AreaData *area, int argc, QStringList argv, AOPacket packet)
