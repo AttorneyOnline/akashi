@@ -308,7 +308,7 @@ void AOClient::pktChangeMusic(AreaData *area, int argc, QStringList argv, AOPack
             sendServerMessage("You are blocked from changing the music.");
             return;
         }
-        if (!area->isMusicAllowed() && !checkAuth(ACLFlags.value("CM"))) {
+        if (!area->isMusicAllowed() && !checkPermission(ACLRole::CM)) {
             sendServerMessage("Music is disabled in this area.");
             return;
         }
@@ -613,7 +613,7 @@ void AOClient::updateEvidenceList(AreaData *area)
 
     const QList<AreaData::Evidence> l_area_evidence = area->evidence();
     for (const AreaData::Evidence &evidence : l_area_evidence) {
-        if (!checkAuth(ACLFlags.value("CM")) && area->eviMod() == AreaData::EvidenceMod::HIDDEN_CM) {
+        if (!checkPermission(ACLRole::CM) && area->eviMod() == AreaData::EvidenceMod::HIDDEN_CM) {
             QRegularExpression l_regex("<owner=(.*?)>");
             QRegularExpressionMatch l_match = l_regex.match(evidence.description);
             if (l_match.hasMatch()) {
@@ -648,7 +648,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         // Spectators cannot use IC
         return l_invalid;
     AreaData *area = server->getAreaById(m_current_area);
-    if (area->lockStatus() == AreaData::LockStatus::SPECTATABLE && !area->invited().contains(m_id) && !checkAuth(ACLFlags.value("BYPASS_LOCKS")))
+    if (area->lockStatus() == AreaData::LockStatus::SPECTATABLE && !area->invited().contains(m_id) && !checkPermission(ACLRole::BYPASS_LOCKS))
         // Non-invited players cannot speak in spectatable areas
         return l_invalid;
 
@@ -1007,7 +1007,7 @@ bool AOClient::checkEvidenceAccess(AreaData *area)
         return true;
     case AreaData::EvidenceMod::CM:
     case AreaData::EvidenceMod::HIDDEN_CM:
-        return checkAuth(ACLFlags.value("CM"));
+        return checkPermission(ACLRole::CM);
     case AreaData::EvidenceMod::MOD:
         return m_authenticated;
     default:
@@ -1043,6 +1043,7 @@ void AOClient::loginAttempt(QString message)
             sendPacket("AUTH", {"1"});                      // Client: "You were granted the Disable Modcalls button."
             sendServerMessage("Logged in as a moderator."); // pre-2.9.1 clients are hardcoded to display the mod UI when this string is sent in OOC
             m_authenticated = true;
+            m_acl_role_id = ACLRolesHandler::SUPER_ID;
         }
         else {
             sendPacket("AUTH", {"0"}); // Client: "Login unsuccessful."
@@ -1062,8 +1063,9 @@ void AOClient::loginAttempt(QString message)
         QString username = l_login[0];
         QString password = l_login[1];
         if (server->getDatabaseManager()->authenticate(username, password)) {
-            m_moderator_name = username;
             m_authenticated = true;
+            m_acl_role_id = server->getDatabaseManager()->getACL(username);
+            m_moderator_name = username;
             sendPacket("AUTH", {"1"}); // Client: "You were granted the Disable Modcalls button."
             if (m_version.release <= 2 && m_version.major <= 9 && m_version.minor <= 0)
                 sendServerMessage("Logged in as a moderator."); // pre-2.9.1 clients are hardcoded to display the mod UI when this string is sent in OOC

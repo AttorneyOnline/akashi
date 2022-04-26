@@ -171,11 +171,11 @@ bool DBManager::invalidateBan(int id)
     return true;
 }
 
-bool DBManager::createUser(QString username, QString salt, QString password, unsigned long long acl)
+bool DBManager::createUser(QString f_username, QString f_salt, QString f_password, QString f_acl)
 {
     QSqlQuery username_exists;
     username_exists.prepare("SELECT ACL FROM users WHERE USERNAME = ?");
-    username_exists.addBindValue(username);
+    username_exists.addBindValue(f_username);
     username_exists.exec();
 
     if (username_exists.first())
@@ -185,15 +185,15 @@ bool DBManager::createUser(QString username, QString salt, QString password, uns
 
     QString salted_password;
     QMessageAuthenticationCode hmac(QCryptographicHash::Sha256);
-    hmac.setKey(salt.toUtf8());
-    hmac.addData(password.toUtf8());
+    hmac.setKey(f_salt.toUtf8());
+    hmac.addData(f_password.toUtf8());
     salted_password = hmac.result().toHex();
 
     query.prepare("INSERT INTO users(USERNAME, SALT, PASSWORD, ACL) VALUES(?, ?, ?, ?)");
-    query.addBindValue(username);
-    query.addBindValue(salt);
+    query.addBindValue(f_username);
+    query.addBindValue(f_salt);
     query.addBindValue(salted_password);
-    query.addBindValue(acl);
+    query.addBindValue(f_acl);
     query.exec();
 
     return true;
@@ -226,7 +226,7 @@ bool DBManager::deleteUser(QString username)
     }
 }
 
-unsigned long long DBManager::getACL(QString moderator_name)
+QString DBManager::getACL(QString moderator_name)
 {
     if (moderator_name == "")
         return 0;
@@ -235,7 +235,7 @@ unsigned long long DBManager::getACL(QString moderator_name)
     query.exec();
     if (!query.first())
         return 0;
-    return query.value(0).toULongLong();
+    return query.value(0).toString();
 }
 
 bool DBManager::authenticate(QString username, QString password)
@@ -263,30 +263,21 @@ bool DBManager::authenticate(QString username, QString password)
     return salted_password == stored_pass;
 }
 
-bool DBManager::updateACL(QString username, unsigned long long acl, bool mode)
+bool DBManager::updateACL(QString f_username, QString f_acl)
 {
-    QSqlQuery username_exists;
-    username_exists.prepare("SELECT ACL FROM users WHERE USERNAME = ?");
-    username_exists.addBindValue(username);
-    username_exists.exec();
+    QSqlQuery l_username_exists;
+    l_username_exists.prepare("SELECT ACL FROM users WHERE USERNAME = ?");
+    l_username_exists.addBindValue(f_username);
+    l_username_exists.exec();
 
-    if (!username_exists.first())
+    if (!l_username_exists.first())
         return false;
 
-    unsigned long long old_acl = username_exists.value(0).toULongLong();
-    unsigned long long new_acl;
-    if (mode) // adding perm
-        new_acl = old_acl | acl;
-    else // removing perm
-        new_acl = old_acl & ~acl;
-    if (acl == 0) // Allow clearing all perms via adding perm "NONE"
-        new_acl = 0;
-
-    QSqlQuery update_acl;
-    update_acl.prepare("UPDATE users SET ACL = ? WHERE USERNAME = ?");
-    update_acl.addBindValue(new_acl);
-    update_acl.addBindValue(username);
-    update_acl.exec();
+    QSqlQuery l_update_acl;
+    l_update_acl.prepare("UPDATE users SET ACL = ? WHERE USERNAME = ?");
+    l_update_acl.addBindValue(f_acl);
+    l_update_acl.addBindValue(f_username);
+    l_update_acl.exec();
     return true;
 }
 

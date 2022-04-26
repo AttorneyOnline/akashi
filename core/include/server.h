@@ -31,6 +31,7 @@
 
 #include "include/aopacket.h"
 
+class ACLRolesHandler;
 class Advertiser;
 class AOClient;
 class AreaData;
@@ -285,6 +286,8 @@ class Server : public QObject
      */
     DBManager *getDatabaseManager();
 
+    ACLRolesHandler *getACLRolesHandler();
+
     /**
      * @brief The server-wide global timer.
      */
@@ -507,6 +510,8 @@ class Server : public QObject
      * @brief The database manager on the server, used to store users' bans and authorisation details.
      */
     DBManager *db_manager;
+
+    ACLRolesHandler *acl_roles_handler;
 
     /**
      * @brief Connects new AOClient to logger and disconnect handling.

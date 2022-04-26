@@ -29,6 +29,8 @@
 #include <QSqlError>
 #include <QSqlQuery>
 
+#include "include/acl_roles_handler.h"
+
 /**
  * @brief A class used to handle database interaction.
  *
@@ -138,14 +140,14 @@ class DBManager : public QObject
      * @param username The username clients can use to log in with.
      * @param salt The salt to obfuscate the password with.
      * @param password The user's password.
-     * @param acl The user's authority bitflag -- what special permissions does the user have.
+     * @param acl The ACL role identifier.
      *
      * @return False if the user already exists, true if the user was successfully created.
      *
-     * @see AOClient::cmdLogin() and AOClient::cmdLogout() for the username and password's contexts.
-     * @see AOClient::ACLFlags for the potential special permissions a user may have.
+     * @see AOClient#cmdLogin and AOClient#cmdLogout for the username and password's contexts.
+     * @see ACLRolesHandler for details regarding ACL roles and ACL role identifiers.
      */
-    bool createUser(QString username, QString salt, QString password, unsigned long long acl);
+    bool createUser(QString username, QString salt, QString password, QString acl);
 
     /**
      * @brief Deletes an authorised user from the database.
@@ -157,16 +159,15 @@ class DBManager : public QObject
     bool deleteUser(QString username);
 
     /**
-     * @brief Gets the permissions of a given user.
+     * @brief Gets the ACL role of a given user.
      *
-     * @param moderator_name The authorised user's name.
+     * @param username The authorised user's name.
      *
-     * @return `0` if `moderator_name` is empty, `0` if such user does not exist in the Users table,
-     * or the primitive representation of an AOClient::ACLFlags permission matrix if neither of the above are true.
+     * @return The name identifier of a ACL role.
      *
-     * @see AOClient::ACLFlags for the potential permissions a user may have.
+     * @see ACLRolesHandler for details about ACL roles.
      */
-    unsigned long long getACL(QString moderator_name);
+    QString getACL(QString f_username);
 
     /**
      * @brief Authenticates a given user.
@@ -180,38 +181,17 @@ class DBManager : public QObject
     bool authenticate(QString username, QString password);
 
     /**
-     * @brief Updates the permissions of a given user.
+     * @brief Updates the ACL role identifier of a given user.
      *
-     * @details This function can add or remove permissions as needed.
-     * `acl` determines what permissions are modified, while `mode` determines whether said permissions are
-     * added or removed.
+     * @details This function **DOES NOT** modify the ACL role itself. It is simply an identifier that determines which ACL role the user is linked to.
      *
-     * `acl` **is not** the user's current permissions *or* the sum permissions you want for the user at the end
-     * -- it is the 'difference' between the user's current and desired permissions.
+     * @param username The username of the user to be updated.
      *
-     * If `acl` is `"NONE"`, then no matter the mode, the user's permissions are cleared.
-     *
-     * For some practical examples, consult this example table:
-     *
-     * | Starting permissions |    `acl`    | `mode`  | Resulting permissions |
-     * | -------------------: | :---------: | :-----: | :-------------------- |
-     * | KICK                 | BAN         | `TRUE`  | KICK, BAN             |
-     * | BAN, KICK            | BAN         | `TRUE`  | KICK, BAN             |
-     * | KICK                 | BAN, BGLOCK | `TRUE`  | KICK, BAN, BGLOCK     |
-     * | BGLOCK, BAN, KICK    | NONE        | `TRUE`  | NONE                  |
-     * | KICK                 | BAN         | `FALSE` | KICK                  |
-     * | BAN, KICK            | BAN         | `FALSE` | KICK                  |
-     * | BGLOCK, BAN, KICK    | BAN, BGLOCK | `FALSE` | KICK                  |
-     * | BGLOCK, BAN, KICK    | NONE        | `FALSE` | NONE                  |
-     *
-     * @param username The username of the user whose permissions should be updated.
-     * @param acl The primitive representation of the permission matrix being modified.
-     * @param mode If true, the permissions described in `acl` are *added* to the user;
-     * if false, they are removed instead.
+     * @param acl The ACL role identifier.
      *
      * @return True if the modification was successful, false if the user does not exist in the records.
      */
-    bool updateACL(QString username, unsigned long long acl, bool mode);
+    bool updateACL(QString username, QString acl);
 
     /**
      * @brief Returns a list of the recorded users' usernames, ordered by ID.

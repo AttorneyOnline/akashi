@@ -141,8 +141,10 @@ void AOClient::cmdMods(int argc, QStringList argv)
     for (AOClient *l_client : l_clients) {
         if (l_client->m_authenticated) {
             l_entries << "---";
-            if (ConfigManager::authType() != DataTypes::AuthType::SIMPLE)
+            if (ConfigManager::authType() != DataTypes::AuthType::SIMPLE) {
                 l_entries << "Moderator: " + l_client->m_moderator_name;
+                l_entries << "Role:" << l_client->m_acl_role_id;
+            }
             l_entries << "OOC name: " + l_client->m_ooc_name;
             l_entries << "ID: " + QString::number(l_client->m_id);
             l_entries << "Area: " + QString::number(l_client->m_current_area);
@@ -165,7 +167,7 @@ void AOClient::cmdCommands(int argc, QStringList argv)
     QMap<QString, CommandInfo>::const_iterator i;
     for (i = commands.constBegin(); i != commands.constEnd(); ++i) {
         CommandInfo info = i.value();
-        if (checkAuth(info.acl_mask)) { // if we are allowed to use this command
+        if (checkPermission(info.acl_permission)) { // if we are allowed to use this command
             l_entries << "/" + i.key();
         }
     }
@@ -193,7 +195,7 @@ void AOClient::cmdMOTD(int argc, QStringList argv)
         sendServerMessage("=== MOTD ===\r\n" + ConfigManager::motd() + "\r\n=============");
     }
     else if (argc > 0) {
-        if (checkAuth(ACLFlags.value("MOTD"))) {
+        if (checkPermission(ACLRole::MOTD)) {
             QString l_MOTD = argv.join(" ");
             ConfigManager::setMotd(l_MOTD);
             sendServerMessage("MOTD has been changed.");
