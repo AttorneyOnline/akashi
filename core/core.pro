@@ -25,6 +25,7 @@ DESTDIR = $$PWD/../bin
 #DEFINES += NET_DEBUG
 
 SOURCES += \
+    src/acl_roles_handler.cpp \
     src/aoclient.cpp \
     src/aopacket.cpp \
     src/area_data.cpp \
@@ -51,6 +52,7 @@ SOURCES += \
     src/music_manager.cpp
 
 HEADERS += include/aoclient.h \
+    include/acl_roles_handler.h \
     include/aopacket.h \
     include/area_data.h \
     include/config_manager.h \

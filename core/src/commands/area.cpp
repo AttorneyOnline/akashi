@@ -74,7 +74,7 @@ void AOClient::cmdUnCM(int argc, QStringList argv)
         l_uid = m_id;
         sendServerMessage("You are no longer CM in this area.");
     }
-    else if (checkAuth(ACLFlags.value("UNCM")) && argc == 1) {
+    else if (checkPermission(ACLRole::UNCM) && argc == 1) {
         bool conv_ok = false;
         l_uid = argv[0].toInt(&conv_ok);
         if (!conv_ok) {
@@ -362,7 +362,7 @@ void AOClient::cmdJudgeLog(int argc, QStringList argv)
     }
     QString l_message = l_area->judgelog().join("\n");
     // Judgelog contains an IPID, so we shouldn't send that unless the caller has appropriate permissions
-    if (checkAuth(ACLFlags.value("KICK")) == 1 || checkAuth(ACLFlags.value("BAN")) == 1) {
+    if (checkPermission(ACLRole::KICK) || checkPermission(ACLRole::BAN)) {
         sendServerMessage(l_message);
     }
     else {

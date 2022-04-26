@@ -87,13 +87,13 @@ void AOClient::handlePacket(AOPacket packet)
     qDebug() << "Received packet:" << packet.header << ":" << packet.contents << "args length:" << packet.contents.length();
 #endif
     AreaData *l_area = server->getAreaById(m_current_area);
-    PacketInfo l_info = packets.value(packet.header, {false, 0, &AOClient::pktDefault});
+    PacketInfo l_info = packets.value(packet.header, {ACLRole::NONE, 0, &AOClient::pktDefault});
 
     if (packet.contents.join("").size() > 16384) {
         return;
     }
 
-    if (!checkAuth(l_info.acl_mask)) {
+    if (!checkPermission(l_info.acl_permission)) {
         return;
     }
 
@@ -120,7 +120,7 @@ void AOClient::changeArea(int new_area)
         sendServerMessage("You are already in area " + server->getAreaName(m_current_area));
         return;
     }
-    if (server->getAreaById(new_area)->lockStatus() == AreaData::LockStatus::LOCKED && !server->getAreaById(new_area)->invited().contains(m_id) && !checkAuth(ACLFlags.value("BYPASS_LOCKS"))) {
+    if (server->getAreaById(new_area)->lockStatus() == AreaData::LockStatus::LOCKED && !server->getAreaById(new_area)->invited().contains(m_id) && !checkPermission(ACLRole::BYPASS_LOCKS)) {
         sendServerMessage("Area " + server->getAreaName(new_area) + " is locked.");
         return;
     }
@@ -202,9 +202,9 @@ void AOClient::changePosition(QString new_pos)
 
 void AOClient::handleCommand(QString command, int argc, QStringList argv)
 {
-    CommandInfo l_info = commands.value(command, {false, -1, &AOClient::cmdDefault});
+    CommandInfo l_info = commands.value(command, {ACLRole::NONE, -1, &AOClient::cmdDefault});
 
-    if (!checkAuth(l_info.acl_mask)) {
+    if (!checkPermission(l_info.acl_permission)) {
         sendServerMessage("You do not have permission to use that command.");
         return;
     }
@@ -331,31 +331,22 @@ void AOClient::sendServerBroadcast(QString message)
     server->broadcast(AOPacket("CT", {ConfigManager::serverName(), message, "1"}));
 }
 
-bool AOClient::checkAuth(unsigned long long acl_mask)
+bool AOClient::checkPermission(ACLRole::Permission f_permission) const
 {
-#ifdef SKIP_AUTH
-    return true;
-#endif
-    if (acl_mask != ACLFlags.value("NONE")) {
-        if (acl_mask == ACLFlags.value("CM")) {
-            AreaData *l_area = server->getAreaById(m_current_area);
-            if (l_area->owners().contains(m_id))
-                return true;
-        }
-        else if (!m_authenticated) {
-            return false;
-        }
-        switch (ConfigManager::authType()) {
-        case DataTypes::AuthType::SIMPLE:
-            return m_authenticated;
-            break;
-        case DataTypes::AuthType::ADVANCED:
-            unsigned long long l_user_acl = server->getDatabaseManager()->getACL(m_moderator_name);
-            return (l_user_acl & acl_mask) != 0;
-            break;
-        }
+    if (f_permission == ACLRole::NONE) {
+        return true;
     }
-    return true;
+
+    if (!isAuthenticated()) {
+        return false;
+    }
+
+    if (ConfigManager::authType() == DataTypes::AuthType::SIMPLE) {
+        return true;
+    }
+
+    const ACLRole l_role = server->getACLRolesHandler()->getRoleById(m_acl_role_id);
+    return l_role.checkPermission(f_permission);
 }
 
 QString AOClient::getIpid() const
@@ -371,6 +362,11 @@ QString AOClient::getHwid() const
 bool AOClient::hasJoined() const
 {
     return m_joined;
+}
+
+bool AOClient::isAuthenticated() const
+{
+    return m_authenticated;
 }
 
 Server *AOClient::getServer() { return server; }

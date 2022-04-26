@@ -84,7 +84,7 @@ void AOClient::cmdTimer(int argc, QStringList argv)
     // Check against permissions if global timer is selected
     QTimer *l_requested_timer;
     if (l_timer_id == 0) {
-        if (!checkAuth(ACLFlags.value("GLOBAL_TIMER"))) {
+        if (!checkPermission(ACLRole::GLOBAL_TIMER)) {
             sendServerMessage("You are not authorized to alter the global timer.");
             return;
         }

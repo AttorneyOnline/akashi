@@ -479,7 +479,7 @@ void AOClient::cmdCharSelect(int argc, QStringList argv)
         sendPacket("DONE");
     }
     else {
-        if (!checkAuth(ACLFlags.value("FORCE_CHARSELECT"))) {
+        if (!checkPermission(ACLRole::FORCE_CHARSELECT)) {
             sendServerMessage("You do not have permission to force another player to character select!");
             return;
         }
