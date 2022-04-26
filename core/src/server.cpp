@@ -256,7 +256,7 @@ QStringList Server::getCursedCharsTaken(AOClient *client, QStringList chars_take
     return chars_taken_cursed;
 }
 
-bool Server::isMessageAllowed()
+bool Server::isMessageAllowed() const
 {
     return m_can_send_ic_messages;
 }

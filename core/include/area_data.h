@@ -870,6 +870,20 @@ class AreaData : public QObject
      */
     QVector<int> joinedIDs() const;
 
+    /**
+     * @brief Returns whatever a game message may be broadcasted or not.
+     *
+     * @return True if expired; false otherwise.
+     */
+    bool isMessageAllowed() const;
+
+    /**
+     * @brief Starts a timer that determines whatever a game message may be broadcasted or not.
+     *
+     * @param f_duration The duration of the message floodguard timer.
+     */
+    void startMessageFloodguard(int f_duration);
+
   public slots:
 
     /**
@@ -1136,6 +1150,22 @@ class AreaData : public QObject
      * @brief Wether or not the jukebox is enabled in this area.
      */
     bool m_jukebox;
+
+    /**
+     * @brief Timer until the next IC message can be sent.
+     */
+    QTimer *m_message_floodguard_timer;
+
+    /**
+     * @brief If false, IC messages will be rejected.
+     */
+    bool m_can_send_ic_messages = true;
+
+  private slots:
+    /**
+     * @brief Allow game messages to be broadcasted.
+     */
+    void allowMessage();
 };
 
 #endif // AREA_DATA_H

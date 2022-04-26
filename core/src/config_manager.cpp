@@ -383,6 +383,17 @@ int ConfigManager::messageFloodguard()
     return l_flood;
 }
 
+int ConfigManager::globalMessageFloodguard()
+{
+    bool ok;
+    int l_flood = m_settings->value("Options/global_message_floodguard", 0).toInt(&ok);
+    if (!ok) {
+        qWarning("global_message_floodguard is not an int!");
+        l_flood = 0;
+    }
+    return l_flood;
+}
+
 QUrl ConfigManager::assetUrl()
 {
     QByteArray l_url = m_settings->value("Options/asset_url", "").toString().toUtf8();
