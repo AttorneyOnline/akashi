@@ -17,6 +17,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/server.h"
 
+#include "include/acl_roles_handler.h"
 #include "include/advertiser.h"
 #include "include/aoclient.h"
 #include "include/aopacket.h"
@@ -42,7 +43,10 @@ Server::Server(int p_port, int p_ws_port, QObject *parent) :
         proxy->start();
     timer = new QTimer(this);
 
-    db_manager = new DBManager();
+    db_manager = new DBManager;
+
+    acl_roles_handler = new ACLRolesHandler;
+    acl_roles_handler->loadFile("config/acl_roles.ini");
 
     // We create it, even if its not used later on.
     discord = new Discord(this);
@@ -304,7 +308,7 @@ void Server::broadcast(AOPacket packet, TARGET_TYPE target)
     for (AOClient *l_client : qAsConst(m_clients)) {
         switch (target) {
         case TARGET_TYPE::MODCHAT:
-            if (l_client->checkAuth(l_client->ACLFlags.value("MODCHAT"))) {
+            if (l_client->checkPermission(ACLRole::MODCHAT)) {
                 l_client->sendPacket(packet);
             }
             break;
@@ -324,7 +328,7 @@ void Server::broadcast(AOPacket packet, AOPacket other_packet, TARGET_TYPE targe
     switch (target) {
     case TARGET_TYPE::AUTHENTICATED:
         for (AOClient *l_client : qAsConst(m_clients)) {
-            if (l_client->m_authenticated) {
+            if (l_client->isAuthenticated()) {
                 l_client->sendPacket(other_packet);
             }
             else {
@@ -454,6 +458,11 @@ DBManager *Server::getDatabaseManager()
     return db_manager;
 }
 
+ACLRolesHandler *Server::getACLRolesHandler()
+{
+    return acl_roles_handler;
+}
+
 void Server::allowMessage()
 {
     m_can_send_ic_messages = true;
@@ -529,6 +538,7 @@ Server::~Server()
     server->deleteLater();
     proxy->deleteLater();
     discord->deleteLater();
+    acl_roles_handler->deleteLater();
 
     delete db_manager;
 }

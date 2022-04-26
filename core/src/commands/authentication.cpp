@@ -90,7 +90,7 @@ void AOClient::cmdSetRootPass(int argc, QStringList argv)
 #endif
     QString l_salt = QStringLiteral("%1").arg(l_salt_number, 16, 16, QLatin1Char('0'));
 
-    server->getDatabaseManager()->createUser("root", l_salt, argv[0], ACLFlags.value("SUPER"));
+    server->getDatabaseManager()->createUser("root", l_salt, argv[0], ACLRolesHandler::SUPER_ID);
 }
 
 void AOClient::cmdAddUser(int argc, QStringList argv)
@@ -111,8 +111,8 @@ void AOClient::cmdAddUser(int argc, QStringList argv)
 #endif
     QString l_salt = QStringLiteral("%1").arg(l_salt_number, 16, 16, QLatin1Char('0'));
 
-    if (server->getDatabaseManager()->createUser(argv[0], l_salt, argv[1], ACLFlags.value("NONE")))
-        sendServerMessage("Created user " + argv[0] + ".\nUse /addperm to modify their permissions.");
+    if (server->getDatabaseManager()->createUser(argv[0], l_salt, argv[1], ACLRolesHandler::NONE_ID))
+        sendServerMessage("Created user " + argv[0] + ".\nUse /setperms to modify their permissions.");
     else
         sendServerMessage("Unable to create user " + argv[0] + ".\nDoes a user with that name already exist?");
 }
@@ -129,125 +129,73 @@ void AOClient::cmdRemoveUser(int argc, QStringList argv)
 
 void AOClient::cmdListPerms(int argc, QStringList argv)
 {
-    unsigned long long l_user_acl = server->getDatabaseManager()->getACL(m_moderator_name);
+    const ACLRole l_role = server->getACLRolesHandler()->getRoleById(m_acl_role_id);
+
+    ACLRole l_target_role = l_role;
     QStringList l_message;
-    const QStringList l_keys = ACLFlags.keys();
     if (argc == 0) {
-        // Just print out all permissions available to the user.
         l_message.append("You have been given the following permissions:");
-        for (const QString &l_perm : l_keys) {
-            if (l_perm == "NONE")
-                ; // don't need to list this one
-            else if (l_perm == "SUPER") {
-                if (l_user_acl == ACLFlags.value("SUPER")) // This has to be checked separately, because SUPER & anything will always be truthy
-                    l_message.append("SUPER (Be careful! This grants the user all permissions.)");
-            }
-            else if ((ACLFlags.value(l_perm) & l_user_acl) == 0)
-                ; // user doesn't have this permission, don't print it
-            else
-                l_message.append(l_perm);
-        }
     }
     else {
-        if ((l_user_acl & ACLFlags.value("MODIFY_USERS")) == 0) {
+        if (!l_role.checkPermission(ACLRole::MODIFY_USERS)) {
             sendServerMessage("You do not have permission to view other users' permissions.");
             return;
         }
 
         l_message.append("User " + argv[0] + " has the following permissions:");
-        unsigned long long l_acl = server->getDatabaseManager()->getACL(argv[0]);
-        if (l_acl == 0) {
-            sendServerMessage("This user either doesn't exist, or has no permissions set.");
-            return;
-        }
+        l_target_role = server->getACLRolesHandler()->getRoleById(argv[0]);
+    }
 
-        for (const QString &l_perm : l_keys) {
-            if ((ACLFlags.value(l_perm) & l_acl) != 0 && l_perm != "SUPER") {
-                l_message.append(l_perm);
+    if (l_target_role.getPermissions() == ACLRole::NONE) {
+        l_message.append("NONE");
+    }
+    else if (l_target_role.checkPermission(ACLRole::SUPER)) {
+        l_message.append("SUPER (Be careful! This grants the user all permissions.)");
+    }
+    else {
+        const QList<ACLRole::Permission> l_permissions = ACLRole::permission_captions.keys();
+        for (const ACLRole::Permission i_permission : l_permissions) {
+            if (l_target_role.checkPermission(i_permission)) {
+                l_message.append(ACLRole::permission_captions.value(i_permission));
             }
         }
     }
     sendServerMessage(l_message.join("\n"));
 }
 
-void AOClient::cmdAddPerms(int argc, QStringList argv)
+void AOClient::cmdSetPerms(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
 
-    unsigned long long l_user_acl = server->getDatabaseManager()->getACL(m_moderator_name);
-    argv[1] = argv[1].toUpper();
-    const QStringList l_keys = ACLFlags.keys();
-
-    if (!l_keys.contains(argv[1])) {
-        sendServerMessage("That permission doesn't exist!");
+    const QString l_target_acl = argv[1];
+    if (!server->getACLRolesHandler()->roleExists(l_target_acl)) {
+        sendServerMessage("That role doesn't exist!");
         return;
     }
 
-    if (argv[1] == "SUPER") {
-        if (l_user_acl != ACLFlags.value("SUPER")) {
-            // This has to be checked separately, because SUPER & anything will always be truthy
-            sendServerMessage("You aren't allowed to add that permission!");
-            return;
-        }
-    }
-    if (argv[1] == "NONE") {
-        sendServerMessage("Added no permissions!");
+    if (l_target_acl == ACLRolesHandler::SUPER_ID && !checkPermission(ACLRole::SUPER)) {
+        sendServerMessage("You aren't allowed to set that role!");
         return;
     }
 
-    unsigned long long l_newperm = ACLFlags.value(argv[1]);
-    if ((l_newperm & l_user_acl) != 0) {
-        if (server->getDatabaseManager()->updateACL(argv[0], l_newperm, true))
-            sendServerMessage("Successfully added permission " + argv[1] + " to user " + argv[0]);
-        else
-            sendServerMessage(argv[0] + " wasn't found!");
+    const QString l_target_username = argv[0];
+    if (l_target_username == "root") {
+        sendServerMessage("You can't change root's role!");
         return;
     }
 
-    sendServerMessage("You aren't allowed to add that permission!");
+    if (server->getDatabaseManager()->updateACL(l_target_username, l_target_acl)) {
+        sendServerMessage("Successfully changed role " + l_target_acl + " to user " + l_target_username);
+    }
+    else {
+        sendServerMessage(l_target_username + " wasn't found!");
+    }
 }
 
 void AOClient::cmdRemovePerms(int argc, QStringList argv)
 {
-    Q_UNUSED(argc);
-
-    unsigned long long l_user_acl = server->getDatabaseManager()->getACL(m_moderator_name);
-    argv[1] = argv[1].toUpper();
-
-    const QStringList l_keys = ACLFlags.keys();
-
-    if (!l_keys.contains(argv[1])) {
-        sendServerMessage("That permission doesn't exist!");
-        return;
-    }
-
-    if (argv[0] == "root") {
-        sendServerMessage("You cannot change the permissions of the root account!");
-        return;
-    }
-
-    if (argv[1] == "SUPER") {
-        if (l_user_acl != ACLFlags.value("SUPER")) {
-            // This has to be checked separately, because SUPER & anything will always be truthy
-            sendServerMessage("You aren't allowed to remove that permission!");
-            return;
-        }
-    }
-    if (argv[1] == "NONE") {
-        sendServerMessage("Removed no permissions!");
-        return;
-    }
-
-    unsigned long long l_newperm = ACLFlags.value(argv[1]);
-    if ((l_newperm & l_user_acl) != 0) {
-        if (server->getDatabaseManager()->updateACL(argv[0], l_newperm, false))
-            sendServerMessage("Successfully removed permission " + argv[1] + " from user " + argv[0]);
-        else
-            sendServerMessage(argv[0] + " wasn't found!");
-        return;
-    }
-
-    sendServerMessage("You aren't allowed to remove that permission!");
+    argv.append(ACLRolesHandler::NONE_ID);
+    cmdSetPerms(argc, argv);
 }
 
 void AOClient::cmdListUsers(int argc, QStringList argv)
@@ -269,6 +217,7 @@ void AOClient::cmdLogout(int argc, QStringList argv)
         return;
     }
     m_authenticated = false;
+    m_acl_role_id = "";
     m_moderator_name = "";
     sendPacket("AUTH", {"-1"}); // Client: "You were logged out."
 }
@@ -284,8 +233,9 @@ void AOClient::cmdChangePassword(int argc, QStringList argv)
         }
         l_username = m_moderator_name;
     }
-    else if (argc == 2 && checkAuth(ACLFlags.value("SUPER"))) {
-        l_username = argv[1];
+    else if (argc == 2 && checkPermission(ACLRole::SUPER)) {
+        l_username = argv[0];
+        l_password = argv[1];
     }
     else {
         sendServerMessage("Invalid command syntax.");

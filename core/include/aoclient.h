@@ -24,12 +24,13 @@
 #include <QHostAddress>
 #include <QRegularExpression>
 #include <QTcpSocket>
-#include <QtGlobal>
 #include <QTimer>
+#include <QtGlobal>
 #if QT_VERSION > QT_VERSION_CHECK(5, 10, 0)
 #include <QRandomGenerator>
 #endif
 
+#include "include/acl_roles_handler.h"
 #include "include/aopacket.h"
 
 class AreaData;
@@ -86,6 +87,13 @@ class AOClient : public QObject
      * @return True if the client has completed the participation handshake. False otherwise.
      */
     bool hasJoined() const;
+
+    /**
+     * @brief Returns true if the client has logged-in as a role.
+     *
+     * @return True if loggged-in, false otherwise.
+     */
+    bool isAuthenticated() const;
 
     /**
      * @brief Calculates the client's IPID based on a hashed version of its IP.
@@ -145,11 +153,6 @@ class AOClient : public QObject
      * @note This will be the same as current_char if the client is not iniswapped.
      */
     QString m_current_iniswap;
-
-    /**
-     * @brief If true, the client is a logged-in moderator.
-     */
-    bool m_authenticated = false;
 
     /**
      * @brief If using advanced authentication, this is the moderator name that the client has logged in with.
@@ -222,33 +225,6 @@ class AOClient : public QObject
     ClientVersion m_version;
 
     /**
-     * @brief The authorisation bitflag, representing what permissions a client can have.
-     *
-     * @showinitializer
-     */
-    QMap<QString, unsigned long long> ACLFlags{
-        {"NONE", 0ULL},
-        {"KICK", 1ULL << 0},
-        {"BAN", 1ULL << 1},
-        {"BGLOCK", 1ULL << 2},
-        {"MODIFY_USERS", 1ULL << 3},
-        {"CM", 1ULL << 4},
-        {"GLOBAL_TIMER", 1ULL << 5},
-        {"EVI_MOD", 1ULL << 6},
-        {"MOTD", 1ULL << 7},
-        {"ANNOUNCE", 1ULL << 8},
-        {"MODCHAT", 1ULL << 9},
-        {"MUTE", 1ULL << 10},
-        {"UNCM", 1ULL << 11},
-        {"SAVETEST", 1ULL << 12},
-        {"FORCE_CHARSELECT", 1ULL << 13},
-        {"BYPASS_LOCKS", 1ULL << 14},
-        {"IGNORE_BGLIST", 1ULL << 15},
-        {"SEND_NOTICE", 1ULL << 16},
-        {"JUKEBOX", 1ULL << 17},
-        {"SUPER", ~0ULL}};
-
-    /**
      * @brief A list of 5 casing preferences (def, pro, judge, jury, steno)
      */
     QList<bool> m_casing_preferences = {false, false, false, false, false};
@@ -310,14 +286,13 @@ class AOClient : public QObject
     bool m_is_logging_in = false;
 
     /**
-     * @brief Checks if the client would be authorised to something based on its necessary permissions.
+     * @brief Checks if the client's ACL role has permission for the given permission.
      *
-     * @param acl_mask The permissions bitflag that the client's own permissions should be checked against.
+     * @param f_permission The permission flags.
      *
-     * @return True if the client's permissions are high enough for `acl_mask`, or higher than it.
-     * False if the client is missing some permissions.
+     * @return True if the client has permission, false otherwise.
      */
-    bool checkAuth(unsigned long long acl_mask);
+    bool checkPermission(ACLRole::Permission f_permission) const;
 
   public slots:
     /**
@@ -612,6 +587,16 @@ class AOClient : public QObject
     ///@{
 
     /**
+     * @brief If true, the client is a logged-in moderator.
+     */
+    bool m_authenticated = false;
+
+    /**
+     * @brief The ACL role identifier, used to determine what ACL role the client is linked to.
+     */
+    QString m_acl_role_id;
+
+    /**
      * @brief The client's character ID.
      *
      * @details A character ID is just the character's index in the server's character list.
@@ -660,8 +645,8 @@ class AOClient : public QObject
     /// Describes a packet's interpretation details.
     struct PacketInfo
     {
-        unsigned long long acl_mask; //!< The permissions necessary for the packet.
-        int minArgs;                 //!< The minimum arguments needed for the packet to be interpreted correctly / make sense.
+        ACLRole::Permission acl_permission; //!< The permissions necessary for the packet.
+        int minArgs;                        //!< The minimum arguments needed for the packet to be interpreted correctly / make sense.
         void (AOClient::*action)(AreaData *, int, QStringList, AOPacket);
     };
 
@@ -686,27 +671,27 @@ class AOClient : public QObject
      * See @ref PacketInfo "the type's documentation" for more details.
      */
     const QMap<QString, PacketInfo> packets{
-        {"HI", {ACLFlags.value("NONE"), 1, &AOClient::pktHardwareId}},
-        {"ID", {ACLFlags.value("NONE"), 2, &AOClient::pktSoftwareId}},
-        {"askchaa", {ACLFlags.value("NONE"), 0, &AOClient::pktBeginLoad}},
-        {"RC", {ACLFlags.value("NONE"), 0, &AOClient::pktRequestChars}},
-        {"RM", {ACLFlags.value("NONE"), 0, &AOClient::pktRequestMusic}},
-        {"RD", {ACLFlags.value("NONE"), 0, &AOClient::pktLoadingDone}},
-        {"PW", {ACLFlags.value("NONE"), 1, &AOClient::pktCharPassword}},
-        {"CC", {ACLFlags.value("NONE"), 3, &AOClient::pktSelectChar}},
-        {"MS", {ACLFlags.value("NONE"), 15, &AOClient::pktIcChat}},
-        {"CT", {ACLFlags.value("NONE"), 2, &AOClient::pktOocChat}},
-        {"CH", {ACLFlags.value("NONE"), 1, &AOClient::pktPing}},
-        {"MC", {ACLFlags.value("NONE"), 2, &AOClient::pktChangeMusic}},
-        {"RT", {ACLFlags.value("NONE"), 1, &AOClient::pktWtCe}},
-        {"HP", {ACLFlags.value("NONE"), 2, &AOClient::pktHpBar}},
-        {"WSIP", {ACLFlags.value("NONE"), 1, &AOClient::pktWebSocketIp}},
-        {"ZZ", {ACLFlags.value("NONE"), 0, &AOClient::pktModCall}},
-        {"PE", {ACLFlags.value("NONE"), 3, &AOClient::pktAddEvidence}},
-        {"DE", {ACLFlags.value("NONE"), 1, &AOClient::pktRemoveEvidence}},
-        {"EE", {ACLFlags.value("NONE"), 4, &AOClient::pktEditEvidence}},
-        {"SETCASE", {ACLFlags.value("NONE"), 7, &AOClient::pktSetCase}},
-        {"CASEA", {ACLFlags.value("NONE"), 6, &AOClient::pktAnnounceCase}},
+        {"HI", {ACLRole::NONE, 1, &AOClient::pktHardwareId}},
+        {"ID", {ACLRole::NONE, 2, &AOClient::pktSoftwareId}},
+        {"askchaa", {ACLRole::NONE, 0, &AOClient::pktBeginLoad}},
+        {"RC", {ACLRole::NONE, 0, &AOClient::pktRequestChars}},
+        {"RM", {ACLRole::NONE, 0, &AOClient::pktRequestMusic}},
+        {"RD", {ACLRole::NONE, 0, &AOClient::pktLoadingDone}},
+        {"PW", {ACLRole::NONE, 1, &AOClient::pktCharPassword}},
+        {"CC", {ACLRole::NONE, 3, &AOClient::pktSelectChar}},
+        {"MS", {ACLRole::NONE, 15, &AOClient::pktIcChat}},
+        {"CT", {ACLRole::NONE, 2, &AOClient::pktOocChat}},
+        {"CH", {ACLRole::NONE, 1, &AOClient::pktPing}},
+        {"MC", {ACLRole::NONE, 2, &AOClient::pktChangeMusic}},
+        {"RT", {ACLRole::NONE, 1, &AOClient::pktWtCe}},
+        {"HP", {ACLRole::NONE, 2, &AOClient::pktHpBar}},
+        {"WSIP", {ACLRole::NONE, 1, &AOClient::pktWebSocketIp}},
+        {"ZZ", {ACLRole::NONE, 0, &AOClient::pktModCall}},
+        {"PE", {ACLRole::NONE, 3, &AOClient::pktAddEvidence}},
+        {"DE", {ACLRole::NONE, 1, &AOClient::pktRemoveEvidence}},
+        {"EE", {ACLRole::NONE, 4, &AOClient::pktEditEvidence}},
+        {"SETCASE", {ACLRole::NONE, 7, &AOClient::pktSetCase}},
+        {"CASEA", {ACLRole::NONE, 6, &AOClient::pktAnnounceCase}},
     };
 
     /**
@@ -779,7 +764,7 @@ class AOClient : public QObject
      *
      * @iscommand
      */
-    void cmdAddPerms(int argc, QStringList argv);
+    void cmdSetPerms(int argc, QStringList argv);
 
     /**
      * @brief Removes permissions from a given user.
@@ -2062,8 +2047,8 @@ class AOClient : public QObject
      */
     struct CommandInfo
     {
-        unsigned long long acl_mask; //!< The permissions necessary to be able to run the command. @see ACLFlags.
-        int minArgs;                 //!< The minimum mandatory arguments needed for the command to function.
+        ACLRole::Permission acl_permission; //!< The permissions necessary to be able to run the command. @see ACLRole::Permission.
+        int minArgs;                        //!< The minimum mandatory arguments needed for the command to function.
         void (AOClient::*action)(int, QStringList);
     };
 
@@ -2087,145 +2072,145 @@ class AOClient : public QObject
      * See @ref CommandInfo "the type's documentation" for more details.
      */
     const QMap<QString, CommandInfo> commands{
-        {"login", {ACLFlags.value("NONE"), 0, &AOClient::cmdLogin}},
-        {"getareas", {ACLFlags.value("NONE"), 0, &AOClient::cmdGetAreas}},
-        {"gas", {ACLFlags.value("NONE"), 0, &AOClient::cmdGetAreas}},
-        {"getarea", {ACLFlags.value("NONE"), 0, &AOClient::cmdGetArea}},
-        {"ga", {ACLFlags.value("NONE"), 0, &AOClient::cmdGetArea}},
-        {"ban", {ACLFlags.value("BAN"), 3, &AOClient::cmdBan}},
-        {"kick", {ACLFlags.value("KICK"), 2, &AOClient::cmdKick}},
-        {"changeauth", {ACLFlags.value("SUPER"), 0, &AOClient::cmdChangeAuth}},
-        {"rootpass", {ACLFlags.value("SUPER"), 1, &AOClient::cmdSetRootPass}},
-        {"background", {ACLFlags.value("NONE"), 1, &AOClient::cmdSetBackground}},
-        {"bg", {ACLFlags.value("NONE"), 1, &AOClient::cmdSetBackground}},
-        {"bglock", {ACLFlags.value("BGLOCK"), 0, &AOClient::cmdBgLock}},
-        {"bgunlock", {ACLFlags.value("BGLOCK"), 0, &AOClient::cmdBgUnlock}},
-        {"adduser", {ACLFlags.value("MODIFY_USERS"), 2, &AOClient::cmdAddUser}},
-        {"listperms", {ACLFlags.value("NONE"), 0, &AOClient::cmdListPerms}},
-        {"addperm", {ACLFlags.value("MODIFY_USERS"), 2, &AOClient::cmdAddPerms}},
-        {"removeperm", {ACLFlags.value("MODIFY_USERS"), 2, &AOClient::cmdRemovePerms}},
-        {"listusers", {ACLFlags.value("MODIFY_USERS"), 0, &AOClient::cmdListUsers}},
-        {"logout", {ACLFlags.value("NONE"), 0, &AOClient::cmdLogout}},
-        {"pos", {ACLFlags.value("NONE"), 1, &AOClient::cmdPos}},
-        {"g", {ACLFlags.value("NONE"), 1, &AOClient::cmdG}},
-        {"need", {ACLFlags.value("NONE"), 1, &AOClient::cmdNeed}},
-        {"coinflip", {ACLFlags.value("NONE"), 0, &AOClient::cmdFlip}},
-        {"roll", {ACLFlags.value("NONE"), 0, &AOClient::cmdRoll}},
-        {"r", {ACLFlags.value("NONE"), 0, &AOClient::cmdRoll}},
-        {"rollp", {ACLFlags.value("NONE"), 0, &AOClient::cmdRollP}},
-        {"doc", {ACLFlags.value("NONE"), 0, &AOClient::cmdDoc}},
-        {"cleardoc", {ACLFlags.value("NONE"), 0, &AOClient::cmdClearDoc}},
-        {"cm", {ACLFlags.value("NONE"), 0, &AOClient::cmdCM}},
-        {"uncm", {ACLFlags.value("CM"), 0, &AOClient::cmdUnCM}},
-        {"invite", {ACLFlags.value("CM"), 1, &AOClient::cmdInvite}},
-        {"uninvite", {ACLFlags.value("CM"), 1, &AOClient::cmdUnInvite}},
-        {"lock", {ACLFlags.value("CM"), 0, &AOClient::cmdLock}},
-        {"area_lock", {ACLFlags.value("CM"), 0, &AOClient::cmdLock}},
-        {"spectatable", {ACLFlags.value("CM"), 0, &AOClient::cmdSpectatable}},
-        {"area_spectate", {ACLFlags.value("CM"), 0, &AOClient::cmdSpectatable}},
-        {"unlock", {ACLFlags.value("CM"), 0, &AOClient::cmdUnLock}},
-        {"area_unlock", {ACLFlags.value("CM"), 0, &AOClient::cmdUnLock}},
-        {"timer", {ACLFlags.value("CM"), 0, &AOClient::cmdTimer}},
-        {"area", {ACLFlags.value("NONE"), 1, &AOClient::cmdArea}},
-        {"play", {ACLFlags.value("CM"), 1, &AOClient::cmdPlay}},
-        {"areakick", {ACLFlags.value("CM"), 1, &AOClient::cmdAreaKick}},
-        {"area_kick", {ACLFlags.value("CM"), 1, &AOClient::cmdAreaKick}},
-        {"randomchar", {ACLFlags.value("NONE"), 0, &AOClient::cmdRandomChar}},
-        {"switch", {ACLFlags.value("NONE"), 1, &AOClient::cmdSwitch}},
-        {"toggleglobal", {ACLFlags.value("NONE"), 0, &AOClient::cmdToggleGlobal}},
-        {"mods", {ACLFlags.value("NONE"), 0, &AOClient::cmdMods}},
-        {"commands", {ACLFlags.value("NONE"), 0, &AOClient::cmdCommands}},
-        {"status", {ACLFlags.value("NONE"), 1, &AOClient::cmdStatus}},
-        {"forcepos", {ACLFlags.value("CM"), 2, &AOClient::cmdForcePos}},
-        {"currentmusic", {ACLFlags.value("NONE"), 0, &AOClient::cmdCurrentMusic}},
-        {"pm", {ACLFlags.value("NONE"), 2, &AOClient::cmdPM}},
-        {"evidence_mod", {ACLFlags.value("EVI_MOD"), 1, &AOClient::cmdEvidenceMod}},
-        {"motd", {ACLFlags.value("NONE"), 0, &AOClient::cmdMOTD}},
-        {"announce", {ACLFlags.value("ANNOUNCE"), 1, &AOClient::cmdAnnounce}},
-        {"m", {ACLFlags.value("MODCHAT"), 1, &AOClient::cmdM}},
-        {"gm", {ACLFlags.value("MODCHAT"), 1, &AOClient::cmdGM}},
-        {"mute", {ACLFlags.value("MUTE"), 1, &AOClient::cmdMute}},
-        {"unmute", {ACLFlags.value("MUTE"), 1, &AOClient::cmdUnMute}},
-        {"bans", {ACLFlags.value("BAN"), 0, &AOClient::cmdBans}},
-        {"unban", {ACLFlags.value("BAN"), 1, &AOClient::cmdUnBan}},
-        {"removeuser", {ACLFlags.value("MODIFY_USERS"), 1, &AOClient::cmdRemoveUser}},
-        {"subtheme", {ACLFlags.value("CM"), 1, &AOClient::cmdSubTheme}},
-        {"about", {ACLFlags.value("NONE"), 0, &AOClient::cmdAbout}},
-        {"evidence_swap", {ACLFlags.value("CM"), 2, &AOClient::cmdEvidence_Swap}},
-        {"notecard", {ACLFlags.value("NONE"), 1, &AOClient::cmdNoteCard}},
-        {"notecardreveal", {ACLFlags.value("CM"), 0, &AOClient::cmdNoteCardReveal}},
-        {"notecard_reveal", {ACLFlags.value("CM"), 0, &AOClient::cmdNoteCardReveal}},
-        {"notecardclear", {ACLFlags.value("NONE"), 0, &AOClient::cmdNoteCardClear}},
-        {"notecard_clear", {ACLFlags.value("NONE"), 0, &AOClient::cmdNoteCardClear}},
-        {"8ball", {ACLFlags.value("NONE"), 1, &AOClient::cmd8Ball}},
-        {"lm", {ACLFlags.value("MODCHAT"), 1, &AOClient::cmdLM}},
-        {"judgelog", {ACLFlags.value("CM"), 0, &AOClient::cmdJudgeLog}},
-        {"allowblankposting", {ACLFlags.value("MODCHAT"), 0, &AOClient::cmdAllowBlankposting}},
-        {"allow_blankposting", {ACLFlags.value("MODCHAT"), 0, &AOClient::cmdAllowBlankposting}},
-        {"gimp", {ACLFlags.value("MUTE"), 1, &AOClient::cmdGimp}},
-        {"ungimp", {ACLFlags.value("MUTE"), 1, &AOClient::cmdUnGimp}},
-        {"baninfo", {ACLFlags.value("BAN"), 1, &AOClient::cmdBanInfo}},
-        {"testify", {ACLFlags.value("CM"), 0, &AOClient::cmdTestify}},
-        {"testimony", {ACLFlags.value("NONE"), 0, &AOClient::cmdTestimony}},
-        {"examine", {ACLFlags.value("CM"), 0, &AOClient::cmdExamine}},
-        {"pause", {ACLFlags.value("CM"), 0, &AOClient::cmdPauseTestimony}},
-        {"delete", {ACLFlags.value("CM"), 0, &AOClient::cmdDeleteStatement}},
-        {"update", {ACLFlags.value("CM"), 0, &AOClient::cmdUpdateStatement}},
-        {"add", {ACLFlags.value("CM"), 0, &AOClient::cmdAddStatement}},
-        {"reload", {ACLFlags.value("SUPER"), 0, &AOClient::cmdReload}},
-        {"disemvowel", {ACLFlags.value("MUTE"), 1, &AOClient::cmdDisemvowel}},
-        {"undisemvowel", {ACLFlags.value("MUTE"), 1, &AOClient::cmdUnDisemvowel}},
-        {"shake", {ACLFlags.value("MUTE"), 1, &AOClient::cmdShake}},
-        {"unshake", {ACLFlags.value("MUTE"), 1, &AOClient::cmdUnShake}},
-        {"forceimmediate", {ACLFlags.value("CM"), 0, &AOClient::cmdForceImmediate}},
-        {"force_noint_pres", {ACLFlags.value("CM"), 0, &AOClient::cmdForceImmediate}},
-        {"allowiniswap", {ACLFlags.value("CM"), 0, &AOClient::cmdAllowIniswap}},
-        {"allow_iniswap", {ACLFlags.value("CM"), 0, &AOClient::cmdAllowIniswap}},
-        {"afk", {ACLFlags.value("NONE"), 0, &AOClient::cmdAfk}},
-        {"savetestimony", {ACLFlags.value("NONE"), 1, &AOClient::cmdSaveTestimony}},
-        {"loadtestimony", {ACLFlags.value("CM"), 1, &AOClient::cmdLoadTestimony}},
-        {"permitsaving", {ACLFlags.value("MODCHAT"), 1, &AOClient::cmdPermitSaving}},
-        {"mutepm", {ACLFlags.value("NONE"), 0, &AOClient::cmdMutePM}},
-        {"toggleadverts", {ACLFlags.value("NONE"), 0, &AOClient::cmdToggleAdverts}},
-        {"oocmute", {ACLFlags.value("MUTE"), 1, &AOClient::cmdOocMute}},
-        {"ooc_mute", {ACLFlags.value("MUTE"), 1, &AOClient::cmdOocMute}},
-        {"oocunmute", {ACLFlags.value("MUTE"), 1, &AOClient::cmdOocUnMute}},
-        {"ooc_unmute", {ACLFlags.value("MUTE"), 1, &AOClient::cmdOocUnMute}},
-        {"blockwtce", {ACLFlags.value("MUTE"), 1, &AOClient::cmdBlockWtce}},
-        {"block_wtce", {ACLFlags.value("MUTE"), 1, &AOClient::cmdBlockWtce}},
-        {"unblockwtce", {ACLFlags.value("MUTE"), 1, &AOClient::cmdUnBlockWtce}},
-        {"unblock_wtce", {ACLFlags.value("MUTE"), 1, &AOClient::cmdUnBlockWtce}},
-        {"blockdj", {ACLFlags.value("MUTE"), 1, &AOClient::cmdBlockDj}},
-        {"block_dj", {ACLFlags.value("MUTE"), 1, &AOClient::cmdBlockDj}},
-        {"unblockdj", {ACLFlags.value("MUTE"), 1, &AOClient::cmdUnBlockDj}},
-        {"unblock_dj", {ACLFlags.value("MUTE"), 1, &AOClient::cmdUnBlockDj}},
-        {"charcurse", {ACLFlags.value("MUTE"), 1, &AOClient::cmdCharCurse}},
-        {"uncharcurse", {ACLFlags.value("MUTE"), 1, &AOClient::cmdUnCharCurse}},
-        {"charselect", {ACLFlags.value("NONE"), 0, &AOClient::cmdCharSelect}},
-        {"togglemusic", {ACLFlags.value("CM"), 0, &AOClient::cmdToggleMusic}},
-        {"a", {ACLFlags.value("NONE"), 2, &AOClient::cmdA}},
-        {"s", {ACLFlags.value("NONE"), 0, &AOClient::cmdS}},
-        {"kickuid", {ACLFlags.value("KICK"), 2, &AOClient::cmdKickUid}},
-        {"kick_uid", {ACLFlags.value("KICK"), 2, &AOClient::cmdKickUid}},
-        {"firstperson", {ACLFlags.value("NONE"), 0, &AOClient::cmdFirstPerson}},
-        {"updateban", {ACLFlags.value("BAN"), 3, &AOClient::cmdUpdateBan}},
-        {"update_ban", {ACLFlags.value("BAN"), 3, &AOClient::cmdUpdateBan}},
-        {"changepass", {ACLFlags.value("NONE"), 1, &AOClient::cmdChangePassword}},
-        {"ignorebglist", {ACLFlags.value("IGNORE_BGLIST"), 0, &AOClient::cmdIgnoreBgList}},
-        {"ignore_bglist", {ACLFlags.value("IGNORE_BGLIST"), 0, &AOClient::cmdIgnoreBgList}},
-        {"notice", {ACLFlags.value("SEND_NOTICE"), 1, &AOClient::cmdNotice}},
-        {"noticeg", {ACLFlags.value("SEND_NOTICE"), 1, &AOClient::cmdNoticeGlobal}},
-        {"togglejukebox", {ACLFlags.value("None"), 0, &AOClient::cmdToggleJukebox}},
-        {"help", {ACLFlags.value("NONE"), 1, &AOClient::cmdHelp}},
-        {"clearcm", {ACLFlags.value("KICK"), 0, &AOClient::cmdClearCM}},
-        {"togglemessage", {ACLFlags.value("CM"), 0, &AOClient::cmdToggleAreaMessageOnJoin}},
-        {"clearmessage", {ACLFlags.value("CM"), 0, &AOClient::cmdClearAreaMessage}},
-        {"areamessage", {ACLFlags.value("CM"), 0, &AOClient::cmdAreaMessage}},
-        {"addsong", {ACLFlags.value("CM"), 1, &AOClient::cmdAddSong}},
-        {"addcategory", {ACLFlags.value("CM"), 1, &AOClient::cmdAddCategory}},
-        {"removeentry", {ACLFlags.value("CM"), 1, &AOClient::cmdRemoveCategorySong}},
-        {"toggleroot", {ACLFlags.value("CM"), 0, &AOClient::cmdToggleRootlist}},
-        {"clearcustom", {ACLFlags.value("CM"), 0, &AOClient::cmdClearCustom}}};
+        {"login", {ACLRole::NONE, 0, &AOClient::cmdLogin}},
+        {"getareas", {ACLRole::NONE, 0, &AOClient::cmdGetAreas}},
+        {"gas", {ACLRole::NONE, 0, &AOClient::cmdGetAreas}},
+        {"getarea", {ACLRole::NONE, 0, &AOClient::cmdGetArea}},
+        {"ga", {ACLRole::NONE, 0, &AOClient::cmdGetArea}},
+        {"ban", {ACLRole::BAN, 3, &AOClient::cmdBan}},
+        {"kick", {ACLRole::KICK, 2, &AOClient::cmdKick}},
+        {"changeauth", {ACLRole::SUPER, 0, &AOClient::cmdChangeAuth}},
+        {"rootpass", {ACLRole::SUPER, 1, &AOClient::cmdSetRootPass}},
+        {"background", {ACLRole::NONE, 1, &AOClient::cmdSetBackground}},
+        {"bg", {ACLRole::NONE, 1, &AOClient::cmdSetBackground}},
+        {"bglock", {ACLRole::BGLOCK, 0, &AOClient::cmdBgLock}},
+        {"bgunlock", {ACLRole::BGLOCK, 0, &AOClient::cmdBgUnlock}},
+        {"adduser", {ACLRole::MODIFY_USERS, 2, &AOClient::cmdAddUser}},
+        {"removeuser", {ACLRole::MODIFY_USERS, 1, &AOClient::cmdRemoveUser}},
+        {"listusers", {ACLRole::MODIFY_USERS, 0, &AOClient::cmdListUsers}},
+        {"setperms", {ACLRole::MODIFY_USERS, 2, &AOClient::cmdSetPerms}},
+        {"removeperms", {ACLRole::MODIFY_USERS, 1, &AOClient::cmdRemovePerms}},
+        {"listperms", {ACLRole::NONE, 0, &AOClient::cmdListPerms}},
+        {"logout", {ACLRole::NONE, 0, &AOClient::cmdLogout}},
+        {"pos", {ACLRole::NONE, 1, &AOClient::cmdPos}},
+        {"g", {ACLRole::NONE, 1, &AOClient::cmdG}},
+        {"need", {ACLRole::NONE, 1, &AOClient::cmdNeed}},
+        {"coinflip", {ACLRole::NONE, 0, &AOClient::cmdFlip}},
+        {"roll", {ACLRole::NONE, 0, &AOClient::cmdRoll}},
+        {"r", {ACLRole::NONE, 0, &AOClient::cmdRoll}},
+        {"rollp", {ACLRole::NONE, 0, &AOClient::cmdRollP}},
+        {"doc", {ACLRole::NONE, 0, &AOClient::cmdDoc}},
+        {"cleardoc", {ACLRole::NONE, 0, &AOClient::cmdClearDoc}},
+        {"cm", {ACLRole::NONE, 0, &AOClient::cmdCM}},
+        {"uncm", {ACLRole::CM, 0, &AOClient::cmdUnCM}},
+        {"invite", {ACLRole::CM, 1, &AOClient::cmdInvite}},
+        {"uninvite", {ACLRole::CM, 1, &AOClient::cmdUnInvite}},
+        {"lock", {ACLRole::CM, 0, &AOClient::cmdLock}},
+        {"area_lock", {ACLRole::CM, 0, &AOClient::cmdLock}},
+        {"spectatable", {ACLRole::CM, 0, &AOClient::cmdSpectatable}},
+        {"area_spectate", {ACLRole::CM, 0, &AOClient::cmdSpectatable}},
+        {"unlock", {ACLRole::CM, 0, &AOClient::cmdUnLock}},
+        {"area_unlock", {ACLRole::CM, 0, &AOClient::cmdUnLock}},
+        {"timer", {ACLRole::CM, 0, &AOClient::cmdTimer}},
+        {"area", {ACLRole::NONE, 1, &AOClient::cmdArea}},
+        {"play", {ACLRole::CM, 1, &AOClient::cmdPlay}},
+        {"areakick", {ACLRole::CM, 1, &AOClient::cmdAreaKick}},
+        {"area_kick", {ACLRole::CM, 1, &AOClient::cmdAreaKick}},
+        {"randomchar", {ACLRole::NONE, 0, &AOClient::cmdRandomChar}},
+        {"switch", {ACLRole::NONE, 1, &AOClient::cmdSwitch}},
+        {"toggleglobal", {ACLRole::NONE, 0, &AOClient::cmdToggleGlobal}},
+        {"mods", {ACLRole::NONE, 0, &AOClient::cmdMods}},
+        {"commands", {ACLRole::NONE, 0, &AOClient::cmdCommands}},
+        {"status", {ACLRole::NONE, 1, &AOClient::cmdStatus}},
+        {"forcepos", {ACLRole::CM, 2, &AOClient::cmdForcePos}},
+        {"currentmusic", {ACLRole::NONE, 0, &AOClient::cmdCurrentMusic}},
+        {"pm", {ACLRole::NONE, 2, &AOClient::cmdPM}},
+        {"evidence_mod", {ACLRole::EVI_MOD, 1, &AOClient::cmdEvidenceMod}},
+        {"motd", {ACLRole::NONE, 0, &AOClient::cmdMOTD}},
+        {"announce", {ACLRole::ANNOUNCE, 1, &AOClient::cmdAnnounce}},
+        {"m", {ACLRole::MODCHAT, 1, &AOClient::cmdM}},
+        {"gm", {ACLRole::MODCHAT, 1, &AOClient::cmdGM}},
+        {"mute", {ACLRole::MUTE, 1, &AOClient::cmdMute}},
+        {"unmute", {ACLRole::MUTE, 1, &AOClient::cmdUnMute}},
+        {"bans", {ACLRole::BAN, 0, &AOClient::cmdBans}},
+        {"unban", {ACLRole::BAN, 1, &AOClient::cmdUnBan}},
+        {"subtheme", {ACLRole::CM, 1, &AOClient::cmdSubTheme}},
+        {"about", {ACLRole::NONE, 0, &AOClient::cmdAbout}},
+        {"evidence_swap", {ACLRole::CM, 2, &AOClient::cmdEvidence_Swap}},
+        {"notecard", {ACLRole::NONE, 1, &AOClient::cmdNoteCard}},
+        {"notecardreveal", {ACLRole::CM, 0, &AOClient::cmdNoteCardReveal}},
+        {"notecard_reveal", {ACLRole::CM, 0, &AOClient::cmdNoteCardReveal}},
+        {"notecardclear", {ACLRole::NONE, 0, &AOClient::cmdNoteCardClear}},
+        {"notecard_clear", {ACLRole::NONE, 0, &AOClient::cmdNoteCardClear}},
+        {"8ball", {ACLRole::NONE, 1, &AOClient::cmd8Ball}},
+        {"lm", {ACLRole::MODCHAT, 1, &AOClient::cmdLM}},
+        {"judgelog", {ACLRole::CM, 0, &AOClient::cmdJudgeLog}},
+        {"allowblankposting", {ACLRole::MODCHAT, 0, &AOClient::cmdAllowBlankposting}},
+        {"allow_blankposting", {ACLRole::MODCHAT, 0, &AOClient::cmdAllowBlankposting}},
+        {"gimp", {ACLRole::MUTE, 1, &AOClient::cmdGimp}},
+        {"ungimp", {ACLRole::MUTE, 1, &AOClient::cmdUnGimp}},
+        {"baninfo", {ACLRole::BAN, 1, &AOClient::cmdBanInfo}},
+        {"testify", {ACLRole::CM, 0, &AOClient::cmdTestify}},
+        {"testimony", {ACLRole::NONE, 0, &AOClient::cmdTestimony}},
+        {"examine", {ACLRole::CM, 0, &AOClient::cmdExamine}},
+        {"pause", {ACLRole::CM, 0, &AOClient::cmdPauseTestimony}},
+        {"delete", {ACLRole::CM, 0, &AOClient::cmdDeleteStatement}},
+        {"update", {ACLRole::CM, 0, &AOClient::cmdUpdateStatement}},
+        {"add", {ACLRole::CM, 0, &AOClient::cmdAddStatement}},
+        {"reload", {ACLRole::SUPER, 0, &AOClient::cmdReload}},
+        {"disemvowel", {ACLRole::MUTE, 1, &AOClient::cmdDisemvowel}},
+        {"undisemvowel", {ACLRole::MUTE, 1, &AOClient::cmdUnDisemvowel}},
+        {"shake", {ACLRole::MUTE, 1, &AOClient::cmdShake}},
+        {"unshake", {ACLRole::MUTE, 1, &AOClient::cmdUnShake}},
+        {"forceimmediate", {ACLRole::CM, 0, &AOClient::cmdForceImmediate}},
+        {"force_noint_pres", {ACLRole::CM, 0, &AOClient::cmdForceImmediate}},
+        {"allowiniswap", {ACLRole::CM, 0, &AOClient::cmdAllowIniswap}},
+        {"allow_iniswap", {ACLRole::CM, 0, &AOClient::cmdAllowIniswap}},
+        {"afk", {ACLRole::NONE, 0, &AOClient::cmdAfk}},
+        {"savetestimony", {ACLRole::NONE, 1, &AOClient::cmdSaveTestimony}},
+        {"loadtestimony", {ACLRole::CM, 1, &AOClient::cmdLoadTestimony}},
+        {"permitsaving", {ACLRole::MODCHAT, 1, &AOClient::cmdPermitSaving}},
+        {"mutepm", {ACLRole::NONE, 0, &AOClient::cmdMutePM}},
+        {"toggleadverts", {ACLRole::NONE, 0, &AOClient::cmdToggleAdverts}},
+        {"oocmute", {ACLRole::MUTE, 1, &AOClient::cmdOocMute}},
+        {"ooc_mute", {ACLRole::MUTE, 1, &AOClient::cmdOocMute}},
+        {"oocunmute", {ACLRole::MUTE, 1, &AOClient::cmdOocUnMute}},
+        {"ooc_unmute", {ACLRole::MUTE, 1, &AOClient::cmdOocUnMute}},
+        {"blockwtce", {ACLRole::MUTE, 1, &AOClient::cmdBlockWtce}},
+        {"block_wtce", {ACLRole::MUTE, 1, &AOClient::cmdBlockWtce}},
+        {"unblockwtce", {ACLRole::MUTE, 1, &AOClient::cmdUnBlockWtce}},
+        {"unblock_wtce", {ACLRole::MUTE, 1, &AOClient::cmdUnBlockWtce}},
+        {"blockdj", {ACLRole::MUTE, 1, &AOClient::cmdBlockDj}},
+        {"block_dj", {ACLRole::MUTE, 1, &AOClient::cmdBlockDj}},
+        {"unblockdj", {ACLRole::MUTE, 1, &AOClient::cmdUnBlockDj}},
+        {"unblock_dj", {ACLRole::MUTE, 1, &AOClient::cmdUnBlockDj}},
+        {"charcurse", {ACLRole::MUTE, 1, &AOClient::cmdCharCurse}},
+        {"uncharcurse", {ACLRole::MUTE, 1, &AOClient::cmdUnCharCurse}},
+        {"charselect", {ACLRole::NONE, 0, &AOClient::cmdCharSelect}},
+        {"togglemusic", {ACLRole::CM, 0, &AOClient::cmdToggleMusic}},
+        {"a", {ACLRole::NONE, 2, &AOClient::cmdA}},
+        {"s", {ACLRole::NONE, 0, &AOClient::cmdS}},
+        {"kickuid", {ACLRole::KICK, 2, &AOClient::cmdKickUid}},
+        {"kick_uid", {ACLRole::KICK, 2, &AOClient::cmdKickUid}},
+        {"firstperson", {ACLRole::NONE, 0, &AOClient::cmdFirstPerson}},
+        {"updateban", {ACLRole::BAN, 3, &AOClient::cmdUpdateBan}},
+        {"update_ban", {ACLRole::BAN, 3, &AOClient::cmdUpdateBan}},
+        {"changepass", {ACLRole::NONE, 1, &AOClient::cmdChangePassword}},
+        {"ignorebglist", {ACLRole::IGNORE_BGLIST, 0, &AOClient::cmdIgnoreBgList}},
+        {"ignore_bglist", {ACLRole::IGNORE_BGLIST, 0, &AOClient::cmdIgnoreBgList}},
+        {"notice", {ACLRole::SEND_NOTICE, 1, &AOClient::cmdNotice}},
+        {"noticeg", {ACLRole::SEND_NOTICE, 1, &AOClient::cmdNoticeGlobal}},
+        {"togglejukebox", {ACLRole::NONE, 0, &AOClient::cmdToggleJukebox}},
+        {"help", {ACLRole::NONE, 1, &AOClient::cmdHelp}},
+        {"clearcm", {ACLRole::KICK, 0, &AOClient::cmdClearCM}},
+        {"togglemessage", {ACLRole::CM, 0, &AOClient::cmdToggleAreaMessageOnJoin}},
+        {"clearmessage", {ACLRole::CM, 0, &AOClient::cmdClearAreaMessage}},
+        {"areamessage", {ACLRole::CM, 0, &AOClient::cmdAreaMessage}},
+        {"addsong", {ACLRole::CM, 1, &AOClient::cmdAddSong}},
+        {"addcategory", {ACLRole::CM, 1, &AOClient::cmdAddCategory}},
+        {"removeentry", {ACLRole::CM, 1, &AOClient::cmdRemoveCategorySong}},
+        {"toggleroot", {ACLRole::CM, 0, &AOClient::cmdToggleRootlist}},
+        {"clearcustom", {ACLRole::CM, 0, &AOClient::cmdClearCustom}}};
 
     /**
      * @brief Filled with part of a packet if said packet could not be read fully from the client's socket.
