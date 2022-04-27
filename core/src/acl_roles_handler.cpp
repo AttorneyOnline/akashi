@@ -12,7 +12,11 @@ const QHash<QString, ACLRole> ACLRolesHandler::readonly_roles{
     {ACLRolesHandler::SUPER_ID, ACLRole(ACLRole::SUPER)},
 };
 
-const QHash<ACLRole::Permission, QString> ACLRole::permission_captions{
+const QHash<ACLRole::Permission, QString> ACLRole::PERMISSION_CAPTIONS{
+    {
+        ACLRole::Permission::NONE,
+        "none",
+    },
     {
         ACLRole::Permission::KICK,
         "kick",
@@ -31,11 +35,11 @@ const QHash<ACLRole::Permission, QString> ACLRole::permission_captions{
     },
     {
         ACLRole::Permission::CM,
-        "set_gamemaster",
+        "gamemaster",
     },
     {
         ACLRole::Permission::GLOBAL_TIMER,
-        "use_global_timer",
+        "global_timer",
     },
     {
         ACLRole::Permission::EVI_MOD,
@@ -43,7 +47,7 @@ const QHash<ACLRole::Permission, QString> ACLRole::permission_captions{
     },
     {
         ACLRole::Permission::MOTD,
-        "set_motd",
+        "motd",
     },
     {
         ACLRole::Permission::ANNOUNCE,
@@ -75,7 +79,7 @@ const QHash<ACLRole::Permission, QString> ACLRole::permission_captions{
     },
     {
         ACLRole::Permission::IGNORE_BGLIST,
-        "ignore_bg_list",
+        "ignore_background_list",
     },
     {
         ACLRole::Permission::SEND_NOTICE,
@@ -176,17 +180,17 @@ bool ACLRolesHandler::loadFile(QString f_file_name)
     if (l_settings.status() != QSettings::NoError) {
         switch (l_settings.status()) {
         case QSettings::AccessError:
-            qWarning() << "ACLRolesHandler"
+            qWarning() << "[ACL Role Handler]"
                        << "error: failed to open file; aborting (" << f_file_name << ")";
             break;
 
         case QSettings::FormatError:
-            qWarning() << "ACLRolesHandler"
+            qWarning() << "[ACL Role Handler]"
                        << "error: file is malformed; aborting (" << f_file_name << ")";
             break;
 
         default:
-            qWarning() << "ACLRolesHandler"
+            qWarning() << "[ACL Role Handler]"
                        << "error: unknown error; aborting; aborting (" << f_file_name << ")";
             break;
         }
@@ -200,20 +204,23 @@ bool ACLRolesHandler::loadFile(QString f_file_name)
     for (const QString &i_group : l_group_list) {
         const QString l_upper_group = i_group.toUpper();
         if (readonly_roles.contains(l_upper_group)) {
-            qWarning() << "ACLRolesHandler warning: cannot modify role;" << i_group << "is read-only";
+            qWarning() << "[ACL Role Handler]"
+                       << "warning: cannot modify role;" << i_group << "is read-only";
             continue;
         }
 
         l_settings.beginGroup(i_group);
         if (l_role_records.contains(l_upper_group)) {
-            qWarning() << "ACLRolesHandler warning: role" << l_upper_group << "already exist! Overwriting.";
+            qWarning() << "[ACL Role Handler]"
+                       << "warning: role" << l_upper_group << "already exist";
+            continue;
         }
         l_role_records.append(l_upper_group);
 
         ACLRole l_role;
-        const QList<ACLRole::Permission> l_permissions = ACLRole::permission_captions.keys();
+        const QList<ACLRole::Permission> l_permissions = ACLRole::PERMISSION_CAPTIONS.keys();
         for (const ACLRole::Permission &i_permission : l_permissions) {
-            l_role.setPermission(i_permission, l_settings.value(ACLRole::permission_captions.value(i_permission), false).toBool());
+            l_role.setPermission(i_permission, l_settings.value(ACLRole::PERMISSION_CAPTIONS.value(i_permission), false).toBool());
         }
         m_roles.insert(l_upper_group, std::move(l_role));
 
@@ -230,17 +237,17 @@ bool ACLRolesHandler::saveFile(QString f_file_name)
     if (l_settings.status() != QSettings::NoError) {
         switch (l_settings.status()) {
         case QSettings::AccessError:
-            qWarning() << "ACLRolesHandler"
+            qWarning() << "[ACL Role Handler]"
                        << "error: failed to open file; aborting (" << f_file_name << ")";
             break;
 
         case QSettings::FormatError:
-            qWarning() << "ACLRolesHandler"
+            qWarning() << "[ACL Role Handler]"
                        << "error: file is malformed; aborting (" << f_file_name << ")";
             break;
 
         default:
-            qWarning() << "ACLRolesHandler"
+            qWarning() << "[ACL Role Handler]"
                        << "error: unknown error; aborting; aborting (" << f_file_name << ")";
             break;
         }
@@ -259,22 +266,22 @@ bool ACLRolesHandler::saveFile(QString f_file_name)
         const ACLRole i_role = m_roles.value(l_upper_role_id);
         l_settings.beginGroup(l_upper_role_id);
         if (i_role.checkPermission(ACLRole::SUPER)) {
-            l_settings.setValue(ACLRole::permission_captions.value(ACLRole::SUPER), true);
+            l_settings.setValue(ACLRole::PERMISSION_CAPTIONS.value(ACLRole::SUPER), true);
         }
         else {
-            const QList<ACLRole::Permission> l_permissions = ACLRole::permission_captions.keys();
+            const QList<ACLRole::Permission> l_permissions = ACLRole::PERMISSION_CAPTIONS.keys();
             for (const ACLRole::Permission i_permission : l_permissions) {
                 if (!i_role.checkPermission(i_permission)) {
                     continue;
                 }
-                l_settings.setValue(ACLRole::permission_captions.value(i_permission), true);
+                l_settings.setValue(ACLRole::PERMISSION_CAPTIONS.value(i_permission), true);
             }
         }
         l_settings.endGroup();
     }
     l_settings.sync();
     if (l_settings.status() != QSettings::NoError) {
-        qWarning() << "ACLRolesHandler"
+        qWarning() << "[ACL Role Handler]"
                    << "error: failed to write file; aborting (" << f_file_name << ")";
         return false;
     }

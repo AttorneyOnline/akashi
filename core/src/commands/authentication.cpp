@@ -153,10 +153,10 @@ void AOClient::cmdListPerms(int argc, QStringList argv)
         l_message.append("SUPER (Be careful! This grants the user all permissions.)");
     }
     else {
-        const QList<ACLRole::Permission> l_permissions = ACLRole::permission_captions.keys();
+        const QList<ACLRole::Permission> l_permissions = ACLRole::PERMISSION_CAPTIONS.keys();
         for (const ACLRole::Permission i_permission : l_permissions) {
             if (l_target_role.checkPermission(i_permission)) {
-                l_message.append(ACLRole::permission_captions.value(i_permission));
+                l_message.append(ACLRole::PERMISSION_CAPTIONS.value(i_permission));
             }
         }
     }

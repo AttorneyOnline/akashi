@@ -35,6 +35,7 @@ class ACLRolesHandler;
 class Advertiser;
 class AOClient;
 class AreaData;
+class CommandExtensionCollection;
 class ConfigManager;
 class DBManager;
 class Discord;
@@ -282,11 +283,19 @@ class Server : public QObject
     /**
      * @brief Returns a pointer to a database manager.
      *
-     * @return A pointer to database manager.
+     * @return A pointer to a database manager.
      */
     DBManager *getDatabaseManager();
 
+    /**
+     * @brief Returns a pointer to ACL role handler.
+     */
     ACLRolesHandler *getACLRolesHandler();
+
+    /**
+     * @brief Returns a pointer to a command extension collection.
+     */
+    CommandExtensionCollection *getCommandExtensionCollection();
 
     /**
      * @brief The server-wide global timer.
@@ -511,7 +520,15 @@ class Server : public QObject
      */
     DBManager *db_manager;
 
+    /**
+     * @see ACLRolesHandler
+     */
     ACLRolesHandler *acl_roles_handler;
+
+    /**
+     * @see CommandExtensionCollection
+     */
+    CommandExtensionCollection *command_extension_collection;
 
     /**
      * @brief Connects new AOClient to logger and disconnect handling.

@@ -29,6 +29,7 @@ SOURCES += \
     src/aoclient.cpp \
     src/aopacket.cpp \
     src/area_data.cpp \
+    src/command_extension.cpp \
     src/commands/area.cpp \
     src/commands/authentication.cpp \
     src/commands/casing.cpp \
@@ -53,8 +54,10 @@ SOURCES += \
 
 HEADERS += include/aoclient.h \
     include/acl_roles_handler.h \
+    include/akashidefs.h \
     include/aopacket.h \
     include/area_data.h \
+    include/command_extension.h \
     include/config_manager.h \
     include/data_types.h \
     include/db_manager.h \

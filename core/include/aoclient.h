@@ -47,6 +47,37 @@ class AOClient : public QObject
 
   public:
     /**
+     * @brief Describes a command's details.
+     */
+    struct CommandInfo
+    {
+        QVector<ACLRole::Permission> acl_permissions; //!< The permissions necessary to be able to run the command. @see ACLRole::Permission.
+        int minArgs;                                  //!< The minimum mandatory arguments needed for the command to function.
+        void (AOClient::*action)(int, QStringList);
+    };
+
+    /**
+     * @property CommandInfo::action
+     *
+     * @brief A function reference that contains what the command actually does.
+     *
+     * @param int When called, this parameter will be filled with the argument count. @anchor commandArgc
+     * @param QStringList When called, this parameter will be filled the list of arguments. @anchor commandArgv
+     */
+
+    /**
+     * @brief The list of commands available on the server.
+     *
+     * @details Generally called with the format of `/command parameters` in the out-of-character chat.
+     * @showinitializer
+     *
+     * @tparam QString The name of the command, without the leading slash.
+     * @tparam CommandInfo The details of the command.
+     * See @ref CommandInfo "the type's documentation" for more details.
+     */
+    static const QMap<QString, CommandInfo> COMMANDS;
+
+    /**
      * @brief Creates an instance of the AOClient class.
      *
      * @param p_server A pointer to the Server instance where the client is joining to.
@@ -1032,15 +1063,18 @@ class AOClient : public QObject
     void cmdHelp(int argc, QStringList argv);
 
     /**
-     * @brief Gets or sets the server's Message Of The Day.
-     *
-     * @details If called without arguments, gets the MOTD.
-     *
-     * If it has any number of arguments, it is set as the **MOTD**.
+     * @brief Gets the server's Message Of The Day.
      *
      * @iscommand
      */
     void cmdMOTD(int argc, QStringList argv);
+
+    /**
+     * @brief Sets the server's Message Of The Day.
+     *
+     * @iscommand
+     */
+    void cmdSetMOTD(int argc, QStringList argv);
 
     /**
      * @brief Gives a very brief description of Akashi.
@@ -1635,13 +1669,20 @@ class AOClient : public QObject
     void cmdUnCharCurse(int argc, QStringList argv);
 
     /**
-     * @brief Forces a client into the charselect screen.
+     * @brief Forces the caller's client into the charselect screen.
+     *
+     * @iscommand
+     */
+    void cmdCharSelect(int argc, QStringList argv);
+
+    /**
+     * @brief Forces the target's client into the charselect screen.
      *
      * @details The only argument is the **target's ID** whom the client wants to force into charselect.
      *
      * @iscommand
      */
-    void cmdCharSelect(int argc, QStringList argv);
+    void cmdForceCharSelect(int argc, QStringList argv);
 
     /**
      * @brief Sends a message to an area that you a CM in.
@@ -2041,176 +2082,6 @@ class AOClient : public QObject
      * @see cmdChangeAuth and cmdSetRootPass
      */
     bool change_auth_started = false;
-
-    /**
-     * @brief Describes a command's details.
-     */
-    struct CommandInfo
-    {
-        ACLRole::Permission acl_permission; //!< The permissions necessary to be able to run the command. @see ACLRole::Permission.
-        int minArgs;                        //!< The minimum mandatory arguments needed for the command to function.
-        void (AOClient::*action)(int, QStringList);
-    };
-
-    /**
-     * @property CommandInfo::action
-     *
-     * @brief A function reference that contains what the command actually does.
-     *
-     * @param int When called, this parameter will be filled with the argument count. @anchor commandArgc
-     * @param QStringList When called, this parameter will be filled the list of arguments. @anchor commandArgv
-     */
-
-    /**
-     * @brief The list of commands available on the server.
-     *
-     * @details Generally called with the format of `/command parameters` in the out-of-character chat.
-     * @showinitializer
-     *
-     * @tparam QString The name of the command, without the leading slash.
-     * @tparam CommandInfo The details of the command.
-     * See @ref CommandInfo "the type's documentation" for more details.
-     */
-    const QMap<QString, CommandInfo> commands{
-        {"login", {ACLRole::NONE, 0, &AOClient::cmdLogin}},
-        {"getareas", {ACLRole::NONE, 0, &AOClient::cmdGetAreas}},
-        {"gas", {ACLRole::NONE, 0, &AOClient::cmdGetAreas}},
-        {"getarea", {ACLRole::NONE, 0, &AOClient::cmdGetArea}},
-        {"ga", {ACLRole::NONE, 0, &AOClient::cmdGetArea}},
-        {"ban", {ACLRole::BAN, 3, &AOClient::cmdBan}},
-        {"kick", {ACLRole::KICK, 2, &AOClient::cmdKick}},
-        {"changeauth", {ACLRole::SUPER, 0, &AOClient::cmdChangeAuth}},
-        {"rootpass", {ACLRole::SUPER, 1, &AOClient::cmdSetRootPass}},
-        {"background", {ACLRole::NONE, 1, &AOClient::cmdSetBackground}},
-        {"bg", {ACLRole::NONE, 1, &AOClient::cmdSetBackground}},
-        {"bglock", {ACLRole::BGLOCK, 0, &AOClient::cmdBgLock}},
-        {"bgunlock", {ACLRole::BGLOCK, 0, &AOClient::cmdBgUnlock}},
-        {"adduser", {ACLRole::MODIFY_USERS, 2, &AOClient::cmdAddUser}},
-        {"removeuser", {ACLRole::MODIFY_USERS, 1, &AOClient::cmdRemoveUser}},
-        {"listusers", {ACLRole::MODIFY_USERS, 0, &AOClient::cmdListUsers}},
-        {"setperms", {ACLRole::MODIFY_USERS, 2, &AOClient::cmdSetPerms}},
-        {"removeperms", {ACLRole::MODIFY_USERS, 1, &AOClient::cmdRemovePerms}},
-        {"listperms", {ACLRole::NONE, 0, &AOClient::cmdListPerms}},
-        {"logout", {ACLRole::NONE, 0, &AOClient::cmdLogout}},
-        {"pos", {ACLRole::NONE, 1, &AOClient::cmdPos}},
-        {"g", {ACLRole::NONE, 1, &AOClient::cmdG}},
-        {"need", {ACLRole::NONE, 1, &AOClient::cmdNeed}},
-        {"coinflip", {ACLRole::NONE, 0, &AOClient::cmdFlip}},
-        {"roll", {ACLRole::NONE, 0, &AOClient::cmdRoll}},
-        {"r", {ACLRole::NONE, 0, &AOClient::cmdRoll}},
-        {"rollp", {ACLRole::NONE, 0, &AOClient::cmdRollP}},
-        {"doc", {ACLRole::NONE, 0, &AOClient::cmdDoc}},
-        {"cleardoc", {ACLRole::NONE, 0, &AOClient::cmdClearDoc}},
-        {"cm", {ACLRole::NONE, 0, &AOClient::cmdCM}},
-        {"uncm", {ACLRole::CM, 0, &AOClient::cmdUnCM}},
-        {"invite", {ACLRole::CM, 1, &AOClient::cmdInvite}},
-        {"uninvite", {ACLRole::CM, 1, &AOClient::cmdUnInvite}},
-        {"lock", {ACLRole::CM, 0, &AOClient::cmdLock}},
-        {"area_lock", {ACLRole::CM, 0, &AOClient::cmdLock}},
-        {"spectatable", {ACLRole::CM, 0, &AOClient::cmdSpectatable}},
-        {"area_spectate", {ACLRole::CM, 0, &AOClient::cmdSpectatable}},
-        {"unlock", {ACLRole::CM, 0, &AOClient::cmdUnLock}},
-        {"area_unlock", {ACLRole::CM, 0, &AOClient::cmdUnLock}},
-        {"timer", {ACLRole::CM, 0, &AOClient::cmdTimer}},
-        {"area", {ACLRole::NONE, 1, &AOClient::cmdArea}},
-        {"play", {ACLRole::CM, 1, &AOClient::cmdPlay}},
-        {"areakick", {ACLRole::CM, 1, &AOClient::cmdAreaKick}},
-        {"area_kick", {ACLRole::CM, 1, &AOClient::cmdAreaKick}},
-        {"randomchar", {ACLRole::NONE, 0, &AOClient::cmdRandomChar}},
-        {"switch", {ACLRole::NONE, 1, &AOClient::cmdSwitch}},
-        {"toggleglobal", {ACLRole::NONE, 0, &AOClient::cmdToggleGlobal}},
-        {"mods", {ACLRole::NONE, 0, &AOClient::cmdMods}},
-        {"commands", {ACLRole::NONE, 0, &AOClient::cmdCommands}},
-        {"status", {ACLRole::NONE, 1, &AOClient::cmdStatus}},
-        {"forcepos", {ACLRole::CM, 2, &AOClient::cmdForcePos}},
-        {"currentmusic", {ACLRole::NONE, 0, &AOClient::cmdCurrentMusic}},
-        {"pm", {ACLRole::NONE, 2, &AOClient::cmdPM}},
-        {"evidence_mod", {ACLRole::EVI_MOD, 1, &AOClient::cmdEvidenceMod}},
-        {"motd", {ACLRole::NONE, 0, &AOClient::cmdMOTD}},
-        {"announce", {ACLRole::ANNOUNCE, 1, &AOClient::cmdAnnounce}},
-        {"m", {ACLRole::MODCHAT, 1, &AOClient::cmdM}},
-        {"gm", {ACLRole::MODCHAT, 1, &AOClient::cmdGM}},
-        {"mute", {ACLRole::MUTE, 1, &AOClient::cmdMute}},
-        {"unmute", {ACLRole::MUTE, 1, &AOClient::cmdUnMute}},
-        {"bans", {ACLRole::BAN, 0, &AOClient::cmdBans}},
-        {"unban", {ACLRole::BAN, 1, &AOClient::cmdUnBan}},
-        {"subtheme", {ACLRole::CM, 1, &AOClient::cmdSubTheme}},
-        {"about", {ACLRole::NONE, 0, &AOClient::cmdAbout}},
-        {"evidence_swap", {ACLRole::CM, 2, &AOClient::cmdEvidence_Swap}},
-        {"notecard", {ACLRole::NONE, 1, &AOClient::cmdNoteCard}},
-        {"notecardreveal", {ACLRole::CM, 0, &AOClient::cmdNoteCardReveal}},
-        {"notecard_reveal", {ACLRole::CM, 0, &AOClient::cmdNoteCardReveal}},
-        {"notecardclear", {ACLRole::NONE, 0, &AOClient::cmdNoteCardClear}},
-        {"notecard_clear", {ACLRole::NONE, 0, &AOClient::cmdNoteCardClear}},
-        {"8ball", {ACLRole::NONE, 1, &AOClient::cmd8Ball}},
-        {"lm", {ACLRole::MODCHAT, 1, &AOClient::cmdLM}},
-        {"judgelog", {ACLRole::CM, 0, &AOClient::cmdJudgeLog}},
-        {"allowblankposting", {ACLRole::MODCHAT, 0, &AOClient::cmdAllowBlankposting}},
-        {"allow_blankposting", {ACLRole::MODCHAT, 0, &AOClient::cmdAllowBlankposting}},
-        {"gimp", {ACLRole::MUTE, 1, &AOClient::cmdGimp}},
-        {"ungimp", {ACLRole::MUTE, 1, &AOClient::cmdUnGimp}},
-        {"baninfo", {ACLRole::BAN, 1, &AOClient::cmdBanInfo}},
-        {"testify", {ACLRole::CM, 0, &AOClient::cmdTestify}},
-        {"testimony", {ACLRole::NONE, 0, &AOClient::cmdTestimony}},
-        {"examine", {ACLRole::CM, 0, &AOClient::cmdExamine}},
-        {"pause", {ACLRole::CM, 0, &AOClient::cmdPauseTestimony}},
-        {"delete", {ACLRole::CM, 0, &AOClient::cmdDeleteStatement}},
-        {"update", {ACLRole::CM, 0, &AOClient::cmdUpdateStatement}},
-        {"add", {ACLRole::CM, 0, &AOClient::cmdAddStatement}},
-        {"reload", {ACLRole::SUPER, 0, &AOClient::cmdReload}},
-        {"disemvowel", {ACLRole::MUTE, 1, &AOClient::cmdDisemvowel}},
-        {"undisemvowel", {ACLRole::MUTE, 1, &AOClient::cmdUnDisemvowel}},
-        {"shake", {ACLRole::MUTE, 1, &AOClient::cmdShake}},
-        {"unshake", {ACLRole::MUTE, 1, &AOClient::cmdUnShake}},
-        {"forceimmediate", {ACLRole::CM, 0, &AOClient::cmdForceImmediate}},
-        {"force_noint_pres", {ACLRole::CM, 0, &AOClient::cmdForceImmediate}},
-        {"allowiniswap", {ACLRole::CM, 0, &AOClient::cmdAllowIniswap}},
-        {"allow_iniswap", {ACLRole::CM, 0, &AOClient::cmdAllowIniswap}},
-        {"afk", {ACLRole::NONE, 0, &AOClient::cmdAfk}},
-        {"savetestimony", {ACLRole::NONE, 1, &AOClient::cmdSaveTestimony}},
-        {"loadtestimony", {ACLRole::CM, 1, &AOClient::cmdLoadTestimony}},
-        {"permitsaving", {ACLRole::MODCHAT, 1, &AOClient::cmdPermitSaving}},
-        {"mutepm", {ACLRole::NONE, 0, &AOClient::cmdMutePM}},
-        {"toggleadverts", {ACLRole::NONE, 0, &AOClient::cmdToggleAdverts}},
-        {"oocmute", {ACLRole::MUTE, 1, &AOClient::cmdOocMute}},
-        {"ooc_mute", {ACLRole::MUTE, 1, &AOClient::cmdOocMute}},
-        {"oocunmute", {ACLRole::MUTE, 1, &AOClient::cmdOocUnMute}},
-        {"ooc_unmute", {ACLRole::MUTE, 1, &AOClient::cmdOocUnMute}},
-        {"blockwtce", {ACLRole::MUTE, 1, &AOClient::cmdBlockWtce}},
-        {"block_wtce", {ACLRole::MUTE, 1, &AOClient::cmdBlockWtce}},
-        {"unblockwtce", {ACLRole::MUTE, 1, &AOClient::cmdUnBlockWtce}},
-        {"unblock_wtce", {ACLRole::MUTE, 1, &AOClient::cmdUnBlockWtce}},
-        {"blockdj", {ACLRole::MUTE, 1, &AOClient::cmdBlockDj}},
-        {"block_dj", {ACLRole::MUTE, 1, &AOClient::cmdBlockDj}},
-        {"unblockdj", {ACLRole::MUTE, 1, &AOClient::cmdUnBlockDj}},
-        {"unblock_dj", {ACLRole::MUTE, 1, &AOClient::cmdUnBlockDj}},
-        {"charcurse", {ACLRole::MUTE, 1, &AOClient::cmdCharCurse}},
-        {"uncharcurse", {ACLRole::MUTE, 1, &AOClient::cmdUnCharCurse}},
-        {"charselect", {ACLRole::NONE, 0, &AOClient::cmdCharSelect}},
-        {"togglemusic", {ACLRole::CM, 0, &AOClient::cmdToggleMusic}},
-        {"a", {ACLRole::NONE, 2, &AOClient::cmdA}},
-        {"s", {ACLRole::NONE, 0, &AOClient::cmdS}},
-        {"kickuid", {ACLRole::KICK, 2, &AOClient::cmdKickUid}},
-        {"kick_uid", {ACLRole::KICK, 2, &AOClient::cmdKickUid}},
-        {"firstperson", {ACLRole::NONE, 0, &AOClient::cmdFirstPerson}},
-        {"updateban", {ACLRole::BAN, 3, &AOClient::cmdUpdateBan}},
-        {"update_ban", {ACLRole::BAN, 3, &AOClient::cmdUpdateBan}},
-        {"changepass", {ACLRole::NONE, 1, &AOClient::cmdChangePassword}},
-        {"ignorebglist", {ACLRole::IGNORE_BGLIST, 0, &AOClient::cmdIgnoreBgList}},
-        {"ignore_bglist", {ACLRole::IGNORE_BGLIST, 0, &AOClient::cmdIgnoreBgList}},
-        {"notice", {ACLRole::SEND_NOTICE, 1, &AOClient::cmdNotice}},
-        {"noticeg", {ACLRole::SEND_NOTICE, 1, &AOClient::cmdNoticeGlobal}},
-        {"togglejukebox", {ACLRole::NONE, 0, &AOClient::cmdToggleJukebox}},
-        {"help", {ACLRole::NONE, 1, &AOClient::cmdHelp}},
-        {"clearcm", {ACLRole::KICK, 0, &AOClient::cmdClearCM}},
-        {"togglemessage", {ACLRole::CM, 0, &AOClient::cmdToggleAreaMessageOnJoin}},
-        {"clearmessage", {ACLRole::CM, 0, &AOClient::cmdClearAreaMessage}},
-        {"areamessage", {ACLRole::CM, 0, &AOClient::cmdAreaMessage}},
-        {"addsong", {ACLRole::CM, 1, &AOClient::cmdAddSong}},
-        {"addcategory", {ACLRole::CM, 1, &AOClient::cmdAddCategory}},
-        {"removeentry", {ACLRole::CM, 1, &AOClient::cmdRemoveCategorySong}},
-        {"toggleroot", {ACLRole::CM, 0, &AOClient::cmdToggleRootlist}},
-        {"clearcustom", {ACLRole::CM, 0, &AOClient::cmdClearCustom}}};
 
     /**
      * @brief Filled with part of a packet if said packet could not be read fully from the client's socket.

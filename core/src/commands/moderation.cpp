@@ -18,6 +18,7 @@
 #include "include/aoclient.h"
 
 #include "include/area_data.h"
+#include "include/command_extension.h"
 #include "include/config_manager.h"
 #include "include/db_manager.h"
 #include "include/server.h"
@@ -165,11 +166,27 @@ void AOClient::cmdCommands(int argc, QStringList argv)
     QStringList l_entries;
     l_entries << "Allowed commands:";
     QMap<QString, CommandInfo>::const_iterator i;
-    for (i = commands.constBegin(); i != commands.constEnd(); ++i) {
-        CommandInfo info = i.value();
-        if (checkPermission(info.acl_permission)) { // if we are allowed to use this command
-            l_entries << "/" + i.key();
+    for (i = COMMANDS.constBegin(); i != COMMANDS.constEnd(); ++i) {
+        const CommandInfo l_command = i.value();
+        const CommandExtension l_extension = server->getCommandExtensionCollection()->getExtension(i.key());
+        const QVector<ACLRole::Permission> l_permissions = l_extension.getPermissions(l_command.acl_permissions);
+        bool l_has_permission = false;
+        for (const ACLRole::Permission i_permission : qAsConst(l_permissions)) {
+            if (checkPermission(i_permission)) {
+                l_has_permission = true;
+                break;
+            }
         }
+        if (!l_has_permission) {
+            continue;
+        }
+
+        QString l_info = "/" + i.key();
+        const QStringList l_aliases = l_extension.getAliases();
+        if (!l_aliases.isEmpty()) {
+            l_info += " [aka: " + l_aliases.join(", ") + "]";
+        }
+        l_entries << l_info;
     }
     sendServerMessage(l_entries.join("\n"));
 }
@@ -191,19 +208,19 @@ void AOClient::cmdHelp(int argc, QStringList argv)
 
 void AOClient::cmdMOTD(int argc, QStringList argv)
 {
-    if (argc == 0) {
-        sendServerMessage("=== MOTD ===\r\n" + ConfigManager::motd() + "\r\n=============");
-    }
-    else if (argc > 0) {
-        if (checkPermission(ACLRole::MOTD)) {
-            QString l_MOTD = argv.join(" ");
-            ConfigManager::setMotd(l_MOTD);
-            sendServerMessage("MOTD has been changed.");
-        }
-        else {
-            sendServerMessage("You do not have permission to change the MOTD");
-        }
-    }
+    Q_UNUSED(argc)
+    Q_UNUSED(argv)
+
+    sendServerMessage("=== MOTD ===\r\n" + ConfigManager::motd() + "\r\n=============");
+}
+
+void AOClient::cmdSetMOTD(int argc, QStringList argv)
+{
+    Q_UNUSED(argc)
+
+    QString l_MOTD = argv.join(" ");
+    ConfigManager::setMotd(l_MOTD);
+    sendServerMessage("MOTD has been changed.");
 }
 
 void AOClient::cmdBans(int argc, QStringList argv)
