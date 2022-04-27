@@ -41,7 +41,7 @@ class ACLRole
      *
      * @see ACLRoleHandler#loadFile and ACLRoleHandler#saveFile
      */
-    static const QHash<ACLRole::Permission, QString> permission_captions;
+    static const QHash<ACLRole::Permission, QString> PERMISSION_CAPTIONS;
 
     /**
      * @brief Constructs a role without any permissions.
@@ -98,6 +98,7 @@ class ACLRole
      */
     ACLRole::Permissions m_permissions;
 };
+Q_DECLARE_METATYPE(ACLRole::Permission)
 
 class ACLRolesHandler : public QObject
 {

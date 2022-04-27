@@ -19,6 +19,7 @@
 
 #include <QQueue>
 
+#include "include/akashidefs.h"
 #include "include/aopacket.h"
 #include "include/area_data.h"
 #include "include/config_manager.h"
@@ -258,11 +259,7 @@ void AOClient::pktOocChat(AreaData *area, int argc, QStringList argv, AOPacket p
         return;
     AOPacket final_packet("CT", {m_ooc_name, l_message, "0"});
     if (l_message.at(0) == '/') {
-#if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
-        QStringList l_cmd_argv = l_message.split(" ", QString::SplitBehavior::SkipEmptyParts);
-#else
-        QStringList l_cmd_argv = l_message.split(" ", Qt::SkipEmptyParts);
-#endif
+        QStringList l_cmd_argv = l_message.split(" ", akashi::SkipEmptyParts);
         QString l_command = l_cmd_argv[0].trimmed().toLower();
         l_command = l_command.right(l_command.length() - 1);
         l_cmd_argv.removeFirst();

@@ -127,15 +127,10 @@ void AOClient::cmdToggleJukebox(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    if (checkPermission(ACLRole::CM) | checkPermission(ACLRole::JUKEBOX)) {
-        AreaData *l_area = server->getAreaById(m_current_area);
-        l_area->toggleJukebox();
-        QString l_state = l_area->isjukeboxEnabled() ? "enabled." : "disabled.";
-        sendServerMessageArea("The jukebox in this area has been " + l_state);
-    }
-    else {
-        sendServerMessage("You do not have permission to change the jukebox status.");
-    }
+    AreaData *l_area = server->getAreaById(m_current_area);
+    l_area->toggleJukebox();
+    QString l_state = l_area->isjukeboxEnabled() ? "enabled." : "disabled.";
+    sendServerMessageArea("The jukebox in this area has been " + l_state);
 }
 
 void AOClient::cmdAddSong(int argc, QStringList argv)

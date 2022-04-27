@@ -19,9 +19,132 @@
 
 #include "include/aopacket.h"
 #include "include/area_data.h"
+#include "include/command_extension.h"
 #include "include/config_manager.h"
 #include "include/db_manager.h"
 #include "include/server.h"
+
+const QMap<QString, AOClient::CommandInfo> AOClient::COMMANDS{
+    {"login", {{ACLRole::NONE}, 0, &AOClient::cmdLogin}},
+    {"getarea", {{ACLRole::NONE}, 0, &AOClient::cmdGetArea}},
+    {"getareas", {{ACLRole::NONE}, 0, &AOClient::cmdGetAreas}},
+    {"ban", {{ACLRole::BAN}, 3, &AOClient::cmdBan}},
+    {"kick", {{ACLRole::KICK}, 2, &AOClient::cmdKick}},
+    {"changeauth", {{ACLRole::SUPER}, 0, &AOClient::cmdChangeAuth}},
+    {"rootpass", {{ACLRole::SUPER}, 1, &AOClient::cmdSetRootPass}},
+    {"background", {{ACLRole::NONE}, 1, &AOClient::cmdSetBackground}},
+    {"lock_background", {{ACLRole::BGLOCK}, 0, &AOClient::cmdBgLock}},
+    {"unlock_background", {{ACLRole::BGLOCK}, 0, &AOClient::cmdBgUnlock}},
+    {"adduser", {{ACLRole::MODIFY_USERS}, 2, &AOClient::cmdAddUser}},
+    {"removeuser", {{ACLRole::MODIFY_USERS}, 1, &AOClient::cmdRemoveUser}},
+    {"listusers", {{ACLRole::MODIFY_USERS}, 0, &AOClient::cmdListUsers}},
+    {"setperms", {{ACLRole::MODIFY_USERS}, 2, &AOClient::cmdSetPerms}},
+    {"removeperms", {{ACLRole::MODIFY_USERS}, 1, &AOClient::cmdRemovePerms}},
+    {"listperms", {{ACLRole::NONE}, 0, &AOClient::cmdListPerms}},
+    {"logout", {{ACLRole::NONE}, 0, &AOClient::cmdLogout}},
+    {"pos", {{ACLRole::NONE}, 1, &AOClient::cmdPos}},
+    {"g", {{ACLRole::NONE}, 1, &AOClient::cmdG}},
+    {"need", {{ACLRole::NONE}, 1, &AOClient::cmdNeed}},
+    {"coinflip", {{ACLRole::NONE}, 0, &AOClient::cmdFlip}},
+    {"roll", {{ACLRole::NONE}, 0, &AOClient::cmdRoll}},
+    {"rollp", {{ACLRole::NONE}, 0, &AOClient::cmdRollP}},
+    {"doc", {{ACLRole::NONE}, 0, &AOClient::cmdDoc}},
+    {"cleardoc", {{ACLRole::NONE}, 0, &AOClient::cmdClearDoc}},
+    {"cm", {{ACLRole::NONE}, 0, &AOClient::cmdCM}},
+    {"uncm", {{ACLRole::CM}, 0, &AOClient::cmdUnCM}},
+    {"invite", {{ACLRole::CM}, 1, &AOClient::cmdInvite}},
+    {"uninvite", {{ACLRole::CM}, 1, &AOClient::cmdUnInvite}},
+    {"area_lock", {{ACLRole::CM}, 0, &AOClient::cmdLock}},
+    {"area_spectate", {{ACLRole::CM}, 0, &AOClient::cmdSpectatable}},
+    {"area_unlock", {{ACLRole::CM}, 0, &AOClient::cmdUnLock}},
+    {"timer", {{ACLRole::CM}, 0, &AOClient::cmdTimer}},
+    {"area", {{ACLRole::NONE}, 1, &AOClient::cmdArea}},
+    {"play", {{ACLRole::CM}, 1, &AOClient::cmdPlay}},
+    {"area_kick", {{ACLRole::CM}, 1, &AOClient::cmdAreaKick}},
+    {"randomchar", {{ACLRole::NONE}, 0, &AOClient::cmdRandomChar}},
+    {"switch", {{ACLRole::NONE}, 1, &AOClient::cmdSwitch}},
+    {"toggleglobal", {{ACLRole::NONE}, 0, &AOClient::cmdToggleGlobal}},
+    {"mods", {{ACLRole::NONE}, 0, &AOClient::cmdMods}},
+    {"commands", {{ACLRole::NONE}, 0, &AOClient::cmdCommands}},
+    {"status", {{ACLRole::NONE}, 1, &AOClient::cmdStatus}},
+    {"forcepos", {{ACLRole::CM}, 2, &AOClient::cmdForcePos}},
+    {"currentmusic", {{ACLRole::NONE}, 0, &AOClient::cmdCurrentMusic}},
+    {"pm", {{ACLRole::NONE}, 2, &AOClient::cmdPM}},
+    {"evidence_mod", {{ACLRole::EVI_MOD}, 1, &AOClient::cmdEvidenceMod}},
+    {"motd", {{ACLRole::NONE}, 0, &AOClient::cmdMOTD}},
+    {"set_motd", {{ACLRole::MOTD}, 1, &AOClient::cmdSetMOTD}},
+    {"announce", {{ACLRole::ANNOUNCE}, 1, &AOClient::cmdAnnounce}},
+    {"m", {{ACLRole::MODCHAT}, 1, &AOClient::cmdM}},
+    {"gm", {{ACLRole::MODCHAT}, 1, &AOClient::cmdGM}},
+    {"mute", {{ACLRole::MUTE}, 1, &AOClient::cmdMute}},
+    {"unmute", {{ACLRole::MUTE}, 1, &AOClient::cmdUnMute}},
+    {"bans", {{ACLRole::BAN}, 0, &AOClient::cmdBans}},
+    {"unban", {{ACLRole::BAN}, 1, &AOClient::cmdUnBan}},
+    {"subtheme", {{ACLRole::CM}, 1, &AOClient::cmdSubTheme}},
+    {"about", {{ACLRole::NONE}, 0, &AOClient::cmdAbout}},
+    {"evidence_swap", {{ACLRole::CM}, 2, &AOClient::cmdEvidence_Swap}},
+    {"notecard", {{ACLRole::NONE}, 1, &AOClient::cmdNoteCard}},
+    {"notecard_reveal", {{ACLRole::CM}, 0, &AOClient::cmdNoteCardReveal}},
+    {"notecard_clear", {{ACLRole::NONE}, 0, &AOClient::cmdNoteCardClear}},
+    {"8ball", {{ACLRole::NONE}, 1, &AOClient::cmd8Ball}},
+    {"lm", {{ACLRole::MODCHAT}, 1, &AOClient::cmdLM}},
+    {"judgelog", {{ACLRole::CM}, 0, &AOClient::cmdJudgeLog}},
+    {"allow_blankposting", {{ACLRole::MODCHAT}, 0, &AOClient::cmdAllowBlankposting}},
+    {"gimp", {{ACLRole::MUTE}, 1, &AOClient::cmdGimp}},
+    {"ungimp", {{ACLRole::MUTE}, 1, &AOClient::cmdUnGimp}},
+    {"baninfo", {{ACLRole::BAN}, 1, &AOClient::cmdBanInfo}},
+    {"testify", {{ACLRole::CM}, 0, &AOClient::cmdTestify}},
+    {"testimony", {{ACLRole::NONE}, 0, &AOClient::cmdTestimony}},
+    {"examine", {{ACLRole::CM}, 0, &AOClient::cmdExamine}},
+    {"pause", {{ACLRole::CM}, 0, &AOClient::cmdPauseTestimony}},
+    {"delete", {{ACLRole::CM}, 0, &AOClient::cmdDeleteStatement}},
+    {"update", {{ACLRole::CM}, 0, &AOClient::cmdUpdateStatement}},
+    {"add", {{ACLRole::CM}, 0, &AOClient::cmdAddStatement}},
+    {"reload", {{ACLRole::SUPER}, 0, &AOClient::cmdReload}},
+    {"disemvowel", {{ACLRole::MUTE}, 1, &AOClient::cmdDisemvowel}},
+    {"undisemvowel", {{ACLRole::MUTE}, 1, &AOClient::cmdUnDisemvowel}},
+    {"shake", {{ACLRole::MUTE}, 1, &AOClient::cmdShake}},
+    {"unshake", {{ACLRole::MUTE}, 1, &AOClient::cmdUnShake}},
+    {"forceimmediate", {{ACLRole::CM}, 0, &AOClient::cmdForceImmediate}},
+    {"allow_iniswap", {{ACLRole::CM}, 0, &AOClient::cmdAllowIniswap}},
+    {"afk", {{ACLRole::NONE}, 0, &AOClient::cmdAfk}},
+    {"savetestimony", {{ACLRole::NONE}, 1, &AOClient::cmdSaveTestimony}},
+    {"loadtestimony", {{ACLRole::CM}, 1, &AOClient::cmdLoadTestimony}},
+    {"permitsaving", {{ACLRole::MODCHAT}, 1, &AOClient::cmdPermitSaving}},
+    {"mutepm", {{ACLRole::NONE}, 0, &AOClient::cmdMutePM}},
+    {"toggleadverts", {{ACLRole::NONE}, 0, &AOClient::cmdToggleAdverts}},
+    {"ooc_mute", {{ACLRole::MUTE}, 1, &AOClient::cmdOocMute}},
+    {"ooc_unmute", {{ACLRole::MUTE}, 1, &AOClient::cmdOocUnMute}},
+    {"block_wtce", {{ACLRole::MUTE}, 1, &AOClient::cmdBlockWtce}},
+    {"unblock_wtce", {{ACLRole::MUTE}, 1, &AOClient::cmdUnBlockWtce}},
+    {"block_dj", {{ACLRole::MUTE}, 1, &AOClient::cmdBlockDj}},
+    {"unblock_dj", {{ACLRole::MUTE}, 1, &AOClient::cmdUnBlockDj}},
+    {"charcurse", {{ACLRole::MUTE}, 1, &AOClient::cmdCharCurse}},
+    {"uncharcurse", {{ACLRole::MUTE}, 1, &AOClient::cmdUnCharCurse}},
+    {"charselect", {{ACLRole::NONE}, 0, &AOClient::cmdCharSelect}},
+    {"force_charselect", {{ACLRole::FORCE_CHARSELECT}, 1, &AOClient::cmdForceCharSelect}},
+    {"togglemusic", {{ACLRole::CM}, 0, &AOClient::cmdToggleMusic}},
+    {"a", {{ACLRole::NONE}, 2, &AOClient::cmdA}},
+    {"s", {{ACLRole::NONE}, 0, &AOClient::cmdS}},
+    {"kick_uid", {{ACLRole::KICK}, 2, &AOClient::cmdKickUid}},
+    {"firstperson", {{ACLRole::NONE}, 0, &AOClient::cmdFirstPerson}},
+    {"update_ban", {{ACLRole::BAN}, 3, &AOClient::cmdUpdateBan}},
+    {"changepass", {{ACLRole::NONE}, 1, &AOClient::cmdChangePassword}},
+    {"ignore_bglist", {{ACLRole::IGNORE_BGLIST}, 0, &AOClient::cmdIgnoreBgList}},
+    {"notice", {{ACLRole::SEND_NOTICE}, 1, &AOClient::cmdNotice}},
+    {"noticeg", {{ACLRole::SEND_NOTICE}, 1, &AOClient::cmdNoticeGlobal}},
+    {"togglejukebox", {{ACLRole::CM, ACLRole::JUKEBOX}, 0, &AOClient::cmdToggleJukebox}},
+    {"help", {{ACLRole::NONE}, 1, &AOClient::cmdHelp}},
+    {"clearcm", {{ACLRole::KICK}, 0, &AOClient::cmdClearCM}},
+    {"togglemessage", {{ACLRole::CM}, 0, &AOClient::cmdToggleAreaMessageOnJoin}},
+    {"clearmessage", {{ACLRole::CM}, 0, &AOClient::cmdClearAreaMessage}},
+    {"areamessage", {{ACLRole::CM}, 0, &AOClient::cmdAreaMessage}},
+    {"addsong", {{ACLRole::CM}, 1, &AOClient::cmdAddSong}},
+    {"addcategory", {{ACLRole::CM}, 1, &AOClient::cmdAddCategory}},
+    {"removeentry", {{ACLRole::CM}, 1, &AOClient::cmdRemoveCategorySong}},
+    {"toggleroot", {{ACLRole::CM}, 0, &AOClient::cmdToggleRootlist}},
+    {"clearcustom", {{ACLRole::CM}, 0, &AOClient::cmdClearCustom}},
+};
 
 void AOClient::clientData()
 {
@@ -202,20 +325,44 @@ void AOClient::changePosition(QString new_pos)
 
 void AOClient::handleCommand(QString command, int argc, QStringList argv)
 {
-    CommandInfo l_info = commands.value(command, {ACLRole::NONE, -1, &AOClient::cmdDefault});
+    command = command.toLower();
+    QString l_target_command = command;
+    QVector<ACLRole::Permission> l_permissions;
 
-    if (!checkPermission(l_info.acl_permission)) {
+    // check for aliases
+    const QList<CommandExtension> l_extensions = server->getCommandExtensionCollection()->getExtensions();
+    for (const CommandExtension &i_extension : l_extensions) {
+        if (i_extension.checkCommandNameAndAlias(command)) {
+            l_target_command = i_extension.getCommandName();
+            l_permissions = i_extension.getPermissions();
+            break;
+        }
+    }
+
+    CommandInfo l_command = COMMANDS.value(l_target_command, {{ACLRole::NONE}, -1, &AOClient::cmdDefault});
+    if (l_permissions.isEmpty()) {
+        l_permissions.append(l_command.acl_permissions);
+    }
+
+    bool l_has_permissions = false;
+    for (const ACLRole::Permission i_permission : qAsConst(l_permissions)) {
+        if (checkPermission(i_permission)) {
+            l_has_permissions = true;
+            break;
+        }
+    }
+    if (!l_has_permissions) {
         sendServerMessage("You do not have permission to use that command.");
         return;
     }
 
-    if (argc < l_info.minArgs) {
+    if (argc < l_command.minArgs) {
         sendServerMessage("Invalid command syntax.");
         sendServerMessage("The expected syntax for this command is: \n" + ConfigManager::commandHelp(command).usage);
         return;
     }
 
-    (this->*(l_info.action))(argc, argv);
+    (this->*(l_command.action))(argc, argv);
 }
 
 void AOClient::arup(ARUPType type, bool broadcast)

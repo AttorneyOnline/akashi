@@ -22,6 +22,7 @@
 #include "include/aoclient.h"
 #include "include/aopacket.h"
 #include "include/area_data.h"
+#include "include/command_extension.h"
 #include "include/config_manager.h"
 #include "include/db_manager.h"
 #include "include/discord.h"
@@ -47,6 +48,10 @@ Server::Server(int p_port, int p_ws_port, QObject *parent) :
 
     acl_roles_handler = new ACLRolesHandler;
     acl_roles_handler->loadFile("config/acl_roles.ini");
+
+    command_extension_collection = new CommandExtensionCollection;
+    command_extension_collection->setCommandNameWhitelist(AOClient::COMMANDS.keys());
+    command_extension_collection->loadFile("config/command_extensions.ini");
 
     // We create it, even if its not used later on.
     discord = new Discord(this);
@@ -286,6 +291,8 @@ void Server::reloadSettings()
     handleDiscordIntegration();
     logger->loadLogtext();
     m_ipban_list = ConfigManager::iprangeBans();
+    acl_roles_handler->loadFile("config/acl_roles.ini");
+    command_extension_collection->loadFile("config/command_extensions.ini");
 }
 
 void Server::broadcast(AOPacket packet, int area_index)
@@ -461,6 +468,11 @@ DBManager *Server::getDatabaseManager()
 ACLRolesHandler *Server::getACLRolesHandler()
 {
     return acl_roles_handler;
+}
+
+CommandExtensionCollection *Server::getCommandExtensionCollection()
+{
+    return command_extension_collection;
 }
 
 void Server::allowMessage()
