@@ -270,18 +270,16 @@ void AOClient::cmdLogout(int argc, QStringList argv)
 void AOClient::cmdChangePassword(int argc, QStringList argv)
 {
     QString l_username;
-    QString l_password;
+    QString l_password = argv[0];
     if (argc == 1) {
         if (m_moderator_name.isEmpty()) {
             sendServerMessage("You are not logged in.");
             return;
         }
         l_username = m_moderator_name;
-        l_password = argv[0];
     }
     else if (argc == 2 && checkAuth(ACLFlags.value("SUPER"))) {
-        l_username = argv[0];
-        l_password = argv[1];
+        l_username = argv[1];
     }
     else {
         sendServerMessage("Invalid command syntax.");
