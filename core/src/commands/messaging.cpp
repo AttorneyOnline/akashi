@@ -76,7 +76,7 @@ void AOClient::cmdG(int argc, QStringList argv)
     QString l_sender_name = m_ooc_name;
     QString l_sender_area = server->getAreaName(m_current_area);
     QString l_sender_message = argv.join(" ");
-    //Slightly better readability
+    // Better readability thanks to AwesomeAim.
     AOPacket l_mod_packet = AOPacket("CT", {"[G][" + m_ipid + "][" + l_sender_area + "]" + l_sender_name, l_sender_message});
     AOPacket l_user_packet = AOPacket("CT", {"[G][" + l_sender_area + "]" + l_sender_name, l_sender_message});
     server->broadcast(l_user_packet, l_mod_packet, Server::TARGET_TYPE::AUTHENTICATED);
