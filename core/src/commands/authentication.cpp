@@ -234,8 +234,7 @@ void AOClient::cmdChangePassword(int argc, QStringList argv)
         l_username = m_moderator_name;
     }
     else if (argc == 2 && checkPermission(ACLRole::SUPER)) {
-        l_username = argv[0];
-        l_password = argv[1];
+        l_username = argv[1];
     }
     else {
         sendServerMessage("Invalid command syntax.");
