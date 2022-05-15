@@ -447,20 +447,28 @@ void AOClient::pktModCall(AreaData* area, int argc, QStringList argv, AOPacket p
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
+    QString l_name = m_ooc_name;
+    if (m_ooc_name.isEmpty())
+        l_name = m_current_char;
+
+    QString l_areaName = area->name();
+
+    QString l_modcallNotice = "!!!MODCALL!!!\nArea: " + l_areaName + "\nCaller: " + l_name + "\n";
+
+    if (!packet.contents[0].isEmpty())
+        l_modcallNotice.append("Reason: " + packet.contents[0]);
+    else
+        l_modcallNotice.append("No reason given.");
+
     for (AOClient* client : qAsConst(server->m_clients)) {
-        if (client->m_authenticated)
-            client->sendPacket(packet);
+        if (client->m_authenticated) {
+            client->sendPacket(AOPacket("ZZ", {l_modcallNotice}));
+        }
     }
     emit logModcall((m_current_char + " " + m_showname), m_ipid, m_ooc_name, server->m_areas[m_current_area]->name());
 
-    if (ConfigManager::discordModcallWebhookEnabled()) {
-        QString l_name = m_ooc_name;
-        if (m_ooc_name.isEmpty())
-            l_name = m_current_char;
-
-        QString l_areaName = area->name();
+    if (ConfigManager::discordModcallWebhookEnabled())
         emit server->modcallWebhookRequest(l_name, l_areaName, packet.contents[0],server->getAreaBuffer(l_areaName));
-    }
 }
 
 void AOClient::pktAddEvidence(AreaData* area, int argc, QStringList argv, AOPacket packet)
