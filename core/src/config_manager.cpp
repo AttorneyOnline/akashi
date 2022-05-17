@@ -473,7 +473,14 @@ QString ConfigManager::discordUptimeWebhookUrl()
 
 QString ConfigManager::discordWebhookColor()
 {
-    return m_discord->value("Discord/webhook_color","13312842").toString();
+    const QString l_default_color = "13312842";
+    QString l_color = m_discord->value("Discord/webhook_color", l_default_color).toString();
+    if (l_color.isEmpty()) {
+        return l_default_color;
+    }
+    else {
+        return l_color;
+    }
 }
 
 bool ConfigManager::passwordRequirements()
