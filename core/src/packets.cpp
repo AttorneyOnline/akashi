@@ -45,7 +45,15 @@ void AOClient::pktHardwareId(AreaData *area, int argc, QStringList argv, AOPacke
     Q_UNUSED(argc);
     Q_UNUSED(packet);
 
-    m_hwid = argv[0];
+    QString l_incoming_hwid = argv[0];
+    if (l_incoming_hwid.isEmpty() || !m_hwid.isEmpty()) {
+        // No double sending or empty HWIDs!
+        sendPacket(AOPacket("BD", {"A protocol error has been encountered. Packet : HI"}));
+        m_socket->close();
+        return;
+    }
+
+    m_hwid = l_incoming_hwid;
     emit server->logConnectionAttempt(m_remote_ip.toString(), m_ipid, m_hwid);
     auto l_ban = server->getDatabaseManager()->isHDIDBanned(m_hwid);
     if (l_ban.first) {
@@ -61,6 +69,13 @@ void AOClient::pktSoftwareId(AreaData *area, int argc, QStringList argv, AOPacke
     Q_UNUSED(area);
     Q_UNUSED(argc);
     Q_UNUSED(packet);
+
+    if (m_version.major == 2) {
+        // No double sending of the ID packet!
+        sendPacket(AOPacket("BD", {"A protocol error has been encountered. Packet : ID"}));
+        m_socket->close();
+        return;
+    }
 
     // Full feature list as of AO 2.8.5
     // The only ones that are critical to ensuring the server works are
@@ -80,6 +95,18 @@ void AOClient::pktSoftwareId(AreaData *area, int argc, QStringList argv, AOPacke
         m_version.release = l_match.captured(1).toInt();
         m_version.major = l_match.captured(2).toInt();
         m_version.minor = l_match.captured(3).toInt();
+    }
+    if (argv[0] == "webAO") {
+        m_version.release = 2;
+        m_version.major = 10;
+        m_version.minor = 0;
+    }
+
+    if (m_version.release != 2) {
+        // No valid ID packet resolution.
+        sendPacket(AOPacket("BD", {"A protocol error has been encountered. Packet : ID"}));
+        m_socket->close();
+        return;
     }
 
     sendPacket("PN", {QString::number(server->getPlayerCount()), QString::number(ConfigManager::maxPlayers()), ConfigManager::serverDescription()});
