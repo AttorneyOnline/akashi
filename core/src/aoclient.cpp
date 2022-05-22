@@ -303,6 +303,8 @@ bool AOClient::changeCharacter(int char_id)
 
     if (char_id < 0) {
         m_current_char = "";
+        m_char_id = char_id;
+        setSpectator(true);
     }
 
     if (l_successfulChange == true) {
@@ -517,6 +519,16 @@ bool AOClient::isAuthenticated() const
 }
 
 Server *AOClient::getServer() { return server; }
+
+void AOClient::setSpectator(bool f_spectator)
+{
+    m_is_spectator = f_spectator;
+}
+
+bool AOClient::isSpectator() const
+{
+    return m_is_spectator;
+}
 
 void AOClient::onAfkTimeout()
 {
