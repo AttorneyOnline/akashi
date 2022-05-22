@@ -144,7 +144,8 @@ const QMap<QString, AOClient::CommandInfo> AOClient::COMMANDS{
     {"removeentry", {{ACLRole::CM}, 1, &AOClient::cmdRemoveCategorySong}},
     {"toggleroot", {{ACLRole::CM}, 0, &AOClient::cmdToggleRootlist}},
     {"clearcustom", {{ACLRole::CM}, 0, &AOClient::cmdClearCustom}},
-};
+    {"togglewtce", {{ACLRole::CM}, 0, &AOClient::cmdToggleWtce}},
+    {"toggleshouts", {{ACLRole::CM}, 0, &AOClient::cmdToggleShouts}}};
 
 void AOClient::clientData()
 {
@@ -484,6 +485,10 @@ bool AOClient::checkPermission(ACLRole::Permission f_permission) const
 {
     if (f_permission == ACLRole::NONE) {
         return true;
+    }
+
+    if ((f_permission == ACLRole::CM) && server->getAreaById(m_current_area)->owners().contains(m_id)) {
+        return true; // I'm sorry for this hack.
     }
 
     if (!isAuthenticated()) {

@@ -1065,6 +1065,24 @@ class AOClient : public QObject
      */
     void cmdToggleAreaMessageOnJoin(int argc, QStringList argv);
 
+    /**
+     * @brief Toggles wether the client can use testimony animations in the area.
+     *
+     * @details No arguments.
+     *
+     * @iscommand
+     */
+    void cmdToggleWtce(int argc, QStringList argv);
+
+    /**
+     * @brief Toggles wether the client can send game shouts in the area.
+     *
+     * @details No arguments.
+     *
+     * @iscommand
+     */
+    void cmdToggleShouts(int argc, QStringList argv);
+
     ///@}
 
     /**

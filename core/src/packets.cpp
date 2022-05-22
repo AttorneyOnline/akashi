@@ -376,6 +376,12 @@ void AOClient::pktWtCe(AreaData *area, int argc, QStringList argv, AOPacket pack
         sendServerMessage("You are blocked from using the judge controls.");
         return;
     }
+
+    if (!area->isWtceAllowed()) {
+        sendServerMessage("WTCE animations have been disabled in this area.");
+        return;
+    }
+
     if (QDateTime::currentDateTime().toSecsSinceEpoch() - m_last_wtce_time <= 5)
         return;
     m_last_wtce_time = QDateTime::currentDateTime().toSecsSinceEpoch();
@@ -770,15 +776,24 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     l_args.append(l_incoming_args[9].toString());
 
     // objection modifier
-    if (l_incoming_args[10].toString().contains("4")) {
-        // custom shout includes text metadata
-        l_args.append(l_incoming_args[10].toString());
+    if (area->isShoutAllowed()) {
+        if (l_incoming_args[10].toString().contains("4")) {
+            // custom shout includes text metadata
+            l_args.append(l_incoming_args[10].toString());
+        }
+        else {
+            int l_obj_mod = l_incoming_args[10].toInt();
+            if ((l_obj_mod < 0) || (l_obj_mod > 4)) {
+                return l_invalid;
+            }
+            l_args.append(QString::number(l_obj_mod));
+        }
     }
     else {
-        int l_obj_mod = l_incoming_args[10].toInt();
-        if (l_obj_mod != 0 && l_obj_mod != 1 && l_obj_mod != 2 && l_obj_mod != 3)
-            return l_invalid;
-        l_args.append(QString::number(l_obj_mod));
+        if (l_incoming_args[10].toString() != "0") {
+            sendServerMessage("Shouts have been disabled in this area.");
+        }
+        l_args.append("0");
     }
 
     // evidence

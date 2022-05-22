@@ -861,6 +861,16 @@ class AreaData : public QObject
     void toggleJukebox();
 
     /**
+     * @brief Toggles wether testimony animations can be used in the area.
+     */
+    void toggleWtceAllowed();
+
+    /**
+     * @brief Toggles wether shouts can be used in the area.
+     */
+    void toggleShoutAllowed();
+
+    /**
      * @brief Adds a song to the Jukeboxs queue.
      */
     QString addJukeboxSong(QString f_song);
@@ -876,6 +886,20 @@ class AreaData : public QObject
      * @return True if expired; false otherwise.
      */
     bool isMessageAllowed() const;
+
+    /**
+     * @brief Returns whatever a wtce packet may be broadcasted or not.
+     *
+     * @return True if permitted, false otherwise.
+     */
+    bool isWtceAllowed() const;
+
+    /**
+     * @brief Returns wether a shout can be used in the area.
+     *
+     * @return True if permitted, false otherwise.
+     */
+    bool isShoutAllowed() const;
 
     /**
      * @brief Starts a timer that determines whatever a game message may be broadcasted or not.
@@ -1160,6 +1184,16 @@ class AreaData : public QObject
      * @brief If false, IC messages will be rejected.
      */
     bool m_can_send_ic_messages = true;
+
+    /**
+     * @brief If false, WTCE will be rejected.
+     */
+    bool m_can_send_wtce = true;
+
+    /**
+     * @brief If false, shouts are stripped from all messages in the area.
+     */
+    bool m_can_use_shouts = true;
 
   private slots:
     /**
