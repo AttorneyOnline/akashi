@@ -411,6 +411,28 @@ void AOClient::cmdToggleAreaMessageOnJoin(int argc, QStringList argv)
     sendServerMessage("Sending message on area join is now " + l_state);
 }
 
+void AOClient::cmdToggleWtce(int argc, QStringList argv)
+{
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
+    AreaData *l_area = server->getAreaById(m_current_area);
+    l_area->toggleWtceAllowed();
+    QString l_state = l_area->isWtceAllowed() ? "enabled." : "disabled.";
+    sendServerMessage("Using testimony animations is now " + l_state);
+}
+
+void AOClient::cmdToggleShouts(int argc, QStringList argv)
+{
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
+    AreaData *l_area = server->getAreaById(m_current_area);
+    l_area->toggleShoutAllowed();
+    QString l_state = l_area->isShoutAllowed() ? "enabled." : "disabled.";
+    sendServerMessage("Using shouts is now " + l_state);
+}
+
 void AOClient::cmdClearAreaMessage(int argc, QStringList argv)
 {
     Q_UNUSED(argc);

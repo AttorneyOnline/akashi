@@ -36,7 +36,9 @@ AreaData::AreaData(QString p_name, int p_index, MusicManager *p_music_manager = 
     m_statement(0),
     m_judgelog(),
     m_lastICMessage(),
-    m_send_area_message(false)
+    m_send_area_message(false),
+    m_can_send_wtce(true),
+    m_can_use_shouts(true)
 {
     QStringList name_split = p_name.split(":");
     name_split.removeFirst();
@@ -57,6 +59,8 @@ AreaData::AreaData(QString p_name, int p_index, MusicManager *p_music_manager = 
     m_shownameAllowed = areas_ini->value("shownames_allowed", "true").toBool();
     m_ignoreBgList = areas_ini->value("ignore_bglist", "false").toBool();
     m_jukebox = areas_ini->value("jukebox_enabled", "false").toBool();
+    m_can_send_wtce = areas_ini->value("wtce_enabled", "true").toBool();
+    m_can_use_shouts = areas_ini->value("shouts_enabled", "true").toBool();
     areas_ini->endGroup();
     QTimer *timer1 = new QTimer();
     m_timers.append(timer1);
@@ -295,6 +299,16 @@ bool AreaData::isMusicAllowed() const
 bool AreaData::isMessageAllowed() const
 {
     return m_can_send_ic_messages;
+}
+
+bool AreaData::isWtceAllowed() const
+{
+    return m_can_send_wtce;
+}
+
+bool AreaData::isShoutAllowed() const
+{
+    return m_can_use_shouts;
 }
 
 void AreaData::startMessageFloodguard(int f_duration)
@@ -584,6 +598,16 @@ void AreaData::toggleJukebox()
         m_jukebox_queue.clear();
         m_jukebox_timer->stop();
     }
+}
+
+void AreaData::toggleWtceAllowed()
+{
+    m_can_send_wtce = !m_can_send_wtce;
+}
+
+void AreaData::toggleShoutAllowed()
+{
+    m_can_use_shouts = !m_can_use_shouts;
 }
 
 QString AreaData::addJukeboxSong(QString f_song)
