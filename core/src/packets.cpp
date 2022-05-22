@@ -194,11 +194,15 @@ void AOClient::pktSelectChar(AreaData *area, int argc, QStringList argv, AOPacke
     bool argument_ok;
     int l_selected_char_id = argv[1].toInt(&argument_ok);
     if (!argument_ok) {
-        l_selected_char_id = -1;
+        l_selected_char_id = SPECTATOR_ID;
     }
 
     if (changeCharacter(l_selected_char_id))
         m_char_id = l_selected_char_id;
+
+    if (m_char_id > SPECTATOR_ID) {
+        setSpectator(false);
+    }
 }
 
 void AOClient::pktIcChat(AreaData *area, int argc, QStringList argv, AOPacket packet)
@@ -302,6 +306,12 @@ void AOClient::pktChangeMusic(AreaData *area, int argc, QStringList argv, AOPack
 
     if (server->getMusicList().contains(l_argument) || m_music_manager->isCustom(m_current_area, l_argument) || l_argument == "~stop.mp3") { // ~stop.mp3 is a dummy track used by 2.9+
         // We have a song here
+
+        if (m_is_spectator) {
+            sendServerMessage("Spectator are blocked from changing the music.");
+            return;
+        }
+
         if (m_is_dj_blocked) {
             sendServerMessage("You are blocked from changing the music.");
             return;
