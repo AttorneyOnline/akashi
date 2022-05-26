@@ -48,6 +48,10 @@ void AOClient::cmdCM(int argc, QStringList argv)
             sendServerMessage("Unable to find client with ID " + argv[0] + ".");
             return;
         }
+        if (l_area->owners().contains(l_owner_candidate->m_id)) {
+            sendServerMessage("User is already a CM in this area.");
+            return;
+        }
         l_area->addOwner(l_owner_candidate->m_id);
         sendServerMessageArea(l_owner_candidate->m_ooc_name + " is now CM in this area.");
         arup(ARUPType::CM, true);
