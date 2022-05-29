@@ -813,7 +813,8 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
         QString l_other_emote = "0";
         QString l_other_offset = "0";
         QString l_other_flip = "0";
-        for (AOClient* l_client : qAsConst(server->m_clients)) {
+        for (int l_client_id : area->joinedIDs()) {
+        AOClient* l_client = server->getClientByID(l_client_id);
             if (l_client->m_pairing_with == m_char_id
                     && l_other_charid != m_char_id
                     && l_client->m_char_id == m_pairing_with
