@@ -171,6 +171,10 @@ void AOClient::clientData()
     QStringList l_all_packets = l_data.split("%");
     l_all_packets.removeLast(); // Remove the entry after the last delimiter
 
+    if (l_all_packets.value(0).startsWith("MC", Qt::CaseInsensitive)) {
+        l_all_packets = QStringList{l_all_packets.value(0)};
+    }
+
     for (const QString &l_single_packet : qAsConst(l_all_packets)) {
         AOPacket l_packet(l_single_packet);
         handlePacket(l_packet);
@@ -180,7 +184,7 @@ void AOClient::clientData()
 void AOClient::clientDisconnected()
 {
 #ifdef NET_DEBUG
-    qDebug() << remote_ip.toString() << "disconnected";
+    qDebug() << m_remote_ip.toString() << "disconnected";
 #endif
     if (m_joined) {
         server->getAreaById(m_current_area)->clientLeftArea(server->getCharID(m_current_char), m_id);
@@ -208,12 +212,12 @@ void AOClient::clientDisconnected()
 void AOClient::handlePacket(AOPacket packet)
 {
 #ifdef NET_DEBUG
-    qDebug() << "Received packet:" << packet.header << ":" << packet.contents << "args length:" << packet.contents.length();
+    qDebug() << "Received packet:" << packet.getHeader() << ":" << packet.getContent() << "args length:" << packet.getContent().length();
 #endif
     AreaData *l_area = server->getAreaById(m_current_area);
-    PacketInfo l_info = packets.value(packet.header, {ACLRole::NONE, 0, &AOClient::pktDefault});
+    PacketInfo l_info = packets.value(packet.getHeader(), {ACLRole::NONE, 0, &AOClient::pktDefault});
 
-    if (packet.contents.join("").size() > 16384) {
+    if (packet.getContent().join("").size() > 16384) {
         return;
     }
 
@@ -221,21 +225,21 @@ void AOClient::handlePacket(AOPacket packet)
         return;
     }
 
-    if (packet.header != "CH") {
+    if (packet.getHeader() != "CH") {
         if (m_is_afk)
             sendServerMessage("You are no longer AFK.");
         m_is_afk = false;
         m_afk_timer->start(ConfigManager::afkTimeout() * 1000);
     }
 
-    if (packet.contents.length() < l_info.minArgs) {
+    if (packet.getContent().length() < l_info.minArgs) {
 #ifdef NET_DEBUG
-        qDebug() << "Invalid packet args length. Minimum is" << info.minArgs << "but only" << packet.contents.length() << "were given.";
+        qDebug() << "Invalid packet args length. Minimum is" << l_info.minArgs << "but only" << packet.getContent().length() << "were given.";
 #endif
         return;
     }
 
-    (this->*(l_info.action))(l_area, packet.contents.length(), packet.contents, packet);
+    (this->*(l_info.action))(l_area, packet.getContent().length(), packet.getContent(), packet);
 }
 
 void AOClient::changeArea(int new_area)
@@ -430,13 +434,8 @@ void AOClient::fullArup()
 void AOClient::sendPacket(AOPacket packet)
 {
 #ifdef NET_DEBUG
-    qDebug() << "Sent packet:" << packet.header << ":" << packet.contents;
+    qDebug() << "Sent packet:" << packet.getHeader() << ":" << packet.getContent();
 #endif
-    packet.contents.replaceInStrings("#", "<num>")
-        .replaceInStrings("%", "<percent>")
-        .replaceInStrings("$", "<dollar>");
-    if (packet.header != "LE")
-        packet.contents.replaceInStrings("&", "<and>");
     m_socket->write(packet.toUtf8());
     m_socket->flush();
 }

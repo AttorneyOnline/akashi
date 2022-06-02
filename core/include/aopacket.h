@@ -41,35 +41,115 @@ class AOPacket
     AOPacket(QString p_header, QStringList p_contents);
 
     /**
-     * @brief AOPacket Interprets a string of a full (header + content) packet into an AOPacket.
+     * @brief Create an AOPacket from an incoming network message.
      *
-     * @param packet The string to interpret.
+     * @param f_packet An escaped string with header and content.
      */
-    AOPacket(QString packet);
+    AOPacket(QString f_packet);
 
     /**
-     * @brief Returns the string representation of the packet.
+     * @brief Destructor for the AOPacket
+     */
+    ~AOPacket(){};
+
+    /**
+     * @brief Returns the current content of the packet
      *
-     * @return See brief description.
+     * @return The content of the packet.
+     */
+    const QStringList getContent();
+
+    /**
+     * @brief Returns the header of the packet.
+     *
+     * @return The packets header.
+     */
+    QString getHeader();
+
+    /**
+     * @brief Converts the header and content into a single string.
+     *
+     * @return String converted packet.
      */
     QString toString();
 
     /**
-     * @brief Convenience function over AOPacket::toString() + QString::toUtf8().
+     * @brief Converts the entire packet, header and content, to a UTF8 formatted ByteArray.
      *
      * @return A UTF-8 representation of the packet.
      */
     QByteArray toUtf8();
 
     /**
-     * @brief The string that indentifies the type of the packet.
+     * @brief Allows editing of the content inside the packet on a per-field basis.
      */
-    QString header;
+    void setContentField(int f_content_index, QString f_content_data);
 
     /**
-     * @brief The list of parameters for the packet. Can be empty.
+     * @brief Escapes the content of the packet using AO2's escape codes.
+     *
+     * @see https://github.com/AttorneyOnline/docs/blob/master/AO%20Documentation/docs/development/network.md#escape-codes
      */
-    QStringList contents;
+    void escapeContent();
+
+    /**
+     * @brief Unescapes the content of the packet using AO2's escape codes.
+     *
+     * @see https://github.com/AttorneyOnline/docs/blob/master/AO%20Documentation/docs/development/network.md#escape-codes
+     */
+    void unescapeContent();
+
+    /**
+     * @brief Due to the way AO's netcode actively fights you, you have to do some specific considerations when escaping evidence.
+     */
+    void escapeEvidence();
+
+    /**
+     * @brief Sets the state if a packet has already been escaped or not.
+     *
+     * @details This is partially a workaround to make edge case behaviour possible while maintaining a
+     * mostly unified escape/unescape path.
+     *
+     * @param Boolean value of the current state.
+     *
+     */
+    void setPacketEscaped(bool f_packet_state);
+
+    /**
+     * @brief Returns if the packet is currently escaped or not.
+     *
+     * @details If a packet is escaped, it likely has either just been received by the server or is about to be written
+     * to a network socket. There should **NEVER** be an instance where an unescaped packet is processed inside the server.
+     *
+     * @return If true, the packet is escaped. If false, it is unescaped and plain text.
+     */
+    bool isPacketEscaped();
+
+  private:
+    /**
+     * @brief The header of the packet.
+     *
+     * @see https://github.com/AttorneyOnline/docs/blob/master/AO%20Documentation/docs/development/network.md#network-protocol
+     * for a general explanation on Attorney Online 2's network protocl.
+     */
+    QString m_header;
+
+    /**
+     * @brief The contents of the packet.
+     */
+    QStringList m_content;
+
+    /**
+     * @brief Wether the packet is currently escaped or not. If false, the packet is unescaped.
+     */
+    bool m_escaped;
+
+    /**
+     * @brief According to AO documentation a complete packet is finished using the percent symbol.
+     *
+     * @details Note : This is due to AOs inability to determine the packet length, making it read forever otherwise.
+     */
+    const QString packetFinished = "%";
 };
 
 #endif // PACKET_MANAGER_H

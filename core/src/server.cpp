@@ -221,7 +221,7 @@ void Server::clientConnected()
     client->sendPacket(decryptor);
     hookupAOClient(client);
 #ifdef NET_DEBUG
-    qDebug() << client->remote_ip.toString() << "connected";
+    qDebug() << client->m_remote_ip.toString() << "connected";
 #endif
 }
 
