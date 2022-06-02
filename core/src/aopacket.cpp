@@ -17,47 +17,103 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/aopacket.h"
 
-AOPacket::AOPacket(QString p_header, QStringList p_contents)
+AOPacket::AOPacket(QString p_header, QStringList p_contents) :
+    m_header(p_header),
+    m_content(p_contents),
+    m_escaped(false)
 {
-    header = p_header;
-    contents = p_contents;
 }
 
-AOPacket::AOPacket(QString p_packet)
+AOPacket::AOPacket(QString f_packet)
 {
-    if (p_packet.isEmpty())
+    QString l_packet = f_packet;
+    if (l_packet.isEmpty() || l_packet.at(0) == '#' || l_packet.contains("%")) {
+#if NET_DEBUG
+        qDebug() << "Invalid or fantacrypt packet received.";
+#endif
+        m_header = "Unknown";
+        m_content = QStringList{"Unknown"};
         return;
+    }
 
-    QStringList packet_contents = p_packet.split("#");
-    if (p_packet.at(0) == '#') {
-        // The header is encrypted with FantaCrypt
-        // This should never happen with AO2 2.4.3 or newer
-        qDebug() << "FantaCrypt packet received";
-        header = "Unknown";
-        packet_contents.append("Unknown");
-        return;
-    }
-    else {
-        header = packet_contents[0];
-    }
-    packet_contents.removeFirst(); // Remove header
-    packet_contents.removeLast();  // Remove anything trailing after delimiter
-    contents = packet_contents;
+    QStringList l_split_packet = l_packet.split("#");
+    m_header = l_split_packet.value(0);
+
+    // Remove header and trailing packetFinished
+    l_split_packet.removeFirst();
+    l_split_packet.removeLast();
+    m_content = l_split_packet;
+
+    // All incoming data has to be escaped after being split.
+    this->unescapeContent();
+}
+
+const QStringList AOPacket::getContent()
+{
+    return m_content;
+}
+
+QString AOPacket::getHeader()
+{
+    return m_header;
 }
 
 QString AOPacket::toString()
 {
-    QString ao_packet = header;
-    for (int i = 0; i < contents.length(); i++) {
-        ao_packet += "#" + contents[i];
+    if (!isPacketEscaped() && !(m_header == "LE")) {
+        // We will never send unescaped data to a client, unless its evidence.
+        this->escapeContent();
     }
-    ao_packet += "#%";
-
-    return ao_packet;
+    else {
+        // Of course AO has SOME expection to the rule.
+        this->escapeEvidence();
+    }
+    return QString("%1#%2#%3").arg(m_header, m_content.join("#"), packetFinished);
 }
 
 QByteArray AOPacket::toUtf8()
 {
-    QString packet_string = toString();
-    return packet_string.toUtf8();
+    QString l_packet = this->toString();
+    return l_packet.toUtf8();
+}
+
+void AOPacket::setContentField(int f_content_index, QString f_content_data)
+{
+    m_content[f_content_index] = f_content_data;
+}
+
+void AOPacket::escapeContent()
+{
+    m_content.replaceInStrings("#", "<num>")
+        .replaceInStrings("%", "<percent>")
+        .replaceInStrings("$", "<dollar>")
+        .replaceInStrings("&", "<and>");
+    this->setPacketEscaped(true);
+}
+
+void AOPacket::unescapeContent()
+{
+    m_content.replaceInStrings("<num>", "#")
+        .replaceInStrings("<percent>", "%")
+        .replaceInStrings("<dollar>", "$")
+        .replaceInStrings("<and>", "&");
+    this->setPacketEscaped(false);
+}
+
+void AOPacket::escapeEvidence()
+{
+    m_content.replaceInStrings("#", "<num>")
+        .replaceInStrings("%", "<percent>")
+        .replaceInStrings("$", "<dollar>");
+    this->setPacketEscaped(true);
+}
+
+void AOPacket::setPacketEscaped(bool f_packet_state)
+{
+    m_escaped = f_packet_state;
+}
+
+bool AOPacket::isPacketEscaped()
+{
+    return m_escaped;
 }
