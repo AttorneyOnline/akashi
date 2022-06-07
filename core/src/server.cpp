@@ -38,7 +38,7 @@ Server::Server(int p_port, int p_ws_port, QObject *parent) :
 {
     server = new QTcpServer(this);
 
-    connect(server, SIGNAL(newConnection()), this, SLOT(clientConnected()));
+    connect(server, &QTcpServer::newConnection, this, &Server::clientConnected);
 
     timer = new QTimer(this);
 
@@ -171,7 +171,7 @@ void Server::clientConnected()
     }
 
     int user_id = m_available_ids.pop();
-    NetworkSocket *l_socket = new NetworkSocket(socket);
+    NetworkSocket *l_socket = new NetworkSocket(socket, this);
     AOClient *client = new AOClient(this, l_socket, this, user_id, music_manager);
     m_clients_ids.insert(user_id, client);
 
@@ -217,7 +217,7 @@ void Server::clientConnected()
     }
 
     m_clients.append(client);
-    connect(socket, &QTcpSocket::disconnected, this, [=] {
+    connect(l_socket, &NetworkSocket::clientDisconnected, this, [=] {
         if (client->hasJoined()) {
             decreasePlayerCount();
         }
@@ -254,7 +254,7 @@ void Server::ws_clientConnected()
     }
 
     int user_id = m_available_ids.pop();
-    NetworkSocket *l_socket = new NetworkSocket(socket);
+    NetworkSocket *l_socket = new NetworkSocket(socket, this);
     AOClient *client = new AOClient(this, l_socket, this, user_id, music_manager);
     m_clients_ids.insert(user_id, client);
 
