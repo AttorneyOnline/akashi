@@ -18,7 +18,7 @@
 
 #include <algorithm>
 
-#include "include/aopacket.h"
+#include "include/network/aopacket.h"
 #include "include/area_data.h"
 #include "include/config_manager.h"
 #include "include/music_manager.h"

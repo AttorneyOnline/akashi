@@ -17,7 +17,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/aoclient.h"
 
-#include "include/aopacket.h"
+#include "include/network/aopacket.h"
 #include "include/area_data.h"
 #include "include/server.h"
 

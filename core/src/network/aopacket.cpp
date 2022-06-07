@@ -15,7 +15,7 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
-#include "include/aopacket.h"
+#include "include/network/aopacket.h"
 
 AOPacket::AOPacket(QString p_header, QStringList p_contents) :
     m_header(p_header),
