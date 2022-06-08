@@ -105,7 +105,7 @@ const QMap<QString, AOClient::CommandInfo> AOClient::COMMANDS{
     {"undisemvowel", {{ACLRole::MUTE}, 1, &AOClient::cmdUnDisemvowel}},
     {"shake", {{ACLRole::MUTE}, 1, &AOClient::cmdShake}},
     {"unshake", {{ACLRole::MUTE}, 1, &AOClient::cmdUnShake}},
-    {"forceimmediate", {{ACLRole::CM}, 0, &AOClient::cmdForceImmediate}},
+    {"force_noint_pres", {{ACLRole::CM}, 0, &AOClient::cmdForceImmediate}},
     {"allow_iniswap", {{ACLRole::CM}, 0, &AOClient::cmdAllowIniswap}},
     {"afk", {{ACLRole::NONE}, 0, &AOClient::cmdAfk}},
     {"savetestimony", {{ACLRole::NONE}, 1, &AOClient::cmdSaveTestimony}},
@@ -144,8 +144,8 @@ const QMap<QString, AOClient::CommandInfo> AOClient::COMMANDS{
     {"removeentry", {{ACLRole::CM}, 1, &AOClient::cmdRemoveCategorySong}},
     {"toggleroot", {{ACLRole::CM}, 0, &AOClient::cmdToggleRootlist}},
     {"clearcustom", {{ACLRole::CM}, 0, &AOClient::cmdClearCustom}},
-    {"togglewtce", {{ACLRole::CM}, 0, &AOClient::cmdToggleWtce}},
-    {"toggleshouts", {{ACLRole::CM}, 0, &AOClient::cmdToggleShouts}}};
+    {"toggle_wtce", {{ACLRole::CM}, 0, &AOClient::cmdToggleWtce}},
+    {"toggle_shouts", {{ACLRole::CM}, 0, &AOClient::cmdToggleShouts}}};
 
 void AOClient::clientDisconnected()
 {
