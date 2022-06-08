@@ -20,7 +20,6 @@
 #include "include/acl_roles_handler.h"
 #include "include/advertiser.h"
 #include "include/aoclient.h"
-#include "include/aopacket.h"
 #include "include/area_data.h"
 #include "include/command_extension.h"
 #include "include/config_manager.h"
@@ -28,7 +27,8 @@
 #include "include/discord.h"
 #include "include/logger/u_logger.h"
 #include "include/music_manager.h"
-#include "include/ws_proxy.h"
+#include "include/network/aopacket.h"
+#include "include/network/network_socket.h"
 
 Server::Server(int p_port, int p_ws_port, QObject *parent) :
     QObject(parent),
@@ -37,11 +37,9 @@ Server::Server(int p_port, int p_ws_port, QObject *parent) :
     m_player_count(0)
 {
     server = new QTcpServer(this);
-    connect(server, SIGNAL(newConnection()), this, SLOT(clientConnected()));
 
-    proxy = new WSProxy(port, ws_port, this);
-    if (ws_port != -1)
-        proxy->start();
+    connect(server, &QTcpServer::newConnection, this, &Server::clientConnected);
+
     timer = new QTimer(this);
 
     db_manager = new DBManager;
@@ -76,6 +74,19 @@ void Server::start()
     }
     else {
         qDebug() << "Server listening on" << port;
+    }
+
+    // Enable WebAO
+    if (ConfigManager::webaoEnabled()) {
+        ws_server = new QWebSocketServer("Akashi", QWebSocketServer::NonSecureMode, this);
+        if (!ws_server->listen(bind_addr, ConfigManager::webaoPort())) {
+            qDebug() << "Websocket Server error:" << ws_server->errorString();
+        }
+        else {
+            connect(ws_server, &QWebSocketServer::newConnection,
+                    this, &Server::ws_clientConnected);
+            qInfo() << "Websocket Server listening on" << ConfigManager::webaoPort();
+        }
     }
 
     // Checks if any Discord webhooks are enabled.
@@ -160,7 +171,8 @@ void Server::clientConnected()
     }
 
     int user_id = m_available_ids.pop();
-    AOClient *client = new AOClient(this, socket, this, user_id, music_manager);
+    NetworkSocket *l_socket = new NetworkSocket(socket, this);
+    AOClient *client = new AOClient(this, l_socket, l_socket, user_id, music_manager);
     m_clients_ids.insert(user_id, client);
 
     int multiclient_count = 1;
@@ -205,15 +217,16 @@ void Server::clientConnected()
     }
 
     m_clients.append(client);
-    connect(socket, &QTcpSocket::disconnected, client, &AOClient::clientDisconnected);
-    connect(socket, &QTcpSocket::disconnected, this, [=] {
+    connect(l_socket, &NetworkSocket::clientDisconnected, this, [=] {
         if (client->hasJoined()) {
             decreasePlayerCount();
         }
         m_clients.removeAll(client);
         client->deleteLater();
     });
-    connect(socket, &QTcpSocket::readyRead, client, &AOClient::clientData);
+    connect(l_socket, &NetworkSocket::handlePacket, client, &AOClient::handlePacket);
+    connect(l_socket, &NetworkSocket::clientDisconnected,
+            client, &AOClient::clientDisconnected);
 
     AOPacket decryptor("decryptor", {"NOENCRYPT"}); // This is the infamous workaround for
                                                     // tsuserver4. It should disable fantacrypt
@@ -223,6 +236,84 @@ void Server::clientConnected()
 #ifdef NET_DEBUG
     qDebug() << client->m_remote_ip.toString() << "connected";
 #endif
+}
+
+void Server::ws_clientConnected()
+{
+    QWebSocket *socket = ws_server->nextPendingConnection();
+    NetworkSocket *l_socket = new NetworkSocket(socket, this);
+
+    // Too many players. Reject connection!
+    // This also enforces the maximum playercount.
+    if (m_available_ids.empty()) {
+        AOPacket disconnect_reason("BD", {"Maximum playercount has been reached."});
+        l_socket->write(disconnect_reason);
+        l_socket->close();
+        l_socket->deleteLater();
+        return;
+    }
+
+    int user_id = m_available_ids.pop();
+    AOClient *client = new AOClient(this, l_socket, l_socket, user_id, music_manager);
+    m_clients_ids.insert(user_id, client);
+
+    int multiclient_count = 1;
+    bool is_at_multiclient_limit = false;
+    client->calculateIpid();
+    auto ban = db_manager->isIPBanned(client->getIpid());
+    bool is_banned = ban.first;
+    for (AOClient *joined_client : qAsConst(m_clients)) {
+        if (client->m_remote_ip.isEqual(joined_client->m_remote_ip))
+            multiclient_count++;
+    }
+
+    if (multiclient_count > ConfigManager::multiClientLimit() && !client->m_remote_ip.isLoopback())
+        is_at_multiclient_limit = true;
+
+    if (is_banned) {
+        QString reason = ban.second;
+        AOPacket ban_reason("BD", {reason});
+        socket->sendTextMessage(ban_reason.toUtf8());
+    }
+    if (is_banned || is_at_multiclient_limit) {
+        client->deleteLater();
+        l_socket->close(QWebSocketProtocol::CloseCodeNormal);
+        markIDFree(user_id);
+        return;
+    }
+
+    QHostAddress l_remote_ip = client->m_remote_ip;
+    if (l_remote_ip.protocol() == QAbstractSocket::IPv6Protocol) {
+        l_remote_ip = parseToIPv4(l_remote_ip);
+    }
+
+    if (isIPBanned(l_remote_ip)) {
+        QString l_reason = "Your IP has been banned by a moderator.";
+        AOPacket l_ban_reason("BD", {l_reason});
+        l_socket->write(l_ban_reason);
+        client->deleteLater();
+        l_socket->close(QWebSocketProtocol::CloseCodeNormal);
+        markIDFree(user_id);
+        return;
+    }
+
+    m_clients.append(client);
+    connect(l_socket, &NetworkSocket::clientDisconnected, this, [=] {
+        if (client->hasJoined()) {
+            decreasePlayerCount();
+        }
+        m_clients.removeAll(client);
+        l_socket->deleteLater();
+    });
+    connect(l_socket, &NetworkSocket::handlePacket, client, &AOClient::handlePacket);
+    connect(l_socket, &NetworkSocket::clientDisconnected,
+            client, &AOClient::clientDisconnected);
+
+    AOPacket decryptor("decryptor", {"NOENCRYPT"}); // This is the infamous workaround for
+                                                    // tsuserver4. It should disable fantacrypt
+                                                    // completely in any client 2.4.3 or newer
+    client->sendPacket(decryptor);
+    hookupAOClient(client);
 }
 
 void Server::updateCharsTaken(AreaData *area)
@@ -548,7 +639,6 @@ Server::~Server()
         l_client->deleteLater();
     }
     server->deleteLater();
-    proxy->deleteLater();
     discord->deleteLater();
     acl_roles_handler->deleteLater();
 

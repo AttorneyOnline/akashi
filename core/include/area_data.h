@@ -26,7 +26,7 @@
 #include <QString>
 #include <QTimer>
 
-#include "include/aopacket.h"
+#include "include/network/aopacket.h"
 
 class ConfigManager;
 class Logger;

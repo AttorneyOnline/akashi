@@ -23,7 +23,7 @@
 #include <QObject>
 #include <QPair>
 
-#include "include/aopacket.h"
+#include "include/network/aopacket.h"
 #include "include/typedefs.h"
 
 class ConfigManager;

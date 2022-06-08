@@ -17,8 +17,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/aoclient.h"
 
-#include "include/aopacket.h"
 #include "include/area_data.h"
+#include "include/network/aopacket.h"
 #include "include/server.h"
 
 // This file is for commands under the messaging category in aoclient.h
