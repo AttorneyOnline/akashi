@@ -185,7 +185,7 @@ void AOClient::cmdSetPerms(int argc, QStringList argv)
     }
 
     if (server->getDatabaseManager()->updateACL(l_target_username, l_target_acl)) {
-        sendServerMessage("Successfully changed role " + l_target_acl + " to user " + l_target_username);
+        sendServerMessage("Successfully applied role " + l_target_acl + " to user " + l_target_username);
     }
     else {
         sendServerMessage(l_target_username + " wasn't found!");

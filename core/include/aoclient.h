@@ -806,16 +806,16 @@ class AOClient : public QObject
     void cmdListPerms(int argc, QStringList argv);
 
     /**
-     * @brief Adds permissions to a given user.
+     * @brief Sets the role of the user.
      *
-     * @details The first argument is the **target user**, the second is the **permission** (in string form) to add to that user.
+     * @details The first argument is the **target user**, the second is the **role** (in string form) to set to that user.
      *
      * @iscommand
      */
     void cmdSetPerms(int argc, QStringList argv);
 
     /**
-     * @brief Removes permissions from a given user.
+     * @brief Removes the role from a given user.
      *
      * @details The first argument is the **target user**, the second is the **permission** (in string form) to remove from that user.
      *

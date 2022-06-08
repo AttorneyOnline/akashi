@@ -100,6 +100,8 @@ class ACLRole
 };
 Q_DECLARE_METATYPE(ACLRole::Permission)
 
+class QSettings;
+
 class ACLRolesHandler : public QObject
 {
     Q_OBJECT
@@ -195,6 +197,13 @@ class ACLRolesHandler : public QObject
      * @return True if successfull, false otherwise.
      */
     bool saveFile(QString f_filename);
+
+    /**
+     * @brief Checks if the ini file is accessible and well-formated
+     * @param Pointer to the QSettings object to verify.
+     * @return True if okay., false otherwise.
+     */
+    bool checkPermissionsIni(QSettings *f_settings);
 
   private:
     /**

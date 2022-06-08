@@ -95,7 +95,6 @@ void NetworkSocket::readData()
 
     for (const QString &l_single_packet : qAsConst(l_all_packets)) {
         AOPacket l_packet(l_single_packet);
-        qDebug() << "Inbound Header:" << l_packet.getHeader();
         emit handlePacket(l_packet);
     }
 }

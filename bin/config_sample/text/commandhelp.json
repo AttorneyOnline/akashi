@@ -70,14 +70,14 @@
       "text":"Lists the permission of a given user. When called with an argument it shows the user's permission."
    },
    {
-      "name":"addperm",
-      "usage":"/addperm <Username> <Permission>",
-      "text":"Adds permissions to a given user."
+      "name":"setperm",
+      "usage":"/addperm <Username> <Role>",
+      "text":"Sets the role of the user.."
    },
    {
       "name":"removeperm",
       "usage":"/removeperm <Username> <Permission>",
-      "text":"Removes permissions from a given user."
+      "text":"Removes the role from a given user."
    },
    {
       "name":"listusers",

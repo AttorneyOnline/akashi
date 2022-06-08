@@ -177,24 +177,7 @@ bool ACLRolesHandler::loadFile(QString f_file_name)
 {
     QSettings l_settings(f_file_name, QSettings::IniFormat);
     l_settings.setIniCodec("UTF-8");
-    if (l_settings.status() != QSettings::NoError) {
-        switch (l_settings.status()) {
-        case QSettings::AccessError:
-            qWarning() << "[ACL Role Handler]"
-                       << "error: failed to open file; aborting (" << f_file_name << ")";
-            break;
-
-        case QSettings::FormatError:
-            qWarning() << "[ACL Role Handler]"
-                       << "error: file is malformed; aborting (" << f_file_name << ")";
-            break;
-
-        default:
-            qWarning() << "[ACL Role Handler]"
-                       << "error: unknown error; aborting; aborting (" << f_file_name << ")";
-            break;
-        }
-
+    if (!checkPermissionsIni(&l_settings)) {
         return false;
     }
 
@@ -234,24 +217,7 @@ bool ACLRolesHandler::saveFile(QString f_file_name)
 {
     QSettings l_settings(f_file_name, QSettings::IniFormat);
     l_settings.setIniCodec("UTF-8");
-    if (l_settings.status() != QSettings::NoError) {
-        switch (l_settings.status()) {
-        case QSettings::AccessError:
-            qWarning() << "[ACL Role Handler]"
-                       << "error: failed to open file; aborting (" << f_file_name << ")";
-            break;
-
-        case QSettings::FormatError:
-            qWarning() << "[ACL Role Handler]"
-                       << "error: file is malformed; aborting (" << f_file_name << ")";
-            break;
-
-        default:
-            qWarning() << "[ACL Role Handler]"
-                       << "error: unknown error; aborting; aborting (" << f_file_name << ")";
-            break;
-        }
-
+    if (!checkPermissionsIni(&l_settings)) {
         return false;
     }
 
@@ -286,5 +252,30 @@ bool ACLRolesHandler::saveFile(QString f_file_name)
         return false;
     }
 
+    return true;
+}
+
+bool ACLRolesHandler::checkPermissionsIni(QSettings *f_settings)
+{
+    if (f_settings->status() != QSettings::NoError) {
+        switch (f_settings->status()) {
+        case QSettings::AccessError:
+            qWarning() << "[ACL Role Handler]"
+                       << "error: failed to open file; aborting (" << f_settings->fileName() << ")";
+            break;
+
+        case QSettings::FormatError:
+            qWarning() << "[ACL Role Handler]"
+                       << "error: file is malformed; aborting (" << f_settings->fileName() << ")";
+            break;
+
+        default:
+            qWarning() << "[ACL Role Handler]"
+                       << "error: unknown error; aborting; aborting (" << f_settings->fileName() << ")";
+            break;
+        }
+
+        return false;
+    }
     return true;
 }
