@@ -44,7 +44,7 @@ class Discord : public QObject
     /**
      * @brief Deconstructor for the Discord class.
      *
-     * @details Marks the nam to be deleted later.
+     * @details Marks the network access manager to be deleted later.
      */
     ~Discord();
 
