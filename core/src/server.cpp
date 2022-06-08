@@ -78,7 +78,7 @@ void Server::start()
 
     // Enable WebAO
     if (ConfigManager::webaoEnabled()) {
-        ws_server = new QWebSocketServer(ConfigManager::serverName(), QWebSocketServer::NonSecureMode, this);
+        ws_server = new QWebSocketServer("Akashi", QWebSocketServer::NonSecureMode, this);
         if (!ws_server->listen(bind_addr, ConfigManager::webaoPort())) {
             qDebug() << "Websocket Server error:" << ws_server->errorString();
         }
@@ -172,7 +172,7 @@ void Server::clientConnected()
 
     int user_id = m_available_ids.pop();
     NetworkSocket *l_socket = new NetworkSocket(socket, this);
-    AOClient *client = new AOClient(this, l_socket, this, user_id, music_manager);
+    AOClient *client = new AOClient(this, l_socket, l_socket, user_id, music_manager);
     m_clients_ids.insert(user_id, client);
 
     int multiclient_count = 1;
@@ -241,21 +241,20 @@ void Server::clientConnected()
 void Server::ws_clientConnected()
 {
     QWebSocket *socket = ws_server->nextPendingConnection();
+    NetworkSocket *l_socket = new NetworkSocket(socket, this);
 
     // Too many players. Reject connection!
     // This also enforces the maximum playercount.
     if (m_available_ids.empty()) {
         AOPacket disconnect_reason("BD", {"Maximum playercount has been reached."});
-        socket->sendTextMessage(disconnect_reason.toUtf8());
-        socket->flush();
-        socket->close();
-        socket->deleteLater();
+        l_socket->write(disconnect_reason);
+        l_socket->close();
+        l_socket->deleteLater();
         return;
     }
 
     int user_id = m_available_ids.pop();
-    NetworkSocket *l_socket = new NetworkSocket(socket, this);
-    AOClient *client = new AOClient(this, l_socket, this, user_id, music_manager);
+    AOClient *client = new AOClient(this, l_socket, l_socket, user_id, music_manager);
     m_clients_ids.insert(user_id, client);
 
     int multiclient_count = 1;
@@ -277,9 +276,8 @@ void Server::ws_clientConnected()
         socket->sendTextMessage(ban_reason.toUtf8());
     }
     if (is_banned || is_at_multiclient_limit) {
-        socket->flush();
         client->deleteLater();
-        socket->close(QWebSocketProtocol::CloseCodeNormal);
+        l_socket->close(QWebSocketProtocol::CloseCodeNormal);
         markIDFree(user_id);
         return;
     }
@@ -292,15 +290,15 @@ void Server::ws_clientConnected()
     if (isIPBanned(l_remote_ip)) {
         QString l_reason = "Your IP has been banned by a moderator.";
         AOPacket l_ban_reason("BD", {l_reason});
-        socket->sendTextMessage(l_ban_reason.toUtf8());
+        l_socket->write(l_ban_reason);
         client->deleteLater();
-        socket->close();
+        l_socket->close(QWebSocketProtocol::CloseCodeNormal);
         markIDFree(user_id);
         return;
     }
 
     m_clients.append(client);
-    connect(l_socket, &NetworkSocket::handlePacket, this, [=] {
+    connect(l_socket, &NetworkSocket::clientDisconnected, this, [=] {
         if (client->hasJoined()) {
             decreasePlayerCount();
         }

@@ -52,9 +52,16 @@ class NetworkSocket : public QObject
     QHostAddress peerAddress();
 
     /**
-     * @brief Closes the socket by request of the child AOClient object.
+     * @brief Closes the socket by request of the child AOClient object or the server.
      */
     void close();
+
+    /**
+     * @brief Closes the socket by request of the child AOClient object or the server.
+     *
+     * @param The close code to the send to the client.
+     */
+    void close(QWebSocketProtocol::CloseCode f_code);
 
     /**
      * @brief Writes data to the network socket.
@@ -91,10 +98,6 @@ class NetworkSocket : public QObject
      */
     void ws_readData(QString f_data);
 
-    void onStateChanged(QAbstractSocket::SocketState f_state);
-
-    void onError();
-
   private:
     enum SocketType
     {
@@ -105,8 +108,10 @@ class NetworkSocket : public QObject
     /**
      * @brief Union holding either a TCP- or Websocket.
      */
-    QTcpSocket *tcp;
-    QWebSocket *ws;
+    union {
+        QTcpSocket *tcp;
+        QWebSocket *ws;
+    } m_client_socket;
 
     /**
      * @brief Remote IP of the client.

@@ -21,10 +21,10 @@ NetworkSocket::NetworkSocket(QTcpSocket *f_socket, QObject *parent) :
     QObject(parent)
 {
     m_socket_type = TCP;
-    tcp = f_socket;
-    connect(tcp, &QTcpSocket::readyRead,
+    m_client_socket.tcp = f_socket;
+    connect(m_client_socket.tcp, &QTcpSocket::readyRead,
             this, &NetworkSocket::readData);
-    connect(tcp, &QTcpSocket::disconnected,
+    connect(m_client_socket.tcp, &QTcpSocket::disconnected,
             this, &NetworkSocket::clientDisconnected);
 }
 
@@ -32,21 +32,17 @@ NetworkSocket::NetworkSocket(QWebSocket *f_socket, QObject *parent) :
     QObject(parent)
 {
     m_socket_type = WS;
-    ws = f_socket;
-    connect(ws, &QWebSocket::textMessageReceived,
+    m_client_socket.ws = f_socket;
+    connect(m_client_socket.ws, &QWebSocket::textMessageReceived,
             this, &NetworkSocket::ws_readData);
-    connect(ws, &QWebSocket::disconnected,
+    connect(m_client_socket.ws, &QWebSocket::disconnected,
             this, &NetworkSocket::clientDisconnected);
-    connect(ws, &QWebSocket::stateChanged,
-            this, &NetworkSocket::onStateChanged);
-    connect(ws, QOverload<QAbstractSocket::SocketError>::of(&QWebSocket::error),
-            this, &NetworkSocket::onError);
 
-    bool l_is_local = (ws->peerAddress() == QHostAddress::LocalHost) ||
-                      (ws->peerAddress() == QHostAddress::LocalHostIPv6);
+    bool l_is_local = (m_client_socket.ws->peerAddress() == QHostAddress::LocalHost) ||
+                      (m_client_socket.ws->peerAddress() == QHostAddress::LocalHostIPv6);
     // TLDR : We check if the header comes trough a proxy/tunnel running locally.
     // This is to ensure nobody can send those headers from the web.
-    QNetworkRequest l_request = ws->request();
+    QNetworkRequest l_request = m_client_socket.ws->request();
     if (l_request.hasRawHeader("x-forwarded-for") && l_is_local) {
         m_socket_ip = QHostAddress(QString::fromUtf8(l_request.rawHeader("x-forwarded-for")));
     }
@@ -63,20 +59,25 @@ QHostAddress NetworkSocket::peerAddress()
 void NetworkSocket::close()
 {
     if (m_socket_type == TCP) {
-        tcp->close();
+        m_client_socket.tcp->close();
     }
     else {
-        ws->close();
+        m_client_socket.ws->close();
     }
+}
+
+void NetworkSocket::close(QWebSocketProtocol::CloseCode f_code)
+{
+    m_client_socket.ws->close(f_code);
 }
 
 void NetworkSocket::readData()
 {
-    if (tcp->bytesAvailable() > 30720) { // Client can send a max of 30KB to the server.
-        tcp->close();
+    if (m_client_socket.tcp->bytesAvailable() > 30720) { // Client can send a max of 30KB to the server.
+        m_client_socket.tcp->close();
     }
 
-    QString l_data = QString::fromUtf8(tcp->readAll());
+    QString l_data = QString::fromUtf8(m_client_socket.tcp->readAll());
 
     if (m_is_partial) {
         l_data = m_partial_packet + l_data;
@@ -104,10 +105,9 @@ void NetworkSocket::ws_readData(QString f_data)
     QString l_data = f_data;
 
     if (l_data.toUtf8().size() > 30720) {
-        ws->close(QWebSocketProtocol::CloseCodeTooMuchData);
+        m_client_socket.ws->close(QWebSocketProtocol::CloseCodeTooMuchData);
     }
 
-    qDebug() << "Incoming string data:" << l_data;
     QStringList l_all_packets = l_data.split("%");
     l_all_packets.removeLast(); // Remove the entry after the last delimiter
 
@@ -117,31 +117,18 @@ void NetworkSocket::ws_readData(QString f_data)
 
     for (const QString &l_single_packet : qAsConst(l_all_packets)) {
         AOPacket l_packet(l_single_packet);
-        qDebug() << "Inbound Header:" << l_packet.getHeader();
         emit handlePacket(l_packet);
     }
-}
-
-void NetworkSocket::onStateChanged(QAbstractSocket::SocketState f_state)
-{
-    qDebug() << "Websocket state:" << f_state;
-}
-
-void NetworkSocket::onError()
-{
-    qDebug() << ws->errorString();
 }
 
 void NetworkSocket::write(AOPacket f_packet)
 {
     if (m_socket_type == TCP) {
-        qDebug() << "Header:" << f_packet.getHeader();
-        tcp->write(f_packet.toUtf8());
-        tcp->flush();
+        m_client_socket.tcp->write(f_packet.toUtf8());
+        m_client_socket.tcp->flush();
     }
     else {
-        qDebug() << "Header:" << f_packet.getHeader();
-        qDebug() << ws->sendTextMessage(f_packet.toString());
-        qDebug() << ws->flush();
+        m_client_socket.ws->sendTextMessage(f_packet.toString());
+        m_client_socket.ws->flush();
     }
 }
