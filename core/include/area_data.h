@@ -881,28 +881,28 @@ class AreaData : public QObject
     QVector<int> joinedIDs() const;
 
     /**
-     * @brief Returns whatever a game message may be broadcasted or not.
+     * @brief Returns whether a game message may be broadcasted or not.
      *
      * @return True if expired; false otherwise.
      */
     bool isMessageAllowed() const;
 
     /**
-     * @brief Returns whatever a wtce packet may be broadcasted or not.
+     * @brief Returns whether testimony animation packets may be broadcasted or not.
      *
      * @return True if permitted, false otherwise.
      */
     bool isWtceAllowed() const;
 
     /**
-     * @brief Returns wether a shout can be used in the area.
+     * @brief Returns whether a shout can be used in the area.
      *
      * @return True if permitted, false otherwise.
      */
     bool isShoutAllowed() const;
 
     /**
-     * @brief Starts a timer that determines whatever a game message may be broadcasted or not.
+     * @brief Starts a timer that determines whether a game message may be broadcasted or not.
      *
      * @param f_duration The duration of the message floodguard timer.
      */
