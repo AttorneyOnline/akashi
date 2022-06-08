@@ -1,7 +1,7 @@
 #include "include/music_manager.h"
 
-#include "include/aopacket.h"
 #include "include/config_manager.h"
+#include "include/network/aopacket.h"
 
 MusicManager::MusicManager(QStringList f_root_ordered, QStringList f_cdns, QMap<QString, QPair<QString, int>> f_root_list, QObject *parent) :
     QObject(parent),

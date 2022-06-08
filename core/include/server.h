@@ -28,8 +28,10 @@
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QTimer>
+#include <QWebSocket>
+#include <QWebSocketServer>
 
-#include "include/aopacket.h"
+#include "include/network/aopacket.h"
 
 class ACLRolesHandler;
 class Advertiser;
@@ -338,6 +340,14 @@ class Server : public QObject
     void clientConnected();
 
     /**
+     * @brief Handles a new connection.
+     *
+     * @details The function creates an AOClient to represent the user, assigns a user ID to them, and
+     * checks if the client is banned.
+     */
+    void ws_clientConnected();
+
+    /**
      * @brief Method to construct and reconstruct Discord Webhook Integration.
      *
      * @details Constructs or rebuilds Discord Object during server startup and configuration reload.
@@ -412,6 +422,11 @@ class Server : public QObject
      * @brief Listens for incoming TCP connections.
      */
     QTcpServer *server;
+
+    /**
+     * @brief Listens for incoming websocket connections.
+     */
+    QWebSocketServer *ws_server;
 
     /**
      * @brief Handles Discord webhooks.

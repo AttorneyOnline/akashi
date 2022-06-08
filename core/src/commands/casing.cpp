@@ -17,9 +17,9 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/aoclient.h"
 
-#include "include/aopacket.h"
 #include "include/area_data.h"
 #include "include/config_manager.h"
+#include "include/network/aopacket.h"
 #include "include/server.h"
 
 // This file is for commands under the casing category in aoclient.h

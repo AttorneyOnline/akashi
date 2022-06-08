@@ -20,11 +20,11 @@
 #include <QQueue>
 
 #include "include/akashidefs.h"
-#include "include/aopacket.h"
 #include "include/area_data.h"
 #include "include/config_manager.h"
 #include "include/db_manager.h"
 #include "include/music_manager.h"
+#include "include/network/aopacket.h"
 #include "include/server.h"
 
 void AOClient::pktDefault(AreaData *area, int argc, QStringList argv, AOPacket packet)
@@ -443,55 +443,6 @@ void AOClient::pktHpBar(AreaData *area, int argc, QStringList argv, AOPacket pac
     server->broadcast(AOPacket("HP", {"2", QString::number(area->proHP())}), area->index());
 
     updateJudgeLog(area, this, "updated the penalties");
-}
-
-void AOClient::pktWebSocketIp(AreaData *area, int argc, QStringList argv, AOPacket packet)
-{
-    Q_UNUSED(area);
-    Q_UNUSED(argc);
-    Q_UNUSED(packet);
-
-    // Special packet to set remote IP from the webao proxy
-    // Only valid if from a local ip
-    if (m_remote_ip.isLoopback()) {
-#ifdef NET_DEBUG
-        qDebug() << "ws ip set to" << argv[0];
-#endif
-        m_remote_ip = QHostAddress(argv[0]);
-
-        QHostAddress l_remote_ip = m_remote_ip;
-        if (l_remote_ip.protocol() == QAbstractSocket::IPv6Protocol) {
-            l_remote_ip = server->parseToIPv4(l_remote_ip);
-        }
-
-        if (server->isIPBanned(l_remote_ip)) {
-            QString l_reason = "Your IP has been banned by a moderator.";
-            AOPacket l_ban_reason("BD", {l_reason});
-            m_socket->write(l_ban_reason.toUtf8());
-            m_socket->close();
-            return;
-        }
-
-        calculateIpid();
-        auto l_ban = server->getDatabaseManager()->isIPBanned(m_ipid);
-        if (l_ban.first) {
-            sendPacket("BD", {l_ban.second});
-            m_socket->close();
-            return;
-        }
-
-        int l_multiclient_count = 0;
-        const QVector<AOClient *> l_clients = server->getClients();
-        for (AOClient *l_joined_client : l_clients) {
-            if (m_remote_ip.isEqual(l_joined_client->m_remote_ip))
-                l_multiclient_count++;
-        }
-
-        if (l_multiclient_count > ConfigManager::multiClientLimit()) {
-            m_socket->close();
-            return;
-        }
-    }
 }
 
 void AOClient::pktModCall(AreaData *area, int argc, QStringList argv, AOPacket packet)

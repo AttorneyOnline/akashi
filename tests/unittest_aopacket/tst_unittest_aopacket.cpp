@@ -1,7 +1,7 @@
 #include <QObject>
 #include <QTest>
 
-#include "include/aopacket.h"
+#include "include/network/aopacket.h"
 
 namespace tests {
 namespace unittests {

@@ -18,10 +18,10 @@
 
 #include <algorithm>
 
-#include "include/aopacket.h"
 #include "include/area_data.h"
 #include "include/config_manager.h"
 #include "include/music_manager.h"
+#include "include/network/aopacket.h"
 
 AreaData::AreaData(QString p_name, int p_index, MusicManager *p_music_manager = nullptr) :
     m_index(p_index),

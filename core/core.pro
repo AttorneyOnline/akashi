@@ -27,7 +27,8 @@ DESTDIR = $$PWD/../bin
 SOURCES += \
     src/acl_roles_handler.cpp \
     src/aoclient.cpp \
-    src/aopacket.cpp \
+    src/network/aopacket.cpp \
+    src/network/network_socket.cpp \
     src/area_data.cpp \
     src/command_extension.cpp \
     src/commands/area.cpp \
@@ -44,8 +45,6 @@ SOURCES += \
     src/packets.cpp \
     src/server.cpp \
     src/testimony_recorder.cpp \
-    src/ws_client.cpp \
-    src/ws_proxy.cpp \
     src/advertiser.cpp \
     src/logger/u_logger.cpp \
     src/logger/writer_modcall.cpp \
@@ -55,7 +54,8 @@ SOURCES += \
 HEADERS += include/aoclient.h \
     include/acl_roles_handler.h \
     include/akashidefs.h \
-    include/aopacket.h \
+    include/network/aopacket.h \
+    include/network/network_socket.h \
     include/area_data.h \
     include/command_extension.h \
     include/config_manager.h \
@@ -64,8 +64,6 @@ HEADERS += include/aoclient.h \
     include/discord.h \
     include/server.h \
     include/typedefs.h \
-    include/ws_client.h \
-    include/ws_proxy.h \
     include/advertiser.h \
     include/logger/u_logger.h \
     include/logger/writer_modcall.h \

@@ -17,11 +17,11 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/aoclient.h"
 
-#include "include/aopacket.h"
 #include "include/area_data.h"
 #include "include/command_extension.h"
 #include "include/config_manager.h"
 #include "include/db_manager.h"
+#include "include/network/aopacket.h"
 #include "include/server.h"
 
 const QMap<QString, AOClient::CommandInfo> AOClient::COMMANDS{
@@ -147,40 +147,6 @@ const QMap<QString, AOClient::CommandInfo> AOClient::COMMANDS{
     {"togglewtce", {{ACLRole::CM}, 0, &AOClient::cmdToggleWtce}},
     {"toggleshouts", {{ACLRole::CM}, 0, &AOClient::cmdToggleShouts}}};
 
-void AOClient::clientData()
-{
-    if (last_read + m_socket->bytesAvailable() > 30720) { // Client can send a max of 30KB to the server over two sequential reads
-        m_socket->close();
-    }
-
-    if (last_read == 0) { // i.e. this is the first packet we've been sent
-        if (!m_socket->waitForConnected(1000)) {
-            m_socket->close();
-        }
-    }
-    QString l_data = QString::fromUtf8(m_socket->readAll());
-    last_read = l_data.size();
-
-    if (is_partial) {
-        l_data = partial_packet + l_data;
-    }
-    if (!l_data.endsWith("%")) {
-        is_partial = true;
-    }
-
-    QStringList l_all_packets = l_data.split("%");
-    l_all_packets.removeLast(); // Remove the entry after the last delimiter
-
-    if (l_all_packets.value(0).startsWith("MC", Qt::CaseInsensitive)) {
-        l_all_packets = QStringList{l_all_packets.value(0)};
-    }
-
-    for (const QString &l_single_packet : qAsConst(l_all_packets)) {
-        AOPacket l_packet(l_single_packet);
-        handlePacket(l_packet);
-    }
-}
-
 void AOClient::clientDisconnected()
 {
 #ifdef NET_DEBUG
@@ -225,7 +191,7 @@ void AOClient::handlePacket(AOPacket packet)
         return;
     }
 
-    if (packet.getHeader() != "CH") {
+    if (packet.getHeader() != "CH" && m_joined) {
         if (m_is_afk)
             sendServerMessage("You are no longer AFK.");
         m_is_afk = false;
@@ -436,8 +402,7 @@ void AOClient::sendPacket(AOPacket packet)
 #ifdef NET_DEBUG
     qDebug() << "Sent packet:" << packet.getHeader() << ":" << packet.getContent();
 #endif
-    m_socket->write(packet.toUtf8());
-    m_socket->flush();
+    m_socket->write(packet);
 }
 
 void AOClient::sendPacket(QString header, QStringList contents)
@@ -541,15 +506,15 @@ void AOClient::onAfkTimeout()
     m_is_afk = true;
 }
 
-AOClient::AOClient(Server *p_server, QTcpSocket *p_socket, QObject *parent, int user_id, MusicManager *p_manager) :
+AOClient::AOClient(Server *p_server, NetworkSocket *socket, QObject *parent, int user_id, MusicManager *p_manager) :
     QObject(parent),
     m_id(user_id),
-    m_remote_ip(p_socket->peerAddress()),
+    m_remote_ip(socket->peerAddress()),
     m_password(""),
     m_joined(false),
     m_current_area(0),
     m_current_char(""),
-    m_socket(p_socket),
+    m_socket(socket),
     server(p_server),
     is_partial(false),
     m_last_wtce_time(0),

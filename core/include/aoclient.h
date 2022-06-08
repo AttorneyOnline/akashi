@@ -31,7 +31,8 @@
 #endif
 
 #include "include/acl_roles_handler.h"
-#include "include/aopacket.h"
+#include "include/network/aopacket.h"
+#include "include/network/network_socket.h"
 
 class AreaData;
 class DBManager;
@@ -85,7 +86,7 @@ class AOClient : public QObject
      * @param user_id The user ID of the client.
      * @param parent Qt-based parent, passed along to inherited constructor from QObject.
      */
-    AOClient(Server *p_server, QTcpSocket *p_socket, QObject *parent = nullptr, int user_id = 0, MusicManager *p_manager = nullptr);
+    AOClient(Server *p_server, NetworkSocket *socket, QObject *parent = nullptr, int user_id = 0, MusicManager *p_manager = nullptr);
 
     /**
      * @brief Destructor for the AOClient instance.
@@ -356,14 +357,16 @@ class AOClient : public QObject
 
   public slots:
     /**
+     * @brief Handles an incoming packet, checking for authorisation and minimum argument count.
+     *
+     * @param packet The incoming packet.
+     */
+    void handlePacket(AOPacket packet);
+
+    /**
      * @brief A slot for when the client disconnects from the server.
      */
     void clientDisconnected();
-
-    /**
-     * @brief A slot for when the client sends data to the server.
-     */
-    void clientData();
 
     /**
      * @brief A slot for sending a packet to the client.
@@ -395,9 +398,9 @@ class AOClient : public QObject
 
   private:
     /**
-     * @brief The TCP socket used to communicate with the client.
+     * @brief The network socket used by the client. Can either be a Websocket or TCP Socket.
      */
-    QTcpSocket *m_socket;
+    NetworkSocket *m_socket;
 
     /**
      * @brief A pointer to the Server, used for updating server variables that depend on the client (e.g. amount of players in an area).
@@ -414,13 +417,6 @@ class AOClient : public QObject
         CM,           //!< The packet contains updates about who's the CM of what area.
         LOCKED        //!< The packet contains updates about what areas are locked.
     };
-
-    /**
-     * @brief Handles an incoming packet, checking for authorisation and minimum argument count.
-     *
-     * @param packet The incoming packet.
-     */
-    void handlePacket(AOPacket packet);
 
     /**
      * @brief Handles an incoming command, checking for authorisation and minimum argument count.
@@ -563,13 +559,6 @@ class AOClient : public QObject
 
     /// Implements [penalty bars](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#penalty-health-bars).
     void pktHpBar(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /**
-     * @brief Implements WebSocket IP handling. This is not on the netcode documentation as of writing.
-     *
-     * @todo Link packet details when it gets into the netcode documentation.
-     */
-    void pktWebSocketIp(AreaData *area, int argc, QStringList argv, AOPacket packet);
 
     /// Implements [moderator calling](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#call-mod).
     void pktModCall(AreaData *area, int argc, QStringList argv, AOPacket packet);
@@ -745,7 +734,6 @@ class AOClient : public QObject
         {"MC", {ACLRole::NONE, 2, &AOClient::pktChangeMusic}},
         {"RT", {ACLRole::NONE, 1, &AOClient::pktWtCe}},
         {"HP", {ACLRole::NONE, 2, &AOClient::pktHpBar}},
-        {"WSIP", {ACLRole::NONE, 1, &AOClient::pktWebSocketIp}},
         {"ZZ", {ACLRole::NONE, 0, &AOClient::pktModCall}},
         {"PE", {ACLRole::NONE, 3, &AOClient::pktAddEvidence}},
         {"DE", {ACLRole::NONE, 1, &AOClient::pktRemoveEvidence}},
