@@ -18,11 +18,12 @@
 #ifndef NETWORK_SOCKET_H
 #define NETWORK_SOCKET_H
 
-#include "include/network/aopacket.h"
 #include <QHostAddress>
 #include <QObject>
 #include <QTcpSocket>
 #include <QWebSocket>
+
+#include "include/network/aopacket.h"
 
 class NetworkSocket : public QObject
 {
@@ -62,6 +63,19 @@ class NetworkSocket : public QObject
      */
     void write(AOPacket f_packet);
 
+  signals:
+
+    /**
+     * @brief handlePacket
+     * @param f_packet
+     */
+    void handlePacket(AOPacket f_packet);
+
+    /**
+     * @brief Emitted when the socket has been closed and the client is disconnected.
+     */
+    void clientDisconnected();
+
   private slots:
     /**
      * @brief Handles the reading and processing of TCP stream data.
@@ -77,18 +91,9 @@ class NetworkSocket : public QObject
      */
     void ws_readData(QString f_data);
 
-  signals:
+    void onStateChanged(QAbstractSocket::SocketState f_state);
 
-    /**
-     * @brief handlePacket
-     * @param f_packet
-     */
-    void handlePacket(AOPacket f_packet);
-
-    /**
-     * @brief Emitted when the socket has been closed and the client is disconnected.
-     */
-    void clientDisconnected();
+    void onError();
 
   private:
     enum SocketType
@@ -100,10 +105,8 @@ class NetworkSocket : public QObject
     /**
      * @brief Union holding either a TCP- or Websocket.
      */
-    union {
-        QWebSocket *ws;
-        QTcpSocket *tcp;
-    } m_client_socket;
+    QTcpSocket *tcp;
+    QWebSocket *ws;
 
     /**
      * @brief Remote IP of the client.
