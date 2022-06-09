@@ -59,10 +59,10 @@ QHostAddress NetworkSocket::peerAddress()
 void NetworkSocket::close()
 {
     if (m_socket_type == TCP) {
-        m_client_socket.tcp->close();
+        m_client_socket.tcp->deleteLater();
     }
     else {
-        m_client_socket.ws->close();
+        m_client_socket.ws->deleteLater();
     }
 }
 
