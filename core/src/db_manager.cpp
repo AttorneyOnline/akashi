@@ -399,6 +399,10 @@ void DBManager::updateDB(int current_version)
         QSqlQuery("ALTER TABLE bans ADD COLUMN MODERATOR TEXT");
         Q_FALLTHROUGH();
     case 1:
+        QSqlQuery("PRAGMA user_version = " + QString::number(1));
+        Q_FALLTHROUGH();
+    case 2:
+        QSqlQuery("UPDATE users SET ACL = 'SUPER' WHERE USERNAME = 'root'");
         QSqlQuery("PRAGMA user_version = " + QString::number(DB_VERSION));
         break;
     }
