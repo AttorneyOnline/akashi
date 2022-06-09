@@ -171,7 +171,9 @@ void Server::clientConnected()
     }
 
     int user_id = m_available_ids.pop();
-    NetworkSocket *l_socket = new NetworkSocket(socket, this);
+    // The parent hierachry looks like this :
+    // QTcpSocket -> NetworkSocket -> AOClient
+    NetworkSocket *l_socket = new NetworkSocket(socket, socket);
     AOClient *client = new AOClient(this, l_socket, l_socket, user_id, music_manager);
     m_clients_ids.insert(user_id, client);
 
@@ -241,7 +243,7 @@ void Server::clientConnected()
 void Server::ws_clientConnected()
 {
     QWebSocket *socket = ws_server->nextPendingConnection();
-    NetworkSocket *l_socket = new NetworkSocket(socket, this);
+    NetworkSocket *l_socket = new NetworkSocket(socket, socket);
 
     // Too many players. Reject connection!
     // This also enforces the maximum playercount.
