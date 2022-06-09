@@ -39,7 +39,8 @@ NetworkSocket::NetworkSocket(QWebSocket *f_socket, QObject *parent) :
             this, &NetworkSocket::clientDisconnected);
 
     bool l_is_local = (m_client_socket.ws->peerAddress() == QHostAddress::LocalHost) ||
-                      (m_client_socket.ws->peerAddress() == QHostAddress::LocalHostIPv6);
+                      (m_client_socket.ws->peerAddress() == QHostAddress::LocalHostIPv6) ||
+                      (m_client_socket.ws->peerAddress() == QHostAddress("::ffff:127.0.0.1"));
     // TLDR : We check if the header comes trough a proxy/tunnel running locally.
     // This is to ensure nobody can send those headers from the web.
     QNetworkRequest l_request = m_client_socket.ws->request();
@@ -48,6 +49,16 @@ NetworkSocket::NetworkSocket(QWebSocket *f_socket, QObject *parent) :
     }
     else {
         m_socket_ip = f_socket->peerAddress();
+    }
+}
+
+NetworkSocket::~NetworkSocket()
+{
+    if (m_socket_type == TCP) {
+        m_client_socket.tcp->deleteLater();
+    }
+    else {
+        m_client_socket.ws->deleteLater();
     }
 }
 

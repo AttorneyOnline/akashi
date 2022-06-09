@@ -45,6 +45,11 @@ class NetworkSocket : public QObject
     NetworkSocket(QWebSocket *f_socket, QObject *parent = nullptr);
 
     /**
+     * @brief Default destructor for the NetworkSocket object.
+     */
+    ~NetworkSocket();
+
+    /**
      * @brief Returns the Address of the remote socket.
      *
      * @return QHostAddress object of the socket.
