@@ -450,6 +450,12 @@ class ConfigManager
     static QString advertiserHostname();
 
     /**
+     * @brief Returns a dummy port instead of the real port
+     * @return
+     */
+    static bool advertiserCloudflareMode();
+
+    /**
      * @brief Returns the uptime of the server in miliseconds.
      */
     static qint64 uptime();

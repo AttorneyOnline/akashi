@@ -610,6 +610,11 @@ QString ConfigManager::advertiserHostname()
     return m_settings->value("Advertiser/hostname", "").toString();
 }
 
+bool ConfigManager::advertiserCloudflareMode()
+{
+    return m_settings->value("Advertiser/cloudflare_enabled", "false").toBool();
+}
+
 qint64 ConfigManager::uptime()
 {
     return m_uptimeTimer->elapsed();
