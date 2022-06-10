@@ -630,3 +630,20 @@ void AOClient::cmdClearCM(int argc, QStringList argv)
     arup(ARUPType::CM, true);
     sendServerMessage("Removed all CMs from this area.");
 }
+
+void AOClient::cmdKickOther(int argc, QStringList argv)
+{
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
+    int l_kick_counter = 0;
+
+    const QList<AOClient *> l_target_clients = server->getClientsByIpid(m_ipid);
+    for (AOClient *l_target_client : l_target_clients) {
+        if (l_target_client != this) {
+            l_target_client->m_socket->close();
+            l_kick_counter++;
+        }
+    }
+    sendServerMessage("Kicked " + QString::number(l_kick_counter) + " multiclients from the server.");
+}
