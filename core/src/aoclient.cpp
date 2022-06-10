@@ -171,7 +171,6 @@ void AOClient::clientDisconnected()
     if (l_updateLocks)
         arup(ARUPType::LOCKED, true);
     arup(ARUPType::CM, true);
-
     emit clientSuccessfullyDisconnected(m_id);
 }
 

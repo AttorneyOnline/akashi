@@ -609,6 +609,7 @@ void Server::hookupAOClient(AOClient *client)
     connect(client, &AOClient::logBan, logger, &ULogger::logBan);
     connect(client, &AOClient::logKick, logger, &ULogger::logKick);
     connect(client, &AOClient::logModcall, logger, &ULogger::logModcall);
+    connect(client, &AOClient::clientSuccessfullyDisconnected, this, &Server::markIDFree);
 }
 
 void Server::increasePlayerCount()
