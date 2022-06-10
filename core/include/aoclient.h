@@ -1363,6 +1363,15 @@ class AOClient : public QObject
      */
     void cmdClearCM(int argc, QStringList argv);
 
+    /**
+     * @brief Removes all multiclient instances of a client on the server, excluding the one using the command.
+     *
+     * @details This command gracefully removes all multiclients from the server, disconnecting them and freeing their used character.
+     *
+     * @iscommand
+     */
+    void cmdKickOther(int argc, QStringList argv);
+
     ///@}
 
     /**

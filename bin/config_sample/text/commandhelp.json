@@ -673,5 +673,10 @@
       "name":"clearcustom",
       "usage":"/clearcustom",
       "text":"Removes all custom songs from the area."
+   },
+   {
+      "name":"kick_other",
+      "usage":"/kick_other",
+      "text":"Removes all multiclients of the user from the server."
    }
 ]
