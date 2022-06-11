@@ -23,7 +23,6 @@
 #include <QDateTime>
 #include <QHostAddress>
 #include <QRegularExpression>
-#include <QTcpSocket>
 #include <QTimer>
 #include <QtGlobal>
 #if QT_VERSION > QT_VERSION_CHECK(5, 10, 0)
