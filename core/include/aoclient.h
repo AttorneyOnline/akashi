@@ -1969,6 +1969,11 @@ class AOClient : public QObject
      */
     void cmdClearCustom(int argc, QStringList argv);
 
+    /**
+     * @brief Skips the current song in the Jukebox and plays the next available one.
+     */
+    void cmdJukeboxSkip(int argc, QStringList argv);
+
     ///@}
 
     /**

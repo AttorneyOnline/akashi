@@ -678,5 +678,10 @@
       "name":"kick_other",
       "usage":"/kick_other",
       "text":"Removes all multiclients of the user from the server."
+   },
+   {
+      "name":"jukebox_skip",
+      "usage":"/jukebox_skip",
+      "text":"Skips the current song in the Jukebox and plays the next available one."
    }
 ]

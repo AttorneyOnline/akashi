@@ -208,3 +208,16 @@ void AOClient::cmdClearCustom(int argc, QStringList argv)
     m_music_manager->clearCustomList(m_current_area);
     sendServerMessage("Custom songs have been cleared.");
 }
+
+void AOClient::cmdJukeboxSkip(int argc, QStringList argv)
+{
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
+    QString l_name = m_current_char;
+    if (!m_showname.isEmpty()) {
+        l_name = m_showname;
+    }
+    server->getAreaById(m_current_area)->switchJukeboxSong();
+    sendServerMessageArea(l_name + " has forced a skip. Playing the next available song.");
+}
