@@ -26,6 +26,7 @@ NetworkSocket::NetworkSocket(QTcpSocket *f_socket, QObject *parent) :
             this, &NetworkSocket::readData);
     connect(m_client_socket.tcp, &QTcpSocket::disconnected,
             this, &NetworkSocket::clientDisconnected);
+    m_socket_ip = m_client_socket.tcp->peerAddress();
 }
 
 NetworkSocket::NetworkSocket(QWebSocket *f_socket, QObject *parent) :
