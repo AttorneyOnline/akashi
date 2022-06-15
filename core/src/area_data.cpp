@@ -160,6 +160,11 @@ bool AreaData::isjukeboxEnabled() const
     return m_jukebox;
 }
 
+int AreaData::getJukeboxQueueSize() const
+{
+    return m_jukebox_queue.size();
+}
+
 void AreaData::lock()
 {
     m_locked = LockStatus::LOCKED;

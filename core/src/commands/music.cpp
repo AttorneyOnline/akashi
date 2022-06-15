@@ -218,6 +218,17 @@ void AOClient::cmdJukeboxSkip(int argc, QStringList argv)
     if (!m_showname.isEmpty()) {
         l_name = m_showname;
     }
-    server->getAreaById(m_current_area)->switchJukeboxSong();
-    sendServerMessageArea(l_name + " has forced a skip. Playing the next available song.");
+
+    AreaData *l_area = server->getAreaById(m_current_area);
+
+    if (l_area->isjukeboxEnabled()) {
+        if (l_area->getJukeboxQueueSize() >= 1) {
+            l_area->switchJukeboxSong();
+            sendServerMessageArea(l_name + " has forced a skip. Playing the next available song.");
+            return;
+        }
+        sendServerMessage("Unable to skip song. Jukebox is currently empty.");
+        return;
+    }
+    sendServerMessage("Unable to skip song. The jukebox is not running.");
 }
