@@ -227,8 +227,6 @@ void Server::clientConnected()
         client->deleteLater();
     });
     connect(l_socket, &NetworkSocket::handlePacket, client, &AOClient::handlePacket);
-    connect(l_socket, &NetworkSocket::clientDisconnected,
-            client, &AOClient::clientDisconnected);
 
     AOPacket decryptor("decryptor", {"NOENCRYPT"}); // This is the infamous workaround for
                                                     // tsuserver4. It should disable fantacrypt
@@ -308,8 +306,6 @@ void Server::ws_clientConnected()
         l_socket->deleteLater();
     });
     connect(l_socket, &NetworkSocket::handlePacket, client, &AOClient::handlePacket);
-    connect(l_socket, &NetworkSocket::clientDisconnected,
-            client, &AOClient::clientDisconnected);
 
     AOPacket decryptor("decryptor", {"NOENCRYPT"}); // This is the infamous workaround for
                                                     // tsuserver4. It should disable fantacrypt
