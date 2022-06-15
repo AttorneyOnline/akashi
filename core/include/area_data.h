@@ -322,6 +322,13 @@ class AreaData : public QObject
     bool isjukeboxEnabled() const;
 
     /**
+     * @brief Returns the amount of songs pending in the Jukebox queue.
+     *
+     * @return Remaining entries of the queue as int.
+     */
+    int getJukeboxQueueSize() const;
+
+    /**
      * @brief Locks the area, setting it to LOCKED.
      */
     void lock();
