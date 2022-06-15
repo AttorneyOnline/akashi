@@ -528,5 +528,6 @@ AOClient::AOClient(Server *p_server, NetworkSocket *socket, QObject *parent, int
 
 AOClient::~AOClient()
 {
+    clientDisconnected();
     m_socket->deleteLater();
 }
