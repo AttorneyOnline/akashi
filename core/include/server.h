@@ -118,6 +118,15 @@ class Server : public QObject
     QList<AOClient *> getClientsByIpid(QString ipid);
 
     /**
+     * @brief Gets a list of pointers to all clients with the given HWID.
+     *
+     * @param HWID The HWID to look for.
+     *
+     * @return A list of clients whose HWID match. List may be empty.
+     */
+    QList<AOClient *> getClientsByHwid(QString f_hwid);
+
+    /**
      * @brief Gets a pointer to a client by user ID.
      *
      * @param id The user ID to look for.

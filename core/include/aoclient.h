@@ -1367,6 +1367,9 @@ class AOClient : public QObject
      *
      * @details This command gracefully removes all multiclients from the server, disconnecting them and freeing their used character.
      *
+     * @arg argv This command allows the user to specify if it should look for IPID or HWID matches. This is useful when a client mayb
+     * have been connected over IPv6 and the second connection is made over IPv4
+     *
      * @iscommand
      */
     void cmdKickOther(int argc, QStringList argv);

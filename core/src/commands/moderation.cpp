@@ -638,12 +638,22 @@ void AOClient::cmdKickOther(int argc, QStringList argv)
 
     int l_kick_counter = 0;
 
-    const QList<AOClient *> l_target_clients = server->getClientsByIpid(m_ipid);
-    for (AOClient *l_target_client : l_target_clients) {
-        if (l_target_client != this) {
-            l_target_client->m_socket->close();
-            l_kick_counter++;
+    QList<AOClient *> l_target_clients;
+    const QList<AOClient *> l_targets_hwid = server->getClientsByHwid(m_hwid);
+    l_target_clients = server->getClientsByIpid(m_ipid);
+
+    // Merge both lookups into one single list.)
+    for (AOClient *l_target_candidate : qAsConst(l_targets_hwid)) {
+        if (!l_target_clients.contains(l_target_candidate)) {
+            l_target_clients.append(l_target_candidate);
         }
+    }
+
+    // The list is unique, we can only have on instance of the current client.
+    l_target_clients.removeOne(this);
+    for (AOClient *l_target_client : qAsConst(l_target_clients)) {
+        l_target_client->m_socket->close();
+        l_kick_counter++;
     }
     sendServerMessage("Kicked " + QString::number(l_kick_counter) + " multiclients from the server.");
 }
