@@ -456,6 +456,16 @@ QList<AOClient *> Server::getClientsByIpid(QString ipid)
     return return_clients;
 }
 
+QList<AOClient *> Server::getClientsByHwid(QString f_hwid)
+{
+    QList<AOClient *> return_clients;
+    for (AOClient *l_client : qAsConst(m_clients)) {
+        if (l_client->getHwid() == f_hwid)
+            return_clients.append(l_client);
+    }
+    return return_clients;
+}
+
 AOClient *Server::getClientByID(int id)
 {
     return m_clients_ids.value(id);
