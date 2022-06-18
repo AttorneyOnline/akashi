@@ -641,7 +641,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
 
     AOPacket l_invalid("INVALID", {});
     QStringList l_args;
-    if (m_current_char == "" || !m_joined)
+    if (isSpectator() || m_current_char.isEmpty() || !m_joined)
         // Spectators cannot use IC
         return l_invalid;
     AreaData *area = server->getAreaById(m_current_area);
@@ -663,8 +663,17 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
                       << "3"
                       << "4"
                       << "5";
-    if (allowed_desk_mods.contains(l_incoming_args[0].toString())) {
-        l_args.append(l_incoming_args[0].toString());
+    QString l_incoming_deskmod = l_incoming_args[0].toString();
+    if (allowed_desk_mods.contains(l_incoming_deskmod)) {
+        // **WARNING : THIS IS A HACK!**
+        // A proper solution would be to deprecate chat as an argument on the clientside
+        // instead of overwriting correct netcode behaviour on the serverside.
+        if (l_incoming_deskmod == "chat") {
+            l_args.append("1");
+        }
+        else {
+            l_args.append(l_incoming_args[0].toString());
+        }
     }
     else
         return l_invalid;
