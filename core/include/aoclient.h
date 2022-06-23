@@ -319,7 +319,7 @@ class AOClient : public QObject
     /**
      * @brief If true, the client is a spectator and his IC interactions will be limtied.
      */
-    bool m_is_spectator = false;
+    bool m_is_spectator = true;
 
     /**
      * @brief Checks if the client's ACL role has permission for the given permission.
