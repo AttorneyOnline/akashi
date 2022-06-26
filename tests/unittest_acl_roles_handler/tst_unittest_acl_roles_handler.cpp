@@ -179,6 +179,10 @@ void tst_ACLRolesHandler::modifyRoles()
 void tst_ACLRolesHandler::loadRolesFromIni()
 {
     {
+        QFile config_file("config/acl_roles.ini");
+        QCOMPARE(config_file.exists(), true);
+    }
+    {
         m_handler->loadFile("config/acl_roles.ini");
     }
     {
