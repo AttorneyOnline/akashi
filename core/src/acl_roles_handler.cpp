@@ -203,10 +203,12 @@ bool ACLRolesHandler::loadFile(QString f_file_name)
         ACLRole l_role;
         const QList<ACLRole::Permission> l_permissions = ACLRole::PERMISSION_CAPTIONS.keys();
         for (const ACLRole::Permission &i_permission : l_permissions) {
-            l_role.setPermission(i_permission, l_settings.value(ACLRole::PERMISSION_CAPTIONS.value(i_permission), false).toBool());
+            const QVariant l_value = l_settings.value(ACLRole::PERMISSION_CAPTIONS.value(i_permission));
+            if (l_value.isValid()) {
+                l_role.setPermission(i_permission, l_value.toBool());
+            }
         }
         m_roles.insert(l_upper_group, std::move(l_role));
-
         l_settings.endGroup();
     }
 
