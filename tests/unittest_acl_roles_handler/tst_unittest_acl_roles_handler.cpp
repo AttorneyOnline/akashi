@@ -44,6 +44,11 @@ class tst_ACLRolesHandler : public QObject
     void modifyRoles();
 
     /**
+     * @brief Tests file loading of roles and correct permission assignment.
+     */
+    void loadRolesFromIni();
+
+    /**
      * @brief Tests clearance of roles.
      */
     void clearAllRoles();
@@ -60,7 +65,7 @@ void tst_ACLRolesHandler::checkReadOnlyRoles()
         const QString l_role_name = ACLRolesHandler::NONE_ID;
 
         // Checks if the role exists
-        QCOMPARE(m_handler->roleExists(ACLRolesHandler::NONE_ID), true);
+        QCOMPARE(m_handler->roleExists(l_role_name), true);
 
         ACLRole l_role = m_handler->getRoleById(ACLRolesHandler::NONE_ID);
         // Checks every permissions
@@ -168,6 +173,39 @@ void tst_ACLRolesHandler::modifyRoles()
 
         // Checks if the role exists. This should fail.
         QCOMPARE(m_handler->roleExists(l_role_id), false);
+    }
+}
+
+void tst_ACLRolesHandler::loadRolesFromIni()
+{
+    {
+        m_handler->loadFile("config/acl_roles.ini");
+    }
+    {
+        QString l_role_id = "moderator";
+        QCOMPARE(m_handler->roleExists(l_role_id), true);
+        ACLRole l_role = m_handler->getRoleById(l_role_id);
+
+        QCOMPARE(l_role.checkPermission(ACLRole::NONE), true);
+        QCOMPARE(l_role.checkPermission(ACLRole::KICK), true);
+        QCOMPARE(l_role.checkPermission(ACLRole::BAN), true);
+        QCOMPARE(l_role.checkPermission(ACLRole::BGLOCK), true);
+        QCOMPARE(l_role.checkPermission(ACLRole::MODIFY_USERS), false);
+        QCOMPARE(l_role.checkPermission(ACLRole::CM), false);
+        QCOMPARE(l_role.checkPermission(ACLRole::GLOBAL_TIMER), false);
+        QCOMPARE(l_role.checkPermission(ACLRole::EVI_MOD), false);
+        QCOMPARE(l_role.checkPermission(ACLRole::MOTD), false);
+        QCOMPARE(l_role.checkPermission(ACLRole::ANNOUNCE), false);
+        QCOMPARE(l_role.checkPermission(ACLRole::MODCHAT), true);
+        QCOMPARE(l_role.checkPermission(ACLRole::MUTE), true);
+        QCOMPARE(l_role.checkPermission(ACLRole::UNCM), false);
+        QCOMPARE(l_role.checkPermission(ACLRole::SAVETEST), false);
+        QCOMPARE(l_role.checkPermission(ACLRole::FORCE_CHARSELECT), false);
+        QCOMPARE(l_role.checkPermission(ACLRole::BYPASS_LOCKS), true);
+        QCOMPARE(l_role.checkPermission(ACLRole::IGNORE_BGLIST), true);
+        QCOMPARE(l_role.checkPermission(ACLRole::SEND_NOTICE), false);
+        QCOMPARE(l_role.checkPermission(ACLRole::JUKEBOX), false);
+        QCOMPARE(l_role.checkPermission(ACLRole::SUPER), false);
     }
 }
 
