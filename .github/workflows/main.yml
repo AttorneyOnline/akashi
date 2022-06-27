@@ -69,8 +69,17 @@ jobs:
       - uses: actions/checkout@v2
       - uses: ilammy/msvc-dev-cmd@v1
       
+      - name: Cache Qt
+        id: cache-qt
+        uses: actions/cache@v1  # not v2!
+        with:
+          path: ../Qt
+          key: ${{ runner.os }}-QtCache
+
       - name: Install Qt
         uses: jurplel/install-qt-action@v2
+        with:
+          cached: ${{ steps.cache-qt.outputs.cache-hit }}
      
       - name: Build
         run: |
@@ -82,10 +91,10 @@ jobs:
           
       - name: Run tests
         run: |
-            cd ${{github.workspace}}/bin_tests/
             for test in bin_tests/unittest_*; do
               LD_LIBRARY_PATH=./bin:$LD_LIBRARY_PATH ./$test
             done;
+        working-directory: ${{ github.workspace }}/bin_tests
         shell: bash
 
       - name: Deploy OpenSSL
