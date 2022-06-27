@@ -91,7 +91,7 @@ jobs:
           
       - name: Run tests
         run: |
-            for test in bin_tests/unittest_*; do
+            for test in ./unittest_*; do
               LD_LIBRARY_PATH=./bin:$LD_LIBRARY_PATH ./$test
             done;
         working-directory: ${{ github.workspace }}/bin_tests
