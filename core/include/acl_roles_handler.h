@@ -8,6 +8,7 @@
 class ACLRole
 {
     Q_GADGET
+
   public:
     /**
      * @brief This enum is used to specify permissions of a role.
