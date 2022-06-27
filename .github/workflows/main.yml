@@ -49,7 +49,7 @@ jobs:
           mv bin/config_sample bin/config
       - name: Run tests
         run: |
-            for test in bin_tests/*; do
+            for test in bin_tests/unittest_*; do
               LD_LIBRARY_PATH=./bin:$LD_LIBRARY_PATH ./$test
             done;
           
@@ -79,7 +79,7 @@ jobs:
           mv bin\config_sample bin\config
       - name: Run tests
         run: |
-          for test in bin_tests/*; do
+          for test in bin_tests/unittest_*; do
             LD_LIBRARY_PATH=./bin:$LD_LIBRARY_PATH ./$test
           done;
         shell: bash
