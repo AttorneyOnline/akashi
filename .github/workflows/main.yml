@@ -82,8 +82,8 @@ jobs:
           
       - name: Run tests
         run: |
-          cd cd ${{github.workspace}}/bin_tests
-          for test in ./*; do
+          cd ${{github.workspace}}/bin_tests
+          for test in ./unittest_*; do
             LD_LIBRARY_PATH=./bin:$LD_LIBRARY_PATH ./$test
           done;
         shell: bash
