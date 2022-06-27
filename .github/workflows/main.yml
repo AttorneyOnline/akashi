@@ -91,11 +91,8 @@ jobs:
           
       - name: Run tests
         run: |
-            for test in *.exe; do
-              ./${test}
-            done;
+            for %%i in (.\unittest_*.exe) do %%i
         working-directory: ${{ github.workspace }}/bin_tests
-        shell: bash
 
       - name: Deploy OpenSSL
         run: |
