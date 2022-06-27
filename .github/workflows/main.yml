@@ -47,9 +47,11 @@ jobs:
           qmake
           make
           mv bin/config_sample bin/config
+          
       - name: Run tests
         run: |
-            for test in bin_tests/*; do
+            cd ${{github.workspace}}/bin_tests/
+            for test in ./unittest_*; do
               LD_LIBRARY_PATH=./bin:$LD_LIBRARY_PATH ./$test
             done;
           
@@ -67,8 +69,17 @@ jobs:
       - uses: actions/checkout@v2
       - uses: ilammy/msvc-dev-cmd@v1
       
+      - name: Cache Qt
+        id: cache-qt
+        uses: actions/cache@v1  # not v2!
+        with:
+          path: ../Qt
+          key: ${{ runner.os }}-QtCache
+
       - name: Install Qt
         uses: jurplel/install-qt-action@v2
+        with:
+          cached: ${{ steps.cache-qt.outputs.cache-hit }}
      
       - name: Build
         run: |
@@ -77,12 +88,14 @@ jobs:
           nmake
           windeployqt bin\akashi.exe --release --no-opengl-sw
           mv bin\config_sample bin\config
-      - name: Run tests
-        run: |
-          for test in bin_tests/*; do
-            LD_LIBRARY_PATH=./bin:$LD_LIBRARY_PATH ./$test
-          done;
-        shell: bash
+
+# As QTest seems to be non-functional on Windows runners this is commented out. If a solution is found, please fix and uncomment - 27.06.2022 / Salanto         
+#      - name: Run tests
+#        run: |
+#            windeployqt .\unittest_music_manager.exe --no-translations
+#            $tests = Get-ChildItem -Filter "unittest_*.exe" -Path ".\" | Select -ExpandProperty Name
+#            foreach ($test in $tests) {Write-Host(& ".\$test")}
+#        working-directory: ${{ github.workspace }}/bin_tests
 
       - name: Deploy OpenSSL
         run: |

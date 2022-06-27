@@ -44,7 +44,7 @@ Server::Server(int p_port, int p_ws_port, QObject *parent) :
 
     db_manager = new DBManager;
 
-    acl_roles_handler = new ACLRolesHandler;
+    acl_roles_handler = new ACLRolesHandler(this);
     acl_roles_handler->loadFile("config/acl_roles.ini");
 
     command_extension_collection = new CommandExtensionCollection;

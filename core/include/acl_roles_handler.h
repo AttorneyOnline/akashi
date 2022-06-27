@@ -7,6 +7,8 @@
 
 class ACLRole
 {
+    Q_GADGET
+
   public:
     /**
      * @brief This enum is used to specify permissions of a role.
@@ -35,6 +37,7 @@ class ACLRole
         SUPER = 0xffffffff,
     };
     Q_DECLARE_FLAGS(Permissions, Permission);
+    Q_ENUM(Permission);
 
     /**
      * @brief Shared read-only captions for each permissions.
