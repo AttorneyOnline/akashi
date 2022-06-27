@@ -47,9 +47,11 @@ jobs:
           qmake
           make
           mv bin/config_sample bin/config
+          
       - name: Run tests
         run: |
-            for test in bin_tests/unittest_*; do
+            cd ${{github.workspace}}/bin_tests/
+            for test in ./unittest_*; do
               LD_LIBRARY_PATH=./bin:$LD_LIBRARY_PATH ./$test
             done;
           
@@ -77,11 +79,13 @@ jobs:
           nmake
           windeployqt bin\akashi.exe --release --no-opengl-sw
           mv bin\config_sample bin\config
+          
       - name: Run tests
         run: |
-          for test in bin_tests/unittest_*; do
-            LD_LIBRARY_PATH=./bin:$LD_LIBRARY_PATH ./$test
-          done;
+            cd ${{github.workspace}}/bin_tests/
+            for test in ./unittest_*; do
+              LD_LIBRARY_PATH=./bin:$LD_LIBRARY_PATH ./$test
+            done;
         shell: bash
 
       - name: Deploy OpenSSL
