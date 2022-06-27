@@ -91,6 +91,7 @@ jobs:
           
       - name: Run tests
         run: |
+            windeployqt .\unittest_music_manager.exe --no-translations
             for %%i in (.\unittest_*.exe) do %%i
         working-directory: ${{ github.workspace }}/bin_tests
         shell: cmd
