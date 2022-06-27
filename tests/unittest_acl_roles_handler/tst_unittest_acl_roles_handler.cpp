@@ -202,7 +202,7 @@ void tst_ACLRolesHandler::loadRolesFromIni()
         QCOMPARE(l_role.checkPermission(ACLRole::MOTD), false);
         QCOMPARE(l_role.checkPermission(ACLRole::ANNOUNCE), false);
         QCOMPARE(l_role.checkPermission(ACLRole::MODCHAT), true);
-        QCOMPARE(l_role.checkPermission(ACLRole::MUTE), true);
+        QCOMPARE(l_role.checkPermission(ACLRole::MUTE), false);
         QCOMPARE(l_role.checkPermission(ACLRole::UNCM), false);
         QCOMPARE(l_role.checkPermission(ACLRole::SAVETEST), false);
         QCOMPARE(l_role.checkPermission(ACLRole::FORCE_CHARSELECT), false);
