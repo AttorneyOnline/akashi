@@ -95,6 +95,7 @@ jobs:
             Set-Location -Path $Env:GITHUB_WORKSPACE/bin_tests
             ("Current folder : " + (Get-Location))
             windeployqt .\unittest_music_manager.exe --no-translations
+            Write-Host(Get-ChildItem -Path ".\")
             $tests = Get-ChildItem -Filter "unittest_*.exe" -Path ".\"
             foreach ($test in $tests.Name) {
             Write-Host ("Executing test file : " + $test) 
