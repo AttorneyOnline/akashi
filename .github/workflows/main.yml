@@ -79,10 +79,10 @@ jobs:
           nmake
           windeployqt bin\akashi.exe --release --no-opengl-sw
           mv bin\config_sample bin\config
+          cd $Env:GITHUB_WORKSPACE/bin_tests
           
       - name: Run tests
         run: |
-          cd ${{github.workspace}}/bin_tests
           for test in ./unittest_*; do
             LD_LIBRARY_PATH=./bin:$LD_LIBRARY_PATH ./$test
           done;
