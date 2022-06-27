@@ -92,7 +92,7 @@ jobs:
       - name: Run tests
         run: |
             for test in *.exe; do
-              LD_LIBRARY_PATH=../bin:$LD_LIBRARY_PATH ./${test}
+              ./${test}
             done;
         working-directory: ${{ github.workspace }}/bin_tests
         shell: bash
