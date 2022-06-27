@@ -91,8 +91,8 @@ jobs:
           
       - name: Run tests
         run: |
+            Set-ExecutionPolicy -ExecutionPolicy "Bypass" -Force
             $env:Path += (";" + "$Env:GITHUB_WORKSPACE\bin")
-            $ErrorActionPreference = "Stop"
             Set-Location -Path $Env:GITHUB_WORKSPACE/bin_tests
             ("Current folder : " + (Get-Location))
             windeployqt .\unittest_music_manager.exe --no-translations
