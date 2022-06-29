@@ -170,7 +170,7 @@ void AOClient::cmdNoteCardReveal(int argc, QStringList argv)
     }
 
     QString l_message("Note cards have been revealed.\n");
-    l_message.append(l_notecards.join("\n") + "\n");
+    l_message.append(l_notecards.join(""));
 
     sendServerMessageArea(l_message);
 }
