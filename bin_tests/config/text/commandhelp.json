@@ -1,0 +1,687 @@
+[
+   {
+      "name":"foo",
+      "usage":"/foo <bar> [baz|qux]",
+      "text":"A sample explanation."
+   },
+   {
+      "name":"login",
+      "usage":"/login",
+      "text":"Activates the login dialogue to enter your credentials. This command takes no arguments."
+   },
+   {
+      "name":"getareas",
+      "usage":"/getareas",
+      "text":"Lists all clients in all areas. This command takes no arguments."
+   },
+   {
+      "name":"getarea",
+      "usage":"/getarea",
+      "text":"Lists all clients in the area the caller is in. This command takes no arguments."
+   },
+   {
+      "name":"ban",
+      "usage":"/ban <IPID> <Duration> <Reason>",
+      "text":"Bans a client from the server, forcibly disconnecting them and disallowing their return."
+   },
+   {
+      "name":"kick",
+      "usage":"/kick <IPID> <Reason>",
+      "text":"Kicks a client from the server, forcibly disconnecting them."
+   },
+   {
+      "name":"changeauth",
+      "usage":"/changeauth",
+      "text":"A helper to change the authorisation for moderators from simple to advanced."
+   },
+   {
+      "name":"rootpass",
+      "usage":"/rootpass <Password>",
+      "text":"Sets the root user's password."
+   },
+   {
+      "name":"background",
+      "usage":"/background <Background>",
+      "text":"Changes the background of the current area."
+   },
+   {
+      "name":"bg",
+      "usage":"/bg <Background>",
+      "text":"Changes the background of the current area."
+   },
+   {
+      "name":"bglock",
+      "usage":"/bglock",
+      "text":"Locks the background, preventing it from being changed. This command takes no arguments."
+   },
+   {
+      "name":"bgunlock",
+      "usage":"/bgunlock",
+      "text":"Unlocks the background, allowing it to be changed again."
+   },
+   {
+      "name":"adduser",
+      "usage":"/adduser <Username> <Password>",
+      "text":"Adds a user to the moderators in advanced authorisation type."
+   },
+   {
+      "name":"listperms",
+      "usage":"/listperms 'Username'",
+      "text":"Lists the permission of a given user. When called with an argument it shows the user's permission."
+   },
+   {
+      "name":"setperm",
+      "usage":"/addperm <Username> <Role>",
+      "text":"Sets the role of the user.."
+   },
+   {
+      "name":"removeperm",
+      "usage":"/removeperm <Username> <Permission>",
+      "text":"Removes the role from a given user."
+   },
+   {
+      "name":"listusers",
+      "usage":"/listusers",
+      "text":" Lists all users in the server's database. This command takes no arguments."
+   },
+   {
+      "name":"logout",
+      "usage":"/logout",
+      "text":"Logs the caller out from their moderator user. This command takes no arguments."
+   },
+   {
+      "name":"pos",
+      "usage":"/pos <Position>",
+      "text":"Changes the client's position."
+   },
+   {
+      "name":"g",
+      "usage":"/g <Message>",
+      "text":"Sends a global message (i.e., all clients in the server will be able to see it)."
+   },
+   {
+      "name":"need",
+      "usage":"/need <Message>",
+      "text":"A global message expressing that the client needs something (generally: players for something)."
+   },
+   {
+      "name":"coinflip",
+      "usage":"/coinflip",
+      "text":"Flips a coin, returning heads or tails. This command takes no arguments."
+   },
+   {
+      "name":"roll",
+      "usage":"/roll 'face' 'die'",
+      "text":"Rolls dice and sends the results to the area. The first argument is the amount of faces each die should have. The second argument is the amount of dice that should be rolled. Both arguments are optional."
+   },
+   {
+      "name":"rollp",
+      "usage":"/rollp 'face' 'die'",
+      "text":"Rolls dice, but sends the results in private to the roller. The first argument is the amount of faces each die should have. The second argument is the amount of dice that should be rolled. Both arguments are optional."
+   },
+   {
+      "name":"doc",
+      "usage":"/doc <document>",
+      "text":"Sets the `/doc` to a custom text."
+   },
+   {
+      "name":"cleardoc",
+      "usage":"/cleardoc",
+      "text":"Sets the `/doc` to `No document.`. This command takes no arguments."
+   },
+   {
+      "name":"cm",
+      "usage":"/cm 'ID'",
+      "text":"Promotes a client to CM status. If called with a user ID as an argument, and the caller is a CM, promotes the target client to CM status."
+   },
+   {
+      "name":"uncm",
+      "usage":"/uncm",
+      "text":"Removes the CM status from the caller. This command takes no arguments."
+   },
+   {
+      "name":"invite",
+      "usage":"/invite <ID>",
+      "text":"Invites a client to the area."
+   },
+   {
+      "name":"uninvite",
+      "usage":"/uninvite <ID>",
+      "text":"Uninvites a client from. the area."
+   },
+   {
+      "name":"lock",
+      "usage":"/lock",
+      "text":"Locks the area. This command takes no arguments."
+   },
+   {
+      "name":"area_lock",
+      "usage":"/area_lock",
+      "text":"Locks the area. This command takes no arguments."
+   },
+   {
+      "name":"spectatable",
+      "usage":"/spectatable",
+      "text":"Sets the area to spectatable. This command takes no arguments."
+   },
+   {
+      "name":"area_spectate",
+      "usage":"/area_spectate",
+      "text":"Sets the area to spectatable. This command takes no arguments."
+   },
+   {
+      "name":"unlock",
+      "usage":"/unlock",
+      "text":"Unlocks the area. This command takes no arguments."
+   },
+   {
+      "name":"area_unlock",
+      "usage":"/area_unlock",
+      "text":"Unlocks the area. This command takes no arguments."
+   },
+   {
+      "name":"timer",
+      "usage":"/timer 'Timer' 'Duration'",
+      "text":"Gets or sets the global or one of the area-specific timers. If called without arguments, sends an out-of-character message listing the statuses of both the global timer and the area-specific timers. If called with one argument, and that argument is between `0` and `4` (inclusive on both ends), sends an out-of-character message about the status of the given timer, where `0` is the global timer, and the remaining numbers are the first, second, third and fourth timers in the current area."
+   },
+   {
+      "name":"play",
+      "usage":"/play <Song>",
+      "text":"Plays music in the area. Can play either a local file or a URL."
+   },
+   {
+      "name":"areakick",
+      "usage":"/areakick <ID>",
+      "text":"Kicks a client from the area, moving them back to the default area."
+   },
+   {
+      "name":"area_kick",
+      "usage":"/area_kick <ID>",
+      "text":"Kicks a client from the area, moving them back to the default area."
+   },
+   {
+      "name":"randomchar",
+      "usage":"/randomchar",
+      "text":"Picks a new random character for the client. This command takes no arguments."
+   },
+   {
+      "name":"switch",
+      "usage":"/switch <ID>",
+      "text":"Switches to a different character based on character ID."
+   },
+   {
+      "name":"toggleglobal",
+      "usage":"/toggleglobal",
+      "text":"Toggles whether the client will ignore global messages or not."
+   },
+   {
+      "name":"mods",
+      "usage":"/mods",
+      "text":"Lists the currently logged-in moderators on the server."
+   },
+   {
+      "name":"commands",
+      "usage":"/commands",
+      "text":"Lists all the commands that the caller client has the permissions to use. This command takes no arguments."
+   },
+   {
+      "name":"status",
+      "usage":"/status <Status>",
+      "text":"Changes the status of the current area."
+   },
+   {
+      "name":"forcepos",
+      "usage":"/forcepos <ID> <Position>",
+      "text":"Forces a client, or all clients in the area, to a specific position. The first argument is the client's ID or * for all clients. The second argument is the position to force the clients to."
+   },
+   {
+      "name":"currentmusic",
+      "usage":"/currentmusic",
+      "text":"Returns the currently playing music in the area, and who played it. This command takes no arguments."
+   },
+   {
+      "name":"pm",
+      "usage":"/pm <ID> <Message>",
+      "text":"Sends a direct message to another client on the server based on ID."
+   },
+   {
+      "name":"evidence_mod",
+      "usage":"/evidence_mod <EvidenceMod>",
+      "text":"Changes the evidence mod in the area."
+   },
+   {
+      "name":"motd",
+      "usage":"/motd 'Message'",
+      "text":"Gets or sets the server's Message Of The Day. If called without an argument, gets the MOTD. If it has a message, sets the message as the MOTD."
+   },
+   {
+      "name":"announce",
+      "usage":"/announce <Message>",
+      "text":"Sends out a decorated global message, for announcements."
+   },
+   {
+      "name":"m",
+      "usage":"/m <Message>",
+      "text":"Sends a message in the server-wide, moderator only chat."
+   },
+   {
+      "name":"gm",
+      "usage":"/gm <Message>",
+      "text":"Sends out a global message that is marked with an `[M]` to mean it is coming from a moderator."
+   },
+   {
+      "name":"mute",
+      "usage":"/mute <ID>",
+      "text":"Mutes a client."
+   },
+   {
+      "name":"unmute",
+      "usage":"/unmute <ID>",
+      "text":"Removes the muted status from a client."
+   },
+   {
+      "name":"bans",
+      "usage":"/bans",
+      "text":"Lists the last five bans made on the server. This command takes no arguments."
+   },
+   {
+      "name":"unban",
+      "usage":"/unban <ID>",
+      "text":"Removes a ban from the database."
+   },
+   {
+      "name":"removeuser",
+      "usage":"/removeuser <Username>",
+      "text":"Removes a user from the moderators in `advanced` authorisation type."
+   },
+   {
+      "name":"subtheme",
+      "usage":"/subtheme <Theme>",
+      "text":"Changes the subtheme of the clients in the current area."
+   },
+   {
+      "name":"about",
+      "usage":"/about",
+      "text":"Gives a very brief description of Akashi. This command takes no arguments."
+   },
+   {
+      "name":"evidence_swap",
+      "usage":"/evidence_swap <EvidenceID> <EvidenceID>",
+      "text":"Changes position of two pieces of evidence in the area."
+   },
+   {
+      "name":"notecard",
+      "usage":"/notecard <Message>",
+      "text":"Writes a notecard in the current area. The notecard is not readable until all note cards in the area are revealed by a CM. A message will appear to all clients in the area indicating that a notecard has been written."
+   },
+   {
+      "name":"notecardreveal",
+      "usage":"/notecardreveal",
+      "text":"Reveals all note cards in the current area. This command takes no arguments."
+   },
+   {
+      "name":"notecard_reveal",
+      "usage":"/notecard_reveal",
+      "text":"Reveals all note cards in the current area. This command takes no arguments."
+   },
+   {
+      "name":"notecardclear",
+      "usage":"/notecardclear",
+      "text":"Erases the client's notecard from the area's list of cards. A message will appear to all clients in the area indicating that a notecard has been erased. This command takes no arguments."
+   },
+   {
+      "name":"notecard_clear",
+      "usage":"/notecard_clear",
+      "text":"Erases the client's notecard from the area's list of cards. A message will appear to all clients in the area indicating that a notecard has been erased. This command takes no arguments."
+   },
+   {
+      "name":"8ball",
+      "usage":"/8ball <Question>",
+      "text":"Randomly selects an answer from 8ball.txt to a question."
+   },
+   {
+      "name":"lm",
+      "usage":"/lm <Message>",
+      "text":"Sends out a local message that is marked with an `[M]` to mean it is coming from a moderator."
+   },
+   {
+      "name":"judgelog",
+      "usage":"/judgelog",
+      "text":"ends an out-of-character message with the judgelog of an area. This command takes no arguments."
+   },
+   {
+      "name":"allowblankposting",
+      "usage":"allowblankposting",
+      "text":"Toggle whether or not in-character messages purely consisting of spaces are allowed. Takes no arguments. Against all common sense, this also allows you to disable blankposting."
+   },
+   {
+      "name":"allow_blankposting",
+      "usage":"/allow_blankposting",
+      "text":"Toggle whether or not in-character messages purely consisting of spaces are allowed. Takes no arguments. Against all common sense, this also allows you to disable blankposting."
+   },
+   {
+      "name":"gimp",
+      "usage":"/gimp <ID>",
+      "text":"Replaces a target client's in-character messages with strings randomly selected from gimp.txt. Takes the client id as the only argument."
+   },
+   {
+      "name":"ungimp",
+      "usage":"/ungimp <ID>",
+      "text":"Allows a gimped client to speak normally. The user needs to be gimped to be ungimped. Takes the client id as the only argument."
+   },
+   {
+      "name":"baninfo",
+      "usage":"/baninfo <BanID>",
+      "text":"Looks up info on a ban."
+   },
+   {
+      "name":"testify",
+      "usage":"/testify",
+      "text":"Enables the testimony recorder in the area. The next message will automatically be used as the title of the testimony. This command takes no arguments."
+   },
+   {
+      "name":"testimony",
+      "usage":"/testimony",
+      "text":"Outputs the contents of the testimony recorder into OOC. This command takes no arguments."
+   },
+   {
+      "name":"examine",
+      "usage":"/testify",
+      "text":"Switches the testimony recorder into playback mode. If no testimony has been recorded, this command can't be used. This command takes no arguments."
+   },
+   {
+      "name":"pause",
+      "usage":"/pause",
+      "text":"Pauses testimony playback. This command takes no arguments."
+   },
+   {
+      "name":"delete",
+      "usage":"/delete",
+      "text":"Deletes the currently displayed testimony message from the testimony recorder. This command takes no arguments."
+   },
+   {
+      "name":"update",
+      "usage":"/update",
+      "text":"Updates the currently displayed testimony message with the next message said in IC chat. This command takes no arguments."
+   },
+   {
+      "name":"add",
+      "usage":"/add",
+      "text":"Adds the next IC message into the testimony recorder after the currently displayed message. This command takes no arguments."
+   },
+   {
+      "name":"reload",
+      "usage":"/reload",
+      "text":"Reloads the server configuration. This command takes no arguments."
+   },
+   {
+      "name":"disemvovel",
+      "usage":"/disemvovel <ID>",
+      "text":"Disemvovels a user, removing vowels from their IC messages. Takes the client ID as an argument."
+   },
+   {
+      "name":"undisemvovel",
+      "usage":"undisemvovel <ID>",
+      "text":"Removes the disemvovel from a user, allowing them to use vowels again."
+   },
+   {
+      "name":"shake",
+      "usage":"/shake <ID>",
+      "text":"Scrambles the words of a target client's in-character messages. The only argument is the client ID"
+   },
+   {
+      "name":"unshake",
+      "usage":"/unshake <ID>",
+      "text":"llows a shaken client to speak normally."
+   },
+   {
+      "name":"forceimmediate",
+      "usage":"/forceimmediate",
+      "text":"Toggles immediate text processing in the current area. This command takes no arguments."
+   },
+   {
+      "name":"force_noint_pres",
+      "usage":"/force_noint_pres",
+      "text":"Toggles immediate text processing in the current area. This command takes no arguments."
+   },
+   {
+      "name":"allowiniswap",
+      "usage":"/allowiniswap",
+      "text":"Toggles whether iniswaps are allowed in the current area. For no apparent reason, this also can be used to disable it. This command takes no arguments."
+   },
+   {
+      "name":"allow_iniswap",
+      "usage":"/allow_iniswap",
+      "text":"Toggles whether iniswaps are allowed in the current area. This command takes no arguments."
+   },
+   {
+      "name":"afk",
+      "usage":"/afk",
+      "text":"Toggles whether this client is considered AFK. This command takes no arguments."
+   },
+   {
+      "name":"savetestimony",
+      "usage":"/savetestimony <Name>",
+      "text":"Saves a testimony recording to the server's storage. Argument is the name of the testimony."
+   },
+   {
+      "name":"loadtestimony",
+      "usage":"/loadtestimony <Name>",
+      "text":"Loads testimony for the testimony replay. Argument is the testimony name."
+   },
+   {
+      "name":"permitsaving",
+      "usage":"/permitsaving <ID>",
+      "text":"Grants a client the temporary permission to save a testimony. Argument is the client ID"
+   },
+   {
+      "name":"mutepm",
+      "usage":"/mutepm",
+      "text":"Toggles whether a client will recieve private messages or not. This command takes no arguments."
+   },
+   {
+      "name":"oocmute",
+      "usage":"/oocmute <ID>",
+      "text":"OOC-mutes a client. Argument is the client ID."
+   },
+   {
+      "name":"ooc_mute",
+      "usage":"/ooc_mute <ID>",
+      "text":"OOC-mutes a client. Argument is the client ID."
+   },
+   {
+      "name":"oocunmute",
+      "usage":"/oocunmute <ID>",
+      "text":"Removes the OOC-muted status from a client. Argument is the client ID."
+   },
+   {
+      "name":"ooc_unmute",
+      "usage":"/ooc_unmute <ID>",
+      "text":"Removes the OOC-muted status from a client. Argument is the client ID."
+   },
+   {
+      "name":"blockwtce",
+      "usage":"/blockwtce <ID>",
+      "text":"WTCE-blocks a client. Argument is the client ID."
+   },
+   {
+      "name":"block_wtce",
+      "usage":"/block_wtce <ID>",
+      "text":"WTCE-blocks a client. Argument is the client ID."
+   },
+   {
+      "name":"unblockwtce",
+      "usage":"/unblockwtce <ID>",
+      "text":"WTCE-unblocks a client. Argument is the client ID."
+   },
+   {
+      "name":"unlock_wtce",
+      "usage":"/unblock_wtce <ID>",
+      "text":"WTCE-unblocks a client. Argument is the client ID."
+   },
+   {
+      "name":"blockdj",
+      "usage":"/blockdj <ID>",
+      "text":"DJ-blocks a client. Argument is the client ID."
+   },
+   {
+      "name":"block_dj",
+      "usage":"block_dj <ID>",
+      "text":"DJ-blocks a client. Argument is the client ID."
+   },
+   {
+      "name":"unblockdj",
+      "usage":"/unblockdj <ID>",
+      "text":"Removes the DJ-blocked status from a client. Argument is the client ID."
+   },
+   {
+      "name":"unblock_dj",
+      "usage":"/unblock_dj <ID>",
+      "text":"Removes the DJ-blocked status from a client. Argument is the client ID."
+   },
+   {
+      "name":"charcurse",
+      "usage":"/charcurse <ClientID> <CharacterName>",
+      "text":"Restricts a target client to a set of characters that they can switch from, blocking them from other characters."
+   },
+   {
+      "name":"uncharcurse",
+      "usage":"uncharcurse <ID>",
+      "text":"Removes the charcurse status from a client. Argument is the ClientID"
+   },
+   {
+      "name":"charselect",
+      "usage":"/charselect 'ID'",
+      "text":"Forces yourself into the charselect screen. If used with a client ID, it forces that client back into the charselect screen."
+   },
+   {
+      "name":"togglemusic",
+      "usage":"/tooglemusic",
+      "text":"Toggles music playing in the current area. This command takes no arguments."
+   },
+   {
+      "name":"a",
+      "usage":"/a <Area> <Message>",
+      "text":"Sends a message to an area that you a CM in."
+   },
+   {
+      "name":"s",
+      "usage":"/s <Message>",
+      "text":"Send a message to all areas that you are a CM in."
+   },
+   {
+      "name":"kickuid",
+      "usage":"/kickuid <ID> <Message>",
+      "text":"Kicks a client from the server, forcibly severing its connection to the server. This command only kicks the client with the user ID. Argument is the User ID."
+   },
+   {
+      "name":"kick_uid",
+      "usage":"/kick_uid <ID> <Message>",
+      "text":"Kicks a client from the server, forcibly severing its connection to the server. This command only kicks the client with the user ID. Argument is the User ID."
+   },
+   {
+      "name":"firstperson",
+      "usage":"/firstperson",
+      "text":"Toggle whether the client's messages will be sent in first person mode. This command takes no arguments."
+   },
+   {
+      "name":"updateban",
+      "usage":"/updateban <BanID> <Field> [Duration|Reason]",
+      "text":"Updates a ban in the database, changing either its reason or duration. First argument is the ban ID. Second is the field, 'reason' or 'duration'. Last argument is either the new duration or reason."
+   },
+   {
+      "name":"update_ban",
+      "usage":"/update_ban <BanID> ['duration'|'reason'] <New Value>",
+      "text":"Updates a ban in the database, changing either its reason or duration. First argument is the ban ID. Second is the field, 'reason' or 'duration'. Last argument is either the new duration or reason."
+   },
+   {
+      "name":"changepass",
+      "usage":"/changepass <Password> 'Moderator'",
+      "text":"Changes a moderator's password. The first argument is the new password. The optional second argument is the moderator name."
+   },
+   {
+      "name":"ignorebglist",
+      "usage":"/ignorebglist",
+      "text":"Toggles whether the BG list is ignored in an area. This command takes no arguments."
+   },
+   {
+      "name":"ignore_bglist",
+      "usage":"/ignore_bglist",
+      "text":"Toggles whether the BG list is ignored in an area. This command takes no arguments."
+   },
+   {
+      "name":"notice",
+      "usage":"/notice <Message>",
+      "text":"Pops up a notice for all clients in the targeted area with a given message. The only argument is the message."
+   },
+   {
+      "name":"noticeg",
+      "usage":"/noticeg <Message>",
+      "text":"Pops up a notice for all clients in the server with a given message. The only argument is the message."
+   },
+   {
+      "name":"togglejukebox",
+      "usage":"/togglejukebox",
+      "text":"Enables/Disables the Jukebox in the area. This command takes no arguments."
+   },
+   {
+      "name":"help",
+      "usage":"/help <Command>",
+      "text":"Shows you information about a command, if available. The only argument is the command name. About Syntax : <Argument> are mandatory arguments. 'Argument' are optional arguments. [Argument|OtherArgument] is that two argument types are valid, but only one can be used."
+   },
+   {
+      "name":"clearcm",
+      "usage":"/clearcm",
+      "text":"Removes all CMs from the current area. This command takes no arguments."
+   },
+   {
+      "name":"togglemessage",
+      "usage":"/togglemessage",
+      "text":"Toggles wether the client shows the area message when joining the current area."
+   },
+   {
+      "name":"clearmessage",
+      "usage":"/clearmessage",
+      "text":"Clears the areas message and disables automatic sending."
+   },
+   {
+      "name":"areamessage",
+      "usage":"/areamessage 'Message'",
+      "text":"Returns the area message in OOC. If text is entered it updates the current area message."
+   },
+   {
+      "name":"addsong",
+      "usage":"/addsong <Songname>,'TrueName','Duration'",
+      "text":"Adds a song to the custom musiclist. Optionally can be an aliased name to hide a streamlink. Set the duration for the jukebox."
+   },
+   {
+      "name":"addcategory",
+      "usage":"/addsong <Category>",
+      "text":"Adds a category to the custom musiclist."
+   },
+   {
+      "name":"removeentry",
+      "usage":"/removeentry 'Name'",
+      "text":"Removes an entry from the custom musiclist."
+   },
+   {
+      "name":"toggleglobal",
+      "usage":"/toggleglobal",
+      "text":"Changes the behaviour of prepending the server root musiclist to the custom lists of the area."
+   },
+   {
+      "name":"clearcustom",
+      "usage":"/clearcustom",
+      "text":"Removes all custom songs from the area."
+   },
+   {
+      "name":"kick_other",
+      "usage":"/kick_other",
+      "text":"Removes all multiclients of the user from the server."
+   },
+   {
+      "name":"jukebox_skip",
+      "usage":"/jukebox_skip",
+      "text":"Skips the current song in the Jukebox and plays the next available one."
+   }
+]
