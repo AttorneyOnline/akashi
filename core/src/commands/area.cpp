@@ -78,7 +78,7 @@ void AOClient::cmdUnCM(int argc, QStringList argv)
         l_uid = m_id;
         sendServerMessage("You are no longer CM in this area.");
     }
-    else if (checkPermission(ACLRole::UNCM) && argc == 1) {
+    else if (checkPermission(ACLRole::UNCM) && argc >= 1) {
         bool conv_ok = false;
         l_uid = argv[0].toInt(&conv_ok);
         if (!conv_ok) {
@@ -94,10 +94,11 @@ void AOClient::cmdUnCM(int argc, QStringList argv)
             sendServerMessage("No client with that ID found.");
             return;
         }
+        sendServerMessage(l_target->m_ooc_name + " was successfully unCMed.");
         l_target->sendServerMessage("You have been unCMed by a moderator.");
     }
     else {
-        sendServerMessage("Invalid command.");
+        sendServerMessage("You do not have permission to unCM others.");
         return;
     }
 
