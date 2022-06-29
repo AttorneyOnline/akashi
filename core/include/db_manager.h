@@ -23,13 +23,13 @@
 #include <QDateTime>
 #include <QFileInfo>
 #include <QHostAddress>
-#include <QMessageAuthenticationCode>
 #include <QSqlDatabase>
 #include <QSqlDriver>
 #include <QSqlError>
 #include <QSqlQuery>
 
 #include "include/acl_roles_handler.h"
+#include "include/crypto_helper.h"
 
 /**
  * @brief A class used to handle database interaction.
