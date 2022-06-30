@@ -25,6 +25,8 @@
 
 #include "include/network/aopacket.h"
 
+class AOPacket;
+
 class NetworkSocket : public QObject
 {
     Q_OBJECT
@@ -73,7 +75,7 @@ class NetworkSocket : public QObject
      *
      * @param Packet to be written to the socket.
      */
-    void write(AOPacket f_packet);
+    void write(AOPacket *f_packet);
 
   signals:
 
@@ -81,7 +83,7 @@ class NetworkSocket : public QObject
      * @brief handlePacket
      * @param f_packet
      */
-    void handlePacket(AOPacket f_packet);
+    void handlePacket(AOPacket *f_packet);
 
     /**
      * @brief Emitted when the socket has been closed and the client is disconnected.

@@ -21,7 +21,7 @@
 #include "include/command_extension.h"
 #include "include/config_manager.h"
 #include "include/db_manager.h"
-#include "include/network/aopacket.h"
+#include "include/packet/packet_factory.h"
 #include "include/server.h"
 
 const QMap<QString, AOClient::CommandInfo> AOClient::COMMANDS{
@@ -176,37 +176,36 @@ void AOClient::clientDisconnected()
     emit clientSuccessfullyDisconnected(m_id);
 }
 
-void AOClient::handlePacket(AOPacket packet)
+void AOClient::handlePacket(AOPacket *packet)
 {
 #ifdef NET_DEBUG
     qDebug() << "Received packet:" << packet.getHeader() << ":" << packet.getContent() << "args length:" << packet.getContent().length();
 #endif
     AreaData *l_area = server->getAreaById(m_current_area);
-    PacketInfo l_info = packets.value(packet.getHeader(), {ACLRole::NONE, 0, &AOClient::pktDefault});
 
-    if (packet.getContent().join("").size() > 16384) {
+    if (packet->getContent().join("").size() > 16384) {
         return;
     }
 
-    if (!checkPermission(l_info.acl_permission)) {
+    if (!checkPermission(packet->getPacketInfo().acl_permission)) {
         return;
     }
 
-    if (packet.getHeader() != "CH" && m_joined) {
+    if (packet->getPacketInfo().header != "CH" && m_joined) {
         if (m_is_afk)
             sendServerMessage("You are no longer AFK.");
         m_is_afk = false;
         m_afk_timer->start(ConfigManager::afkTimeout() * 1000);
     }
 
-    if (packet.getContent().length() < l_info.minArgs) {
+    if (packet->getContent().length() < packet->getPacketInfo().min_args) {
 #ifdef NET_DEBUG
-        qDebug() << "Invalid packet args length. Minimum is" << l_info.minArgs << "but only" << packet.getContent().length() << "were given.";
+        qDebug() << "Invalid packet args length. Minimum is" << packet->getPacketInfo().min_args << "but only" << packet.getContent().length() << "were given.";
 #endif
         return;
     }
 
-    (this->*(l_info.action))(l_area, packet.getContent().length(), packet.getContent(), packet);
+    packet->handlePacket(l_area, *this);
 }
 
 void AOClient::changeArea(int new_area)
@@ -385,7 +384,7 @@ void AOClient::arup(ARUPType type, bool broadcast)
         }
     }
     if (broadcast)
-        server->broadcast(AOPacket("ARUP", l_arup_data));
+        server->broadcast(PacketFactory::createPacket("ARUP", l_arup_data));
     else
         sendPacket("ARUP", l_arup_data);
 }
@@ -398,7 +397,7 @@ void AOClient::fullArup()
     arup(ARUPType::LOCKED, false);
 }
 
-void AOClient::sendPacket(AOPacket packet)
+void AOClient::sendPacket(AOPacket *packet)
 {
 #ifdef NET_DEBUG
     qDebug() << "Sent packet:" << packet.getHeader() << ":" << packet.getContent();
@@ -408,12 +407,12 @@ void AOClient::sendPacket(AOPacket packet)
 
 void AOClient::sendPacket(QString header, QStringList contents)
 {
-    sendPacket(AOPacket(header, contents));
+    sendPacket(PacketFactory::createPacket(header, contents));
 }
 
 void AOClient::sendPacket(QString header)
 {
-    sendPacket(AOPacket(header, {}));
+    sendPacket(PacketFactory::createPacket(header, {}));
 }
 
 void AOClient::calculateIpid()
@@ -438,12 +437,12 @@ void AOClient::sendServerMessage(QString message)
 
 void AOClient::sendServerMessageArea(QString message)
 {
-    server->broadcast(AOPacket("CT", {ConfigManager::serverName(), message, "1"}), m_current_area);
+    server->broadcast(PacketFactory::createPacket("CT", {ConfigManager::serverName(), message, "1"}), m_current_area);
 }
 
 void AOClient::sendServerBroadcast(QString message)
 {
-    server->broadcast(AOPacket("CT", {ConfigManager::serverName(), message, "1"}));
+    server->broadcast(PacketFactory::createPacket("CT", {ConfigManager::serverName(), message, "1"}));
 }
 
 bool AOClient::checkPermission(ACLRole::Permission f_permission) const

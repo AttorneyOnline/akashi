@@ -55,7 +55,9 @@ SOURCES += \
     src/logger/u_logger.cpp \
     src/logger/writer_modcall.cpp \
     src/logger/writer_full.cpp \
-    src/music_manager.cpp
+    src/music_manager.cpp \
+    src/packet/packet_factory.cpp \
+    src/packet/packet_generic.cpp
 
 HEADERS += include/aoclient.h \
     include/acl_roles_handler.h \
@@ -74,4 +76,7 @@ HEADERS += include/aoclient.h \
     include/logger/u_logger.h \
     include/logger/writer_modcall.h \
     include/logger/writer_full.h \
-    include/music_manager.h
+    include/music_manager.h \
+    include/packet/packet_factory.h \
+    include/packet/packet_info.h \
+    include/packet/packet_generic.h

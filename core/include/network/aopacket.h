@@ -23,6 +23,12 @@
 #include <QString>
 #include <QStringList>
 
+#include "include/packet/packet_info.h"
+#include "include/area_data.h"
+#include "include/aoclient.h"
+
+class AOClient;
+
 /**
  * @brief An Attorney Online 2 compatible packet.
  *
@@ -32,20 +38,7 @@
 class AOPacket
 {
   public:
-    /**
-     * @brief Creates an AOPacket with the given header and contents.
-     *
-     * @param p_header The header for the packet.
-     * @param p_contents The contents of the packet.
-     */
-    AOPacket(QString p_header, QStringList p_contents);
-
-    /**
-     * @brief Create an AOPacket from an incoming network message.
-     *
-     * @param f_packet An escaped string with header and content.
-     */
-    AOPacket(QString f_packet);
+    AOPacket(QStringList p_contents);
 
     /**
      * @brief Destructor for the AOPacket
@@ -58,13 +51,6 @@ class AOPacket
      * @return The content of the packet.
      */
     const QStringList getContent();
-
-    /**
-     * @brief Returns the header of the packet.
-     *
-     * @return The packets header.
-     */
-    QString getHeader();
 
     /**
      * @brief Converts the header and content into a single string.
@@ -125,15 +111,11 @@ class AOPacket
      */
     bool isPacketEscaped();
 
-  private:
-    /**
-     * @brief The header of the packet.
-     *
-     * @see https://github.com/AttorneyOnline/docs/blob/master/AO%20Documentation/docs/development/network.md#network-protocol
-     * for a general explanation on Attorney Online 2's network protocl.
-     */
-    QString m_header;
+    virtual PacketInfo getPacketInfo() const = 0;
+    virtual void handlePacket(AreaData* area, AOClient& client) const = 0;
+    virtual bool validatePacket() const = 0;
 
+  protected:
     /**
      * @brief The contents of the packet.
      */

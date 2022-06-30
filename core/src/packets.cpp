@@ -24,9 +24,10 @@
 #include "include/config_manager.h"
 #include "include/db_manager.h"
 #include "include/music_manager.h"
-#include "include/network/aopacket.h"
+#include "include/packet/packet_factory.h"
 #include "include/server.h"
 
+/*
 void AOClient::pktDefault(AreaData *area, int argc, QStringList argv, AOPacket packet)
 {
     Q_UNUSED(area);
@@ -592,7 +593,7 @@ void AOClient::pktAnnounceCase(AreaData *area, int argc, QStringList argv, AOPac
         // however for some inscrutable reason Attorney Online 2 will outright reject a CASEA packet that does not have
         // at least 7 arguments despite only using the first 6. Cera, i kneel. you have truly broken me.
     }
-}
+}*/
 
 void AOClient::sendEvidenceList(AreaData *area)
 {
@@ -624,9 +625,10 @@ void AOClient::updateEvidenceList(AreaData *area)
         l_evidence_list.append(l_evidence_format.arg(evidence.name, evidence.description, evidence.image));
     }
 
-    sendPacket(AOPacket("LE", l_evidence_list));
+    sendPacket(PacketFactory::createPacket("LE", l_evidence_list));
 }
 
+/*
 AOPacket AOClient::validateIcPacket(AOPacket packet)
 {
     // Welcome to the super cursed server-side IC chat validation hell
@@ -1006,7 +1008,7 @@ AOPacket AOClient::validateIcPacket(AOPacket packet)
     }
 
     return AOPacket("MS", l_args);
-}
+}*/
 
 QString AOClient::dezalgo(QString p_text)
 {

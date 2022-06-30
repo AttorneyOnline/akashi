@@ -168,7 +168,7 @@ class MusicManager : public QObject
      *
      * @param f_user_id temporary userid of the incoming client.
      */
-    void sendFMPacket(AOPacket f_packet, int f_user_id);
+    void sendFMPacket(AOPacket *f_packet, int f_user_id);
 
     /**
      * @brief Sends the FM packet with the musiclist of the area when changes are made.
@@ -177,7 +177,7 @@ class MusicManager : public QObject
      *
      * @param f_area_index Index of the current area the edit is made in.
      */
-    void sendAreaFMPacket(AOPacket f_packet, int f_area_index);
+    void sendAreaFMPacket(AOPacket *f_packet, int f_area_index);
 
   private:
     /**

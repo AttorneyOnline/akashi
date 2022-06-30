@@ -16,6 +16,7 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/network/network_socket.h"
+#include "include/packet/packet_factory.h"
 
 NetworkSocket::NetworkSocket(QTcpSocket *f_socket, QObject *parent) :
     QObject(parent)
@@ -106,7 +107,12 @@ void NetworkSocket::readData()
     }
 
     for (const QString &l_single_packet : qAsConst(l_all_packets)) {
-        AOPacket l_packet(l_single_packet);
+        AOPacket* l_packet = PacketFactory::createPacket(l_single_packet);
+        if (!l_packet) {
+            qDebug() << "Unimplemented packet: " << l_single_packet;
+            continue;
+        }
+
         emit handlePacket(l_packet);
     }
 }
@@ -127,19 +133,24 @@ void NetworkSocket::ws_readData(QString f_data)
     }
 
     for (const QString &l_single_packet : qAsConst(l_all_packets)) {
-        AOPacket l_packet(l_single_packet);
+        AOPacket* l_packet = PacketFactory::createPacket(l_single_packet);
+        if (!l_packet) {
+            qDebug() << "Unimplemented packet: " << l_single_packet;
+            continue;
+        }
+
         emit handlePacket(l_packet);
     }
 }
 
-void NetworkSocket::write(AOPacket f_packet)
+void NetworkSocket::write(AOPacket *f_packet)
 {
     if (m_socket_type == TCP) {
-        m_client_socket.tcp->write(f_packet.toUtf8());
+        m_client_socket.tcp->write(f_packet->toUtf8());
         m_client_socket.tcp->flush();
     }
     else {
-        m_client_socket.ws->sendTextMessage(f_packet.toString());
+        m_client_socket.ws->sendTextMessage(f_packet->toString());
         m_client_socket.ws->flush();
     }
 }

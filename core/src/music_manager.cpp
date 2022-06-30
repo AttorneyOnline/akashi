@@ -1,7 +1,7 @@
 #include "include/music_manager.h"
 
 #include "include/config_manager.h"
-#include "include/network/aopacket.h"
+#include "include/packet/packet_factory.h"
 
 MusicManager::MusicManager(QStringList f_root_ordered, QStringList f_cdns, QMap<QString, QPair<QString, int>> f_root_list, QObject *parent) :
     QObject(parent),
@@ -120,7 +120,7 @@ bool MusicManager::addCustomSong(QString f_song_name, QString f_real_name, int f
     l_custom_list.insert(l_song_name, {l_real_name, f_duration});
     m_custom_lists->insert(f_area_id, l_custom_list);
     m_customs_ordered.insert(f_area_id, (QStringList{m_customs_ordered.value(f_area_id)} << l_song_name));
-    emit sendAreaFMPacket(AOPacket("FM", musiclist(f_area_id)), f_area_id);
+    emit sendAreaFMPacket(PacketFactory::createPacket("FM", musiclist(f_area_id)), f_area_id);
     return true;
 }
 
@@ -148,7 +148,7 @@ bool MusicManager::addCustomCategory(QString f_category_name, int f_area_id)
     l_custom_list.insert(l_category_name, {l_category_name, 0});
     m_custom_lists->insert(f_area_id, l_custom_list);
     m_customs_ordered.insert(f_area_id, (QStringList{m_customs_ordered.value(f_area_id)} << l_category_name));
-    emit sendAreaFMPacket(AOPacket("FM", musiclist(f_area_id)), f_area_id);
+    emit sendAreaFMPacket(PacketFactory::createPacket("FM", musiclist(f_area_id)), f_area_id);
     return true;
 }
 
@@ -165,7 +165,7 @@ bool MusicManager::removeCategorySong(QString f_songcategory_name, int f_area_id
             l_customs_ordered.removeAll(f_songcategory_name);
             m_customs_ordered.insert(f_area_id, l_customs_ordered);
 
-            emit sendAreaFMPacket(AOPacket("FM", musiclist(f_area_id)), f_area_id);
+            emit sendAreaFMPacket(PacketFactory::createPacket("FM", musiclist(f_area_id)), f_area_id);
             return true;
         } // Fallthrough
     }
@@ -178,7 +178,7 @@ bool MusicManager::toggleRootEnabled(int f_area_id)
     if (m_global_enabled.value(f_area_id)) {
         sanitiseCustomList(f_area_id);
     }
-    emit sendAreaFMPacket(AOPacket("FM", musiclist(f_area_id)), f_area_id);
+    emit sendAreaFMPacket(PacketFactory::createPacket("FM", musiclist(f_area_id)), f_area_id);
     return m_global_enabled.value(f_area_id);
 }
 
@@ -234,5 +234,5 @@ void MusicManager::reloadRequest()
 
 void MusicManager::userJoinedArea(int f_area_index, int f_user_id)
 {
-    emit sendFMPacket(AOPacket("FM", musiclist(f_area_index)), f_user_id);
+    emit sendFMPacket(PacketFactory::createPacket("FM", musiclist(f_area_index)), f_user_id);
 }

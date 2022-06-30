@@ -34,6 +34,8 @@ class AreaData;
 class DBManager;
 class MusicManager;
 class Server;
+class NetworkSocket;
+class AOPacket;
 
 /**
  * @brief Represents a client connected to the server running Attorney Online 2 or one of its derivatives.
@@ -357,7 +359,7 @@ class AOClient : public QObject
      *
      * @param packet The incoming packet.
      */
-    void handlePacket(AOPacket packet);
+    void handlePacket(AOPacket *packet);
 
     /**
      * @brief A slot for when the client disconnects from the server.
@@ -369,7 +371,7 @@ class AOClient : public QObject
      *
      * @param packet The packet to send.
      */
-    void sendPacket(AOPacket packet);
+    void sendPacket(AOPacket *packet);
 
     /**
      * @overload
@@ -480,103 +482,6 @@ class AOClient : public QObject
     void sendServerBroadcast(QString message);
 
     /**
-     * @name Packet headers
-     *
-     * @details These functions implement the AO2-style packet handling.
-     * As these should generally be the same across server software, I see no reason to document them specifically.
-     *
-     * You can check out the AO2 network protocol for explanations.
-     *
-     * All packet handling functions share the same parameters:
-     *
-     * @param area The area the client is in. Some packets make use of the client's current area.
-     * @param argc The amount of arguments in the packet, not counting the header. Same as `argv.size()`.
-     * @param argv The arguments in the packet, once again, not counting the header.
-     * @param packet The... arguments in the packet. Yes, exactly the same as `argv`, just packed into an AOPacket.
-     *
-     * @see https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md for the AO2 network protocol.
-     */
-    ///@{
-
-    /// A "default" packet handler, to be used for error checking and copying other packet handlers.
-    void pktDefault(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [hardware ID](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#hard-drive-id).
-    void pktHardwareId(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /**
-     * @brief Implements [feature list](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#feature-list) and
-     * [player count](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#player-count).
-     */
-    void pktSoftwareId(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [resource counts](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#resource-counts).
-    void pktBeginLoad(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [character list](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#character-list).
-    void pktRequestChars(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [music list](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#music-list).
-    void pktRequestMusic(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [the final loading confirmation](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#final-confirmation).
-    void pktLoadingDone(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /**
-     * @brief Implements character passwording. This is not on the netcode documentation as of writing.
-     *
-     * @todo Link packet details when it gets into the netcode documentation.
-     */
-    void pktCharPassword(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [character selection](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#choose-character).
-    void pktSelectChar(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [the in-character messaging hell](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#in-character-message).
-    void pktIcChat(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [out-of-character messages](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#out-of-character-message).
-    void pktOocChat(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [the keepalive packet](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#keep-alive).
-    void pktPing(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /**
-     * @brief Implements [music](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#music) and
-     * [area changing](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#switch-area).
-     */
-    void pktChangeMusic(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /**
-     * @brief Implements [the witness testimony / cross examination / judge decision popups]
-     * (https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#witness-testimonycross-examination-wtce).
-     */
-    void pktWtCe(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [penalty bars](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#penalty-health-bars).
-    void pktHpBar(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [moderator calling](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#call-mod).
-    void pktModCall(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [adding evidence](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#add).
-    void pktAddEvidence(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [removing evidence](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#remove).
-    void pktRemoveEvidence(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [editing evidence](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#edit).
-    void pktEditEvidence(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [updating casing preferences](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#case-preferences-update).
-    void pktSetCase(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [announcing a case](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#case-alert).
-    void pktAnnounceCase(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    ///@}
-
-    /**
      * @name Packet helper functions
      */
     ///@{
@@ -594,15 +499,6 @@ class AOClient : public QObject
      * @param area The client's area.
      */
     void updateEvidenceList(AreaData *area);
-
-    /**
-     * @brief Attempts to validate that hellish abomination that Attorney Online 2 calls an in-character packet.
-     *
-     * @param packet The packet to validate.
-     *
-     * @return A validated version of the input packet if it is correct, or an `"INVALID"` packet if it is not.
-     */
-    AOPacket validateIcPacket(AOPacket packet);
 
     /**
      * @brief Removes excessive combining characters from a text.
@@ -687,14 +583,6 @@ class AOClient : public QObject
 
     ///@}
 
-    /// Describes a packet's interpretation details.
-    struct PacketInfo
-    {
-        ACLRole::Permission acl_permission; //!< The permissions necessary for the packet.
-        int minArgs;                        //!< The minimum arguments needed for the packet to be interpreted correctly / make sense.
-        void (AOClient::*action)(AreaData *, int, QStringList, AOPacket);
-    };
-
     /**
      * @property PacketInfo::action
      *
@@ -705,38 +593,6 @@ class AOClient : public QObject
      * @param QStringList When called, this parameter will be filled the list of arguments.
      * @param AOPacket This is a duplicated version of the QStringList above, containing the same data.
      */
-
-    /**
-     * @brief The list of packets that the server can interpret.
-     *
-     * @showinitializer
-     *
-     * @tparam QString The header of the packet that uniquely identifies it.
-     * @tparam PacketInfo The details of the packet.
-     * See @ref PacketInfo "the type's documentation" for more details.
-     */
-    const QMap<QString, PacketInfo> packets{
-        {"HI", {ACLRole::NONE, 1, &AOClient::pktHardwareId}},
-        {"ID", {ACLRole::NONE, 2, &AOClient::pktSoftwareId}},
-        {"askchaa", {ACLRole::NONE, 0, &AOClient::pktBeginLoad}},
-        {"RC", {ACLRole::NONE, 0, &AOClient::pktRequestChars}},
-        {"RM", {ACLRole::NONE, 0, &AOClient::pktRequestMusic}},
-        {"RD", {ACLRole::NONE, 0, &AOClient::pktLoadingDone}},
-        {"PW", {ACLRole::NONE, 1, &AOClient::pktCharPassword}},
-        {"CC", {ACLRole::NONE, 3, &AOClient::pktSelectChar}},
-        {"MS", {ACLRole::NONE, 15, &AOClient::pktIcChat}},
-        {"CT", {ACLRole::NONE, 2, &AOClient::pktOocChat}},
-        {"CH", {ACLRole::NONE, 1, &AOClient::pktPing}},
-        {"MC", {ACLRole::NONE, 2, &AOClient::pktChangeMusic}},
-        {"RT", {ACLRole::NONE, 1, &AOClient::pktWtCe}},
-        {"HP", {ACLRole::NONE, 2, &AOClient::pktHpBar}},
-        {"ZZ", {ACLRole::NONE, 0, &AOClient::pktModCall}},
-        {"PE", {ACLRole::NONE, 3, &AOClient::pktAddEvidence}},
-        {"DE", {ACLRole::NONE, 1, &AOClient::pktRemoveEvidence}},
-        {"EE", {ACLRole::NONE, 4, &AOClient::pktEditEvidence}},
-        {"SETCASE", {ACLRole::NONE, 7, &AOClient::pktSetCase}},
-        {"CASEA", {ACLRole::NONE, 6, &AOClient::pktAnnounceCase}},
-    };
 
     /**
      * @name Authentication

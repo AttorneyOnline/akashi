@@ -17,35 +17,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/network/aopacket.h"
 
-AOPacket::AOPacket(QString p_header, QStringList p_contents) :
-    m_header(p_header),
+AOPacket::AOPacket(QStringList p_contents) :
     m_content(p_contents),
     m_escaped(false)
 {
-}
-
-AOPacket::AOPacket(QString f_packet)
-{
-    QString l_packet = f_packet;
-    if (l_packet.isEmpty() || l_packet.at(0) == '#' || l_packet.contains("%")) {
-#if NET_DEBUG
-        qDebug() << "Invalid or fantacrypt packet received.";
-#endif
-        m_header = "Unknown";
-        m_content = QStringList{"Unknown"};
-        return;
-    }
-
-    QStringList l_split_packet = l_packet.split("#");
-    m_header = l_split_packet.value(0);
-
-    // Remove header and trailing packetFinished
-    l_split_packet.removeFirst();
-    l_split_packet.removeLast();
-    m_content = l_split_packet;
-
-    // All incoming data has to be escaped after being split.
-    this->unescapeContent();
 }
 
 const QStringList AOPacket::getContent()
@@ -53,14 +28,9 @@ const QStringList AOPacket::getContent()
     return m_content;
 }
 
-QString AOPacket::getHeader()
-{
-    return m_header;
-}
-
 QString AOPacket::toString()
 {
-    if (!isPacketEscaped() && !(m_header == "LE")) {
+    if (!isPacketEscaped() && !(getPacketInfo().header == "LE")) {
         // We will never send unescaped data to a client, unless its evidence.
         this->escapeContent();
     }
@@ -68,7 +38,7 @@ QString AOPacket::toString()
         // Of course AO has SOME expection to the rule.
         this->escapeEvidence();
     }
-    return QString("%1#%2#%3").arg(m_header, m_content.join("#"), packetFinished);
+    return QString("%1#%2#%3").arg(getPacketInfo().header, m_content.join("#"), packetFinished);
 }
 
 QByteArray AOPacket::toUtf8()

@@ -27,8 +27,8 @@
 #include "include/discord.h"
 #include "include/logger/u_logger.h"
 #include "include/music_manager.h"
-#include "include/network/aopacket.h"
 #include "include/network/network_socket.h"
+#include "include/packet/packet_factory.h"
 
 Server::Server(int p_port, int p_ws_port, QObject *parent) :
     QObject(parent),
@@ -115,7 +115,7 @@ void Server::start()
     ConfigManager::musiclist();
     music_manager = new MusicManager(ConfigManager::ordered_songs(), ConfigManager::cdnList(), ConfigManager::musiclist(), this);
     connect(music_manager, &MusicManager::sendFMPacket, this, &Server::unicast);
-    connect(music_manager, &MusicManager::sendAreaFMPacket, this, QOverload<AOPacket, int>::of(&Server::broadcast));
+    connect(music_manager, &MusicManager::sendAreaFMPacket, this, QOverload<AOPacket*, int>::of(&Server::broadcast));
 
     // Get musiclist from config file
     m_music_list = music_manager->rootMusiclist();
@@ -127,7 +127,7 @@ void Server::start()
         QString area_name = raw_area_names[i];
         AreaData *l_area = new AreaData(area_name, i, music_manager);
         m_areas.insert(i, l_area);
-        connect(l_area, &AreaData::sendAreaPacket, this, QOverload<AOPacket, int>::of(&Server::broadcast));
+        connect(l_area, &AreaData::sendAreaPacket, this, QOverload<AOPacket*, int>::of(&Server::broadcast));
         connect(l_area, &AreaData::sendAreaPacketClient, this, &Server::unicast);
         connect(l_area, &AreaData::userJoinedArea, music_manager, &MusicManager::userJoinedArea);
         music_manager->registerArea(i);
@@ -162,8 +162,8 @@ void Server::clientConnected()
     // Too many players. Reject connection!
     // This also enforces the maximum playercount.
     if (m_available_ids.empty()) {
-        AOPacket disconnect_reason("BD", {"Maximum playercount has been reached."});
-        socket->write(disconnect_reason.toUtf8());
+        AOPacket *disconnect_reason = PacketFactory::createPacket("BD", {"Maximum playercount has been reached."});
+        socket->write(disconnect_reason->toUtf8());
         socket->flush();
         socket->close();
         socket->deleteLater();
@@ -192,8 +192,8 @@ void Server::clientConnected()
 
     if (is_banned) {
         QString reason = ban.second;
-        AOPacket ban_reason("BD", {reason});
-        socket->write(ban_reason.toUtf8());
+        AOPacket *ban_reason = PacketFactory::createPacket("BD", {reason});
+        socket->write(ban_reason->toUtf8());
     }
     if (is_banned || is_at_multiclient_limit) {
         socket->flush();
@@ -210,8 +210,8 @@ void Server::clientConnected()
 
     if (isIPBanned(l_remote_ip)) {
         QString l_reason = "Your IP has been banned by a moderator.";
-        AOPacket l_ban_reason("BD", {l_reason});
-        socket->write(l_ban_reason.toUtf8());
+        AOPacket *l_ban_reason = PacketFactory::createPacket("BD", {l_reason});
+        socket->write(l_ban_reason->toUtf8());
         client->deleteLater();
         socket->close();
         markIDFree(user_id);
@@ -228,9 +228,10 @@ void Server::clientConnected()
     });
     connect(l_socket, &NetworkSocket::handlePacket, client, &AOClient::handlePacket);
 
-    AOPacket decryptor("decryptor", {"NOENCRYPT"}); // This is the infamous workaround for
-                                                    // tsuserver4. It should disable fantacrypt
-                                                    // completely in any client 2.4.3 or newer
+    // This is the infamous workaround for
+    // tsuserver4. It should disable fantacrypt
+    // completely in any client 2.4.3 or newer
+    AOPacket *decryptor = PacketFactory::createPacket("decryptor", {"NOENCRYPT"});
     client->sendPacket(decryptor);
     hookupAOClient(client);
 #ifdef NET_DEBUG
@@ -246,7 +247,7 @@ void Server::ws_clientConnected()
     // Too many players. Reject connection!
     // This also enforces the maximum playercount.
     if (m_available_ids.empty()) {
-        AOPacket disconnect_reason("BD", {"Maximum playercount has been reached."});
+        AOPacket *disconnect_reason = PacketFactory::createPacket("BD", {"Maximum playercount has been reached."});
         l_socket->write(disconnect_reason);
         l_socket->close();
         l_socket->deleteLater();
@@ -272,8 +273,8 @@ void Server::ws_clientConnected()
 
     if (is_banned) {
         QString reason = ban.second;
-        AOPacket ban_reason("BD", {reason});
-        socket->sendTextMessage(ban_reason.toUtf8());
+        AOPacket *ban_reason = PacketFactory::createPacket("BD", {reason});
+        socket->sendTextMessage(ban_reason->toUtf8());
     }
     if (is_banned || is_at_multiclient_limit) {
         client->deleteLater();
@@ -289,7 +290,7 @@ void Server::ws_clientConnected()
 
     if (isIPBanned(l_remote_ip)) {
         QString l_reason = "Your IP has been banned by a moderator.";
-        AOPacket l_ban_reason("BD", {l_reason});
+        AOPacket *l_ban_reason = PacketFactory::createPacket("BD", {l_reason});
         l_socket->write(l_ban_reason);
         client->deleteLater();
         l_socket->close(QWebSocketProtocol::CloseCodeNormal);
@@ -307,9 +308,10 @@ void Server::ws_clientConnected()
     });
     connect(l_socket, &NetworkSocket::handlePacket, client, &AOClient::handlePacket);
 
-    AOPacket decryptor("decryptor", {"NOENCRYPT"}); // This is the infamous workaround for
-                                                    // tsuserver4. It should disable fantacrypt
-                                                    // completely in any client 2.4.3 or newer
+    // This is the infamous workaround for
+    // tsuserver4. It should disable fantacrypt
+    // completely in any client 2.4.3 or newer
+    AOPacket *decryptor = PacketFactory::createPacket("decryptor", {"NOENCRYPT"});
     client->sendPacket(decryptor);
     hookupAOClient(client);
 }
@@ -323,7 +325,7 @@ void Server::updateCharsTaken(AreaData *area)
                                : QStringLiteral("0"));
     }
 
-    AOPacket response_cc("CharsCheck", chars_taken);
+    AOPacket *response_cc = PacketFactory::createPacket("CharsCheck", chars_taken);
 
     for (AOClient *l_client : qAsConst(m_clients)) {
         if (l_client->m_current_area == area->index()) {
@@ -331,7 +333,7 @@ void Server::updateCharsTaken(AreaData *area)
                 l_client->sendPacket(response_cc);
             else {
                 QStringList chars_taken_cursed = getCursedCharsTaken(l_client, chars_taken);
-                AOPacket response_cc_cursed("CharsCheck", chars_taken_cursed);
+                AOPacket *response_cc_cursed = PacketFactory::createPacket("CharsCheck", chars_taken_cursed);
                 l_client->sendPacket(response_cc_cursed);
             }
         }
@@ -384,7 +386,7 @@ void Server::reloadSettings()
     command_extension_collection->loadFile("config/command_extensions.ini");
 }
 
-void Server::broadcast(AOPacket packet, int area_index)
+void Server::broadcast(AOPacket *packet, int area_index)
 {
     QVector<int> l_client_ids = m_areas.value(area_index)->joinedIDs();
     for (const int l_client_id : qAsConst(l_client_ids)) {
@@ -392,14 +394,14 @@ void Server::broadcast(AOPacket packet, int area_index)
     }
 }
 
-void Server::broadcast(AOPacket packet)
+void Server::broadcast(AOPacket *packet)
 {
     for (AOClient *l_client : qAsConst(m_clients)) {
         l_client->sendPacket(packet);
     }
 }
 
-void Server::broadcast(AOPacket packet, TARGET_TYPE target)
+void Server::broadcast(AOPacket *packet, TARGET_TYPE target)
 {
     for (AOClient *l_client : qAsConst(m_clients)) {
         switch (target) {
@@ -419,7 +421,7 @@ void Server::broadcast(AOPacket packet, TARGET_TYPE target)
     }
 }
 
-void Server::broadcast(AOPacket packet, AOPacket other_packet, TARGET_TYPE target)
+void Server::broadcast(AOPacket *packet, AOPacket *other_packet, TARGET_TYPE target)
 {
     switch (target) {
     case TARGET_TYPE::AUTHENTICATED:
@@ -437,7 +439,7 @@ void Server::broadcast(AOPacket packet, AOPacket other_packet, TARGET_TYPE targe
     }
 }
 
-void Server::unicast(AOPacket f_packet, int f_client_id)
+void Server::unicast(AOPacket *f_packet, int f_client_id)
 {
     AOClient *l_client = getClientByID(f_client_id);
     if (l_client != nullptr) { // This should never happen, but safety first.
