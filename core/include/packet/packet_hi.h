@@ -1,12 +1,12 @@
-#ifndef PACKET_GENERIC_H
-#define PACKET_GENERIC_H
+#ifndef PACKET_HI_H
+#define PACKET_HI_H
 
 #include "include/network/aopacket.h"
 
-class PacketGeneric : public AOPacket
+class PacketHI : public AOPacket
 {
   public:
-    PacketGeneric(QString header, QStringList contents);
+    PacketHI(QStringList &contents);
     virtual PacketInfo getPacketInfo() const;
     virtual void handlePacket(AreaData *area, AOClient &client) const;
     virtual bool validatePacket() const;

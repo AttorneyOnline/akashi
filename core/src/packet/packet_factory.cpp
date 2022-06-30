@@ -6,7 +6,7 @@ AOPacket *PacketFactory::createPacket(QString header, QStringList contents)
     if (!class_map.count(header)) {
         return createInstance<PacketGeneric>(header, contents);
     }
-    
+
     return class_map[header](contents);
 }
 

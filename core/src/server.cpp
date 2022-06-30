@@ -56,6 +56,8 @@ Server::Server(int p_port, int p_ws_port, QObject *parent) :
 
     logger = new ULogger(this);
     connect(this, &Server::logConnectionAttempt, logger, &ULogger::logConnectionAttempt);
+
+    AOPacket::registerPackets();
 }
 
 void Server::start()
@@ -115,7 +117,7 @@ void Server::start()
     ConfigManager::musiclist();
     music_manager = new MusicManager(ConfigManager::ordered_songs(), ConfigManager::cdnList(), ConfigManager::musiclist(), this);
     connect(music_manager, &MusicManager::sendFMPacket, this, &Server::unicast);
-    connect(music_manager, &MusicManager::sendAreaFMPacket, this, QOverload<AOPacket*, int>::of(&Server::broadcast));
+    connect(music_manager, &MusicManager::sendAreaFMPacket, this, QOverload<AOPacket *, int>::of(&Server::broadcast));
 
     // Get musiclist from config file
     m_music_list = music_manager->rootMusiclist();
@@ -127,7 +129,7 @@ void Server::start()
         QString area_name = raw_area_names[i];
         AreaData *l_area = new AreaData(area_name, i, music_manager);
         m_areas.insert(i, l_area);
-        connect(l_area, &AreaData::sendAreaPacket, this, QOverload<AOPacket*, int>::of(&Server::broadcast));
+        connect(l_area, &AreaData::sendAreaPacket, this, QOverload<AOPacket *, int>::of(&Server::broadcast));
         connect(l_area, &AreaData::sendAreaPacketClient, this, &Server::unicast);
         connect(l_area, &AreaData::userJoinedArea, music_manager, &MusicManager::userJoinedArea);
         music_manager->registerArea(i);

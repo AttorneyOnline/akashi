@@ -6,7 +6,7 @@ TEMPLATE = lib
 # Apparently, Windows needs a static config to make a dynamic library?
 # Look, I dunno.
 # Linux works just fine with `shared` only.
-CONFIG += shared static c++11
+CONFIG += shared static c++17
 
 coverage {
     QMAKE_CXXFLAGS += --coverage -g -Og    # -fprofile-arcs -ftest-coverage
@@ -28,7 +28,7 @@ DESTDIR = $$PWD/../bin
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 # Enable this to print network messages to the console
-#DEFINES += NET_DEBUG
+DEFINES += NET_DEBUG
 
 SOURCES += \
     src/acl_roles_handler.cpp \
@@ -57,7 +57,27 @@ SOURCES += \
     src/logger/writer_full.cpp \
     src/music_manager.cpp \
     src/packet/packet_factory.cpp \
-    src/packet/packet_generic.cpp
+    src/packet/packet_generic.cpp \
+    src/packet/packet_hi.cpp \
+    src/packet/packet_id.cpp \
+    src/packet/packet_askchaa.cpp \
+    src/packet/packet_casea.cpp \
+    src/packet/packet_cc.cpp \
+    src/packet/packet_ch.cpp \
+    src/packet/packet_ct.cpp \
+    src/packet/packet_de.cpp \
+    src/packet/packet_ee.cpp \
+    src/packet/packet_hp.cpp \
+    src/packet/packet_mc.cpp \
+    src/packet/packet_ms.cpp \
+    src/packet/packet_pe.cpp \
+    src/packet/packet_pw.cpp \
+    src/packet/packet_rc.cpp \
+    src/packet/packet_rd.cpp \
+    src/packet/packet_rm.cpp \
+    src/packet/packet_rt.cpp \
+    src/packet/packet_setcase.cpp \
+    src/packet/packet_zz.cpp
 
 HEADERS += include/aoclient.h \
     include/acl_roles_handler.h \
@@ -79,4 +99,24 @@ HEADERS += include/aoclient.h \
     include/music_manager.h \
     include/packet/packet_factory.h \
     include/packet/packet_info.h \
-    include/packet/packet_generic.h
+    include/packet/packet_generic.h \
+    include/packet/packet_hi.h \
+    include/packet/packet_id.h \
+    include/packet/packet_askchaa.h \
+    include/packet/packet_casea.h \
+    include/packet/packet_cc.h \
+    include/packet/packet_ch.h \
+    include/packet/packet_ct.h \
+    include/packet/packet_de.h \
+    include/packet/packet_ee.h \
+    include/packet/packet_hp.h \
+    include/packet/packet_mc.h \
+    include/packet/packet_ms.h \
+    include/packet/packet_pe.h \
+    include/packet/packet_pw.h \
+    include/packet/packet_rc.h \
+    include/packet/packet_rd.h \
+    include/packet/packet_rm.h \
+    include/packet/packet_rt.h \
+    include/packet/packet_setcase.h \
+    include/packet/packet_zz.h

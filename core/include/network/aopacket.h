@@ -23,9 +23,9 @@
 #include <QString>
 #include <QStringList>
 
-#include "include/packet/packet_info.h"
-#include "include/area_data.h"
 #include "include/aoclient.h"
+#include "include/area_data.h"
+#include "include/packet/packet_info.h"
 
 class AOClient;
 
@@ -112,8 +112,10 @@ class AOPacket
     bool isPacketEscaped();
 
     virtual PacketInfo getPacketInfo() const = 0;
-    virtual void handlePacket(AreaData* area, AOClient& client) const = 0;
+    virtual void handlePacket(AreaData *area, AOClient &client) const = 0;
     virtual bool validatePacket() const = 0;
+
+    static void registerPackets();
 
   protected:
     /**

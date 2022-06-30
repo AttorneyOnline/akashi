@@ -1,17 +1,14 @@
-#ifndef PACKET_GENERIC_H
-#define PACKET_GENERIC_H
+#ifndef PACKET_EE_H
+#define PACKET_EE_H
 
 #include "include/network/aopacket.h"
 
-class PacketGeneric : public AOPacket
+class PacketEE : public AOPacket
 {
   public:
-    PacketGeneric(QString header, QStringList contents);
+    PacketEE(QStringList &contents);
     virtual PacketInfo getPacketInfo() const;
     virtual void handlePacket(AreaData *area, AOClient &client) const;
     virtual bool validatePacket() const;
-
-  private:
-    QString header;
 };
 #endif

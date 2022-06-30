@@ -2,7 +2,7 @@ QT       += network websockets core sql
 QT       -= gui
 TEMPLATE = app
 
-CONFIG += c++11 console
+CONFIG += c++17 console
 
 coverage {
     LIBS += -lgcov

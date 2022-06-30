@@ -321,6 +321,37 @@ class AOClient : public QObject
     bool m_is_spectator = true;
 
     /**
+     * @brief The hardware ID of the client.
+     *
+     * @details Generated based on the client's own supplied hardware ID.
+     * The client supplied hardware ID is generally a machine unique ID.
+     */
+    QString m_hwid;
+
+    /**
+     * @brief The network socket used by the client. Can either be a Websocket or TCP Socket.
+     */
+    NetworkSocket *m_socket;
+
+    /**
+     * @brief The IPID of the client.
+     *
+     * @details Generated based on the client's IP, but cannot be reversed to identify the client's IP.
+     */
+    QString m_ipid;
+
+    /**
+     * @brief The type of area update, used for area update (ARUP) packets.
+     */
+    enum ARUPType
+    {
+        PLAYER_COUNT, //!< The packet contains player count updates.
+        STATUS,       //!< The packet contains area status updates.
+        CM,           //!< The packet contains updates about who's the CM of what area.
+        LOCKED        //!< The packet contains updates about what areas are locked.
+    };
+
+    /**
      * @brief Checks if the client's ACL role has permission for the given permission.
      *
      * @param f_permission The permission flags.
@@ -342,6 +373,232 @@ class AOClient : public QObject
      * @param f_spectator
      */
     void setSpectator(bool f_spectator);
+
+    /**
+     * @brief Sends or announces an ARUP update.
+     *
+     * @param type The type of ARUP to send.
+     * @param broadcast If true, the update is sent out to all clients on the server. If false, it is only sent to this client.
+     *
+     * @see AOClient::ARUPType
+     */
+    void arup(ARUPType type, bool broadcast);
+
+    /**
+     * @brief Sends all four types of ARUP to the client.
+     */
+    void fullArup();
+    /**
+     * @brief Sends an out-of-character message originating from the server to the client.
+     *
+     * @param message The text of the message to send.
+     */
+    void sendServerMessage(QString message);
+
+    /**
+     * @brief Like with AOClient::sendServerMessage(), but to every client in the client's area.
+     *
+     * @param message The text of the message to send.
+     */
+    void sendServerMessageArea(QString message);
+
+    /**
+     * @brief Like with AOClient::sendServerMessage(), but to every client in the server.
+     *
+     * @param message The text of the message to send.
+     */
+    void sendServerBroadcast(QString message);
+
+    /**
+     * @brief Calls AOClient::updateEvidenceList() for every client in the current client's area.
+     *
+     * @param area The current client's area.
+     */
+    void sendEvidenceList(AreaData *area) const;
+
+    /**
+     * @brief Updates the evidence list in the area for the client.
+     *
+     * @param area The client's area.
+     */
+    void updateEvidenceList(AreaData *area);
+
+    /**
+     * @brief Removes excessive combining characters from a text.
+     *
+     * @param p_text The text to clear of its excessive combining characters.
+     *
+     * @return See brief description.
+     *
+     * @see https://en.wikipedia.org/wiki/Zalgo_text
+     */
+    QString dezalgo(QString p_text);
+
+    /**
+     * @brief Checks if the client can modify the evidence in the area.
+     *
+     * @param area The client's area.
+     *
+     * @return True if the client can modify the evidence, false if not.
+     */
+    bool checkEvidenceAccess(AreaData *area);
+
+    /**
+     * @brief Changes the client's character.
+     *
+     * @param char_id The character ID of the client's new character.
+     */
+    bool changeCharacter(int char_id);
+
+    /**
+     * @brief A helper function for logging in a client as moderator.
+     *
+     * @param message The OOC message the client has sent.
+     */
+    void loginAttempt(QString message);
+
+    /**
+     * @brief Changes the area the client is in.
+     *
+     * @param new_area The ID of the new area.
+     */
+    void changeArea(int new_area);
+
+    /**
+     * @brief Handles an incoming command, checking for authorisation and minimum argument count.
+     *
+     * @param command The incoming command.
+     * @param argc The amount of arguments the command was called with. Equivalent to `argv.size()`.
+     * @param argv The arguments the command was called with.
+     */
+    void handleCommand(QString command, int argc, QStringList argv);
+
+    /**
+     * @brief A helper function for decoding AO encoding from a QString.
+     *
+     * @param incoming_message QString to be decoded.
+     */
+    QString decodeMessage(QString incoming_message);
+
+    /**
+     * @brief Adds the last send IC-Message to QVector of the respective area.
+     *
+     * @details This one pulls double duty to both append IC-Messages to the QVector or insert them, depending on the current recorder enum.
+     *
+     * @param packet The MS-Packet being recorded with their color changed to green.
+     */
+    void addStatement(QStringList packet);
+
+    /**
+     * @brief Updates the currently displayed IC-Message with the next one send
+     * @param packet The IC-Message that will overwrite the currently stored one.
+     * @return Returns the updated IC-Message to be send to the other users. It also changes the color to green.
+     */
+    QStringList updateStatement(QStringList packet);
+
+    /**
+     * @brief Convenience function to generate a random integer number between the given minimum and maximum values.
+     *
+     * @param min The minimum possible value for the random integer, inclusive.
+     * @param max The maximum possible value for the random integer, exclusive.
+     *
+     * @warning `max` must be greater than `min`.
+     *
+     * @return A randomly generated integer within the bounds given.
+     */
+    int genRand(int min, int max);
+
+    /**
+     * @brief A helper function to add recorded packets to an area's judgelog.
+     *
+     * @param area Pointer to the area where the packet was sent.
+     *
+     * @param client Pointer to the client that sent the packet.
+     *
+     * @param action String containing the info that is being recorded.
+     */
+    void updateJudgeLog(AreaData *area, AOClient *client, QString action);
+
+    /**
+     * @brief Pointer to the servers music manager instance.
+     */
+    MusicManager *m_music_manager;
+
+    /**
+     * @brief The text of the last in-character message that was sent by the client.
+     *
+     * @details Used to determine if the incoming message is a duplicate.
+     */
+    QString m_last_message;
+
+    /**
+     * @brief The time in seconds since the client last sent a Witness Testimony / Cross Examination
+     * popup packet.
+     *
+     * @details Used to filter out potential spam.
+     */
+    long m_last_wtce_time;
+
+    /**
+     * @name Packet helper global variables
+     */
+    ///@{
+
+    /**
+     * @brief If true, the client is a logged-in moderator.
+     */
+    bool m_authenticated = false;
+
+    /**
+     * @brief The ACL role identifier, used to determine what ACL role the client is linked to.
+     */
+    QString m_acl_role_id;
+
+    /**
+     * @brief The character ID of the other character that the client wants to pair up with.
+     *
+     * @details Though this uses character ID, a client with *that* character ID must exist in the area for the pairing to work.
+     * Furthermore, the owner of that character ID must also do the reverse to this client, making their `pairing_with` equal
+     * to this client's character ID.
+     */
+    int m_pairing_with = -1;
+
+    /**
+     * @brief The name of the emote last used by the client. No extension.
+     *
+     * @details This is used for pairing mainly, for the server to be able to craft a smooth-looking transition from one
+     * paired-up client talking to the next.
+     */
+    QString m_emote = "";
+
+    /**
+     * @brief The amount the client was last offset by.
+     *
+     * @details This used to be just a plain number ranging from -100 to 100, but then Crystal mangled it by building some extra data into it.
+     * Cheers, love.
+     */
+    QString m_offset = "";
+
+    /**
+     * @brief The last flipped state of the client.
+     */
+    QString m_flipping = "";
+
+    /**
+     * @brief The last reported position of the client.
+     */
+    QString m_pos = "";
+
+    ///@}
+
+    /**
+     * @brief The client's character ID.
+     *
+     * @details A character ID is just the character's index in the server's character list.
+     *
+     * In general, the client assumes that this is a continuous block starting from 0.
+     */
+    int m_char_id = -1;
 
     /**
      * @brief The spectator character ID
@@ -396,48 +653,9 @@ class AOClient : public QObject
 
   private:
     /**
-     * @brief The network socket used by the client. Can either be a Websocket or TCP Socket.
-     */
-    NetworkSocket *m_socket;
-
-    /**
      * @brief A pointer to the Server, used for updating server variables that depend on the client (e.g. amount of players in an area).
      */
     Server *server;
-
-    /**
-     * @brief The type of area update, used for area update (ARUP) packets.
-     */
-    enum ARUPType
-    {
-        PLAYER_COUNT, //!< The packet contains player count updates.
-        STATUS,       //!< The packet contains area status updates.
-        CM,           //!< The packet contains updates about who's the CM of what area.
-        LOCKED        //!< The packet contains updates about what areas are locked.
-    };
-
-    /**
-     * @brief Handles an incoming command, checking for authorisation and minimum argument count.
-     *
-     * @param command The incoming command.
-     * @param argc The amount of arguments the command was called with. Equivalent to `argv.size()`.
-     * @param argv The arguments the command was called with.
-     */
-    void handleCommand(QString command, int argc, QStringList argv);
-
-    /**
-     * @brief Changes the area the client is in.
-     *
-     * @param new_area The ID of the new area.
-     */
-    void changeArea(int new_area);
-
-    /**
-     * @brief Changes the client's character.
-     *
-     * @param char_id The character ID of the client's new character.
-     */
-    bool changeCharacter(int char_id);
 
     /**
      * @brief Changes the client's in-character position.
@@ -447,139 +665,9 @@ class AOClient : public QObject
     void changePosition(QString new_pos);
 
     /**
-     * @brief Sends or announces an ARUP update.
-     *
-     * @param type The type of ARUP to send.
-     * @param broadcast If true, the update is sent out to all clients on the server. If false, it is only sent to this client.
-     *
-     * @see AOClient::ARUPType
-     */
-    void arup(ARUPType type, bool broadcast);
-
-    /**
-     * @brief Sends all four types of ARUP to the client.
-     */
-    void fullArup();
-    /**
-     * @brief Sends an out-of-character message originating from the server to the client.
-     *
-     * @param message The text of the message to send.
-     */
-    void sendServerMessage(QString message);
-
-    /**
-     * @brief Like with AOClient::sendServerMessage(), but to every client in the client's area.
-     *
-     * @param message The text of the message to send.
-     */
-    void sendServerMessageArea(QString message);
-
-    /**
-     * @brief Like with AOClient::sendServerMessage(), but to every client in the server.
-     *
-     * @param message The text of the message to send.
-     */
-    void sendServerBroadcast(QString message);
-
-    /**
      * @name Packet helper functions
      */
     ///@{
-
-    /**
-     * @brief Calls AOClient::updateEvidenceList() for every client in the current client's area.
-     *
-     * @param area The current client's area.
-     */
-    void sendEvidenceList(AreaData *area);
-
-    /**
-     * @brief Updates the evidence list in the area for the client.
-     *
-     * @param area The client's area.
-     */
-    void updateEvidenceList(AreaData *area);
-
-    /**
-     * @brief Removes excessive combining characters from a text.
-     *
-     * @param p_text The text to clear of its excessive combining characters.
-     *
-     * @return See brief description.
-     *
-     * @see https://en.wikipedia.org/wiki/Zalgo_text
-     */
-    QString dezalgo(QString p_text);
-
-    /**
-     * @brief Checks if the client can modify the evidence in the area.
-     *
-     * @param area The client's area.
-     *
-     * @return True if the client can modify the evidence, false if not.
-     */
-    bool checkEvidenceAccess(AreaData *area);
-
-    ///@}
-
-    /**
-     * @name Packet helper global variables
-     */
-    ///@{
-
-    /**
-     * @brief If true, the client is a logged-in moderator.
-     */
-    bool m_authenticated = false;
-
-    /**
-     * @brief The ACL role identifier, used to determine what ACL role the client is linked to.
-     */
-    QString m_acl_role_id;
-
-    /**
-     * @brief The client's character ID.
-     *
-     * @details A character ID is just the character's index in the server's character list.
-     *
-     * In general, the client assumes that this is a continuous block starting from 0.
-     */
-    int m_char_id = -1;
-
-    /**
-     * @brief The character ID of the other character that the client wants to pair up with.
-     *
-     * @details Though this uses character ID, a client with *that* character ID must exist in the area for the pairing to work.
-     * Furthermore, the owner of that character ID must also do the reverse to this client, making their `pairing_with` equal
-     * to this client's character ID.
-     */
-    int m_pairing_with = -1;
-
-    /**
-     * @brief The name of the emote last used by the client. No extension.
-     *
-     * @details This is used for pairing mainly, for the server to be able to craft a smooth-looking transition from one
-     * paired-up client talking to the next.
-     */
-    QString m_emote = "";
-
-    /**
-     * @brief The amount the client was last offset by.
-     *
-     * @details This used to be just a plain number ranging from -100 to 100, but then Crystal mangled it by building some extra data into it.
-     * Cheers, love.
-     */
-    QString m_offset = "";
-
-    /**
-     * @brief The last flipped state of the client.
-     */
-    QString m_flipping = "";
-
-    /**
-     * @brief The last reported position of the client.
-     */
-    QString m_pos = "";
 
     ///@}
 
@@ -1875,18 +1963,6 @@ class AOClient : public QObject
     QStringList buildAreaList(int area_idx);
 
     /**
-     * @brief Convenience function to generate a random integer number between the given minimum and maximum values.
-     *
-     * @param min The minimum possible value for the random integer, inclusive.
-     * @param max The maximum possible value for the random integer, exclusive.
-     *
-     * @warning `max` must be greater than `min`.
-     *
-     * @return A randomly generated integer within the bounds given.
-     */
-    int genRand(int min, int max);
-
-    /**
      * @brief A convenience function for rolling dice.
      *
      * @param sides The number of sides the dice to be rolled have
@@ -1923,28 +1999,12 @@ class AOClient : public QObject
     QString getReprimand(bool f_positive = false);
 
     /**
-     * @brief Adds the last send IC-Message to QVector of the respective area.
-     *
-     * @details This one pulls double duty to both append IC-Messages to the QVector or insert them, depending on the current recorder enum.
-     *
-     * @param packet The MS-Packet being recorded with their color changed to green.
-     */
-    void addStatement(QStringList packet);
-
-    /**
      * @brief Clears QVector of the current area.
      *
      * @details It clears both its content and trims it back to size 0
      *
      */
     void clearTestimony();
-
-    /**
-     * @brief Updates the currently displayed IC-Message with the next one send
-     * @param packet The IC-Message that will overwrite the currently stored one.
-     * @return Returns the updated IC-Message to be send to the other users. It also changes the color to green.
-     */
-    QStringList updateStatement(QStringList packet);
 
     /**
      * @brief Called when area enum is set to PLAYBACK. Sends the IC-Message stored at the current statement.
@@ -2007,69 +2067,9 @@ class AOClient : public QObject
     bool is_partial;
 
     /**
-     * @brief The hardware ID of the client.
-     *
-     * @details Generated based on the client's own supplied hardware ID.
-     * The client supplied hardware ID is generally a machine unique ID.
-     */
-    QString m_hwid;
-
-    /**
-     * @brief The IPID of the client.
-     *
-     * @details Generated based on the client's IP, but cannot be reversed to identify the client's IP.
-     */
-    QString m_ipid;
-
-    /**
-     * @brief The time in seconds since the client last sent a Witness Testimony / Cross Examination
-     * popup packet.
-     *
-     * @details Used to filter out potential spam.
-     */
-    long m_last_wtce_time;
-
-    /**
-     * @brief The text of the last in-character message that was sent by the client.
-     *
-     * @details Used to determine if the incoming message is a duplicate.
-     */
-    QString m_last_message;
-
-    /**
-     * @brief Pointer to the servers music manager instance.
-     */
-    MusicManager *m_music_manager;
-
-    /**
-     * @brief A helper function to add recorded packets to an area's judgelog.
-     *
-     * @param area Pointer to the area where the packet was sent.
-     *
-     * @param client Pointer to the client that sent the packet.
-     *
-     * @param action String containing the info that is being recorded.
-     */
-    void updateJudgeLog(AreaData *area, AOClient *client, QString action);
-
-    /**
-     * @brief A helper function for decoding AO encoding from a QString.
-     *
-     * @param incoming_message QString to be decoded.
-     */
-    QString decodeMessage(QString incoming_message);
-
-    /**
      * @brief The size, in bytes, of the last data the client sent to the server.
      */
     int last_read = 0;
-
-    /**
-     * @brief A helper function for logging in a client as moderator.
-     *
-     * @param message The OOC message the client has sent.
-     */
-    void loginAttempt(QString message);
 
   signals:
 
