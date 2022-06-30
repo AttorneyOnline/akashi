@@ -26,14 +26,26 @@
 
 /**
  * @brief Simple header library for basic cryptographic functionality
- *
  */
 class CryptoHelper
 {
   private:
+    /**
+     * @brief Length of the output of PBKDF2
+     */
     static constexpr qint32 pbkdf2_output_len = 32; // 32 bytes (SHA-256)
+    /**
+     * @brief Configurable cost parameter of PBKDF2
+     */
     static constexpr quint32 pbkdf2_cost = 100000;
 
+    /**
+     * @brief Compute the SHA-256 HMAC of given data
+     *
+     * @param salt HMAC key
+     * @param password HMAC data
+     * @return QByteArray HMAC result
+     */
     static QByteArray hmac(QByteArray salt, QByteArray password)
     {
         QMessageAuthenticationCode hmac(QCryptographicHash::Sha256);
@@ -42,11 +54,29 @@ class CryptoHelper
         return hmac.result();
     }
 
+    /**
+     * @brief Compute the SHA-256 HMAC of strings
+     *
+     * @param salt Salt value
+     * @param password Password value
+     * @return QString HMAC result, hex encoded
+     */
     static QString password_hmac(QString salt, QString password)
     {
         return hmac(salt.toUtf8(), password.toUtf8()).toHex();
     }
 
+    /**
+     * @brief Perform the PBKDF2 key-derivation function
+     *
+     * @details PBKDF2 is a very configurable algorithm, but most of its functionality
+     * does not apply here. Instead, we fix the output to the size of the underlying
+     * hash function, which greatly simplifies the algorithm.
+     *
+     * @param salt Salt value
+     * @param password Password value
+     * @return QString PBKDF2 result, hex encoded
+     */
     static QString pbkdf2(QByteArray salt, QString password)
     {
         QByteArray bigendian_one("\x00\x00\x00\x01", 4);
@@ -65,8 +95,23 @@ class CryptoHelper
     }
 
   public:
+    /**
+     * @brief The length of the salt value used for PBKDF2, in bytes
+     */
     static constexpr qint32 pbkdf2_salt_len = 16;
 
+    /**
+     * @brief Compute the hash of a password to store, given a salt
+     *
+     * @details This function selects one of two hashing algorithm backends to use,
+     * dependent on the length of the salt. Older versions of this program used an
+     * 8-byte salt, but newer versions use a 16-byte salt. This allows us to version
+     * the algorithm being used without the need to change the schema of the database.
+     *
+     * @param salt Salt value
+     * @param password Password value
+     * @return QString Hashed password, hex encoded
+     */
     static QString hash_password(QByteArray salt, QString password)
     {
         // Select the correct hash backend based on the salt length
@@ -80,6 +125,11 @@ class CryptoHelper
         return pbkdf2(salt, password);
     }
 
+    /**
+     * @brief Generate a random octet
+     *
+     * @return quint8 A random 8-bit value
+     */
     static quint8 rand8()
     {
 #if QT_VERSION < QT_VERSION_CHECK(5, 10, 0)
@@ -91,19 +141,12 @@ class CryptoHelper
         return (quint8)(l_rand & 0xFF);
     }
 
-    static quint64 rand64()
-    {
-#if QT_VERSION < QT_VERSION_CHECK(5, 10, 0)
-        qsrand(QDateTime::currentMSecsSinceEpoch());
-        quint32 l_upper = qrand();
-        quint32 l_lower = qrand();
-        quint64 l_number = (l_upper << 32) | l_lower;
-#else
-        quint64 l_number = QRandomGenerator::system()->generate64();
-#endif
-        return l_number;
-    }
-
+    /**
+     * @brief Generate an arbitrary amount of random data
+     *
+     * @param n Number of bytes to generate
+     * @return QByteArray Random bytes
+     */
     static QByteArray randbytes(int n)
     {
         QByteArray output;
