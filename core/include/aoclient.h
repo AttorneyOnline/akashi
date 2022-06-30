@@ -25,9 +25,6 @@
 #include <QRegularExpression>
 #include <QTimer>
 #include <QtGlobal>
-#if QT_VERSION > QT_VERSION_CHECK(5, 10, 0)
-#include <QRandomGenerator>
-#endif
 
 #include "include/acl_roles_handler.h"
 #include "include/network/aopacket.h"

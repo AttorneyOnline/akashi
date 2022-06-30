@@ -171,7 +171,7 @@ bool DBManager::invalidateBan(int id)
     return true;
 }
 
-bool DBManager::createUser(QString f_username, QString f_salt, QString f_password, QString f_acl)
+bool DBManager::createUser(QString f_username, QByteArray f_salt, QString f_password, QString f_acl)
 {
     QSqlQuery username_exists;
     username_exists.prepare("SELECT ACL FROM users WHERE USERNAME = ?");
@@ -183,15 +183,11 @@ bool DBManager::createUser(QString f_username, QString f_salt, QString f_passwor
 
     QSqlQuery query;
 
-    QString salted_password;
-    QMessageAuthenticationCode hmac(QCryptographicHash::Sha256);
-    hmac.setKey(f_salt.toUtf8());
-    hmac.addData(f_password.toUtf8());
-    salted_password = hmac.result().toHex();
+    QString salted_password = CryptoHelper::hash_password(f_salt, f_password);
 
     query.prepare("INSERT INTO users(USERNAME, SALT, PASSWORD, ACL) VALUES(?, ?, ?, ?)");
     query.addBindValue(f_username);
-    query.addBindValue(f_salt);
+    query.addBindValue(f_salt.toHex());
     query.addBindValue(salted_password);
     query.addBindValue(f_acl);
     query.exec();
@@ -247,18 +243,19 @@ bool DBManager::authenticate(QString username, QString password)
         return false;
     QString salt = query_salt.value(0).toString();
 
-    QString salted_password;
-    QMessageAuthenticationCode hmac(QCryptographicHash::Sha256);
-    hmac.setKey(salt.toUtf8());
-    hmac.addData(password.toUtf8());
-    salted_password = hmac.result().toHex();
+    QString salted_password = CryptoHelper::hash_password(QByteArray::fromHex(salt.toUtf8()), password);
 
-    QSqlQuery query_pass("SELECT PASSWORD FROM users WHERE SALT = ?");
-    query_pass.addBindValue(salt);
+    QSqlQuery query_pass("SELECT PASSWORD FROM users WHERE USERNAME = ?");
+    query_pass.addBindValue(username);
     query_pass.exec();
     if (!query_pass.first())
         return false;
     QString stored_pass = query_pass.value(0).toString();
+
+    // Update old-style hashes to new ones on the fly
+    if (QByteArray::fromHex(salt.toUtf8()).length() < CryptoHelper::pbkdf2_salt_len && salted_password == stored_pass) {
+        updatePassword(username, password);
+    }
 
     return salted_password == stored_pass;
 }
@@ -353,27 +350,13 @@ bool DBManager::updateBan(int ban_id, QString field, QVariant updated_info)
 
 bool DBManager::updatePassword(QString username, QString password)
 {
-    QString salt;
-    QSqlQuery salt_check;
-    salt_check.prepare("SELECT SALT FROM users WHERE USERNAME = ?");
-    salt_check.addBindValue(username);
-    salt_check.exec();
-
-    if (!salt_check.first())
-        return false;
-    else
-        salt = salt_check.value(0).toString();
+    QByteArray salt = CryptoHelper::randbytes(16);
+    QString salted_password = CryptoHelper::hash_password(salt, password);
 
     QSqlQuery query;
-
-    QString salted_password;
-    QMessageAuthenticationCode hmac(QCryptographicHash::Sha256);
-    hmac.setKey(salt.toUtf8());
-    hmac.addData(password.toUtf8());
-    salted_password = hmac.result().toHex();
-
-    query.prepare("UPDATE users SET PASSWORD = ? WHERE USERNAME = ?");
+    query.prepare("UPDATE users SET PASSWORD = ?, SALT = ? WHERE USERNAME = ?");
     query.addBindValue(salted_password);
+    query.addBindValue(salt.toHex());
     query.addBindValue(username);
     query.exec();
     return true;
