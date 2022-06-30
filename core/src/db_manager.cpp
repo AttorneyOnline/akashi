@@ -171,7 +171,7 @@ bool DBManager::invalidateBan(int id)
     return true;
 }
 
-bool DBManager::createUser(QString f_username, QString f_salt, QString f_password, QString f_acl)
+bool DBManager::createUser(QString f_username, QByteArray f_salt, QString f_password, QString f_acl)
 {
     QSqlQuery username_exists;
     username_exists.prepare("SELECT ACL FROM users WHERE USERNAME = ?");
@@ -187,7 +187,7 @@ bool DBManager::createUser(QString f_username, QString f_salt, QString f_passwor
 
     query.prepare("INSERT INTO users(USERNAME, SALT, PASSWORD, ACL) VALUES(?, ?, ?, ?)");
     query.addBindValue(f_username);
-    query.addBindValue(f_salt);
+    query.addBindValue(f_salt.toHex());
     query.addBindValue(salted_password);
     query.addBindValue(f_acl);
     query.exec();
@@ -243,10 +243,10 @@ bool DBManager::authenticate(QString username, QString password)
         return false;
     QString salt = query_salt.value(0).toString();
 
-    QString salted_password = CryptoHelper::hash_password(salt, password);
+    QString salted_password = CryptoHelper::hash_password(QByteArray::fromHex(salt.toUtf8()), password);
 
-    QSqlQuery query_pass("SELECT PASSWORD FROM users WHERE SALT = ?");
-    query_pass.addBindValue(salt);
+    QSqlQuery query_pass("SELECT PASSWORD FROM users WHERE USERNAME = ?");
+    query_pass.addBindValue(username);
     query_pass.exec();
     if (!query_pass.first())
         return false;
@@ -358,7 +358,7 @@ bool DBManager::updatePassword(QString username, QString password)
 
     QSqlQuery query;
 
-    QString salted_password = CryptoHelper::hash_password(salt, password);
+    QString salted_password = CryptoHelper::hash_password(QByteArray::fromHex(salt.toUtf8()), password);
 
     query.prepare("UPDATE users SET PASSWORD = ? WHERE USERNAME = ?");
     query.addBindValue(salted_password);

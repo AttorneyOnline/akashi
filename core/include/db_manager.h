@@ -147,7 +147,7 @@ class DBManager : public QObject
      * @see AOClient#cmdLogin and AOClient#cmdLogout for the username and password's contexts.
      * @see ACLRolesHandler for details regarding ACL roles and ACL role identifiers.
      */
-    bool createUser(QString username, QString salt, QString password, QString acl);
+    bool createUser(QString username, QByteArray salt, QString password, QString acl);
 
     /**
      * @brief Deletes an authorised user from the database.

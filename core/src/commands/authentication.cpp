@@ -81,7 +81,7 @@ void AOClient::cmdSetRootPass(int argc, QStringList argv)
     m_authenticated = false;
     ConfigManager::setAuthType(DataTypes::AuthType::ADVANCED);
 
-    QString l_salt = CryptoHelper::randbytes(16).toHex();;
+    QByteArray l_salt = CryptoHelper::randbytes(16);
 
     server->getDatabaseManager()->createUser("root", l_salt, argv[0], ACLRolesHandler::SUPER_ID);
 }
@@ -95,7 +95,7 @@ void AOClient::cmdAddUser(int argc, QStringList argv)
         return;
     }
 
-    QString l_salt = CryptoHelper::randbytes(16).toHex();
+    QByteArray l_salt = CryptoHelper::randbytes(16);
 
     if (server->getDatabaseManager()->createUser(argv[0], l_salt, argv[1], ACLRolesHandler::NONE_ID))
         sendServerMessage("Created user " + argv[0] + ".\nUse /setperms to modify their permissions.");

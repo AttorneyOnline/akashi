@@ -30,28 +30,48 @@
  */
 class CryptoHelper {
   private:
-    static constexpr int argon2_salt_len = 16;
-    static constexpr int argon2_cost = 10000;
-    static constexpr int argon2_output_len = 16;
+    static constexpr qint32 pbkdf2_salt_len = 16;
+    static constexpr qint32 pbkdf2_output_len = 32; // 32 bytes (SHA-256)
+    static constexpr quint32 pbkdf2_cost = 100000;
 
-    static QString argon2(QString salt, QString password) {
-      return "UNIMPLEMENTED";
+    static QByteArray hmac(QByteArray salt, QByteArray password) {
+      QMessageAuthenticationCode hmac(QCryptographicHash::Sha256);
+      hmac.setKey(salt);
+      hmac.addData(password);
+      return hmac.result();
     }
 
     static QString password_hmac(QString salt, QString password) {
-      QMessageAuthenticationCode hmac(QCryptographicHash::Sha256);
-      hmac.setKey(salt.toUtf8());
-      hmac.addData(password.toUtf8());
-      return hmac.result().toHex();
+      return hmac(salt.toUtf8(), password.toUtf8()).toHex();
+    }
+
+    static QString pbkdf2(QByteArray salt, QString password) {
+      QByteArray bigendian_one("\x00\x00\x00\x01", 4);
+      QByteArray last_block = salt;
+      last_block.append(bigendian_one);
+
+      QByteArray result(pbkdf2_output_len, '\0');
+
+      for (unsigned int i = 0; i < pbkdf2_cost; i++) {
+        last_block = hmac(password.toUtf8(), last_block);
+        for (unsigned int n = 0; n < pbkdf2_output_len; n++)
+          result[n] = result[n] ^ last_block[n];
+      }
+
+      return result.toHex();
     }
   public:
 
-    static QString hash_password(QString salt, QString password) {
+    static QString hash_password(QByteArray salt, QString password) {
       // Select the correct hash backend based on the salt length
-      if (salt.length() < argon2_salt_len)
-        return password_hmac(salt, password);
-
-      return argon2(salt, password);
+      if (salt.length() < pbkdf2_salt_len) {
+        // Due to an implementation oversight, the old HMAC algorithm
+        // does not correctly handle salts. Instead of treating the hex string
+        // as binary data, it is used directly. We have to handle this case.
+        return password_hmac(salt.toHex(), password);
+      }
+        
+      return pbkdf2(salt, password);
 
     }
 
