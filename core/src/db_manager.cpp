@@ -252,6 +252,11 @@ bool DBManager::authenticate(QString username, QString password)
         return false;
     QString stored_pass = query_pass.value(0).toString();
 
+    // Update old-style hashes to new ones on the fly
+    if (QByteArray::fromHex(salt.toUtf8()).length() < CryptoHelper::pbkdf2_salt_len && salted_password == stored_pass) {
+        updatePassword(username, password);
+    }
+
     return salted_password == stored_pass;
 }
 
@@ -345,23 +350,13 @@ bool DBManager::updateBan(int ban_id, QString field, QVariant updated_info)
 
 bool DBManager::updatePassword(QString username, QString password)
 {
-    QString salt;
-    QSqlQuery salt_check;
-    salt_check.prepare("SELECT SALT FROM users WHERE USERNAME = ?");
-    salt_check.addBindValue(username);
-    salt_check.exec();
-
-    if (!salt_check.first())
-        return false;
-    else
-        salt = salt_check.value(0).toString();
+    QByteArray salt = CryptoHelper::randbytes(16);
+    QString salted_password = CryptoHelper::hash_password(salt, password);
 
     QSqlQuery query;
-
-    QString salted_password = CryptoHelper::hash_password(QByteArray::fromHex(salt.toUtf8()), password);
-
-    query.prepare("UPDATE users SET PASSWORD = ? WHERE USERNAME = ?");
+    query.prepare("UPDATE users SET PASSWORD = ?, SALT = ? WHERE USERNAME = ?");
     query.addBindValue(salted_password);
+    query.addBindValue(salt.toHex());
     query.addBindValue(username);
     query.exec();
     return true;

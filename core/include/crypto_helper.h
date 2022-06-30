@@ -30,7 +30,6 @@
  */
 class CryptoHelper {
   private:
-    static constexpr qint32 pbkdf2_salt_len = 16;
     static constexpr qint32 pbkdf2_output_len = 32; // 32 bytes (SHA-256)
     static constexpr quint32 pbkdf2_cost = 100000;
 
@@ -61,6 +60,7 @@ class CryptoHelper {
       return result.toHex();
     }
   public:
+    static constexpr qint32 pbkdf2_salt_len = 16;
 
     static QString hash_password(QByteArray salt, QString password) {
       // Select the correct hash backend based on the salt length
