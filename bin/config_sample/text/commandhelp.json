@@ -214,16 +214,10 @@
    },
    {
       "names": [
-         "lock"
-      ],
-      "usage":"/lock",
-      "text":"Locks the area. This command takes no arguments."
-   },
-   {
-      "names": [
+         "lock",
          "area_lock"
       ],
-      "usage":"/area_lock",
+      "usage":"/lock",
       "text":"Locks the area. This command takes no arguments."
    },
    {
@@ -276,13 +270,6 @@
          "area_kick"
       ],
       "usage":"/areakick <ID>",
-      "text":"Kicks a client from the area, moving them back to the default area."
-   },
-   {
-      "names": [
-         "area_kick"
-      ],
-      "usage":"/area_kick <ID>",
       "text":"Kicks a client from the area, moving them back to the default area."
    },
    {
@@ -464,13 +451,6 @@
    },
    {
       "names": [
-         "notecard_clear"
-      ],
-      "usage":"/notecard_clear",
-      "text":"Erases the client's notecard from the area's list of cards. A message will appear to all clients in the area indicating that a notecard has been erased. This command takes no arguments."
-   },
-   {
-      "names": [
          "8ball"
       ],
       "usage":"/8ball <Question>",
@@ -495,7 +475,7 @@
          "allowblankposting",
          "allow_blankposting"
       ],
-      "usage":"allowblankposting",
+      "usage":"/allowblankposting",
       "text":"Toggle whether or not in-character messages purely consisting of spaces are allowed. Takes no arguments. Against all common sense, this also allows you to disable blankposting."
    },
    {
@@ -609,13 +589,6 @@
          "force_noint_pres"
       ],
       "usage":"/forceimmediate",
-      "text":"Toggles immediate text processing in the current area. This command takes no arguments."
-   },
-   {
-      "names": [
-         "force_noint_pres"
-      ],
-      "usage":"/force_noint_pres",
       "text":"Toggles immediate text processing in the current area. This command takes no arguments."
    },
    {
@@ -768,16 +741,10 @@
    },
    {
       "names": [
-         "updateban"
-      ],
-      "usage":"/updateban <BanID> <Field> [Duration|Reason]",
-      "text":"Updates a ban in the database, changing either its reason or duration. First argument is the ban ID. Second is the field, 'reason' or 'duration'. Last argument is either the new duration or reason."
-   },
-   {
-      "names": [
+         "updateban",
          "update_ban"
       ],
-      "usage":"/update_ban <BanID> ['duration'|'reason'] <New Value>",
+      "usage":"/updateban <BanID> <Field> [Duration|Reason]",
       "text":"Updates a ban in the database, changing either its reason or duration. First argument is the ban ID. Second is the field, 'reason' or 'duration'. Last argument is either the new duration or reason."
    },
    {
