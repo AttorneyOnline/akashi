@@ -95,7 +95,7 @@ class ConfigManager
     static void loadCommandHelp();
 
     /**
-     * @brief Returns the content of
+     * @brief Returns a pointer to the QSettings object which contains the area configuration.
      *
      * @return See short description.
      */
