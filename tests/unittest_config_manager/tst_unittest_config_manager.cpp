@@ -2,6 +2,7 @@
 #include <QTest>
 
 #include <include/config_manager.h>
+#include <include/data_types.h>
 
 namespace tests {
 namespace unittests {
@@ -12,6 +13,35 @@ class tst_ConfigManager : public QObject
     Q_OBJECT
 
     typedef QMap<QString, QPair<QString, int>> MusicList;
+
+    using AuthType = DataTypes::AuthType;
+
+  private:
+    /**
+     * @brief setValue Used to modify values in the test ini file.
+     */
+    void setValue(QString f_filename, QString f_key, QString f_value);
+
+    /**
+     * @brief setValue Used to modify values in the test ini file.
+     */
+    void setValue(QString f_filename, QString f_key, int f_value);
+
+    /**
+     * @brief deleteKey Used to delete a key from the test ini.
+     * Tests default loading behaviour for some functions.
+     */
+    void deleteKey(QString f_filename, QString f_key);
+
+    /**
+     * @brief Default path to config.ini
+     */
+    const QString config = "config/config.ini";
+
+    /**
+     * @brief Default path to discord.ini
+     */
+    const QString discord = "config/discord.ini";
 
   private slots:
 
@@ -143,6 +173,30 @@ class tst_ConfigManager : public QObject
     void advertiserCloudflareMode();
 };
 
+void tst_ConfigManager::setValue(QString f_filename, QString f_key, QString f_value)
+{
+    QSettings l_settings(f_filename, QSettings::IniFormat, this);
+    l_settings.setIniCodec("UTF-8");
+    l_settings.setValue(f_key, f_value);
+    l_settings.sync();
+}
+
+void tst_ConfigManager::setValue(QString f_filename, QString f_key, int f_value)
+{
+    QSettings l_settings(f_filename, QSettings::IniFormat, this);
+    l_settings.setIniCodec("UTF-8");
+    l_settings.setValue(f_key, f_value);
+    l_settings.sync();
+}
+
+void tst_ConfigManager::deleteKey(QString f_filename, QString f_key)
+{
+    QSettings l_settings(f_filename, QSettings::IniFormat, this);
+    l_settings.setIniCodec("UTF-8");
+    l_settings.remove(f_key);
+    l_settings.sync();
+}
+
 void tst_ConfigManager::verifyServerConfig()
 {
     // If the sample folder is not renamed or a file is missing, we fail the test.
@@ -167,6 +221,13 @@ void tst_ConfigManager::verifyServerConfig()
 void tst_ConfigManager::bindIP()
 {
     QCOMPARE(ConfigManager::bindIP(), "all");
+    setValue(config, "Options/bind_ip", "192.168.0.1");
+
+    QCOMPARE(ConfigManager::bindIP(), "192.168.0.1");
+    deleteKey(config, "Options/bind_ip");
+
+    QCOMPARE(ConfigManager::bindIP(), "all");
+    setValue(config, "Options/bind_ip", "all");
 }
 
 void tst_ConfigManager::charlist()
@@ -262,42 +323,156 @@ void tst_ConfigManager::iprangeBans()
 
 void tst_ConfigManager::maxPlayers()
 {
+    // Load ini-provided value
+    QCOMPARE(ConfigManager::maxPlayers(), 100);
+
+    // Set an invalid value. It should return the default value.
+    setValue(config, "Options/max_players", "invalid");
+    QCOMPARE(ConfigManager::maxPlayers(), 100);
+
+    // Insert an empty-valued key. This should return default.
+    setValue(config, "Options/max_players", "");
+    QCOMPARE(ConfigManager::maxPlayers(), 100);
+
+    // Key missing, return default
+    deleteKey(config, "Options/max_players");
+    QCOMPARE(ConfigManager::maxPlayers(), 100);
+
+    // Restore original value
+    setValue(config, "Options/max_players", "100");
 }
 
 void tst_ConfigManager::serverPort()
 {
+    QCOMPARE(ConfigManager::serverPort(), 27016);
+
+    setValue(config, "Options/port", "Invalid");
+    QCOMPARE(ConfigManager::serverPort(), 27016);
+
+    setValue(config, "Options/port", 10);
+    QCOMPARE(ConfigManager::serverPort(), 10);
+
+    deleteKey(config, "Options/port");
+    QCOMPARE(ConfigManager::serverPort(), 27016);
+
+    setValue(config, "Options/port", 27016);
 }
 
 void tst_ConfigManager::serverDescription()
 {
+    QCOMPARE(ConfigManager::serverDescription(), "This is a placeholder server description. Tell the world of AO who you are here!");
+
+    setValue(config, "Options/server_description", "");
+    QCOMPARE(ConfigManager::serverDescription(), "");
+
+    setValue(config, "Options/server_description", "Sample Description.");
+    QCOMPARE(ConfigManager::serverDescription(), "Sample Description.");
+
+    deleteKey(config, "Options/server_description");
+    QCOMPARE(ConfigManager::serverDescription(), "This is my flashy new server!");
+
+    setValue(config, "Options/server_description", "This is a placeholder server description. Tell the world of AO who you are here!");
 }
 
 void tst_ConfigManager::serverName()
 {
+    QCOMPARE(ConfigManager::serverName(), "An Unnamed Server");
+
+    setValue(config, "Options/server_name", "");
+    QCOMPARE(ConfigManager::serverName(), "");
+
+    setValue(config, "Options/server_name", "1Aa-.,/()Ä");
+    QCOMPARE(ConfigManager::serverName(), "1Aa-.,/()Ä");
+
+    deleteKey(config, "Options/server_name");
+    QCOMPARE(ConfigManager::serverName(), "An Unnamed Server");
+
+    setValue(config, "Options/server_name", "An Unnamed Server");
 }
 
 void tst_ConfigManager::motd()
 {
+    QCOMPARE(ConfigManager::motd(), "MOTD is not set.");
+
+    setValue(config, "Options/motd", "");
+    QCOMPARE(ConfigManager::motd(), "");
+
+    setValue(config, "Options/motd", "This 1s 4 sample MOTD!§$%&/(");
+    QCOMPARE(ConfigManager::motd(), "This 1s 4 sample MOTD!§$%&/(");
+
+    deleteKey(config, "Options/motd");
+    QCOMPARE(ConfigManager::motd(), "MOTD is not set.");
+
+    setValue(config, "Options/motd", "MOTD is not set.");
 }
 
 void tst_ConfigManager::webaoEnabled()
 {
+    QCOMPARE(ConfigManager::webaoEnabled(), true);
+
+    setValue(config, "Options/webao_enable", "false");
+    QCOMPARE(ConfigManager::webaoEnabled(), false);
+
+    setValue(config, "Options/webao_enable", "Invalid");
+    QCOMPARE(ConfigManager::webaoEnabled(), true);
+
+    deleteKey(config, "Options/webao_enable");
+    QCOMPARE(ConfigManager::webaoEnabled(), false);
+
+    setValue(config, "Options/webao_enable", "true");
 }
 
 void tst_ConfigManager::webaoPort()
 {
+    QCOMPARE(ConfigManager::webaoPort(), 27017);
+
+    setValue(config, "Options/webao_port", 10);
+    QCOMPARE(ConfigManager::webaoPort(), 10);
+
+    setValue(config, "Options/webao_port", "Invalid");
+    QCOMPARE(ConfigManager::webaoPort(), 27017);
+
+    deleteKey(config, "Options/webao_port");
+    QCOMPARE(ConfigManager::webaoPort(), 27017);
 }
 
 void tst_ConfigManager::authType()
 {
+    QCOMPARE(ConfigManager::authType(), AuthType::SIMPLE);
+
+    setValue(config, "Options/auth", "advanced");
+    QCOMPARE(ConfigManager::authType(), AuthType::ADVANCED);
+
+    setValue(config, "Options/auth", "Invalid");
+    QCOMPARE(ConfigManager::authType(), AuthType::SIMPLE);
+
+    setValue(config, "Options/auth", "simple");
 }
 
 void tst_ConfigManager::modpass()
 {
+    QCOMPARE(ConfigManager::modpass(), "changeme");
+
+    setValue(config, "Options/modpass", "DEADBEEF");
+    QCOMPARE(ConfigManager::modpass(), "DEADBEEF");
+
+    setValue(config, "Options/modpass", "changeme");
 }
 
 void tst_ConfigManager::logBuffer()
 {
+    QCOMPARE(ConfigManager::logBuffer(), 500);
+
+    setValue(config, "Options/logbuffer", 100);
+    QCOMPARE(ConfigManager::logBuffer(), 100);
+
+    setValue(config, "Options/logbuffer", "Invalid");
+    QCOMPARE(ConfigManager::logBuffer(), 500);
+
+    deleteKey(config, "Options/logbuffer");
+    QCOMPARE(ConfigManager::logBuffer(), 500);
+
+    setValue(config, "Options/logbuffer", 500);
 }
 
 void tst_ConfigManager::loggingType()

@@ -285,8 +285,8 @@ int ConfigManager::maxPlayers()
 {
     bool ok;
     int l_players = m_settings->value("Options/max_players", 100).toInt(&ok);
-    if (!ok) {
-        qWarning("max_players is not an int!");
+    if (!ok || l_players < 1) {
+        qWarning("max_players is not an int or negative!");
         l_players = 100;
     }
     return l_players;
@@ -294,7 +294,13 @@ int ConfigManager::maxPlayers()
 
 int ConfigManager::serverPort()
 {
-    return m_settings->value("Options/port", 27016).toInt();
+    bool ok;
+    int l_port = m_settings->value("Options/port", 27016).toInt(&ok);
+    if (!ok || l_port < 1) {
+        qWarning("Server port is not an int or negative!");
+        l_port = 27016;
+    }
+    return l_port;
 }
 
 QString ConfigManager::serverDescription()
@@ -309,7 +315,7 @@ QString ConfigManager::serverName()
 
 QString ConfigManager::motd()
 {
-    return m_settings->value("Options/motd", "MOTD not set").toString();
+    return m_settings->value("Options/motd", "MOTD is not set.").toString();
 }
 
 bool ConfigManager::webaoEnabled()
@@ -319,7 +325,13 @@ bool ConfigManager::webaoEnabled()
 
 int ConfigManager::webaoPort()
 {
-    return m_settings->value("Options/webao_port", 27017).toInt();
+    bool ok;
+    int l_webao_port = m_settings->value("Options/webao_port", 27017).toInt(&ok);
+    if (!ok || l_webao_port < 1) {
+        qWarning() << "webao_port is not an int or negative!";
+        l_webao_port = 27017;
+    }
+    return l_webao_port;
 }
 
 DataTypes::AuthType ConfigManager::authType()
