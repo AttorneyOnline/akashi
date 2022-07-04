@@ -38,12 +38,114 @@ void AOClient::cmdFlip(int argc, QStringList argv)
 
 void AOClient::cmdRoll(int argc, QStringList argv)
 {
-    diceThrower(argc, argv, false);
+    int l_sides = 6;
+    int l_dice = 1;
+    QStringList results;
+
+    if (argc >= 1) {
+        if (argv[0].contains('d')) {
+            QStringList l_arguments = argv[0].split('d');
+
+            bool l_dice_ok;
+            bool l_sides_ok;
+            l_dice = l_arguments[0].toInt(&l_dice_ok);
+            l_sides = l_arguments[1].toInt(&l_sides_ok);
+
+            if (argv[0].contains('+')) {
+                bool l_mod_ok;
+                QStringList l_modifier = l_arguments[1].split('+');
+                int modifier = l_modifier[1].toInt(&l_mod_ok);
+                l_sides = l_modifier[0].toInt(&l_sides_ok);
+
+                if (l_mod_ok && l_dice_ok && l_sides_ok)
+                    diceThrower(l_sides, l_dice, false, modifier);
+                else
+                    sendServerMessage("Invalid dice notation.");
+                return;
+            }
+            else if (argv[0].contains('-')) {
+                bool l_mod_ok;
+                QStringList l_modifier = l_arguments[1].split('-');
+                int modifier = l_modifier[1].toInt(&l_mod_ok);
+                l_sides = l_modifier[0].toInt(&l_sides_ok);
+
+                if (l_mod_ok && l_dice_ok && l_sides_ok)
+                    diceThrower(l_sides, l_dice, false, -modifier);
+                else
+                    sendServerMessage("Invalid dice notation.");
+                return;
+            }
+            else if (l_dice_ok && l_sides_ok) {
+                diceThrower(l_sides, l_dice, false);
+                return;
+            }
+            else {
+                sendServerMessage("Invalid dice notation.");
+                return;
+            }
+        }
+        else
+            l_sides = qBound(1, argv[0].toInt(), ConfigManager::diceMaxValue());
+    }
+    if (argc == 2)
+        l_dice = qBound(1, argv[1].toInt(), ConfigManager::diceMaxDice());
+    diceThrower(l_sides, l_dice, false);
 }
 
 void AOClient::cmdRollP(int argc, QStringList argv)
 {
-    diceThrower(argc, argv, true);
+    int l_sides = 6;
+    int l_dice = 1;
+    QStringList results;
+
+    if (argc >= 1) {
+        if (argv[0].contains('d')) {
+            QStringList l_arguments = argv[0].split('d');
+
+            bool l_dice_ok;
+            bool l_sides_ok;
+            l_dice = l_arguments[0].toInt(&l_dice_ok);
+            l_sides = l_arguments[1].toInt(&l_sides_ok);
+
+            if (argv[0].contains('+')) {
+                bool l_mod_ok;
+                QStringList l_modifier = l_arguments[1].split('+');
+                int modifier = l_modifier[1].toInt(&l_mod_ok);
+                l_sides = l_modifier[0].toInt(&l_sides_ok);
+
+                if (l_mod_ok && l_dice_ok && l_sides_ok)
+                    diceThrower(l_sides, l_dice, true, modifier);
+                else
+                    sendServerMessage("Invalid dice notation.");
+                return;
+            }
+            else if (argv[0].contains('-')) {
+                bool l_mod_ok;
+                QStringList l_modifier = l_arguments[1].split('-');
+                int modifier = l_modifier[1].toInt(&l_mod_ok);
+                l_sides = l_modifier[0].toInt(&l_sides_ok);
+
+                if (l_mod_ok && l_dice_ok && l_sides_ok)
+                    diceThrower(l_sides, l_dice, true, -modifier);
+                else
+                    sendServerMessage("Invalid dice notation.");
+                return;
+            }
+            else if (l_dice_ok && l_sides_ok) {
+                diceThrower(l_sides, l_dice, true);
+                return;
+            }
+            else {
+                sendServerMessage("Invalid dice notation.");
+                return;
+            }
+        }
+        else
+            l_sides = qBound(1, argv[0].toInt(), ConfigManager::diceMaxValue());
+    }
+    if (argc == 2)
+        l_dice = qBound(1, argv[1].toInt(), ConfigManager::diceMaxDice());
+    diceThrower(l_sides, l_dice, true);
 }
 
 void AOClient::cmdTimer(int argc, QStringList argv)

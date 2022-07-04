@@ -2033,13 +2033,16 @@ class AOClient : public QObject
     /**
      * @brief A convenience function for rolling dice.
      *
-     * @param argc The amount of arguments.
+     * @param sides The number of sides the dice to be rolled have
      *
-     * @param argv Stringlist of the arguments given by the client.
+     * @param dice The number of dice to be rolled
      *
      * @param p_roll Bool to determine of a roll is private or not.
+     * 
+     * @param roll_modifier Option parameter to add or subtract from each
+     * rolled value
      */
-    void diceThrower(int argc, QStringList argv, bool p_roll);
+    void diceThrower(int sides, int dice, bool p_roll, int roll_modifier = 0);
 
     /**
      * @brief Interprets an expression of time into amount of seconds.
