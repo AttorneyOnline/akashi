@@ -86,7 +86,7 @@ int AOClient::genRand(int min, int max)
 
 void AOClient::diceThrower(int sides, int dice, bool p_roll, int roll_modifier)
 {
-    if (sides < 0 || dice < 0 || sides > 99999 || dice > 99999) {
+    if (sides < 0 || dice < 0 || sides > ConfigManager::diceMaxValue || dice > ConfigManager::diceMaxDice) {
         sendServerMessage("Dice or side number out of bounds.");
         return;
     }
