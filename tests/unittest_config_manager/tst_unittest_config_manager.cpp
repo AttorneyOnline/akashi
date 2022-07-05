@@ -16,6 +16,8 @@ class tst_ConfigManager : public QObject
 
     using AuthType = DataTypes::AuthType;
 
+    using LogType = DataTypes::LogType;
+
   private:
     /**
      * @brief setValue Used to modify values in the test ini file.
@@ -477,18 +479,69 @@ void tst_ConfigManager::logBuffer()
 
 void tst_ConfigManager::loggingType()
 {
+    QCOMPARE(ConfigManager::loggingType(), LogType::MODCALL);
+
+    setValue(config, "Options/logging", "full");
+    QCOMPARE(ConfigManager::loggingType(), LogType::FULL);
+
+    setValue(config, "Options/logging", "fullarea");
+    QCOMPARE(ConfigManager::loggingType(), LogType::FULLAREA);
+
+    setValue(config, "Options/logging", "Invalid");
+    QCOMPARE(ConfigManager::loggingType(), LogType::MODCALL);
+
+    deleteKey(config, "Options/logging");
+    QCOMPARE(ConfigManager::loggingType(), LogType::MODCALL);
+
+    setValue(config, "Options/logging", "modcall");
 }
 
 void tst_ConfigManager::maxStatements()
 {
+    QCOMPARE(ConfigManager::maxStatements(), 10);
+
+    setValue(config, "Options/maximum_statements", 20);
+    QCOMPARE(ConfigManager::maxStatements(), 20);
+
+    setValue(config, "Options/maximum_statements", "Invalid");
+    QCOMPARE(ConfigManager::maxStatements(), 10);
+
+    deleteKey(config, "Options/maxium_statements");
+    QCOMPARE(ConfigManager::maxStatements(), 10);
+
+    setValue(config, "Options/maximum_statements", 10);
 }
 
 void tst_ConfigManager::multiClientLimit()
 {
+    QCOMPARE(ConfigManager::multiClientLimit(), 15);
+
+    setValue(config, "Options/multiclient_limit", 10);
+    QCOMPARE(ConfigManager::multiClientLimit(), 10);
+
+    setValue(config, "Options/multiclient_limit", "Invalid");
+    QCOMPARE(ConfigManager::multiClientLimit(), 15);
+
+    deleteKey(config, "Options/multiclient_limit");
+    QCOMPARE(ConfigManager::multiClientLimit(), 15);
+
+    setValue(config, "Options/multiclient_limit", 15);
 }
 
 void tst_ConfigManager::maxCharacters()
 {
+    QCOMPARE(ConfigManager::maxCharacters(), 256);
+
+    setValue(config, "Options/maximum_characters", 10);
+    QCOMPARE(ConfigManager::maxCharacters(), 10);
+
+    setValue(config, "Options/maximum_characters", "Invalid");
+    QCOMPARE(ConfigManager::maxCharacters(), 256);
+
+    deleteKey(config, "Options/maximum_characters");
+    QCOMPARE(ConfigManager::maxCharacters(), 256);
+
+    setValue(config, "Options/maximum_characters", 256);
 }
 
 void tst_ConfigManager::messageFloodguard()
