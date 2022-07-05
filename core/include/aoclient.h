@@ -2038,7 +2038,7 @@ class AOClient : public QObject
      * @param dice The number of dice to be rolled
      *
      * @param p_roll Bool to determine of a roll is private or not.
-     * 
+     *
      * @param roll_modifier Option parameter to add or subtract from each
      * rolled value
      */

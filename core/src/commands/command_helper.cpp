@@ -108,7 +108,6 @@ void AOClient::diceThrower(int sides, int dice, bool p_roll, int roll_modifier)
         sendServerMessageArea(m_ooc_name + " rolled a " + QString::number(dice) + "d" + QString::number(sides) + ". Results: " + total_results);
 }
 
-
 QString AOClient::getAreaTimer(int area_idx, int timer_idx)
 {
     AreaData *l_area = server->getAreaById(area_idx);
