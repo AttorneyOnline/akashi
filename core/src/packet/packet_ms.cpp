@@ -14,7 +14,7 @@ PacketInfo PacketMS::getPacketInfo() const
 {
     PacketInfo info{
         .acl_permission = ACLRole::Permission::NONE,
-        .min_args = 0,
+        .min_args = 15,
         .header = "MS"};
     return info;
 }
@@ -138,7 +138,11 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
 
     if (client.m_is_shaken) {
         QStringList l_parts = l_incoming_msg.split(" ");
-        std::random_shuffle(l_parts.begin(), l_parts.end());
+
+        std::random_device rng;
+        std::mt19937 urng(rng());
+        std::shuffle(l_parts.begin(), l_parts.end(), urng);
+
         l_incoming_msg = l_parts.join(" ");
     }
 

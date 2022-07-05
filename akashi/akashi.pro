@@ -2,7 +2,8 @@ QT       += network websockets core sql
 QT       -= gui
 TEMPLATE = app
 
-CONFIG += c++17 console
+unix:CONFIG += c++1z console
+win32: CONFIG+=c++2a console
 
 coverage {
     LIBS += -lgcov

@@ -12,7 +12,7 @@ PacketInfo PacketDE::getPacketInfo() const
 {
     PacketInfo info{
         .acl_permission = ACLRole::Permission::NONE,
-        .min_args = 0,
+        .min_args = 1,
         .header = "DE"};
     return info;
 }

@@ -12,7 +12,7 @@ PacketInfo PacketPW::getPacketInfo() const
 {
     PacketInfo info{
         .acl_permission = ACLRole::Permission::NONE,
-        .min_args = 0,
+        .min_args = 1,
         .header = "PW"};
     return info;
 }

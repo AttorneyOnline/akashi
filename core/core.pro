@@ -6,7 +6,8 @@ TEMPLATE = lib
 # Apparently, Windows needs a static config to make a dynamic library?
 # Look, I dunno.
 # Linux works just fine with `shared` only.
-CONFIG += shared static c++17
+unix: CONFIG += shared static c++1z
+win32: CONFIG+= shared static c++2a
 
 coverage {
     QMAKE_CXXFLAGS += --coverage -g -Og    # -fprofile-arcs -ftest-coverage
