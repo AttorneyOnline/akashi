@@ -212,8 +212,7 @@ void ConfigManager::loadCommandHelp()
             if (!l_name.isEmpty()) {
                 help l_help_information = {
                     .usage = l_usage,
-                    .text = l_text
-                };
+                    .text = l_text};
 
                 m_commands_help->insert(l_name, l_help_information);
             }
