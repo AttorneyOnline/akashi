@@ -16,7 +16,7 @@
    {
       "names": [
          "getareas"
-      ]
+      ],
       "usage":"/getareas",
       "text":"Lists all clients in all areas. This command takes no arguments."
    },
