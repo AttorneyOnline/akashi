@@ -29,5 +29,8 @@ void PacketAskchaa::handlePacket(AreaData *area, AOClient &client) const
 
 bool PacketAskchaa::validatePacket() const
 {
+    if (m_content.size() > 0) { // Too many arguments.
+        return false;
+    }
     return true;
 }

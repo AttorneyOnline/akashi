@@ -1,4 +1,5 @@
 #include "include/packet/packet_cc.h"
+#include "include/akashiutils.h"
 #include "include/config_manager.h"
 #include "include/server.h"
 
@@ -43,5 +44,5 @@ void PacketCC::handlePacket(AreaData *area, AOClient &client) const
 
 bool PacketCC::validatePacket() const
 {
-    return true;
+    return AkashiUtils::checkArgType<int>(m_content.at(1));
 }

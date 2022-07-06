@@ -1,4 +1,5 @@
 #include "include/packet/packet_de.h"
+#include "include/akashiutils.h"
 #include "include/server.h"
 
 #include <QDebug>
@@ -31,5 +32,5 @@ void PacketDE::handlePacket(AreaData *area, AOClient &client) const
 
 bool PacketDE::validatePacket() const
 {
-    return true;
+    return AkashiUtils::checkArgType<int>(m_content.at(0));
 }

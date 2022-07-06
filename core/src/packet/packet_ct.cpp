@@ -64,5 +64,6 @@ void PacketCT::handlePacket(AreaData *area, AOClient &client) const
 
 bool PacketCT::validatePacket() const
 {
+    // Nothing to validate.
     return true;
 }

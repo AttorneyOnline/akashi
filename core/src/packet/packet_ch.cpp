@@ -1,4 +1,5 @@
 #include "include/packet/packet_ch.h"
+#include "include/akashiutils.h"
 #include "include/server.h"
 
 #include <QDebug>
@@ -28,5 +29,5 @@ void PacketCH::handlePacket(AreaData *area, AOClient &client) const
 
 bool PacketCH::validatePacket() const
 {
-    return true;
+    return AkashiUtils::checkArgType<int>(m_content.at(0));
 }

@@ -1,4 +1,5 @@
 #include "include/packet/packet_casea.h"
+#include "include/akashiutils.h"
 #include "include/packet/packet_factory.h"
 #include "include/server.h"
 
@@ -72,5 +73,10 @@ void PacketCasea::handlePacket(AreaData *area, AOClient &client) const
 
 bool PacketCasea::validatePacket() const
 {
+    for (int i = 1; i < m_content.size(); i++) {
+        if (!AkashiUtils::checkArgType<int>(m_content.at(i))) {
+            return false;
+        }
+    }
     return true;
 }

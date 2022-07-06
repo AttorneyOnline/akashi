@@ -33,6 +33,7 @@ DEFINES += NET_DEBUG
 
 SOURCES += \
     src/acl_roles_handler.cpp \
+    src/akashiutils.cpp \
     src/aoclient.cpp \
     src/network/aopacket.cpp \
     src/network/network_socket.cpp \
@@ -83,6 +84,7 @@ SOURCES += \
 HEADERS += include/aoclient.h \
     include/acl_roles_handler.h \
     include/akashidefs.h \
+    include/akashiutils.h \
     include/network/aopacket.h \
     include/network/network_socket.h \
     include/area_data.h \

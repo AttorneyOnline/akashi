@@ -1,4 +1,5 @@
 #include "include/packet/packet_hi.h"
+#include "include/akashiutils.h"
 #include "include/db_manager.h"
 #include "include/server.h"
 
@@ -13,7 +14,7 @@ PacketInfo PacketHI::getPacketInfo() const
 {
     PacketInfo info{
         .acl_permission = ACLRole::Permission::NONE,
-        .min_args = 0,
+        .min_args = 1,
         .header = "HI"};
     return info;
 }
@@ -44,5 +45,6 @@ void PacketHI::handlePacket(AreaData *area, AOClient &client) const
 
 bool PacketHI::validatePacket() const
 {
+    // We can always convert a string to a string. No point in checking.
     return true;
 }

@@ -1,4 +1,5 @@
 #include "include/packet/packet_hp.h"
+#include "include/akashiutils.h"
 #include "include/packet/packet_factory.h"
 #include "include/server.h"
 
@@ -41,5 +42,9 @@ void PacketHP::handlePacket(AreaData *area, AOClient &client) const
 
 bool PacketHP::validatePacket() const
 {
+    if (!AkashiUtils::checkArgType<int>(m_content.at(0)))
+        return false;
+    if (!AkashiUtils::checkArgType<int>(m_content.at(1)))
+        return false;
     return true;
 }
