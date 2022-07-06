@@ -15,7 +15,6 @@ class Packet : public QObject
     Q_OBJECT
 
   public:
-
   private slots:
     /**
      * @brief Initializes all tests
@@ -38,8 +37,9 @@ class Packet : public QObject
     void createPacketFromString();
 };
 
-void Packet::init() {
-  AOPacket::registerPackets();
+void Packet::init()
+{
+    AOPacket::registerPackets();
 }
 
 void Packet::createPacket()
@@ -77,7 +77,7 @@ void Packet::createPacketFromString_data()
 
     QTest::newRow("Empty packet") << ""
                                   << "Unknown"
-                                  << QStringList{"Unknown"};                       
+                                  << QStringList{"Unknown"};
 }
 
 void Packet::createPacketFromString()

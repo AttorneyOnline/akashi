@@ -16,10 +16,3 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/akashiutils.h"
-
-template <typename T>
-bool AkashiUtils::checkArgType(QString arg)
-{
-    QVariant qvar = arg;
-    return qvar.canConvert<T>();
-}

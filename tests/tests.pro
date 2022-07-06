@@ -7,4 +7,5 @@ SUBDIRS += \
     unittest_command_extension \
     unittest_config_manager \
     unittest_crypto \
-    unittest_aopacket
+    unittest_aopacket \
+    unittest_akashi_utils

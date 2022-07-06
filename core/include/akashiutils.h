@@ -27,7 +27,11 @@ class AkashiUtils
 
   public:
     template <typename T>
-    static bool checkArgType(QString arg);
+    static inline bool checkArgType(QString arg)
+    {
+        QVariant qvar = arg;
+        return qvar.canConvert<T>();
+    }
 };
 
 #endif // AKASHI_UTILS_H
