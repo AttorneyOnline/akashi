@@ -199,19 +199,23 @@ void ConfigManager::loadCommandHelp()
     // Akashi expects the helpfile to contain multiple entires, so it always checks for an array first.
     QJsonArray l_Json_root_array = l_help_list_json.array();
     QJsonObject l_child_obj;
+    QJsonArray l_names;
 
-    for (int i = 0; i <= l_Json_root_array.size() - 1; i++) {
+    for (int i = 0; i < l_Json_root_array.size(); i++) {
         l_child_obj = l_Json_root_array.at(i).toObject();
-        QString l_name = l_child_obj["name"].toString();
+        l_names = l_child_obj["names"].toArray();
         QString l_usage = l_child_obj["usage"].toString();
         QString l_text = l_child_obj["text"].toString();
 
-        if (!l_name.isEmpty()) {
-            help l_help_information;
-            l_help_information.usage = l_usage;
-            l_help_information.text = l_text;
+        for (int j = 0; j < l_names.size(); j++) {
+            QString l_name = l_names.at(j).toString();
+            if (!l_name.isEmpty()) {
+                help l_help_information = {
+                    .usage = l_usage,
+                    .text = l_text};
 
-            m_commands_help->insert(l_name, l_help_information);
+                m_commands_help->insert(l_name, l_help_information);
+            }
         }
     }
 }
