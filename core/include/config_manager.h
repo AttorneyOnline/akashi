@@ -151,6 +151,13 @@ class ConfigManager
     static QString serverName();
 
     /**
+     * @brief Returns the server nickname.
+     *
+     * @return See short description.
+     */
+    static QString serverNick();
+
+    /**
      * @brief Returns the server's Message of the Day.
      *
      * @return See short description.
