@@ -301,7 +301,8 @@ QString ConfigManager::serverName()
     return m_settings->value("Options/server_name", "An Unnamed Server").toString();
 }
 
-QString ConfigManager::serverNick() {
+QString ConfigManager::serverNick()
+{
     return m_settings->value("Options/server_nick", "").toString();
 }
 
