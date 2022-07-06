@@ -78,3 +78,5 @@ bin/logs/
 bin/core.lib
 bin/libcore.a
 doxygen/html
+
+.vscode/
