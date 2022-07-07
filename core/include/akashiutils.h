@@ -42,12 +42,12 @@ class AkashiUtils
         else if (std::is_same<T, float>()) {
             bool ok;
             float f = qvar.toFloat(&ok);
-            return ok && !isnanf(f);
+            return ok && !isnan((float) f);
         }
         else if (std::is_same<T, double>()) {
             bool ok;
             double d = qvar.toDouble(&ok);
-            return ok && !isnanl(d);
+            return ok && !isnan((double) d);
         }
 
         return true;
