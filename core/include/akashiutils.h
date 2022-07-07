@@ -19,6 +19,7 @@
 #define AKASHI_UTILS_H
 
 #include <QVariant>
+#include <cmath>
 
 class AkashiUtils
 {
@@ -30,8 +31,27 @@ class AkashiUtils
     static inline bool checkArgType(QString arg)
     {
         QVariant qvar = arg;
-        return qvar.canConvert<T>();
-    }
+        if (!qvar.canConvert<T>())
+            return false;
+
+        if (std::is_same<T, int>()) {
+            bool ok;
+            qvar.toInt(&ok);
+            return ok;
+        }
+        else if (std::is_same<T, float>()) {
+            bool ok;
+            float f = qvar.toFloat(&ok);
+            return ok && !isnanf(f);
+        }
+        else if (std::is_same<T, double>()) {
+            bool ok;
+            double d = qvar.toDouble(&ok);
+            return ok && !isnanl(d);
+        }
+
+        return true;
+    };
 };
 
 #endif // AKASHI_UTILS_H

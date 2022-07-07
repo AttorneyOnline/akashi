@@ -33,7 +33,6 @@ DEFINES += NET_DEBUG
 
 SOURCES += \
     src/acl_roles_handler.cpp \
-    src/akashiutils.cpp \
     src/aoclient.cpp \
     src/network/aopacket.cpp \
     src/network/network_socket.cpp \
