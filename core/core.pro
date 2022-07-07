@@ -8,6 +8,12 @@ TEMPLATE = lib
 # Linux works just fine with `shared` only.
 CONFIG += shared static c++11
 
+coverage {
+    QMAKE_CXXFLAGS += --coverage -g -Og    # -fprofile-arcs -ftest-coverage
+    LIBS += -lgcov
+    CONFIG -= static
+}
+
 # Needed so that Windows doesn't do `release/` and `debug/` subfolders
 # in the output directory.
 CONFIG -= \

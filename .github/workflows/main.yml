@@ -52,7 +52,7 @@ jobs:
         run: |
             cd ${{github.workspace}}/bin_tests/
             for test in ./unittest_*; do
-              LD_LIBRARY_PATH=./bin:$LD_LIBRARY_PATH ./$test
+              LD_LIBRARY_PATH=../bin:$LD_LIBRARY_PATH ./$test
             done;
           
       - name: Upload binary
@@ -61,6 +61,52 @@ jobs:
           name: akashi-linux
           path: bin/
   
+  coverage:
+    needs: build-linux
+    runs-on: ubuntu-latest
+
+    steps:
+       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+      
+      # Runs a single command using the runners shell
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install qt5-default libqt5websockets5-dev g++ make
+      # Runs a set of commands using the runners shell
+      - name: qmake and build
+        run: |
+          cd $GITHUB_WORKSPACE
+          qmake CONFIG+=coverage
+          make
+          
+      - name: Run tests
+        run: |
+            cd ${{github.workspace}}/bin_tests/
+            for test in ./unittest_*; do
+              LD_LIBRARY_PATH=../bin:$LD_LIBRARY_PATH ./$test
+            done;
+
+      - name: Copy coverage files
+        run: |
+          cd ${{github.workspace}}/core
+          gcov *.o
+          cd ..
+          mkdir coverage
+          cp core/*.gcov coverage/
+
+      - name: Codecov
+        uses: codecov/codecov-action@v3.1.0
+        with:
+          files: coverage/*
+
+      - name: Upload coverage files
+        uses: actions/upload-artifact@v2
+        with:
+          name: coverage statistics
+          path: coverage/
+
   build-windows:
     needs: formatting-check
     runs-on: windows-latest
