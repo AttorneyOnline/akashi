@@ -96,6 +96,11 @@ jobs:
           mkdir coverage
           cp core/*.gcov coverage/
 
+      - name: Codecov
+        uses: codecov/codecov-action@v3.1.0
+        with:
+          files: coverage/*
+
       - name: Upload coverage files
         uses: actions/upload-artifact@v2
         with:
