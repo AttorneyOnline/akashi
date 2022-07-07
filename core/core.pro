@@ -10,7 +10,7 @@ CONFIG += shared static c++11
 
 coverage
 {
-    QMAKE_CXXFLAGS += --coverage    # -fprofile-arcs -ftest-coverage
+    QMAKE_CXXFLAGS += --coverage -g -Og    # -fprofile-arcs -ftest-coverage
     LIBS += -lgcov
     CONFIG -= static
 }
