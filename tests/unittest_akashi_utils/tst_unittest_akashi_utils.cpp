@@ -7,6 +7,8 @@ namespace unittests {
 class tst_AkashiUtils : public QObject
 {
 
+    Q_OBJECT
+
   private slots:
 
     void integer_data();
@@ -26,3 +28,7 @@ void tst_AkashiUtils::integer()
 
 }
 };
+
+QTEST_APPLESS_MAIN(tests::unittests::tst_AkashiUtils)
+
+#include "tst_unittest_akashi_utils.moc"
