@@ -2,6 +2,7 @@
 #include <QTest>
 
 #include "include/network/aopacket.h"
+#include "include/packet/packet_factory.h"
 
 namespace tests {
 namespace unittests {
@@ -14,9 +15,12 @@ class Packet : public QObject
     Q_OBJECT
 
   public:
-    AOPacket m_packet = AOPacket{"", {}};
-
   private slots:
+    /**
+     * @brief Initializes all tests
+     */
+    void init();
+
     /**
      * @brief Creates a packet from a defined header and content.
      */
@@ -33,11 +37,16 @@ class Packet : public QObject
     void createPacketFromString();
 };
 
+void Packet::init()
+{
+    AOPacket::registerPackets();
+}
+
 void Packet::createPacket()
 {
-    AOPacket packet = AOPacket("HI", {"HDID"});
-    QCOMPARE(packet.getHeader(), "HI");
-    QCOMPARE(packet.getContent(), {"HDID"});
+    AOPacket *packet = PacketFactory::createPacket("HI", {"HDID"});
+    QCOMPARE(packet->getPacketInfo().header, "HI");
+    QCOMPARE(packet->getContent(), {"HDID"});
 }
 
 void Packet::createPacketFromString_data()
@@ -64,7 +73,11 @@ void Packet::createPacketFromString_data()
 
     QTest::newRow("Unescaped characters") << "MC#20% Cooler#"
                                           << "Unknown"
-                                          << QStringList{"Unknown"}; // This should be impossible.
+                                          << QStringList{"Unknown"};
+
+    QTest::newRow("Empty packet") << ""
+                                  << "Unknown"
+                                  << QStringList{"Unknown"};
 }
 
 void Packet::createPacketFromString()
@@ -73,9 +86,9 @@ void Packet::createPacketFromString()
     QFETCH(QString, expected_header);
     QFETCH(QStringList, expected_content);
 
-    AOPacket packet = AOPacket(incoming_packet);
-    QCOMPARE(packet.getHeader(), expected_header);
-    QCOMPARE(packet.getContent(), expected_content);
+    AOPacket *packet = PacketFactory::createPacket(incoming_packet);
+    QCOMPARE(packet->getPacketInfo().header, expected_header);
+    QCOMPARE(packet->getContent(), expected_content);
 }
 
 }

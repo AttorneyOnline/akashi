@@ -19,7 +19,7 @@
 
 #include "include/area_data.h"
 #include "include/config_manager.h"
-#include "include/network/aopacket.h"
+#include "include/packet/packet_factory.h"
 #include "include/server.h"
 
 // This file is for functions used by various commands, defined in the command helper function category in aoclient.h
@@ -228,7 +228,7 @@ void AOClient::sendNotice(QString f_notice, bool f_global)
         l_message += "server-wide ";
     l_message += "notice:\n\n" + f_notice;
     sendServerMessageArea(l_message);
-    AOPacket l_packet("BB", {l_message});
+    AOPacket *l_packet = PacketFactory::createPacket("BB", {l_message});
     if (f_global)
         server->broadcast(l_packet);
     else

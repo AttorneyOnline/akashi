@@ -34,6 +34,8 @@ class AreaData;
 class DBManager;
 class MusicManager;
 class Server;
+class NetworkSocket;
+class AOPacket;
 
 /**
  * @brief Represents a client connected to the server running Attorney Online 2 or one of its derivatives.
@@ -319,6 +321,37 @@ class AOClient : public QObject
     bool m_is_spectator = true;
 
     /**
+     * @brief The hardware ID of the client.
+     *
+     * @details Generated based on the client's own supplied hardware ID.
+     * The client supplied hardware ID is generally a machine unique ID.
+     */
+    QString m_hwid;
+
+    /**
+     * @brief The network socket used by the client. Can either be a Websocket or TCP Socket.
+     */
+    NetworkSocket *m_socket;
+
+    /**
+     * @brief The IPID of the client.
+     *
+     * @details Generated based on the client's IP, but cannot be reversed to identify the client's IP.
+     */
+    QString m_ipid;
+
+    /**
+     * @brief The type of area update, used for area update (ARUP) packets.
+     */
+    enum ARUPType
+    {
+        PLAYER_COUNT, //!< The packet contains player count updates.
+        STATUS,       //!< The packet contains area status updates.
+        CM,           //!< The packet contains updates about who's the CM of what area.
+        LOCKED        //!< The packet contains updates about what areas are locked.
+    };
+
+    /**
      * @brief Checks if the client's ACL role has permission for the given permission.
      *
      * @param f_permission The permission flags.
@@ -340,109 +373,6 @@ class AOClient : public QObject
      * @param f_spectator
      */
     void setSpectator(bool f_spectator);
-
-    /**
-     * @brief The spectator character ID
-     *
-     * @details You may assume that AO has a sane way to determine if a user is a spectator
-     * or an actual player. Well, to nobodys surprise, this is not the case, so the character id -1 is used
-     * to determine if a client has entered spectator or user mode. I am making this a const mostly
-     * for the case this could change at some point in the future, but don't count on it.
-     */
-    const int SPECTATOR_ID = -1;
-
-  public slots:
-    /**
-     * @brief Handles an incoming packet, checking for authorisation and minimum argument count.
-     *
-     * @param packet The incoming packet.
-     */
-    void handlePacket(AOPacket packet);
-
-    /**
-     * @brief A slot for when the client disconnects from the server.
-     */
-    void clientDisconnected();
-
-    /**
-     * @brief A slot for sending a packet to the client.
-     *
-     * @param packet The packet to send.
-     */
-    void sendPacket(AOPacket packet);
-
-    /**
-     * @overload
-     */
-    void sendPacket(QString header, QStringList contents);
-
-    /**
-     * @overload
-     */
-    void sendPacket(QString header);
-
-    /**
-     * @brief A slot for when the client's AFK timer runs out.
-     */
-    void onAfkTimeout();
-
-  signals:
-    /**
-     * @brief This signal is emitted when the client has completed the participation handshake.
-     */
-    void joined();
-
-  private:
-    /**
-     * @brief The network socket used by the client. Can either be a Websocket or TCP Socket.
-     */
-    NetworkSocket *m_socket;
-
-    /**
-     * @brief A pointer to the Server, used for updating server variables that depend on the client (e.g. amount of players in an area).
-     */
-    Server *server;
-
-    /**
-     * @brief The type of area update, used for area update (ARUP) packets.
-     */
-    enum ARUPType
-    {
-        PLAYER_COUNT, //!< The packet contains player count updates.
-        STATUS,       //!< The packet contains area status updates.
-        CM,           //!< The packet contains updates about who's the CM of what area.
-        LOCKED        //!< The packet contains updates about what areas are locked.
-    };
-
-    /**
-     * @brief Handles an incoming command, checking for authorisation and minimum argument count.
-     *
-     * @param command The incoming command.
-     * @param argc The amount of arguments the command was called with. Equivalent to `argv.size()`.
-     * @param argv The arguments the command was called with.
-     */
-    void handleCommand(QString command, int argc, QStringList argv);
-
-    /**
-     * @brief Changes the area the client is in.
-     *
-     * @param new_area The ID of the new area.
-     */
-    void changeArea(int new_area);
-
-    /**
-     * @brief Changes the client's character.
-     *
-     * @param char_id The character ID of the client's new character.
-     */
-    bool changeCharacter(int char_id);
-
-    /**
-     * @brief Changes the client's in-character position.
-     *
-     * @param new_pos The new position of the client.
-     */
-    void changePosition(QString new_pos);
 
     /**
      * @brief Sends or announces an ARUP update.
@@ -480,113 +410,11 @@ class AOClient : public QObject
     void sendServerBroadcast(QString message);
 
     /**
-     * @name Packet headers
-     *
-     * @details These functions implement the AO2-style packet handling.
-     * As these should generally be the same across server software, I see no reason to document them specifically.
-     *
-     * You can check out the AO2 network protocol for explanations.
-     *
-     * All packet handling functions share the same parameters:
-     *
-     * @param area The area the client is in. Some packets make use of the client's current area.
-     * @param argc The amount of arguments in the packet, not counting the header. Same as `argv.size()`.
-     * @param argv The arguments in the packet, once again, not counting the header.
-     * @param packet The... arguments in the packet. Yes, exactly the same as `argv`, just packed into an AOPacket.
-     *
-     * @see https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md for the AO2 network protocol.
-     */
-    ///@{
-
-    /// A "default" packet handler, to be used for error checking and copying other packet handlers.
-    void pktDefault(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [hardware ID](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#hard-drive-id).
-    void pktHardwareId(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /**
-     * @brief Implements [feature list](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#feature-list) and
-     * [player count](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#player-count).
-     */
-    void pktSoftwareId(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [resource counts](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#resource-counts).
-    void pktBeginLoad(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [character list](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#character-list).
-    void pktRequestChars(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [music list](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#music-list).
-    void pktRequestMusic(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [the final loading confirmation](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#final-confirmation).
-    void pktLoadingDone(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /**
-     * @brief Implements character passwording. This is not on the netcode documentation as of writing.
-     *
-     * @todo Link packet details when it gets into the netcode documentation.
-     */
-    void pktCharPassword(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [character selection](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#choose-character).
-    void pktSelectChar(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [the in-character messaging hell](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#in-character-message).
-    void pktIcChat(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [out-of-character messages](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#out-of-character-message).
-    void pktOocChat(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [the keepalive packet](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#keep-alive).
-    void pktPing(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /**
-     * @brief Implements [music](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#music) and
-     * [area changing](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#switch-area).
-     */
-    void pktChangeMusic(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /**
-     * @brief Implements [the witness testimony / cross examination / judge decision popups]
-     * (https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#witness-testimonycross-examination-wtce).
-     */
-    void pktWtCe(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [penalty bars](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#penalty-health-bars).
-    void pktHpBar(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [moderator calling](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#call-mod).
-    void pktModCall(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [adding evidence](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#add).
-    void pktAddEvidence(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [removing evidence](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#remove).
-    void pktRemoveEvidence(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [editing evidence](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#edit).
-    void pktEditEvidence(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [updating casing preferences](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#case-preferences-update).
-    void pktSetCase(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    /// Implements [announcing a case](https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md#case-alert).
-    void pktAnnounceCase(AreaData *area, int argc, QStringList argv, AOPacket packet);
-
-    ///@}
-
-    /**
-     * @name Packet helper functions
-     */
-    ///@{
-
-    /**
      * @brief Calls AOClient::updateEvidenceList() for every client in the current client's area.
      *
      * @param area The current client's area.
      */
-    void sendEvidenceList(AreaData *area);
+    void sendEvidenceList(AreaData *area) const;
 
     /**
      * @brief Updates the evidence list in the area for the client.
@@ -594,15 +422,6 @@ class AOClient : public QObject
      * @param area The client's area.
      */
     void updateEvidenceList(AreaData *area);
-
-    /**
-     * @brief Attempts to validate that hellish abomination that Attorney Online 2 calls an in-character packet.
-     *
-     * @param packet The packet to validate.
-     *
-     * @return A validated version of the input packet if it is correct, or an `"INVALID"` packet if it is not.
-     */
-    AOPacket validateIcPacket(AOPacket packet);
 
     /**
      * @brief Removes excessive combining characters from a text.
@@ -624,7 +443,101 @@ class AOClient : public QObject
      */
     bool checkEvidenceAccess(AreaData *area);
 
-    ///@}
+    /**
+     * @brief Changes the client's character.
+     *
+     * @param char_id The character ID of the client's new character.
+     */
+    bool changeCharacter(int char_id);
+
+    /**
+     * @brief A helper function for logging in a client as moderator.
+     *
+     * @param message The OOC message the client has sent.
+     */
+    void loginAttempt(QString message);
+
+    /**
+     * @brief Changes the area the client is in.
+     *
+     * @param new_area The ID of the new area.
+     */
+    void changeArea(int new_area);
+
+    /**
+     * @brief Handles an incoming command, checking for authorisation and minimum argument count.
+     *
+     * @param command The incoming command.
+     * @param argc The amount of arguments the command was called with. Equivalent to `argv.size()`.
+     * @param argv The arguments the command was called with.
+     */
+    void handleCommand(QString command, int argc, QStringList argv);
+
+    /**
+     * @brief A helper function for decoding AO encoding from a QString.
+     *
+     * @param incoming_message QString to be decoded.
+     */
+    QString decodeMessage(QString incoming_message);
+
+    /**
+     * @brief Adds the last send IC-Message to QVector of the respective area.
+     *
+     * @details This one pulls double duty to both append IC-Messages to the QVector or insert them, depending on the current recorder enum.
+     *
+     * @param packet The MS-Packet being recorded with their color changed to green.
+     */
+    void addStatement(QStringList packet);
+
+    /**
+     * @brief Updates the currently displayed IC-Message with the next one send
+     * @param packet The IC-Message that will overwrite the currently stored one.
+     * @return Returns the updated IC-Message to be send to the other users. It also changes the color to green.
+     */
+    QStringList updateStatement(QStringList packet);
+
+    /**
+     * @brief Convenience function to generate a random integer number between the given minimum and maximum values.
+     *
+     * @param min The minimum possible value for the random integer, inclusive.
+     * @param max The maximum possible value for the random integer, exclusive.
+     *
+     * @warning `max` must be greater than `min`.
+     *
+     * @return A randomly generated integer within the bounds given.
+     */
+    int genRand(int min, int max);
+
+    /**
+     * @brief A helper function to add recorded packets to an area's judgelog.
+     *
+     * @param area Pointer to the area where the packet was sent.
+     *
+     * @param client Pointer to the client that sent the packet.
+     *
+     * @param action String containing the info that is being recorded.
+     */
+    void updateJudgeLog(AreaData *area, AOClient *client, QString action);
+
+    /**
+     * @brief Pointer to the servers music manager instance.
+     */
+    MusicManager *m_music_manager;
+
+    /**
+     * @brief The text of the last in-character message that was sent by the client.
+     *
+     * @details Used to determine if the incoming message is a duplicate.
+     */
+    QString m_last_message;
+
+    /**
+     * @brief The time in seconds since the client last sent a Witness Testimony / Cross Examination
+     * popup packet.
+     *
+     * @details Used to filter out potential spam.
+     */
+    long m_last_wtce_time;
 
     /**
      * @name Packet helper global variables
@@ -640,15 +553,6 @@ class AOClient : public QObject
      * @brief The ACL role identifier, used to determine what ACL role the client is linked to.
      */
     QString m_acl_role_id;
-
-    /**
-     * @brief The client's character ID.
-     *
-     * @details A character ID is just the character's index in the server's character list.
-     *
-     * In general, the client assumes that this is a continuous block starting from 0.
-     */
-    int m_char_id = -1;
 
     /**
      * @brief The character ID of the other character that the client wants to pair up with.
@@ -687,13 +591,85 @@ class AOClient : public QObject
 
     ///@}
 
-    /// Describes a packet's interpretation details.
-    struct PacketInfo
-    {
-        ACLRole::Permission acl_permission; //!< The permissions necessary for the packet.
-        int minArgs;                        //!< The minimum arguments needed for the packet to be interpreted correctly / make sense.
-        void (AOClient::*action)(AreaData *, int, QStringList, AOPacket);
-    };
+    /**
+     * @brief The client's character ID.
+     *
+     * @details A character ID is just the character's index in the server's character list.
+     *
+     * In general, the client assumes that this is a continuous block starting from 0.
+     */
+    int m_char_id = -1;
+
+    /**
+     * @brief The spectator character ID
+     *
+     * @details You may assume that AO has a sane way to determine if a user is a spectator
+     * or an actual player. Well, to nobodys surprise, this is not the case, so the character id -1 is used
+     * to determine if a client has entered spectator or user mode. I am making this a const mostly
+     * for the case this could change at some point in the future, but don't count on it.
+     */
+    const int SPECTATOR_ID = -1;
+
+  public slots:
+    /**
+     * @brief Handles an incoming packet, checking for authorisation and minimum argument count.
+     *
+     * @param packet The incoming packet.
+     */
+    void handlePacket(AOPacket *packet);
+
+    /**
+     * @brief A slot for when the client disconnects from the server.
+     */
+    void clientDisconnected();
+
+    /**
+     * @brief A slot for sending a packet to the client.
+     *
+     * @param packet The packet to send.
+     */
+    void sendPacket(AOPacket *packet);
+
+    /**
+     * @overload
+     */
+    void sendPacket(QString header, QStringList contents);
+
+    /**
+     * @overload
+     */
+    void sendPacket(QString header);
+
+    /**
+     * @brief A slot for when the client's AFK timer runs out.
+     */
+    void onAfkTimeout();
+
+  signals:
+    /**
+     * @brief This signal is emitted when the client has completed the participation handshake.
+     */
+    void joined();
+
+  private:
+    /**
+     * @brief A pointer to the Server, used for updating server variables that depend on the client (e.g. amount of players in an area).
+     */
+    Server *server;
+
+    /**
+     * @brief Changes the client's in-character position.
+     *
+     * @param new_pos The new position of the client.
+     */
+    void changePosition(QString new_pos);
+
+    /**
+     * @name Packet helper functions
+     */
+    ///@{
+
+    ///@}
 
     /**
      * @property PacketInfo::action
@@ -705,38 +681,6 @@ class AOClient : public QObject
      * @param QStringList When called, this parameter will be filled the list of arguments.
      * @param AOPacket This is a duplicated version of the QStringList above, containing the same data.
      */
-
-    /**
-     * @brief The list of packets that the server can interpret.
-     *
-     * @showinitializer
-     *
-     * @tparam QString The header of the packet that uniquely identifies it.
-     * @tparam PacketInfo The details of the packet.
-     * See @ref PacketInfo "the type's documentation" for more details.
-     */
-    const QMap<QString, PacketInfo> packets{
-        {"HI", {ACLRole::NONE, 1, &AOClient::pktHardwareId}},
-        {"ID", {ACLRole::NONE, 2, &AOClient::pktSoftwareId}},
-        {"askchaa", {ACLRole::NONE, 0, &AOClient::pktBeginLoad}},
-        {"RC", {ACLRole::NONE, 0, &AOClient::pktRequestChars}},
-        {"RM", {ACLRole::NONE, 0, &AOClient::pktRequestMusic}},
-        {"RD", {ACLRole::NONE, 0, &AOClient::pktLoadingDone}},
-        {"PW", {ACLRole::NONE, 1, &AOClient::pktCharPassword}},
-        {"CC", {ACLRole::NONE, 3, &AOClient::pktSelectChar}},
-        {"MS", {ACLRole::NONE, 15, &AOClient::pktIcChat}},
-        {"CT", {ACLRole::NONE, 2, &AOClient::pktOocChat}},
-        {"CH", {ACLRole::NONE, 1, &AOClient::pktPing}},
-        {"MC", {ACLRole::NONE, 2, &AOClient::pktChangeMusic}},
-        {"RT", {ACLRole::NONE, 1, &AOClient::pktWtCe}},
-        {"HP", {ACLRole::NONE, 2, &AOClient::pktHpBar}},
-        {"ZZ", {ACLRole::NONE, 0, &AOClient::pktModCall}},
-        {"PE", {ACLRole::NONE, 3, &AOClient::pktAddEvidence}},
-        {"DE", {ACLRole::NONE, 1, &AOClient::pktRemoveEvidence}},
-        {"EE", {ACLRole::NONE, 4, &AOClient::pktEditEvidence}},
-        {"SETCASE", {ACLRole::NONE, 7, &AOClient::pktSetCase}},
-        {"CASEA", {ACLRole::NONE, 6, &AOClient::pktAnnounceCase}},
-    };
 
     /**
      * @name Authentication
@@ -2019,18 +1963,6 @@ class AOClient : public QObject
     QStringList buildAreaList(int area_idx);
 
     /**
-     * @brief Convenience function to generate a random integer number between the given minimum and maximum values.
-     *
-     * @param min The minimum possible value for the random integer, inclusive.
-     * @param max The maximum possible value for the random integer, exclusive.
-     *
-     * @warning `max` must be greater than `min`.
-     *
-     * @return A randomly generated integer within the bounds given.
-     */
-    int genRand(int min, int max);
-
-    /**
      * @brief A convenience function for rolling dice.
      *
      * @param sides The number of sides the dice to be rolled have
@@ -2067,28 +1999,12 @@ class AOClient : public QObject
     QString getReprimand(bool f_positive = false);
 
     /**
-     * @brief Adds the last send IC-Message to QVector of the respective area.
-     *
-     * @details This one pulls double duty to both append IC-Messages to the QVector or insert them, depending on the current recorder enum.
-     *
-     * @param packet The MS-Packet being recorded with their color changed to green.
-     */
-    void addStatement(QStringList packet);
-
-    /**
      * @brief Clears QVector of the current area.
      *
      * @details It clears both its content and trims it back to size 0
      *
      */
     void clearTestimony();
-
-    /**
-     * @brief Updates the currently displayed IC-Message with the next one send
-     * @param packet The IC-Message that will overwrite the currently stored one.
-     * @return Returns the updated IC-Message to be send to the other users. It also changes the color to green.
-     */
-    QStringList updateStatement(QStringList packet);
 
     /**
      * @brief Called when area enum is set to PLAYBACK. Sends the IC-Message stored at the current statement.
@@ -2151,69 +2067,9 @@ class AOClient : public QObject
     bool is_partial;
 
     /**
-     * @brief The hardware ID of the client.
-     *
-     * @details Generated based on the client's own supplied hardware ID.
-     * The client supplied hardware ID is generally a machine unique ID.
-     */
-    QString m_hwid;
-
-    /**
-     * @brief The IPID of the client.
-     *
-     * @details Generated based on the client's IP, but cannot be reversed to identify the client's IP.
-     */
-    QString m_ipid;
-
-    /**
-     * @brief The time in seconds since the client last sent a Witness Testimony / Cross Examination
-     * popup packet.
-     *
-     * @details Used to filter out potential spam.
-     */
-    long m_last_wtce_time;
-
-    /**
-     * @brief The text of the last in-character message that was sent by the client.
-     *
-     * @details Used to determine if the incoming message is a duplicate.
-     */
-    QString m_last_message;
-
-    /**
-     * @brief Pointer to the servers music manager instance.
-     */
-    MusicManager *m_music_manager;
-
-    /**
-     * @brief A helper function to add recorded packets to an area's judgelog.
-     *
-     * @param area Pointer to the area where the packet was sent.
-     *
-     * @param client Pointer to the client that sent the packet.
-     *
-     * @param action String containing the info that is being recorded.
-     */
-    void updateJudgeLog(AreaData *area, AOClient *client, QString action);
-
-    /**
-     * @brief A helper function for decoding AO encoding from a QString.
-     *
-     * @param incoming_message QString to be decoded.
-     */
-    QString decodeMessage(QString incoming_message);
-
-    /**
      * @brief The size, in bytes, of the last data the client sent to the server.
      */
     int last_read = 0;
-
-    /**
-     * @brief A helper function for logging in a client as moderator.
-     *
-     * @param message The OOC message the client has sent.
-     */
-    void loginAttempt(QString message);
 
   signals:
 

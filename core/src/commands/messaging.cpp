@@ -18,7 +18,7 @@
 #include "include/aoclient.h"
 
 #include "include/area_data.h"
-#include "include/network/aopacket.h"
+#include "include/packet/packet_factory.h"
 #include "include/server.h"
 
 // This file is for commands under the messaging category in aoclient.h
@@ -77,8 +77,8 @@ void AOClient::cmdG(int argc, QStringList argv)
     QString l_sender_area = server->getAreaName(m_current_area);
     QString l_sender_message = argv.join(" ");
     // Better readability thanks to AwesomeAim.
-    AOPacket l_mod_packet = AOPacket("CT", {"[G][" + m_ipid + "][" + l_sender_area + "]" + l_sender_name, l_sender_message});
-    AOPacket l_user_packet = AOPacket("CT", {"[G][" + l_sender_area + "]" + l_sender_name, l_sender_message});
+    AOPacket *l_mod_packet = PacketFactory::createPacket("CT", {"[G][" + m_ipid + "][" + l_sender_area + "]" + l_sender_name, l_sender_message});
+    AOPacket *l_user_packet = PacketFactory::createPacket("CT", {"[G][" + l_sender_area + "]" + l_sender_name, l_sender_message});
     server->broadcast(l_user_packet, l_mod_packet, Server::TARGET_TYPE::AUTHENTICATED);
     return;
 }
@@ -89,7 +89,7 @@ void AOClient::cmdNeed(int argc, QStringList argv)
 
     QString l_sender_area = server->getAreaName(m_current_area);
     QString l_sender_message = argv.join(" ");
-    server->broadcast(AOPacket("CT", {"=== Advert ===\n[" + l_sender_area + "] needs " + l_sender_message + "."}), Server::TARGET_TYPE::ADVERT);
+    server->broadcast(PacketFactory::createPacket("CT", {"=== Advert ===\n[" + l_sender_area + "] needs " + l_sender_message + "."}), Server::TARGET_TYPE::ADVERT);
 }
 
 void AOClient::cmdSwitch(int argc, QStringList argv)
@@ -175,7 +175,7 @@ void AOClient::cmdM(int argc, QStringList argv)
 
     QString l_sender_name = m_ooc_name;
     QString l_sender_message = argv.join(" ");
-    server->broadcast(AOPacket("CT", {"[M]" + l_sender_name, l_sender_message}), Server::TARGET_TYPE::MODCHAT);
+    server->broadcast(PacketFactory::createPacket("CT", {"[M]" + l_sender_name, l_sender_message}), Server::TARGET_TYPE::MODCHAT);
 }
 
 void AOClient::cmdGM(int argc, QStringList argv)
@@ -185,7 +185,7 @@ void AOClient::cmdGM(int argc, QStringList argv)
     QString l_sender_name = m_ooc_name;
     QString l_sender_area = server->getAreaName(m_current_area);
     QString l_sender_message = argv.join(" ");
-    server->broadcast(AOPacket("CT", {"[G][" + l_sender_area + "]" + "[" + l_sender_name + "][M]", l_sender_message}), Server::TARGET_TYPE::MODCHAT);
+    server->broadcast(PacketFactory::createPacket("CT", {"[G][" + l_sender_area + "]" + "[" + l_sender_name + "][M]", l_sender_message}), Server::TARGET_TYPE::MODCHAT);
 }
 
 void AOClient::cmdLM(int argc, QStringList argv)
@@ -194,7 +194,7 @@ void AOClient::cmdLM(int argc, QStringList argv)
 
     QString l_sender_name = m_ooc_name;
     QString l_sender_message = argv.join(" ");
-    server->broadcast(AOPacket("CT", {"[" + l_sender_name + "][M]", l_sender_message}), m_current_area);
+    server->broadcast(PacketFactory::createPacket("CT", {"[" + l_sender_name + "][M]", l_sender_message}), m_current_area);
 }
 
 void AOClient::cmdGimp(int argc, QStringList argv)
@@ -524,7 +524,7 @@ void AOClient::cmdA(int argc, QStringList argv)
     argv.removeAt(0);
     QString l_sender_name = m_ooc_name;
     QString l_ooc_message = argv.join(" ");
-    server->broadcast(AOPacket("CT", {"[CM]" + l_sender_name, l_ooc_message}), l_area_id);
+    server->broadcast(PacketFactory::createPacket("CT", {"[CM]" + l_sender_name, l_ooc_message}), l_area_id);
 }
 
 void AOClient::cmdS(int argc, QStringList argv)
@@ -537,7 +537,7 @@ void AOClient::cmdS(int argc, QStringList argv)
 
     for (int i = 0; i <= l_all_areas; i++) {
         if (server->getAreaById(i)->owners().contains(m_id))
-            server->broadcast(AOPacket("CT", {"[CM]" + l_sender_name, l_ooc_message}), i);
+            server->broadcast(PacketFactory::createPacket("CT", {"[CM]" + l_sender_name, l_ooc_message}), i);
     }
 }
 

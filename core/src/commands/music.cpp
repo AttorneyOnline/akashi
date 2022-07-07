@@ -19,7 +19,7 @@
 
 #include "include/area_data.h"
 #include "include/music_manager.h"
-#include "include/network/aopacket.h"
+#include "include/packet/packet_factory.h"
 #include "include/server.h"
 
 // This file is for commands under the music category in aoclient.h
@@ -41,7 +41,7 @@ void AOClient::cmdPlay(int argc, QStringList argv)
     else {
         l_area->changeMusic(m_showname, l_song);
     }
-    AOPacket music_change("MC", {l_song, QString::number(server->getCharID(m_current_char)), m_showname, "1", "0"});
+    AOPacket *music_change = PacketFactory::createPacket("MC", {l_song, QString::number(server->getCharID(m_current_char)), m_showname, "1", "0"});
     server->broadcast(music_change, m_current_area);
 }
 
