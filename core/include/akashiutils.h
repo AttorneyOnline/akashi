@@ -19,7 +19,7 @@
 #define AKASHI_UTILS_H
 
 #include <QVariant>
-#include <cmath>
+#include <math.h>
 
 class AkashiUtils
 {
