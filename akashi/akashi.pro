@@ -4,8 +4,7 @@ TEMPLATE = app
 
 CONFIG += c++11 console
 
-coverage
-{
+coverage {
     LIBS += -lgcov
 }
 

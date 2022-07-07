@@ -8,8 +8,7 @@ TEMPLATE = lib
 # Linux works just fine with `shared` only.
 CONFIG += shared static c++11
 
-coverage
-{
+coverage {
     QMAKE_CXXFLAGS += --coverage -g -Og    # -fprofile-arcs -ftest-coverage
     LIBS += -lgcov
     CONFIG -= static
