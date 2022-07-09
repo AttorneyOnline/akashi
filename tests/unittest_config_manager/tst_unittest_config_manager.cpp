@@ -208,6 +208,11 @@ void tst_ConfigManager::ordered_songs()
     QCOMPARE(l_ordered_musiclist.at(1), "Announce The Truth (AA).opus");
     QCOMPARE(l_ordered_musiclist.at(2), "Announce The Truth (AJ).opus");
     QCOMPARE(l_ordered_musiclist.at(3), "Announce The Truth (JFA).opus");
+
+    ConfigManager::musiclist();
+
+    // Make sure several loads do not stack.
+    QCOMPARE(l_ordered_musiclist, ConfigManager::ordered_songs());
 }
 
 void tst_ConfigManager::CommandInfo()

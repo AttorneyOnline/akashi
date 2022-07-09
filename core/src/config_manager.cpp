@@ -145,11 +145,17 @@ MusicList ConfigManager::musiclist()
         return QMap<QString, QPair<QString, int>>{}; // Server can still run without music.
     }
 
+    // Make sure the list is empty before appending new data.
+    if (!m_ordered_list->empty()) {
+        m_ordered_list->clear();
+    }
+
     // Akashi expects the musiclist to be contained in a JSON array, even if its only a single category.
     QJsonArray l_Json_root_array = l_music_list_json.array();
     QJsonObject l_child_obj;
     QJsonArray l_child_array;
-    for (int i = 0; i <= l_Json_root_array.size() - 1; i++) { // Iterate trough entire JSON file to assemble musiclist
+
+    for (int i = 0; i < l_Json_root_array.size(); i++) { // Iterate trough entire JSON file to assemble musiclist
         l_child_obj = l_Json_root_array.at(i).toObject();
 
         // Technically not a requirement, but neat for organisation.
@@ -163,7 +169,7 @@ MusicList ConfigManager::musiclist()
         }
 
         l_child_array = l_child_obj["songs"].toArray();
-        for (int i = 0; i <= l_child_array.size() - 1; i++) { // Inner for loop because a category can contain multiple songs.
+        for (int i = 0; i < l_child_array.size(); i++) { // Inner for loop because a category can contain multiple songs.
             QJsonObject l_song_obj = l_child_array.at(i).toObject();
             QString l_song_name = l_song_obj["name"].toString();
             QString l_real_name = l_song_obj["realname"].toString();
