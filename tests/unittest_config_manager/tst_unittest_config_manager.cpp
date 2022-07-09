@@ -33,6 +33,15 @@ class tst_ConfigManager : public QObject
 
     void ordered_songs();
 
+    /**
+     * @brief Tests the loading routine for the musiclist.
+     *
+     * @details Handles regression testing for a bug fixed in PR#314 in which a
+     * musiclist would be loaded twice and the old root instance was not cleared,
+     * causing each reload to append the musiclist to the old list.
+     */
+    void regression_pr_314();
+
     void CommandInfo();
 
     void iprangeBans();
@@ -208,11 +217,24 @@ void tst_ConfigManager::ordered_songs()
     QCOMPARE(l_ordered_musiclist.at(1), "Announce The Truth (AA).opus");
     QCOMPARE(l_ordered_musiclist.at(2), "Announce The Truth (AJ).opus");
     QCOMPARE(l_ordered_musiclist.at(3), "Announce The Truth (JFA).opus");
+}
 
-    ConfigManager::musiclist();
+void tst_ConfigManager::regression_pr_314()
+{
+    // Populate songlist.
+    Q_UNUSED(ConfigManager::musiclist());
 
-    // Make sure several loads do not stack.
-    QCOMPARE(l_ordered_musiclist, ConfigManager::ordered_songs());
+    // Tests for regression where a reload of the songlist would cause the list to duplicate.
+    QStringList l_list = ConfigManager::ordered_songs();
+
+    // We have a populated ordered list and it has a valid size.
+    QCOMPARE(l_list.isEmpty(), false);
+    QCOMPARE(l_list.size(), 4);
+
+    // We are reloading the songlist. The size should be the same and the list has not changed.
+    Q_UNUSED(ConfigManager::musiclist());
+    QCOMPARE(l_list.size(), ConfigManager::ordered_songs().size());
+    QCOMPARE(l_list, ConfigManager::ordered_songs());
 }
 
 void tst_ConfigManager::CommandInfo()
