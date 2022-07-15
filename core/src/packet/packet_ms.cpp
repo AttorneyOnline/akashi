@@ -104,7 +104,8 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
         // Selected char is different from supplied folder name
         // This means the user is INI-swapped
         if (!area->iniswapAllowed()) {
-            if (!client.getServer()->getCharacters().contains(l_incoming_args[2].toString(), Qt::CaseInsensitive))
+            QStringList l_character_split = l_incoming_args[2].toString().split("/");
+            if (!client.getServer()->getCharacters().contains(l_character_split.at(0), Qt::CaseInsensitive) || l_character_split.contains(".."))
                 return l_invalid;
         }
         qDebug() << "INI swap detected from " << client.getIpid();
