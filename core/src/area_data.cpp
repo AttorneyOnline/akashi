@@ -26,6 +26,7 @@
 AreaData::AreaData(QString p_name, int p_index, MusicManager *p_music_manager = nullptr) :
     m_index(p_index),
     m_music_manager(p_music_manager),
+    m_currentMusic("~stop.mp3"),
     m_playerCount(0),
     m_status(IDLE),
     m_locked(FREE),
