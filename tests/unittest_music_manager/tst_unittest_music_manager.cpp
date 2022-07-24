@@ -84,7 +84,7 @@ void MusicListManager::init()
            << "Announce The Truth (AJ).opus"
            << "Announce The Truth (JFA).opus";
 
-    m_music_manager = new MusicManager(l_list, {"my.cdn.com", "your.cdn.com"}, l_test_list, nullptr);
+    m_music_manager = new MusicManager({"my.cdn.com", "your.cdn.com"}, l_test_list, l_list, nullptr);
 }
 
 void MusicListManager::registerArea()
