@@ -3,7 +3,7 @@
 #include "include/config_manager.h"
 #include "include/packet/packet_factory.h"
 
-MusicManager::MusicManager(QStringList f_root_ordered, QStringList f_cdns, QMap<QString, QPair<QString, int>> f_root_list, QObject *parent) :
+MusicManager::MusicManager(QStringList f_cdns, MusicList f_root_list, QStringList f_root_ordered, QObject *parent) :
     QObject(parent),
     m_root_list(f_root_list),
     m_root_ordered(f_root_ordered)
