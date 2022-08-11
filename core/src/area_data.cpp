@@ -33,6 +33,7 @@ AreaData::AreaData(QString p_name, int p_index, MusicManager *p_music_manager = 
     m_area_message("No area message set."),
     m_defHP(10),
     m_proHP(10),
+    m_currentMusic("~stop.mp3"),
     m_statement(0),
     m_judgelog(),
     m_lastICMessage(),
