@@ -23,6 +23,11 @@ void PacketCC::handlePacket(AreaData *area, AOClient &client) const
 {
     Q_UNUSED(area)
 
+    if (!client.hasJoined()) {
+        //No character selecting when you aren't joined.
+        return;
+    }
+
     bool argument_ok;
     int l_selected_char_id = m_content[1].toInt(&argument_ok);
     if (!argument_ok) {
