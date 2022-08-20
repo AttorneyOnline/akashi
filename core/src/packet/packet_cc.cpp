@@ -24,7 +24,7 @@ void PacketCC::handlePacket(AreaData *area, AOClient &client) const
     Q_UNUSED(area)
 
     if (!client.hasJoined()) {
-        //No character selecting when you aren't joined.
+        // No character selecting when you aren't joined.
         return;
     }
 
