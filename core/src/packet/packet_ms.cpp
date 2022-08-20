@@ -159,7 +159,7 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
     l_args.append(l_incoming_args[5].toString());
     if (client.m_pos != l_incoming_args[5].toString()) {
         client.m_pos = l_incoming_args[5].toString();
-        client.m_pos.replace("../", "").replace("..\\","");
+        client.m_pos.replace("../", "").replace("..\\", "");
         client.updateEvidenceList(client.getServer()->getAreaById(client.m_current_area));
     }
 
