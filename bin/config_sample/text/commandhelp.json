@@ -102,16 +102,16 @@
    },
    {
       "names": [
-         "setperm"
+         "setperms"
       ],
-      "usage":"/addperm <Usernames> <Role>",
-      "text":"Sets the role of the user.."
+      "usage":"/setperms <Usernames> <Role>",
+      "text":"Sets the role of the user."
    },
    {
       "names": [
-         "removeperm"
+         "removeperms"
       ],
-      "usage":"/removeperm <Usernames> <Permission>",
+      "usage":"/removeperms <Usernames> <Permission>",
       "text":"Removes the role from a given user."
    },
    {
