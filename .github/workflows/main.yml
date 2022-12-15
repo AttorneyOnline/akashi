@@ -39,7 +39,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install qt5-default libqt5websockets5-dev g++ make
+          sudo apt-get install qt5-qmake libqt5websockets5-dev g++ make
       # Runs a set of commands using the runners shell
       - name: qmake and build
         run: |
