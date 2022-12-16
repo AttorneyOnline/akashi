@@ -126,7 +126,7 @@ void NetworkSocket::ws_readData(QString f_data)
     }
 
     QStringList l_all_packets = l_data.split("%");
-    l_all_packets.removeLast(); // Remove the entry after the last delimiter
+    l_all_packets.removeLast();  // Remove the entry after the last delimiter
     l_all_packets.removeAll({}); // Remove empty or null strings.
 
     if (l_all_packets.value(0).startsWith("MC", Qt::CaseInsensitive)) {

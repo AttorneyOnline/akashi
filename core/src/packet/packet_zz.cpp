@@ -29,7 +29,7 @@ void PacketZZ::handlePacket(AreaData *area, AOClient &client) const
 
     QString l_modcallNotice = "!!!MODCALL!!!\nArea: " + l_areaName + "\nCaller: " + l_name + "\n";
 
-    if (m_content.size() > 0  && !m_content[0].isEmpty())
+    if (m_content.size() > 0 && !m_content[0].isEmpty())
         l_modcallNotice.append("Reason: " + m_content[0]);
     else
         l_modcallNotice.append("No reason given.");
