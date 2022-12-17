@@ -39,7 +39,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install qt5-default libqt5websockets5-dev g++ make
+          sudo apt-get install qt5-qmake libqt5websockets5-dev g++ make
       # Runs a set of commands using the runners shell
       - name: qmake and build
         run: |
@@ -73,7 +73,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install qt5-default libqt5websockets5-dev g++ make
+          sudo apt-get install qt5-qmake libqt5websockets5-dev g++ make
       # Runs a set of commands using the runners shell
       - name: qmake and build
         run: |
@@ -145,8 +145,8 @@ jobs:
 
       - name: Deploy OpenSSL
         run: |
-          curl https://mirror.firedaemon.com/OpenSSL/openssl-1.1.1p.zip --output openssl-1.1.1p.zip
-          tar -xf openssl-1.1.1p.zip
+          curl https://mirror.firedaemon.com/OpenSSL/openssl-1.1.1r.zip --output openssl-1.1.1.zip
+          tar -xf openssl-1.1.1.zip
           copy .\openssl-1.1\x64\bin\libcrypto-1_1-x64.dll .\bin\libcrypto-1_1-x64.dll 
           copy .\openssl-1.1\x64\bin\libssl-1_1-x64.dll .\bin\libssl-1_1-x64.dll
           

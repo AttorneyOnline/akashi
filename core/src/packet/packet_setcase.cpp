@@ -13,7 +13,7 @@ PacketInfo PacketSetcase::getPacketInfo() const
     PacketInfo info{
         .acl_permission = ACLRole::Permission::NONE,
         .min_args = 7,
-        .header = "Setcase"};
+        .header = "SETCASE"};
     return info;
 }
 
