@@ -15,7 +15,7 @@ PacketInfo PacketCasea::getPacketInfo() const
     PacketInfo info{
         .acl_permission = ACLRole::Permission::NONE,
         .min_args = 6,
-        .header = "Casea"};
+        .header = "CASEA"};
     return info;
 }
 
