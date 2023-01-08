@@ -166,6 +166,9 @@ void Packet::createPacketFromString_data()
     QTest::newRow("Empty packet") << ""
                                   << "Unknown"
                                   << QStringList{"Unknown"};
+    QTest::newRow("Bogus Packet - PR 328") << "ZZ#%@%#@^#@&^#@$^@&$^*@&$*@^$&*@$@^$&*@^$&#^&#@$#%"
+                                       << "Unknown"
+                                       << QStringList{"Unknown"};
 }
 
 void Packet::createPacketFromString()
