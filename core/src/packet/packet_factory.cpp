@@ -15,16 +15,23 @@ AOPacket *PacketFactory::createPacket(QString raw_packet)
     QString header;
     QStringList contents;
 
-    if (raw_packet.at(0) == '#' || raw_packet.contains("%") || raw_packet.isEmpty()) {
+    if (raw_packet.isEmpty()) {
+        qDebug() << "Empty packet received.";
+        return PacketFactory::createPacket("Unknown", {"Unknown"});
+    }
+
+    if (raw_packet.at(0) == '#' || raw_packet.contains("%")) {
         qDebug() << "FantaCrypt or otherwise invalid packet received";
         return PacketFactory::createPacket("Unknown", {"Unknown"});
     }
 
     QStringList packet_contents = raw_packet.split("#");
     header = packet_contents[0];
-
     packet_contents.removeFirst(); // Remove header
-    packet_contents.removeLast();  // Remove anything trailing after delimiter
+
+    if (!packet_contents.isEmpty()) {
+        packet_contents.removeLast(); // Remove anything trailing after delimiter
+    }
     contents = packet_contents;
 
     AOPacket *packet = PacketFactory::createPacket(header, contents);
