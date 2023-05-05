@@ -44,48 +44,60 @@ DBManager::DBManager() :
         updateDB(db_version);
 }
 
-QPair<bool, QString> DBManager::isIPBanned(QString ipid)
+QPair<bool, DBManager::BanInfo> DBManager::isIPBanned(QString ipid)
 {
     QSqlQuery query;
-    query.prepare("SELECT TIME,REASON,DURATION FROM BANS WHERE IPID = ? ORDER BY TIME DESC");
+    query.prepare("SELECT * FROM BANS WHERE IPID = ? ORDER BY TIME DESC");
     query.addBindValue(ipid);
     query.exec();
+    BanInfo ban;
     if (query.first()) {
-        long long ban_time = query.value(0).toLongLong();
-        QString reason = query.value(1).toString();
-        long long duration = query.value(2).toLongLong();
-        if (duration == -2)
-            return {true, reason};
+        ban.id = query.value(0).toInt();
+        ban.ipid = query.value(1).toString();
+        ban.hdid = query.value(2).toString();
+        ban.ip = QHostAddress(query.value(3).toString());
+        ban.time = static_cast<unsigned long>(query.value(4).toULongLong());
+        ban.reason = query.value(5).toString();
+        ban.duration = query.value(6).toLongLong();
+        ban.moderator = query.value(7).toString();
+        if (ban.duration == -2)
+            return {true, ban};
         long long current_time = QDateTime::currentDateTime().toSecsSinceEpoch();
-        if (ban_time + duration > current_time)
-            return {true, reason};
+        if (ban.time + ban.duration > current_time)
+            return {true, ban};
         else
-            return {false, nullptr};
+            return {false, ban};
     }
     else
-        return {false, nullptr};
+        return {false, ban};
 }
 
-QPair<bool, QString> DBManager::isHDIDBanned(QString hdid)
+QPair<bool, DBManager::BanInfo> DBManager::isHDIDBanned(QString hdid)
 {
     QSqlQuery query;
-    query.prepare("SELECT TIME,REASON,DURATION FROM BANS WHERE HDID = ? ORDER BY TIME DESC");
+    query.prepare("SELECT * FROM BANS WHERE HDID = ? ORDER BY TIME DESC");
     query.addBindValue(hdid);
     query.exec();
+    BanInfo ban;
     if (query.first()) {
-        long long ban_time = query.value(0).toLongLong();
-        QString reason = query.value(1).toString();
-        long long duration = query.value(2).toLongLong();
-        if (duration == -2)
-            return {true, reason};
+        ban.id = query.value(0).toInt();
+        ban.ipid = query.value(1).toString();
+        ban.hdid = query.value(2).toString();
+        ban.ip = QHostAddress(query.value(3).toString());
+        ban.time = static_cast<unsigned long>(query.value(4).toULongLong());
+        ban.reason = query.value(5).toString();
+        ban.duration = query.value(6).toLongLong();
+        ban.moderator = query.value(7).toString();
+        if (ban.duration == -2)
+            return {true, ban};
         long long current_time = QDateTime::currentDateTime().toSecsSinceEpoch();
-        if (ban_time + duration > current_time)
-            return {true, reason};
+        if (ban.time + ban.duration > current_time)
+            return {true, ban};
         else
-            return {false, nullptr};
+            return {false, ban};
     }
     else
-        return {false, nullptr};
+        return {false, ban};
 }
 
 int DBManager::getBanID(QString hdid)
