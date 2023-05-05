@@ -194,8 +194,14 @@ void Server::clientConnected()
         is_at_multiclient_limit = true;
 
     if (is_banned) {
-        QString reason = ban.second;
-        AOPacket *ban_reason = PacketFactory::createPacket("BD", {reason});
+        QString ban_duration;
+        if (!(ban.second.duration == -2)) {
+            ban_duration = QDateTime::fromSecsSinceEpoch(ban.second.time).addSecs(ban.second.duration).toString("MM/dd/yyyy, hh:mm");
+        }
+        else {
+            ban_duration = "The heat death of the universe.";
+        }
+        AOPacket *ban_reason = PacketFactory::createPacket("BD", {"Reason: " + ban.second.reason + "\nBan ID: " + QString::number(ban.second.id) + "\nUntil: " + ban_duration});
         socket->write(ban_reason->toUtf8());
     }
     if (is_banned || is_at_multiclient_limit) {
