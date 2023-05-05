@@ -62,7 +62,7 @@ QPair<bool, DBManager::BanInfo> DBManager::isIPBanned(QString ipid)
         ban.moderator = query.value(7).toString();
         if (ban.duration == -2)
             return {true, ban};
-        long long current_time = QDateTime::currentDateTime().toSecsSinceEpoch();
+        unsigned long current_time = QDateTime::currentDateTime().toSecsSinceEpoch();
         if (ban.time + ban.duration > current_time)
             return {true, ban};
         else
@@ -90,7 +90,7 @@ QPair<bool, DBManager::BanInfo> DBManager::isHDIDBanned(QString hdid)
         ban.moderator = query.value(7).toString();
         if (ban.duration == -2)
             return {true, ban};
-        long long current_time = QDateTime::currentDateTime().toSecsSinceEpoch();
+        unsigned long current_time = QDateTime::currentDateTime().toSecsSinceEpoch();
         if (ban.time + ban.duration > current_time)
             return {true, ban};
         else
