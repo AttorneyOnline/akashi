@@ -70,11 +70,12 @@ jobs:
        # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
       
-      # Runs a single command using the runners shell
       - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install qt5-qmake libqt5websockets5-dev g++ make
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: qt5-qmake libqt5websockets5-dev g++ make
+          version: 1.0
+          
       # Runs a set of commands using the runners shell
       - name: qmake and build
         run: |
