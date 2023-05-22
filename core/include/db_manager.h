@@ -60,6 +60,21 @@ class DBManager : public QObject
     ~DBManager();
 
     /**
+     * @brief Details about a ban.
+     */
+    struct BanInfo
+    {
+        QString ipid;       //!< The banned user's IPID.
+        QHostAddress ip;    //!< The banned user's IP.
+        QString hdid;       //!< The banned user's hardware ID.
+        unsigned long time; //!< The time the ban was registered.
+        QString reason;     //!< The reason given for the ban by the moderator who registered it.
+        long long duration; //!< The duration of the ban, in seconds.
+        int id;             //!< The unique ID of the ban.
+        QString moderator;  //!< The moderator who issued the ban.
+    };
+
+    /**
      * @brief Checks if there is a record in the Bans table with the given IPID.
      *
      * @param ipid The IPID to check if it is banned.
@@ -68,7 +83,7 @@ class DBManager : public QObject
      * * First, a `bool` that is true if the query could return at least one such record.
      * * Then, a `QString` that is the reason for the ban.
      */
-    QPair<bool, QString> isIPBanned(QString ipid);
+    QPair<bool, BanInfo> isIPBanned(QString ipid);
 
     /**
      * @brief Checks if there is a record in the Bans table with the given hardware ID.
@@ -79,7 +94,7 @@ class DBManager : public QObject
      * * First, a `bool` that is true if the query could return at least one such record.
      * * Then, a `QString` that is the reason for the ban.
      */
-    QPair<bool, QString> isHDIDBanned(QString hdid);
+    QPair<bool, BanInfo> isHDIDBanned(QString hdid);
 
     /**
      * @brief Gets the ID number of a given ban.
@@ -95,21 +110,6 @@ class DBManager : public QObject
      * @overload
      */
     int getBanID(QString hdid);
-
-    /**
-     * @brief Details about a ban.
-     */
-    struct BanInfo
-    {
-        QString ipid;       //!< The banned user's IPID.
-        QHostAddress ip;    //!< The banned user's IP.
-        QString hdid;       //!< The banned user's hardware ID.
-        unsigned long time; //!< The time the ban was registered.
-        QString reason;     //!< The reason given for the ban by the moderator who registered it.
-        long long duration; //!< The duration of the ban, in seconds.
-        int id;             //!< The unique ID of the ban.
-        QString moderator;  //!< The moderator who issued the ban.
-    };
 
     /**
      * @brief Gets the last five bans made on the server.
