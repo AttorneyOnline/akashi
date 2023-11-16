@@ -16,8 +16,8 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
 #include "include/config_manager.h"
-
-#include <include/config_manager.h>
+#include <QSqlDatabase>
+#include <QSqlQuery>
 
 QSettings *ConfigManager::m_settings = new QSettings("config/config.ini", QSettings::IniFormat);
 QSettings *ConfigManager::m_discord = new QSettings("config/discord.ini", QSettings::IniFormat);
@@ -43,7 +43,7 @@ bool ConfigManager::verifyServerConfig()
     // Verify config files
     QStringList l_config_files{"config/config.ini", "config/areas.ini", "config/backgrounds.txt", "config/characters.txt", "config/music.json",
                                "config/discord.ini", "config/text/8ball.txt", "config/text/gimp.txt", "config/text/praise.txt",
-                               "config/text/reprimands.txt", "config/text/commandhelp.json", "config/text/cdns.txt"};
+                               "config/text/reprimands.txt", "config/text/commandhelp.json", "config/text/cdns.txt", "config/ipbans.json"};
     for (const QString &l_file : l_config_files) {
         if (!fileExists(QFileInfo(l_file))) {
             qCritical() << l_file + " does not exist!";
@@ -252,14 +252,36 @@ QStringList ConfigManager::rawAreaNames()
 
 QStringList ConfigManager::iprangeBans()
 {
-    QStringList l_iprange_bans;
-    QFile l_file("config/iprange_bans.txt");
-    l_file.open(QIODevice::ReadOnly | QIODevice::Text);
-    while (!(l_file.atEnd())) {
-        l_iprange_bans.append(l_file.readLine().trimmed());
+    QFile l_json_file("config/ipbans.json");
+    l_json_file.open(QIODevice::ReadOnly | QIODevice::Text);
+
+    QJsonParseError l_error;
+    QJsonDocument l_ip_bans = QJsonDocument::fromJson(l_json_file.readAll(), &l_error);
+    if (l_error.error != QJsonParseError::NoError) {
+        qDebug() << "Unable to parse JSON file. Error:" << l_error.errorString();
+        return {};
     }
-    l_file.close();
-    return l_iprange_bans;
+
+    QJsonObject l_json_obj = l_ip_bans.object();
+
+    QStringList l_range_bans;
+    l_range_bans.append(l_json_obj["ip_range"].toVariant().toStringList());
+
+    if (QFile::exists("storage/asn.sqlite3")) {
+        QSqlDatabase asn_db = QSqlDatabase::addDatabase("QSQLITE", "ASN");
+        asn_db.setDatabaseName("storage/asn.sqlite3");
+        asn_db.open();
+
+        // This is a dumb hack. Idk how else I can do this, but who gives a shit?
+        QSqlQuery query("SELECT ip FROM maxmind WHERE asn in (" + l_json_obj["asn"].toVariant().toStringList().join(",") + ")", asn_db);
+        query.exec();
+        while (query.next()) {
+            l_range_bans.append(query.value(0).toString());
+        }
+        asn_db.close();
+    }
+    l_range_bans.removeDuplicates();
+    return l_range_bans;
 }
 
 void ConfigManager::reloadSettings()

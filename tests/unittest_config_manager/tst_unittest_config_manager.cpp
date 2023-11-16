@@ -256,8 +256,8 @@ void tst_ConfigManager::CommandInfo()
 void tst_ConfigManager::iprangeBans()
 {
     QStringList l_ipranges = ConfigManager::iprangeBans();
-    QCOMPARE(l_ipranges.at(0), "# Test nets");
-    QCOMPARE(l_ipranges.at(1), "192.0.2.0/24");
+    QCOMPARE(l_ipranges.at(0), "192.0.2.0/24");
+    QCOMPARE(l_ipranges.at(1), "198.51.100.0/24");
 }
 
 void tst_ConfigManager::maxPlayers()
