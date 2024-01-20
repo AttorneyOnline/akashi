@@ -63,6 +63,7 @@ void AOClient::cmdCM(int argc, QStringList argv)
     else {
         sendServerMessage("You are already a CM in this area.");
     }
+    server->broadcast(PacketFactory::createPacket("JP", resolvePlayerEntry()));
 }
 
 void AOClient::cmdUnCM(int argc, QStringList argv)

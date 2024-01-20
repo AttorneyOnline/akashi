@@ -665,6 +665,11 @@ class AOClient : public QObject
     void changePosition(QString new_pos);
 
     /**
+     * @brief Creates a QStringList to be displayed by the clients player menu.
+     */
+    QStringList resolvePlayerEntry();
+
+    /**
      * @name Packet helper functions
      */
     ///@{

@@ -96,12 +96,13 @@ void AreaData::clientLeftArea(int f_charId, int f_userId)
         m_charactersTaken.removeAll(f_charId);
     }
     m_joined_ids.removeAll(f_userId);
+    emit sendAreaPacketClient(PacketFactory::createPacket("RP", {}), f_userId);
+    emit sendAreaPacket(PacketFactory::createPacket("LP", {QString::number(f_userId)}), m_index);
 }
 
 void AreaData::clientJoinedArea(int f_charId, int f_userId)
 {
     ++m_playerCount;
-
     if (f_charId != -1) {
         m_charactersTaken.append(f_charId);
     }

@@ -230,7 +230,16 @@ void AOClient::changeArea(int new_area)
         m_char_id = -1;
         l_character_taken = true;
     }
-    server->getAreaById(new_area)->clientJoinedArea(m_char_id, m_id);
+
+    // *vomit* - Salanto
+    AreaData *l_area = server->getAreaById(new_area);
+    for (int l_id : l_area->joinedIDs()) {
+        AOClient *l_client = server->getClientByID(l_id);
+        sendPacket("JP", l_client->resolvePlayerEntry());
+    }
+
+    l_area->clientJoinedArea(m_char_id, m_id);
+    server->broadcast(PacketFactory::createPacket("JP", resolvePlayerEntry()), new_area);
     m_current_area = new_area;
     arup(ARUPType::PLAYER_COUNT, true);
     sendEvidenceList(server->getAreaById(new_area));
@@ -284,6 +293,7 @@ bool AOClient::changeCharacter(int char_id)
         m_pos = "";
         server->updateCharsTaken(l_area);
         sendPacket("PV", {QString::number(m_id), "CID", QString::number(char_id)});
+        server->broadcast(PacketFactory::createPacket("JP", resolvePlayerEntry()));
         return true;
     }
     return false;
@@ -294,6 +304,24 @@ void AOClient::changePosition(QString new_pos)
     m_pos = new_pos;
     sendServerMessage("Position changed to " + m_pos + ".");
     sendPacket("SP", {m_pos});
+}
+
+QStringList AOClient::resolvePlayerEntry()
+{
+    QString l_id = QString::number(m_id);
+    QString l_name = m_ooc_name;
+    if (l_name.isEmpty()) {
+        l_name = m_current_char;
+    }
+    QString l_character = m_current_char;
+    if (!m_current_iniswap.isEmpty()) {
+        l_character = m_current_iniswap;
+    }
+    bool l_is_special = false;
+    if (server->getAreaById(m_current_area)->owners().contains(m_id)) {
+        l_is_special = true;
+    }
+    return {l_id, l_name, l_character, QString::number(l_is_special)};
 }
 
 void AOClient::handleCommand(QString command, int argc, QStringList argv)
