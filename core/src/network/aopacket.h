@@ -23,9 +23,9 @@
 #include <QString>
 #include <QStringList>
 
-#include "include/aoclient.h"
-#include "include/area_data.h"
-#include "include/packet/packet_info.h"
+#include "aoclient.h"
+#include "area_data.h"
+#include "packet/packet_info.h"
 
 class AOClient;
 

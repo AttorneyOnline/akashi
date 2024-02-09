@@ -26,9 +26,8 @@
 #include <QTimer>
 #include <QtGlobal>
 
-#include "include/acl_roles_handler.h"
-#include "include/network/aopacket.h"
-#include "include/network/network_socket.h"
+#include "acl_roles_handler.h"
+#include "network_socket.h"
 
 class AreaData;
 class DBManager;

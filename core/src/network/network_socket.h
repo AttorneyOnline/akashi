@@ -23,8 +23,6 @@
 #include <QTcpSocket>
 #include <QWebSocket>
 
-#include "include/network/aopacket.h"
-
 class AOPacket;
 
 class NetworkSocket : public QObject
