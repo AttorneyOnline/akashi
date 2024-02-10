@@ -1,7 +1,7 @@
-#include "include/packet/packet_mc.h"
-#include "include/music_manager.h"
-#include "include/packet/packet_factory.h"
-#include "include/server.h"
+#include "packet_mc.h"
+#include "music_manager.h"
+#include "packet/packet_factory.h"
+#include "server.h"
 
 #include <QDebug>
 

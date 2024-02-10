@@ -31,7 +31,7 @@
 #include <QWebSocket>
 #include <QWebSocketServer>
 
-#include "include/network/aopacket.h"
+#include "aopacket.h"
 
 class ACLRolesHandler;
 class Advertiser;

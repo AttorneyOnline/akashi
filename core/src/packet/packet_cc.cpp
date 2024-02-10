@@ -1,7 +1,7 @@
-#include "include/packet/packet_cc.h"
-#include "include/akashiutils.h"
-#include "include/config_manager.h"
-#include "include/server.h"
+#include "packet_cc.h"
+#include "akashiutils.h"
+#include "config_manager.h"
+#include "server.h"
 
 #include <QDebug>
 

@@ -15,9 +15,8 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
-#include "include/discord.h"
-
-#include "include/config_manager.h"
+#include "discord.h"
+#include "config_manager.h"
 
 Discord::Discord(QObject *parent) :
     QObject(parent)

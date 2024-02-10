@@ -1,7 +1,7 @@
 #ifndef PACKET_PE_H
 #define PACKET_PE_H
 
-#include "include/network/aopacket.h"
+#include "aopacket.h"
 
 class PacketPE : public AOPacket
 {

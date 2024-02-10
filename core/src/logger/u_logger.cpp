@@ -15,7 +15,9 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
-#include "include/logger/u_logger.h"
+#include "u_logger.h"
+#include "config_manager.h"
+#include "data_types.h"
 
 ULogger::ULogger(QObject *parent) :
     QObject(parent)

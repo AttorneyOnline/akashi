@@ -6,7 +6,7 @@
 #include <QString>
 #include <QVector>
 
-#include "include/acl_roles_handler.h"
+#include "acl_roles_handler.h"
 
 class CommandExtension
 {

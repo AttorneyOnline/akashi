@@ -15,8 +15,8 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
-#include "include/network/network_socket.h"
-#include "include/packet/packet_factory.h"
+#include "network_socket.h"
+#include "packet_factory.h"
 
 NetworkSocket::NetworkSocket(QTcpSocket *f_socket, QObject *parent) :
     QObject(parent)

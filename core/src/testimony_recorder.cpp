@@ -15,11 +15,11 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
-#include "include/aoclient.h"
+#include "aoclient.h"
 
-#include "include/area_data.h"
-#include "include/config_manager.h"
-#include "include/server.h"
+#include "area_data.h"
+#include "config_manager.h"
+#include "server.h"
 
 void AOClient::addStatement(QStringList packet)
 {

@@ -1,4 +1,4 @@
-#include "include/packet/packet_generic.h"
+#include "packet_generic.h"
 
 #include <QDebug>
 

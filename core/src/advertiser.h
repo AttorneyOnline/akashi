@@ -18,8 +18,8 @@
 #ifndef ADVERTISER_H
 #define ADVERTISER_H
 
+#include <QNetworkAccessManager>
 #include <QObject>
-#include <QtNetwork>
 
 /**
  * @brief Represents the advertiser of the server. Sends current server information to masterserver.

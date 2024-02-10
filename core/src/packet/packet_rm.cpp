@@ -1,5 +1,5 @@
-#include "include/packet/packet_rm.h"
-#include "include/server.h"
+#include "packet_rm.h"
+#include "server.h"
 
 #include <QDebug>
 

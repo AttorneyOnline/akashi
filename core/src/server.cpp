@@ -15,20 +15,20 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
-#include "include/server.h"
+#include "server.h"
 
-#include "include/acl_roles_handler.h"
-#include "include/advertiser.h"
-#include "include/aoclient.h"
-#include "include/area_data.h"
-#include "include/command_extension.h"
-#include "include/config_manager.h"
-#include "include/db_manager.h"
-#include "include/discord.h"
-#include "include/logger/u_logger.h"
-#include "include/music_manager.h"
-#include "include/network/network_socket.h"
-#include "include/packet/packet_factory.h"
+#include "acl_roles_handler.h"
+#include "advertiser.h"
+#include "aoclient.h"
+#include "area_data.h"
+#include "command_extension.h"
+#include "config_manager.h"
+#include "db_manager.h"
+#include "discord.h"
+#include "music_manager.h"
+#include "network_socket.h"
+#include "packet_factory.h"
+#include "u_logger.h"
 
 Server::Server(int p_port, int p_ws_port, QObject *parent) :
     QObject(parent),

@@ -1,7 +1,7 @@
 #ifndef PACKET_CASEA_H
 #define PACKET_CASEA_H
 
-#include "include/network/aopacket.h"
+#include "aopacket.h"
 
 class PacketCasea : public AOPacket
 {

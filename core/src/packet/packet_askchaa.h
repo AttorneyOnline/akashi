@@ -1,7 +1,7 @@
 #ifndef PACKET_ASKCHAA_H
 #define PACKET_ASKCHAA_H
 
-#include "include/network/aopacket.h"
+#include "aopacket.h"
 
 class PacketAskchaa : public AOPacket
 {

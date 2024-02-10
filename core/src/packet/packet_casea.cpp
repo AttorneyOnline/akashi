@@ -1,7 +1,7 @@
-#include "include/packet/packet_casea.h"
-#include "include/akashiutils.h"
-#include "include/packet/packet_factory.h"
-#include "include/server.h"
+#include "packet_casea.h"
+#include "akashiutils.h"
+#include "packet_factory.h"
+#include "server.h"
 
 #include <QDebug>
 

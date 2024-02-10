@@ -1,7 +1,7 @@
 #ifndef PACKET_SETCASE_H
 #define PACKET_SETCASE_H
 
-#include "include/network/aopacket.h"
+#include "aopacket.h"
 
 class PacketSetcase : public AOPacket
 {

@@ -15,12 +15,12 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
-#include "include/aoclient.h"
+#include "aoclient.h"
 
-#include "include/area_data.h"
-#include "include/config_manager.h"
-#include "include/packet/packet_factory.h"
-#include "include/server.h"
+#include "area_data.h"
+#include "config_manager.h"
+#include "packet_factory.h"
+#include "server.h"
 
 // This file is for commands under the casing category in aoclient.h
 // Be sure to register the command in the header before adding it here!

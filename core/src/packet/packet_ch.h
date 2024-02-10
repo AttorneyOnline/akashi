@@ -1,7 +1,7 @@
 #ifndef PACKET_CH_H
 #define PACKET_CH_H
 
-#include "include/network/aopacket.h"
+#include "aopacket.h"
 
 class PacketCH : public AOPacket
 {

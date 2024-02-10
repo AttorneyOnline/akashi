@@ -1,4 +1,4 @@
-#include "include/network/aopacket.h"
+#include "aopacket.h"
 
 class PacketFactory
 {

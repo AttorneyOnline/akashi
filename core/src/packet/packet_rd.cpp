@@ -1,6 +1,6 @@
-#include "include/packet/packet_rd.h"
-#include "include/config_manager.h"
-#include "include/server.h"
+#include "packet_rd.h"
+#include "config_manager.h"
+#include "server.h"
 
 #include <QDebug>
 

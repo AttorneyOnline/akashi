@@ -1,5 +1,5 @@
-#include "include/packet/packet_pw.h"
-#include "include/server.h"
+#include "packet_pw.h"
+#include "server.h"
 
 #include <QDebug>
 

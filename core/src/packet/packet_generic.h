@@ -1,7 +1,7 @@
 #ifndef PACKET_GENERIC_H
 #define PACKET_GENERIC_H
 
-#include "include/network/aopacket.h"
+#include "aopacket.h"
 
 class PacketGeneric : public AOPacket
 {

@@ -1,7 +1,7 @@
 #ifndef PACKET_PW_H
 #define PACKET_PW_H
 
-#include "include/network/aopacket.h"
+#include "aopacket.h"
 
 class PacketPW : public AOPacket
 {

@@ -15,17 +15,16 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
-#include "include/aoclient.h"
+#include "aoclient.h"
 
 #include <QQueue>
 
-#include "include/akashidefs.h"
-#include "include/area_data.h"
-#include "include/config_manager.h"
-#include "include/db_manager.h"
-#include "include/music_manager.h"
-#include "include/packet/packet_factory.h"
-#include "include/server.h"
+#include "area_data.h"
+#include "config_manager.h"
+#include "db_manager.h"
+#include "music_manager.h"
+#include "packet_factory.h"
+#include "server.h"
 
 void AOClient::sendEvidenceList(AreaData *area) const
 {

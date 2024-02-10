@@ -1,6 +1,6 @@
-#include "include/packet/packet_ch.h"
-#include "include/akashiutils.h"
-#include "include/server.h"
+#include "packet_ch.h"
+#include "akashiutils.h"
+#include "server.h"
 
 #include <QDebug>
 

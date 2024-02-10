@@ -26,8 +26,6 @@
 #include <QString>
 #include <QTimer>
 
-#include "include/network/aopacket.h"
-
 class ConfigManager;
 class Logger;
 class MusicManager;

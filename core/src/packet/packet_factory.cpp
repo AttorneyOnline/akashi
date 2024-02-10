@@ -1,5 +1,5 @@
-#include "include/packet/packet_factory.h"
-#include "include/packet/packet_generic.h"
+#include "packet_factory.h"
+#include "packet_generic.h"
 
 AOPacket *PacketFactory::createPacket(QString header, QStringList contents)
 {

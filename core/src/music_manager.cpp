@@ -1,7 +1,7 @@
-#include "include/music_manager.h"
+#include "music_manager.h"
 
-#include "include/config_manager.h"
-#include "include/packet/packet_factory.h"
+#include "config_manager.h"
+#include "packet_factory.h"
 
 MusicManager::MusicManager(QStringList f_cdns, MusicList f_root_list, QStringList f_root_ordered, QObject *parent) :
     QObject(parent),

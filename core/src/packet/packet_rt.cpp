@@ -1,6 +1,6 @@
-#include "include/packet/packet_rt.h"
-#include "include/packet/packet_factory.h"
-#include "include/server.h"
+#include "packet_rt.h"
+#include "packet_factory.h"
+#include "server.h"
 
 #include <QDebug>
 

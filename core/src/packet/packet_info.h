@@ -1,7 +1,7 @@
 #ifndef PACKET_INFO_H
 #define PACKET_INFO_H
 
-#include "include/acl_roles_handler.h"
+#include "acl_roles_handler.h"
 
 /// Describes a packet's interpretation details.
 class PacketInfo

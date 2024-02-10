@@ -35,8 +35,8 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 
-#include "include/data_types.h"
-#include "include/typedefs.h"
+#include "data_types.h"
+#include "typedefs.h"
 
 /**
  * @brief The config file handler class.

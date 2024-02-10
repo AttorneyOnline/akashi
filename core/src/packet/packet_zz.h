@@ -1,7 +1,7 @@
 #ifndef PACKET_ZZ_H
 #define PACKET_ZZ_H
 
-#include "include/network/aopacket.h"
+#include "aopacket.h"
 
 class PacketZZ : public AOPacket
 {

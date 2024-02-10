@@ -15,8 +15,8 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
-#include <include/config_manager.h>
-#include <include/server.h>
+#include "config_manager.h"
+#include "server.h"
 
 #include <cstdlib>
 

@@ -1,7 +1,7 @@
 #ifndef PACKET_RD_H
 #define PACKET_RD_H
 
-#include "include/network/aopacket.h"
+#include "aopacket.h"
 
 class PacketRD : public AOPacket
 {

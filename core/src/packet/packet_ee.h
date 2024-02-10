@@ -1,7 +1,7 @@
 #ifndef PACKET_EE_H
 #define PACKET_EE_H
 
-#include "include/network/aopacket.h"
+#include "aopacket.h"
 
 class PacketEE : public AOPacket
 {

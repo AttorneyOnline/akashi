@@ -18,9 +18,8 @@
 #ifndef U_LOGGER_H
 #define U_LOGGER_H
 
-#include "include/config_manager.h"
-#include "include/logger/writer_full.h"
-#include "include/logger/writer_modcall.h"
+#include "writer_full.h"
+#include "writer_modcall.h"
 #include <QDateTime>
 #include <QMap>
 #include <QObject>

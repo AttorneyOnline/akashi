@@ -1,5 +1,5 @@
-#include "include/packet/packet_setcase.h"
-#include "include/server.h"
+#include "packet_setcase.h"
+#include "server.h"
 
 #include <QDebug>
 

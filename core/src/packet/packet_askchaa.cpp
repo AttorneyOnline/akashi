@@ -1,6 +1,6 @@
-#include "include/packet/packet_askchaa.h"
-#include "include/config_manager.h"
-#include "include/server.h"
+#include "packet_askchaa.h"
+#include "config_manager.h"
+#include "server.h"
 
 #include <QDebug>
 

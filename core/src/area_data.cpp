@@ -18,10 +18,10 @@
 
 #include <algorithm>
 
-#include "include/area_data.h"
-#include "include/config_manager.h"
-#include "include/music_manager.h"
-#include "include/packet/packet_factory.h"
+#include "area_data.h"
+#include "config_manager.h"
+#include "music_manager.h"
+#include "packet_factory.h"
 
 AreaData::AreaData(QString p_name, int p_index, MusicManager *p_music_manager = nullptr) :
     m_index(p_index),

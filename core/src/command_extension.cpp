@@ -1,9 +1,9 @@
-#include "include/command_extension.h"
+#include "command_extension.h"
 
 #include <QDebug>
 #include <QSettings>
 
-#include "include/akashidefs.h"
+#include "akashidefs.h"
 
 CommandExtension::CommandExtension() {}
 

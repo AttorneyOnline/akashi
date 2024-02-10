@@ -25,7 +25,7 @@
 
 #include "aoclient.h"
 #include "area_data.h"
-#include "packet/packet_info.h"
+#include "packet_info.h"
 
 class AOClient;
 

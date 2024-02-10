@@ -1,7 +1,7 @@
-#include "include/packet/packet_hi.h"
-#include "include/akashiutils.h"
-#include "include/db_manager.h"
-#include "include/server.h"
+#include "packet_hi.h"
+#include "akashiutils.h"
+#include "db_manager.h"
+#include "server.h"
 
 #include <QDebug>
 

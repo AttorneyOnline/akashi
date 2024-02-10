@@ -1,7 +1,7 @@
-#include "include/packet/packet_ms.h"
-#include "include/config_manager.h"
-#include "include/packet/packet_factory.h"
-#include "include/server.h"
+#include "packet_ms.h"
+#include "config_manager.h"
+#include "packet_factory.h"
+#include "server.h"
 
 #include <QDebug>
 

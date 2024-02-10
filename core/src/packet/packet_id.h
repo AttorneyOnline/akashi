@@ -1,7 +1,7 @@
 #ifndef PACKET_ID_H
 #define PACKET_ID_H
 
-#include "include/network/aopacket.h"
+#include "aopacket.h"
 
 class PacketID : public AOPacket
 {
