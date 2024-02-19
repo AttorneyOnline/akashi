@@ -13,5 +13,6 @@ class PacketMS : public AOPacket
 
   private:
     AOPacket *validateIcPacket(AOClient &client) const;
+    QRegularExpressionMatch regexTestimonyJumpCommand(QString message) const;
 };
 #endif

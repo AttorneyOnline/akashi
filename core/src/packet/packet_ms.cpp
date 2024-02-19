@@ -123,9 +123,14 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
     if (l_incoming_args[4].toString().size() > ConfigManager::maxCharacters())
         return l_invalid;
 
+    // Doublepost prevention. Has to ignore blankposts and testimony commands.
     QString l_incoming_msg = client.dezalgo(l_incoming_args[4].toString().trimmed());
-    if (!client.m_last_message.isEmpty() && l_incoming_msg == client.m_last_message && l_incoming_msg != "")
-        return l_invalid;
+    QRegularExpressionMatch match = regexTestimonyJumpCommand(client.decodeMessage(l_args[4]));
+    bool msg_is_testimony_cmd = (match.hasMatch() || l_incoming_msg == ">" || l_incoming_msg == "<");
+    if (!client.m_last_message.isEmpty()             // If the last message you sent isn't empty,
+        && l_incoming_msg == client.m_last_message   // and it matches the one you're sending,
+        && !msg_is_testimony_cmd)                    // and it's not a testimony command,
+        return l_invalid;                            // get it the hell outta here!
 
     if (l_incoming_msg == "" && area->blankpostingAllowed() == false) {
         client.sendServerMessage("Blankposting has been forbidden in this area.");
@@ -400,10 +405,7 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
                 client.sendServerMessage("First statement reached.");
             }
         }
-
-        QString l_decoded_message = client.decodeMessage(l_args[4]); // Get rid of that pesky encoding first.
-        QRegularExpression jump("(?<arrow>>)(?<int>[0,1,2,3,4,5,6,7,8,9]+)");
-        QRegularExpressionMatch match = jump.match(l_decoded_message);
+        QRegularExpressionMatch match = regexTestimonyJumpCommand(client.decodeMessage(l_args[4])); // Get rid of that pesky encoding, then do the fun part
         if (match.hasMatch()) {
             client.m_pos = "wit";
             auto l_statement = area->jumpToStatement(match.captured("int").toInt());
@@ -430,6 +432,17 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
     }
 
     return PacketFactory::createPacket("MS", l_args);
+}
+
+QRegularExpressionMatch PacketMS::regexTestimonyJumpCommand(QString message) const
+{
+    // *sigh* slightly too chunky and needed slightly
+    // too often to justify not making this a helper
+    // even if it hurts my heart
+    //
+    // and my grey matter
+    QRegularExpression jump("(?<arrow>>)(?<int>[0,1,2,3,4,5,6,7,8,9]+)");
+    return jump.match(message);
 }
 
 bool PacketMS::validatePacket() const
