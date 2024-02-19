@@ -124,7 +124,7 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
         return l_invalid;
 
     QString l_incoming_msg = client.dezalgo(l_incoming_args[4].toString().trimmed());
-    if (!area->lastICMessage().isEmpty() && l_incoming_msg == area->lastICMessage()[4] && l_incoming_msg != "")
+    if (!client.m_last_message.isEmpty() && l_incoming_msg == client.m_last_message && l_incoming_msg != "")
         return l_invalid;
 
     if (l_incoming_msg == "" && area->blankpostingAllowed() == false) {
