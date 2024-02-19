@@ -127,10 +127,10 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
     QString l_incoming_msg = client.dezalgo(l_incoming_args[4].toString().trimmed());
     QRegularExpressionMatch match = regexTestimonyJumpCommand(client.decodeMessage(l_args[4]));
     bool msg_is_testimony_cmd = (match.hasMatch() || l_incoming_msg == ">" || l_incoming_msg == "<");
-    if (!client.m_last_message.isEmpty()             // If the last message you sent isn't empty,
-        && l_incoming_msg == client.m_last_message   // and it matches the one you're sending,
-        && !msg_is_testimony_cmd)                    // and it's not a testimony command,
-        return l_invalid;                            // get it the hell outta here!
+    if (!client.m_last_message.isEmpty()           // If the last message you sent isn't empty,
+        && l_incoming_msg == client.m_last_message // and it matches the one you're sending,
+        && !msg_is_testimony_cmd)                  // and it's not a testimony command,
+        return l_invalid;                          // get it the hell outta here!
 
     if (l_incoming_msg == "" && area->blankpostingAllowed() == false) {
         client.sendServerMessage("Blankposting has been forbidden in this area.");
