@@ -434,7 +434,7 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
     return PacketFactory::createPacket("MS", l_args);
 }
 
-QRegularExpressionMatch PacketMS::regexTestimonyJumpCommand(QString message) const
+QRegularExpressionMatch PacketMS::isTestimonyJumpCommand(QString message) const
 {
     // *sigh* slightly too chunky and needed slightly
     // too often to justify not making this a helper
