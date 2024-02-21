@@ -363,7 +363,10 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
     }
 
     // Testimony playback
-    QString client_name = client.m_ooc_name == "" ? client.m_current_char : client.m_ooc_name;
+    QString client_name = client.m_ooc_name;
+    if (client_name == "") {
+        client_name = client.m_current_char; // fallback in case of empty ooc name
+    }
     if (area->testimonyRecording() == AreaData::TestimonyRecording::RECORDING || area->testimonyRecording() == AreaData::TestimonyRecording::ADD) {
         if (l_args[5] != "wit")
             return PacketFactory::createPacket("MS", l_args);
