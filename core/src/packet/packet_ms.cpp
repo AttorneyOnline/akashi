@@ -363,12 +363,16 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
     }
 
     // Testimony playback
+    QString client_name = client.m_ooc_name;
+    if (client_name == "") {
+        client_name = client.m_current_char; // fallback in case of empty ooc name
+    }
     if (area->testimonyRecording() == AreaData::TestimonyRecording::RECORDING || area->testimonyRecording() == AreaData::TestimonyRecording::ADD) {
         if (l_args[5] != "wit")
             return PacketFactory::createPacket("MS", l_args);
 
         if (area->statement() == -1) {
-            l_args[4] = "~~\\n-- " + l_args[4] + " --";
+            l_args[4] = "~~-- " + l_args[4] + " --";
             l_args[14] = "3";
             client.getServer()->broadcast(PacketFactory::createPacket("RT", {"testimony1"}), client.m_current_area);
         }
@@ -386,6 +390,8 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
             l_args = l_statement.first;
             l_progress = l_statement.second;
 
+            client.sendServerMessageArea(client_name + " moved to the next statement.");
+
             if (l_progress == AreaData::TestimonyProgress::LOOPED) {
                 client.sendServerMessageArea("Last statement reached. Looping to first statement.");
             }
@@ -395,6 +401,8 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
             auto l_statement = area->jumpToStatement(area->statement() - 1);
             l_args = l_statement.first;
             l_progress = l_statement.second;
+
+            client.sendServerMessageArea(client_name + " moved to the previous statement.");
 
             if (l_progress == AreaData::TestimonyProgress::STAYED_AT_FIRST) {
                 client.sendServerMessage("First statement reached.");
@@ -406,9 +414,12 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
         QRegularExpressionMatch match = jump.match(l_decoded_message);
         if (match.hasMatch()) {
             client.m_pos = "wit";
-            auto l_statement = area->jumpToStatement(match.captured("int").toInt());
+            int jump_idx = match.captured("int").toInt();
+            auto l_statement = area->jumpToStatement(jump_idx);
             l_args = l_statement.first;
             l_progress = l_statement.second;
+
+            client.sendServerMessageArea(client_name + " jumped to statement number " + QString::number(jump_idx) + ".");
 
             switch (l_progress) {
             case AreaData::TestimonyProgress::LOOPED:
