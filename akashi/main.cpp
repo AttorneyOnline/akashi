@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
 {
     QCoreApplication app(argc, argv);
     QCoreApplication::setApplicationName("akashi");
-    QCoreApplication::setApplicationVersion("grapefruit (1.7)");
+    QCoreApplication::setApplicationVersion("honeydew (1.8)");
     std::atexit(cleanup);
 
     // Verify server configuration is sound.
