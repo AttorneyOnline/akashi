@@ -252,20 +252,12 @@ QStringList ConfigManager::rawAreaNames()
 
 QStringList ConfigManager::iprangeBans()
 {
-    QFile l_json_file("config/ipbans.json");
-    l_json_file.open(QIODevice::ReadOnly | QIODevice::Text);
-
-    QJsonParseError l_error;
-    QJsonDocument l_ip_bans = QJsonDocument::fromJson(l_json_file.readAll(), &l_error);
-    if (l_error.error != QJsonParseError::NoError) {
-        qDebug() << "Unable to parse JSON file. Error:" << l_error.errorString();
-        return {};
-    }
-
-    QJsonObject l_json_obj = l_ip_bans.object();
+    QFile l_ban_file("config/ipbans.txt");
+    l_ban_file.open(QIODevice::ReadOnly | QIODevice::Text);
 
     QStringList l_range_bans;
-    l_range_bans.append(l_json_obj["ip_range"].toVariant().toStringList());
+    while(!l_ban_file.atEnd())
+        l_range_bans.append(l_ban_file.readLine());
 
     if (QFile::exists("storage/asn.sqlite3")) {
         QSqlDatabase asn_db = QSqlDatabase::addDatabase("QSQLITE", "ASN");
@@ -273,7 +265,7 @@ QStringList ConfigManager::iprangeBans()
         asn_db.open();
 
         // This is a dumb hack. Idk how else I can do this, but who gives a shit?
-        QSqlQuery query("SELECT ip FROM maxmind WHERE asn in (" + l_json_obj["asn"].toVariant().toStringList().join(",") + ")", asn_db);
+        QSqlQuery query("SELECT ip FROM maxmind WHERE asn in (" + l_range_bans.join(",") + ")", asn_db);
         query.exec();
         while (query.next()) {
             l_range_bans.append(query.value(0).toString());
