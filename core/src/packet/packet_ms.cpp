@@ -368,7 +368,7 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
         client_name = client.m_current_char; // fallback in case of empty ooc name
     }
     if (area->testimonyRecording() == AreaData::TestimonyRecording::RECORDING || area->testimonyRecording() == AreaData::TestimonyRecording::ADD) {
-        if (l_args[5] != "wit")
+        if (!l_args[5].startsWith("wit"))
             return PacketFactory::createPacket("MS", l_args);
 
         if (area->statement() == -1) {
@@ -385,10 +385,10 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
         AreaData::TestimonyProgress l_progress;
 
         if (l_args[4] == ">") {
-            client.m_pos = "wit";
             auto l_statement = area->jumpToStatement(area->statement() + 1);
             l_args = l_statement.first;
             l_progress = l_statement.second;
+            client.m_pos = l_args[5];
 
             client.sendServerMessageArea(client_name + " moved to the next statement.");
 
@@ -397,10 +397,10 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
             }
         }
         if (l_args[4] == "<") {
-            client.m_pos = "wit";
             auto l_statement = area->jumpToStatement(area->statement() - 1);
             l_args = l_statement.first;
             l_progress = l_statement.second;
+            client.m_pos = l_args[5];
 
             client.sendServerMessageArea(client_name + " moved to the previous statement.");
 
