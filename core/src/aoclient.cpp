@@ -59,7 +59,7 @@ const QMap<QString, AOClient::CommandInfo> AOClient::COMMANDS{
     {"area_unlock", {{ACLRole::CM}, 0, &AOClient::cmdUnLock}},
     {"timer", {{ACLRole::CM}, 0, &AOClient::cmdTimer}},
     {"area", {{ACLRole::NONE}, 1, &AOClient::cmdArea}},
-    {"play", {{ACLRole::CM}, 1, &AOClient::cmdPlay}},
+    {"play", {{ACLRole::NONE}, 1, &AOClient::cmdPlay}},
     {"area_kick", {{ACLRole::CM}, 1, &AOClient::cmdAreaKick}},
     {"randomchar", {{ACLRole::NONE}, 0, &AOClient::cmdRandomChar}},
     {"switch", {{ACLRole::NONE}, 1, &AOClient::cmdSwitch}},

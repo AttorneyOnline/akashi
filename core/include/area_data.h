@@ -330,6 +330,15 @@ class AreaData : public QObject
     int getJukeboxQueueSize() const;
 
     /**
+     * @brief Returns whether /play is allowed without CM in this area
+     *
+     * @return See short description.
+     *
+     * @see #m_playcmd
+     */
+    bool isPlayEnabled() const;
+
+    /**
      * @brief Locks the area, setting it to LOCKED.
      */
     void lock();
@@ -1182,6 +1191,11 @@ class AreaData : public QObject
      * @brief Wether or not the jukebox is enabled in this area.
      */
     bool m_jukebox;
+
+    /**
+     * @brief Whether or not /play can be used without CM.
+     */
+    bool m_playcmd;
 
     /**
      * @brief Timer until the next IC message can be sent.

@@ -34,6 +34,10 @@ void AOClient::cmdPlay(int argc, QStringList argv)
         return;
     }
     AreaData *l_area = server->getAreaById(m_current_area);
+    if (!l_area->owners().contains(m_id) && !l_area->isPlayEnabled()) { // Make sure we have permission to play music
+        sendServerMessage("You need to be a CM to use that command here.");
+        return;
+    }
     QString l_song = argv.join(" ");
     if (m_showname.isEmpty()) {
         l_area->changeMusic(m_current_char, l_song);
