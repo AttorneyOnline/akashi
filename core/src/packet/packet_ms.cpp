@@ -125,7 +125,7 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
 
     // Doublepost prevention. Has to ignore blankposts and testimony commands.
     QString l_incoming_msg = client.dezalgo(l_incoming_args[4].toString().trimmed());
-    QRegularExpressionMatch match = isTestimonyJumpCommand(client.decodeMessage(l_args[4]));
+    QRegularExpressionMatch match = isTestimonyJumpCommand(client.decodeMessage(l_incoming_msg));
     bool msg_is_testimony_cmd = (match.hasMatch() || l_incoming_msg == ">" || l_incoming_msg == "<");
     if (!client.m_last_message.isEmpty()           // If the last message you sent isn't empty,
         && l_incoming_msg == client.m_last_message // and it matches the one you're sending,
