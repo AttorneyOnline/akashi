@@ -60,6 +60,7 @@ AreaData::AreaData(QString p_name, int p_index, MusicManager *p_music_manager = 
     m_shownameAllowed = areas_ini->value("shownames_allowed", "true").toBool();
     m_ignoreBgList = areas_ini->value("ignore_bglist", "false").toBool();
     m_jukebox = areas_ini->value("jukebox_enabled", "false").toBool();
+    m_playcmd = areas_ini->value("playcmd_enabled", "false").toBool();
     m_can_send_wtce = areas_ini->value("wtce_enabled", "true").toBool();
     m_can_use_shouts = areas_ini->value("shouts_enabled", "true").toBool();
     areas_ini->endGroup();
@@ -164,6 +165,11 @@ bool AreaData::isjukeboxEnabled() const
 int AreaData::getJukeboxQueueSize() const
 {
     return m_jukebox_queue.size();
+}
+
+bool AreaData::isPlayEnabled() const
+{
+    return m_playcmd;
 }
 
 void AreaData::lock()
