@@ -102,10 +102,6 @@ void NetworkSocket::readData()
     QStringList l_all_packets = l_data.split("%");
     l_all_packets.removeLast(); // Remove the entry after the last delimiter
 
-    if (l_all_packets.value(0).startsWith("MC", Qt::CaseInsensitive)) {
-        l_all_packets = QStringList{l_all_packets.value(0)};
-    }
-
     for (const QString &l_single_packet : qAsConst(l_all_packets)) {
         AOPacket *l_packet = PacketFactory::createPacket(l_single_packet);
         if (!l_packet) {
