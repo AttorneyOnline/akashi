@@ -87,6 +87,10 @@ void PacketMC::handlePacket(AreaData *area, AOClient &client) const
         QString l_area = client.getServer()->getAreaName(i);
         if (l_area == l_argument) {
             client.changeArea(i);
+            QString tempname = client.m_current_char;
+            if (!client.m_showname.isEmpty())
+                tempname = client.m_showname;
+            client.sendServerMessageArea(tempname + " entered the area.");
             break;
         }
     }
