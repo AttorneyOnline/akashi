@@ -1,6 +1,6 @@
 # akashi <img src="https://github.com/AttorneyOnline/akashi/blob/master/akashi/resource/icon/256.png" width=30 height=30>
 A C++ server for Attorney Online 2<br><br>
-![Code Format and Build](https://github.com/AttorneyOnline/akashi/actions/workflows/main.yml/badge.svg?event=push) [![Codecov branch](https://img.shields.io/codecov/c/gh/AttorneyOnline/akashi/master)](https://app.codecov.io/gh/AttorneyOnline/akashi) [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/AttorneyOnline/akashi/graphs/commit-activity) [![Linux](https://svgshare.com/i/Zhy.svg)](https://svgshare.com/i/Zhy.svg) [![Windows](https://svgshare.com/i/ZhY.svg)](https://svgshare.com/i/ZhY.svg) ![GitHub](https://img.shields.io/github/license/AttorneyOnline/akashi?color=blue)<br>
+![Code Format and Build](https://github.com/AttorneyOnline/akashi/actions/workflows/main.yml/badge.svg?event=push) [![Codecov branch](https://img.shields.io/codecov/c/gh/AttorneyOnline/akashi/master)](https://app.codecov.io/gh/AttorneyOnline/akashi) [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/AttorneyOnline/akashi/graphs/commit-activity) ![GitHub](https://img.shields.io/github/license/AttorneyOnline/akashi?color=blue)<br>
 
 # Where to download
 You can find the latest stable release on our [release page.](https://github.com/AttorneyOnline/akashi/releases)<br>
