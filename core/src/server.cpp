@@ -144,6 +144,7 @@ void Server::start()
 
     // Rate-Limiter for IC-Chat
     m_message_floodguard_timer = new QTimer(this);
+    m_message_floodguard_timer->setSingleShot(true);
     connect(m_message_floodguard_timer, &QTimer::timeout, this, &Server::allowMessage);
 
     // Prepare player IDs and reference hash.

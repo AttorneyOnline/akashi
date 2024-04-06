@@ -326,6 +326,7 @@ bool AreaData::isShoutAllowed() const
 void AreaData::startMessageFloodguard(int f_duration)
 {
     m_can_send_ic_messages = false;
+    m_message_floodguard_timer->setSingleShot(true);
     m_message_floodguard_timer->start(f_duration);
 }
 
