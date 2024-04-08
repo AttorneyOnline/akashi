@@ -49,6 +49,25 @@ void AOClient::cmdPlay(int argc, QStringList argv)
     server->broadcast(music_change, m_current_area);
 }
 
+void AOClient::cmdPlayAmbience(int argc, QStringList argv)
+{
+    Q_UNUSED(argc);
+
+    if (m_is_dj_blocked) {
+        sendServerMessage("You are blocked from changing the ambience.");
+        return;
+    }
+    AreaData *l_area = server->getAreaById(m_current_area);
+    if (!l_area->owners().contains(m_id) && !l_area->isPlayEnabled()) { // Make sure we have permission to play music
+        sendServerMessage("Free ambience play is disabled in this area.");
+        return;
+    }
+    QString l_song = argv.join(" ");
+    l_area->changeAmbience(l_song);
+    AOPacket *music_change = PacketFactory::createPacket("MC", {l_song, "-1", m_showname, "1", "1"});
+    server->broadcast(music_change, m_current_area);
+}
+
 void AOClient::cmdCurrentMusic(int argc, QStringList argv)
 {
     Q_UNUSED(argc);

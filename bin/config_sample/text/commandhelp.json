@@ -872,5 +872,12 @@
       ],
       "usage":"/jukebox_skip",
       "text":"Skips the current song in the Jukebox and plays the next available one."
+   },
+   {
+      "names": [
+         "play_ambience"
+      ],
+      "usage":"/play_ambience",
+      "text":"Plays the requested track in the ambience channel."
    }
 ]
