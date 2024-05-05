@@ -34,7 +34,8 @@ void AOClient::cmdPlay(int argc, QStringList argv)
         return;
     }
     AreaData *l_area = server->getAreaById(m_current_area);
-    if (!l_area->owners().contains(m_id) && !l_area->isPlayEnabled()) { // Make sure we have permission to play music
+    const ACLRole l_role = server->getACLRolesHandler()->getRoleById(m_acl_role_id);
+    if (!l_area->owners().contains(m_id) && !l_area->isPlayEnabled() && !l_role.checkPermission(ACLRole::CM)) { // Make sure we have permission to play music
         sendServerMessage("Free music play is disabled in this area.");
         return;
     }
