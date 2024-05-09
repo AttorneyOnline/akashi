@@ -365,6 +365,8 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
 
         // effect
         l_args.append(l_incoming_args[25].toString());
+    }
+    if (l_incoming_args.size() >= 27) {
         // blips
         l_args.append(l_incoming_args[26].toString());
     }
