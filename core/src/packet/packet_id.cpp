@@ -38,7 +38,7 @@ void PacketID::handlePacket(AreaData *area, AOClient &client) const
         "deskmod", "evidence", "cccc_ic_support",
         "arup", "casing_alerts", "modcall_reason",
         "looping_sfx", "additive", "effects",
-        "y_offset", "expanded_desk_mods", "auth_packet"};
+        "y_offset", "expanded_desk_mods", "auth_packet", "custom_blips"};
 
     client.m_version.string = m_content[1];
     QRegularExpression rx("\\b(\\d+)\\.(\\d+)\\.(\\d+)\\b"); // matches X.X.X (e.g. 2.9.0, 2.4.10, etc.)
