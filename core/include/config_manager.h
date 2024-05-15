@@ -102,6 +102,13 @@ class ConfigManager
     static QSettings *areaData();
 
     /**
+     * @brief Returns a pointer to the QSettings object which contains the ambience configuration.
+     *
+     * @return See short description.
+     */
+    static QSettings *ambience();
+
+    /**
      * @brief Returns a sanitized QStringList of the areas.
      *
      * @return See short description.
@@ -551,6 +558,11 @@ class ConfigManager
      * @brief Stores all adjustable logstrings.
      */
     static QSettings *m_logtext;
+
+    /**
+     * @brief Stores all adjustable logstrings.
+     */
+    static QSettings *m_ambience;
 
     /**
      * @brief Pointer to QElapsedTimer to track the uptime of the server.

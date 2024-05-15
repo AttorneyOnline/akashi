@@ -23,6 +23,7 @@ QSettings *ConfigManager::m_settings = new QSettings("config/config.ini", QSetti
 QSettings *ConfigManager::m_discord = new QSettings("config/discord.ini", QSettings::IniFormat);
 QSettings *ConfigManager::m_areas = new QSettings("config/areas.ini", QSettings::IniFormat);
 QSettings *ConfigManager::m_logtext = new QSettings("config/text/logtext.ini", QSettings::IniFormat);
+QSettings *ConfigManager::m_ambience = new QSettings("config/ambience.ini", QSettings::IniFormat);
 ConfigManager::CommandSettings *ConfigManager::m_commands = new CommandSettings();
 QElapsedTimer *ConfigManager::m_uptimeTimer = new QElapsedTimer;
 MusicList *ConfigManager::m_musicList = new MusicList;
@@ -229,6 +230,11 @@ void ConfigManager::loadCommandHelp()
 QSettings *ConfigManager::areaData()
 {
     return m_areas;
+}
+
+QSettings *ConfigManager::ambience()
+{
+    return m_ambience;
 }
 
 QStringList ConfigManager::sanitizedAreaNames()

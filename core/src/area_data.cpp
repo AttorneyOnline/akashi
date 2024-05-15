@@ -108,6 +108,8 @@ void AreaData::clientJoinedArea(int f_charId, int f_userId)
     }
     m_joined_ids.append(f_userId);
     emit userJoinedArea(m_index, f_userId);
+    // Send out ambience as well. Use channel 1 for that
+    emit sendAreaPacketClient(PacketFactory::createPacket("MC", {m_currentAmbience, QString::number(-1), ConfigManager::serverName(), QString::number(1), QString::number(1)}), f_userId);
     // The name will never be shown as we are using a spectator ID. Still nice for people who network sniff.
     // We auto-loop this so you'll never sit in silence unless wanted.
     emit sendAreaPacketClient(PacketFactory::createPacket("MC", {m_currentMusic, QString::number(-1), ConfigManager::serverName(), QString::number(1)}), f_userId);
@@ -494,9 +496,19 @@ void AreaData::changeMusic(const QString &f_source_r, const QString &f_newSong_r
     m_musicPlayedBy = f_source_r;
 }
 
+void AreaData::changeAmbience(const QString &f_newSong_r)
+{
+    m_currentAmbience = f_newSong_r;
+}
+
 QString AreaData::currentMusic() const
 {
     return m_currentMusic;
+}
+
+QString AreaData::currentAmbience() const
+{
+    return m_currentAmbience;
 }
 
 void AreaData::setCurrentMusic(QString f_current_song)
@@ -587,6 +599,14 @@ QString AreaData::background() const
 void AreaData::setBackground(const QString f_background)
 {
     m_background = f_background;
+    QSettings *ambience_data = ConfigManager::ambience();
+    QString new_ambience = ambience_data->value(f_background + "/ambience").toString();
+    if (new_ambience != "") {
+        changeAmbience(new_ambience);
+    }
+    else {
+        changeAmbience(""); // DON'T use ~stop.mp3 it overrides some code we don't want overridden
+    }
 }
 
 bool AreaData::ignoreBgList()

@@ -299,6 +299,13 @@ void AOClient::cmdSetBackground(int argc, QStringList argv)
         if (server->getBackgrounds().contains(f_background, Qt::CaseInsensitive) || area->ignoreBgList() == true) {
             area->setBackground(f_background);
             server->broadcast(PacketFactory::createPacket("BN", {f_background}), m_current_area);
+            QString ambience_name = ConfigManager::ambience()->value(f_background + "/ambience").toString();
+            if (ambience_name != "") {
+                server->broadcast(PacketFactory::createPacket("MC", {ambience_name, "-1", m_showname, "1", "1"}), m_current_area);
+            }
+            else {
+                server->broadcast(PacketFactory::createPacket("MC", {"~stop.mp3", "-1", m_showname, "1", "1"}), m_current_area);
+            }
             sendServerMessageArea(m_current_char + " changed the background to " + f_background);
         }
         else {
