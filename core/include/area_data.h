@@ -639,6 +639,15 @@ class AreaData : public QObject
     QString currentMusic() const;
 
     /**
+     * @brief Returns the ambient audio currently being played in the area.
+     *
+     * @return See short description.
+     *
+     * @see #m_currentAmbience
+     */
+    QString currentAmbience() const;
+
+    /**
      * @brief Sets the music currently being played in the area.
      *
      * @param Name of the song being played.
@@ -672,6 +681,13 @@ class AreaData : public QObject
      * @param f_newSong_r The name of the new song that is going to be played in the area.
      */
     void changeMusic(const QString &f_source_r, const QString &f_newSong_r);
+
+    /**
+     * @brief Changes the ambience audio being played in the area.
+     *
+     * @param f_newSong_r The name of the new audio that is going to be played in the area.
+     */
+    void changeAmbience(const QString &f_newSong_r);
 
     /**
      * @brief Returns the evidence mod in the area.
@@ -1096,6 +1112,14 @@ class AreaData : public QObject
      * `base/sounds/music/` clientside, with file extension.
      */
     QString m_currentMusic;
+
+    /**
+     * @brief See m_currentMusic, but for ambience.
+     *
+     * @details Title is a path to the music file, with the starting point on
+     * `base/sounds/music/` clientside, with file extension.
+     */
+    QString m_currentAmbience;
 
     /**
      * @brief The name of the client (or client's character) that started the currently playing music.

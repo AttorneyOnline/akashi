@@ -1844,6 +1844,19 @@ class AOClient : public QObject
     void cmdPlay(int argc, QStringList argv);
 
     /**
+     * @brief Plays ambience in the area.
+     *
+     * @details The arguments are **the song's filepath** originating from `base/sounds/music/`,
+     * or **the song's URL** if it's a stream.
+     *
+     * As described above, this command can be used to play ambience by URL (for clients at and above version 2.9),
+     * but it can also be used to play ambience locally available for the clients.
+     *
+     * @iscommand
+     */
+    void cmdPlayAmbience(int argc, QStringList argv);
+
+    /**
      * @brief DJ-blocks a client.
      *
      * @details The only argument is the **target client's user ID**.
