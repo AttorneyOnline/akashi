@@ -370,6 +370,10 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
         // blips
         l_args.append(l_incoming_args[26].toString());
     }
+    if (l_incoming_args.size() >= 28) {
+        // slide toggle
+        l_args.append(l_incoming_args[27].toString());
+    }
 
     // Testimony playback
     QString client_name = client.m_ooc_name;
