@@ -645,7 +645,6 @@ class AOClient : public QObject
     void joined();
 
     void characterChanged();
-    void areaChanged(int f_old_area);
     void displaynameChanged();
 
 private:

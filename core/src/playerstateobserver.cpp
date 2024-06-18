@@ -9,7 +9,6 @@ PlayerStateObserver::PlayerStateObserver(QObject *parent)
 void PlayerStateObserver::registerClient(AOClient *client)
 {
     observed_clients.insert(client->clientId(), client);
-    connect(client, &AOClient::areaChanged, this, &PlayerStateObserver::playerChangedArea);
     connect(client, &AOClient::displaynameChanged, this, &PlayerStateObserver::displayNameChanged);
     connect(client, &AOClient::characterChanged, this, &PlayerStateObserver::characterChanged);
 }
@@ -20,7 +19,7 @@ void PlayerStateObserver::deregisterClient(int id)
     disconnect(l_client, nullptr, this, nullptr);
 }
 
-void PlayerStateObserver::playerChangedArea()
+void PlayerStateObserver::playerChangedArea(AreaMoveType f_type, int area_id)
 {
     AOClient *l_client = qobject_cast<AOClient *>(sender());
     if (l_client) {
