@@ -50,6 +50,7 @@ SOURCES += \
     src/db_manager.cpp \
     src/discord.cpp \
     src/packets.cpp \
+    src/playerstateobserver.cpp \
     src/server.cpp \
     src/testimony_recorder.cpp \
     src/advertiser.cpp \
@@ -92,6 +93,7 @@ HEADERS += include/aoclient.h \
     include/data_types.h \
     include/db_manager.h \
     include/discord.h \
+    include/playerstateobserver.h \
     include/server.h \
     include/typedefs.h \
     include/advertiser.h \

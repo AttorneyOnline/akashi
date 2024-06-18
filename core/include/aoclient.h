@@ -651,7 +651,11 @@ class AOClient : public QObject
      */
     void joined();
 
-  private:
+    void characterChanged();
+    void areaChanged();
+    void displaynameChanged();
+
+private:
     /**
      * @brief A pointer to the Server, used for updating server variables that depend on the client (e.g. amount of players in an area).
      */
