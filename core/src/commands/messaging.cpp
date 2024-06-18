@@ -29,7 +29,7 @@ void AOClient::cmdPos(int argc, QStringList argv)
     Q_UNUSED(argc);
 
     changePosition(argv[0]);
-    updateEvidenceList(server->getAreaById(m_current_area));
+    updateEvidenceList(server->getAreaById(currentArea()));
 }
 
 void AOClient::cmdForcePos(int argc, QStringList argv)
@@ -57,7 +57,7 @@ void AOClient::cmdForcePos(int argc, QStringList argv)
     else if (argv[1] == "*") { // force all clients in the area
         const QVector<AOClient *> l_clients = server->getClients();
         for (AOClient *l_client : l_clients) {
-            if (l_client->m_current_area == m_current_area)
+            if (l_client->currentArea() == currentArea())
                 l_targets.append(l_client);
         }
     }
@@ -74,7 +74,7 @@ void AOClient::cmdG(int argc, QStringList argv)
     Q_UNUSED(argc);
 
     QString l_sender_name = m_ooc_name;
-    QString l_sender_area = server->getAreaName(m_current_area);
+    QString l_sender_area = server->getAreaName(currentArea());
     QString l_sender_message = argv.join(" ");
     // Better readability thanks to AwesomeAim.
     AOPacket *l_mod_packet = PacketFactory::createPacket("CT", {"[G][" + m_ipid + "][" + l_sender_area + "]" + l_sender_name, l_sender_message});
@@ -87,7 +87,7 @@ void AOClient::cmdNeed(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
 
-    QString l_sender_area = server->getAreaName(m_current_area);
+    QString l_sender_area = server->getAreaName(currentArea());
     QString l_sender_message = argv.join(" ");
     server->broadcast(PacketFactory::createPacket("CT", {"=== Advert ===\n[" + l_sender_area + "] needs " + l_sender_message + "."}), Server::TARGET_TYPE::ADVERT);
 }
@@ -114,7 +114,7 @@ void AOClient::cmdRandomChar(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData *l_area = server->getAreaById(m_current_area);
+    AreaData *l_area = server->getAreaById(currentArea());
     int l_selected_char_id;
     bool l_taken = true;
     while (l_taken) {
@@ -158,7 +158,7 @@ void AOClient::cmdPM(int argc, QStringList argv)
         return;
     }
     QString l_message = argv.join(" "); //...which means it will not end up as part of the message
-    l_target_client->sendServerMessage("Message from " + m_ooc_name + " (" + QString::number(m_id) + "): " + l_message);
+    l_target_client->sendServerMessage("Message from " + m_ooc_name + " (" + QString::number(clientId()) + "): " + l_message);
     sendServerMessage("PM sent to " + QString::number(l_target_id) + ". Message: " + l_message);
 }
 
@@ -183,7 +183,7 @@ void AOClient::cmdGM(int argc, QStringList argv)
     Q_UNUSED(argc);
 
     QString l_sender_name = m_ooc_name;
-    QString l_sender_area = server->getAreaName(m_current_area);
+    QString l_sender_area = server->getAreaName(currentArea());
     QString l_sender_message = argv.join(" ");
     server->broadcast(PacketFactory::createPacket("CT", {"[G][" + l_sender_area + "]" + "[" + l_sender_name + "][M]", l_sender_message}), Server::TARGET_TYPE::MODCHAT);
 }
@@ -194,7 +194,7 @@ void AOClient::cmdLM(int argc, QStringList argv)
 
     QString l_sender_name = m_ooc_name;
     QString l_sender_message = argv.join(" ");
-    server->broadcast(PacketFactory::createPacket("CT", {"[" + l_sender_name + "][M]", l_sender_message}), m_current_area);
+    server->broadcast(PacketFactory::createPacket("CT", {"[" + l_sender_name + "][M]", l_sender_message}), currentArea());
 }
 
 void AOClient::cmdGimp(int argc, QStringList argv)
@@ -410,7 +410,7 @@ void AOClient::cmdCharCurse(int argc, QStringList argv)
     }
 
     if (argc == 1) {
-        l_target->m_charcurse_list.append(server->getCharID(l_target->m_current_char));
+        l_target->m_charcurse_list.append(server->getCharID(l_target->currentCharacter()));
     }
     else {
         argv.removeFirst();
@@ -430,13 +430,13 @@ void AOClient::cmdCharCurse(int argc, QStringList argv)
     l_target->m_is_charcursed = true;
 
     // Kick back to char select screen
-    if (!l_target->m_charcurse_list.contains(server->getCharID(l_target->m_current_char))) {
+    if (!l_target->m_charcurse_list.contains(server->getCharID(l_target->currentCharacter()))) {
         l_target->changeCharacter(-1);
-        server->updateCharsTaken(server->getAreaById(m_current_area));
+        server->updateCharsTaken(server->getAreaById(currentArea()));
         l_target->sendPacket("DONE");
     }
     else {
-        server->updateCharsTaken(server->getAreaById(m_current_area));
+        server->updateCharsTaken(server->getAreaById(currentArea()));
     }
 
     l_target->sendServerMessage("You have been charcursed!");
@@ -467,7 +467,7 @@ void AOClient::cmdUnCharCurse(int argc, QStringList argv)
     }
     l_target->m_is_charcursed = false;
     l_target->m_charcurse_list.clear();
-    server->updateCharsTaken(server->getAreaById(m_current_area));
+    server->updateCharsTaken(server->getAreaById(currentArea()));
     sendServerMessage("Uncharcursed player.");
     l_target->sendServerMessage("You were uncharcursed.");
 }
@@ -516,7 +516,7 @@ void AOClient::cmdA(int argc, QStringList argv)
     }
 
     AreaData *l_area = server->getAreaById(l_area_id);
-    if (!l_area->owners().contains(m_id)) {
+    if (!l_area->owners().contains(clientId())) {
         sendServerMessage("You are not CM in that area.");
         return;
     }
@@ -536,7 +536,7 @@ void AOClient::cmdS(int argc, QStringList argv)
     QString l_ooc_message = argv.join(" ");
 
     for (int i = 0; i <= l_all_areas; i++) {
-        if (server->getAreaById(i)->owners().contains(m_id))
+        if (server->getAreaById(i)->owners().contains(clientId()))
             server->broadcast(PacketFactory::createPacket("CT", {"[CM]" + l_sender_name, l_ooc_message}), i);
     }
 }

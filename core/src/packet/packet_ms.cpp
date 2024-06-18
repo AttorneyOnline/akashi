@@ -37,8 +37,8 @@ void PacketMS::handlePacket(AreaData *area, AOClient &client) const
     if (client.m_pos != "")
         validated_packet->setContentField(5, client.m_pos);
 
-    client.getServer()->broadcast(validated_packet, client.m_current_area);
-    emit client.logIC((client.m_current_char + " " + client.m_showname), client.m_ooc_name, client.m_ipid, client.getServer()->getAreaById(client.m_current_area)->name(), client.m_last_message);
+    client.getServer()->broadcast(validated_packet, client.currentArea());
+    emit client.logIC((client.currentCharacter() + " " + client.m_showname), client.m_ooc_name, client.m_ipid, client.getServer()->getAreaById(client.currentArea())->name(), client.m_last_message);
     area->updateLastICMessage(validated_packet->getContent());
 
     area->startMessageFloodguard(ConfigManager::messageFloodguard());
@@ -59,11 +59,11 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
 
     AOPacket *l_invalid = PacketFactory::createPacket("INVALID", {});
     QStringList l_args;
-    if (client.isSpectator() || client.m_current_char.isEmpty() || !client.m_joined)
+    if (client.isSpectator() || client.currentCharacter().isEmpty() || !client.m_joined)
         // Spectators cannot use IC
         return l_invalid;
-    AreaData *area = client.getServer()->getAreaById(client.m_current_area);
-    if (area->lockStatus() == AreaData::LockStatus::SPECTATABLE && !area->invited().contains(client.m_id) && !client.checkPermission(ACLRole::BYPASS_LOCKS))
+    AreaData *area = client.getServer()->getAreaById(client.currentArea());
+    if (area->lockStatus() == AreaData::LockStatus::SPECTATABLE && !area->invited().contains(client.clientId()) && !client.checkPermission(ACLRole::BYPASS_LOCKS))
         // Non-invited players cannot speak in spectatable areas
         return l_invalid;
 
@@ -100,7 +100,7 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
     l_args.append(l_incoming_args[1].toString());
 
     // char name
-    if (client.m_current_char.toLower() != l_incoming_args[2].toString().toLower()) {
+    if (client.currentCharacter().toLower() != l_incoming_args[2].toString().toLower()) {
         // Selected char is different from supplied folder name
         // This means the user is INI-swapped
         if (!area->iniswapAllowed()) {
@@ -166,7 +166,7 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
     if (client.m_pos != l_incoming_args[5].toString()) {
         client.m_pos = l_incoming_args[5].toString();
         client.m_pos.replace("../", "").replace("..\\", "");
-        client.updateEvidenceList(client.getServer()->getAreaById(client.m_current_area));
+        client.updateEvidenceList(client.getServer()->getAreaById(client.currentArea()));
     }
 
     // sfx name
@@ -246,7 +246,7 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
     if (l_incoming_args.length() >= 19) {
         // showname
         QString l_incoming_showname = client.dezalgo(l_incoming_args[15].toString().trimmed());
-        if (!(l_incoming_showname == client.m_current_char || l_incoming_showname.isEmpty()) && !area->shownameAllowed()) {
+        if (!(l_incoming_showname == client.currentCharacter() || l_incoming_showname.isEmpty()) && !area->shownameAllowed()) {
             client.sendServerMessage("Shownames are not allowed in this area!");
             return l_invalid;
         }
@@ -378,7 +378,7 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
     // Testimony playback
     QString client_name = client.m_ooc_name;
     if (client_name == "") {
-        client_name = client.m_current_char; // fallback in case of empty ooc name
+        client_name = client.currentCharacter(); // fallback in case of empty ooc name
     }
     if (area->testimonyRecording() == AreaData::TestimonyRecording::RECORDING || area->testimonyRecording() == AreaData::TestimonyRecording::ADD) {
         if (!l_args[5].startsWith("wit"))
@@ -387,7 +387,7 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
         if (area->statement() == -1) {
             l_args[4] = "~~-- " + l_args[4] + " --";
             l_args[14] = "3";
-            client.getServer()->broadcast(PacketFactory::createPacket("RT", {"testimony1"}), client.m_current_area);
+            client.getServer()->broadcast(PacketFactory::createPacket("RT", {"testimony1"}), client.currentArea());
         }
         client.addStatement(l_args);
     }

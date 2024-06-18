@@ -41,7 +41,7 @@ void PacketCasea::handlePacket(AreaData *area, AOClient &client) const
     if (l_needed_roles.isEmpty())
         return;
 
-    QString l_message = "=== Case Announcement ===\r\n" + (client.m_ooc_name == "" ? client.m_current_char : client.m_ooc_name) + " needs " + l_needed_roles.join(", ") + " for " + (l_case_title == "" ? "a case" : l_case_title) + "!";
+    QString l_message = "=== Case Announcement ===\r\n" + (client.m_ooc_name == "" ? client.currentCharacter() : client.m_ooc_name) + " needs " + l_needed_roles.join(", ") + " for " + (l_case_title == "" ? "a case" : l_case_title) + "!";
 
     QList<AOClient *> l_clients_to_alert;
     // here lies morton, RIP

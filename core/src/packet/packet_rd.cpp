@@ -62,7 +62,7 @@ void PacketRD::handlePacket(AreaData *area, AOClient &client) const
         }
     }
     emit client.joined();
-    area->clientJoinedArea(-1, client.m_id);
+    area->clientJoinedArea(-1, client.clientId());
     client.arup(client.ARUPType::PLAYER_COUNT, true); // Tell everyone there is a new player
 }
 

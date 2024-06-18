@@ -150,7 +150,7 @@ void AOClient::cmdRollP(int argc, QStringList argv)
 
 void AOClient::cmdTimer(int argc, QStringList argv)
 {
-    AreaData *l_area = server->getAreaById(m_current_area);
+    AreaData *l_area = server->getAreaById(currentArea());
 
     // Called without arguments
     // Shows a brief of all timers
@@ -207,8 +207,8 @@ void AOClient::cmdTimer(int argc, QStringList argv)
         l_requested_timer->start();
         sendServerMessage("Set timer " + QString::number(l_timer_id) + " to " + argv[1] + ".");
         AOPacket *l_update_timer = PacketFactory::createPacket("TI", {QString::number(l_timer_id), "0", QString::number(QTime(0, 0).msecsTo(l_requested_time))});
-        l_is_global ? server->broadcast(l_show_timer) : server->broadcast(l_show_timer, m_current_area); // Show the timer
-        l_is_global ? server->broadcast(l_update_timer) : server->broadcast(l_update_timer, m_current_area);
+        l_is_global ? server->broadcast(l_show_timer) : server->broadcast(l_show_timer, currentArea()); // Show the timer
+        l_is_global ? server->broadcast(l_update_timer) : server->broadcast(l_update_timer, currentArea());
         return;
     }
     // Otherwise, update the state of the timer
@@ -217,22 +217,22 @@ void AOClient::cmdTimer(int argc, QStringList argv)
             l_requested_timer->start();
             sendServerMessage("Started timer " + QString::number(l_timer_id) + ".");
             AOPacket *l_update_timer = PacketFactory::createPacket("TI", {QString::number(l_timer_id), "0", QString::number(QTime(0, 0).msecsTo(QTime(0, 0).addMSecs(l_requested_timer->remainingTime())))});
-            l_is_global ? server->broadcast(l_show_timer) : server->broadcast(l_show_timer, m_current_area);
-            l_is_global ? server->broadcast(l_update_timer) : server->broadcast(l_update_timer, m_current_area);
+            l_is_global ? server->broadcast(l_show_timer) : server->broadcast(l_show_timer, currentArea());
+            l_is_global ? server->broadcast(l_update_timer) : server->broadcast(l_update_timer, currentArea());
         }
         else if (argv[1] == "pause" || argv[1] == "stop") {
             l_requested_timer->setInterval(l_requested_timer->remainingTime());
             l_requested_timer->stop();
             sendServerMessage("Stopped timer " + QString::number(l_timer_id) + ".");
             AOPacket *l_update_timer = PacketFactory::createPacket("TI", {QString::number(l_timer_id), "1", QString::number(QTime(0, 0).msecsTo(QTime(0, 0).addMSecs(l_requested_timer->interval())))});
-            l_is_global ? server->broadcast(l_update_timer) : server->broadcast(l_update_timer, m_current_area);
+            l_is_global ? server->broadcast(l_update_timer) : server->broadcast(l_update_timer, currentArea());
         }
         else if (argv[1] == "hide" || argv[1] == "unset") {
             l_requested_timer->setInterval(0);
             l_requested_timer->stop();
             sendServerMessage("Hid timer " + QString::number(l_timer_id) + ".");
             // Hide the timer
-            l_is_global ? server->broadcast(l_hide_timer) : server->broadcast(l_hide_timer, m_current_area);
+            l_is_global ? server->broadcast(l_hide_timer) : server->broadcast(l_hide_timer, currentArea());
         }
     }
 }
@@ -241,10 +241,10 @@ void AOClient::cmdNoteCard(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
 
-    AreaData *l_area = server->getAreaById(m_current_area);
+    AreaData *l_area = server->getAreaById(currentArea());
     QString l_notecard = argv.join(" ");
-    l_area->addNotecard(m_current_char, l_notecard);
-    sendServerMessageArea(m_current_char + " wrote a note card.");
+    l_area->addNotecard(currentCharacter(), l_notecard);
+    sendServerMessageArea(currentCharacter() + " wrote a note card.");
 }
 
 void AOClient::cmdNoteCardClear(int argc, QStringList argv)
@@ -252,9 +252,9 @@ void AOClient::cmdNoteCardClear(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData *l_area = server->getAreaById(m_current_area);
-    if (!l_area->addNotecard(m_current_char, QString())) {
-        sendServerMessageArea(m_current_char + " erased their note card.");
+    AreaData *l_area = server->getAreaById(currentArea());
+    if (!l_area->addNotecard(currentCharacter(), QString())) {
+        sendServerMessageArea(currentCharacter() + " erased their note card.");
     }
 }
 
@@ -263,7 +263,7 @@ void AOClient::cmdNoteCardReveal(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData *l_area = server->getAreaById(m_current_area);
+    AreaData *l_area = server->getAreaById(currentArea());
     const QStringList l_notecards = l_area->getNotecards();
 
     if (l_notecards.isEmpty()) {
@@ -301,7 +301,7 @@ void AOClient::cmdSubTheme(int argc, QStringList argv)
     QString l_subtheme = argv.join(" ");
     const QVector<AOClient *> l_clients = server->getClients();
     for (AOClient *l_client : l_clients) {
-        if (l_client->m_current_area == m_current_area)
+        if (l_client->currentArea() == currentArea())
             l_client->sendPacket("ST", {l_subtheme, "1"});
     }
     sendServerMessageArea("Subtheme was set to " + l_subtheme);

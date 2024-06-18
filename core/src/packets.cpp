@@ -31,7 +31,7 @@ void AOClient::sendEvidenceList(AreaData *area) const
 {
     const QVector<AOClient *> l_clients = server->getClients();
     for (AOClient *l_client : l_clients) {
-        if (l_client->m_current_area == m_current_area)
+        if (l_client->currentArea() == currentArea())
             l_client->updateEvidenceList(area);
     }
 }
@@ -85,8 +85,8 @@ bool AOClient::checkEvidenceAccess(AreaData *area)
 void AOClient::updateJudgeLog(AreaData *area, AOClient *client, QString action)
 {
     QString l_timestamp = QTime::currentTime().toString("hh:mm:ss");
-    QString l_uid = QString::number(client->m_id);
-    QString l_char_name = client->m_current_char;
+    QString l_uid = QString::number(client->clientId());
+    QString l_char_name = client->currentCharacter();
     QString l_ipid = client->getIpid();
     QString l_message = action;
     QString l_logmessage = QString("[%1]: [%2] %3 (%4) %5").arg(l_timestamp, l_uid, l_char_name, l_ipid, l_message);
@@ -116,8 +116,8 @@ void AOClient::loginAttempt(QString message)
             sendPacket("AUTH", {"0"}); // Client: "Login unsuccessful."
             sendServerMessage("Incorrect password.");
         }
-        emit logLogin((m_current_char + " " + m_showname), m_ooc_name, "Moderator",
-                      m_ipid, server->getAreaById(m_current_area)->name(), m_authenticated);
+        emit logLogin((currentCharacter() + " " + m_showname), m_ooc_name, "Moderator",
+                      m_ipid, server->getAreaById(currentArea())->name(), m_authenticated);
         break;
     case DataTypes::AuthType::ADVANCED:
         QStringList l_login = message.split(" ");
@@ -142,8 +142,8 @@ void AOClient::loginAttempt(QString message)
             sendPacket("AUTH", {"0"}); // Client: "Login unsuccessful."
             sendServerMessage("Incorrect password.");
         }
-        emit logLogin((m_current_char + " " + m_showname), m_ooc_name, username, m_ipid,
-                      server->getAreaById(m_current_area)->name(), m_authenticated);
+        emit logLogin((currentCharacter() + " " + m_showname), m_ooc_name, username, m_ipid,
+                      server->getAreaById(currentArea())->name(), m_authenticated);
         break;
     }
     sendServerMessage("Exiting login prompt.");

@@ -141,10 +141,13 @@ class AOClient : public QObject
      */
     Server *getServer();
 
-    /**
-     * @brief The user ID of the client.
-     */
-    int m_id;
+    int clientId() const;
+
+    int currentArea() const;
+    void setCurrentArea(const int f_area_id);
+
+    QString currentCharacter() const;
+    void setCurrentCharacter(const QString &f_character);
 
     /**
      * @brief The IP address of the client.
@@ -166,16 +169,6 @@ class AOClient : public QObject
      * its client has sent the standard handshake packets, which does signify that the client intended to 'join' this server.
      */
     bool m_joined;
-
-    /**
-     * @brief The ID of the area the client is currently in.
-     */
-    int m_current_area;
-
-    /**
-     * @brief The internal name of the character the client is currently using.
-     */
-    QString m_current_char;
 
     /**
      * @brief The internal name of the character the client is iniswapped to.
@@ -652,10 +645,25 @@ class AOClient : public QObject
     void joined();
 
     void characterChanged();
-    void areaChanged();
+    void areaChanged(int f_old_area);
     void displaynameChanged();
 
 private:
+    /**
+     * @brief The user ID of the client.
+     */
+    int m_id;
+
+    /**
+     * @brief The ID of the area the client is currently in.
+     */
+    int m_current_area;
+
+    /**
+     * @brief The internal name of the character the client is currently using.
+     */
+    QString m_current_char;
+
     /**
      * @brief A pointer to the Server, used for updating server variables that depend on the client (e.g. amount of players in an area).
      */

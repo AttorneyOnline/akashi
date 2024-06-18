@@ -53,13 +53,13 @@ void PacketCT::handlePacket(AreaData *area, AOClient &client) const
         int l_cmd_argc = l_cmd_argv.length();
 
         client.handleCommand(l_command, l_cmd_argc, l_cmd_argv);
-        emit client.logCMD((client.m_current_char + " " + client.m_showname), client.m_ipid, client.m_ooc_name, l_command, l_cmd_argv, client.getServer()->getAreaById(client.m_current_area)->name());
+        emit client.logCMD((client.currentCharacter() + " " + client.m_showname), client.m_ipid, client.m_ooc_name, l_command, l_cmd_argv, client.getServer()->getAreaById(client.currentArea())->name());
         return;
     }
     else {
-        client.getServer()->broadcast(final_packet, client.m_current_area);
+        client.getServer()->broadcast(final_packet, client.currentArea());
     }
-    emit client.logOOC((client.m_current_char + " " + client.m_showname), client.m_ooc_name, client.m_ipid, area->name(), l_message);
+    emit client.logOOC((client.currentCharacter() + " " + client.m_showname), client.m_ooc_name, client.m_ipid, area->name(), l_message);
 }
 
 bool PacketCT::validatePacket() const

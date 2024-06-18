@@ -147,9 +147,9 @@ void AOClient::cmdMods(int argc, QStringList argv)
                 l_entries << "Role:" << l_client->m_acl_role_id;
             }
             l_entries << "OOC name: " + l_client->m_ooc_name;
-            l_entries << "ID: " + QString::number(l_client->m_id);
-            l_entries << "Area: " + QString::number(l_client->m_current_area);
-            l_entries << "Character: " + l_client->m_current_char;
+            l_entries << "ID: " + QString::number(l_client->clientId());
+            l_entries << "Area: " + QString::number(l_client->currentArea());
+            l_entries << "Character: " + l_client->currentCharacter();
             l_online_count++;
         }
     }
@@ -442,7 +442,7 @@ void AOClient::cmdAllowBlankposting(int argc, QStringList argv)
     Q_UNUSED(argv);
 
     QString l_sender_name = m_ooc_name;
-    AreaData *l_area = server->getAreaById(m_current_area);
+    AreaData *l_area = server->getAreaById(currentArea());
     l_area->toggleBlankposting();
     if (l_area->blankpostingAllowed() == false) {
         sendServerMessageArea(l_sender_name + " has set blankposting in the area to forbidden.");
@@ -508,7 +508,7 @@ void AOClient::cmdForceImmediate(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData *l_area = server->getAreaById(m_current_area);
+    AreaData *l_area = server->getAreaById(currentArea());
     l_area->toggleImmediate();
     QString l_state = l_area->forceImmediate() ? "on." : "off.";
     sendServerMessage("Forced immediate text processing in this area is now " + l_state);
@@ -519,7 +519,7 @@ void AOClient::cmdAllowIniswap(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData *l_area = server->getAreaById(m_current_area);
+    AreaData *l_area = server->getAreaById(currentArea());
     l_area->toggleIniswap();
     QString state = l_area->iniswapAllowed() ? "allowed." : "disallowed.";
     sendServerMessage("Iniswapping in this area is now " + state);
@@ -535,7 +535,7 @@ void AOClient::cmdPermitSaving(int argc, QStringList argv)
         return;
     }
     l_client->m_testimony_saving = true;
-    sendServerMessage("Testimony saving has been enabled for client " + QString::number(l_client->m_id));
+    sendServerMessage("Testimony saving has been enabled for client " + QString::number(l_client->clientId()));
 }
 
 void AOClient::cmdKickUid(int argc, QStringList argv)
@@ -623,7 +623,7 @@ void AOClient::cmdClearCM(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData *l_area = server->getAreaById(m_current_area);
+    AreaData *l_area = server->getAreaById(currentArea());
     foreach (int l_client_id, l_area->owners()) {
         l_area->removeOwner(l_client_id);
     }

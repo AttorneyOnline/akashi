@@ -26,7 +26,7 @@ void AOClient::addStatement(QStringList packet)
     if (checkTestimonySymbols(packet[4])) {
         return;
     }
-    AreaData *area = server->getAreaById(m_current_area);
+    AreaData *area = server->getAreaById(currentArea());
     int c_statement = area->statement();
     if (c_statement >= -1) {
         if (area->testimonyRecording() == AreaData::TestimonyRecording::RECORDING) {
@@ -59,7 +59,7 @@ QStringList AOClient::updateStatement(QStringList packet)
     if (checkTestimonySymbols(packet[4])) {
         return packet;
     }
-    AreaData *area = server->getAreaById(m_current_area);
+    AreaData *area = server->getAreaById(currentArea());
     int c_statement = area->statement();
     area->setTestimonyRecording(AreaData::TestimonyRecording::PLAYBACK);
     if (c_statement <= 0 || area->testimony()[c_statement].empty())
@@ -75,7 +75,7 @@ QStringList AOClient::updateStatement(QStringList packet)
 
 void AOClient::clearTestimony()
 {
-    AreaData *area = server->getAreaById(m_current_area);
+    AreaData *area = server->getAreaById(currentArea());
     area->clearTestimony();
 }
 

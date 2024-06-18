@@ -54,13 +54,13 @@ QStringList AOClient::buildAreaList(int area_idx)
     entries.append("[" + QString::number(area->playerCount()) + " users][" + QVariant::fromValue(area->status()).toString().replace("_", "-") + "]");
     const QVector<AOClient *> l_clients = server->getClients();
     for (AOClient *l_client : l_clients) {
-        if (l_client->m_current_area == area_idx && l_client->hasJoined()) {
-            QString char_entry = "[" + QString::number(l_client->m_id) + "] " + l_client->m_current_char;
-            if (l_client->m_current_char == "")
+        if (l_client->currentArea() == area_idx && l_client->hasJoined()) {
+            QString char_entry = "[" + QString::number(l_client->clientId()) + "] " + l_client->currentCharacter();
+            if (l_client->currentCharacter() == "")
                 char_entry += "Spectator";
             if (l_client->m_showname != "")
                 char_entry += " (" + l_client->m_showname + ")";
-            if (area->owners().contains(l_client->m_id))
+            if (area->owners().contains(l_client->clientId()))
                 char_entry.insert(0, "[CM] ");
             if (m_authenticated)
                 char_entry += " (" + l_client->getIpid() + "): " + l_client->m_ooc_name;
@@ -232,5 +232,5 @@ void AOClient::sendNotice(QString f_notice, bool f_global)
     if (f_global)
         server->broadcast(l_packet);
     else
-        server->broadcast(l_packet, m_current_area);
+        server->broadcast(l_packet, currentArea());
 }

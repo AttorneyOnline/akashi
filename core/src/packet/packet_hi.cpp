@@ -47,7 +47,7 @@ void PacketHI::handlePacket(AreaData *area, AOClient &client) const
         return;
     }
 
-    client.sendPacket("ID", {QString::number(client.m_id), "akashi", QCoreApplication::applicationVersion()});
+    client.sendPacket("ID", {QString::number(client.clientId()), "akashi", QCoreApplication::applicationVersion()});
 }
 
 bool PacketHI::validatePacket() const

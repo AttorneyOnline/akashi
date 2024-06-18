@@ -29,7 +29,7 @@ void PacketMC::handlePacket(AreaData *area, AOClient &client) const
     // argument is a valid song
     QString l_argument = m_content[0];
 
-    if (client.getServer()->getMusicList().contains(l_argument) || client.m_music_manager->isCustom(client.m_current_area, l_argument) || l_argument == "~stop.mp3") { // ~stop.mp3 is a dummy track used by 2.9+
+    if (client.getServer()->getMusicList().contains(l_argument) || client.m_music_manager->isCustom(client.currentArea(), l_argument) || l_argument == "~stop.mp3") { // ~stop.mp3 is a dummy track used by 2.9+
         // We have a song here
 
         if (client.m_is_spectator) {
@@ -67,16 +67,16 @@ void PacketMC::handlePacket(AreaData *area, AOClient &client) const
 
         if (l_final_song != "~stop.mp3") {
             // We might have an aliased song. We check for its real songname and send it to the clients.
-            QPair<QString, float> l_song = client.m_music_manager->songInformation(l_final_song, client.m_current_area);
+            QPair<QString, float> l_song = client.m_music_manager->songInformation(l_final_song, client.currentArea());
             l_final_song = l_song.first;
         }
         AOPacket *l_music_change = PacketFactory::createPacket("MC", {l_final_song, m_content[1], client.m_showname, "1", "0", l_effects});
-        client.getServer()->broadcast(l_music_change, client.m_current_area);
+        client.getServer()->broadcast(l_music_change, client.currentArea());
 
         // Since we can't ensure a user has their showname set, we check if its empty to prevent
         //"played by ." in /currentmusic.
         if (client.m_showname.isEmpty()) {
-            area->changeMusic(client.m_current_char, l_final_song);
+            area->changeMusic(client.currentCharacter(), l_final_song);
             return;
         }
         area->changeMusic(client.m_showname, l_final_song);

@@ -344,7 +344,7 @@ void Server::updateCharsTaken(AreaData *area)
     AOPacket *response_cc = PacketFactory::createPacket("CharsCheck", chars_taken);
 
     for (AOClient *l_client : qAsConst(m_clients)) {
-        if (l_client->m_current_area == area->index()) {
+        if (l_client->currentArea() == area->index()) {
             if (!l_client->m_is_charcursed)
                 l_client->sendPacket(response_cc);
             else {
