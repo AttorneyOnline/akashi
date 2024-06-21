@@ -65,8 +65,3 @@ void PacketRD::handlePacket(AreaData *area, AOClient &client) const
     area->addClient(-1, client.clientId());
     client.arup(client.ARUPType::PLAYER_COUNT, true); // Tell everyone there is a new player
 }
-
-bool PacketRD::validatePacket() const
-{
-    return true;
-}

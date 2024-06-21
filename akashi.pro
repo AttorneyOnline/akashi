@@ -2,11 +2,10 @@ QT += network websockets core sql
 
 TEMPLATE = app
 
-unix:CONFIG += c++1z console
-win32: CONFIG+=c++2a console
+CONFIG += c++2a console
 
 coverage {
-    LIBS += -lgcov
+  LIBS += -lgcov
 }
 
 # The following define makes your compiler emit warnings if you use
@@ -32,4 +31,3 @@ SOURCES += \
   src/main.cpp
 
 LIBS += -L$$PWD/bin -lcore
-

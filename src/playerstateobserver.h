@@ -1,25 +1,29 @@
 #pragma once
 
-class AOClient;
+#include "aoclient.h"
+#include "packet/packet_pl.h"
 
-#include <QMap>
+#include <QList>
 #include <QObject>
+#include <QString>
 
 class PlayerStateObserver : public QObject
 {
-public:
-    enum AreaMoveType { JOIN, LEAVE };
+  public:
+    explicit PlayerStateObserver(QObject *parent = nullptr);
+    virtual ~PlayerStateObserver();
 
-    PlayerStateObserver(QObject* parent);
+    void registerClient(AOClient *client);
+    void unregisterClient(AOClient *client);
 
-    void registerClient(AOClient* client);
-    void deregisterClient(int id);
+  private:
+    QList<AOClient *> m_client_list;
 
-private Q_SLOTS:
-    void playerChangedArea(AreaMoveType f_type, int area_id);
-    void displayNameChanged();
-    void characterChanged();
+    void sendToClientList(const AOPacket &packet);
 
-private:
-    QMap<int, AOClient*> observed_clients;
+  private Q_SLOTS:
+    void notifyNameChanged(const QString &name);
+    void notifyCharacterChanged(const QString &character);
+    void notifyCharacterNameChanged(const QString &characterName);
+    void notifyAreaIdChanged(int areaId);
 };

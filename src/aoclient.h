@@ -143,14 +143,17 @@ class AOClient : public QObject
 
     int clientId() const;
 
-    int currentArea() const;
-    void setCurrentArea(const int f_area_id);
+    QString name() const;
+    void setName(const QString &f_name);
 
-    QString currentCharacter() const;
-    void setCurrentCharacter(const QString &f_character);
+    QString character() const;
+    void setCharacter(const QString &f_character);
 
-    QString currentCharacterName() const;
-    void setCurrentCharacterName(const QString &f_showname);
+    QString characterName() const;
+    void setCharacterName(const QString &f_showname);
+
+    int areaId() const;
+    void setAreaId(const int f_area_id);
 
     /**
      * @brief The IP address of the client.
@@ -647,9 +650,10 @@ class AOClient : public QObject
      */
     void joined();
 
+    void nameChanged(const QString &);
     void characterChanged(const QString &);
     void characterNameChanged(const QString &);
-    void currentAreaChanged(int);
+    void areaIdChanged(int);
 
   private:
     /**

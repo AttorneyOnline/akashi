@@ -54,16 +54,16 @@ QStringList AOClient::buildAreaList(int area_idx)
     entries.append("[" + QString::number(area->playerCount()) + " users][" + QVariant::fromValue(area->status()).toString().replace("_", "-") + "]");
     const QVector<AOClient *> l_clients = server->getClients();
     for (AOClient *l_client : l_clients) {
-        if (l_client->currentArea() == area_idx && l_client->hasJoined()) {
-            QString char_entry = "[" + QString::number(l_client->clientId()) + "] " + l_client->currentCharacter();
-            if (l_client->currentCharacter() == "")
+        if (l_client->areaId() == area_idx && l_client->hasJoined()) {
+            QString char_entry = "[" + QString::number(l_client->clientId()) + "] " + l_client->character();
+            if (l_client->character() == "")
                 char_entry += "Spectator";
-            if (l_client->currentCharacterName() != "")
-                char_entry += " (" + l_client->currentCharacterName() + ")";
+            if (l_client->characterName() != "")
+                char_entry += " (" + l_client->characterName() + ")";
             if (area->owners().contains(l_client->clientId()))
                 char_entry.insert(0, "[CM] ");
             if (m_authenticated)
-                char_entry += " (" + l_client->getIpid() + "): " + l_client->m_ooc_name;
+                char_entry += " (" + l_client->getIpid() + "): " + l_client->name();
             if (l_client->m_is_afk)
                 char_entry += " [AFK]";
             entries.append(char_entry);
@@ -103,9 +103,9 @@ void AOClient::diceThrower(int sides, int dice, bool p_roll, int roll_modifier)
         return;
     }
     if (roll_modifier)
-        sendServerMessageArea(m_ooc_name + " rolled a " + QString::number(dice) + "d" + QString::number(sides) + "+" + QString::number(roll_modifier) + ". Results: " + total_results);
+        sendServerMessageArea(name() + " rolled a " + QString::number(dice) + "d" + QString::number(sides) + "+" + QString::number(roll_modifier) + ". Results: " + total_results);
     else
-        sendServerMessageArea(m_ooc_name + " rolled a " + QString::number(dice) + "d" + QString::number(sides) + ". Results: " + total_results);
+        sendServerMessageArea(name() + " rolled a " + QString::number(dice) + "d" + QString::number(sides) + ". Results: " + total_results);
 }
 
 QString AOClient::getAreaTimer(int area_idx, int timer_idx)
@@ -232,5 +232,5 @@ void AOClient::sendNotice(QString f_notice, bool f_global)
     if (f_global)
         server->broadcast(l_packet);
     else
-        server->broadcast(l_packet, currentArea());
+        server->broadcast(l_packet, areaId());
 }

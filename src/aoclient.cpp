@@ -155,13 +155,13 @@ void AOClient::clientDisconnected()
     qDebug() << m_remote_ip.toString() << "disconnected";
 #endif
     if (m_joined) {
-        server->getAreaById(currentArea())
-            ->removeClient(server->getCharID(currentCharacter()), clientId());
+        server->getAreaById(areaId())
+            ->removeClient(server->getCharID(character()), clientId());
         arup(ARUPType::PLAYER_COUNT, true);
     }
 
-    if (currentCharacter() != "") {
-        server->updateCharsTaken(server->getAreaById(currentArea()));
+    if (character() != "") {
+        server->updateCharsTaken(server->getAreaById(areaId()));
     }
 
     bool l_updateLocks = false;
@@ -182,7 +182,7 @@ void AOClient::handlePacket(AOPacket *packet)
 #ifdef NET_DEBUG
     qDebug() << "Received packet:" << packet->getPacketInfo().header << ":" << packet->getContent() << "args length:" << packet->getContent().length();
 #endif
-    AreaData *l_area = server->getAreaById(currentArea());
+    AreaData *l_area = server->getAreaById(areaId());
 
     if (packet->getContent().join("").size() > 16384) {
         return;
@@ -211,8 +211,8 @@ void AOClient::handlePacket(AOPacket *packet)
 
 void AOClient::changeArea(int new_area)
 {
-    if (currentArea() == new_area) {
-        sendServerMessage("You are already in area " + server->getAreaName(currentArea()));
+    if (areaId() == new_area) {
+        sendServerMessage("You are already in area " + server->getAreaName(areaId()));
         return;
     }
     if (server->getAreaById(new_area)->lockStatus() == AreaData::LockStatus::LOCKED && !server->getAreaById(new_area)->invited().contains(clientId()) && !checkPermission(ACLRole::BYPASS_LOCKS)) {
@@ -220,21 +220,21 @@ void AOClient::changeArea(int new_area)
         return;
     }
 
-    if (currentCharacter() != "") {
-        server->getAreaById(currentArea())
-            ->changeCharacter(server->getCharID(currentCharacter()), -1);
-        server->updateCharsTaken(server->getAreaById(currentArea()));
+    if (character() != "") {
+        server->getAreaById(areaId())
+            ->changeCharacter(server->getCharID(character()), -1);
+        server->updateCharsTaken(server->getAreaById(areaId()));
     }
-    server->getAreaById(currentArea())->removeClient(m_char_id, clientId());
+    server->getAreaById(areaId())->removeClient(m_char_id, clientId());
     bool l_character_taken = false;
     if (server->getAreaById(new_area)->charactersTaken().contains(
-            server->getCharID(currentCharacter()))) {
-        setCurrentCharacter("");
+            server->getCharID(character()))) {
+        setCharacter("");
         m_char_id = -1;
         l_character_taken = true;
     }
     server->getAreaById(new_area)->addClient(m_char_id, clientId());
-    setCurrentArea(new_area);
+    setAreaId(new_area);
     arup(ARUPType::PLAYER_COUNT, true);
     sendEvidenceList(server->getAreaById(new_area));
     sendPacket("HP", {"1", QString::number(server->getAreaById(new_area)->defHP())});
@@ -243,9 +243,9 @@ void AOClient::changeArea(int new_area)
     if (l_character_taken) {
         sendPacket("DONE");
     }
-    const QList<QTimer *> l_timers = server->getAreaById(currentArea())->timers();
+    const QList<QTimer *> l_timers = server->getAreaById(areaId())->timers();
     for (QTimer *l_timer : l_timers) {
-        int l_timer_id = server->getAreaById(currentArea())->timers().indexOf(l_timer) + 1;
+        int l_timer_id = server->getAreaById(areaId())->timers().indexOf(l_timer) + 1;
         if (l_timer->isActive()) {
             sendPacket("TI", {QString::number(l_timer_id), "2"});
             sendPacket("TI", {QString::number(l_timer_id), "0", QString::number(QTime(0, 0).msecsTo(QTime(0, 0).addMSecs(l_timer->remainingTime())))});
@@ -254,17 +254,17 @@ void AOClient::changeArea(int new_area)
             sendPacket("TI", {QString::number(l_timer_id), "3"});
         }
     }
-    sendServerMessage("You moved to area " + server->getAreaName(currentArea()));
-    if (server->getAreaById(currentArea())->sendAreaMessageOnJoin())
-        sendServerMessage(server->getAreaById(currentArea())->areaMessage());
+    sendServerMessage("You moved to area " + server->getAreaName(areaId()));
+    if (server->getAreaById(areaId())->sendAreaMessageOnJoin())
+        sendServerMessage(server->getAreaById(areaId())->areaMessage());
 
-    if (server->getAreaById(currentArea())->lockStatus() == AreaData::LockStatus::SPECTATABLE)
-        sendServerMessage("Area " + server->getAreaName(currentArea()) + " is spectate-only; to chat IC you will need to be invited by the CM.");
+    if (server->getAreaById(areaId())->lockStatus() == AreaData::LockStatus::SPECTATABLE)
+        sendServerMessage("Area " + server->getAreaName(areaId()) + " is spectate-only; to chat IC you will need to be invited by the CM.");
 }
 
 bool AOClient::changeCharacter(int char_id)
 {
-    AreaData *l_area = server->getAreaById(currentArea());
+    AreaData *l_area = server->getAreaById(areaId());
 
     if (char_id >= server->getCharacterCount())
         return false;
@@ -273,18 +273,18 @@ bool AOClient::changeCharacter(int char_id)
         return false;
     }
 
-    bool l_successfulChange = l_area->changeCharacter(server->getCharID(currentCharacter()),
+    bool l_successfulChange = l_area->changeCharacter(server->getCharID(character()),
                                                       char_id);
 
     if (char_id < 0) {
-        setCurrentCharacter("");
+        setCharacter("");
         m_char_id = char_id;
         setSpectator(true);
     }
 
     if (l_successfulChange == true) {
         QString l_char_selected = server->getCharacterById(char_id);
-        setCurrentCharacter(l_char_selected);
+        setCharacter(l_char_selected);
         m_pos = "";
         server->updateCharsTaken(l_area);
         sendPacket("PV", {QString::number(clientId()), "CID", QString::number(char_id)});
@@ -369,7 +369,7 @@ void AOClient::arup(ARUPType type, bool broadcast)
                 const QList<int> l_owner_ids = l_area->owners();
                 for (int l_owner_id : l_owner_ids) {
                     AOClient *l_owner = server->getClientByID(l_owner_id);
-                    l_area_owners.append("[" + QString::number(l_owner->clientId()) + "] " + l_owner->currentCharacter());
+                    l_area_owners.append("[" + QString::number(l_owner->clientId()) + "] " + l_owner->character());
                 }
                 l_arup_data.append(l_area_owners.join(", "));
             }
@@ -403,9 +403,6 @@ void AOClient::fullArup()
 
 void AOClient::sendPacket(AOPacket *packet)
 {
-#ifdef NET_DEBUG
-    qDebug() << "Sent packet:" << packet->getPacketInfo().header << ":" << packet->getContent();
-#endif
     m_socket->write(packet);
 }
 
@@ -442,7 +439,7 @@ void AOClient::sendServerMessage(QString message)
 void AOClient::sendServerMessageArea(QString message)
 {
     server->broadcast(PacketFactory::createPacket("CT", {ConfigManager::serverName(), message, "1"}),
-                      currentArea());
+                      areaId());
 }
 
 void AOClient::sendServerBroadcast(QString message)
@@ -456,7 +453,7 @@ bool AOClient::checkPermission(ACLRole::Permission f_permission) const
         return true;
     }
 
-    if ((f_permission == ACLRole::CM) && server->getAreaById(currentArea())->owners().contains(clientId())) {
+    if ((f_permission == ACLRole::CM) && server->getAreaById(areaId())->owners().contains(clientId())) {
         return true; // I'm sorry for this hack.
     }
 
@@ -499,34 +496,42 @@ int AOClient::clientId() const
     return m_id;
 }
 
-int AOClient::currentArea() const
+QString AOClient::name() const { return m_ooc_name; }
+
+void AOClient::setName(const QString &f_name)
+{
+    m_ooc_name = f_name;
+    Q_EMIT nameChanged(m_ooc_name);
+}
+
+int AOClient::areaId() const
 {
     return m_current_area;
 }
 
-void AOClient::setCurrentArea(const int f_area_id)
+void AOClient::setAreaId(const int f_area_id)
 {
     m_current_area = f_area_id;
-    Q_EMIT currentAreaChanged(m_current_area);
+    Q_EMIT areaIdChanged(m_current_area);
 }
 
-QString AOClient::currentCharacter() const
+QString AOClient::character() const
 {
     return m_current_char;
 }
 
-void AOClient::setCurrentCharacter(const QString &f_character)
+void AOClient::setCharacter(const QString &f_character)
 {
     m_current_char = f_character;
     Q_EMIT characterChanged(m_current_char);
 }
 
-QString AOClient::currentCharacterName() const { return m_showname; }
+QString AOClient::characterName() const { return m_showname; }
 
-void AOClient::setCurrentCharacterName(const QString &f_showname)
+void AOClient::setCharacterName(const QString &f_showname)
 {
-  m_showname = f_showname;
-  Q_EMIT characterNameChanged(m_showname);
+    m_showname = f_showname;
+    Q_EMIT characterNameChanged(m_showname);
 }
 
 void AOClient::setSpectator(bool f_spectator)

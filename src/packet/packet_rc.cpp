@@ -23,8 +23,3 @@ void PacketRC::handlePacket(AreaData *area, AOClient &client) const
 
     client.sendPacket("SC", client.getServer()->getCharacters());
 }
-
-bool PacketRC::validatePacket() const
-{
-    return true;
-}

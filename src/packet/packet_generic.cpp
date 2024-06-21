@@ -24,8 +24,3 @@ void PacketGeneric::handlePacket(AreaData *area, AOClient &client) const
     qDebug() << "ERROR: Cannot handle generic packet: " << header;
     qDebug() << "Packet is either unimplemented, or is meant to be sent to client";
 }
-
-bool PacketGeneric::validatePacket() const
-{
-    return true;
-}

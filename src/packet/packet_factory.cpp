@@ -21,7 +21,7 @@ AOPacket *PacketFactory::createPacket(QString raw_packet)
     }
 
     if (raw_packet.at(0) == '#' || raw_packet.contains("%")) {
-        qDebug() << "FantaCrypt or otherwise invalid packet received";
+        qDebug() << "FantaCrypt or otherwise invalid packet received:" << raw_packet;
         return PacketFactory::createPacket("Unknown", {"Unknown"});
     }
 

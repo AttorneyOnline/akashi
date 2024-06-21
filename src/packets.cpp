@@ -31,7 +31,7 @@ void AOClient::sendEvidenceList(AreaData *area) const
 {
     const QVector<AOClient *> l_clients = server->getClients();
     for (AOClient *l_client : l_clients) {
-        if (l_client->currentArea() == currentArea())
+        if (l_client->areaId() == areaId())
             l_client->updateEvidenceList(area);
     }
 }
@@ -86,7 +86,7 @@ void AOClient::updateJudgeLog(AreaData *area, AOClient *client, QString action)
 {
     QString l_timestamp = QTime::currentTime().toString("hh:mm:ss");
     QString l_uid = QString::number(client->clientId());
-    QString l_char_name = client->currentCharacter();
+    QString l_char_name = client->character();
     QString l_ipid = client->getIpid();
     QString l_message = action;
     QString l_logmessage = QString("[%1]: [%2] %3 (%4) %5").arg(l_timestamp, l_uid, l_char_name, l_ipid, l_message);
@@ -116,8 +116,8 @@ void AOClient::loginAttempt(QString message)
             sendPacket("AUTH", {"0"}); // Client: "Login unsuccessful."
             sendServerMessage("Incorrect password.");
         }
-        emit logLogin((currentCharacter() + " " + currentCharacterName()), m_ooc_name, "Moderator",
-                      m_ipid, server->getAreaById(currentArea())->name(), m_authenticated);
+        emit logLogin((character() + " " + characterName()), name(), "Moderator",
+                      m_ipid, server->getAreaById(areaId())->name(), m_authenticated);
         break;
     case DataTypes::AuthType::ADVANCED:
         QStringList l_login = message.split(" ");
@@ -142,8 +142,8 @@ void AOClient::loginAttempt(QString message)
             sendPacket("AUTH", {"0"}); // Client: "Login unsuccessful."
             sendServerMessage("Incorrect password.");
         }
-        emit logLogin((currentCharacter() + " " + currentCharacterName()), m_ooc_name, username, m_ipid,
-                      server->getAreaById(currentArea())->name(), m_authenticated);
+        emit logLogin((character() + " " + characterName()), name(), username, m_ipid,
+                      server->getAreaById(areaId())->name(), m_authenticated);
         break;
     }
     sendServerMessage("Exiting login prompt.");

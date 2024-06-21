@@ -180,6 +180,7 @@ void Server::clientConnected()
     NetworkSocket *l_socket = new NetworkSocket(socket, socket);
     AOClient *client = new AOClient(this, l_socket, l_socket, user_id, music_manager);
     m_clients_ids.insert(user_id, client);
+    m_player_state_observer.registerClient(client);
 
     int multiclient_count = 1;
     bool is_at_multiclient_limit = false;
@@ -267,6 +268,7 @@ void Server::ws_clientConnected()
     int user_id = m_available_ids.pop();
     AOClient *client = new AOClient(this, l_socket, l_socket, user_id, music_manager);
     m_clients_ids.insert(user_id, client);
+    m_player_state_observer.registerClient(client);
 
     int multiclient_count = 1;
     bool is_at_multiclient_limit = false;
@@ -344,7 +346,7 @@ void Server::updateCharsTaken(AreaData *area)
     AOPacket *response_cc = PacketFactory::createPacket("CharsCheck", chars_taken);
 
     for (AOClient *l_client : qAsConst(m_clients)) {
-        if (l_client->currentArea() == area->index()) {
+        if (l_client->areaId() == area->index()) {
             if (!l_client->m_is_charcursed)
                 l_client->sendPacket(response_cc);
             else {
@@ -619,8 +621,9 @@ void Server::handleDiscordIntegration()
 
 void Server::markIDFree(const int &f_user_id)
 {
-    m_available_ids.push(f_user_id);
+    m_player_state_observer.unregisterClient(m_clients_ids[f_user_id]);
     m_clients_ids.insert(f_user_id, nullptr);
+    m_available_ids.push(f_user_id);
 }
 
 void Server::hookupAOClient(AOClient *client)

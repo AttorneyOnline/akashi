@@ -30,8 +30,3 @@ void PacketEE::handlePacket(AreaData *area, AOClient &client) const
     }
     client.sendEvidenceList(area);
 }
-
-bool PacketEE::validatePacket() const
-{
-    return AkashiUtils::checkArgType<int>(m_content.at(0));
-}

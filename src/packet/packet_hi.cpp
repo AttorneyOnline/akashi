@@ -49,9 +49,3 @@ void PacketHI::handlePacket(AreaData *area, AOClient &client) const
 
     client.sendPacket("ID", {QString::number(client.clientId()), "akashi", QCoreApplication::applicationVersion()});
 }
-
-bool PacketHI::validatePacket() const
-{
-    // We can always convert a string to a string. No point in checking.
-    return true;
-}

@@ -146,10 +146,10 @@ void AOClient::cmdMods(int argc, QStringList argv)
                 l_entries << "Moderator: " + l_client->m_moderator_name;
                 l_entries << "Role:" << l_client->m_acl_role_id;
             }
-            l_entries << "OOC name: " + l_client->m_ooc_name;
+            l_entries << "OOC name: " + l_client->name();
             l_entries << "ID: " + QString::number(l_client->clientId());
-            l_entries << "Area: " + QString::number(l_client->currentArea());
-            l_entries << "Character: " + l_client->currentCharacter();
+            l_entries << "Area: " + QString::number(l_client->areaId());
+            l_entries << "Character: " + l_client->character();
             l_online_count++;
         }
     }
@@ -441,8 +441,8 @@ void AOClient::cmdAllowBlankposting(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    QString l_sender_name = m_ooc_name;
-    AreaData *l_area = server->getAreaById(currentArea());
+    QString l_sender_name = name();
+    AreaData *l_area = server->getAreaById(areaId());
     l_area->toggleBlankposting();
     if (l_area->blankpostingAllowed() == false) {
         sendServerMessageArea(l_sender_name + " has set blankposting in the area to forbidden.");
@@ -508,7 +508,7 @@ void AOClient::cmdForceImmediate(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData *l_area = server->getAreaById(currentArea());
+    AreaData *l_area = server->getAreaById(areaId());
     l_area->toggleImmediate();
     QString l_state = l_area->forceImmediate() ? "on." : "off.";
     sendServerMessage("Forced immediate text processing in this area is now " + l_state);
@@ -519,7 +519,7 @@ void AOClient::cmdAllowIniswap(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData *l_area = server->getAreaById(currentArea());
+    AreaData *l_area = server->getAreaById(areaId());
     l_area->toggleIniswap();
     QString state = l_area->iniswapAllowed() ? "allowed." : "disallowed.";
     sendServerMessage("Iniswapping in this area is now " + state);
@@ -623,7 +623,7 @@ void AOClient::cmdClearCM(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData *l_area = server->getAreaById(currentArea());
+    AreaData *l_area = server->getAreaById(areaId());
     foreach (int l_client_id, l_area->owners()) {
         l_area->removeOwner(l_client_id);
     }

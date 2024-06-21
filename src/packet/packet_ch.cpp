@@ -26,8 +26,3 @@ void PacketCH::handlePacket(AreaData *area, AOClient &client) const
     // It is now used for ping measurement
     client.sendPacket("CHECK");
 }
-
-bool PacketCH::validatePacket() const
-{
-    return AkashiUtils::checkArgType<int>(m_content.at(0));
-}

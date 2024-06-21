@@ -31,8 +31,3 @@ void PacketSetcase::handlePacket(AreaData *area, AOClient &client) const
     }
     client.m_casing_preferences = l_prefs_list;
 }
-
-bool PacketSetcase::validatePacket() const
-{
-    return true;
-}

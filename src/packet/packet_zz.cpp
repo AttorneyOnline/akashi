@@ -21,9 +21,9 @@ PacketInfo PacketZZ::getPacketInfo() const
 
 void PacketZZ::handlePacket(AreaData *area, AOClient &client) const
 {
-    QString l_name = client.m_ooc_name;
-    if (client.m_ooc_name.isEmpty())
-        l_name = client.currentCharacter();
+    QString l_name = client.name();
+    if (client.name().isEmpty())
+        l_name = client.character();
 
     QString l_areaName = area->name();
 
@@ -39,19 +39,14 @@ void PacketZZ::handlePacket(AreaData *area, AOClient &client) const
         if (l_client->m_authenticated)
             l_client->sendPacket(PacketFactory::createPacket("ZZ", {l_modcallNotice}));
     }
-    emit client.logModcall((client.currentCharacter() + " " + client.currentCharacterName()), client.m_ipid, client.m_ooc_name, client.getServer()->getAreaById(client.currentArea())->name());
+    emit client.logModcall((client.character() + " " + client.characterName()), client.m_ipid, client.name(), client.getServer()->getAreaById(client.areaId())->name());
 
     if (ConfigManager::discordModcallWebhookEnabled()) {
-        QString l_name = client.m_ooc_name;
-        if (client.m_ooc_name.isEmpty())
-            l_name = client.currentCharacter();
+        QString l_name = client.name();
+        if (client.name().isEmpty())
+            l_name = client.character();
 
         QString l_areaName = area->name();
         emit client.getServer()->modcallWebhookRequest(l_name, l_areaName, m_content.value(0), client.getServer()->getAreaBuffer(l_areaName));
     }
-}
-
-bool PacketZZ::validatePacket() const
-{
-    return true;
 }

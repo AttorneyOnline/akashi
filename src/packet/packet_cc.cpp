@@ -46,8 +46,3 @@ void PacketCC::handlePacket(AreaData *area, AOClient &client) const
         client.setSpectator(false);
     }
 }
-
-bool PacketCC::validatePacket() const
-{
-    return AkashiUtils::checkArgType<int>(m_content.at(1));
-}

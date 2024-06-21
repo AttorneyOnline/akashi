@@ -23,8 +23,3 @@ void PacketPW::handlePacket(AreaData *area, AOClient &client) const
 
     client.m_password = m_content[0];
 }
-
-bool PacketPW::validatePacket() const
-{
-    return true;
-}

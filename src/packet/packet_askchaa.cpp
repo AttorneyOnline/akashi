@@ -26,11 +26,3 @@ void PacketAskchaa::handlePacket(AreaData *area, AOClient &client) const
     // Client only cares about what it gets from LE
     client.sendPacket("SI", {QString::number(client.getServer()->getCharacterCount()), "0", QString::number(client.getServer()->getAreaCount() + client.getServer()->getMusicList().length())});
 }
-
-bool PacketAskchaa::validatePacket() const
-{
-    if (m_content.size() > 0) { // Too many arguments.
-        return false;
-    }
-    return true;
-}

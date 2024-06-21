@@ -39,12 +39,3 @@ void PacketHP::handlePacket(AreaData *area, AOClient &client) const
 
     client.updateJudgeLog(area, &client, "updated the penalties");
 }
-
-bool PacketHP::validatePacket() const
-{
-    if (!AkashiUtils::checkArgType<int>(m_content.at(0)))
-        return false;
-    if (!AkashiUtils::checkArgType<int>(m_content.at(1)))
-        return false;
-    return true;
-}

@@ -27,11 +27,11 @@ void PacketCT::handlePacket(AreaData *area, AOClient &client) const
         return;
     }
 
-    client.m_ooc_name = client.dezalgo(m_content[0]).replace(QRegExp("\\[|\\]|\\{|\\}|\\#|\\$|\\%|\\&"), ""); // no fucky wucky shit here
-    if (client.m_ooc_name.isEmpty() || client.m_ooc_name == ConfigManager::serverName())                      // impersonation & empty name protection
+    client.setName(client.dezalgo(m_content[0]).replace(QRegExp("\\[|\\]|\\{|\\}|\\#|\\$|\\%|\\&"), "")); // no fucky wucky shit here
+    if (client.name().isEmpty() || client.name() == ConfigManager::serverName())                          // impersonation & empty name protection
         return;
 
-    if (client.m_ooc_name.length() > 30) {
+    if (client.name().length() > 30) {
         client.sendServerMessage("Your name is too long! Please limit it to under 30 characters.");
         return;
     }
@@ -44,7 +44,7 @@ void PacketCT::handlePacket(AreaData *area, AOClient &client) const
     QString l_message = client.dezalgo(m_content[1]);
     if (l_message.length() == 0 || l_message.length() > ConfigManager::maxCharacters())
         return;
-    AOPacket *final_packet = PacketFactory::createPacket("CT", {client.m_ooc_name, l_message, "0"});
+    AOPacket *final_packet = PacketFactory::createPacket("CT", {client.name(), l_message, "0"});
     if (l_message.at(0) == '/') {
         QStringList l_cmd_argv = l_message.split(" ", akashi::SkipEmptyParts);
         QString l_command = l_cmd_argv[0].trimmed().toLower();
@@ -53,17 +53,11 @@ void PacketCT::handlePacket(AreaData *area, AOClient &client) const
         int l_cmd_argc = l_cmd_argv.length();
 
         client.handleCommand(l_command, l_cmd_argc, l_cmd_argv);
-        emit client.logCMD((client.currentCharacter() + " " + client.currentCharacterName()), client.m_ipid, client.m_ooc_name, l_command, l_cmd_argv, client.getServer()->getAreaById(client.currentArea())->name());
+        emit client.logCMD((client.character() + " " + client.characterName()), client.m_ipid, client.name(), l_command, l_cmd_argv, client.getServer()->getAreaById(client.areaId())->name());
         return;
     }
     else {
-        client.getServer()->broadcast(final_packet, client.currentArea());
+        client.getServer()->broadcast(final_packet, client.areaId());
     }
-    emit client.logOOC((client.currentCharacter() + " " + client.currentCharacterName()), client.m_ooc_name, client.m_ipid, area->name(), l_message);
-}
-
-bool PacketCT::validatePacket() const
-{
-    // Nothing to validate.
-    return true;
+    emit client.logOOC((client.character() + " " + client.characterName()), client.name(), client.m_ipid, area->name(), l_message);
 }

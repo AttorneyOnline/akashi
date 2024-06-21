@@ -32,6 +32,7 @@
 #include <QWebSocketServer>
 
 #include "network/aopacket.h"
+#include "playerstateobserver.h"
 
 class ACLRolesHandler;
 class Advertiser;
@@ -481,6 +482,7 @@ class Server : public QObject
      * @brief Collection of all clients with their userID as key.
      */
     QHash<int, AOClient *> m_clients_ids;
+    PlayerStateObserver m_player_state_observer;
 
     /**
      * @brief Stack of all available IDs for clients. When this is empty the server

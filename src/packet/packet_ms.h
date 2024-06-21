@@ -9,7 +9,6 @@ class PacketMS : public AOPacket
     PacketMS(QStringList &contents);
     virtual PacketInfo getPacketInfo() const;
     virtual void handlePacket(AreaData *area, AOClient &client) const;
-    virtual bool validatePacket() const;
 
   private:
     AOPacket *validateIcPacket(AOClient &client) const;

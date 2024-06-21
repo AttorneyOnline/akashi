@@ -69,8 +69,3 @@ void PacketID::handlePacket(AreaData *area, AOClient &client) const
         client.sendPacket("ASS", {l_asset_url});
     }
 }
-
-bool PacketID::validatePacket() const
-{
-    return true;
-}

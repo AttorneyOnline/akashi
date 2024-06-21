@@ -33,21 +33,21 @@ void AOClient::cmdPlay(int argc, QStringList argv)
         sendServerMessage("You are blocked from changing the music.");
         return;
     }
-    AreaData *l_area = server->getAreaById(currentArea());
+    AreaData *l_area = server->getAreaById(areaId());
     const ACLRole l_role = server->getACLRolesHandler()->getRoleById(m_acl_role_id);
     if (!l_area->owners().contains(clientId()) && !l_area->isPlayEnabled() && !l_role.checkPermission(ACLRole::CM)) { // Make sure we have permission to play music
         sendServerMessage("Free music play is disabled in this area.");
         return;
     }
     QString l_song = argv.join(" ");
-    if (currentCharacterName().isEmpty()) {
-        l_area->changeMusic(currentCharacter(), l_song);
+    if (characterName().isEmpty()) {
+        l_area->changeMusic(character(), l_song);
     }
     else {
-        l_area->changeMusic(currentCharacterName(), l_song);
+        l_area->changeMusic(characterName(), l_song);
     }
-    AOPacket *music_change = PacketFactory::createPacket("MC", {l_song, QString::number(server->getCharID(currentCharacter())), currentCharacterName(), "1", "0"});
-    server->broadcast(music_change, currentArea());
+    AOPacket *music_change = PacketFactory::createPacket("MC", {l_song, QString::number(server->getCharID(character())), characterName(), "1", "0"});
+    server->broadcast(music_change, areaId());
 }
 
 void AOClient::cmdPlayAmbience(int argc, QStringList argv)
@@ -58,15 +58,15 @@ void AOClient::cmdPlayAmbience(int argc, QStringList argv)
         sendServerMessage("You are blocked from changing the ambience.");
         return;
     }
-    AreaData *l_area = server->getAreaById(currentArea());
+    AreaData *l_area = server->getAreaById(areaId());
     if (!l_area->owners().contains(clientId()) && !l_area->isPlayEnabled()) { // Make sure we have permission to play music
         sendServerMessage("Free ambience play is disabled in this area.");
         return;
     }
     QString l_song = argv.join(" ");
     l_area->changeAmbience(l_song);
-    AOPacket *music_change = PacketFactory::createPacket("MC", {l_song, "-1", currentCharacterName(), "1", "1"});
-    server->broadcast(music_change, currentArea());
+    AOPacket *music_change = PacketFactory::createPacket("MC", {l_song, "-1", characterName(), "1", "1"});
+    server->broadcast(music_change, areaId());
 }
 
 void AOClient::cmdCurrentMusic(int argc, QStringList argv)
@@ -74,7 +74,7 @@ void AOClient::cmdCurrentMusic(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData *l_area = server->getAreaById(currentArea());
+    AreaData *l_area = server->getAreaById(areaId());
     if (!l_area->currentMusic().isEmpty() && !l_area->currentMusic().contains("~stop.mp3")) // dummy track for stopping music
         sendServerMessage("The current song is " + l_area->currentMusic() + " played by " + l_area->musicPlayerBy());
     else
@@ -140,7 +140,7 @@ void AOClient::cmdToggleMusic(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData *l_area = server->getAreaById(currentArea());
+    AreaData *l_area = server->getAreaById(areaId());
     l_area->toggleMusic();
     QString l_state = l_area->isMusicAllowed() ? "allowed." : "disallowed.";
     sendServerMessage("Music in this area is now " + l_state);
@@ -151,7 +151,7 @@ void AOClient::cmdToggleJukebox(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData *l_area = server->getAreaById(currentArea());
+    AreaData *l_area = server->getAreaById(areaId());
     l_area->toggleJukebox();
     QString l_state = l_area->isjukeboxEnabled() ? "enabled." : "disabled.";
     sendServerMessageArea("The jukebox in this area has been " + l_state);
@@ -172,13 +172,13 @@ void AOClient::cmdAddSong(int argc, QStringList argv)
     bool l_success = false;
     if (l_argv.size() == 1) {
         QString l_song_name = l_argv.value(0);
-        l_success = m_music_manager->addCustomSong(l_song_name, l_song_name, 0, currentArea());
+        l_success = m_music_manager->addCustomSong(l_song_name, l_song_name, 0, areaId());
     }
 
     if (l_argv.size() == 2) {
         QString l_song_name = l_argv.value(0);
         QString l_true_name = l_argv.value(1);
-        l_success = m_music_manager->addCustomSong(l_song_name, l_true_name, 0, currentArea());
+        l_success = m_music_manager->addCustomSong(l_song_name, l_true_name, 0, areaId());
     }
 
     if (l_argv.size() == 3) {
@@ -188,7 +188,7 @@ void AOClient::cmdAddSong(int argc, QStringList argv)
         int l_song_duration = l_argv.value(2).toInt(&ok);
         if (!ok)
             l_song_duration = 0;
-        l_success = m_music_manager->addCustomSong(l_song_name, l_true_name, l_song_duration, currentArea());
+        l_success = m_music_manager->addCustomSong(l_song_name, l_true_name, l_song_duration, areaId());
     }
 
     if (l_argv.size() >= 4) {
@@ -203,7 +203,7 @@ void AOClient::cmdAddSong(int argc, QStringList argv)
 void AOClient::cmdAddCategory(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
-    bool l_success = m_music_manager->addCustomCategory(argv.join(" "), currentArea());
+    bool l_success = m_music_manager->addCustomCategory(argv.join(" "), areaId());
     QString l_message = l_success ? "succeeded." : "failed.";
     sendServerMessage("The addition of the category has " + l_message);
 }
@@ -211,7 +211,7 @@ void AOClient::cmdAddCategory(int argc, QStringList argv)
 void AOClient::cmdRemoveCategorySong(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
-    bool l_success = m_music_manager->removeCategorySong(argv.join(" "), currentArea());
+    bool l_success = m_music_manager->removeCategorySong(argv.join(" "), areaId());
     QString l_message = l_success ? "succeeded." : "failed.";
     sendServerMessage("The removal of the entry has " + l_message);
 }
@@ -220,7 +220,7 @@ void AOClient::cmdToggleRootlist(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
     Q_UNUSED(argv);
-    bool l_status = m_music_manager->toggleRootEnabled(currentArea());
+    bool l_status = m_music_manager->toggleRootEnabled(areaId());
     QString l_message = (l_status) ? "enabled." : "disabled.";
     sendServerMessage("Global musiclist has been " + l_message);
 }
@@ -229,7 +229,7 @@ void AOClient::cmdClearCustom(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
     Q_UNUSED(argv);
-    m_music_manager->clearCustomList(currentArea());
+    m_music_manager->clearCustomList(areaId());
     sendServerMessage("Custom songs have been cleared.");
 }
 
@@ -238,12 +238,12 @@ void AOClient::cmdJukeboxSkip(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    QString l_name = currentCharacter();
-    if (!currentCharacterName().isEmpty()) {
-        l_name = currentCharacterName();
+    QString l_name = character();
+    if (!characterName().isEmpty()) {
+        l_name = characterName();
     }
 
-    AreaData *l_area = server->getAreaById(currentArea());
+    AreaData *l_area = server->getAreaById(areaId());
 
     if (l_area->isjukeboxEnabled()) {
         if (l_area->getJukeboxQueueSize() >= 1) {

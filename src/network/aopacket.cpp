@@ -31,6 +31,7 @@
 #include "packet/packet_mc.h"
 #include "packet/packet_ms.h"
 #include "packet/packet_pe.h"
+#include "packet/packet_pl.h"
 #include "packet/packet_pw.h"
 #include "packet/packet_rc.h"
 #include "packet/packet_rd.h"
@@ -132,4 +133,7 @@ void AOPacket::registerPackets()
     PacketFactory::registerClass<PacketRT>("RT");
     PacketFactory::registerClass<PacketSetcase>("SETCASE");
     PacketFactory::registerClass<PacketZZ>("ZZ");
+    PacketFactory::registerClass<PacketPL>("PL");
+    PacketFactory::registerClass<PacketPLU>("PLU");
+    PacketFactory::registerClass<PacketPU>("PU");
 }

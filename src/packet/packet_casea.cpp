@@ -41,7 +41,7 @@ void PacketCasea::handlePacket(AreaData *area, AOClient &client) const
     if (l_needed_roles.isEmpty())
         return;
 
-    QString l_message = "=== Case Announcement ===\r\n" + (client.m_ooc_name == "" ? client.currentCharacter() : client.m_ooc_name) + " needs " + l_needed_roles.join(", ") + " for " + (l_case_title == "" ? "a case" : l_case_title) + "!";
+    QString l_message = "=== Case Announcement ===\r\n" + (client.name() == "" ? client.character() : client.name()) + " needs " + l_needed_roles.join(", ") + " for " + (l_case_title == "" ? "a case" : l_case_title) + "!";
 
     QList<AOClient *> l_clients_to_alert;
     // here lies morton, RIP
@@ -69,14 +69,4 @@ void PacketCasea::handlePacket(AreaData *area, AOClient &client) const
         // however for some inscrutable reason Attorney Online 2 will outright reject a CASEA packet that does not have
         // at least 7 arguments despite only using the first 6. Cera, i kneel. you have truly broken me.
     }
-}
-
-bool PacketCasea::validatePacket() const
-{
-    for (int i = 1; i < m_content.size(); i++) {
-        if (!AkashiUtils::checkArgType<int>(m_content.at(i))) {
-            return false;
-        }
-    }
-    return true;
 }

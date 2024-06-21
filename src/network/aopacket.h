@@ -113,7 +113,6 @@ class AOPacket
 
     virtual PacketInfo getPacketInfo() const = 0;
     virtual void handlePacket(AreaData *area, AOClient &client) const = 0;
-    virtual bool validatePacket() const = 0;
 
     static void registerPackets();
 

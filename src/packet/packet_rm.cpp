@@ -23,8 +23,3 @@ void PacketRM::handlePacket(AreaData *area, AOClient &client) const
 
     client.sendPacket("SM", client.getServer()->getAreaNames() + client.getServer()->getMusicList());
 }
-
-bool PacketRM::validatePacket() const
-{
-    return true;
-}

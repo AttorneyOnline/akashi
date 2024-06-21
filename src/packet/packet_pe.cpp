@@ -25,8 +25,3 @@ void PacketPE::handlePacket(AreaData *area, AOClient &client) const
     area->appendEvidence(l_evi);
     client.sendEvidenceList(area);
 }
-
-bool PacketPE::validatePacket() const
-{
-    return true;
-}

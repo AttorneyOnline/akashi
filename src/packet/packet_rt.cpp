@@ -33,11 +33,6 @@ void PacketRT::handlePacket(AreaData *area, AOClient &client) const
     if (QDateTime::currentDateTime().toSecsSinceEpoch() - client.m_last_wtce_time <= 5)
         return;
     client.m_last_wtce_time = QDateTime::currentDateTime().toSecsSinceEpoch();
-    client.getServer()->broadcast(PacketFactory::createPacket("RT", m_content), client.currentArea());
+    client.getServer()->broadcast(PacketFactory::createPacket("RT", m_content), client.areaId());
     client.updateJudgeLog(area, &client, "WT/CE");
-}
-
-bool PacketRT::validatePacket() const
-{
-    return true;
 }
