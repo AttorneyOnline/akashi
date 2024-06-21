@@ -1,8 +1,8 @@
 #include <QObject>
 #include <QTest>
 
-#include "include/network/aopacket.h"
-#include "include/packet/packet_factory.h"
+#include "network/aopacket.h"
+#include "packet/packet_factory.h"
 
 namespace tests {
 namespace unittests {

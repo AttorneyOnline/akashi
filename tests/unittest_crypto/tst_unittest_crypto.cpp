@@ -1,6 +1,6 @@
 #include <QTest>
 
-#include <include/crypto_helper.h>
+#include "crypto_helper.h"
 
 namespace tests {
 namespace unittests {

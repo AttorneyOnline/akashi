@@ -1,6 +1,6 @@
 #include <QTest>
 
-#include <include/music_manager.h>
+#include "music_manager.h"
 
 namespace tests {
 namespace unittests {

@@ -1,6 +1,6 @@
 #include <QtTest>
 
-#include <include/area_data.h>
+#include "area_data.h"
 
 Q_DECLARE_METATYPE(AreaData::Side);
 
@@ -78,14 +78,14 @@ void Area::clientJoinLeave()
 {
     {
         // There must be exactly one client in the area, and it must have a charid of 5 and userid 0.
-        m_area->clientJoinedArea(5, 0);
+        m_area->addClient(5, 0);
 
         QCOMPARE(m_area->joinedIDs().size(), 1);
         QCOMPARE(m_area->charactersTaken().at(0), 5);
     }
     {
         // No clients must be left in the area.
-        m_area->clientLeftArea(5, 0);
+        m_area->removeClient(5, 0);
 
         QCOMPARE(m_area->joinedIDs().size(), 0);
     }
@@ -153,7 +153,7 @@ void Area::changeCharacter()
 {
     {
         // A client with a charid of 6 and userid 0 joins. There's only them in there.
-        m_area->clientJoinedArea(6, 0);
+        m_area->addClient(6, 0);
 
         QCOMPARE(m_area->charactersTaken().size(), 1);
         QCOMPARE(m_area->charactersTaken().at(0), 6);
