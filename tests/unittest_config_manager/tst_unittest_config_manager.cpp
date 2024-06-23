@@ -1,7 +1,7 @@
 #include <QString>
 #include <QTest>
 
-#include <include/config_manager.h>
+#include "config_manager.h"
 
 namespace tests {
 namespace unittests {

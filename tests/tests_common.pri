@@ -11,8 +11,6 @@ coverage {
 
 DESTDIR = $$PWD/../bin_tests
 
-win32: LIBS += -L$$PWD/../bin/ -lcore
-else:unix: LIBS += -L$$PWD/../bin/ -lcore
+INCLUDEPATH += $$PWD/../src
 
-INCLUDEPATH += $$PWD/../core
-DEPENDPATH += $$PWD/../core
+LIBS += -L$$PWD/../bin -lcore

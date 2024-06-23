@@ -2,7 +2,7 @@
 #include <QRegularExpression>
 #include <QTest>
 
-#include <include/command_extension.h>
+#include "command_extension.h"
 
 namespace tests {
 namespace unittests {

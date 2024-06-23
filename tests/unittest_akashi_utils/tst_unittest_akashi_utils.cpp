@@ -1,4 +1,4 @@
-#include "include/akashiutils.h"
+#include "akashiutils.h"
 #include <QTest>
 
 namespace tests {
