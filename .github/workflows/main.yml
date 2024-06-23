@@ -92,11 +92,10 @@ jobs:
 
       - name: Copy coverage files
         run: |
+          mkdir coverage
           cd ${{github.workspace}}
           gcov *.o
-          cd ..
-          mkdir coverage
-          cp *.gcov coverage/
+          cp ./*.gcov ../coverage
 
       - name: Codecov
         uses: codecov/codecov-action@v3.1.0
