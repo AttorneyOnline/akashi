@@ -94,7 +94,7 @@ jobs:
           mkdir coverage
           cd ${{github.workspace}}
           gcov *.o
-          cp *.gcov ../coverage
+          cp *.gcov ../coverage/
 
       - name: Codecov
         uses: codecov/codecov-action@v3.1.0
