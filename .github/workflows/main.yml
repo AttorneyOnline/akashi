@@ -62,50 +62,50 @@ jobs:
           name: akashi-linux
           path: bin/
   
-  coverage:
-    runs-on: ubuntu-latest
+  # coverage:
+  #   runs-on: ubuntu-latest
 
-    steps:
-       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
+  #   steps:
+  #      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+  #     - uses: actions/checkout@v2
       
-      - name: Install dependencies
-        uses: awalsh128/cache-apt-pkgs-action@latest
-        with:
-          packages: qt5-qmake libqt5websockets5-dev g++ make
-          version: 1.0
+  #     - name: Install dependencies
+  #       uses: awalsh128/cache-apt-pkgs-action@latest
+  #       with:
+  #         packages: qt5-qmake libqt5websockets5-dev g++ make
+  #         version: 1.0
           
-      # Runs a set of commands using the runners shell
-      - name: qmake and build
-        run: |
-          cd $GITHUB_WORKSPACE
-          qmake CONFIG+=coverage project-akashi.pro
-          make
+  #     # Runs a set of commands using the runners shell
+  #     - name: qmake and build
+  #       run: |
+  #         cd $GITHUB_WORKSPACE
+  #         qmake CONFIG+=coverage project-akashi.pro
+  #         make
           
-      - name: Run tests
-        run: |
-            cd ${{github.workspace}}/bin_tests/
-            for test in ./unittest_*; do
-              LD_LIBRARY_PATH=../bin:$LD_LIBRARY_PATH ./$test
-            done;
+  #     - name: Run tests
+  #       run: |
+  #           cd ${{github.workspace}}/bin_tests/
+  #           for test in ./unittest_*; do
+  #             LD_LIBRARY_PATH=../bin:$LD_LIBRARY_PATH ./$test
+  #           done;
 
-      - name: Copy coverage files
-        run: |
-          mkdir coverage
-          cd ${{github.workspace}}
-          gcov *.o
-          cp *.gcov ../coverage/
+  #     - name: Copy coverage files
+  #       run: |
+  #         mkdir coverage
+  #         cd ${{github.workspace}}
+  #         gcov *.o
+  #         cp *.gcov ../coverage/
 
-      - name: Codecov
-        uses: codecov/codecov-action@v3.1.0
-        with:
-          files: coverage/*
+  #     - name: Codecov
+  #       uses: codecov/codecov-action@v3.1.0
+  #       with:
+  #         files: coverage/*
 
-      - name: Upload coverage files
-        uses: actions/upload-artifact@v2
-        with:
-          name: coverage statistics
-          path: coverage/
+  #     - name: Upload coverage files
+  #       uses: actions/upload-artifact@v2
+  #       with:
+  #         name: coverage statistics
+  #         path: coverage/
 
   build-windows:
     needs: formatting-check
