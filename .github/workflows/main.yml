@@ -45,7 +45,7 @@ jobs:
       - name: qmake and build
         run: |
           cd $GITHUB_WORKSPACE
-          qmake
+          qmake project-akashi.pro
           make
           mv bin/config_sample bin/config
           
@@ -80,7 +80,7 @@ jobs:
       - name: qmake and build
         run: |
           cd $GITHUB_WORKSPACE
-          qmake CONFIG+=coverage
+          qmake CONFIG+=coverage project-akashi.pro
           make
           
       - name: Run tests
@@ -132,7 +132,7 @@ jobs:
       - name: Build
         run: |
           cd $Env:GITHUB_WORKSPACE
-          qmake "CONFIG += qtquickcompiler" akashi.pro
+          qmake "CONFIG += qtquickcompiler" project-akashi.pro
           nmake
           windeployqt bin\akashi.exe --release --no-opengl-sw
           mv bin\config_sample bin\config
