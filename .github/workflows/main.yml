@@ -96,7 +96,7 @@ jobs:
           gcov *.o
           cd ..
           mkdir coverage
-          cp core/*.gcov coverage/
+          cp *.gcov coverage/
 
       - name: Codecov
         uses: codecov/codecov-action@v3.1.0
