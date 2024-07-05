@@ -74,14 +74,7 @@ QStringList AOClient::buildAreaList(int area_idx)
 
 int AOClient::genRand(int min, int max)
 {
-#if QT_VERSION < QT_VERSION_CHECK(5, 10, 0)
-    qsrand(QDateTime::currentMSecsSinceEpoch());
-    quint32 random_number = (qrand() % (max - min + 1)) + min;
-    return random_number;
-
-#else
     return QRandomGenerator::system()->bounded(min, max + 1);
-#endif
 }
 
 void AOClient::diceThrower(int sides, int dice, bool p_roll, int roll_modifier)

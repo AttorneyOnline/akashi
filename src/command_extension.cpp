@@ -112,7 +112,6 @@ CommandExtension CommandExtensionCollection::getExtension(QString f_command_name
 bool CommandExtensionCollection::loadFile(QString f_filename)
 {
     QSettings l_settings(f_filename, QSettings::IniFormat);
-    l_settings.setIniCodec("UTF-8");
     if (l_settings.status() != QSettings::NoError) {
         qWarning() << "[Command Extension Collection]"
                    << "error: failed to load file" << f_filename << "; aborting";

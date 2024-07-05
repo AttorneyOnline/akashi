@@ -240,10 +240,9 @@ class AOClient : public QObject
      */
     struct ClientVersion
     {
-        QString string;   //!< The name of the client software, for example, `AO2`.
-        int release = -1; //!< The 'release' part of the version number. In Attorney Online's case, this is fixed at `2`.
-        int major = -1;   //!< The 'major' part of the version number. In Attorney Online's case, this increases when a new feature is introduced (generally).
-        int minor = -1;   //!< The 'minor' part of the version number. In Attorney Online's case, this increases for bugfix releases (generally).
+        int major = -1;
+        int minor = -1;
+        int patch = -1;
     };
 
     /**

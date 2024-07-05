@@ -54,7 +54,6 @@ bool ConfigManager::verifyServerConfig()
 
     // Verify areas
     QSettings l_areas_ini("config/areas.ini", QSettings::IniFormat);
-    l_areas_ini.setIniCodec("UTF-8");
     if (l_areas_ini.childGroups().length() < 1) {
         qCritical() << "areas.ini is invalid!";
         return false;

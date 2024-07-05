@@ -45,7 +45,6 @@ AreaData::AreaData(QString p_name, int p_index, MusicManager *p_music_manager = 
     name_split.removeFirst();
     m_name = name_split.join(":");
     QSettings *areas_ini = ConfigManager::areaData();
-    areas_ini->setIniCodec("UTF-8");
     areas_ini->beginGroup(p_name);
     m_background = areas_ini->value("background", "gs4").toString();
     m_isProtected = areas_ini->value("protected_area", "false").toBool();
@@ -262,12 +261,7 @@ QList<AreaData::Evidence> AreaData::evidence() const
 
 void AreaData::swapEvidence(int f_eviId1, int f_eviId2)
 {
-#if QT_VERSION < QT_VERSION_CHECK(5, 13, 0)
-    // swapItemsAt does not exist in Qt older than 5.13
-    m_evidence.swap(f_eviId1, f_eviId2);
-#else
     m_evidence.swapItemsAt(f_eviId1, f_eviId2);
-#endif
 }
 
 void AreaData::appendEvidence(const AreaData::Evidence &f_evi_r)

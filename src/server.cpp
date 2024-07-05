@@ -519,11 +519,12 @@ QString Server::getCharacterById(int f_chr_id)
 
 int Server::getCharID(QString char_name)
 {
-    for (const QString &character : qAsConst(m_characters)) {
-        if (character.toLower() == char_name.toLower()) {
-            return m_characters.indexOf(QRegExp(character, Qt::CaseInsensitive, QRegExp::FixedString));
+    for (int i = 0; i < m_characters.length(); i++) {
+        if (m_characters[i].toLower() == char_name.toLower()) {
+            return i;
         }
     }
+
     return -1; // character does not exist
 }
 

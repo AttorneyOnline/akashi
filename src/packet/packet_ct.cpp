@@ -1,10 +1,12 @@
 #include "packet/packet_ct.h"
+
 #include "akashidefs.h"
 #include "config_manager.h"
 #include "packet/packet_factory.h"
 #include "server.h"
 
 #include <QDebug>
+#include <QRegularExpression>
 
 PacketCT::PacketCT(QStringList &contents) :
     AOPacket(contents)
@@ -27,8 +29,8 @@ void PacketCT::handlePacket(AreaData *area, AOClient &client) const
         return;
     }
 
-    client.setName(client.dezalgo(m_content[0]).replace(QRegExp("\\[|\\]|\\{|\\}|\\#|\\$|\\%|\\&"), "")); // no fucky wucky shit here
-    if (client.name().isEmpty() || client.name() == ConfigManager::serverName())                          // impersonation & empty name protection
+    client.setName(client.dezalgo(m_content[0]).replace(QRegularExpression("\\[|\\]|\\{|\\}|\\#|\\$|\\%|\\&"), "")); // no fucky wucky shit here
+    if (client.name().isEmpty() || client.name() == ConfigManager::serverName())                                     // impersonation & empty name protection
         return;
 
     if (client.name().length() > 30) {

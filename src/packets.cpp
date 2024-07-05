@@ -107,8 +107,7 @@ void AOClient::loginAttempt(QString message)
     switch (ConfigManager::authType()) {
     case DataTypes::AuthType::SIMPLE:
         if (message == ConfigManager::modpass()) {
-            sendPacket("AUTH", {"1"});                      // Client: "You were granted the Disable Modcalls button."
-            sendServerMessage("Logged in as a moderator."); // pre-2.9.1 clients are hardcoded to display the mod UI when this string is sent in OOC
+            sendPacket("AUTH", {"1"});
             m_authenticated = true;
             m_acl_role_id = ACLRolesHandler::SUPER_ID;
         }
@@ -133,13 +132,11 @@ void AOClient::loginAttempt(QString message)
             m_authenticated = true;
             m_acl_role_id = server->getDatabaseManager()->getACL(username);
             m_moderator_name = username;
-            sendPacket("AUTH", {"1"}); // Client: "You were granted the Disable Modcalls button."
-            if (m_version.release <= 2 && m_version.major <= 9 && m_version.minor <= 0)
-                sendServerMessage("Logged in as a moderator."); // pre-2.9.1 clients are hardcoded to display the mod UI when this string is sent in OOC
+            sendPacket("AUTH", {"1"});
             sendServerMessage("Welcome, " + username);
         }
         else {
-            sendPacket("AUTH", {"0"}); // Client: "Login unsuccessful."
+            sendPacket("AUTH", {"0"});
             sendServerMessage("Incorrect password.");
         }
         emit logLogin((character() + " " + characterName()), name(), username, m_ipid,

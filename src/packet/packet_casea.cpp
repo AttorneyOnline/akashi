@@ -44,20 +44,13 @@ void PacketCasea::handlePacket(AreaData *area, AOClient &client) const
     QString l_message = "=== Case Announcement ===\r\n" + (client.name() == "" ? client.character() : client.name()) + " needs " + l_needed_roles.join(", ") + " for " + (l_case_title == "" ? "a case" : l_case_title) + "!";
 
     QList<AOClient *> l_clients_to_alert;
-    // here lies morton, RIP
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
     QSet<bool> l_needs_set(l_needs_list.begin(), l_needs_list.end());
-#else
-    QSet<bool> l_needs_set = l_needs_list.toSet();
-#endif
+
     const QVector<AOClient *> l_clients = client.getServer()->getClients();
     for (AOClient *l_client : l_clients) {
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
         QSet<bool> l_matches(l_client->m_casing_preferences.begin(), l_client->m_casing_preferences.end());
         l_matches.intersect(l_needs_set);
-#else
-        QSet<bool> l_matches = l_client->m_casing_preferences.toSet().intersect(l_needs_set);
-#endif
+
         if (!l_matches.isEmpty() && !l_clients_to_alert.contains(l_client))
             l_clients_to_alert.append(l_client);
     }
