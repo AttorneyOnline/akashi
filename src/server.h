@@ -25,8 +25,6 @@
 #include <QSettings>
 #include <QStack>
 #include <QString>
-#include <QTcpServer>
-#include <QTcpSocket>
 #include <QTimer>
 #include <QWebSocket>
 #include <QWebSocketServer>
@@ -44,7 +42,6 @@ class DBManager;
 class Discord;
 class MusicManager;
 class ULogger;
-class WSProxy;
 
 /**
  * @brief The class that represents the actual server as it is.
@@ -57,11 +54,10 @@ class Server : public QObject
     /**
      * @brief Creates a Server instance.
      *
-     * @param p_port The TCP port to listen for connections on.
-     * @param p_ws_port The WebSocket port to listen for connections on.
+     * @param p_ws_port The port to listen for connections on.
      * @param parent Qt-based parent, passed along to inherited constructor from QObject.
      */
-    Server(int p_port, int p_ws_port, QObject *parent = nullptr);
+    Server(int p_ws_port, QObject *parent = nullptr);
 
     /**
      * @brief Destructor for the Server class.
@@ -73,8 +69,7 @@ class Server : public QObject
     /**
      * @brief Starts the server.
      *
-     * @details Amongst other things, this function starts the listening on the given TCP port, sets up the server
-     * according to the configuration file, and starts listening on the WebSocket port if it is not `-1`.
+     * @details Starts listening for incoming connections on the given port.
      *
      * Advertising is not done here -- see Advertiser::contactMasterServer() for that.
      */
@@ -350,14 +345,6 @@ class Server : public QObject
     void clientConnected();
 
     /**
-     * @brief Handles a new connection.
-     *
-     * @details The function creates an AOClient to represent the user, assigns a user ID to them, and
-     * checks if the client is banned.
-     */
-    void ws_clientConnected();
-
-    /**
      * @brief Method to construct and reconstruct Discord Webhook Integration.
      *
      * @details Constructs or rebuilds Discord Object during server startup and configuration reload.
@@ -422,21 +409,9 @@ class Server : public QObject
 
   private:
     /**
-     * @brief The proxy used for WebSocket connections.
-     *
-     * @see WSProxy and WSClient for an explanation as to why this is a thing.
-     */
-    WSProxy *proxy;
-
-    /**
-     * @brief Listens for incoming TCP connections.
-     */
-    QTcpServer *server;
-
-    /**
      * @brief Listens for incoming websocket connections.
      */
-    QWebSocketServer *ws_server;
+    QWebSocketServer *server;
 
     /**
      * @brief Handles Discord webhooks.
@@ -464,14 +439,9 @@ class Server : public QObject
     MusicManager *music_manager;
 
     /**
-     * @brief The port through which the server will accept TCP connections.
-     */
-    int port;
-
-    /**
      * @brief The port through which the server will accept WebSocket connections.
      */
-    int ws_port;
+    int m_port;
 
     /**
      * @brief The collection of all currently connected clients.

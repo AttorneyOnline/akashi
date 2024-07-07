@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
         QCoreApplication::quit();
     }
     else {
-        server = new Server(ConfigManager::serverPort(), ConfigManager::webaoPort());
+        server = new Server(ConfigManager::serverPort());
         server->start();
     }
 
