@@ -43,7 +43,7 @@ class AOPacket
     /**
      * @brief Destructor for the AOPacket
      */
-    ~AOPacket(){};
+    virtual ~AOPacket();
 
     /**
      * @brief Returns the current content of the packet

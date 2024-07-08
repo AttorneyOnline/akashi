@@ -1,14 +1,11 @@
-#ifndef PACKET_ZZ_H
-#define PACKET_ZZ_H
+#pragma once
 
 #include "network/aopacket.h"
 
-class PacketZZ : public AOPacket
+class PacketMA : public AOPacket
 {
   public:
-    PacketZZ(QStringList &contents);
+    PacketMA(QStringList &contents);
     virtual PacketInfo getPacketInfo() const;
     virtual void handlePacket(AreaData *area, AOClient &client) const;
 };
-
-#endif
