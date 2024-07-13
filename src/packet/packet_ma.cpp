@@ -83,7 +83,7 @@ void PacketMA::handlePacket(AreaData *area, AOClient &client) const
             timestamp = "permanently";
         }
         else {
-            ban.duration = (duration) * 60;
+            ban.duration = duration * 60;
             timestamp = QDateTime::fromSecsSinceEpoch(ban.time).addSecs(ban.duration).toString("MM/dd/yyyy, hh:mm");
         }
 
