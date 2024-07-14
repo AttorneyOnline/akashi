@@ -80,3 +80,4 @@ bin/libcore.a
 doxygen/html
 
 .vscode/
+*.TMP

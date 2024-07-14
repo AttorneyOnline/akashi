@@ -605,12 +605,12 @@ void AreaData::setBackground(const QString f_background)
 
 QString AreaData::side() const
 {
-  return m_side;
+    return m_side;
 }
 
 void AreaData::setSide(const QString f_side)
 {
-  m_side = f_side;
+    m_side = f_side;
 }
 
 bool AreaData::ignoreBgList()
