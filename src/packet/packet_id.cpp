@@ -29,7 +29,7 @@ void PacketID::handlePacket(AreaData *area, AOClient &client) const
         client.m_socket->close();
         return;
     }
-  
+
     if (!ConfigManager::webaoEnabled() && m_content[0] == "webAO") {
         client.sendPacket("BD", {"WebAO is disabled on this server."});
         client.m_socket->close();
