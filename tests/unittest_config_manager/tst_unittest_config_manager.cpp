@@ -58,8 +58,6 @@ class tst_ConfigManager : public QObject
 
     void webaoEnabled();
 
-    void webaoPort();
-
     void authType();
 
     void modpass();
@@ -281,10 +279,6 @@ void tst_ConfigManager::motd()
 }
 
 void tst_ConfigManager::webaoEnabled()
-{
-}
-
-void tst_ConfigManager::webaoPort()
 {
 }
 

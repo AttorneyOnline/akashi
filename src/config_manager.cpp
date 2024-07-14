@@ -322,6 +322,11 @@ int ConfigManager::maxPlayers()
 
 int ConfigManager::serverPort()
 {
+    if (m_settings->contains("Options/webao_port")) {
+        qWarning("webao_port is deprecated, use port instead");
+        return m_settings->value("Options/webao_port", 27016).toInt();
+    }
+
     return m_settings->value("Options/port", 27016).toInt();
 }
 
@@ -343,11 +348,6 @@ QString ConfigManager::motd()
 bool ConfigManager::webaoEnabled()
 {
     return m_settings->value("Options/webao_enable", false).toBool();
-}
-
-int ConfigManager::webaoPort()
-{
-    return m_settings->value("Options/webao_port", 27017).toInt();
 }
 
 DataTypes::AuthType ConfigManager::authType()
