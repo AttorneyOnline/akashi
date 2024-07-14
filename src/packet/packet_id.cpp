@@ -52,6 +52,12 @@ void PacketID::handlePacket(AreaData *area, AOClient &client) const
         client.m_version.release = 2;
         client.m_version.major = 10;
         client.m_version.minor = 0;
+
+        if (!ConfigManager::webaoEnabled()) {
+            client.sendPacket("BD", {"WebAO is disabled on this server."});
+            client.m_socket->close();
+            return;
+        }
     }
 
     if (client.m_version.release != 2) {

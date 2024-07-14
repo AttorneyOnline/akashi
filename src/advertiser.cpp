@@ -19,7 +19,7 @@
 
 #include "config_manager.h"
 
-Advertiser::Advertiser()
+Advertiser::Advertiser(int port)
 {
     m_manager = new QNetworkAccessManager();
     connect(m_manager, &QNetworkAccessManager::finished,
@@ -28,15 +28,17 @@ Advertiser::Advertiser()
     m_name = ConfigManager::serverName();
     m_hostname = ConfigManager::advertiserHostname();
     m_description = ConfigManager::serverDescription();
-    m_port = ConfigManager::serverPort();
 
     // Cheap workaround to correctly advertise when Cloudflare tunnel is used.
     if (ConfigManager::advertiserCloudflareMode()) {
+        m_port = 80;
         m_ws_port = 80;
     }
     else {
-        m_ws_port = ConfigManager::webaoPort();
+        m_port = port;
+        m_ws_port = port;
     }
+
     m_masterserver = ConfigManager::advertiserIP();
     m_debug = ConfigManager::advertiserDebug();
 }

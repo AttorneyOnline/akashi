@@ -32,7 +32,7 @@ class Advertiser : public QObject
     /**
      * @brief Constructor for the HTTP_Advertiser class.
      */
-    explicit Advertiser();
+    explicit Advertiser(int port);
 
     /**
      *  @brief Deconstructor for the HTTP_Advertiser class. Yes, that's it. Can't say more about it.
