@@ -1,6 +1,7 @@
 #include <QObject>
 #include <QTest>
 
+#include "akashidefs.h"
 #include "network/aopacket.h"
 #include "packet/packet_factory.h"
 
@@ -86,7 +87,7 @@ void Packet::createPacketSubclass_data()
                         << 2;
     QTest::newRow("ID") << "ID#"
                         << "ID"
-                        << 2;
+                        << 3;
     QTest::newRow("MC") << "MC#"
                         << "MC"
                         << 2;
@@ -110,7 +111,7 @@ void Packet::createPacketSubclass_data()
                         << 0;
     QTest::newRow("RT") << "RT#"
                         << "RT"
-                        << 1;
+                        << 2;
     QTest::newRow("SETCASE") << "SETCASE#"
                              << "SETCASE"
                              << 7;
@@ -147,9 +148,9 @@ void Packet::createPacketFromString_data()
                                        << "HI"
                                        << QStringList{"1234"};
 
-    QTest::newRow("Multiple fields") << "ID#34#Akashi#"
+    QTest::newRow("Multiple fields") << "ID#34#Akashi#5.0.0#"
                                      << "ID"
-                                     << QStringList{"34", "Akashi"};
+                                     << QStringList{"34", "Akashi", "5.0.0"};
 
     QTest::newRow("Encoded fields") << "MC#[T<and>T]Objection.opus#0#oldmud0#-1#0#0#"
                                     << "MC"

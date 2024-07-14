@@ -13,7 +13,7 @@ PacketInfo PacketRT::getPacketInfo() const
 {
     PacketInfo info{
         .acl_permission = ACLRole::Permission::NONE,
-        .min_args = 1,
+        .min_args = 2,
         .header = "RT"};
     return info;
 }

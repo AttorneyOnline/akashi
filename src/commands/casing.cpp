@@ -240,7 +240,6 @@ void AOClient::cmdSaveTestimony(int argc, QStringList argv)
         }
 
         QTextStream l_out(&l_file);
-        l_out.setCodec("UTF-8");
         if (l_file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
             for (int i = 0; i <= l_area->testimony().size() - 1; i++) {
                 l_out << l_area->testimony().at(i).join("#") << "\n";
@@ -280,7 +279,6 @@ void AOClient::cmdLoadTestimony(int argc, QStringList argv)
     clearTestimony();
     int l_testimony_lines = 0;
     QTextStream l_in(&l_file);
-    l_in.setCodec("UTF-8");
     while (!l_in.atEnd()) {
         if (l_testimony_lines <= ConfigManager::maxStatements()) {
             QString line = l_in.readLine();

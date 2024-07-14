@@ -19,6 +19,7 @@
 #define DATA_TYPES_H
 
 #include <QDebug>
+#include <QVariant>
 
 /**
  * @brief A class for handling several custom data types.
