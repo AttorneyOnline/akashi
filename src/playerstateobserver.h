@@ -1,7 +1,8 @@
 #pragma once
 
+#include "akashidefs.h"
 #include "aoclient.h"
-#include "packet/packet_pl.h"
+#include "packet/packet_pr.h"
 
 #include <QList>
 #include <QObject>

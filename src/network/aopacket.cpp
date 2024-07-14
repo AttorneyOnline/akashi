@@ -28,10 +28,11 @@
 #include "packet/packet_hi.h"
 #include "packet/packet_hp.h"
 #include "packet/packet_id.h"
+#include "packet/packet_ma.h"
 #include "packet/packet_mc.h"
 #include "packet/packet_ms.h"
 #include "packet/packet_pe.h"
-#include "packet/packet_pl.h"
+#include "packet/packet_pr.h"
 #include "packet/packet_pw.h"
 #include "packet/packet_rc.h"
 #include "packet/packet_rd.h"
@@ -45,6 +46,8 @@ AOPacket::AOPacket(QStringList p_contents) :
     m_escaped(false)
 {
 }
+
+AOPacket::~AOPacket() {}
 
 const QStringList AOPacket::getContent()
 {
@@ -132,8 +135,8 @@ void AOPacket::registerPackets()
     PacketFactory::registerClass<PacketRM>("RM");
     PacketFactory::registerClass<PacketRT>("RT");
     PacketFactory::registerClass<PacketSetcase>("SETCASE");
+    PacketFactory::registerClass<PacketMA>("MA");
     PacketFactory::registerClass<PacketZZ>("ZZ");
-    PacketFactory::registerClass<PacketPL>("PL");
-    PacketFactory::registerClass<PacketPLU>("PLU");
+    PacketFactory::registerClass<PacketPR>("PR");
     PacketFactory::registerClass<PacketPU>("PU");
 }

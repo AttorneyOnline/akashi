@@ -116,7 +116,7 @@ void Packet::createPacketSubclass_data()
                              << 7;
     QTest::newRow("ZZ") << "ZZ#"
                         << "ZZ"
-                        << 0;
+                        << 2;
 }
 
 void Packet::createPacketSubclass()

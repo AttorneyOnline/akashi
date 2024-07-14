@@ -40,7 +40,7 @@ void PacketHI::handlePacket(AreaData *area, AOClient &client) const
             ban_duration = QDateTime::fromSecsSinceEpoch(ban.second.time).addSecs(ban.second.duration).toString("MM/dd/yyyy, hh:mm");
         }
         else {
-            ban_duration = "The heat death of the universe.";
+            ban_duration = "Permanently.";
         }
         client.sendPacket("BD", {"Reason: " + ban.second.reason + "\nBan ID: " + QString::number(ban.second.id) + "\nUntil: " + ban_duration});
         client.m_socket->close();

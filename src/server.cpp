@@ -184,7 +184,7 @@ void Server::clientConnected()
             ban_duration = QDateTime::fromSecsSinceEpoch(ban.second.time).addSecs(ban.second.duration).toString("MM/dd/yyyy, hh:mm");
         }
         else {
-            ban_duration = "The heat death of the universe.";
+            ban_duration = "Permanently.";
         }
         AOPacket *ban_reason = PacketFactory::createPacket("BD", {"Reason: " + ban.second.reason + "\nBan ID: " + QString::number(ban.second.id) + "\nUntil: " + ban_duration});
         socket->sendTextMessage(ban_reason->toUtf8());

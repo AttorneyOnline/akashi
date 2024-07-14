@@ -77,7 +77,7 @@ void AOClient::cmdBan(int argc, QStringList argv)
             l_ban_duration = QDateTime::fromSecsSinceEpoch(l_ban.time).addSecs(l_ban.duration).toString("MM/dd/yyyy, hh:mm");
         }
         else {
-            l_ban_duration = "The heat death of the universe.";
+            l_ban_duration = "Permanently.";
         }
         int l_ban_id = server->getDatabaseManager()->getBanID(l_ban.ip);
         l_client->sendPacket("KB", {l_ban.reason + "\nID: " + QString::number(l_ban_id) + "\nUntil: " + l_ban_duration});

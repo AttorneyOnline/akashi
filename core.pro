@@ -47,6 +47,7 @@ SOURCES += \
   src/config_manager.cpp \
   src/db_manager.cpp \
   src/discord.cpp \
+  src/packet/packet_pr.cpp \
   src/packets.cpp \
   src/playerstateobserver.cpp \
   src/server.cpp \
@@ -68,10 +69,10 @@ SOURCES += \
   src/packet/packet_de.cpp \
   src/packet/packet_ee.cpp \
   src/packet/packet_hp.cpp \
+  src/packet/packet_ma.cpp \
   src/packet/packet_mc.cpp \
   src/packet/packet_ms.cpp \
   src/packet/packet_pe.cpp \
-  src/packet/packet_pl.cpp \
   src/packet/packet_pw.cpp \
   src/packet/packet_rc.cpp \
   src/packet/packet_rd.cpp \
@@ -92,6 +93,7 @@ HEADERS += src/aoclient.h \
   src/data_types.h \
   src/db_manager.h \
   src/discord.h \
+  src/packet/packet_pr.h \
   src/playerstateobserver.h \
   src/server.h \
   src/typedefs.h \
@@ -113,10 +115,10 @@ HEADERS += src/aoclient.h \
   src/packet/packet_de.h \
   src/packet/packet_ee.h \
   src/packet/packet_hp.h \
+  src/packet/packet_ma.h \
   src/packet/packet_mc.h \
   src/packet/packet_ms.h \
   src/packet/packet_pe.h \
-  src/packet/packet_pl.h \
   src/packet/packet_pw.h \
   src/packet/packet_rc.h \
   src/packet/packet_rd.h \
