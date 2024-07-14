@@ -111,7 +111,7 @@ void Packet::createPacketSubclass_data()
                         << 0;
     QTest::newRow("RT") << "RT#"
                         << "RT"
-                        << 1;
+                        << 2;
     QTest::newRow("SETCASE") << "SETCASE#"
                              << "SETCASE"
                              << 7;
