@@ -53,7 +53,7 @@ class ConfigManager
     static bool verifyServerConfig();
 
     /**
-     * @brief Returns the IP the TCP Server binds to.
+     * @brief Returns the IP the server binds to.
      *
      * @return See short description
      */
@@ -170,13 +170,6 @@ class ConfigManager
      * @return See short description.
      */
     static bool webaoEnabled();
-
-    /**
-     * @brief Returns the port to listen for webAO connections on.
-     *
-     * @return See short description.
-     */
-    static int webaoPort();
 
     /**
      * @brief Returns the server's authorization type.

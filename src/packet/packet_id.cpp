@@ -29,9 +29,15 @@ void PacketID::handlePacket(AreaData *area, AOClient &client) const
         client.m_socket->close();
         return;
     }
+  
+    if (!ConfigManager::webaoEnabled() && m_content[0] == "webAO") {
+        client.sendPacket("BD", {"WebAO is disabled on this server."});
+        client.m_socket->close();
+        return;
+    }
 
     AOClient::ClientVersion version;
-    if (m_content[0] == akashi::get_protocol_version_string()) {
+    if (m_content[2] == akashi::get_protocol_version_string()) {
         version.major = akashi::PROTOCOL_MAJOR_VERSION;
         version.minor = akashi::PROTOCOL_MINOR_VERSION;
         version.patch = akashi::PROTOCOL_PATCH_VERSION;

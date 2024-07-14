@@ -327,7 +327,7 @@ class AOClient : public QObject
     QString m_hwid;
 
     /**
-     * @brief The network socket used by the client. Can either be a Websocket or TCP Socket.
+     * @brief The network socket used by the client.
      */
     NetworkSocket *m_socket;
 
