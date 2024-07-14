@@ -940,6 +940,15 @@ class AOClient : public QObject
     void cmdSetBackground(int argc, QStringList argv);
 
     /**
+     * @brief Fixes the background side of the current area.
+     *
+     * @details Takes the **background side** as the only argument.
+     *
+     * @iscommand
+     */
+    void cmdSetSide(int argc, QStringList argv);
+
+    /**
      * @brief Locks the background, preventing it from being changed.
      *
      * @details No arguments.
