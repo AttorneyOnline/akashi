@@ -1,7 +1,6 @@
 #include <QObject>
 #include <QTest>
 
-#include "akashidefs.h"
 #include "network/aopacket.h"
 #include "packet/packet_factory.h"
 
@@ -87,7 +86,7 @@ void Packet::createPacketSubclass_data()
                         << 2;
     QTest::newRow("ID") << "ID#"
                         << "ID"
-                        << 3;
+                        << 2;
     QTest::newRow("MC") << "MC#"
                         << "MC"
                         << 2;
@@ -111,7 +110,7 @@ void Packet::createPacketSubclass_data()
                         << 0;
     QTest::newRow("RT") << "RT#"
                         << "RT"
-                        << 2;
+                        << 1;
     QTest::newRow("SETCASE") << "SETCASE#"
                              << "SETCASE"
                              << 7;
