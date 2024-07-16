@@ -48,10 +48,5 @@ void PacketHI::handlePacket(AreaData *area, AOClient &client) const
         return;
     }
 
-    client.sendPacket("PN", {QString::number(client.getServer()->getPlayerCount()), QString::number(ConfigManager::maxPlayers()), ConfigManager::serverDescription()});
-
-    if (ConfigManager::assetUrl().isValid()) {
-        QByteArray l_asset_url = ConfigManager::assetUrl().toEncoded(QUrl::EncodeSpaces);
-        client.sendPacket("ASS", {l_asset_url});
-    }
+    client.sendPacket("ID", {QString::number(client.clientId()), "akashi", QCoreApplication::applicationVersion()});
 }
