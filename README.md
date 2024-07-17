@@ -17,10 +17,10 @@ Requires Qt >= 5.10, and Qt websockets
 
 **Ubuntu 20.04/22.04** - Ubuntu 18.04 or older are not supported.
 ```
-   sudo apt install build-essential qt5-default libqt5websockets5-dev
+   sudo apt install build-essential qtbase5-dev qt5-qmake qttools5-dev qttools5-dev-tools libqt5websockets5-dev
    git clone https://github.com/AttorneyOnline/akashi
    cd akashi
-   qmake && make
+   qmake project-akashi.pro && make
 ```
 
 # Contributors

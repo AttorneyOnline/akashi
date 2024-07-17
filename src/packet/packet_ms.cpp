@@ -2,7 +2,7 @@
 #include "config_manager.h"
 #include "packet/packet_factory.h"
 #include "server.h"
-
+#include <QRegularExpression>
 #include <QDebug>
 
 PacketMS::PacketMS(QStringList &contents) :
@@ -153,7 +153,7 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
     }
 
     if (client.m_is_disemvoweled) {
-        QString l_disemvoweled_message = l_incoming_msg.remove(QRegExp("[AEIOUaeiou]"));
+        QString l_disemvoweled_message = l_incoming_msg.remove(QRegularExpression("[AEIOUaeiou]"));
         l_incoming_msg = l_disemvoweled_message;
     }
 
