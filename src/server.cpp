@@ -18,7 +18,6 @@
 #include "server.h"
 
 #include "acl_roles_handler.h"
-#include "advertiser.h"
 #include "aoclient.h"
 #include "area_data.h"
 #include "command_extension.h"
@@ -29,6 +28,7 @@
 #include "music_manager.h"
 #include "network/network_socket.h"
 #include "packet/packet_factory.h"
+#include "publisher.h"
 
 Server::Server(int p_ws_port, QObject *parent) :
     QObject(parent),
@@ -80,18 +80,16 @@ void Server::start()
     // Checks if any Discord webhooks are enabled.
     handleDiscordIntegration();
 
-    // Construct modern advertiser if enabled in config
-    if (ConfigManager::advertiseServer()) {
-        AdvertiserTimer = new QTimer(this);
-        ms3_Advertiser = new Advertiser(server->serverPort());
+    auto publisher_info = new akashi::PublisherInfo;
+    publisher_info->servername = ConfigManager::serverName();
+    publisher_info->serverlist = ConfigManager::advertiserIP();
+    publisher_info->description = ConfigManager::serverDescription();
+    publisher_info->enabled = ConfigManager::advertiseServer();
+    publisher_info->players = 0;
+    publisher_info->port = 0;
+    publisher_info->ip = ConfigManager::advertiserHostname();
 
-        connect(AdvertiserTimer, &QTimer::timeout, ms3_Advertiser, &Advertiser::msAdvertiseServer);
-        connect(this, &Server::playerCountUpdated, ms3_Advertiser, &Advertiser::updatePlayerCount);
-        connect(this, &Server::updateHTTPConfiguration, ms3_Advertiser, &Advertiser::updateAdvertiserSettings);
-        emit playerCountUpdated(m_player_count);
-        ms3_Advertiser->msAdvertiseServer();
-        AdvertiserTimer->start(300000);
-    }
+    serverlist_advertiser = new Publisher(publisher_info, this);
 
     // Get characters from config file
     m_characters = ConfigManager::charlist();
@@ -212,7 +210,7 @@ void Server::clientConnected()
     }
 
     m_clients.append(client);
-    connect(l_socket, &NetworkSocket::clientDisconnected, this, [=] {
+    connect(l_socket, &NetworkSocket::clientDisconnected, this, [=, this] {
         if (client->hasJoined()) {
             decreasePlayerCount();
         }
@@ -290,8 +288,6 @@ QHostAddress Server::parseToIPv4(QHostAddress f_remote_ip)
 void Server::reloadSettings()
 {
     ConfigManager::reloadSettings();
-    emit reloadRequest(ConfigManager::serverName(), ConfigManager::serverDescription());
-    emit updateHTTPConfiguration();
     handleDiscordIntegration();
     logger->loadLogtext();
     m_ipban_list = ConfigManager::iprangeBans();

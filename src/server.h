@@ -33,7 +33,7 @@
 #include "playerstateobserver.h"
 
 class ACLRolesHandler;
-class Advertiser;
+class Publisher;
 class AOClient;
 class AreaData;
 class CommandExtensionCollection;
@@ -42,6 +42,7 @@ class DBManager;
 class Discord;
 class MusicManager;
 class ULogger;
+class QNetworkAccessManager;
 
 /**
  * @brief The class that represents the actual server as it is.
@@ -70,8 +71,6 @@ class Server : public QObject
      * @brief Starts the server.
      *
      * @details Starts listening for incoming connections on the given port.
-     *
-     * Advertising is not done here -- see Advertiser::contactMasterServer() for that.
      */
     void start();
 
@@ -357,27 +356,12 @@ class Server : public QObject
     void markIDFree(const int &f_user_id);
 
   signals:
-
-    /**
-     * @brief Sends the server name and description, emitted by /reload.
-     *
-     * @param p_name The server name.
-     * @param p_desc The server description.
-     */
-    void reloadRequest(QString p_name, QString p_desc);
-
     /**
      * @brief This signal is emitted whenever the current player count has changed.
      *
      * @param f_current_player The player count at the time the signal was emitted.
      */
     void playerCountUpdated(int f_current_players);
-
-    /**
-     * @brief Triggers a partial update of the modern advertiser as some information, such as ports
-     * can't be updated while the server is running.
-     */
-    void updateHTTPConfiguration();
 
     /**
      * @brief Sends a modcall webhook request, emitted by AOClient::pktModcall.
@@ -421,12 +405,7 @@ class Server : public QObject
     /**
      * @brief Handles HTTP server advertising.
      */
-    Advertiser *ms3_Advertiser;
-
-    /**
-     * @brief Advertises the server in a regular intervall.
-     */
-    QTimer *AdvertiserTimer;
+    Publisher *serverlist_advertiser;
 
     /**
      * @brief Handles the universal log framework.

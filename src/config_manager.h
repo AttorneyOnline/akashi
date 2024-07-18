@@ -434,14 +434,9 @@ class ConfigManager
     static bool advertiseServer();
 
     /**
-     * @brief Returns if the advertiser prints debug info to console.
-     */
-    static bool advertiserDebug();
-
-    /**
      * @brief Returns the IP or URL of the masterserver.
      */
-    static QUrl advertiserIP();
+    static QString advertiserIP();
 
     /**
      * @brief Returns an optional hostname paramemter for the advertiser.

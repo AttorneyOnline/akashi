@@ -631,15 +631,9 @@ bool ConfigManager::advertiseServer()
     return m_settings->value("Advertiser/advertise", "true").toBool();
 }
 
-bool ConfigManager::advertiserDebug()
+QString ConfigManager::advertiserIP()
 {
-    return m_settings->value("Advertiser/debug", "true").toBool();
-}
-
-QUrl ConfigManager::advertiserIP()
-{
-    qDebug() << m_settings->value("Advertiser/ms_ip", "").toUrl();
-    return m_settings->value("Advertiser/ms_ip", "").toUrl();
+    return m_settings->value("Advertiser/ms_ip", "").toString();
 }
 
 QString ConfigManager::advertiserHostname()

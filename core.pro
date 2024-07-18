@@ -31,6 +31,7 @@ INCLUDEPATH += src
 
 SOURCES += \
   src/acl_roles_handler.cpp \
+  src/akashidefs.cpp \
   src/aoclient.cpp \
   src/network/aopacket.cpp \
   src/network/network_socket.cpp \
@@ -50,9 +51,9 @@ SOURCES += \
   src/packet/packet_pr.cpp \
   src/packets.cpp \
   src/playerstateobserver.cpp \
+  src/publisher.cpp \
   src/server.cpp \
   src/testimony_recorder.cpp \
-  src/advertiser.cpp \
   src/logger/u_logger.cpp \
   src/logger/writer_modcall.cpp \
   src/logger/writer_full.cpp \
@@ -83,6 +84,7 @@ SOURCES += \
 
 HEADERS += src/aoclient.h \
   src/acl_roles_handler.h \
+  src/akashidefs.h \
   src/akashiutils.h \
   src/network/aopacket.h \
   src/network/network_socket.h \
@@ -94,9 +96,9 @@ HEADERS += src/aoclient.h \
   src/discord.h \
   src/packet/packet_pr.h \
   src/playerstateobserver.h \
+  src/publisher.h \
   src/server.h \
   src/typedefs.h \
-  src/advertiser.h \
   src/logger/u_logger.h \
   src/logger/writer_modcall.h \
   src/logger/writer_full.h \

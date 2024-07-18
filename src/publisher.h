@@ -15,39 +15,46 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
-#include "config_manager.h"
-#include "server.h"
+#ifndef PUBLISHER_H
+#define PUBLISHER_H
 
-#include <cstdlib>
+#include <QObject>
+#include <QTimer>
 
-#include <QCoreApplication>
-#include <QDebug>
+#include "akashidefs.h"
 
-Server *server;
+class QNetworkAccessManager;
+class QNetworkReply;
 
-void cleanup()
+/**
+ * @brief Represents the Publisher of the server. Sends current server information to masterserver.
+ */
+class Publisher : public QObject
 {
-    server->deleteLater();
-}
+    Q_OBJECT
 
-int main(int argc, char *argv[])
-{
-    QCoreApplication app(argc, argv);
-    QCoreApplication::setApplicationName("akashi");
-    QCoreApplication::setApplicationVersion("honeydew hotfix (1.8.1)");
-    std::atexit(cleanup);
+  public:
+    explicit Publisher(akashi::PublisherInfo *config, QObject *parent);
+    ~Publisher(){};
 
-    // Verify server configuration is sound.
-    if (!ConfigManager::verifyServerConfig()) {
-        qCritical() << "config.ini is invalid!";
-        qCritical() << "Exiting server due to configuration issue.";
-        exit(EXIT_FAILURE);
-        QCoreApplication::quit();
-    }
-    else {
-        server = new Server(ConfigManager::serverPort(), &app);
-        server->start();
-    }
+    static const int TIMEOUT_TIME = 1000 * 60 * 5;
 
-    return app.exec();
-}
+  public slots:
+    /**
+     * @brief Establishes a connection with masterserver to register or update the listing on the masterserver.
+     */
+    void publishServerInfo();
+
+    /**
+     * @brief Reads the information send as a reply for further error handling.
+     * @param reply Response data from the masterserver. Information contained is send to the console if debug is enabled.
+     */
+    void finished(QNetworkReply *f_reply);
+
+  private:
+    QTimer timeout_timer;
+    akashi::PublisherInfo *m_config;
+    QNetworkAccessManager *m_serverlist;
+};
+
+#endif // PUBLISHER_H
