@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
 {
     QCoreApplication app(argc, argv);
     QCoreApplication::setApplicationName("akashi");
-    QCoreApplication::setApplicationVersion("honeydew hotfix (1.8.1)");
+    QCoreApplication::setApplicationVersion("jackfruit (1.9)");
     std::atexit(cleanup);
 
     // Verify server configuration is sound.
