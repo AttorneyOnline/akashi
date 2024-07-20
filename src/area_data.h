@@ -516,6 +516,22 @@ class AreaData : public QObject
     void setBackground(const QString f_background);
 
     /**
+     * @brief Returns the side of the area.
+     *
+     * @return See short description.
+     *
+     * @see #m_side
+     */
+    QString side() const;
+
+    /**
+     * @brief Sets the side of the area.
+     *
+     * @see #AOClient::cmdSetSide and #m_side
+     */
+    void setSide(const QString f_side);
+
+    /**
      * @brief Returns if custom shownames are allowed in the area.
      *
      * @return See short description.
@@ -1048,6 +1064,7 @@ class AreaData : public QObject
      * @details Represents a directory's name in `base/background/` clientside.
      */
     QString m_background;
+    QString m_side;
 
     /**
      * @brief If true, nobody may become the CM of this area.

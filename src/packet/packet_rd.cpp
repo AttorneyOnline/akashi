@@ -38,7 +38,7 @@ void PacketRD::handlePacket(AreaData *area, AOClient &client) const
     client.sendPacket("FA", client.getServer()->getAreaNames());
     // Here lies OPPASS, the genius of FanatSors who send the modpass to everyone in plain text.
     client.sendPacket("DONE");
-    client.sendPacket("BN", {area->background()});
+    client.sendPacket("BN", {area->background(), area->side()});
 
     client.sendServerMessage("=== MOTD ===\r\n" + ConfigManager::motd() + "\r\n=============");
 

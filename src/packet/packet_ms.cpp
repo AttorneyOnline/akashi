@@ -163,7 +163,12 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
 
     // side
     // this is validated clientside so w/e
-    l_args.append(l_incoming_args[5].toString());
+    QString side = area->side();
+    if (side.isEmpty()) {
+        side = l_incoming_args[5].toString();
+    }
+    l_args.append(side);
+
     if (client.m_pos != l_incoming_args[5].toString()) {
         client.m_pos = l_incoming_args[5].toString();
         client.m_pos.replace("../", "").replace("..\\", "");
