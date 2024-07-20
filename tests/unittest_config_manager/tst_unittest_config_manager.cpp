@@ -130,15 +130,15 @@ class tst_ConfigManager : public QObject
 
     void cdnList();
 
-    void advertiseServer();
+    void publishServerEnabled();
 
     void advertiserDebug();
 
-    void advertiserIP();
+    void serverlistURL();
 
-    void advertiserHostname();
+    void serverDomainName();
 
-    void advertiserCloudflareMode();
+    void advertiseWSProxy();
 };
 
 void tst_ConfigManager::verifyServerConfig()
@@ -426,7 +426,7 @@ void tst_ConfigManager::cdnList()
 {
 }
 
-void tst_ConfigManager::advertiseServer()
+void tst_ConfigManager::publishServerEnabled()
 {
 }
 
@@ -434,15 +434,15 @@ void tst_ConfigManager::advertiserDebug()
 {
 }
 
-void tst_ConfigManager::advertiserIP()
+void tst_ConfigManager::serverlistURL()
 {
 }
 
-void tst_ConfigManager::advertiserHostname()
+void tst_ConfigManager::serverDomainName()
 {
 }
 
-void tst_ConfigManager::advertiserCloudflareMode()
+void tst_ConfigManager::advertiseWSProxy()
 {
 }
 

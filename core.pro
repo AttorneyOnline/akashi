@@ -51,8 +51,8 @@ SOURCES += \
   src/packets.cpp \
   src/playerstateobserver.cpp \
   src/server.cpp \
+  src/serverpublisher.cpp \
   src/testimony_recorder.cpp \
-  src/advertiser.cpp \
   src/logger/u_logger.cpp \
   src/logger/writer_modcall.cpp \
   src/logger/writer_full.cpp \
@@ -95,8 +95,8 @@ HEADERS += src/aoclient.h \
   src/packet/packet_pr.h \
   src/playerstateobserver.h \
   src/server.h \
+  src/serverpublisher.h \
   src/typedefs.h \
-  src/advertiser.h \
   src/logger/u_logger.h \
   src/logger/writer_modcall.h \
   src/logger/writer_full.h \

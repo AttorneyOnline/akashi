@@ -33,7 +33,7 @@
 #include "playerstateobserver.h"
 
 class ACLRolesHandler;
-class Advertiser;
+class ServerPublisher;
 class AOClient;
 class AreaData;
 class CommandExtensionCollection;
@@ -421,12 +421,7 @@ class Server : public QObject
     /**
      * @brief Handles HTTP server advertising.
      */
-    Advertiser *ms3_Advertiser;
-
-    /**
-     * @brief Advertises the server in a regular intervall.
-     */
-    QTimer *AdvertiserTimer;
+    ServerPublisher *server_publisher;
 
     /**
      * @brief Handles the universal log framework.
