@@ -1,6 +1,5 @@
 #include "packet/packet_ct.h"
 
-#include "akashidefs.h"
 #include "config_manager.h"
 #include "packet/packet_factory.h"
 #include "server.h"
@@ -48,7 +47,7 @@ void PacketCT::handlePacket(AreaData *area, AOClient &client) const
         return;
     AOPacket *final_packet = PacketFactory::createPacket("CT", {client.name(), l_message, "0"});
     if (l_message.at(0) == '/') {
-        QStringList l_cmd_argv = l_message.split(" ", akashi::SkipEmptyParts);
+        QStringList l_cmd_argv = l_message.split(" ", Qt::SkipEmptyParts);
         QString l_command = l_cmd_argv[0].trimmed().toLower();
         l_command = l_command.right(l_command.length() - 1);
         l_cmd_argv.removeFirst();

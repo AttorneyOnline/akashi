@@ -19,7 +19,6 @@
 
 #include <QQueue>
 
-#include "akashidefs.h"
 #include "area_data.h"
 #include "config_manager.h"
 #include "db_manager.h"
@@ -108,6 +107,8 @@ void AOClient::loginAttempt(QString message)
     case DataTypes::AuthType::SIMPLE:
         if (message == ConfigManager::modpass()) {
             sendPacket("AUTH", {"1"});
+            if (m_version.release <= 2 && m_version.major <= 9 && m_version.minor <= 0)
+                sendServerMessage("Logged in as a moderator.");
             m_authenticated = true;
             m_acl_role_id = ACLRolesHandler::SUPER_ID;
         }
@@ -133,6 +134,8 @@ void AOClient::loginAttempt(QString message)
             m_acl_role_id = server->getDatabaseManager()->getACL(username);
             m_moderator_name = username;
             sendPacket("AUTH", {"1"});
+            if (m_version.release <= 2 && m_version.major <= 9 && m_version.minor <= 0)
+                sendServerMessage("Logged in as a moderator.");
             sendServerMessage("Welcome, " + username);
         }
         else {

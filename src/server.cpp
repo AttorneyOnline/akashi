@@ -18,7 +18,6 @@
 #include "server.h"
 
 #include "acl_roles_handler.h"
-#include "advertiser.h"
 #include "aoclient.h"
 #include "area_data.h"
 #include "command_extension.h"
@@ -29,6 +28,7 @@
 #include "music_manager.h"
 #include "network/network_socket.h"
 #include "packet/packet_factory.h"
+#include "serverpublisher.h"
 
 Server::Server(int p_ws_port, QObject *parent) :
     QObject(parent),
@@ -81,17 +81,7 @@ void Server::start()
     handleDiscordIntegration();
 
     // Construct modern advertiser if enabled in config
-    if (ConfigManager::advertiseServer()) {
-        AdvertiserTimer = new QTimer(this);
-        ms3_Advertiser = new Advertiser(server->serverPort());
-
-        connect(AdvertiserTimer, &QTimer::timeout, ms3_Advertiser, &Advertiser::msAdvertiseServer);
-        connect(this, &Server::playerCountUpdated, ms3_Advertiser, &Advertiser::updatePlayerCount);
-        connect(this, &Server::updateHTTPConfiguration, ms3_Advertiser, &Advertiser::updateAdvertiserSettings);
-        emit playerCountUpdated(m_player_count);
-        ms3_Advertiser->msAdvertiseServer();
-        AdvertiserTimer->start(300000);
-    }
+    server_publisher = new ServerPublisher(server->serverPort(), &m_player_count, this);
 
     // Get characters from config file
     m_characters = ConfigManager::charlist();

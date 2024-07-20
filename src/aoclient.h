@@ -240,9 +240,9 @@ class AOClient : public QObject
      */
     struct ClientVersion
     {
+        int release = -1;
         int major = -1;
         int minor = -1;
-        int patch = -1;
     };
 
     /**

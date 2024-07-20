@@ -6,38 +6,6 @@
 #include <QDebug>
 #include <QRegularExpression>
 
-enum CHAT_MESSAGE
-{
-    DESK_MOD,
-    PRE_EMOTE,
-    CHAR_NAME,
-    EMOTE,
-    MESSAGE,
-    SIDE,
-    SFX_NAME,
-    EMOTE_MOD,
-    CHAR_ID,
-    SFX_DELAY,
-    OBJECTION_MOD,
-    EVIDENCE_ID,
-    FLIP,
-    REALIZATION,
-    TEXT_COLOR,
-    SHOWNAME,
-    OTHER_CHARID,
-    SELF_OFFSET,
-    IMMEDIATE,
-    LOOPING_SFX,
-    SCREENSHAKE,
-    FRAME_SCREENSHAKE,
-    FRAME_REALIZATION,
-    FRAME_SFX,
-    ADDITIVE,
-    EFFECTS,
-    BLIPNAME,
-    SLIDE,
-};
-
 PacketMS::PacketMS(QStringList &contents) :
     AOPacket(contents)
 {
@@ -114,7 +82,7 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
                       << "3"
                       << "4"
                       << "5";
-    QString l_incoming_deskmod = l_incoming_args[DESK_MOD].toString();
+    QString l_incoming_deskmod = l_incoming_args[0].toString();
     if (allowed_desk_mods.contains(l_incoming_deskmod)) {
         // **WARNING : THIS IS A HACK!**
         // A proper solution would be to deprecate chat as an argument on the clientside
@@ -123,41 +91,41 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
             l_args.append("1");
         }
         else {
-            l_args.append(l_incoming_args[DESK_MOD].toString());
+            l_args.append(l_incoming_args[0].toString());
         }
     }
     else
         return l_invalid;
 
     // preanim
-    l_args.append(l_incoming_args[PRE_EMOTE].toString());
+    l_args.append(l_incoming_args[1].toString());
 
     // char name
-    if (client.character().toLower() != l_incoming_args[CHAR_NAME].toString().toLower()) {
+    if (client.character().toLower() != l_incoming_args[2].toString().toLower()) {
         // Selected char is different from supplied folder name
         // This means the user is INI-swapped
         if (!area->iniswapAllowed()) {
-            QStringList l_character_split = l_incoming_args[CHAR_NAME].toString().split("/");
+            QStringList l_character_split = l_incoming_args[2].toString().split("/");
             if (!client.getServer()->getCharacters().contains(l_character_split.at(0), Qt::CaseInsensitive) || l_character_split.contains(".."))
                 return l_invalid;
         }
         qDebug() << "INI swap detected from " << client.getIpid();
     }
-    client.m_current_iniswap = l_incoming_args[CHAR_NAME].toString();
-    l_args.append(l_incoming_args[CHAR_NAME].toString());
+    client.m_current_iniswap = l_incoming_args[2].toString();
+    l_args.append(l_incoming_args[2].toString());
 
     // emote
-    client.m_emote = l_incoming_args[EMOTE].toString();
+    client.m_emote = l_incoming_args[3].toString();
     if (client.m_first_person)
         client.m_emote = "";
     l_args.append(client.m_emote);
 
     // message text
-    if (l_incoming_args[MESSAGE].toString().size() > ConfigManager::maxCharacters())
+    if (l_incoming_args[4].toString().size() > ConfigManager::maxCharacters())
         return l_invalid;
 
     // Doublepost prevention. Has to ignore blankposts and testimony commands.
-    QString l_incoming_msg = client.dezalgo(l_incoming_args[MESSAGE].toString().trimmed());
+    QString l_incoming_msg = client.dezalgo(l_incoming_args[4].toString().trimmed());
     QRegularExpressionMatch match = isTestimonyJumpCommand(client.decodeMessage(l_incoming_msg));
     bool msg_is_testimony_cmd = (match.hasMatch() || l_incoming_msg == ">" || l_incoming_msg == "<");
     if (!client.m_last_message.isEmpty()           // If the last message you sent isn't empty,
@@ -197,18 +165,18 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
     // this is validated clientside so w/e
     QString side = area->side();
     if (side.isEmpty()) {
-        side = l_incoming_args[SIDE].toString();
+        side = l_incoming_args[5].toString();
     }
     l_args.append(side);
 
-    if (client.m_pos != l_incoming_args[SIDE].toString()) {
-        client.m_pos = l_incoming_args[SIDE].toString();
+    if (client.m_pos != l_incoming_args[5].toString()) {
+        client.m_pos = l_incoming_args[5].toString();
         client.m_pos.replace("../", "").replace("..\\", "");
         client.updateEvidenceList(client.getServer()->getAreaById(client.areaId()));
     }
 
     // sfx name
-    l_args.append(l_incoming_args[SFX_NAME].toString());
+    l_args.append(l_incoming_args[6].toString());
 
     // emote modifier
     // Now, gather round, y'all. Here is a story that is truly a microcosm of the AO dev experience.
@@ -218,7 +186,7 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
     // This would crash everyone else's client, and the feature had to be disabled
     // But, for some reason, nobody traced the cause of this issue for many many years.
     // The serverside fix is needed to ensure invalid values are not sent, because the client sucks
-    int emote_mod = l_incoming_args[EMOTE_MOD].toInt();
+    int emote_mod = l_incoming_args[7].toInt();
 
     if (emote_mod == 4)
         emote_mod = 6;
@@ -227,21 +195,21 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
     l_args.append(QString::number(emote_mod));
 
     // char id
-    if (l_incoming_args[CHAR_ID].toInt() != client.m_char_id)
+    if (l_incoming_args[8].toInt() != client.m_char_id)
         return l_invalid;
-    l_args.append(l_incoming_args[CHAR_ID].toString());
+    l_args.append(l_incoming_args[8].toString());
 
     // sfx delay
-    l_args.append(l_incoming_args[SFX_DELAY].toString());
+    l_args.append(l_incoming_args[9].toString());
 
     // objection modifier
     if (area->isShoutAllowed()) {
-        if (l_incoming_args[OBJECTION_MOD].toString().contains("4")) {
+        if (l_incoming_args[10].toString().contains("4")) {
             // custom shout includes text metadata
-            l_args.append(l_incoming_args[OBJECTION_MOD].toString());
+            l_args.append(l_incoming_args[10].toString());
         }
         else {
-            int l_obj_mod = l_incoming_args[OBJECTION_MOD].toInt();
+            int l_obj_mod = l_incoming_args[10].toInt();
             if ((l_obj_mod < 0) || (l_obj_mod > 4)) {
                 return l_invalid;
             }
@@ -249,33 +217,33 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
         }
     }
     else {
-        if (l_incoming_args[OBJECTION_MOD].toString() != "0") {
+        if (l_incoming_args[10].toString() != "0") {
             client.sendServerMessage("Shouts have been disabled in this area.");
         }
         l_args.append("0");
     }
 
     // evidence
-    int evi_idx = l_incoming_args[EVIDENCE_ID].toInt();
+    int evi_idx = l_incoming_args[11].toInt();
     if (evi_idx > area->evidence().length())
         return l_invalid;
     l_args.append(QString::number(evi_idx));
 
     // flipping
-    int l_flip = l_incoming_args[FLIP].toInt();
+    int l_flip = l_incoming_args[12].toInt();
     if (l_flip != 0 && l_flip != 1)
         return l_invalid;
     client.m_flipping = QString::number(l_flip);
     l_args.append(client.m_flipping);
 
     // realization
-    int realization = l_incoming_args[REALIZATION].toInt();
+    int realization = l_incoming_args[13].toInt();
     if (realization != 0 && realization != 1)
         return l_invalid;
     l_args.append(QString::number(realization));
 
     // text color
-    int text_color = l_incoming_args[TEXT_COLOR].toInt();
+    int text_color = l_incoming_args[14].toInt();
     if (text_color < 0 || text_color > 11)
         return l_invalid;
     l_args.append(QString::number(text_color));
@@ -283,7 +251,7 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
     // 2.6 packet extensions
     if (l_incoming_args.length() >= 19) {
         // showname
-        QString l_incoming_showname = client.dezalgo(l_incoming_args[SHOWNAME].toString().trimmed());
+        QString l_incoming_showname = client.dezalgo(l_incoming_args[15].toString().trimmed());
         if (!(l_incoming_showname == client.character() || l_incoming_showname.isEmpty()) && !area->shownameAllowed()) {
             client.sendServerMessage("Shownames are not allowed in this area!");
             return l_invalid;
@@ -294,7 +262,7 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
         }
 
         // if the raw input is not empty but the trimmed input is, use a single space
-        if (l_incoming_showname.isEmpty() && !l_incoming_args[SHOWNAME].toString().isEmpty())
+        if (l_incoming_showname.isEmpty() && !l_incoming_args[15].toString().isEmpty())
             l_incoming_showname = " ";
         l_args.append(l_incoming_showname);
         client.setCharacterName(l_incoming_showname);
@@ -302,7 +270,7 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
         // other char id
         // things get a bit hairy here
         // don't ask me how this works, because i don't know either
-        QStringList l_pair_data = l_incoming_args[OTHER_CHARID].toString().split("^");
+        QStringList l_pair_data = l_incoming_args[16].toString().split("^");
         client.m_pairing_with = l_pair_data[0].toInt();
         QString l_front_back = "";
         if (l_pair_data.length() > 1)
@@ -332,15 +300,22 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
         l_args.append(l_other_emote);
 
         // self offset
-        client.m_offset = l_incoming_args[SELF_OFFSET].toString();
-        l_args.append(client.m_offset);
-        l_args.append(l_other_offset);
-
-        // other flip
+        client.m_offset = l_incoming_args[17].toString();
+        // versions 2.6-2.8 cannot validate y-offset so we send them just the x-offset
+        if ((client.m_version.release == 2) && (client.m_version.major == 6 || client.m_version.major == 7 || client.m_version.major == 8)) {
+            QString l_x_offset = client.m_offset.split("&")[0];
+            l_args.append(l_x_offset);
+            QString l_other_x_offset = l_other_offset.split("&")[0];
+            l_args.append(l_other_x_offset);
+        }
+        else {
+            l_args.append(client.m_offset);
+            l_args.append(l_other_offset);
+        }
         l_args.append(l_other_flip);
 
         // immediate text processing
-        int l_immediate = l_incoming_args[IMMEDIATE].toInt();
+        int l_immediate = l_incoming_args[18].toInt();
         if (area->forceImmediate()) {
             if (l_args[7] == "1" || l_args[7] == "2") {
                 l_args[7] = "0";
@@ -356,50 +331,55 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
         l_args.append(QString::number(l_immediate));
     }
 
-    // sfx looping
-    int l_sfx_loop = l_incoming_args[LOOPING_SFX].toInt();
-    if (l_sfx_loop != 0 && l_sfx_loop != 1)
-        return l_invalid;
-    l_args.append(QString::number(l_sfx_loop));
+    // 2.8 packet extensions
+    if (l_incoming_args.length() >= 26) {
+        // sfx looping
+        int l_sfx_loop = l_incoming_args[19].toInt();
+        if (l_sfx_loop != 0 && l_sfx_loop != 1)
+            return l_invalid;
+        l_args.append(QString::number(l_sfx_loop));
 
-    // screenshake
-    int l_screenshake = l_incoming_args[SCREENSHAKE].toInt();
-    if (l_screenshake != 0 && l_screenshake != 1)
-        return l_invalid;
-    l_args.append(QString::number(l_screenshake));
+        // screenshake
+        int l_screenshake = l_incoming_args[20].toInt();
+        if (l_screenshake != 0 && l_screenshake != 1)
+            return l_invalid;
+        l_args.append(QString::number(l_screenshake));
 
-    // frames shake
-    l_args.append(l_incoming_args[FRAME_SCREENSHAKE].toString());
+        // frames shake
+        l_args.append(l_incoming_args[21].toString());
 
-    // frames realization
-    l_args.append(l_incoming_args[FRAME_REALIZATION].toString());
+        // frames realization
+        l_args.append(l_incoming_args[22].toString());
 
-    // frames sfx
-    l_args.append(l_incoming_args[FRAME_SFX].toString());
+        // frames sfx
+        l_args.append(l_incoming_args[23].toString());
 
-    // additive
-    int l_additive = l_incoming_args[ADDITIVE].toInt();
-    if (l_additive != 0 && l_additive != 1)
-        return l_invalid;
-    else if (area->lastICMessage().isEmpty()) {
-        l_additive = 0;
+        // additive
+        int l_additive = l_incoming_args[24].toInt();
+        if (l_additive != 0 && l_additive != 1)
+            return l_invalid;
+        else if (area->lastICMessage().isEmpty()) {
+            l_additive = 0;
+        }
+        else if (!(client.m_char_id == area->lastICMessage()[8].toInt())) {
+            l_additive = 0;
+        }
+        else if (l_additive == 1) {
+            l_args[4].insert(0, " ");
+        }
+        l_args.append(QString::number(l_additive));
+
+        // effect
+        l_args.append(l_incoming_args[25].toString());
     }
-    else if (!(client.m_char_id == area->lastICMessage()[8].toInt())) {
-        l_additive = 0;
+    if (l_incoming_args.size() >= 27) {
+        // blips
+        l_args.append(l_incoming_args[26].toString());
     }
-    else if (l_additive == 1) {
-        l_args[4].insert(0, " ");
+    if (l_incoming_args.size() >= 28) {
+        // slide toggle
+        l_args.append(l_incoming_args[27].toString());
     }
-    l_args.append(QString::number(l_additive));
-
-    // effect
-    l_args.append(l_incoming_args[EFFECTS].toString());
-
-    // blips
-    l_args.append(l_incoming_args[BLIPNAME].toString());
-
-    // slide toggle
-    l_args.append(l_incoming_args[SLIDE].toString());
 
     // Testimony playback
     QString client_name = client.name();
@@ -413,7 +393,7 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
         if (area->statement() == -1) {
             l_args[4] = "~~-- " + l_args[4] + " --";
             l_args[14] = "3";
-            client.getServer()->broadcast(PacketFactory::createPacket("RT", {"testimony1"}), client.areaId());
+            client.getServer()->broadcast(PacketFactory::createPacket("RT", {"testimony1", "0"}), client.areaId());
         }
         client.addStatement(l_args);
     }

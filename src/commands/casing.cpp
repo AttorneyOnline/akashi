@@ -130,7 +130,7 @@ void AOClient::cmdExamine(int argc, QStringList argv)
     AreaData *l_area = server->getAreaById(areaId());
     if (l_area->testimony().size() - 1 > 0) {
         l_area->restartTestimony();
-        server->broadcast(PacketFactory::createPacket("RT", {"testimony2"}), areaId());
+        server->broadcast(PacketFactory::createPacket("RT", {"testimony2", "0"}), areaId());
         server->broadcast(PacketFactory::createPacket("MS", {l_area->testimony()[0]}), areaId());
         return;
     }

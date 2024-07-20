@@ -626,28 +626,22 @@ QStringList ConfigManager::cdnList()
     return m_commands->cdns;
 }
 
-bool ConfigManager::advertiseServer()
+bool ConfigManager::publishServerEnabled()
 {
     return m_settings->value("Advertiser/advertise", "true").toBool();
 }
 
-bool ConfigManager::advertiserDebug()
+QUrl ConfigManager::serverlistURL()
 {
-    return m_settings->value("Advertiser/debug", "true").toBool();
-}
-
-QUrl ConfigManager::advertiserIP()
-{
-    qDebug() << m_settings->value("Advertiser/ms_ip", "").toUrl();
     return m_settings->value("Advertiser/ms_ip", "").toUrl();
 }
 
-QString ConfigManager::advertiserHostname()
+QString ConfigManager::serverDomainName()
 {
     return m_settings->value("Advertiser/hostname", "").toString();
 }
 
-bool ConfigManager::advertiserCloudflareMode()
+bool ConfigManager::advertiseWSProxy()
 {
     return m_settings->value("Advertiser/cloudflare_enabled", "false").toBool();
 }

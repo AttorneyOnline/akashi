@@ -431,29 +431,24 @@ class ConfigManager
     /**
      * @brief Returns if the advertiser is enabled to advertise on ms3.
      */
-    static bool advertiseServer();
-
-    /**
-     * @brief Returns if the advertiser prints debug info to console.
-     */
-    static bool advertiserDebug();
+    static bool publishServerEnabled();
 
     /**
      * @brief Returns the IP or URL of the masterserver.
      */
-    static QUrl advertiserIP();
+    static QUrl serverlistURL();
 
     /**
      * @brief Returns an optional hostname paramemter for the advertiser.
      * If used allows user to set a custom IP or domain name.
      */
-    static QString advertiserHostname();
+    static QString serverDomainName();
 
     /**
      * @brief Returns a dummy port instead of the real port
      * @return
      */
-    static bool advertiserCloudflareMode();
+    static bool advertiseWSProxy();
 
     /**
      * @brief Returns the uptime of the server in miliseconds.
