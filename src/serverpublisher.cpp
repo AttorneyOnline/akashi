@@ -64,7 +64,6 @@ void ServerPublisher::publishServer()
         serverinfo["name"] = ConfigManager::serverName();
         serverinfo["description"] = ConfigManager::serverDescription();
 
-        qDebug() << QJsonDocument(serverinfo).toJson(QJsonDocument::Indented);
         m_manager->post(request, QJsonDocument(serverinfo).toJson());
     }
     else {
