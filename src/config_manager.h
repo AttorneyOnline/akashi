@@ -422,6 +422,13 @@ class ConfigManager
     static QStringList gimpList();
 
     /**
+     * @brief Returns the server regex filter list
+     *
+     * @return See short description.
+     */
+    static QStringList filterList();
+
+    /**
      * @brief Returns the server approved domain list.
      *
      * @return See short description.
@@ -519,6 +526,7 @@ class ConfigManager
         QStringList praises;     //!< Contains command praises, found in config/text/praises.txt
         QStringList reprimands;  //!< Contains command reprimands, found in config/text/reprimands.txt
         QStringList gimps;       //!< Contains phrases for /gimp, found in config/text/gimp.txt
+        QStringList filters;     //!< Contains filter regex, found in config/text/filter.txt
         QStringList cdns;        // !< Contains domains for custom song validation, found in config/text/cdns.txt
     };
 
