@@ -50,7 +50,7 @@ void PacketCT::handlePacket(AreaData *area, AOClient &client) const
     if (!ConfigManager::filterList().isEmpty()) {
         foreach (const QString &regex, ConfigManager::filterList()) {
             QRegularExpression re(regex, QRegularExpression::CaseInsensitiveOption);
-            l_message.remove(re);
+            l_message.replace(re, "❌");
         }
     }
 

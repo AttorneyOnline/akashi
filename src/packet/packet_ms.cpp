@@ -141,7 +141,7 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
     if (!ConfigManager::filterList().isEmpty()) {
         foreach (const QString &regex, ConfigManager::filterList()) {
             QRegularExpression re(regex, QRegularExpression::CaseInsensitiveOption);
-            l_incoming_msg.remove(re);
+            l_incoming_msg.replace(re, "❌");
         }
     }
 
