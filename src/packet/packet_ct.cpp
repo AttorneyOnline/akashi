@@ -43,9 +43,17 @@ void PacketCT::handlePacket(AreaData *area, AOClient &client) const
     }
 
     QString l_message = client.dezalgo(m_content[1]);
+
     if (l_message.length() == 0 || l_message.length() > ConfigManager::maxCharacters())
         return;
-    AOPacket *final_packet = PacketFactory::createPacket("CT", {client.name(), l_message, "0"});
+
+    if (!ConfigManager::filterList().isEmpty()) {
+        foreach (const QString &regex, ConfigManager::filterList()) {
+            QRegularExpression re(regex, QRegularExpression::CaseInsensitiveOption);
+            l_message.remove(re);
+        }
+    }
+
     if (l_message.at(0) == '/') {
         QStringList l_cmd_argv = l_message.split(" ", Qt::SkipEmptyParts);
         QString l_command = l_cmd_argv[0].trimmed().toLower();
@@ -58,6 +66,7 @@ void PacketCT::handlePacket(AreaData *area, AOClient &client) const
         return;
     }
     else {
+        AOPacket *final_packet = PacketFactory::createPacket("CT", {client.name(), l_message, "0"});
         client.getServer()->broadcast(final_packet, client.areaId());
     }
     emit client.logOOC((client.character() + " " + client.characterName()), client.name(), client.m_ipid, area->name(), l_message);
