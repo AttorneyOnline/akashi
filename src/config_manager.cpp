@@ -339,6 +339,11 @@ QString ConfigManager::serverName()
     return m_settings->value("Options/server_name", "An Unnamed Server").toString();
 }
 
+QString ConfigManager::serverTag()
+{
+    return m_settings->value("Options/server_tag", serverName()).toString();
+}
+
 QString ConfigManager::motd()
 {
     return m_settings->value("Options/motd", "MOTD not set").toString();
