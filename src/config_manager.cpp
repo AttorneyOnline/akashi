@@ -93,6 +93,7 @@ bool ConfigManager::verifyServerConfig()
     m_commands->praises = (loadConfigFile("praise"));
     m_commands->reprimands = (loadConfigFile("reprimands"));
     m_commands->gimps = (loadConfigFile("gimp"));
+    m_commands->filters = (loadConfigFile("filter"));
     m_commands->cdns = (loadConfigFile("cdns"));
     if (m_commands->cdns.isEmpty())
         m_commands->cdns = QStringList{"cdn.discord.com"};
@@ -619,6 +620,11 @@ QStringList ConfigManager::reprimandsList()
 QStringList ConfigManager::gimpList()
 {
     return m_commands->gimps;
+}
+
+QStringList ConfigManager::filterList()
+{
+    return m_commands->filters;
 }
 
 QStringList ConfigManager::cdnList()

@@ -138,6 +138,13 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
         return l_invalid;
     }
 
+    if (!ConfigManager::filterList().isEmpty()) {
+        foreach (const QString &regex, ConfigManager::filterList()) {
+            QRegularExpression re(regex, QRegularExpression::CaseInsensitiveOption);
+            l_incoming_msg.replace(re, "❌");
+        }
+    }
+
     if (client.m_is_gimped) {
         QString l_gimp_message = ConfigManager::gimpList().at((client.genRand(1, ConfigManager::gimpList().size() - 1)));
         l_incoming_msg = l_gimp_message;
