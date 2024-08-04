@@ -25,7 +25,6 @@ QSettings *ConfigManager::m_areas = new QSettings("config/areas.ini", QSettings:
 QSettings *ConfigManager::m_logtext = new QSettings("config/text/logtext.ini", QSettings::IniFormat);
 QSettings *ConfigManager::m_ambience = new QSettings("config/ambience.ini", QSettings::IniFormat);
 ConfigManager::CommandSettings *ConfigManager::m_commands = new CommandSettings();
-QElapsedTimer *ConfigManager::m_uptimeTimer = new QElapsedTimer;
 MusicList *ConfigManager::m_musicList = new MusicList;
 QHash<QString, ConfigManager::help> *ConfigManager::m_commands_help = new QHash<QString, ConfigManager::help>;
 QStringList *ConfigManager::m_ordered_list = new QStringList;
@@ -97,8 +96,6 @@ bool ConfigManager::verifyServerConfig()
     m_commands->cdns = (loadConfigFile("cdns"));
     if (m_commands->cdns.isEmpty())
         m_commands->cdns = QStringList{"cdn.discord.com"};
-
-    m_uptimeTimer->start();
 
     return true;
 }
@@ -506,27 +503,6 @@ QString ConfigManager::discordBanWebhookUrl()
     return m_discord->value("Discord/webhook_ban_url", "").toString();
 }
 
-bool ConfigManager::discordUptimeEnabled()
-{
-    return m_discord->value("Discord/webhook_uptime_enabled", "false").toBool();
-}
-
-int ConfigManager::discordUptimeTime()
-{
-    bool ok;
-    int l_aliveTime = m_discord->value("Discord/webhook_uptime_time", "60").toInt(&ok);
-    if (!ok) {
-        qWarning("alive_time is not an int");
-        l_aliveTime = 60;
-    }
-    return l_aliveTime;
-}
-
-QString ConfigManager::discordUptimeWebhookUrl()
-{
-    return m_discord->value("Discord/webhook_uptime_url", "").toString();
-}
-
 QString ConfigManager::discordWebhookColor()
 {
     const QString l_default_color = "13312842";
@@ -655,11 +631,6 @@ QString ConfigManager::serverDomainName()
 bool ConfigManager::advertiseWSProxy()
 {
     return m_settings->value("Advertiser/cloudflare_enabled", "false").toBool();
-}
-
-qint64 ConfigManager::uptime()
-{
-    return m_uptimeTimer->elapsed();
 }
 
 ConfigManager::help ConfigManager::commandHelp(QString f_command_name)

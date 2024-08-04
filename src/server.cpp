@@ -496,11 +496,6 @@ void Server::handleDiscordIntegration()
 
         if (ConfigManager::discordBanWebhookEnabled())
             connect(this, &Server::banWebhookRequest, discord, &Discord::onBanWebhookRequested);
-
-        if (ConfigManager::discordUptimeEnabled())
-            discord->startUptimeTimer();
-        else
-            discord->stopUptimeTimer();
     }
     return;
 }

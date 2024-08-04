@@ -312,23 +312,6 @@ class ConfigManager
     static QString discordBanWebhookUrl();
 
     /**
-     * @brief Returns if the Webhook sends an alive message.
-     */
-    static bool discordUptimeEnabled();
-
-    /**
-     * @brief Returns the time between posting.
-     */
-    static int discordUptimeTime();
-
-    /**
-     * @brief Returns the Discord Uptime Webhook URL.
-     *
-     * @return See short description.
-     */
-    static QString discordUptimeWebhookUrl();
-
-    /**
      * @brief Returns a user configurable color code for the embeed object.s
      *
      * @return See short description.
@@ -465,11 +448,6 @@ class ConfigManager
     static bool advertiseWSProxy();
 
     /**
-     * @brief Returns the uptime of the server in miliseconds.
-     */
-    static qint64 uptime();
-
-    /**
      * @brief A struct that contains the help information for a command.
      *        It's split in the syntax and the explanation text.
      */
@@ -566,11 +544,6 @@ class ConfigManager
      * @brief Stores all adjustable logstrings.
      */
     static QSettings *m_ambience;
-
-    /**
-     * @brief Pointer to QElapsedTimer to track the uptime of the server.
-     */
-    static QElapsedTimer *m_uptimeTimer;
 
     /**
      * @brief Contains the musiclist with time durations.

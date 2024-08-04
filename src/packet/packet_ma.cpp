@@ -20,6 +20,8 @@ PacketInfo PacketMA::getPacketInfo() const
 
 void PacketMA::handlePacket(AreaData *area, AOClient &client) const
 {
+    Q_UNUSED(area);
+
     if (!client.m_authenticated) {
         client.sendServerMessage("You are not logged in!");
         return;
