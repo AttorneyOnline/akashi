@@ -79,11 +79,6 @@ class Discord : public QObject
      */
     void onBanWebhookRequested(const QString &f_ipid, const QString &f_moderator, const QString &f_duration, const QString &f_reason, const int &f_banID);
 
-    /**
-     * @brief Handles a uptime webhook request.
-     */
-    void onUptimeWebhookRequested();
-
   private:
     /**
      * @brief The QNetworkAccessManager for webhooks.
@@ -94,11 +89,6 @@ class Discord : public QObject
      * @brief The QNetworkRequest for webhooks.
      */
     QNetworkRequest m_request;
-
-    /**
-     * @brief Timer to post a message that the server is still alive.
-     */
-    QTimer *m_uptimePostTimer;
 
     /**
      * @brief Constructs a new JSON document for modcalls.
@@ -153,13 +143,6 @@ class Discord : public QObject
      * @return A JSON document for the ban.
      */
     QJsonDocument constructBanJson(const QString &f_ipid, const QString &f_moderator, const QString &f_duration, const QString &f_reason, const int &f_banID);
-    /**
-     * @brief Constructs a new JSON document for the server alive message.
-     * @param f_timeExpired formatted uptime as a string.
-     *
-     * @return A JSON document for the alive notification.
-     */
-    QJsonDocument constructUptimeJson(const QString &f_timeExpired);
 };
 
 #endif // DISCORD_H
