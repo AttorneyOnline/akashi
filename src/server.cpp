@@ -101,9 +101,8 @@ void Server::start()
 
     // Assembles the area list
     m_area_names = ConfigManager::sanitizedAreaNames();
-    QStringList raw_area_names = ConfigManager::rawAreaNames();
-    for (int i = 0; i < raw_area_names.length(); i++) {
-        QString area_name = raw_area_names[i];
+    for (int i = 0; i < m_area_names.length(); i++) {
+        QString area_name = QString::number(i) + ":" + m_area_names[i];
         AreaData *l_area = new AreaData(area_name, i, music_manager);
         m_areas.insert(i, l_area);
         connect(l_area, &AreaData::sendAreaPacket, this, QOverload<AOPacket *, int>::of(&Server::broadcast));
