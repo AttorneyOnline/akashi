@@ -58,6 +58,9 @@ void ServerPublisher::publishServer()
         if (!ConfigManager::serverDomainName().trimmed().isEmpty()) {
             serverinfo["ip"] = ConfigManager::serverDomainName();
         }
+        if (ConfigManager::securePort() != -1) {
+            serverinfo["wss_port"] = ConfigManager::securePort();
+        }
         serverinfo["port"] = 27106;
         serverinfo["ws_port"] = ConfigManager::advertiseWSProxy() ? WS_REVERSE_PROXY : m_port;
         serverinfo["players"] = *m_players;
