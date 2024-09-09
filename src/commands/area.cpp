@@ -472,3 +472,19 @@ void AOClient::cmdClearAreaMessage(int argc, QStringList argv)
     if (l_area->sendAreaMessageOnJoin())              // Turn off the automatic sending.
         cmdToggleAreaMessageOnJoin(0, QStringList{}); // Dummy values.
 }
+
+void AOClient::cmdWebfiles(int argc, QStringList argv)
+{
+    const QVector<AOClient *> l_clients = server->getClients();
+    QStringList l_weblinks;
+    for (AOClient *l_client : l_clients) {
+        if (l_client->m_current_iniswap.isEmpty() || l_client->areaId() != areaId()) {
+            continue;
+        }
+
+        if (l_client->character().toLower() != l_client->m_current_iniswap.toLower()) {
+            l_weblinks.append("https://attorneyonline.github.io/webDownloader/index.html?char=" + l_client->m_current_iniswap);
+        }
+    }
+    sendServerMessage("Character files:\n" + l_weblinks.join("\n"));
+}
