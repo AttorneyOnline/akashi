@@ -481,7 +481,7 @@ void AOClient::cmdWebfiles(int argc, QStringList argv)
         if (l_client->m_current_iniswap.isEmpty() || l_client->areaId() != areaId()) {
             continue;
         }
-        
+
         if (l_client->character().toLower() != l_client->m_current_iniswap.toLower()) {
             l_weblinks.append("https://attorneyonline.github.io/webDownloader/index.html?char=" + l_client->m_current_iniswap);
         }
