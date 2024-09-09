@@ -139,6 +139,7 @@ const QMap<QString, AOClient::CommandInfo> AOClient::COMMANDS{
     {"togglemessage", {{ACLRole::CM}, 0, &AOClient::cmdToggleAreaMessageOnJoin}},
     {"clearmessage", {{ACLRole::CM}, 0, &AOClient::cmdClearAreaMessage}},
     {"areamessage", {{ACLRole::CM}, 0, &AOClient::cmdAreaMessage}},
+    {"webfiles", {{ACLRole::NONE}, 0, &AOClient::cmdWebfiles}},
     {"addsong", {{ACLRole::CM}, 1, &AOClient::cmdAddSong}},
     {"addcategory", {{ACLRole::CM}, 1, &AOClient::cmdAddCategory}},
     {"removeentry", {{ACLRole::CM}, 1, &AOClient::cmdRemoveCategorySong}},
