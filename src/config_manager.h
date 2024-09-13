@@ -144,6 +144,13 @@ class ConfigManager
     static int serverPort();
 
     /**
+     * @brief Returns the SSL port to listen for connections on.
+     *
+     * @return See short description.
+     */
+    static int securePort();
+
+    /**
      * @brief Returns the server description.
      *
      * @return See short description.

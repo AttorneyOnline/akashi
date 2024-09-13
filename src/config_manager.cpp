@@ -71,17 +71,12 @@ bool ConfigManager::verifyServerConfig()
         qCritical("port is not a valid port!");
         return false;
     }
-    bool web_ao = m_settings->value("webao_enable", false).toBool();
-    if (!web_ao) {
-        m_settings->setValue("webao_port", -1);
+    m_settings->value("secure_port", -1).toInt(&ok);
+    if (!ok) {
+        qCritical("secure_port is not a valid port!");
+        return false;
     }
-    else {
-        m_settings->value("webao_port", 27017).toInt(&ok);
-        if (!ok) {
-            qCritical("webao_port is not a valid port!");
-            return false;
-        }
-    }
+
     QString l_auth = m_settings->value("auth", "simple").toString().toLower();
     if (!(l_auth == "simple" || l_auth == "advanced")) {
         qCritical("auth is not a valid auth type!");
@@ -325,6 +320,11 @@ int ConfigManager::serverPort()
     }
 
     return m_settings->value("Options/port", 27016).toInt();
+}
+
+int ConfigManager::securePort()
+{
+    return m_settings->value("Options/secure_port", -1).toInt();
 }
 
 QString ConfigManager::serverDescription()
