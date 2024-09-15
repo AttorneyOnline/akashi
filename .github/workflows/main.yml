@@ -18,7 +18,7 @@ jobs:
     name: check-clang-format
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Run clang-format style check.
       uses: jidicula/clang-format-action@v4.5.0
       with:
@@ -33,7 +33,7 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       
       - name: Install dependencies
         uses: awalsh128/cache-apt-pkgs-action@latest
@@ -57,7 +57,7 @@ jobs:
             done;
           
       - name: Upload binary
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: akashi-linux
           path: bin/
@@ -112,7 +112,7 @@ jobs:
     runs-on: windows-latest
     
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: ilammy/msvc-dev-cmd@v1
       
       - name: Cache Qt
@@ -151,7 +151,7 @@ jobs:
           copy .\openssl-1.1\x64\bin\libssl-1_1-x64.dll .\bin\libssl-1_1-x64.dll
           
       - name: Upload zip
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: akashi-windows
           path: bin\
