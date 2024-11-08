@@ -52,15 +52,6 @@ void PacketID::handlePacket(AreaData *area, AOClient &client) const
 
     client.sendPacket("PN", {QString::number(client.getServer()->getPlayerCount()), QString::number(ConfigManager::maxPlayers()), ConfigManager::serverDescription()});
 
-    QStringList l_feature_list = {
-        "noencryption", "yellowtext", "prezoom",
-        "flipping", "customobjections", "fastloading",
-        "deskmod", "evidence", "cccc_ic_support",
-        "arup", "casing_alerts", "modcall_reason",
-        "looping_sfx", "additive", "effects",
-        "y_offset", "expanded_desk_mods", "auth_packet", "custom_blips"};
-    client.sendPacket("FL", l_feature_list);
-
     if (ConfigManager::assetUrl().isValid()) {
         QByteArray l_asset_url = ConfigManager::assetUrl().toEncoded(QUrl::EncodeSpaces);
         client.sendPacket("ASS", {l_asset_url});
