@@ -29,6 +29,10 @@ void PacketMC::handlePacket(AreaData *area, AOClient &client) const
     // argument is a valid song
     QString l_argument = m_content[0];
 
+    if (!area->isMessageAllowed() || !client.getServer()->isMessageAllowed()) {
+        return;
+    }
+
     if (client.getServer()->getMusicList().contains(l_argument) || client.m_music_manager->isCustom(client.areaId(), l_argument) || l_argument == "~stop.mp3") { // ~stop.mp3 is a dummy track used by 2.9+
         // We have a song here
 
@@ -90,4 +94,7 @@ void PacketMC::handlePacket(AreaData *area, AOClient &client) const
             break;
         }
     }
+
+    area->startMessageFloodguard(ConfigManager::messageFloodguard());
+    client.getServer()->startMessageFloodguard(ConfigManager::globalMessageFloodguard());
 }
