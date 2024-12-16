@@ -81,7 +81,7 @@ bool ConfigManager::verifyServerConfig()
         m_commands->dice_faces[dice] = faces;
         l_dice_ini.endGroup();
     }
-    
+
     // Verify config settings
     m_settings->beginGroup("Options");
     bool ok;
