@@ -71,7 +71,7 @@ bool ConfigManager::verifyServerConfig()
         for (int i = 1; i <= max; ++i) {
             QString key = QString::number(i);
             if (l_dice_ini.contains(key)) {
-                values.append(l_dice_ini.value(key).toString());
+                faces.append(l_dice_ini.value(key).toString());
             }
             else {
                 qCritical() << "dice.ini is invalid!";
