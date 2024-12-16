@@ -72,7 +72,8 @@ bool ConfigManager::verifyServerConfig()
             QString key = QString::number(i);
             if (l_dice_ini.contains(key)) {
                 values.append(l_dice_ini.value(key).toString());
-            } else {
+            }
+            else {
                 qCritical() << "dice.ini is invalid!";
                 return false;
             }
