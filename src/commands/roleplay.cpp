@@ -99,11 +99,11 @@ void AOClient::cmdRollA(int argc, QStringList argv)
     QString l_dice_name = argv.join(" ");
 
     if (ConfigManager::diceFaces(l_dice_name).isEmpty()) {
-        qWarning() << "dice.ini is empty!";
-        sendServerMessage("dice.ini is empty.");
+        qWarning() << "Unknown dice.";
+        sendServerMessage("Unknown dice.");
     }
     else {
-        QString l_response = ConfigManager::diceFaces(l_dice_name).at((genRand(1, ConfigManager::diceFaces(l_dice_name).size() - 1)));
+        QString l_response = ConfigManager::diceFaces(l_dice_name).at((genRand(0, ConfigManager::diceFaces(l_dice_name).size())));
         QString l_sender_name = name();
 
         sendServerMessageArea(l_sender_name + " asked dice, \"" + l_dice_name + "\" and the answer is: " + l_response);
