@@ -514,6 +514,7 @@ class ConfigManager
      */
     struct CommandSettings
     {
+        QHash<QString, QStringList> diceFaces; //!< Contains customizable dices, found in config/dice.ini
         QStringList magic_8ball; //!< Contains answers for /8ball, found in config/text/8ball.txt
         QStringList praises;     //!< Contains command praises, found in config/text/praises.txt
         QStringList reprimands;  //!< Contains command reprimands, found in config/text/reprimands.txt
