@@ -514,12 +514,13 @@ class ConfigManager
      */
     struct CommandSettings
     {
-        QStringList magic_8ball; //!< Contains answers for /8ball, found in config/text/8ball.txt
-        QStringList praises;     //!< Contains command praises, found in config/text/praises.txt
-        QStringList reprimands;  //!< Contains command reprimands, found in config/text/reprimands.txt
-        QStringList gimps;       //!< Contains phrases for /gimp, found in config/text/gimp.txt
-        QStringList filters;     //!< Contains filter regex, found in config/text/filter.txt
-        QStringList cdns;        // !< Contains domains for custom song validation, found in config/text/cdns.txt
+        QStringList magic_8ball;                 //!< Contains answers for /8ball, found in config/text/8ball.txt
+        QHash<QString, QStringList> diceFaces;   //!< Contains customizable dices, found in config/dice.ini
+        QStringList praises;                     //!< Contains command praises, found in config/text/praises.txt
+        QStringList reprimands;                  //!< Contains command reprimands, found in config/text/reprimands.txt
+        QStringList gimps;                       //!< Contains phrases for /gimp, found in config/text/gimp.txt
+        QStringList filters;                     //!< Contains filter regex, found in config/text/filter.txt
+        QStringList cdns;                        //!< Contains domains for custom song validation, found in config/text/cdns.txt
     };
 
     /**
