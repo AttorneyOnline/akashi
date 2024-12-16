@@ -391,6 +391,13 @@ class ConfigManager
     static int afkTimeout();
 
     /**
+     * @brief Returns a list of dice faces.
+     *
+     * @return See short description.
+     */
+    static QStringList diceFaces(const QString f_name);
+
+    /**
      * @brief Returns a list of magic 8 ball answers.
      *
      * @return See short description.
