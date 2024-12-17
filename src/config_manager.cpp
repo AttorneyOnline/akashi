@@ -74,8 +74,8 @@ bool ConfigManager::verifyServerConfig()
                 faces.append(l_dice_ini.value(key).toString());
             }
             else {
-                qCritical() << "dice.ini is invalid!";
-                return false;
+                qCritical() << "dice.ini max mismatch!";
+                break;
             }
         }
         m_commands->dice_faces[dice] = faces;
