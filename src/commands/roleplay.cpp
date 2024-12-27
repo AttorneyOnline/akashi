@@ -92,6 +92,24 @@ void AOClient::cmdRoll(int argc, QStringList argv)
     diceThrower(l_sides, l_dice, false);
 }
 
+void AOClient::cmdRollA(int argc, QStringList argv)
+{
+    Q_UNUSED(argc);
+
+    QString l_dice_name = argv.join(" ");
+
+    if (ConfigManager::diceFaces(l_dice_name).isEmpty()) {
+        qWarning() << "Unknown dice.";
+        sendServerMessage("Unknown dice.");
+    }
+    else {
+        QString l_response = ConfigManager::diceFaces(l_dice_name).at((genRand(0, ConfigManager::diceFaces(l_dice_name).size() - 1)));
+        QString l_sender_name = name();
+
+        sendServerMessageArea(l_sender_name + " rolled from the \"" + l_dice_name + "\" set and got: " + l_response);
+    }
+}
+
 void AOClient::cmdRollP(int argc, QStringList argv)
 {
     int l_sides = 6;

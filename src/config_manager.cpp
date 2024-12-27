@@ -58,6 +58,30 @@ bool ConfigManager::verifyServerConfig()
         return false;
     }
 
+    // Read dices
+    QSettings l_dice_ini("config/dice.ini", QSettings::IniFormat);
+    QStringList dices = l_dice_ini.childGroups();
+
+    for (const QString &dice : dices) {
+        l_dice_ini.beginGroup(dice);
+
+        int max = l_dice_ini.value("max").toInt();
+        QStringList faces;
+
+        for (int i = 1; i <= max; ++i) {
+            QString key = QString::number(i);
+            if (l_dice_ini.contains(key)) {
+                faces.append(l_dice_ini.value(key).toString());
+            }
+            else {
+                qCritical() << "dice.ini max mismatch!";
+                break;
+            }
+        }
+        m_commands->dice_faces[dice] = faces;
+        l_dice_ini.endGroup();
+    }
+
     // Verify config settings
     m_settings->beginGroup("Options");
     bool ok;
@@ -581,6 +605,11 @@ int ConfigManager::afkTimeout()
 void ConfigManager::setAuthType(const DataTypes::AuthType f_auth)
 {
     m_settings->setValue("Options/auth", fromDataType<DataTypes::AuthType>(f_auth).toLower());
+}
+
+QStringList ConfigManager::diceFaces(const QString f_name)
+{
+    return m_commands->dice_faces[f_name];
 }
 
 QStringList ConfigManager::magic8BallAnswers()
