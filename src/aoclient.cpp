@@ -198,6 +198,9 @@ void AOClient::handlePacket(AOPacket *packet)
         if (m_is_afk)
             sendServerMessage("You are no longer AFK.");
         m_is_afk = false;
+        if (characterName().endsWith(" [AFK]")) {
+            setCharacterName(characterName().remove(" [AFK]"));
+        }
         m_afk_timer->start(ConfigManager::afkTimeout() * 1000);
     }
 
@@ -558,7 +561,7 @@ void AOClient::onAfkTimeout()
 {
     if (!m_is_afk) {
         sendServerMessage("You are now AFK.");
-        setName(name() + " [AFK]");
+        setCharacterName(characterName() + " [AFK]");
     }
     m_is_afk = true;
 }
