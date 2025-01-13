@@ -64,8 +64,6 @@ QStringList AOClient::buildAreaList(int area_idx)
                 char_entry.insert(0, "[CM] ");
             if (m_authenticated)
                 char_entry += " (" + l_client->getIpid() + "): " + l_client->name();
-            if (l_client->m_is_afk)
-                char_entry += " [AFK]";
             entries.append(char_entry);
         }
     }

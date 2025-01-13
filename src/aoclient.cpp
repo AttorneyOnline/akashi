@@ -556,8 +556,10 @@ bool AOClient::isSpectator() const
 
 void AOClient::onAfkTimeout()
 {
-    if (!m_is_afk)
+    if (!m_is_afk) {
         sendServerMessage("You are now AFK.");
+        setName(name() + " [AFK]");
+    }
     m_is_afk = true;
 }
 
