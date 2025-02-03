@@ -394,9 +394,7 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
         client_name = client.character(); // fallback in case of empty ooc name
     }
     if (area->testimonyRecording() == AreaData::TestimonyRecording::RECORDING || area->testimonyRecording() == AreaData::TestimonyRecording::ADD) {
-        if (!l_args[5].startsWith("wit"))
-            return PacketFactory::createPacket("MS", l_args);
-
+        // -1 indicates title
         if (area->statement() == -1) {
             l_args[4] = "~~-- " + l_args[4] + " --";
             l_args[14] = "3";
@@ -436,7 +434,6 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
         }
         QRegularExpressionMatch match = isTestimonyJumpCommand(client.decodeMessage(l_args[4])); // Get rid of that pesky encoding, then do the fun part
         if (match.hasMatch()) {
-            client.m_pos = "wit";
             int jump_idx = match.captured("int").toInt();
             auto l_statement = area->jumpToStatement(jump_idx);
             l_args = l_statement.first;
