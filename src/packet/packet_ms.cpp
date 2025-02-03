@@ -434,6 +434,27 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
                 client.sendServerMessage("First statement reached.");
             }
         }
+        if (l_args[4] == "=") {
+            auto l_statement = area->jumpToStatement(area->statement());
+            l_args = l_statement.first;
+            l_progress = l_statement.second;
+            client.m_pos = l_args[5];
+
+            client.sendServerMessageArea(client_name + " moved to the current statement.");
+        }
+        if (l_args[4].contains(QRegularExpression("(>)(\\d+)"))) {
+            QRegularExpressionMatch match = QRegularExpression("(>)(\\d+)").match(l_args[4]);
+            QString Captureddigits = match.captured(2);
+            int StatementNumber = Captureddigits.toInt();
+
+            auto l_statement = area->jumpToStatement(StatementNumber);
+
+            l_args = l_statement.first;
+            l_progress = l_statement.second;
+            client.m_pos = l_args[5];
+
+            client.sendServerMessageArea(client_name + " moved to statement " + QString::number(area->statement()) + ".");
+        }
         QRegularExpressionMatch match = isTestimonyJumpCommand(client.decodeMessage(l_args[4])); // Get rid of that pesky encoding, then do the fun part
         if (match.hasMatch()) {
             client.m_pos = "wit";
