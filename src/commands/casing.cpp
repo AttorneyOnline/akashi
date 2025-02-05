@@ -129,16 +129,21 @@ void AOClient::cmdExamine(int argc, QStringList argv)
 
     AreaData *l_area = server->getAreaById(areaId());
     if (l_area->testimony().size() - 1 > 0) {
-        l_area->restartTestimony();
-        server->broadcast(PacketFactory::createPacket("RT", {"testimony2", "0"}), areaId());
-        server->broadcast(PacketFactory::createPacket("MS", {l_area->testimony()[0]}), areaId());
-        return;
+        if (l_area->testimonyRecording() == AreaData::TestimonyRecording::PLAYBACK) {
+            sendServerMessage("An examination is already running. Use /testimony to view the testimony.");
+        }
+        else {
+            l_area->restartTestimony();
+            server->broadcast(PacketFactory::createPacket("RT", {"testimony2", "0"}), areaId());
+            server->broadcast(PacketFactory::createPacket("MS", {l_area->testimony()[0]}), areaId());
+            return;
+        }
     }
-    if (l_area->testimonyRecording() == AreaData::TestimonyRecording::PLAYBACK)
-        sendServerMessage("An examination is already running. Use /testimony to view the testimony.");
-    else
-        sendServerMessage("Unable to start replay without prior testimony. Use /testify to start. You can load a testimony with /loadtestimony.");
+    else {
+       sendServerMessage("Unable to start replay without prior testimony. Use /testify to start Or load a testimony with /loadtestimony.");
+    }
 }
+
 
 void AOClient::cmdTestimony(int argc, QStringList argv)
 {
