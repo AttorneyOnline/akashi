@@ -1173,7 +1173,7 @@ class AreaData : public QObject
     TestimonyRecording m_testimonyRecording;
 
     QVector<ms2::OldMSFlatData> m_testimony; //!< Vector of all statements saved. Index 0 is always the title of the testimony.
-    int m_statement;                  //!< Keeps track of the currently played statement.
+    int m_statement;                         //!< Keeps track of the currently played statement.
 
     /**
      * @brief The judgelog of an area.
