@@ -118,7 +118,7 @@ void AOClient::cmdTestify(int argc, QStringList argv)
     else {
         clearTestimony();
         l_area->setTestimonyRecording(AreaData::TestimonyRecording::RECORDING);
-        sendServerMessage("Started testimony recording. Your next IC message will be a title. Use /end to stop recording.");
+        sendServerMessage("Started testimony recording. The next IC message will be a title. Use /end to stop recording.");
     }
 }
 
