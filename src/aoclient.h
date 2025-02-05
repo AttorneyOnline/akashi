@@ -29,6 +29,7 @@
 #include "acl_roles_handler.h"
 #include "network/aopacket.h"
 #include "network/network_socket.h"
+#include "packet/data/msdata.h"
 
 class AreaData;
 class DBManager;
@@ -485,14 +486,14 @@ class AOClient : public QObject
      *
      * @param packet The MS-Packet being recorded with their color changed to green.
      */
-    void addStatement(QStringList packet);
+    void addStatement(ms2::OldMSFlatData packet);
 
     /**
      * @brief Updates the currently displayed IC-Message with the next one send
      * @param packet The IC-Message that will overwrite the currently stored one.
      * @return Returns the updated IC-Message to be send to the other users. It also changes the color to green.
      */
-    QStringList updateStatement(QStringList packet);
+    ms2::OldMSFlatData updateStatement(ms2::OldMSFlatData packet);
 
     /**
      * @brief Convenience function to generate a random integer number between the given minimum and maximum values.
@@ -575,12 +576,12 @@ class AOClient : public QObject
      * @details This used to be just a plain number ranging from -100 to 100, but then Crystal mangled it by building some extra data into it.
      * Cheers, love.
      */
-    QString m_offset = "";
+    QPair<qint32, qint32> m_offset{0, 0};
 
     /**
      * @brief The last flipped state of the client.
      */
-    QString m_flipping = "";
+    bool m_flipping = false;
 
     /**
      * @brief The last reported position of the client.
