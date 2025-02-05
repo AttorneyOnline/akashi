@@ -113,12 +113,12 @@ void AOClient::cmdTestify(int argc, QStringList argv)
 
     AreaData *l_area = server->getAreaById(areaId());
     if (l_area->testimonyRecording() == AreaData::TestimonyRecording::RECORDING) {
-        sendServerMessage("Testimony recording is already in progress. Please stop it before starting a new one.");
+        sendServerMessage("Testimony recording is already in progress. Please stop it with /end before starting a new one.");
     }
     else {
         clearTestimony();
         l_area->setTestimonyRecording(AreaData::TestimonyRecording::RECORDING);
-        sendServerMessage("Started testimony recording.");
+        sendServerMessage("Started testimony recording. Your next IC message will be a title. Use /end to stop recording.");
     }
 }
 
@@ -135,9 +135,9 @@ void AOClient::cmdExamine(int argc, QStringList argv)
         return;
     }
     if (l_area->testimonyRecording() == AreaData::TestimonyRecording::PLAYBACK)
-        sendServerMessage("Unable to examine while another examination is running");
+        sendServerMessage("An examination is already running. Use /testimony to view the testimony.");
     else
-        sendServerMessage("Unable to start replay without prior examination.");
+        sendServerMessage("Unable to start replay without prior testimony. Use /testify to start. You can load a testimony with /loadtestimony.");
 }
 
 void AOClient::cmdTestimony(int argc, QStringList argv)
@@ -182,7 +182,7 @@ void AOClient::cmdUpdateStatement(int argc, QStringList argv)
     Q_UNUSED(argv);
 
     server->getAreaById(areaId())->setTestimonyRecording(AreaData::TestimonyRecording::UPDATE);
-    sendServerMessage("The next IC-Message will replace the last displayed replay message.");
+    sendServerMessage("The next IC-Message will replace the currently selected testimony line.");
 }
 
 void AOClient::cmdPauseTestimony(int argc, QStringList argv)
@@ -193,7 +193,7 @@ void AOClient::cmdPauseTestimony(int argc, QStringList argv)
     AreaData *l_area = server->getAreaById(areaId());
     l_area->setTestimonyRecording(AreaData::TestimonyRecording::STOPPED);
     server->broadcast(PacketFactory::createPacket("RT", {"testimony1", "1"}), areaId());
-    sendServerMessage("Testimony has been stopped.");
+    sendServerMessage("Testimony has been stopped. Use /examine to begin cross-examination.");
 }
 
 void AOClient::cmdAddStatement(int argc, QStringList argv)
