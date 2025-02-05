@@ -140,10 +140,9 @@ void AOClient::cmdExamine(int argc, QStringList argv)
         }
     }
     else {
-       sendServerMessage("Unable to start replay without prior testimony. Use /testify to start Or load a testimony with /loadtestimony.");
+        sendServerMessage("Unable to start replay without prior testimony. Use /testify to start Or load a testimony with /loadtestimony.");
     }
 }
-
 
 void AOClient::cmdTestimony(int argc, QStringList argv)
 {
