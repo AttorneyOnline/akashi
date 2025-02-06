@@ -80,6 +80,7 @@ struct OldMSFlatData
     bool m_additive;
     QString m_effect;
     QString m_blips;
+    bool m_slide;
 
     /// Returns true if the minimal error-checking it does reported no issues when reading from JSON.
     static bool fromJson(const QJsonObject &f_json, OldMSFlatData &f_data);

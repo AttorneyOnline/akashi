@@ -160,6 +160,9 @@ bool ms2::OldMSFlatData::fromJson(const QJsonObject &f_json, OldMSFlatData &f_da
     if (const QJsonValue v = f_json["blips"]; v.isString())
         f_data.m_blips = v.toString();
 
+    if (const QJsonValue v = f_json["slide"]; v.isBool())
+        f_data.m_slide = v.toBool();
+
     return true;
 }
 
@@ -218,6 +221,7 @@ QJsonObject ms2::OldMSFlatData::toJson() const
     json["additive"] = m_additive;
     json["effect"] = m_effect;
     json["blips"] = m_blips;
+    json["slide"] = m_slide;
 
     return json;
 }
