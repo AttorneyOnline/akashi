@@ -16,6 +16,7 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
 
+#include <QJsonDocument>
 #include <algorithm>
 
 #include "area_data.h"
@@ -364,14 +365,14 @@ void AreaData::toggleImmediate()
     m_forceImmediate = !m_forceImmediate;
 }
 
-const QStringList &AreaData::lastICMessage() const
+const ms2::OldMSFlatData &AreaData::lastICMessage() const
 {
     return m_lastICMessage;
 }
 
 void AreaData::updateLastICMessage(const QStringList &f_lastMessage_r)
 {
-    m_lastICMessage = f_lastMessage_r;
+    ms2::OldMSFlatData::fromJson(QJsonDocument::fromJson(f_lastMessage_r.at(0).toUtf8()).object(), m_lastICMessage);
 }
 
 QStringList AreaData::judgelog() const

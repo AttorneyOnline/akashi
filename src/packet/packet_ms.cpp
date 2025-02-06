@@ -38,7 +38,7 @@ void PacketMS::handlePacket(AreaData *area, AOClient &client) const
         return;
 
     if (client.m_pos != "")
-        validated_packet->setContentField(5, client.m_pos);
+        validated_packet->setJsonContentField("side", client.m_pos);
 
     client.getServer()->broadcast(validated_packet, client.areaId());
     emit client.logIC((client.character() + " " + client.characterName()), client.name(), client.m_ipid, client.getServer()->getAreaById(client.areaId())->name(), client.m_last_message);
@@ -71,7 +71,7 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
 
     const auto l_incoming = QJsonDocument::fromJson(m_content.at(0).toUtf8());
     ms2::OldMSFlatData message;
-    if (ms2::OldMSFlatData::fromJson(l_incoming.object(), message)) {
+    if (!ms2::OldMSFlatData::fromJson(l_incoming.object(), message)) {
         return l_invalid;
     }
 
@@ -244,17 +244,14 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
         // immediate text processing
         if (area->forceImmediate()) {
             message.m_immediate = true;
-            if (message.m_emote_mod == ms2::EmoteMod::NoPreObjZoom) {
-                message.m_emote_mod = ms2::EmoteMod::NoPreZoom;
+            if (message.m_emote_mod == ms2::EmoteMod::PreZoom) {
+                message.m_emote_mod = ms2::EmoteMod::Zoom;
             }
         }
     }
     {
         // additive
-        if (area->lastICMessage().isEmpty()) {
-            message.m_additive = false;
-        }
-        else if (!(client.m_char_id == area->lastICMessage()[8].toInt())) {
+        if (!(client.m_char_id == area->lastICMessage().m_char_id)) {
             message.m_additive = false;
         }
         else if (message.m_additive == true) {
@@ -343,7 +340,7 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
         }
     }
 
-    return PacketFactory::createPacket("MS", {QJsonDocument{message.toJson()}.toJson()});
+    return PacketFactory::createPacket("MS", {QJsonDocument{message.toJson()}.toJson(QJsonDocument::Compact)});
 }
 
 QRegularExpressionMatch PacketMS::isTestimonyJumpCommand(QString message) const

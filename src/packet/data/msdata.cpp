@@ -185,7 +185,7 @@ QJsonObject ms2::OldMSFlatData::toJson() const
     json["evidence"] = m_evidence;
     json["flip"] = m_flip;
     json["realisation"] = m_realisation;
-    json["text_color"] = m_text_colour;
+    json["text_colour"] = m_text_colour;
     json["showname"] = m_showname;
     json["other"] = m_other.toJson();
     json["offset"] = m_offset.toJson();

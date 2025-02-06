@@ -72,6 +72,11 @@ class AOPacket
     void setContentField(int f_content_index, QString f_content_data);
 
     /**
+     * @brief As setContentField, but for packets that use JSON as their data.
+     */
+    void setJsonContentField(const QString &f_key, const QString &f_value);
+
+    /**
      * @brief Escapes the content of the packet using AO2's escape codes.
      *
      * @see https://github.com/AttorneyOnline/docs/blob/master/AO%20Documentation/docs/development/network.md#escape-codes

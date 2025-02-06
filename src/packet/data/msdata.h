@@ -16,11 +16,11 @@ enum class DeskMod
 
 enum class EmoteMod
 {
-    NoPre = 0,
+    Idle = 0,
     Pre,
     PreAndObject,
-    NoPreZoom,
-    NoPreObjZoom,
+    Zoom,
+    PreZoom,
 };
 
 enum class ObjectionMod

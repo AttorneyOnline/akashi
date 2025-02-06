@@ -851,7 +851,7 @@ class AreaData : public QObject
      *
      * @return See short description.
      */
-    const QStringList &lastICMessage() const;
+    const ms2::OldMSFlatData &lastICMessage() const;
 
     /**
      * @brief Updates the last IC message sent in the area.
@@ -1185,7 +1185,7 @@ class AreaData : public QObject
     /**
      * @brief The last IC packet sent in an area.
      */
-    QStringList m_lastICMessage;
+    ms2::OldMSFlatData m_lastICMessage;
 
     /**
      * @brief Whether or not to force immediate text processing in this area.
