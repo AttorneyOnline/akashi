@@ -149,8 +149,13 @@ bool ms2::OldMSFlatData::fromJson(const QJsonObject &f_json, OldMSFlatData &f_da
     if (const QJsonValue v = f_json["additive"]; v.isBool())
         f_data.m_additive = v.toBool();
 
-    if (const QJsonValue v = f_json["effect"]; v.isString())
-        f_data.m_effect = v.toString();
+    if (const QJsonValue v = f_json["effect"]; v.isObject()) {
+        EffectData l_effect{};
+        QJsonObject l_json = v.toObject();
+        if (EffectData::fromJson(l_json, l_effect)) {
+            f_data.m_effect = l_effect;
+        }
+    }
 
     if (const QJsonValue v = f_json["blips"]; v.isString())
         f_data.m_blips = v.toString();
@@ -208,7 +213,7 @@ QJsonObject ms2::OldMSFlatData::toJson() const
     }
 
     json["additive"] = m_additive;
-    json["effect"] = m_effect;
+    json["effect"] = m_effect.toJson();
     json["blips"] = m_blips;
     json["slide"] = m_slide;
 
@@ -319,6 +324,33 @@ QJsonObject ms2::OtherData::toJson() const
     json["offset"] = m_offset.toJson();
     json["flip"] = m_flip;
     json["under"] = m_under;
+
+    return json;
+}
+
+bool ms2::EffectData::fromJson(const QJsonObject &f_json, EffectData &f_data)
+{
+    if (const QJsonValue v = f_json["name"]; v.isString())
+        f_data.m_name = v.toString();
+    else
+        return false;
+
+    if (const QJsonValue v = f_json["sound"]; v.isString())
+        f_data.m_sound = v.toString();
+
+    if (const QJsonValue v = f_json["folder"]; v.isString())
+        f_data.m_folder = v.toString();
+
+    return true;
+}
+
+QJsonObject ms2::EffectData::toJson() const
+{
+    QJsonObject json;
+
+    json["name"] = m_name;
+    json["sound"] = m_sound;
+    json["folder"] = m_folder;
 
     return json;
 }

@@ -63,6 +63,16 @@ struct OtherData
     QJsonObject toJson() const;
 };
 
+struct EffectData
+{
+    QString m_name;
+    QString m_sound;
+    QString m_folder;
+
+    static bool fromJson(const QJsonObject &f_json, EffectData &f_data);
+    QJsonObject toJson() const;
+};
+
 /// This is a super-basic representation of the old MS packet in the flattest JSON form possible.
 /// Intentionally minimal types, almost no error checking.
 struct OldMSFlatData
@@ -93,7 +103,7 @@ struct OldMSFlatData
     QList<FrameData> m_frames_realisation;
     QList<FrameData> m_frames_sfx;
     bool m_additive;
-    QString m_effect;
+    EffectData m_effect;
     QString m_blips;
     bool m_slide;
 
