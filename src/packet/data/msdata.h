@@ -38,8 +38,15 @@ struct FrameData
     qint32 m_frame;
     QString m_value;
 
-    /// Returns true if the minimal error-checking it does reported no issues when reading from JSON.
     static bool fromJson(const QJsonObject &f_json, FrameData &f_data);
+    QJsonObject toJson() const;
+};
+
+struct OffsetData {
+    qint32 x;
+    qint32 y;
+
+    static bool fromJson(const QJsonObject &f_json, OffsetData &f_data);
     QJsonObject toJson() const;
 };
 
@@ -67,10 +74,8 @@ struct OldMSFlatData
     qint32 m_other_charid;
     QString m_other_name;
     QString m_other_emote;
-    qint32 m_self_x_offset;
-    qint32 m_self_y_offset;
-    qint32 m_other_x_offset;
-    qint32 m_other_y_offset;
+    OffsetData m_self_offset;
+    OffsetData m_other_offset;
     bool m_other_flip;
     bool m_immediate;
     bool m_sfx_looping;

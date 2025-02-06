@@ -214,7 +214,7 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
         bool l_pairing = false;
         QString l_other_name = "0";
         QString l_other_emote = "0";
-        QPair<qint32, qint32> l_other_offset{0, 0};
+        ms2::OffsetData l_other_offset{0, 0};
         bool l_other_flip = false;
         for (int l_client_id : area->joinedIDs()) {
             AOClient *l_client = client.getServer()->getClientByID(l_client_id);
@@ -234,12 +234,11 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
         message.m_other_charid = l_other_charid;
         message.m_other_emote = l_other_emote;
         message.m_other_flip = l_other_flip;
-        message.m_other_x_offset = l_other_offset.first;
-        message.m_other_y_offset = l_other_offset.second;
+        message.m_other_offset = l_other_offset;
     }
     {
         // self offset
-        client.m_offset = {message.m_self_x_offset, message.m_self_y_offset};
+        client.m_offset = message.m_self_offset;
     }
     {
         // immediate text processing

@@ -576,7 +576,7 @@ class AOClient : public QObject
      * @details This used to be just a plain number ranging from -100 to 100, but then Crystal mangled it by building some extra data into it.
      * Cheers, love.
      */
-    QPair<qint32, qint32> m_offset{0, 0};
+    ms2::OffsetData m_offset{0, 0};
 
     /**
      * @brief The last flipped state of the client.

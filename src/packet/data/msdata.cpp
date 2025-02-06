@@ -95,17 +95,21 @@ bool ms2::OldMSFlatData::fromJson(const QJsonObject &f_json, OldMSFlatData &f_da
     if (const QJsonValue v = f_json["other_name"]; v.isString())
         f_data.m_other_name = v.toString();
 
-    if (const QJsonValue v = f_json["self_x_offset"]; v.isDouble())
-        f_data.m_self_x_offset = v.toInt();
+    if (const QJsonValue v = f_json["self_offset"]; v.isObject()) {
+        OffsetData l_offset{0, 0};
+        QJsonObject l_json = v.toObject();
+        if (OffsetData::fromJson(l_json, l_offset)) {
+            f_data.m_self_offset = l_offset;
+        }
+    }
 
-    if (const QJsonValue v = f_json["self_y_offset"]; v.isDouble())
-        f_data.m_self_y_offset = v.toInt();
-
-    if (const QJsonValue v = f_json["other_x_offset"]; v.isDouble())
-        f_data.m_other_x_offset = v.toInt();
-
-    if (const QJsonValue v = f_json["other_y_offset"]; v.isDouble())
-        f_data.m_other_y_offset = v.toInt();
+    if (const QJsonValue v = f_json["other_offset"]; v.isObject()) {
+        OffsetData l_offset{0, 0};
+        QJsonObject l_json = v.toObject();
+        if (OffsetData::fromJson(l_json, l_offset)) {
+            f_data.m_other_offset = l_offset;
+        }
+    }
 
     if (const QJsonValue v = f_json["other_flip"]; v.isBool())
         f_data.m_other_flip = v.toBool();
@@ -190,10 +194,8 @@ QJsonObject ms2::OldMSFlatData::toJson() const
     json["other_charid"] = m_other_charid;
     json["other_name"] = m_other_name;
     json["other_emote"] = m_other_emote;
-    json["self_x_offset"] = m_self_x_offset;
-    json["self_y_offset"] = m_self_y_offset;
-    json["other_x_offset"] = m_other_x_offset;
-    json["other_y_offset"] = m_other_y_offset;
+    json["self_offset"] = m_self_offset.toJson();
+    json["other_offset"] = m_other_offset.toJson();
     json["other_flip"] = m_other_flip;
     json["immediate"] = m_immediate;
     json["sfx_looping"] = m_sfx_looping;
@@ -254,6 +256,31 @@ QJsonObject ms2::FrameData::toJson() const
     if (!m_value.isEmpty()) {
         json["value"] = m_value;
     }
+
+    return json;
+}
+
+bool ms2::OffsetData::fromJson(const QJsonObject &f_json, OffsetData &f_data)
+{
+    if (const QJsonValue v = f_json["x"]; v.isDouble())
+        f_data.x = std::max(-100, std::min(v.toInt(), 100));
+    else
+        return false;
+
+    if (const QJsonValue v = f_json["y"]; v.isDouble())
+        f_data.y = std::max(-100, std::min(v.toInt(), 100));
+    else
+        return false;
+
+    return true;
+}
+
+QJsonObject ms2::OffsetData::toJson() const
+{
+    QJsonObject json;
+
+    json["x"] = x;
+    json["y"] = y;
 
     return json;
 }
