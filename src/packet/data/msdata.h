@@ -6,7 +6,8 @@
 namespace ms2 {
 enum class DeskMod
 {
-    Shown = 1,
+    Hidden = 0,
+    Shown,
     HiddenDuringPreThenShown,
     ShowDuringPreThenHidden,
     HiddenCentreThenShown,
