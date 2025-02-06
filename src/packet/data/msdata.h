@@ -50,6 +50,19 @@ struct OffsetData {
     QJsonObject toJson() const;
 };
 
+struct OtherData
+{
+    qint32 m_charid;
+    QString m_name;
+    QString m_emote;
+    OffsetData m_offset;
+    bool m_flip;
+    bool m_under;
+
+    static bool fromJson(const QJsonObject &f_json, OtherData &f_data);
+    QJsonObject toJson() const;
+};
+
 /// This is a super-basic representation of the old MS packet in the flattest JSON form possible.
 /// Intentionally minimal types, almost no error checking.
 struct OldMSFlatData
@@ -71,15 +84,11 @@ struct OldMSFlatData
     bool m_realisation;
     qint32 m_text_colour;
     QString m_showname;
-    qint32 m_other_charid;
-    QString m_other_name;
-    QString m_other_emote;
-    OffsetData m_self_offset;
-    OffsetData m_other_offset;
-    bool m_other_flip;
+    OffsetData m_offset;
     bool m_immediate;
     bool m_sfx_looping;
     bool m_screenshake;
+    OtherData m_other;
     QList<FrameData> m_frames_shake;
     QList<FrameData> m_frames_realisation;
     QList<FrameData> m_frames_sfx;

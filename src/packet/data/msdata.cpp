@@ -89,30 +89,21 @@ bool ms2::OldMSFlatData::fromJson(const QJsonObject &f_json, OldMSFlatData &f_da
     if (const QJsonValue v = f_json["showname"]; v.isString())
         f_data.m_showname = v.toString();
 
-    if (const QJsonValue v = f_json["other_charid"]; v.isDouble())
-        f_data.m_other_charid = v.toInt();
-
-    if (const QJsonValue v = f_json["other_name"]; v.isString())
-        f_data.m_other_name = v.toString();
-
-    if (const QJsonValue v = f_json["self_offset"]; v.isObject()) {
-        OffsetData l_offset{0, 0};
+    if (const QJsonValue v = f_json["other"]; v.isObject()) {
+        OtherData l_other;
         QJsonObject l_json = v.toObject();
-        if (OffsetData::fromJson(l_json, l_offset)) {
-            f_data.m_self_offset = l_offset;
+        if (OtherData::fromJson(l_json, l_other)) {
+            f_data.m_other = l_other;
         }
     }
 
-    if (const QJsonValue v = f_json["other_offset"]; v.isObject()) {
+    if (const QJsonValue v = f_json["offset"]; v.isObject()) {
         OffsetData l_offset{0, 0};
         QJsonObject l_json = v.toObject();
         if (OffsetData::fromJson(l_json, l_offset)) {
-            f_data.m_other_offset = l_offset;
+            f_data.m_offset = l_offset;
         }
     }
-
-    if (const QJsonValue v = f_json["other_flip"]; v.isBool())
-        f_data.m_other_flip = v.toBool();
 
     if (const QJsonValue v = f_json["immediate"]; v.isBool())
         f_data.m_immediate = v.toBool();
@@ -191,12 +182,8 @@ QJsonObject ms2::OldMSFlatData::toJson() const
     json["realisation"] = m_realisation;
     json["text_color"] = m_text_colour;
     json["showname"] = m_showname;
-    json["other_charid"] = m_other_charid;
-    json["other_name"] = m_other_name;
-    json["other_emote"] = m_other_emote;
-    json["self_offset"] = m_self_offset.toJson();
-    json["other_offset"] = m_other_offset.toJson();
-    json["other_flip"] = m_other_flip;
+    json["other"] = m_other.toJson();
+    json["offset"] = m_offset.toJson();
     json["immediate"] = m_immediate;
     json["sfx_looping"] = m_sfx_looping;
     json["screenshake"] = m_screenshake;
@@ -281,6 +268,57 @@ QJsonObject ms2::OffsetData::toJson() const
 
     json["x"] = x;
     json["y"] = y;
+
+    return json;
+}
+
+bool ms2::OtherData::fromJson(const QJsonObject &f_json, OtherData &f_data)
+{
+    if (const QJsonValue v = f_json["charid"]; v.isDouble())
+        f_data.m_charid = v.toInt();
+    else
+        return false;
+
+    if (const QJsonValue v = f_json["name"]; v.isString())
+        f_data.m_name = v.toString();
+    else
+        return false;
+
+    if (const QJsonValue v = f_json["offset"]; v.isObject()) {
+        OffsetData l_offset{0, 0};
+        QJsonObject l_json = v.toObject();
+        if (OffsetData::fromJson(l_json, l_offset)) {
+            f_data.m_offset = l_offset;
+        }
+        else
+            return false;
+    }
+    else
+        return false;
+
+    if (const QJsonValue v = f_json["flip"]; v.isBool())
+        f_data.m_flip = v.toBool();
+    else
+        return false;
+
+    if (const QJsonValue v = f_json["under"]; v.isBool())
+        f_data.m_under = v.toBool();
+    else
+        return false;
+
+    return true;
+}
+
+QJsonObject ms2::OtherData::toJson() const
+{
+    QJsonObject json;
+
+    json["charid"] = m_charid;
+    json["name"] = m_name;
+    json["emote"] = m_emote;
+    json["offset"] = m_offset.toJson();
+    json["flip"] = m_flip;
+    json["under"] = m_under;
 
     return json;
 }

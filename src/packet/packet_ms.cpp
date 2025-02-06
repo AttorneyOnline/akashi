@@ -208,7 +208,7 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
     }
     {
         // other char id
-        client.m_pairing_with = message.m_other_charid;
+        client.m_pairing_with = message.m_other.m_charid;
         QString l_front_back = "";
         int l_other_charid = client.m_pairing_with;
         bool l_pairing = false;
@@ -230,15 +230,15 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
             l_other_charid = -1;
             l_front_back = "";
         }
-        message.m_other_name = l_other_name;
-        message.m_other_charid = l_other_charid;
-        message.m_other_emote = l_other_emote;
-        message.m_other_flip = l_other_flip;
-        message.m_other_offset = l_other_offset;
+        message.m_other.m_name = l_other_name;
+        message.m_other.m_charid = l_other_charid;
+        message.m_other.m_emote = l_other_emote;
+        message.m_other.m_flip = l_other_flip;
+        message.m_other.m_offset = l_other_offset;
     }
     {
         // self offset
-        client.m_offset = message.m_self_offset;
+        client.m_offset = message.m_offset;
     }
     {
         // immediate text processing
