@@ -123,8 +123,9 @@ bool ms2::OldMSFlatData::fromJson(const QJsonObject &f_json, OldMSFlatData &f_da
         const QJsonArray frames = v.toArray();
         f_data.m_frames_shake.reserve(frames.size());
         for (const QJsonValue &frame : frames) {
-            if (frame.isDouble())
-                f_data.m_frames_shake.append(frame.toInt());
+            FrameData l_data{};
+            if (frame.isObject() && FrameData::fromJson(frame.toObject(), l_data))
+                f_data.m_frames_shake.append(l_data);
         }
     }
 
@@ -132,8 +133,9 @@ bool ms2::OldMSFlatData::fromJson(const QJsonObject &f_json, OldMSFlatData &f_da
         const QJsonArray frames = v.toArray();
         f_data.m_frames_realisation.reserve(frames.size());
         for (const QJsonValue &frame : frames) {
-            if (frame.isDouble())
-                f_data.m_frames_realisation.append(frame.toInt());
+            FrameData l_data{};
+            if (frame.isObject() && FrameData::fromJson(frame.toObject(), l_data))
+                f_data.m_frames_realisation.append(l_data);
         }
     }
 
@@ -141,8 +143,11 @@ bool ms2::OldMSFlatData::fromJson(const QJsonObject &f_json, OldMSFlatData &f_da
         const QJsonArray frames = v.toArray();
         f_data.m_frames_sfx.reserve(frames.size());
         for (const QJsonValue &frame : frames) {
-            if (frame.isDouble())
-                f_data.m_frames_sfx.append(frame.toInt());
+            FrameData l_data{};
+            if (frame.isObject() &&
+                FrameData::fromJson(frame.toObject(), l_data) &&
+                !l_data.m_value.isEmpty())
+                f_data.m_frames_sfx.append(l_data);
         }
     }
 
@@ -193,26 +198,58 @@ QJsonObject ms2::OldMSFlatData::toJson() const
 
     {
         QJsonArray frameShakeArray;
-        for (const qint32 frame : m_frames_shake)
-            frameShakeArray.append(frame);
+        for (const auto &frame : m_frames_shake)
+            frameShakeArray.append(frame.toJson());
         json["frames_shake"] = frameShakeArray;
     }
     {
         QJsonArray frameRealisationArray;
-        for (const qint32 frame : m_frames_realisation)
-            frameRealisationArray.append(frame);
+        for (const auto &frame : m_frames_realisation)
+            frameRealisationArray.append(frame.toJson());
         json["frames_realisation"] = frameRealisationArray;
     }
     {
         QJsonArray frameSfxArray;
-        for (const qint32 frame : m_frames_sfx)
-            frameSfxArray.append(frame);
+        for (const auto &frame : m_frames_sfx)
+            frameSfxArray.append(frame.toJson());
         json["frames_sfx"] = frameSfxArray;
     }
 
     json["additive"] = m_additive;
     json["effect"] = m_effect;
     json["blips"] = m_blips;
+
+    return json;
+}
+
+bool ms2::FrameData::fromJson(const QJsonObject &f_json, FrameData &f_data)
+{
+    if (const QJsonValue v = f_json["emote"]; v.isString())
+        f_data.m_emote = v.toString();
+    else
+        return false;
+
+    if (const QJsonValue v = f_json["frame"]; v.isDouble())
+        f_data.m_frame = v.toInt();
+    else
+        return false;
+
+    if (const QJsonValue v = f_json["value"]; v.isString())
+        f_data.m_value = v.toString();
+
+    return true;
+}
+
+QJsonObject ms2::FrameData::toJson() const
+{
+    QJsonObject json;
+
+    json["emote"] = m_emote;
+    json["frame"] = m_frame;
+
+    if (!m_value.isEmpty()) {
+        json["value"] = m_value;
+    }
 
     return json;
 }

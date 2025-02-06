@@ -31,6 +31,17 @@ enum class ObjectionMod
     Custom,
 };
 
+struct FrameData
+{
+    QString m_emote;
+    qint32 m_frame;
+    QString m_value;
+
+    /// Returns true if the minimal error-checking it does reported no issues when reading from JSON.
+    static bool fromJson(const QJsonObject &f_json, FrameData &f_data);
+    QJsonObject toJson() const;
+};
+
 /// This is a super-basic representation of the old MS packet in the flattest JSON form possible.
 /// Intentionally minimal types, almost no error checking.
 struct OldMSFlatData
@@ -63,9 +74,9 @@ struct OldMSFlatData
     bool m_immediate;
     bool m_sfx_looping;
     bool m_screenshake;
-    QList<qint32> m_frames_shake;
-    QList<qint32> m_frames_realisation;
-    QList<qint32> m_frames_sfx;
+    QList<FrameData> m_frames_shake;
+    QList<FrameData> m_frames_realisation;
+    QList<FrameData> m_frames_sfx;
     bool m_additive;
     QString m_effect;
     QString m_blips;
