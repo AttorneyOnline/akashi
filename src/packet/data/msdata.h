@@ -42,7 +42,8 @@ struct FrameData
     QJsonObject toJson() const;
 };
 
-struct OffsetData {
+struct OffsetData
+{
     qint32 x;
     qint32 y;
 
