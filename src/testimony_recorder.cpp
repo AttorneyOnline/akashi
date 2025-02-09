@@ -21,9 +21,9 @@
 #include "config_manager.h"
 #include "server.h"
 
-void AOClient::addStatement(QStringList packet)
+void AOClient::addStatement(ms2::OldMSFlatData packet)
 {
-    if (checkTestimonySymbols(packet[4])) {
+    if (checkTestimonySymbols(packet.m_message_text)) {
         return;
     }
     AreaData *area = server->getAreaById(areaId());
@@ -32,9 +32,9 @@ void AOClient::addStatement(QStringList packet)
         if (area->testimonyRecording() == AreaData::TestimonyRecording::RECORDING) {
             if (c_statement <= ConfigManager::maxStatements()) {
                 if (c_statement == -1)
-                    packet[14] = "3";
+                    packet.m_text_colour = 3;
                 else
-                    packet[14] = "1";
+                    packet.m_text_colour = 1;
                 area->recordStatement(packet);
                 return;
             }
@@ -43,7 +43,7 @@ void AOClient::addStatement(QStringList packet)
             }
         }
         else if (area->testimonyRecording() == AreaData::TestimonyRecording::ADD) {
-            packet[14] = "1";
+            packet.m_text_colour = 1;
             area->addStatement(c_statement + 1, packet);
             area->setTestimonyRecording(AreaData::TestimonyRecording::PLAYBACK);
         }
@@ -54,18 +54,18 @@ void AOClient::addStatement(QStringList packet)
     }
 }
 
-QStringList AOClient::updateStatement(QStringList packet)
+ms2::OldMSFlatData AOClient::updateStatement(ms2::OldMSFlatData packet)
 {
-    if (checkTestimonySymbols(packet[4])) {
+    if (checkTestimonySymbols(packet.m_message_text)) {
         return packet;
     }
     AreaData *area = server->getAreaById(areaId());
     int c_statement = area->statement();
     area->setTestimonyRecording(AreaData::TestimonyRecording::PLAYBACK);
-    if (c_statement <= 0 || area->testimony()[c_statement].empty())
+    if (c_statement <= 0)
         sendServerMessage("Unable to update an empty statement. Please use /addtestimony.");
     else {
-        packet[14] = "1";
+        packet.m_text_colour = 1;
         area->replaceStatement(c_statement, packet);
         sendServerMessage("Updated current statement.");
         return area->testimony()[c_statement];

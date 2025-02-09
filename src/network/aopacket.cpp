@@ -41,6 +41,8 @@
 #include "packet/packet_setcase.h"
 #include "packet/packet_zz.h"
 
+#include <QJsonDocument>
+
 AOPacket::AOPacket(QStringList p_contents) :
     m_content(p_contents),
     m_escaped(false)
@@ -76,6 +78,19 @@ QByteArray AOPacket::toUtf8()
 void AOPacket::setContentField(int f_content_index, QString f_content_data)
 {
     m_content[f_content_index] = f_content_data;
+}
+
+void AOPacket::setJsonContentField(const QString &f_key, const QString &f_value)
+{
+    QJsonParseError l_error{};
+    auto l_jsonDocument = QJsonDocument::fromJson(m_content.at(0).toUtf8(), &l_error);
+    auto l_jsonObject = l_jsonDocument.object();
+
+    if (l_error.error == QJsonParseError::ParseError::NoError && l_jsonObject[f_key].isString()) {
+        l_jsonObject[f_key] = f_value;
+    }
+
+    m_content = QStringList{QJsonDocument{l_jsonObject}.toJson(QJsonDocument::Compact)};
 }
 
 void AOPacket::escapeContent()

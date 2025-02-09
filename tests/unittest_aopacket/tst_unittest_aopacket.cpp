@@ -92,7 +92,7 @@ void Packet::createPacketSubclass_data()
                         << 2;
     QTest::newRow("MS") << "MS#"
                         << "MS"
-                        << 15;
+                        << 1;
     QTest::newRow("PE") << "PE#"
                         << "PE"
                         << 3;

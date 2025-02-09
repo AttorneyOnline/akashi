@@ -202,20 +202,26 @@ void Area::changeCharacter()
 
 void Area::testimony()
 {
-    QVector<QStringList> l_testimony = {
-        {"A"},
-        {"B"},
-        {"C"},
-        {"D"},
-        {"E"},
+    QVector<ms2::OldMSFlatData> l_testimony = {
+        ms2::OldMSFlatData{},
+        ms2::OldMSFlatData{},
+        ms2::OldMSFlatData{},
+        ms2::OldMSFlatData{},
+        ms2::OldMSFlatData{},
     };
+
+    l_testimony[0].m_message_text = "A";
+    l_testimony[1].m_message_text = "B";
+    l_testimony[2].m_message_text = "C";
+    l_testimony[3].m_message_text = "D";
+    l_testimony[4].m_message_text = "E";
 
     {
         // Add all statements, and check that they're added.
         for (const auto &l_statement : l_testimony) {
             m_area->recordStatement(l_statement);
 
-            QCOMPARE(l_statement, m_area->testimony().at(m_area->statement() - 1));
+            QCOMPARE(l_statement.m_message_text, m_area->testimony().at(m_area->statement() - 1).m_message_text);
         }
     }
     {
@@ -225,7 +231,7 @@ void Area::testimony()
         for (int i = 1; i < l_testimony.size() - 1; i++) {
             const auto &l_results = m_area->jumpToStatement(m_area->statement() + 1);
 
-            QCOMPARE(l_results.first, l_testimony.at(i + 1));
+            QCOMPARE(l_results.first.m_message_text, l_testimony.at(i + 1).m_message_text);
             QCOMPARE(l_results.second, AreaData::TestimonyProgress::OK);
         }
     }
@@ -233,14 +239,14 @@ void Area::testimony()
         // Next advancement loops the testimony.
         const auto &l_results = m_area->jumpToStatement(m_area->statement() + 1);
 
-        QCOMPARE(l_results.first, l_testimony.at(1));
+        QCOMPARE(l_results.first.m_message_text, l_testimony.at(1).m_message_text);
         QCOMPARE(l_results.second, AreaData::TestimonyProgress::LOOPED);
     }
     {
         // Going back makes the testimony stay at the first statement.
         const auto &l_results = m_area->jumpToStatement(m_area->statement() - 1);
 
-        QCOMPARE(l_results.first, l_testimony.at(1));
+        QCOMPARE(l_results.first.m_message_text, l_testimony.at(1).m_message_text);
         QCOMPARE(l_results.second, AreaData::TestimonyProgress::STAYED_AT_FIRST);
     }
 }
