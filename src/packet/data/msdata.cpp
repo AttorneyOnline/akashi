@@ -139,9 +139,7 @@ bool ms2::OldMSFlatData::fromJson(const QJsonObject &f_json, OldMSFlatData &f_da
         f_data.m_frames_sfx.reserve(frames.size());
         for (const QJsonValue &frame : frames) {
             FrameData l_data{};
-            if (frame.isObject() &&
-                FrameData::fromJson(frame.toObject(), l_data) &&
-                !l_data.m_value.isEmpty())
+            if (frame.isObject() && FrameData::fromJson(frame.toObject(), l_data) && !l_data.m_value.isEmpty())
                 f_data.m_frames_sfx.append(l_data);
         }
     }
@@ -286,6 +284,11 @@ bool ms2::OtherData::fromJson(const QJsonObject &f_json, OtherData &f_data)
 
     if (const QJsonValue v = f_json["name"]; v.isString())
         f_data.m_name = v.toString();
+    else
+        return false;
+
+    if (const QJsonValue v = f_json["emote"]; v.isString())
+        f_data.m_emote = v.toString();
     else
         return false;
 
