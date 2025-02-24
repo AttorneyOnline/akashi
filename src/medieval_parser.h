@@ -64,6 +64,7 @@ class MedievalParser
     bool datafile_valid;
 
     int randomInt(int min, int max);
+    bool containsCaseInsensitive(const QVector<QString> &vector, const QString &str);
 };
 
 #endif // MEDIEVAL_PARSER_H

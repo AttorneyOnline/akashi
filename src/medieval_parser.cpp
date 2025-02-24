@@ -14,6 +14,16 @@ inline int MedievalParser::randomInt(int min, int max)
     return QRandomGenerator::global()->bounded(min, max + 1);
 }
 
+inline bool MedievalParser::containsCaseInsensitive(const QVector<QString> &vector, const QString &str)
+{
+#if QT_VERSION_MAJOR == 5
+    return std::any_of(vector.constBegin(), vector.constEnd(),
+                       [&str](const QString &element) { return element.toLower().contains(str.toLower()); });
+#else
+    return vector.contains(str, Qt::CaseInsensitive);
+#endif
+}
+
 MedievalParser::MedievalParser()
 {
     parseDataFile();
@@ -29,7 +39,7 @@ QString MedievalParser::degrootify(QString message)
 
     if (message.startsWith("-")) {
         do_pends = false;
-        final_text.removeFirst();
+        final_text.remove(0, 1);
     }
 
     return modifySpeech(final_text, do_pends, false);
@@ -79,13 +89,13 @@ void MedievalParser::parseDataFile()
         WordReplacement replacement_struct;
         for (const QString &key : rep_obj.keys()) {
             if (key == "replacement") {
-                replacement_struct.replacements = QVector<QString>(rep_obj[key].toVariant().toStringList());
+                replacement_struct.replacements = QVector<QString>(rep_obj[key].toVariant().toStringList().toVector());
             }
             else if (key == "replacement_prepend") {
-                replacement_struct.prepended = QVector<QString>(rep_obj[key].toVariant().toStringList());
+                replacement_struct.prepended = QVector<QString>(rep_obj[key].toVariant().toStringList().toVector());
             }
             else if (key == "replacement_plural") {
-                replacement_struct.plural_replacements = QVector<QString>(rep_obj[key].toVariant().toStringList());
+                replacement_struct.plural_replacements = QVector<QString>(rep_obj[key].toVariant().toStringList().toVector());
             }
             else if (key == "prepend_count") {
                 replacement_struct.prepend_count = rep_obj[key].toVariant().toInt();
@@ -94,19 +104,19 @@ void MedievalParser::parseDataFile()
                 replacement_struct.chance = rep_obj[key].toVariant().toInt();
             }
             else if (key == "word") {
-                replacement_struct.words = QVector<QString>(rep_obj[key].toVariant().toStringList());
+                replacement_struct.words = QVector<QString>(rep_obj[key].toVariant().toStringList().toVector());
                 for (const QString &word : replacement_struct.words) {
                     word_vector.append(word);
                 }
             }
             else if (key == "word_plural") {
-                replacement_struct.plurals = QVector<QString>(rep_obj[key].toVariant().toStringList());
+                replacement_struct.plurals = QVector<QString>(rep_obj[key].toVariant().toStringList().toVector());
                 for (const QString &word : replacement_struct.words) {
                     word_vector.append(word);
                 }
             }
             else if (key == "prev") {
-                replacement_struct.prev_words = QVector<QString>(rep_obj[key].toVariant().toStringList());
+                replacement_struct.prev_words = QVector<QString>(rep_obj[key].toVariant().toStringList().toVector());
                 for (const QString &word : replacement_struct.words) {
                     word_vector.append(word);
                 }
@@ -166,17 +176,17 @@ MatchResult MedievalParser::wordMatches(WordReplacement *rep, ReplacementCheck *
 
     // if it has prewords make sure the preword matches first
     if (rep->prev_words.count() > 0) {
-        if (check->prev_word.length() <= 0 || !word_vector.contains(check->prev_word, Qt::CaseInsensitive) || !rep->prev_words.contains(check->prev_word, Qt::CaseInsensitive)) {
+        if (check->prev_word.length() <= 0 || !containsCaseInsensitive(word_vector, check->prev_word) || !containsCaseInsensitive(rep->prev_words, check->prev_word)) {
             return MATCHES_NOT;
         }
         check->used_prev_word = true;
     }
 
     // check match type
-    if (rep->words.contains(check->word, Qt::CaseInsensitive)) {
+    if (containsCaseInsensitive(rep->words, check->word)) {
         return MATCHES_SINGULAR;
     }
-    else if (rep->plurals.contains(check->word, Qt::CaseInsensitive)) {
+    else if (containsCaseInsensitive(rep->plurals, check->word)) {
         return MATCHES_PLURAL;
     }
     else {
@@ -315,8 +325,7 @@ bool MedievalParser::performReplacement(QString rep_str, ReplacementCheck *check
         if (!_strnicmp(check->prev_word.toStdString().c_str(), "an", qMax(check->prev_word.length() + 1, 2))) {
             if (fc != 'a' && fc != 'e' && fc != 'i' && fc != 'o' && fc != 'u') {
                 // Remove the trailing n
-                stored_word.removeLast();
-                stored_word.removeLast();
+                stored_word.chop(2);
                 stored_word.append(' '); // 1 for space, 1 for n, then return space
             }
         }
@@ -378,8 +387,8 @@ QString MedievalParser::modifySpeech(QString text, bool generate_pre_and_post, b
         // Not alphabetic or &. Hit the end of a word/string.
         int current_word_len = cur - current_word_cur;
         int prev_word_len = qMax(0, (int)(current_word_cur - prev_word_cur) - 1); // -1 for the space
-        current_word = text.sliced(current_word_cur, current_word_len);
-        check.prev_word = text.sliced(prev_word_cur, prev_word_len);
+        current_word = text.mid(current_word_cur, current_word_len);
+        check.prev_word = text.mid(prev_word_cur, prev_word_len);
         check.used_prev_word = false;
 
         bool modify_word = true;
@@ -392,7 +401,7 @@ QString MedievalParser::modifySpeech(QString text, bool generate_pre_and_post, b
         }
 
         if (skip_one_letter) {
-            check.word = current_word.sliced(1, current_word.length() - 1);
+            check.word = current_word.mid(1, current_word.length() - 1);
         }
         else {
             check.word = current_word;
