@@ -150,6 +150,11 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
         l_incoming_msg = l_gimp_message;
     }
 
+    if (client.m_is_medieval || true) {
+        QString l_medieval_message = client.getServer()->getMedievalParser()->degrootify(l_incoming_msg);
+        l_incoming_msg = l_medieval_message;
+    }
+
     if (client.m_is_shaken) {
         QStringList l_parts = l_incoming_msg.split(" ");
 
