@@ -90,7 +90,7 @@ void MedievalParser::parseDataFile()
                 }
             }
             else if (key == "prev") {
-                replacement_struct.plural_replacements = QVector<QString>(rep_obj[key].toVariant().toStringList());
+                replacement_struct.prev_words = QVector<QString>(rep_obj[key].toVariant().toStringList());
                 for (QString word : replacement_struct.words) {
                     word_vector.append(word);
                 }
@@ -146,7 +146,6 @@ MatchResult MedievalParser::wordMatches(WordReplacement *rep, ReplacementCheck *
 
     // if it has prewords make sure the preword matches first
     if (rep->prev_words.count() > 0) {
-
         if (check->prev_word.length() <= 0 || !word_vector.contains(check->prev_word, Qt::CaseInsensitive) || !rep->prev_words.contains(check->prev_word, Qt::CaseInsensitive)) {
             return MATCHES_NOT;
         }
