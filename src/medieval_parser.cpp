@@ -322,7 +322,7 @@ bool MedievalParser::performReplacement(QString rep_str, ReplacementCheck *check
         // Check to see if the previous word should be modified
         QChar fc = rep_str[0].toLower();
         // moderately cursed c_str comparison. +1 to len is for the null terminator
-        if (!_strnicmp(check->prev_word.toStdString().c_str(), "an", qMax(check->prev_word.length() + 1, 2))) {
+        if (!qstrnicmp(check->prev_word.toStdString().c_str(), "an", qMax(check->prev_word.length() + 1, 2))) {
             if (fc != 'a' && fc != 'e' && fc != 'i' && fc != 'o' && fc != 'u') {
                 // Remove the trailing n
                 stored_word.chop(2);
