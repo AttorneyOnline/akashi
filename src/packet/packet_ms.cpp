@@ -150,7 +150,7 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
         l_incoming_msg = l_gimp_message;
     }
 
-    if (client.m_is_medieval || true) {
+    if (client.m_is_medieval || area->isMedievalMode()) {
         QString l_medieval_message = client.getServer()->getMedievalParser()->degrootify(l_incoming_msg);
         l_incoming_msg = l_medieval_message;
     }
