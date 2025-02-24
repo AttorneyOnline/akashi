@@ -54,7 +54,6 @@ class MedievalParser
     bool replaceWord(ReplacementCheck *check, QString *rep, bool symbols, bool word_list_only);
     bool performReplacement(QString rep_str, ReplacementCheck *check, QString stored_word, QString *out_text);
 
-    QMap<QString, QString> *datafile_map;
     QVector<WordReplacement> word_replacements;
 
     QVector<QString> word_vector;
@@ -62,8 +61,7 @@ class MedievalParser
     QVector<QString> prepended_words;
     QVector<QString> appended_words;
 
-    QVector<QString> current_list;
-    int current_replacement;
+    bool datafile_valid;
 
     int randomInt(int min, int max);
 };

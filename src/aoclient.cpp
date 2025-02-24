@@ -152,7 +152,7 @@ const QMap<QString, AOClient::CommandInfo> AOClient::COMMANDS{
     {"play_ambience", {{ACLRole::NONE}, 1, &AOClient::cmdPlayAmbience}},
     {"medieval", {{ACLRole::MUTE}, 1, &AOClient::cmdMedieval}},
     {"unmedieval", {{ACLRole::MUTE}, 1, &AOClient::cmdUnMedieval}},
-    {"medievalmode", {{ACLRole::MUTE}, 1, &AOClient::cmdMedievalMode}},
+    {"medievalmode", {{ACLRole::MUTE}, 0, &AOClient::cmdMedievalMode}},
 };
 
 void AOClient::clientDisconnected()

@@ -321,7 +321,7 @@ bool AreaData::isShoutAllowed() const
 
 bool AreaData::isMedievalMode() const
 {
-    return m_can_use_shouts;
+    return m_medieval_mode;
 }
 
 void AreaData::startMessageFloodguard(int f_duration)

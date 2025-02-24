@@ -21,7 +21,9 @@ MedievalParser::MedievalParser()
 
 QString MedievalParser::degrootify(QString message)
 {
-
+    if (!datafile_valid) {
+        return message;
+    }
     bool do_pends = true;
     QString final_text = message;
 
@@ -35,6 +37,8 @@ QString MedievalParser::degrootify(QString message)
 
 void MedievalParser::parseDataFile()
 {
+    datafile_valid = true;
+
     QFile l_datafile_json("config/text/autorp.json");
     l_datafile_json.open(QIODevice::ReadOnly | QIODevice::Text);
 
@@ -42,6 +46,8 @@ void MedievalParser::parseDataFile()
     const QJsonDocument &l_datafile_list_json = QJsonDocument::fromJson(l_datafile_json.readAll(), &l_error);
     if (!(l_error.error == QJsonParseError::NoError)) { // Non-Terminating error.
         qWarning() << "Unable to load Medieval Mode data file. The following error occurred: " + l_error.errorString();
+        datafile_valid = false;
+        return;
     }
 
     // Prepended words
@@ -50,10 +56,20 @@ void MedievalParser::parseDataFile()
         prepended_words.append(word);
     }
 
+    if (prepended_words.isEmpty()) {
+        datafile_valid = false;
+        return;
+    }
+
     // Appended words
     const QJsonObject &l_Json_append_object = l_datafile_list_json["appended_words"].toObject();
     for (const QString &word : l_Json_append_object.keys()) {
         appended_words.append(word);
+    }
+
+    if (appended_words.isEmpty()) {
+        datafile_valid = false;
+        return;
     }
 
     // Replaced words
@@ -79,24 +95,28 @@ void MedievalParser::parseDataFile()
             }
             else if (key == "word") {
                 replacement_struct.words = QVector<QString>(rep_obj[key].toVariant().toStringList());
-                for (QString word : replacement_struct.words) {
+                for (const QString &word : replacement_struct.words) {
                     word_vector.append(word);
                 }
             }
             else if (key == "word_plural") {
                 replacement_struct.plurals = QVector<QString>(rep_obj[key].toVariant().toStringList());
-                for (QString word : replacement_struct.words) {
+                for (const QString &word : replacement_struct.words) {
                     word_vector.append(word);
                 }
             }
             else if (key == "prev") {
                 replacement_struct.prev_words = QVector<QString>(rep_obj[key].toVariant().toStringList());
-                for (QString word : replacement_struct.words) {
+                for (const QString &word : replacement_struct.words) {
                     word_vector.append(word);
                 }
             }
         }
         word_replacements.append(replacement_struct);
+    }
+    if (word_replacements.isEmpty()) {
+        datafile_valid = false;
+        return;
     }
 }
 
