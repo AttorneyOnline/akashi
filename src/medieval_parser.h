@@ -5,7 +5,8 @@
 #include <QObject>
 #include <QString>
 ///
-/// \brief Medieval text parser, reimplemented from tf_autorp in the Source 1 SDK 2013
+/// Medieval text parser, reimplemented from tf_autorp in the Source 1 SDK 2013
+/// Please do not report bugs found in this parser without confirming they do not also exist in TF2
 ///
 
 enum MatchResult

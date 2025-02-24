@@ -1052,6 +1052,15 @@ class AOClient : public QObject
      */
     void cmdWebfiles(int argc, QStringList argv);
 
+    /**
+     * @brief Toggles Medieval Mode for the current area.
+     *
+     * @details No arguments.
+     *
+     * @iscommand
+     */
+    void cmdMedievalMode(int argc, QStringList argv);
+
     ///@}
 
     /**

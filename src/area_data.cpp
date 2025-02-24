@@ -319,6 +319,11 @@ bool AreaData::isShoutAllowed() const
     return m_can_use_shouts;
 }
 
+bool AreaData::isMedievalMode() const
+{
+    return m_can_use_shouts;
+}
+
 void AreaData::startMessageFloodguard(int f_duration)
 {
     m_can_send_ic_messages = false;
@@ -645,6 +650,11 @@ void AreaData::toggleWtceAllowed()
 void AreaData::toggleShoutAllowed()
 {
     m_can_use_shouts = !m_can_use_shouts;
+}
+
+void AreaData::toggleMedievalMode()
+{
+    m_medieval_mode = !m_medieval_mode;
 }
 
 QString AreaData::addJukeboxSong(QString f_song)

@@ -149,7 +149,11 @@ const QMap<QString, AOClient::CommandInfo> AOClient::COMMANDS{
     {"toggle_shouts", {{ACLRole::CM}, 0, &AOClient::cmdToggleShouts}},
     {"kick_other", {{ACLRole::NONE}, 0, &AOClient::cmdKickOther}},
     {"jukebox_skip", {{ACLRole::CM}, 0, &AOClient::cmdJukeboxSkip}},
-    {"play_ambience", {{ACLRole::NONE}, 1, &AOClient::cmdPlayAmbience}}};
+    {"play_ambience", {{ACLRole::NONE}, 1, &AOClient::cmdPlayAmbience}},
+    {"medieval", {{ACLRole::MUTE}, 1, &AOClient::cmdMedieval}},
+    {"unmedieval", {{ACLRole::MUTE}, 1, &AOClient::cmdUnMedieval}},
+    {"medievalmode", {{ACLRole::MUTE}, 1, &AOClient::cmdMedievalMode}},
+};
 
 void AOClient::clientDisconnected()
 {
