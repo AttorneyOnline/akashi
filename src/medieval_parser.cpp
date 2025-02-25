@@ -17,8 +17,12 @@ inline int MedievalParser::randomInt(int min, int max)
 inline bool MedievalParser::containsCaseInsensitive(const QVector<QString> &vector, const QString &str)
 {
 #if QT_VERSION_MAJOR == 5
-    return std::any_of(vector.constBegin(), vector.constEnd(),
-                       [&str](const QString &element) { return element.toLower().contains(str.toLower()); });
+    for (const QString &s : vector) {
+        if (s.compare(str, Qt::CaseInsensitive) == 0) {
+            return true;
+        }
+    }
+    return false;
 #else
     return vector.contains(str, Qt::CaseInsensitive);
 #endif
