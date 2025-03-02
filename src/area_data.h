@@ -905,22 +905,27 @@ class AreaData : public QObject
     void toggleAreaMessageJoin();
 
     /**
-     * @brief Toggles wether the jukebox is enabled or not.
+     * @brief Toggles whether the jukebox is enabled or not.
      */
     void toggleJukebox();
 
     /**
-     * @brief Toggles wether testimony animations can be used in the area.
+     * @brief Toggles whether testimony animations can be used in the area.
      */
     void toggleWtceAllowed();
 
     /**
-     * @brief Toggles wether shouts can be used in the area.
+     * @brief Toggles whether shouts can be used in the area.
      */
     void toggleShoutAllowed();
 
     /**
-     * @brief Adds a song to the Jukeboxs queue.
+     * @brief Toggles Medieval Mode.
+     */
+    void toggleMedievalMode();
+
+    /**
+     * @brief Adds a song to the Jukebox's queue.
      */
     QString addJukeboxSong(QString f_song);
 
@@ -949,6 +954,13 @@ class AreaData : public QObject
      * @return True if permitted, false otherwise.
      */
     bool isShoutAllowed() const;
+
+    /**
+     * @brief Returns whether the area is in Medieval Mode.
+     *
+     * @return True if yes, false otherwise.
+     */
+    bool isMedievalMode() const;
 
     /**
      * @brief Starts a timer that determines whether a game message may be broadcasted or not.
@@ -1257,6 +1269,11 @@ class AreaData : public QObject
      * @brief If false, shouts are stripped from all messages in the area.
      */
     bool m_can_use_shouts = true;
+
+    /**
+     * @brief If true, all clients in the area are subject to Medieval Mode.
+     */
+    bool m_medieval_mode = false;
 
   private slots:
     /**

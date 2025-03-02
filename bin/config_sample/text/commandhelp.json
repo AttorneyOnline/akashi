@@ -868,23 +868,49 @@
    },
    {
       "names": [
-         "kick_other"
+         "kick_other",
+		 "kickother"
       ],
       "usage":"/kick_other",
       "text":"Removes all multiclients of the user from the server."
    },
    {
       "names": [
-         "jukebox_skip"
+         "jukebox_skip",
+		 "jukeboxskip"
       ],
       "usage":"/jukebox_skip",
       "text":"Skips the current song in the Jukebox and plays the next available one."
    },
    {
       "names": [
-         "play_ambience"
+         "play_ambience",
+		 "playambience",
+		 "playa"
       ],
-      "usage":"/play_ambience",
+      "usage":"/play_ambience <Track>",
       "text":"Plays the requested track in the ambience channel."
+   },
+   {
+      "names": [
+         "medievalmode",
+		 "medieval_mode"
+      ],
+      "usage":"/medievalmode",
+      "text":"Toggles Medieval Mode for the current area."
+   },
+   {
+      "names": [
+         "medieval"
+      ],
+      "usage":"/medieval <ID>",
+      "text":"Causes the target client to have its messages run through a Ye Olde English chat filter."
+   },
+   {
+      "names": [
+         "unmedieval"
+      ],
+      "usage":"/unmedieval <ID>",
+      "text":"Allows Ye Olde client to speak normally. The user needs to be in Medieval Mode to be un-Medieval'd. Takes the client id as the only argument."
    }
 ]

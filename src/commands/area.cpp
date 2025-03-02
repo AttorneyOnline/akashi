@@ -475,6 +475,9 @@ void AOClient::cmdClearAreaMessage(int argc, QStringList argv)
 
 void AOClient::cmdWebfiles(int argc, QStringList argv)
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
     const QVector<AOClient *> l_clients = server->getClients();
     QStringList l_weblinks;
     for (AOClient *l_client : l_clients) {
@@ -487,4 +490,15 @@ void AOClient::cmdWebfiles(int argc, QStringList argv)
         }
     }
     sendServerMessage("Character files:\n" + l_weblinks.join("\n"));
+}
+
+void AOClient::cmdMedievalMode(int argc, QStringList argv)
+{
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+
+    AreaData *l_area = server->getAreaById(areaId());
+    l_area->toggleMedievalMode();
+    QString l_state = l_area->isMedievalMode() ? "enabled." : "disabled.";
+    sendServerMessageArea("Hear ye, hear ye! Medieval Mode is now " + l_state);
 }

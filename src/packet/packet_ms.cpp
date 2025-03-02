@@ -150,6 +150,11 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
         l_incoming_msg = l_gimp_message;
     }
 
+    if (client.m_is_medieval || area->isMedievalMode()) {
+        QString l_medieval_message = client.getServer()->getMedievalParser()->degrootify(l_incoming_msg);
+        l_incoming_msg = l_medieval_message;
+    }
+
     if (client.m_is_shaken) {
         QStringList l_parts = l_incoming_msg.split(" ");
 
@@ -161,7 +166,7 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
     }
 
     if (client.m_is_disemvoweled) {
-        QString l_disemvoweled_message = l_incoming_msg.remove(QRegularExpression("[AEIOUaeiou]"));
+        QString l_disemvoweled_message = l_incoming_msg.remove(QRegularExpression("[AEIOUaeiou]")); // john madden
         l_incoming_msg = l_disemvoweled_message;
     }
 
