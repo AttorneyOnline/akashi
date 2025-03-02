@@ -16,6 +16,7 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
 
+#include <QJsonDocument>
 #include <algorithm>
 
 #include "area_data.h"
@@ -364,14 +365,14 @@ void AreaData::toggleImmediate()
     m_forceImmediate = !m_forceImmediate;
 }
 
-const QStringList &AreaData::lastICMessage() const
+const ms2::OldMSFlatData &AreaData::lastICMessage() const
 {
     return m_lastICMessage;
 }
 
 void AreaData::updateLastICMessage(const QStringList &f_lastMessage_r)
 {
-    m_lastICMessage = f_lastMessage_r;
+    ms2::OldMSFlatData::fromJson(QJsonDocument::fromJson(f_lastMessage_r.at(0).toUtf8()).object(), m_lastICMessage);
 }
 
 QStringList AreaData::judgelog() const
@@ -393,18 +394,18 @@ int AreaData::statement() const
     return m_statement;
 }
 
-void AreaData::recordStatement(const QStringList &f_newStatement_r)
+void AreaData::recordStatement(const ms2::OldMSFlatData &f_newStatement_r)
 {
     ++m_statement;
     m_testimony.append(f_newStatement_r);
 }
 
-void AreaData::addStatement(int f_position, const QStringList &f_newStatement_r)
+void AreaData::addStatement(int f_position, const ms2::OldMSFlatData &f_newStatement_r)
 {
     m_testimony.insert(f_position, f_newStatement_r);
 }
 
-void AreaData::replaceStatement(int f_position, const QStringList &f_newStatement_r)
+void AreaData::replaceStatement(int f_position, const ms2::OldMSFlatData &f_newStatement_r)
 {
     m_testimony.replace(f_position, f_newStatement_r);
 }
@@ -415,7 +416,7 @@ void AreaData::removeStatement(int f_position)
     --m_statement;
 }
 
-QPair<QStringList, AreaData::TestimonyProgress> AreaData::jumpToStatement(int f_position)
+QPair<ms2::OldMSFlatData, AreaData::TestimonyProgress> AreaData::jumpToStatement(int f_position)
 {
     m_statement = f_position;
 
@@ -432,7 +433,7 @@ QPair<QStringList, AreaData::TestimonyProgress> AreaData::jumpToStatement(int f_
     }
 }
 
-const QVector<QStringList> &AreaData::testimony() const
+const QVector<ms2::OldMSFlatData> &AreaData::testimony() const
 {
     return m_testimony;
 }

@@ -27,6 +27,7 @@
 #include <QTimer>
 
 #include "network/aopacket.h"
+#include "packet/data/msdata.h"
 
 class ConfigManager;
 class Logger;
@@ -771,7 +772,7 @@ class AreaData : public QObject
      *
      * @note Unlike most other getters, this one returns a reference, as it is expected to be used frequently.
      */
-    const QVector<QStringList> &testimony() const;
+    const QVector<ms2::OldMSFlatData> &testimony() const;
 
     /**
      * @brief Returns the index of the currently examined statement in the testimony.
@@ -785,7 +786,7 @@ class AreaData : public QObject
      *
      * @param f_newStatement_r The IC message packet to append to the testimony vector.
      */
-    void recordStatement(const QStringList &f_newStatement_r);
+    void recordStatement(const ms2::OldMSFlatData &f_newStatement_r);
 
     /**
      * @brief Adds a statement into the testimony to a given position.
@@ -793,7 +794,7 @@ class AreaData : public QObject
      * @param f_position The index to insert the statement to.
      * @param f_newStatement_r The IC message packet to insert.
      */
-    void addStatement(int f_position, const QStringList &f_newStatement_r);
+    void addStatement(int f_position, const ms2::OldMSFlatData &f_newStatement_r);
 
     /**
      * @brief Replaces an already existing statement in the testimony in a given position with a new one.
@@ -801,7 +802,7 @@ class AreaData : public QObject
      * @param f_position The index of the statement to replace.
      * @param f_newStatement_r The IC message packet to insert in the old one's stead.
      */
-    void replaceStatement(int f_position, const QStringList &f_newStatement_r);
+    void replaceStatement(int f_position, const ms2::OldMSFlatData &f_newStatement_r);
 
     /**
      * @brief Removes a statement from the testimony at a given position, and moves the statement index one backward.
@@ -821,10 +822,10 @@ class AreaData : public QObject
      * @param f_position The index to jump to.
      *
      * @return A pair of values:
-     * * First, a `QStringList` that is the packet of the statement that was advanced to.
+     * * First, a `ms2::OldMSFlatData` that is the packet of the statement that was advanced to.
      * * Then, a `TestimonyProgress` value that describes how the advancement happened.
      */
-    QPair<QStringList, AreaData::TestimonyProgress> jumpToStatement(int f_position);
+    QPair<ms2::OldMSFlatData, AreaData::TestimonyProgress> jumpToStatement(int f_position);
 
     /**
      * @brief Returns a copy of the judgelog in the area.
@@ -850,7 +851,7 @@ class AreaData : public QObject
      *
      * @return See short description.
      */
-    const QStringList &lastICMessage() const;
+    const ms2::OldMSFlatData &lastICMessage() const;
 
     /**
      * @brief Updates the last IC message sent in the area.
@@ -1171,8 +1172,8 @@ class AreaData : public QObject
      */
     TestimonyRecording m_testimonyRecording;
 
-    QVector<QStringList> m_testimony; //!< Vector of all statements saved. Index 0 is always the title of the testimony.
-    int m_statement;                  //!< Keeps track of the currently played statement.
+    QVector<ms2::OldMSFlatData> m_testimony; //!< Vector of all statements saved. Index 0 is always the title of the testimony.
+    int m_statement;                         //!< Keeps track of the currently played statement.
 
     /**
      * @brief The judgelog of an area.
@@ -1184,7 +1185,7 @@ class AreaData : public QObject
     /**
      * @brief The last IC packet sent in an area.
      */
-    QStringList m_lastICMessage;
+    ms2::OldMSFlatData m_lastICMessage;
 
     /**
      * @brief Whether or not to force immediate text processing in this area.

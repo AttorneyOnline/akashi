@@ -135,7 +135,7 @@ void AOClient::cmdExamine(int argc, QStringList argv)
         else {
             l_area->restartTestimony();
             server->broadcast(PacketFactory::createPacket("RT", {"testimony2", "0"}), areaId());
-            server->broadcast(PacketFactory::createPacket("MS", {l_area->testimony()[0]}), areaId());
+            server->broadcast(PacketFactory::createPacket("MS", {QJsonDocument{l_area->testimony()[0].toJson()}.toJson()}), areaId());
             return;
         }
     }
@@ -157,9 +157,8 @@ void AOClient::cmdTestimony(int argc, QStringList argv)
 
     QString l_ooc_message;
     for (int i = 1; i <= l_area->testimony().size() - 1; i++) {
-        QStringList l_packet = l_area->testimony().at(i);
-        QString l_ic_message = l_packet[4];
-        l_ooc_message.append("[" + QString::number(i) + "]" + l_ic_message + "\n");
+        auto l_statement = l_area->testimony().at(i);
+        l_ooc_message.append("[" + QString::number(i) + "]" + l_statement.m_message_text + "\n");
     }
     sendServerMessage(l_ooc_message);
 }
@@ -246,7 +245,7 @@ void AOClient::cmdSaveTestimony(int argc, QStringList argv)
         QTextStream l_out(&l_file);
         if (l_file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
             for (int i = 0; i <= l_area->testimony().size() - 1; i++) {
-                l_out << l_area->testimony().at(i).join("#") << "\n";
+                l_out << QJsonDocument{l_area->testimony().at(i).toJson()}.toJson(QJsonDocument::Compact) << "\n";
             }
             sendServerMessage("Testimony saved. To load it use /loadtestimony " + l_testimony_name);
             m_testimony_saving = false;
@@ -286,9 +285,14 @@ void AOClient::cmdLoadTestimony(int argc, QStringList argv)
     while (!l_in.atEnd()) {
         if (l_testimony_lines <= ConfigManager::maxStatements()) {
             QString line = l_in.readLine();
-            QStringList packet = line.split("#");
-            l_area->addStatement(l_area->testimony().size(), packet);
-            l_testimony_lines = l_testimony_lines + 1;
+            auto json = QJsonDocument::fromJson(line.toUtf8());
+            ms2::OldMSFlatData loadedMessage;
+            bool loaded = ms2::OldMSFlatData::fromJson(json.object(), loadedMessage);
+
+            if (loaded) {
+                l_area->addStatement(l_area->testimony().size(), loadedMessage);
+                l_testimony_lines = l_testimony_lines + 1;
+            }
         }
         else {
             sendServerMessage("Testimony too large to be loaded.");
