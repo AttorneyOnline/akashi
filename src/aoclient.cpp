@@ -199,6 +199,9 @@ void AOClient::handlePacket(AOPacket *packet)
         if (m_is_afk)
             sendServerMessage("You are no longer AFK.");
         m_is_afk = false;
+        if (characterName().endsWith(" [AFK]")) {
+            setCharacterName(characterName().remove(" [AFK]"));
+        }
         m_afk_timer->start(ConfigManager::afkTimeout() * 1000);
     }
 
@@ -503,8 +506,10 @@ QString AOClient::name() const { return m_ooc_name; }
 
 void AOClient::setName(const QString &f_name)
 {
-    m_ooc_name = f_name;
-    Q_EMIT nameChanged(m_ooc_name);
+    if (f_name != m_ooc_name) {
+        m_ooc_name = f_name;
+        Q_EMIT nameChanged(m_ooc_name);
+    }
 }
 
 int AOClient::areaId() const
@@ -514,8 +519,10 @@ int AOClient::areaId() const
 
 void AOClient::setAreaId(const int f_area_id)
 {
-    m_current_area = f_area_id;
-    Q_EMIT areaIdChanged(m_current_area);
+    if (f_area_id != m_current_area) {
+        m_current_area = f_area_id;
+        Q_EMIT areaIdChanged(m_current_area);
+    }
 }
 
 QString AOClient::character() const
@@ -525,16 +532,20 @@ QString AOClient::character() const
 
 void AOClient::setCharacter(const QString &f_character)
 {
-    m_current_char = f_character;
-    Q_EMIT characterChanged(m_current_char);
+    if (f_character != m_current_char) {
+        m_current_char = f_character;
+        Q_EMIT characterChanged(m_current_char);
+    }
 }
 
 QString AOClient::characterName() const { return m_showname; }
 
 void AOClient::setCharacterName(const QString &f_showname)
 {
-    m_showname = f_showname;
-    Q_EMIT characterNameChanged(m_showname);
+    if (f_showname != m_showname) {
+        m_showname = f_showname;
+        Q_EMIT characterNameChanged(m_showname);
+    }
 }
 
 void AOClient::setSpectator(bool f_spectator)
@@ -549,8 +560,10 @@ bool AOClient::isSpectator() const
 
 void AOClient::onAfkTimeout()
 {
-    if (!m_is_afk)
+    if (!m_is_afk) {
         sendServerMessage("You are now AFK.");
+        setCharacterName(characterName() + " [AFK]");
+    }
     m_is_afk = true;
 }
 

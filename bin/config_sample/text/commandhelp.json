@@ -31,6 +31,13 @@
    },
    {
       "names": [
+         "area"
+      ],
+      "usage":"/area <id>",
+      "test":"Moves the caller to the area with the given ID."
+   },
+   {
+      "names": [
          "ban"
       ],
       "usage":"/ban <IPID> <Duration> <Reason>",
