@@ -360,6 +360,60 @@ void AOClient::cmdUnShake(int argc, QStringList argv)
     l_target->m_is_shaken = false;
 }
 
+void AOClient::cmdMedieval(int argc, QStringList argv)
+{
+    Q_UNUSED(argc);
+
+    bool conv_ok = false;
+    int l_uid = argv[0].toInt(&conv_ok);
+    if (!conv_ok) {
+        sendServerMessage("Invalid user ID.");
+        return;
+    }
+
+    AOClient *l_target = server->getClientByID(l_uid);
+
+    if (l_target == nullptr) {
+        sendServerMessage("No client with that ID found.");
+        return;
+    }
+
+    if (l_target->m_is_medieval)
+        sendServerMessage("That player is already speaking Ye Olde English!");
+    else {
+        sendServerMessage("It is done, sire.");
+        l_target->sendServerMessage("Forsooth! Thine speech will henceforth be Ye Olde!");
+    }
+    l_target->m_is_medieval = true;
+}
+
+void AOClient::cmdUnMedieval(int argc, QStringList argv)
+{
+    Q_UNUSED(argc);
+
+    bool conv_ok = false;
+    int l_uid = argv[0].toInt(&conv_ok);
+    if (!conv_ok) {
+        sendServerMessage("Invalid user ID.");
+        return;
+    }
+
+    AOClient *l_target = server->getClientByID(l_uid);
+
+    if (l_target == nullptr) {
+        sendServerMessage("No client with that ID found.");
+        return;
+    }
+
+    if (!(l_target->m_is_medieval))
+        sendServerMessage("That player is not shaken!");
+    else {
+        sendServerMessage("Un-medieval'd player.");
+        l_target->sendServerMessage("Hark! Thine speech hast been returneth to normal.");
+    }
+    l_target->m_is_medieval = false;
+}
+
 void AOClient::cmdMutePM(int argc, QStringList argv)
 {
     Q_UNUSED(argc);

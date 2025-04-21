@@ -29,6 +29,7 @@
 #include <QWebSocket>
 #include <QWebSocketServer>
 
+#include "medieval_parser.h"
 #include "network/aopacket.h"
 #include "playerstateobserver.h"
 
@@ -295,6 +296,11 @@ class Server : public QObject
     DBManager *getDatabaseManager();
 
     /**
+     * @brief Returns a pointer to the server's Ye Olde Chat Filter
+     */
+    MedievalParser *getMedievalParser();
+
+    /**
      * @brief Returns a pointer to ACL role handler.
      */
     ACLRolesHandler *getACLRolesHandler();
@@ -510,6 +516,11 @@ class Server : public QObject
      * @brief The database manager on the server, used to store users' bans and authorisation details.
      */
     DBManager *db_manager;
+
+    /**
+     * @brief Medieval mode text parser class
+     */
+    MedievalParser *medieval_parser;
 
     /**
      * @see ACLRolesHandler
