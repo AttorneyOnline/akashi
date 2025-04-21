@@ -447,6 +447,7 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
             auto l_statement = area->jumpToStatement(jump_idx);
             l_args = l_statement.first;
             l_progress = l_statement.second;
+            client.m_pos = l_args[5];
 
             client.sendServerMessageArea(client_name + " jumped to statement number " + QString::number(jump_idx) + ".");
 
