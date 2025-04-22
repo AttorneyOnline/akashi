@@ -60,51 +60,6 @@ jobs:
           name: akashi-linux
           path: bin/
   
-  # coverage:
-  #   runs-on: ubuntu-latest
-
-  #   steps:
-  #      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-  #     - uses: actions/checkout@v2
-      
-  #     - name: Install dependencies
-  #       uses: awalsh128/cache-apt-pkgs-action@latest
-  #       with:
-  #         packages: qt5-qmake libqt5websockets5-dev g++ make
-  #         version: 1.0
-          
-  #     # Runs a set of commands using the runners shell
-  #     - name: qmake and build
-  #       run: |
-  #         cd $GITHUB_WORKSPACE
-  #         qmake CONFIG+=coverage project-akashi.pro
-  #         make
-          
-  #     - name: Run tests
-  #       run: |
-  #           cd ${{github.workspace}}/bin_tests/
-  #           for test in ./unittest_*; do
-  #             LD_LIBRARY_PATH=../bin:$LD_LIBRARY_PATH ./$test
-  #           done;
-
-  #     - name: Copy coverage files
-  #       run: |
-  #         mkdir coverage
-  #         cd ${{github.workspace}}
-  #         gcov *.o
-  #         cp *.gcov ../coverage/
-
-  #     - name: Codecov
-  #       uses: codecov/codecov-action@v3.1.0
-  #       with:
-  #         files: coverage/*
-
-  #     - name: Upload coverage files
-  #       uses: actions/upload-artifact@v2
-  #       with:
-  #         name: coverage statistics
-  #         path: coverage/
-
   build-windows:
     needs: formatting-check
     runs-on: windows-latest
@@ -113,17 +68,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ilammy/msvc-dev-cmd@v1
       
-      - name: Cache Qt
-        id: cache-qt
-        uses: actions/cache@v4
-        with:
-          path: ../Qt
-          key: ${{ runner.os }}-QtCache
-
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
-        with:
-          cached: ${{ steps.cache-qt.outputs.cache-hit }}
      
       - name: Build
         run: |
@@ -132,14 +78,6 @@ jobs:
           nmake
           windeployqt bin\akashi.exe --release --no-opengl-sw
           mv bin\config_sample bin\config
-
-# As QTest seems to be non-functional on Windows runners this is commented out. If a solution is found, please fix and uncomment - 27.06.2022 / Salanto         
-#      - name: Run tests
-#        run: |
-#            windeployqt .\unittest_music_manager.exe --no-translations
-#            $tests = Get-ChildItem -Filter "unittest_*.exe" -Path ".\" | Select -ExpandProperty Name
-#            foreach ($test in $tests) {Write-Host(& ".\$test")}
-#        working-directory: ${{ github.workspace }}/bin_tests
 
       - name: Deploy OpenSSL
         run: |
