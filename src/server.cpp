@@ -38,6 +38,7 @@ Server::Server(int p_ws_port, QObject *parent) :
     timer = new QTimer(this);
 
     db_manager = new DBManager;
+    medieval_parser = new MedievalParser;
 
     acl_roles_handler = new ACLRolesHandler(this);
     acl_roles_handler->loadFile("config/acl_roles.ini");
@@ -201,7 +202,7 @@ void Server::clientConnected()
     }
 
     m_clients.append(client);
-    connect(l_socket, &NetworkSocket::clientDisconnected, this, [=] {
+    connect(l_socket, &NetworkSocket::clientDisconnected, this, [=, this] {
         if (client->hasJoined()) {
             decreasePlayerCount();
         }
@@ -467,6 +468,11 @@ QStringList Server::getBackgrounds()
 DBManager *Server::getDatabaseManager()
 {
     return db_manager;
+}
+
+MedievalParser *Server::getMedievalParser()
+{
+    return medieval_parser;
 }
 
 ACLRolesHandler *Server::getACLRolesHandler()

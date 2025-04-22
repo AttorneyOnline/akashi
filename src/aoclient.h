@@ -273,6 +273,11 @@ class AOClient : public QObject
     bool m_is_gimped = false;
 
     /**
+     * @brief If true, the client's in-character messages will be run through a chat parser to make them into Ye Olde English.
+     */
+    bool m_is_medieval = false;
+
+    /**
      * @brief If true, the client will be marked as AFK in /getarea. Automatically applied when a configurable
      * amount of time has passed since the last interaction, or manually applied by /afk.
      */
@@ -1047,6 +1052,15 @@ class AOClient : public QObject
      */
     void cmdWebfiles(int argc, QStringList argv);
 
+    /**
+     * @brief Toggles Medieval Mode for the current area.
+     *
+     * @details No arguments.
+     *
+     * @iscommand
+     */
+    void cmdMedievalMode(int argc, QStringList argv);
+
     ///@}
 
     /**
@@ -1652,6 +1666,24 @@ class AOClient : public QObject
      * @iscommand
      */
     void cmdUnShake(int argc, QStringList argv);
+
+    /**
+     * @brief Runs all messages from ye target client through a chat parser to cause them to speak Ye Olde English.
+     *
+     * @details The only argument is **the target's ID** whom the client wants to shake.
+     *
+     * @iscommand
+     */
+    void cmdMedieval(int argc, QStringList argv);
+
+    /**
+     * @brief Allows ye olde client to speaketh normally.
+     *
+     * @details The only argument is **the target's ID** whom the client wants to unmedieval.
+     *
+     * @iscommand
+     */
+    void cmdUnMedieval(int argc, QStringList argv);
 
     /**
      * @brief Toggles whether a client will recieve @ref cmdPM private messages or not.
