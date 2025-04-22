@@ -1399,6 +1399,15 @@ class AOClient : public QObject
     void cmdRoll(int argc, QStringList argv);
 
     /**
+     * @brief Rolls custom dice and sends the results.
+     *
+     * @details The first argument is which dice to roll.
+     *
+     * @copydetails AOClient::cmdRollA
+     */
+    void cmdRollA(int argc, QStringList argv);
+
+    /**
      * @brief Rolls dice, but sends the results in private to the roller.
      *
      * @copydetails AOClient::cmdRoll
