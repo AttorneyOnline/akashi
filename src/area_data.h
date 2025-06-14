@@ -455,6 +455,13 @@ class AreaData : public QObject
     void replaceEvidence(int f_eviId, const Evidence &f_newEvi_r);
 
     /**
+     * @brief Changes the owner of evidence to "all" when it's presented.
+     *
+     * @param f_eviId The ID of the evidence to change owner for.
+     */
+    void setEvidenceOwnerToAll(int f_eviId);
+
+    /**
      * @brief Returns the status of the area.
      *
      * @return See short description.
