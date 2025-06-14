@@ -239,6 +239,17 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
     int evi_idx = l_incoming_args[11].toInt();
     if (evi_idx > area->evidence().length())
         return l_invalid;
+
+    // If evidence is being presented (evi_idx > 0) and area is in HIDDEN_CM mode,
+    // change evidence owner to "all"
+    if (evi_idx > 0 && area->eviMod() == AreaData::EvidenceMod::HIDDEN_CM) {
+        // evi_idx in protocol starts from 1, but array indices start from 0
+        int evidence_array_idx = evi_idx - 1;
+        area->setEvidenceOwnerToAll(evidence_array_idx);
+        // Update evidence list for all clients in the area
+        client.sendEvidenceList(area);
+    }
+
     l_args.append(QString::number(evi_idx));
 
     // flipping
