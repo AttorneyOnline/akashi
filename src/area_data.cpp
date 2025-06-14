@@ -291,7 +291,7 @@ void AreaData::setEvidenceOwnerToAll(int f_eviId)
     QString description = evidence.description;
 
     // Search for owner tag in description
-    QRegularExpression ownerRegex("<owner=(.*?)>");
+    static const QRegularExpression ownerRegex("<owner=(.*?)>");
     QRegularExpressionMatch match = ownerRegex.match(description);
 
     if (match.hasMatch()) {

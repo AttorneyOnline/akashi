@@ -28,7 +28,7 @@ void PacketPE::handlePacket(AreaData *area, AOClient &client) const
     // Automatically add <owner=all> for evidence in HIDDEN_CM mode areas
     if (area->eviMod() == AreaData::EvidenceMod::HIDDEN_CM) {
         // Check if owner tag already exists in description
-        QRegularExpression ownerRegex("<owner=(.*?)>");
+        static const QRegularExpression ownerRegex("<owner=(.*?)>");
         if (!ownerRegex.match(description).hasMatch()) {
             // Add <owner=all> at the beginning if no owner tag exists
             description = "<owner=all>\n" + description;
