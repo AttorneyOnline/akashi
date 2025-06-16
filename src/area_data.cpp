@@ -741,3 +741,71 @@ void AreaData::allowMessage()
 {
     m_can_send_ic_messages = true;
 }
+
+int AreaData::getEvidenceIndexByVisibleIndex(int f_visibleIndex, const QString &f_clientPos, bool f_isCM) const
+{
+    if (f_visibleIndex <= 0) {
+        return -1;
+    }
+
+    int visibleCount = 0;
+    for (int i = 0; i < m_evidence.size(); ++i) {
+        const Evidence &evidence = m_evidence[i];
+
+        // Apply the same filtering logic as in updateEvidenceList
+        if (!f_isCM && m_eviMod == EvidenceMod::HIDDEN_CM) {
+            static const QRegularExpression ownerRegex("<owner=(.*?)>");
+            QRegularExpressionMatch match = ownerRegex.match(evidence.description);
+            if (match.hasMatch()) {
+                QStringList owners = match.captured(1).split(",");
+                if (!owners.contains("all", Qt::CaseSensitivity::CaseInsensitive) &&
+                    !owners.contains(f_clientPos, Qt::CaseSensitivity::CaseInsensitive)) {
+                    continue; // This evidence is not visible to the client
+                }
+            }
+            // no match = show it to all
+        }
+
+        // This evidence is visible, increment counter
+        ++visibleCount;
+        if (visibleCount == f_visibleIndex) {
+            return i; // Return the real index
+        }
+    }
+
+    return -1; // Not found
+}
+
+int AreaData::getVisibleIndexByEvidenceIndex(int f_evidenceIndex, const QString &f_clientPos, bool f_isCM) const
+{
+    if (f_evidenceIndex < 0 || f_evidenceIndex >= m_evidence.size()) {
+        return 0; // Invalid index or not visible
+    }
+
+    int visibleCount = 0;
+    for (int i = 0; i < m_evidence.size(); ++i) {
+        const Evidence &evidence = m_evidence[i];
+
+        // Apply the same filtering logic as in updateEvidenceList
+        if (!f_isCM && m_eviMod == EvidenceMod::HIDDEN_CM) {
+            static const QRegularExpression ownerRegex("<owner=(.*?)>");
+            QRegularExpressionMatch match = ownerRegex.match(evidence.description);
+            if (match.hasMatch()) {
+                QStringList owners = match.captured(1).split(",");
+                if (!owners.contains("all", Qt::CaseSensitivity::CaseInsensitive) &&
+                    !owners.contains(f_clientPos, Qt::CaseSensitivity::CaseInsensitive)) {
+                    continue; // This evidence is not visible to the client
+                }
+            }
+            // no match = show it to all
+        }
+
+        // This evidence is visible, increment counter
+        ++visibleCount;
+        if (i == f_evidenceIndex) {
+            return visibleCount; // Return the visible index (1-based)
+        }
+    }
+
+    return 0; // Evidence not visible to this client
+}
