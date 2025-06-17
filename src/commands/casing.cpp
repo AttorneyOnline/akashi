@@ -59,7 +59,7 @@ void AOClient::cmdEvidenceMod(int argc, QStringList argv)
         l_area->setEviMod(AreaData::EvidenceMod::CM);
     else if (argv[0] == "mod")
         l_area->setEviMod(AreaData::EvidenceMod::MOD);
-    else if (argv[0] == "hiddencm")
+    else if (argv[0] == "hidden_cm" || argv[0] == "hiddencm")
         l_area->setEviMod(AreaData::EvidenceMod::HIDDEN_CM);
     else if (argv[0] == "ffa")
         l_area->setEviMod(AreaData::EvidenceMod::FFA);

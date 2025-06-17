@@ -121,7 +121,8 @@ class AreaData : public QObject
         FFA,
         MOD,
         CM,
-        HIDDEN_CM
+        HIDDEN_CM,
+        HIDDENCM = HIDDEN_CM // Alias for backward compatibility
     };
     Q_ENUM(EvidenceMod)
 
