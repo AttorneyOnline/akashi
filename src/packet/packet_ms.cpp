@@ -38,7 +38,45 @@ void PacketMS::handlePacket(AreaData *area, AOClient &client) const
     if (client.m_pos != "")
         validated_packet->setContentField(5, client.m_pos);
 
-    client.getServer()->broadcast(validated_packet, client.areaId());
+    // Check if evidence was presented and we need to handle HIDDEN_CM mode
+    int evi_idx = m_content[11].toInt();
+    int real_evidence_idx = -1;
+    bool evidence_presented = false;
+
+    if (evi_idx > 0 && area->eviMod() == AreaData::EvidenceMod::HIDDEN_CM) {
+        // Find the real evidence index
+        real_evidence_idx = area->getEvidenceIndexByVisibleIndex(evi_idx, client.m_pos, client.checkPermission(ACLRole::CM));
+        if (real_evidence_idx >= 0) {
+            area->setEvidenceOwnerToAll(real_evidence_idx);
+            // Update evidence list for all clients in the area
+            client.sendEvidenceList(area);
+            evidence_presented = true;
+        }
+    }
+
+    if (evidence_presented) {
+        // Send individual packets to each client with correct evidence indices
+        const QVector<AOClient *> l_clients = client.getServer()->getClients();
+        for (AOClient *l_client : l_clients) {
+            if (l_client->areaId() == client.areaId()) {
+                // Create a copy of the packet content
+                QStringList packet_content = validated_packet->getContent();
+
+                // Convert the real evidence index to visible index for this client
+                int visible_idx = area->getVisibleIndexByEvidenceIndex(real_evidence_idx, l_client->m_pos, l_client->checkPermission(ACLRole::CM));
+                packet_content[11] = QString::number(visible_idx);
+
+                // Send the customized packet to this client
+                AOPacket *custom_packet = PacketFactory::createPacket("MS", packet_content);
+                l_client->sendPacket(custom_packet);
+            }
+        }
+    }
+    else {
+        // Normal broadcast for non-evidence messages or non-HIDDEN_CM areas
+        client.getServer()->broadcast(validated_packet, client.areaId());
+    }
+
     emit client.logIC((client.character() + " " + client.characterName()), client.name(), client.m_ipid, client.getServer()->getAreaById(client.areaId())->name(), client.m_last_message);
     area->updateLastICMessage(validated_packet->getContent());
 
@@ -239,6 +277,7 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
     int evi_idx = l_incoming_args[11].toInt();
     if (evi_idx > area->evidence().length())
         return l_invalid;
+
     l_args.append(QString::number(evi_idx));
 
     // flipping

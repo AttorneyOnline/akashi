@@ -23,6 +23,8 @@
 #include "music_manager.h"
 #include "packet/packet_factory.h"
 
+#include <QRegularExpression>
+
 AreaData::AreaData(QString p_name, int p_index, MusicManager *p_music_manager = nullptr) :
     m_index(p_index),
     m_music_manager(p_music_manager),
@@ -277,6 +279,31 @@ void AreaData::deleteEvidence(int f_eviId)
 void AreaData::replaceEvidence(int f_eviId, const AreaData::Evidence &f_newEvi_r)
 {
     m_evidence.replace(f_eviId, f_newEvi_r);
+}
+
+void AreaData::setEvidenceOwnerToAll(int f_eviId)
+{
+    if (f_eviId < 0 || f_eviId >= m_evidence.size()) {
+        return;
+    }
+
+    Evidence &evidence = m_evidence[f_eviId];
+    QString description = evidence.description;
+
+    // Search for owner tag in description
+    static const QRegularExpression ownerRegex("<owner=(.*?)>");
+    QRegularExpressionMatch match = ownerRegex.match(description);
+
+    if (match.hasMatch()) {
+        // Replace existing owner tag with <owner=all>
+        description.replace(ownerRegex, "<owner=all>");
+    }
+    else {
+        // If no owner tag exists, add <owner=all> at the beginning
+        description = "<owner=all>\n" + description;
+    }
+
+    evidence.description = description;
 }
 
 AreaData::Status AreaData::status() const
@@ -713,4 +740,72 @@ void AreaData::switchJukeboxSong()
 void AreaData::allowMessage()
 {
     m_can_send_ic_messages = true;
+}
+
+int AreaData::getEvidenceIndexByVisibleIndex(int f_visibleIndex, const QString &f_clientPos, bool f_isCM) const
+{
+    if (f_visibleIndex <= 0) {
+        return -1;
+    }
+
+    int visibleCount = 0;
+    for (int i = 0; i < m_evidence.size(); ++i) {
+        const Evidence &evidence = m_evidence[i];
+
+        // Apply the same filtering logic as in updateEvidenceList
+        if (!f_isCM && m_eviMod == EvidenceMod::HIDDEN_CM) {
+            static const QRegularExpression ownerRegex("<owner=(.*?)>");
+            QRegularExpressionMatch match = ownerRegex.match(evidence.description);
+            if (match.hasMatch()) {
+                QStringList owners = match.captured(1).split(",");
+                if (!owners.contains("all", Qt::CaseSensitivity::CaseInsensitive) &&
+                    !owners.contains(f_clientPos, Qt::CaseSensitivity::CaseInsensitive)) {
+                    continue; // This evidence is not visible to the client
+                }
+            }
+            // no match = show it to all
+        }
+
+        // This evidence is visible, increment counter
+        ++visibleCount;
+        if (visibleCount == f_visibleIndex) {
+            return i; // Return the real index
+        }
+    }
+
+    return -1; // Not found
+}
+
+int AreaData::getVisibleIndexByEvidenceIndex(int f_evidenceIndex, const QString &f_clientPos, bool f_isCM) const
+{
+    if (f_evidenceIndex < 0 || f_evidenceIndex >= m_evidence.size()) {
+        return 0; // Invalid index or not visible
+    }
+
+    int visibleCount = 0;
+    for (int i = 0; i < m_evidence.size(); ++i) {
+        const Evidence &evidence = m_evidence[i];
+
+        // Apply the same filtering logic as in updateEvidenceList
+        if (!f_isCM && m_eviMod == EvidenceMod::HIDDEN_CM) {
+            static const QRegularExpression ownerRegex("<owner=(.*?)>");
+            QRegularExpressionMatch match = ownerRegex.match(evidence.description);
+            if (match.hasMatch()) {
+                QStringList owners = match.captured(1).split(",");
+                if (!owners.contains("all", Qt::CaseSensitivity::CaseInsensitive) &&
+                    !owners.contains(f_clientPos, Qt::CaseSensitivity::CaseInsensitive)) {
+                    continue; // This evidence is not visible to the client
+                }
+            }
+            // no match = show it to all
+        }
+
+        // This evidence is visible, increment counter
+        ++visibleCount;
+        if (i == f_evidenceIndex) {
+            return visibleCount; // Return the visible index (1-based)
+        }
+    }
+
+    return 0; // Evidence not visible to this client
 }

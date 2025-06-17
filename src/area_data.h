@@ -455,6 +455,33 @@ class AreaData : public QObject
     void replaceEvidence(int f_eviId, const Evidence &f_newEvi_r);
 
     /**
+     * @brief Changes the owner of evidence to "all" when it's presented.
+     *
+     * @param f_eviId The ID of the evidence to change owner for.
+     */
+    void setEvidenceOwnerToAll(int f_eviId);
+
+    /**
+     * @brief Gets the real evidence index by visible index for a specific client position.
+     *
+     * @param f_visibleIndex The visible index (1-based) of evidence as seen by the client.
+     * @param f_clientPos The position of the client (for owner filtering).
+     * @param f_isCM Whether the client is a Case Manager.
+     * @return The real index in the evidence array, or -1 if not found.
+     */
+    int getEvidenceIndexByVisibleIndex(int f_visibleIndex, const QString &f_clientPos, bool f_isCM) const;
+
+    /**
+     * @brief Gets the visible index by real evidence index for a specific client position.
+     *
+     * @param f_evidenceIndex The real index (0-based) in the evidence array.
+     * @param f_clientPos The position of the client (for owner filtering).
+     * @param f_isCM Whether the client is a Case Manager.
+     * @return The visible index (1-based) as seen by the client, or 0 if not visible.
+     */
+    int getVisibleIndexByEvidenceIndex(int f_evidenceIndex, const QString &f_clientPos, bool f_isCM) const;
+
+    /**
      * @brief Returns the status of the area.
      *
      * @return See short description.
