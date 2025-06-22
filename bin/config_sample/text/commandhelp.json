@@ -347,7 +347,7 @@
          "evidence_mod"
       ],
       "usage":"/evidence_mod <EvidenceMod>",
-      "text":"Changes the evidence mod in the area."
+      "text":"Changes the evidence mod in the area. Available values: ffa (anyone can modify), mod (only mods), cm (case makers and mods), hidden_cm/hiddencm (case makers and mods with ownership system)."
    },
    {
       "names": [
