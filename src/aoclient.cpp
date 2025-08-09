@@ -175,6 +175,10 @@ void AOClient::clientDisconnected()
 
     const QVector<AreaData *> l_areas = server->getAreas();
     for (AreaData *l_area : l_areas) {
+        if (l_area->invited().contains(m_id)) {
+            l_area->uninvite(m_id);
+        }
+
         l_updateLocks = l_updateLocks || l_area->removeOwner(clientId());
     }
 
