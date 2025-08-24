@@ -193,6 +193,35 @@ void AOClient::handlePacket(AOPacket *packet)
 #ifdef NET_DEBUG
     qDebug() << "Received packet:" << packet->getPacketInfo().header << ":" << packet->getContent() << "args length:" << packet->getContent().length();
 #endif
+
+    // Rate limiting logic
+    QString l_ipid = getIpid();
+    qint64 current_time = QDateTime::currentMSecsSinceEpoch() / 1000;
+
+    if (!packet_time.contains(l_ipid)) {
+        packet_time.insert(l_ipid, current_time);
+        packet_count.insert(l_ipid, 1);
+    }
+    else {
+        if (packet_time.value(l_ipid) == current_time) {
+            packet_count[l_ipid]++;
+            if (packet_count.value(l_ipid) > 20) {
+                // Drop connection
+                m_socket->close();
+                return;
+            }
+            else if (packet_count.value(l_ipid) > 10) {
+                // Send server message and continue
+                sendServerMessage("You are sending packets too fast. Please slow down.");
+            }
+        }
+        else {
+            // New second, reset counters
+            packet_time[l_ipid] = current_time;
+            packet_count[l_ipid] = 1;
+        }
+    }
+
     AreaData *l_area = server->getAreaById(areaId());
 
     if (packet->getContent().join("").size() > 16384) {
@@ -593,6 +622,9 @@ AOClient::AOClient(
     m_afk_timer = new QTimer;
     m_afk_timer->setSingleShot(true);
     connect(m_afk_timer, &QTimer::timeout, this, &AOClient::onAfkTimeout);
+
+    packet_time = QHash<QString, qint64>();
+    packet_count = QHash<QString, int>();
 }
 
 AOClient::~AOClient()
