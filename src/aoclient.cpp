@@ -197,22 +197,25 @@ void AOClient::handlePacket(AOPacket *packet)
     // Rate limiting logic
     QString l_ipid = getIpid();
     qint64 current_time = QDateTime::currentMSecsSinceEpoch() / 1000;
-    
+
     if (!packet_time.contains(l_ipid)) {
         packet_time.insert(l_ipid, current_time);
         packet_count.insert(l_ipid, 1);
-    } else {
+    }
+    else {
         if (packet_time.value(l_ipid) == current_time) {
             packet_count[l_ipid]++;
             if (packet_count.value(l_ipid) > 20) {
                 // Drop connection
                 m_socket->close();
                 return;
-            } else if (packet_count.value(l_ipid) > 10) {
+            }
+            else if (packet_count.value(l_ipid) > 10) {
                 // Send server message and continue
                 sendServerMessage("You are sending packets too fast. Please slow down.");
             }
-        } else {
+        }
+        else {
             // New second, reset counters
             packet_time[l_ipid] = current_time;
             packet_count[l_ipid] = 1;
