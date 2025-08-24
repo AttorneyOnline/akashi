@@ -2161,6 +2161,20 @@ class AOClient : public QObject
      */
     int last_read = 0;
 
+    /**
+     * @brief A map to keep track of how many packets a client has sent in the current second.
+     *
+     * @details Used for rate limiting.
+     */
+    static QHash<QString, int> packet_count;
+
+    /**
+     * @brief A map to keep track of when the last second started for a client.
+     *
+     * @details Used for rate limiting.
+     */
+    static QHash<QString, qint64> packet_time;
+
   signals:
 
     /**
