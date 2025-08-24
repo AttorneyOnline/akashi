@@ -33,9 +33,14 @@ void PacketMC::handlePacket(AreaData *area, AOClient &client) const
         // We have a song here
 
         if (client.m_is_spectator) {
-            client.sendServerMessage("Spectator are blocked from changing the music.");
+            client.sendServerMessage("Spectators are blocked from changing the music.");
             return;
         }
+
+	if (area->lockStatus() == AreaData::LockStatus::SPECTATABLE && !area->invited().contains(client.clientId()) && !client.checkPermission(ACLRole::BYPASS_LOCKS)) {
+            client.sendServerMessage("Spectators are blocked from changing the music.");
+            return;
+	}
 
         if (client.m_is_dj_blocked) {
             client.sendServerMessage("You are blocked from changing the music.");
