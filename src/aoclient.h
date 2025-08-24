@@ -2166,14 +2166,14 @@ class AOClient : public QObject
      *
      * @details Used for rate limiting.
      */
-    static QHash<QString, int> packet_count;
+    QHash<QString, int> packet_count;
 
     /**
      * @brief A map to keep track of when the last second started for a client.
      *
      * @details Used for rate limiting.
      */
-    static QHash<QString, qint64> packet_time;
+    QHash<QString, qint64> packet_time;
 
   signals:
 

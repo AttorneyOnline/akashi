@@ -619,6 +619,9 @@ AOClient::AOClient(
     m_afk_timer = new QTimer;
     m_afk_timer->setSingleShot(true);
     connect(m_afk_timer, &QTimer::timeout, this, &AOClient::onAfkTimeout);
+
+    packet_time = QHash<QString, qint64>();
+    packet_count = QHash<QString, int>();
 }
 
 AOClient::~AOClient()
