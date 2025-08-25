@@ -162,8 +162,7 @@ void AOClient::clientDisconnected()
     qDebug() << m_remote_ip.toString() << "disconnected";
 #endif
     if (m_joined) {
-        server->getAreaById(areaId())
-            ->removeClient(server->getCharID(character()), clientId());
+        server->getAreaById(areaId())->removeClient(server->getCharID(character()), clientId());
         arup(ARUPType::PLAYER_COUNT, true);
     }
 
@@ -182,8 +181,9 @@ void AOClient::clientDisconnected()
         l_updateLocks = l_updateLocks || l_area->removeOwner(clientId());
     }
 
-    if (l_updateLocks)
+    if (l_updateLocks) {
         arup(ARUPType::LOCKED, true);
+    }
     arup(ARUPType::CM, true);
     emit clientSuccessfullyDisconnected(clientId());
 }
@@ -194,32 +194,23 @@ void AOClient::handlePacket(AOPacket *packet)
     qDebug() << "Received packet:" << packet->getPacketInfo().header << ":" << packet->getContent() << "args length:" << packet->getContent().length();
 #endif
 
-    // Rate limiting logic
-    QString l_ipid = getIpid();
-    qint64 current_time = QDateTime::currentMSecsSinceEpoch() / 1000;
-
-    if (!packet_time.contains(l_ipid)) {
-        packet_time.insert(l_ipid, current_time);
-        packet_count.insert(l_ipid, 1);
+    qint64 current_tick = QDateTime::currentSecsSinceEpoch();
+    if (rate_limit_tick < current_tick) {
+        rate_limit_tick = current_tick;
+        packet_count = 0;
     }
-    else {
-        if (packet_time.value(l_ipid) == current_time) {
-            packet_count[l_ipid]++;
-            if (packet_count.value(l_ipid) > 20) {
-                // Drop connection
-                m_socket->close();
-                return;
-            }
-            else if (packet_count.value(l_ipid) > 10) {
-                // Send server message and continue
-                sendServerMessage("You are sending packets too fast. Please slow down.");
-            }
-        }
-        else {
-            // New second, reset counters
-            packet_time[l_ipid] = current_time;
-            packet_count[l_ipid] = 1;
-        }
+
+    ++packet_count;
+    int hard_limit = ConfigManager::packetRateLimitHard();
+    int soft_limit = ConfigManager::packetRateLimitSoft();
+
+    if (hard_limit > 0 && packet_count >= hard_limit) {
+        sendPacket("BD", {"You have been disconnected for sending messages too quickly."});
+        m_socket->close();
+        return;
+    }
+    else if (soft_limit > 0 && packet_count >= soft_limit) {
+        sendServerMessage("You are sending messages too quickly. Please slow down.");
     }
 
     AreaData *l_area = server->getAreaById(areaId());
@@ -233,8 +224,9 @@ void AOClient::handlePacket(AOPacket *packet)
     }
 
     if (packet->getPacketInfo().header != "CH" && m_joined) {
-        if (m_is_afk)
+        if (m_is_afk) {
             sendServerMessage("You are no longer AFK.");
+        }
         m_is_afk = false;
         if (characterName().endsWith(" [AFK]")) {
             setCharacterName(characterName().remove(" [AFK]"));
@@ -264,14 +256,12 @@ void AOClient::changeArea(int new_area)
     }
 
     if (character() != "") {
-        server->getAreaById(areaId())
-            ->changeCharacter(server->getCharID(character()), -1);
+        server->getAreaById(areaId())->changeCharacter(server->getCharID(character()), -1);
         server->updateCharsTaken(server->getAreaById(areaId()));
     }
     server->getAreaById(areaId())->removeClient(m_char_id, clientId());
     bool l_character_taken = false;
-    if (server->getAreaById(new_area)->charactersTaken().contains(
-            server->getCharID(character()))) {
+    if (server->getAreaById(new_area)->charactersTaken().contains(server->getCharID(character()))) {
         setCharacter("");
         m_char_id = -1;
         l_character_taken = true;
@@ -298,26 +288,28 @@ void AOClient::changeArea(int new_area)
         }
     }
     sendServerMessage("You moved to area " + server->getAreaName(areaId()));
-    if (server->getAreaById(areaId())->sendAreaMessageOnJoin())
+    if (server->getAreaById(areaId())->sendAreaMessageOnJoin()) {
         sendServerMessage(server->getAreaById(areaId())->areaMessage());
+    }
 
-    if (server->getAreaById(areaId())->lockStatus() == AreaData::LockStatus::SPECTATABLE)
+    if (server->getAreaById(areaId())->lockStatus() == AreaData::LockStatus::SPECTATABLE) {
         sendServerMessage("Area " + server->getAreaName(areaId()) + " is spectate-only; to chat IC you will need to be invited by the CM.");
+    }
 }
 
 bool AOClient::changeCharacter(int char_id)
 {
     AreaData *l_area = server->getAreaById(areaId());
 
-    if (char_id >= server->getCharacterCount())
+    if (char_id >= server->getCharacterCount()) {
         return false;
+    }
 
     if (m_is_charcursed && !m_charcurse_list.contains(char_id)) {
         return false;
     }
 
-    bool l_successfulChange = l_area->changeCharacter(server->getCharID(character()),
-                                                      char_id);
+    bool l_successfulChange = l_area->changeCharacter(server->getCharID(character()), char_id);
 
     if (char_id < 0) {
         setCharacter("");
@@ -405,8 +397,9 @@ void AOClient::arup(ARUPType type, bool broadcast)
         }
         case ARUPType::CM:
         {
-            if (l_area->owners().isEmpty())
+            if (l_area->owners().isEmpty()) {
                 l_arup_data.append("FREE");
+            }
             else {
                 QStringList l_area_owners;
                 const QList<int> l_owner_ids = l_area->owners();
@@ -430,10 +423,12 @@ void AOClient::arup(ARUPType type, bool broadcast)
         }
         }
     }
-    if (broadcast)
+    if (broadcast) {
         server->broadcast(PacketFactory::createPacket("ARUP", l_arup_data));
-    else
+    }
+    else {
         sendPacket("ARUP", l_arup_data);
+    }
 }
 
 void AOClient::fullArup()
@@ -481,8 +476,7 @@ void AOClient::sendServerMessage(QString message)
 
 void AOClient::sendServerMessageArea(QString message)
 {
-    server->broadcast(PacketFactory::createPacket("CT", {ConfigManager::serverTag(), message, "1"}),
-                      areaId());
+    server->broadcast(PacketFactory::createPacket("CT", {ConfigManager::serverTag(), message, "1"}), areaId());
 }
 
 void AOClient::sendServerBroadcast(QString message)
@@ -532,14 +526,20 @@ bool AOClient::isAuthenticated() const
     return m_authenticated;
 }
 
-Server *AOClient::getServer() { return server; }
+Server *AOClient::getServer()
+{
+    return server;
+}
 
 int AOClient::clientId() const
 {
     return m_id;
 }
 
-QString AOClient::name() const { return m_ooc_name; }
+QString AOClient::name() const
+{
+    return m_ooc_name;
+}
 
 void AOClient::setName(const QString &f_name)
 {
@@ -575,7 +575,10 @@ void AOClient::setCharacter(const QString &f_character)
     }
 }
 
-QString AOClient::characterName() const { return m_showname; }
+QString AOClient::characterName() const
+{
+    return m_showname;
+}
 
 void AOClient::setCharacterName(const QString &f_showname)
 {
@@ -604,8 +607,7 @@ void AOClient::onAfkTimeout()
     m_is_afk = true;
 }
 
-AOClient::AOClient(
-    Server *p_server, NetworkSocket *socket, QObject *parent, int user_id, MusicManager *p_manager) :
+AOClient::AOClient(Server *p_server, NetworkSocket *socket, QObject *parent, int user_id, MusicManager *p_manager) :
     QObject(parent),
     m_remote_ip(socket->peerAddress()),
     m_password(""),
@@ -617,14 +619,12 @@ AOClient::AOClient(
     m_current_area(0),
     m_current_char(""),
     server(p_server),
-    is_partial(false)
+    rate_limit_tick(0),
+    packet_count(0)
 {
     m_afk_timer = new QTimer;
     m_afk_timer->setSingleShot(true);
     connect(m_afk_timer, &QTimer::timeout, this, &AOClient::onAfkTimeout);
-
-    packet_time = QHash<QString, qint64>();
-    packet_count = QHash<QString, int>();
 }
 
 AOClient::~AOClient()

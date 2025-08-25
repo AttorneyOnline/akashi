@@ -2141,39 +2141,14 @@ class AOClient : public QObject
     bool change_auth_started = false;
 
     /**
-     * @brief Filled with part of a packet if said packet could not be read fully from the client's socket.
-     *
-     * @details Per AO2's network protocol, a packet is finished with the character `%`.
-     *
-     * @see #is_partial
+     * @brief Timestamp (in seconds since Epoch) of the current tick.
      */
-    QString partial_packet;
+    qint64 rate_limit_tick;
 
     /**
-     * @brief True when the previous `readAll()` call from the client's socket returned an unfinished packet.
-     *
-     * @see #partial_packet
+     * @brief Number of packets received for the current tick.
      */
-    bool is_partial;
-
-    /**
-     * @brief The size, in bytes, of the last data the client sent to the server.
-     */
-    int last_read = 0;
-
-    /**
-     * @brief A map to keep track of how many packets a client has sent in the current second.
-     *
-     * @details Used for rate limiting.
-     */
-    QHash<QString, int> packet_count;
-
-    /**
-     * @brief A map to keep track of when the last second started for a client.
-     *
-     * @details Used for rate limiting.
-     */
-    QHash<QString, qint64> packet_time;
+    int packet_count;
 
   signals:
 
