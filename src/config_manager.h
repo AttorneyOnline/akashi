@@ -54,388 +54,288 @@ class ConfigManager
 
     /**
      * @brief Returns the IP the server binds to.
-     *
-     * @return See short description
      */
     static QString bindIP();
 
     /**
-     * @brief Returns the character list of the server.
-     *
-     * @return See short description.
+     * @brief Returns the character list of the server..
      */
     static QStringList charlist();
 
     /**
-     * @brief Returns the a QStringList of the available backgrounds.
-     *
-     * @return See short description.
+     * @brief Returns the a QStringList of the available backgrounds..
      */
     static QStringList backgrounds();
 
     /**
-     * @brief Returns a QStringlist of the available songs.
-     *
-     * @return See short description.
+     * @brief Returns a QStringlist of the available songs..
      */
     static MusicList musiclist();
 
     /**
-     * @brief Returns an ordered QList of all basesongs of this server.
-     *
-     * @return See short description.
+     * @brief Returns an ordered QList of all basesongs of this server..
      */
     static QStringList ordered_songs();
 
     /**
-     * @brief Loads help information into m_help_information.
-     *
-     * @return See short description.
+     * @brief Loads help information into m_help_information..
      */
     static void loadCommandHelp();
 
     /**
-     * @brief Returns a pointer to the QSettings object which contains the area configuration.
-     *
-     * @return See short description.
+     * @brief Returns a pointer to the QSettings object which contains the area configuration..
      */
     static QSettings *areaData();
 
     /**
-     * @brief Returns a pointer to the QSettings object which contains the ambience configuration.
-     *
-     * @return See short description.
+     * @brief Returns a pointer to the QSettings object which contains the ambience configuration..
      */
     static QSettings *ambience();
 
     /**
-     * @brief Returns a sanitized QStringList of the areas.
-     *
-     * @return See short description.
+     * @brief Returns a sanitized QStringList of the areas..
      */
     static QStringList sanitizedAreaNames();
 
     /**
-     * @brief Returns the raw arealist
-     *
-     * @return See short description.
+     * @brief Returns the raw arealist.
      */
     static QStringList rawAreaNames();
 
     /**
-     * @brief Returns a list of the IPrange bans.
-     *
-     * @return See short description.
+     * @brief Returns a list of the IPrange bans..
      */
     static QStringList iprangeBans();
 
     /**
-     * @brief Returns the maximum number of players the server will allow.
-     *
-     * @return See short description.
+     * @brief Returns the maximum number of players the server will allow..
      */
     static int maxPlayers();
 
     /**
-     * @brief Returns the port to listen for connections on.
-     *
-     * @return See short description.
+     * @brief Returns the port to listen for connections on..
      */
     static int serverPort();
 
     /**
-     * @brief Returns the SSL port to listen for connections on.
-     *
-     * @return See short description.
+     * @brief Returns the SSL port to listen for connections on..
      */
     static int securePort();
 
     /**
-     * @brief Returns the server description.
-     *
-     * @return See short description.
+     * @brief Returns the server description..
      */
     static QString serverDescription();
 
     /**
-     * @brief Returns the server name.
-     *
-     * @return See short description.
+     * @brief Returns the server name..
      */
     static QString serverName();
 
     /**
-     * @brief Returns the short "tag" version of the server.
-     *
-     * @return See short description.
+     * @brief Returns the short "tag" version of the server..
      */
     static QString serverTag();
 
     /**
-     * @brief Returns the server's Message of the Day.
-     *
-     * @return See short description.
+     * @brief Returns the server's Message of the Day..
      */
     static QString motd();
 
     /**
-     * @brief Returns true if the server should accept webAO connections.
-     *
-     * @return See short description.
+     * @brief Returns true if the server should accept webAO connections..
      */
     static bool webaoEnabled();
 
     /**
-     * @brief Returns the server's authorization type.
-     *
-     * @return See short description.
+     * @brief Returns the server's authorization type..
      */
     static DataTypes::AuthType authType();
 
     /**
-     * @brief Returns the server's moderator password.
-     *
-     * @return See short description.
+     * @brief Returns the server's moderator password..
      */
     static QString modpass();
 
     /**
-     * @brief Returns the server's log buffer length.
-     *
-     * @return See short description.
+     * @brief Returns the server's log buffer length..
      */
     static int logBuffer();
 
     /**
-     * @brief Returns the server's logging type.
-     *
-     * @return See short description.
+     * @brief Returns the server's logging type..
      */
     static DataTypes::LogType loggingType();
 
     /**
-     * @brief Returns true if the server should advertise to the master server.
-     *
-     * @return See short description.
+     * @brief Returns true if the server should advertise to the master server..
      */
     static int maxStatements();
 
     /**
-     * @brief Returns the maximum number of permitted connections from the same IP.
-     *
-     * @return See short description.
+     * @brief Returns the maximum number of permitted connections from the same IP..
      */
     static int multiClientLimit();
 
     /**
-     * @brief Returns the maximum number of characters a message can contain.
-     *
-     * @return See short description.
+     * @brief Returns the maximum number of characters a message can contain..
      */
     static int maxCharacters();
 
     /**
-     * @brief Returns the duration of the message floodguard.
-     *
-     * @return See short description.
+     * @brief Returns the duration of the message floodguard..
      */
     static int messageFloodguard();
 
     /**
-     * @brief Returns the duration of the global message floodguard.
-     *
-     * @return See short description.
+     * @brief Returns the duration of the global message floodguard..
      */
     static int globalMessageFloodguard();
 
     /**
-     * @brief Returns the URL where the server should retrieve remote assets from.
-     *
-     * @return See short description.
+     * @brief Returns the packet count limit for the warning threshold..
+     */
+    static int packetRateLimitSoft();
+
+    /**
+     * @brief Returns the packet count limit for the disconnection threshold..
+     */
+    static int packetRateLimitHard();
+
+    /**
+     * @brief Returns the URL where the server should retrieve remote assets from..
      */
     static QUrl assetUrl();
 
     /**
-     * @brief Returns the maximum number of sides dice can have.
-     *
-     * @return See short description.
+     * @brief Returns the maximum number of sides dice can have..
      */
     static int diceMaxValue();
 
     /**
-     * @brief Returns the maximum number of dice that can be rolled at once.
-     *
-     * @return See short description.
+     * @brief Returns the maximum number of dice that can be rolled at once..
      */
     static int diceMaxDice();
 
     /**
-     * @brief Returns true if the discord webhook integration is enabled.
-     *
-     * @return See short description.
+     * @brief Returns true if the discord webhook integration is enabled..
      */
     static bool discordWebhookEnabled();
 
     /**
-     * @brief Returns true if the discord modcall webhook is enabled.
-     *
-     * @return See short description.
+     * @brief Returns true if the discord modcall webhook is enabled..
      */
     static bool discordModcallWebhookEnabled();
 
     /**
-     * @brief Returns the discord webhook URL.
-     *
-     * @return See short description.
+     * @brief Returns the discord webhook URL..
      */
     static QString discordModcallWebhookUrl();
 
     /**
-     * @brief Returns the discord webhook content.
-     *
-     * @return See short description.
+     * @brief Returns the discord webhook content..
      */
     static QString discordModcallWebhookContent();
 
     /**
-     * @brief Returns true if the discord webhook should send log files.
-     *
-     * @return See short description.
+     * @brief Returns true if the discord webhook should send log files..
      */
     static bool discordModcallWebhookSendFile();
 
     /**
-     * @brief Returns true if the discord ban webhook is enabled.
-     *
-     * @return See short description.
+     * @brief Returns true if the discord ban webhook is enabled..
      */
     static bool discordBanWebhookEnabled();
 
     /**
-     * @brief Returns the Discord Ban Webhook URL.
-     *
-     * @return See short description.
+     * @brief Returns the Discord Ban Webhook URL..
      */
     static QString discordBanWebhookUrl();
 
     /**
-     * @brief Returns a user configurable color code for the embeed object.s
-     *
-     * @return See short description.
+     * @brief Returns a user configurable color code for the embeed object.s.
      */
     static QString discordWebhookColor();
 
     /**
-     * @brief Returns true if password requirements should be enforced.
-     *
-     * @return See short description.
+     * @brief Returns true if password requirements should be enforced..
      */
     static bool passwordRequirements();
 
     /**
-     * @brief Returns the minimum length passwords must be.
-     *
-     * @return See short description.
+     * @brief Returns the minimum length passwords must be..
      */
     static int passwordMinLength();
 
     /**
-     * @brief Returns the maximum length passwords can be, or `0` for unlimited length.
-     *
-     * @return See short description.
+     * @brief Returns the maximum length passwords can be, or `0` for unlimited length..
      */
     static int passwordMaxLength();
 
     /**
-     * @brief Returns true if passwords must be mixed case.
-     *
-     * @return See short description.
+     * @brief Returns true if passwords must be mixed case..
      */
     static bool passwordRequireMixCase();
 
     /**
-     * @brief Returns true is passwords must contain one or more numbers.
-     *
-     * @return See short description.
+     * @brief Returns true is passwords must contain one or more numbers..
      */
     static bool passwordRequireNumbers();
 
     /**
-     * @brief Returns true if passwords must contain one or more special characters..
-     *
-     * @return See short description.
+     * @brief Returns true if passwords must contain one or more special characters...
      */
     static bool passwordRequireSpecialCharacters();
 
     /**
-     * @brief Returns true if passwords can contain the username.
-     *
-     * @return See short description.
+     * @brief Returns true if passwords can contain the username..
      */
     static bool passwordCanContainUsername();
 
     /**
      * @brief Returns the logstring for the specified logtype.
      *
-     * @param Name of the logstring we want.
-     *
-     * @return See short description.
+     * @param Name of the logstring we want..
      */
     static QString LogText(QString f_logtype);
 
     /**
-     * @brief Returns the duration before a client is considered AFK.
-     *
-     * @return See short description.
+     * @brief Returns the duration before a client is considered AFK..
      */
     static int afkTimeout();
 
     /**
-     * @brief Returns a list of dice faces.
-     *
-     * @return See short description.
+     * @brief Returns a list of dice faces..
      */
     static QStringList diceFaces(const QString f_name);
 
     /**
-     * @brief Returns a list of magic 8 ball answers.
-     *
-     * @return See short description.
+     * @brief Returns a list of magic 8 ball answers..
      */
     static QStringList magic8BallAnswers();
 
     /**
-     * @brief Returns a list of praises.
-     *
-     * @return See short description.
+     * @brief Returns a list of praises..
      */
     static QStringList praiseList();
 
     /**
-     * @brief Returns a list of reprimands.
-     *
-     * @return See short description.
+     * @brief Returns a list of reprimands..
      */
     static QStringList reprimandsList();
 
     /**
-     * @brief Returns the server gimp list.
-     *
-     * @return See short description.
+     * @brief Returns the server gimp list..
      */
     static QStringList gimpList();
 
     /**
-     * @brief Returns the server regex filter list
-     *
-     * @return See short description.
+     * @brief Returns the server regex filter list.
      */
     static QStringList filterList();
 
     /**
-     * @brief Returns the server approved domain list.
-     *
-     * @return See short description.
+     * @brief Returns the server approved domain list..
      */
     static QStringList cdnList();
 
@@ -472,9 +372,7 @@ class ConfigManager
     };
 
     /**
-     * @brief Returns a struct with the help information of the command.
-     *
-     * @return See short description.
+     * @brief Returns a struct with the help information of the command..
      */
     static help commandHelp(QString f_command_name);
 

@@ -106,6 +106,29 @@ bool ConfigManager::verifyServerConfig()
         qCritical("auth is not a valid auth type!");
         return false;
     }
+
+    int l_soft_limit = m_settings->value("packet_rate_limit_soft", 10).toInt(&ok);
+    if (!ok) {
+        qCritical("packet_rate_limit_soft is not a valid limit!");
+        return false;
+    }
+    if (l_soft_limit <= 0) {
+        qWarning("packet_rate_limit_soft is 0 or less, warning threshold is disabled!");
+    }
+
+    int l_hard_limit = m_settings->value("packet_rate_limit_hard", 20).toInt(&ok);
+    if (!ok) {
+        qCritical("packet_rate_limit_hard is not a valid limit!");
+        return false;
+    }
+    else if (l_soft_limit > 0 && l_hard_limit <= l_soft_limit) {
+        qCritical("packet_rate_limit_hard must be greater than packet_rate_limit_soft!");
+        return false;
+    }
+    if (l_hard_limit <= 0) {
+        qWarning("packet_rate_limit_hard is 0 or less, rate limiting is disabled!");
+    }
+
     m_settings->endGroup();
     m_commands->magic_8ball = (loadConfigFile("8ball"));
     m_commands->praises = (loadConfigFile("praise"));
@@ -456,6 +479,28 @@ int ConfigManager::globalMessageFloodguard()
         l_flood = 0;
     }
     return l_flood;
+}
+
+int ConfigManager::packetRateLimitSoft()
+{
+    bool ok;
+    int l_limit = m_settings->value("Options/packet_rate_limit_soft", 10).toInt(&ok);
+    if (!ok) {
+        qWarning("packet_rate_limit_soft is not an int!");
+        l_limit = 10;
+    }
+    return l_limit;
+}
+
+int ConfigManager::packetRateLimitHard()
+{
+    bool ok;
+    int l_limit = m_settings->value("Options/packet_rate_limit_hard", 20).toInt(&ok);
+    if (!ok) {
+        qWarning("packet_rate_limit_hard is not an int!");
+        l_limit = 20;
+    }
+    return l_limit;
 }
 
 QUrl ConfigManager::assetUrl()
