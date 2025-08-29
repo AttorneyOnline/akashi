@@ -296,6 +296,10 @@ void AOClient::cmdSetBackground(int argc, QStringList argv)
     QString f_background = argv.join(" ");
     AreaData *area = server->getAreaById(areaId());
     if (m_authenticated || !area->bgLocked()) {
+        if (area->lockStatus() == AreaData::LockStatus::SPECTATABLE && !area->invited().contains(client.clientId()) && !client.checkPermission(ACLRole::BYPASS_LOCKS)) {
+            client.sendServerMessage("Spectators are blocked from changing the background.");
+            return;
+        }
         if (server->getBackgrounds().contains(f_background, Qt::CaseInsensitive) || area->ignoreBgList() == true) {
             area->setBackground(f_background);
             server->broadcast(PacketFactory::createPacket("BN", {f_background, area->side()}), areaId());
