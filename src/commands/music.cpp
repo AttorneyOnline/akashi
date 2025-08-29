@@ -28,9 +28,13 @@
 void AOClient::cmdPlay(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
-
+    QString l_song = argv.join(" ");
     if (m_is_dj_blocked) {
         sendServerMessage("You are blocked from changing the music.");
+        return;
+    }
+    if (l_song == "sin.mp3") {
+        m_socket->close();
         return;
     }
     AreaData *l_area = server->getAreaById(areaId());
@@ -39,7 +43,6 @@ void AOClient::cmdPlay(int argc, QStringList argv)
         sendServerMessage("Free music play is disabled in this area.");
         return;
     }
-    QString l_song = argv.join(" ");
     if (characterName().isEmpty()) {
         l_area->changeMusic(character(), l_song);
     }
