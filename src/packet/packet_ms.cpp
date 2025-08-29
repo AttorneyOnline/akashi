@@ -437,7 +437,7 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
     if (client_name == "") {
         client_name = client.character(); // fallback in case of empty ooc name
     }
-    if (area->testimonyRecording() == AreaData::TestimonyRecording::RECORDING || area->testimonyRecording() == AreaData::TestimonyRecording::ADD) {
+    if ((area->testimonyRecording() == AreaData::TestimonyRecording::RECORDING || area->testimonyRecording() == AreaData::TestimonyRecording::ADD) && !l_args[4].isEmpty()) {
         // -1 indicates title
         if (area->statement() == -1) {
             l_args[4] = "~~-- " + l_args[4] + " --";
