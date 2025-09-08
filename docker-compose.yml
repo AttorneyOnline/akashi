@@ -1,0 +1,10 @@
+name: akashi-ace-attorney
+
+services:
+  akashi:
+    build:
+      dockerfile: ./Dockerfile
+    ports:
+      - 27016:27016
+    volumes:
+      - ./config:/app/config
