@@ -25,7 +25,7 @@ Requires Qt >= 5.10, and Qt websockets
 
 # Docker
 You can also run akashi in a docker container using
-`docker compuse up -d`
+`docker compose up -d`
 
 # Contributors
 ![GitHub Contributors Image](https://contrib.rocks/image?repo=AttorneyOnline/akashi)
