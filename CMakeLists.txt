@@ -129,8 +129,8 @@ if(WIN32)
     set_property(TARGET akashi PROPERTY WIN32_EXECUTABLE true)
     set(APP_ICON_RESOURCE_WINDOWS "${CMAKE_CURRENT_SOURCE_DIR}/data/icon/logo-akashi.rc")
     target_sources(akashi PRIVATE ${APP_ICON_RESOURCE_WINDOWS})
+    set_target_properties(akashi PROPERTIES LINK_FLAGS_RELEASE "/SUBSYSTEM:CONSOLE /ENTRY:mainCRTStartup")
   endif()
-  set_target_properties(akashi PROPERTIES LINK_FLAGS_RELEASE "/SUBSYSTEM:CONSOLE /ENTRY:mainCRTStartup")
 endif()
 
 set_target_properties(akashi PROPERTIES
