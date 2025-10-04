@@ -98,13 +98,6 @@ void PacketMA::handlePacket(AreaData *area, AOClient &client) const
             subclient->m_socket->close();
         }
 
-        if (ban.duration == -2) {
-            timestamp = "permanently";
-        }
-        else {
-            timestamp = QString::number(ban.time + ban.duration);
-        }
-
         Q_EMIT client.logBan(moderator_name, target->m_ipid, timestamp, reason);
 
         client.sendServerMessage("Banned " + QString::number(clients.size()) + " client(s) with ipid " + target->m_ipid + " for reason: " + reason);
