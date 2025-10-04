@@ -13,6 +13,7 @@ find_package(Qt6 REQUIRED COMPONENTS Core Network WebSockets Sql)
 
 qt_standard_project_setup()
 qt_add_executable(akashi
+  data/icon/logo-akashi.rc
   src/commands/area.cpp
   src/commands/authentication.cpp
   src/commands/casing.cpp
