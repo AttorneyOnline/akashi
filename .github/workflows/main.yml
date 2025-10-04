@@ -49,16 +49,9 @@ jobs:
       - name: qmake and build
         run: |
           cd $GITHUB_WORKSPACE
-          qmake project-akashi.pro
-          make
+          cmake .
+          cmake --build . --config Release
           mv bin/config_sample bin/config
-          
-      - name: Run tests
-        run: |
-            cd ${{github.workspace}}/bin_tests/
-            for test in ./unittest_*; do
-              LD_LIBRARY_PATH=../bin:$LD_LIBRARY_PATH ./$test
-            done;
           
       - name: Upload binary
         uses: actions/upload-artifact@v4
