@@ -13,15 +13,9 @@ For more support join the official Attorney Online 2 Discord!<br>
 
 # Build Instructions
 If you are unable to use either CI or release builds, you can compile akashi yourself.<br>
-Requires Qt >= 5.10, and Qt websockets
+Requires Qt >= 6.0, and Qt websockets. Older versions may work, but are not recommended.
 
-**Ubuntu 20.04/22.04** - Ubuntu 18.04 or older are not supported.
-```
-   sudo apt install build-essential qtbase5-dev qt5-qmake qttools5-dev qttools5-dev-tools libqt5websockets5-dev
-   git clone https://github.com/AttorneyOnline/akashi
-   cd akashi
-   qmake project-akashi.pro && make
-```
+For instructions on how to build Akashi yourself check the [Build Instructions](https://github.com/AttorneyOnline/akashi/wiki/Building-Akashi)
 
 # Docker
 You can also run akashi in a docker container using
