@@ -87,10 +87,9 @@ jobs:
       - name: Build
         run: |
           cd $Env:GITHUB_WORKSPACE
-          qmake "CONFIG += qtquickcompiler" project-akashi.pro
-          nmake
+          cmake .
+          cmake --build . --config Release
           windeployqt bin\akashi.exe --release --no-opengl-sw
-          mv bin\config_sample bin\config
           
       - name: Upload zip
         uses: actions/upload-artifact@v4
