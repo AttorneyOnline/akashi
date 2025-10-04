@@ -80,9 +80,9 @@ jobs:
       - name: Build
         run: |
           cd $Env:GITHUB_WORKSPACE
-          cmake .
+          cmake . -D CMAKE_BUILD_TYPE=Release
           cmake --build . --config Release
-          windeployqt bin\akashi.exe --release --no-opengl-sw
+          windeployqt bin\akashi.exe --release --no-translations --no-compiler-runtime --no-opengl-sw
           
       - name: Upload zip
         uses: actions/upload-artifact@v4
