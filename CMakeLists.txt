@@ -127,7 +127,7 @@ set_target_properties(akashi PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURREN
 if(WIN32)
   if(CMAKE_BUILD_TYPE STREQUAL "Release")
     set_property(TARGET akashi PROPERTY WIN32_EXECUTABLE true)
-    set(APP_ICON_RESOURCE_WINDOWS "${CMAKE_CURRENT_SOURCE_DIR}/data/logo-client.rc")
+    set(APP_ICON_RESOURCE_WINDOWS "${CMAKE_CURRENT_SOURCE_DIR}/data/icon/logo-akashi.rc")
     target_sources(akashi PRIVATE ${APP_ICON_RESOURCE_WINDOWS})
   endif()
 endif()
