@@ -85,7 +85,7 @@ jobs:
       - name: Deploy OpenSSL
         run: |
           curl https://download.firedaemon.com/FireDaemon-OpenSSL/openssl-1.1.1t.zip --output openssl-1.1.1.zip
-          tar -xf openssl-1.1.1.zip
+          7z x openssl-1.1.1.zip
           copy .\openssl-1.1\x64\bin\libcrypto-1_1-x64.dll .\bin\libcrypto-1_1-x64.dll 
           copy .\openssl-1.1\x64\bin\libssl-1_1-x64.dll .\bin\libssl-1_1-x64.dll
           
