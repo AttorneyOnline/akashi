@@ -80,15 +80,15 @@ QJsonDocument Discord::constructBanJson(const QString &f_ipid, const QString &f_
 QHttpMultiPart *Discord::constructLogMultipart(const QQueue<QString> &f_buffer) const
 {
     QHttpMultiPart *l_multipart = new QHttpMultiPart();
-    QHttpPart l_file;
-    l_file.setRawHeader(QByteArray("Content-Disposition"), QByteArray("form-data; name=\"file\"; filename=\"log.txt\""));
-    l_file.setRawHeader(QByteArray("Content-Type"), QByteArray("plain/text"));
+    QHttpPart l_logdata;
+    l_logdata.setHeader(QNetworkRequest::ContentDispositionHeader, "form-data; name=\"file\"; filename=\"log.txt\"");
+    l_logdata.setHeader(QNetworkRequest::ContentTypeHeader, "text/plain; charset=utf-8");
     QString l_log;
     for (const QString &log_entry : f_buffer) {
-        l_log.append(log_entry + "\n");
+        l_log.append(log_entry);
     }
-    l_file.setBody(l_log.toUtf8());
-    l_multipart->append(l_file);
+    l_logdata.setBody(l_log.toUtf8());
+    l_multipart->append(l_logdata);
     return l_multipart;
 }
 
