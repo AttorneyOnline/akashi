@@ -46,12 +46,11 @@ jobs:
           modules: 'qtwebsockets'
           
       # Runs a set of commands using the runners shell
-      - name: qmake and build
+      - name: Build
         run: |
           cd $GITHUB_WORKSPACE
           cmake .
           cmake --build . --config Release
-          mv bin/config_sample bin/config
           
       - name: Upload binary
         uses: actions/upload-artifact@v4
