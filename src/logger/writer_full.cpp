@@ -32,6 +32,7 @@ void WriterFull::flush(const QString f_entry)
 
     if (l_logfile.open(QIODevice::WriteOnly | QIODevice::Append)) {
         QTextStream file_stream(&l_logfile);
+        file_stream.setGenerateByteOrderMark(true);
         file_stream << f_entry;
     }
     l_logfile.close();
@@ -43,6 +44,7 @@ void WriterFull::flush(const QString f_entry, const QString f_area_name)
 
     if (l_logfile.open(QIODevice::WriteOnly | QIODevice::Append)) {
         QTextStream file_stream(&l_logfile);
+        file_stream.setGenerateByteOrderMark(true);
         file_stream << f_entry;
     }
     l_logfile.close();
