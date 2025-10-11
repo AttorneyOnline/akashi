@@ -29,7 +29,7 @@ void PacketCT::handlePacket(AreaData *area, AOClient &client) const
     }
 
     client.setName(client.dezalgo(m_content[0]).replace(QRegularExpression("\\[|\\]|\\{|\\}|\\#|\\$|\\%|\\&"), "")); // no fucky wucky shit here
-    if (client.name().isEmpty() || client.name() == ConfigManager::serverName())                                     // impersonation & empty name protection
+    if (client.name().trimmed().replace("​", "").isEmpty() || client.name() == ConfigManager::serverName())        // impersonation & empty name protection
         return;
 
     if (client.name().length() > 30) {
