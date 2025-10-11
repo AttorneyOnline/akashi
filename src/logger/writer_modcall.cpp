@@ -37,6 +37,7 @@ void WriterModcall::flush(const QString f_area_name, QQueue<QString> f_buffer)
 
     if (l_logfile.open(QIODevice::WriteOnly | QIODevice::Append)) {
         QTextStream file_stream(&l_logfile);
+        file_stream.setGenerateByteOrderMark(true);
 
         while (!f_buffer.isEmpty())
             file_stream << f_buffer.dequeue();
