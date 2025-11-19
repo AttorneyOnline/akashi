@@ -25,7 +25,7 @@
 
 const int HTTP_OK = 200;
 const int WS_REVERSE_PROXY = 80;
-const int TIMEOUT = 1000 * 60 * 5;
+const int TIMEOUT = 1000 * 60 * 4;
 
 ServerPublisher::ServerPublisher(int port, int *player_count, QObject *parent) :
     QObject(parent),
