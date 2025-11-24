@@ -1,4 +1,4 @@
-# akashi <img src="https://github.com/AttorneyOnline/akashi/blob/master/resource/icon/256.png" width=30 height=30>
+# akashi <img src="https://github.com/AttorneyOnline/akashi/blob/master/data/icon/256.png" width=30 height=30>
 A C++ server for Attorney Online 2<br><br>
 ![Code Format and Build](https://github.com/AttorneyOnline/akashi/actions/workflows/main.yml/badge.svg?event=push) [![Codecov branch](https://img.shields.io/codecov/c/gh/AttorneyOnline/akashi/master)](https://app.codecov.io/gh/AttorneyOnline/akashi) [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/AttorneyOnline/akashi/graphs/commit-activity) ![GitHub](https://img.shields.io/github/license/AttorneyOnline/akashi?color=blue)<br>
 
