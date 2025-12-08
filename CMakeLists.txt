@@ -10,6 +10,7 @@ set(CMAKE_AUTOUIC ON)
 
 find_package(Qt6 6.5 REQUIRED COMPONENTS Core Network WebSockets Sql)
 find_package(Qt6 REQUIRED COMPONENTS Core Network WebSockets Sql)
+find_package(Qt6 REQUIRED COMPONENTS Core)
 
 qt_standard_project_setup()
 qt_add_executable(akashi
@@ -111,6 +112,12 @@ qt_add_executable(akashi
   src/serverpublisher.h
   src/testimony_recorder.cpp
   src/typedefs.h
+  src/serviceregistry.h src/serviceregistry.cpp
+  src/service.h
+  src/demo/pluginmanager.h src/demo/pluginmanager.cpp
+  src/demo/iplugin.h
+  src/demo/filesystemsupervisor.h src/demo/filesystemsupervisor.cpp
+  src/services/configuration.h src/services/configuration.cpp
 )
 
 target_link_libraries(akashi PRIVATE
@@ -119,6 +126,7 @@ target_link_libraries(akashi PRIVATE
     Qt6::Network
     Qt6::WebSockets
 )
+target_link_libraries(akashi PRIVATE Qt6::Core)
 
 target_include_directories(akashi PRIVATE src src/logger src/network src/packet)
 

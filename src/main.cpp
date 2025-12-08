@@ -23,6 +23,10 @@
 #include <QCoreApplication>
 #include <QDebug>
 
+#include "demo/filesystemsupervisor.h"
+#include "demo/pluginmanager.h"
+#include <serviceregistry.h>
+
 Server *server;
 
 void cleanup()
@@ -36,6 +40,12 @@ int main(int argc, char *argv[])
     QCoreApplication::setApplicationName("akashi");
     QCoreApplication::setApplicationVersion("jackfruit (1.9)");
     std::atexit(cleanup);
+
+    ServiceRegistry *registry = new ServiceRegistry(&app);
+    new FileSystemSupervisor(registry, &app);
+    new PluginManager(registry, &app);
+
+    return 0;
 
     // Verify server configuration is sound.
     if (!ConfigManager::verifyServerConfig()) {
