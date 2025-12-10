@@ -1,0 +1,14 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+# Find required dependencies
+find_dependency(Qt6 REQUIRED COMPONENTS Core)
+
+# Include the targets files
+include("${CMAKE_CURRENT_LIST_DIR}/akashi_core-targets.cmake")
+
+# When you add network library, uncomment:
+# include("${CMAKE_CURRENT_LIST_DIR}/akashi_network-targets.cmake")
+
+check_required_components(akashi)

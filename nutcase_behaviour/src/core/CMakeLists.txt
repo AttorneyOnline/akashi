@@ -1,5 +1,5 @@
 add_library(akashi_core SHARED
-    include/packet.h
+
     include/service.h
     include/serviceregistry.h src/serviceregistry.cpp
     include/akashi_core_global.h
@@ -7,6 +7,10 @@ add_library(akashi_core SHARED
 
 add_library(akashi::Core ALIAS akashi_core)
 
+set_target_properties(akashi_core PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY $<1:$${CMAKE_SOURCE_DIR}/bin>
+        RUNTIME_OUTPUT_DIRECTORY $<1:${CMAKE_SOURCE_DIR}/bin>
+)
 
 target_compile_definitions(akashi_core PRIVATE
     AKASHI_CORE_LIBRARY
@@ -23,4 +27,22 @@ target_include_directories(akashi_core
 target_link_libraries(akashi_core
     PUBLIC
         Qt6::Core
+)
+
+install(TARGETS akashi_core
+    EXPORT akashi_core-targets
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+install(DIRECTORY include/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/core
+    FILES_MATCHING PATTERN "*.h"
+)
+
+install(EXPORT akashi_core-targets
+    FILE akashi_core-targets.cmake
+    NAMESPACE akashi::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/akashi
 )

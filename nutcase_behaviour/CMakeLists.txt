@@ -10,10 +10,6 @@ set(CMAKE_AUTOUIC ON)
 
 find_package(Qt6 REQUIRED COMPONENTS Core)
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib)
-
 add_subdirectory(src/core)
 add_subdirectory(src/network)
 
@@ -26,3 +22,27 @@ if(BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
 endif()
+
+include(CMakePackageConfigHelpers)
+include(GNUInstallDirs)
+
+# Generate the config file that includes the exports
+configure_package_config_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/akashiConfig.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/akashiConfig.cmake
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/akashi
+)
+
+# Generate version file
+write_basic_package_version_file(
+    ${CMAKE_CURRENT_BINARY_DIR}/akashiConfigVersion.cmake
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion
+)
+
+# Install config files
+install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/akashiConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/akashiConfigVersion.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/akashi
+)
