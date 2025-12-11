@@ -3,6 +3,8 @@ add_library(akashi_network SHARED
     include/packet.h    src/packet.cpp
     include/packetfactory.h
     src/packetfactory.cpp
+    include/discordhook.h
+    src/discordhook.cpp
 )
 
 add_library(akashi::Network ALIAS akashi_network)
@@ -24,8 +26,7 @@ target_include_directories(akashi_network
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
-target_link_libraries(akashi_network
-    PUBLIC
+target_link_libraries(akashi_network PUBLIC
         akashi::Core
         Qt6::Network
 )

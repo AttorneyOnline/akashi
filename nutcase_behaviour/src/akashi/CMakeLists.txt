@@ -1,6 +1,7 @@
 qt_standard_project_setup()
 qt_add_executable(akashi
     src/main.cpp
+    src/pluginmanager.h src/pluginmanager.cpp
 )
 
 target_link_libraries(akashi PRIVATE

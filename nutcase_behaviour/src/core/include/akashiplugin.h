@@ -13,6 +13,7 @@ class AKASHI_CORE_EXPORT AkashiPlugin : public QObject
     virtual ~AkashiPlugin() = default;
     virtual bool initialize(ServiceRegistry *f_registry) = 0;
     virtual void shutdown() = 0;
+    virtual QString name() = 0;
 
   protected:
     enum INITSTATUS : bool
