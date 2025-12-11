@@ -3,6 +3,7 @@ add_library(akashi_core SHARED
     include/service.h
     include/serviceregistry.h src/serviceregistry.cpp
     include/akashi_core_global.h
+    include/akashiplugin.h
 )
 
 add_library(akashi::Core ALIAS akashi_core)
@@ -34,6 +35,7 @@ install(TARGETS akashi_core
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
 install(DIRECTORY include/

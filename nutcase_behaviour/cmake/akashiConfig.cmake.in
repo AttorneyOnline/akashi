@@ -5,10 +5,33 @@ include(CMakeFindDependencyMacro)
 # Find required dependencies
 find_dependency(Qt6 REQUIRED COMPONENTS Core)
 
-# Include the targets files
+# Include all target files
 include("${CMAKE_CURRENT_LIST_DIR}/akashi_core-targets.cmake")
 
-# When you add network library, uncomment:
-# include("${CMAKE_CURRENT_LIST_DIR}/akashi_network-targets.cmake")
+if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/akashi_network-targets.cmake")
+    include("${CMAKE_CURRENT_LIST_DIR}/akashi_network-targets.cmake")
+endif()
+
+# Automatically create clean aliases: akashi::akashi_core -> akashi::Core
+# Get all targets in the akashi namespace
+get_property(_imported_targets DIRECTORY PROPERTY IMPORTED_TARGETS)
+
+foreach(_target IN LISTS _imported_targets)
+    # Match pattern: akashi::akashi_something
+    if(_target MATCHES "^akashi::akashi_(.+)$")
+        set(_component_name "${CMAKE_MATCH_1}")
+
+        # Capitalize first letter: core -> Core, network -> Network
+        string(SUBSTRING "${_component_name}" 0 1 _first)
+        string(TOUPPER "${_first}" _first_upper)
+        string(SUBSTRING "${_component_name}" 1 -1 _rest)
+        set(_alias_name "akashi::${_first_upper}${_rest}")
+
+        # Create alias if it doesn't exist
+        if(NOT TARGET ${_alias_name})
+            add_library(${_alias_name} ALIAS ${_target})
+        endif()
+    endif()
+endforeach()
 
 check_required_components(akashi)

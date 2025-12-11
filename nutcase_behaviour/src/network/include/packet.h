@@ -5,12 +5,10 @@
 #include <QStringList>
 #include <QVariantList>
 
-/**
- * @brief An Attorney Online 2 compatible packet.
- *
- * @see https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md for a general explanation
- * on Attorney Online 2's network protocol.
- */
+class PacketInfo
+{
+};
+
 class AKASHI_NETWORK_EXPORT Packet
 {
   public:

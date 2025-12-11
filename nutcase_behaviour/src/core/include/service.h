@@ -3,7 +3,11 @@
 #include <QMetaClassInfo>
 #include <QObject>
 
-class Service : public QObject
+#include "akashi_core_global.h"
+
+class ServiceRegistry;
+
+class AKASHI_CORE_EXPORT Service : public QObject
 {
     Q_OBJECT
     Q_CLASSINFO("Author", "Salanto")
@@ -11,10 +15,15 @@ class Service : public QObject
     Q_CLASSINFO("Identifier", "akashi.service");
 
   public:
-    Service(QObject *parent = nullptr) : QObject(parent) {};
+    Service(ServiceRegistry *f_registry, QObject *parent = nullptr) :
+        QObject{parent},
+        m_registry{f_registry} {};
     ~Service() = default;
 
     QString getClassValue(QString f_key) const;
+
+  protected:
+    ServiceRegistry *m_registry;
 };
 
 inline QString Service::getClassValue(QString f_key) const
