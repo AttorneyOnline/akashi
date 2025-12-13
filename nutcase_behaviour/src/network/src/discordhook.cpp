@@ -239,16 +239,10 @@ DiscordMultipartMessage &DiscordMultipartMessage::setPayloadJson(const QJsonObje
     return *this;
 }
 
-DiscordHook::DiscordHook(ServiceRegistry *registry, QObject *parent) : Service(registry, parent)
+DiscordHook::DiscordHook(QNetworkAccessManager *network_manager, ServiceRegistry *registry, QObject *parent) :
+    Service{registry, parent},
+    m_network_manager{network_manager}
 {
-}
-
-void DiscordHook::installNetworkManager(QNetworkAccessManager *network_manager)
-{
-    if (m_network_manager) {
-        qWarning() << "Replacing existing QNetworkAccessManager instance";
-    }
-    m_network_manager = network_manager;
 }
 
 void DiscordHook::post(const DiscordMessage &message)

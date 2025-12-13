@@ -7,6 +7,7 @@ qt_add_executable(akashi
 target_link_libraries(akashi PRIVATE
     Qt6::Core
     akashi::Core
+    akashi::Network
 )
 
 if(WIN32)

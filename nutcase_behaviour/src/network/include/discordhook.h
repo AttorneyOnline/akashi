@@ -109,10 +109,8 @@ class DiscordHook : public Service
     Q_CLASSINFO("Identifier", "akashi.discordhook")
 
   public:
-    DiscordHook(ServiceRegistry *registry, QObject *parent = nullptr);
+    DiscordHook(QNetworkAccessManager *network_manager, ServiceRegistry *registry, QObject *parent = nullptr);
     ~DiscordHook() = default;
-
-    void installNetworkManager(QNetworkAccessManager *network_manager);
 
     void post(const DiscordMessage &message);
     void post(const DiscordMultipartMessage &message);
