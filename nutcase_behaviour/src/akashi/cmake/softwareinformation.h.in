@@ -8,7 +8,8 @@ namespace SoftwareInfo
 {
 
 inline const QStringList SPLASH_MESSAGES = {
-    "90% cuter than competing brands."
+    "90% cuter than competing brands.",
+    "Powered by HVAC technology."
 };
 
 inline QString getRandomSplash() {
