@@ -1,4 +1,5 @@
 #include "discordhook.h"
+#include "servicewrapper.h"
 
 #include <QHttpMultiPart>
 #include <QHttpPart>
@@ -92,12 +93,12 @@ DiscordMessage &DiscordMessage::setEmbedTimestamp(const QString &timestamp)
 DiscordMessage &DiscordMessage::setEmbedFooter(const QString &text, const QString &icon_url)
 {
     if (m_building_embed) {
-        QMap<QString, QVariant> footer;
-        footer["text"] = text;
+        QMap<QString, QVariant> l_footer;
+        l_footer["text"] = text;
         if (!icon_url.isEmpty()) {
-            footer["icon_url"] = icon_url;
+            l_footer["icon_url"] = icon_url;
         }
-        m_current_embed["footer"] = QVariant::fromValue(footer);
+        m_current_embed["footer"] = QVariant::fromValue(l_footer);
     }
     return *this;
 }
@@ -105,9 +106,9 @@ DiscordMessage &DiscordMessage::setEmbedFooter(const QString &text, const QStrin
 DiscordMessage &DiscordMessage::setEmbedImage(const QString &url)
 {
     if (m_building_embed) {
-        QMap<QString, QVariant> image;
-        image["url"] = url;
-        m_current_embed["image"] = QVariant::fromValue(image);
+        QMap<QString, QVariant> l_image;
+        l_image["url"] = url;
+        m_current_embed["image"] = QVariant::fromValue(l_image);
     }
     return *this;
 }
@@ -115,9 +116,9 @@ DiscordMessage &DiscordMessage::setEmbedImage(const QString &url)
 DiscordMessage &DiscordMessage::setEmbedThumbnail(const QString &url)
 {
     if (m_building_embed) {
-        QMap<QString, QVariant> thumbnail;
-        thumbnail["url"] = url;
-        m_current_embed["thumbnail"] = QVariant::fromValue(thumbnail);
+        QMap<QString, QVariant> l_thumbnail;
+        l_thumbnail["url"] = url;
+        m_current_embed["thumbnail"] = QVariant::fromValue(l_thumbnail);
     }
     return *this;
 }
@@ -125,15 +126,15 @@ DiscordMessage &DiscordMessage::setEmbedThumbnail(const QString &url)
 DiscordMessage &DiscordMessage::setEmbedAuthor(const QString &name, const QString &url, const QString &icon_url)
 {
     if (m_building_embed) {
-        QMap<QString, QVariant> author;
-        author["name"] = name;
+        QMap<QString, QVariant> l_author;
+        l_author["name"] = name;
         if (!url.isEmpty()) {
-            author["url"] = url;
+            l_author["url"] = url;
         }
         if (!icon_url.isEmpty()) {
-            author["icon_url"] = icon_url;
+            l_author["icon_url"] = icon_url;
         }
-        m_current_embed["author"] = QVariant::fromValue(author);
+        m_current_embed["author"] = QVariant::fromValue(l_author);
     }
     return *this;
 }
@@ -141,17 +142,17 @@ DiscordMessage &DiscordMessage::setEmbedAuthor(const QString &name, const QStrin
 DiscordMessage &DiscordMessage::addEmbedField(const QString &name, const QString &value, bool inline_field)
 {
     if (m_building_embed) {
-        QMap<QString, QVariant> field;
-        field["name"] = name;
-        field["value"] = value;
-        field["inline"] = inline_field;
+        QMap<QString, QVariant> l_field;
+        l_field["name"] = name;
+        l_field["value"] = value;
+        l_field["inline"] = inline_field;
 
-        QVariantList fields;
+        QVariantList l_fields;
         if (m_current_embed.contains("fields")) {
-            fields = m_current_embed["fields"].toList();
+            l_fields = m_current_embed["fields"].toList();
         }
-        fields.append(QVariant::fromValue(field));
-        m_current_embed["fields"] = fields;
+        l_fields.append(QVariant::fromValue(l_field));
+        m_current_embed["fields"] = l_fields;
     }
     return *this;
 }
@@ -168,63 +169,63 @@ DiscordMessage &DiscordMessage::endEmbed()
 
 QJsonObject DiscordMessage::toJson() const
 {
-    QJsonObject json;
+    QJsonObject l_json;
 
     for (auto it = m_fields.begin(); it != m_fields.end(); ++it) {
         const QString &key = it.key();
         const QString &value = it.value();
 
         if (key == "tts") {
-            json[key] = (value == "true");
+            l_json[key] = (value == "true");
         }
         else {
-            json[key] = value;
+            l_json[key] = value;
         }
     }
 
     if (!m_embeds.isEmpty()) {
-        QJsonArray embeds_array;
+        QJsonArray l_embeds_array;
 
-        for (const auto &embed_map : m_embeds) {
-            QJsonObject embed_obj;
+        for (const auto &l_embed_map : m_embeds) {
+            QJsonObject l_embed_obj;
 
-            for (auto it = embed_map.begin(); it != embed_map.end(); ++it) {
-                const QString &key = it.key();
-                const QVariant &value = it.value();
+            for (auto it = l_embed_map.begin(); it != l_embed_map.end(); ++it) {
+                const QString &l_key = it.key();
+                const QVariant &l_value = it.value();
 
-                if (value.canConvert<QVariantMap>()) {
-                    QJsonObject nested_obj;
-                    QVariantMap nested_map = value.toMap();
-                    for (auto nested_it = nested_map.begin(); nested_it != nested_map.end(); ++nested_it) {
-                        nested_obj[nested_it.key()] = QJsonValue::fromVariant(nested_it.value());
+                if (l_value.canConvert<QVariantMap>()) {
+                    QJsonObject l_nested_obj;
+                    QVariantMap l_nested_map = l_value.toMap();
+                    for (auto nested_it = l_nested_map.begin(); nested_it != l_nested_map.end();
+                         ++nested_it) {
+                        l_nested_obj[nested_it.key()] = QJsonValue::fromVariant(nested_it.value());
                     }
-                    embed_obj[key] = nested_obj;
-                }
-                else if (value.canConvert<QVariantList>()) {
+                    l_embed_obj[l_key] = l_nested_obj;
+                } else if (l_value.canConvert<QVariantList>()) {
                     QJsonArray fields_array;
-                    QVariantList fields_list = value.toList();
-                    for (const auto &field_variant : fields_list) {
-                        QJsonObject field_obj;
-                        QVariantMap field_map = field_variant.toMap();
-                        for (auto field_it = field_map.begin(); field_it != field_map.end(); ++field_it) {
-                            field_obj[field_it.key()] = QJsonValue::fromVariant(field_it.value());
+                    const QVariantList l_fields_list = l_value.toList();
+                    for (const auto &l_field_variant : l_fields_list) {
+                        QJsonObject l_field_obj;
+                        QVariantMap l_field_map = l_field_variant.toMap();
+                        for (auto field_it = l_field_map.begin(); field_it != l_field_map.end();
+                             ++field_it) {
+                            l_field_obj[field_it.key()] = QJsonValue::fromVariant(field_it.value());
                         }
-                        fields_array.append(field_obj);
+                        fields_array.append(l_field_obj);
                     }
-                    embed_obj[key] = fields_array;
-                }
-                else {
-                    embed_obj[key] = QJsonValue::fromVariant(value);
+                    l_embed_obj[l_key] = fields_array;
+                } else {
+                    l_embed_obj[l_key] = QJsonValue::fromVariant(l_value);
                 }
             }
 
-            embeds_array.append(embed_obj);
+            l_embeds_array.append(l_embed_obj);
         }
 
-        json["embeds"] = embeds_array;
+        l_json["embeds"] = l_embeds_array;
     }
 
-    return json;
+    return l_json;
 }
 
 DiscordMultipartMessage &DiscordMultipartMessage::setRequestUrl(const QString &url)
@@ -239,10 +240,17 @@ DiscordMultipartMessage &DiscordMultipartMessage::setPayloadJson(const QJsonObje
     return *this;
 }
 
-DiscordHook::DiscordHook(QNetworkAccessManager *network_manager, ServiceRegistry *registry, QObject *parent) :
-    Service{registry, parent},
-    m_network_manager{network_manager}
+DiscordHook::DiscordHook(ServiceRegistry *registry, QObject *parent)
+    : Service{registry, parent}
 {
+    m_service_properties = {{"author", "Salanto"},
+                            {"version", "1.0.0"},
+                            {"identifier", "akashi.network.discordhook"}};
+
+    ServiceWrapper<QNetworkAccessManager> *l_wrapper
+        = m_registry->getService<ServiceWrapper<QNetworkAccessManager>>("qt.network.manager");
+    m_network_manager = l_wrapper->instance();
+    m_registry->registerService(this);
 }
 
 void DiscordHook::post(const DiscordMessage &message)
@@ -334,6 +342,4 @@ void DiscordHook::onDiscordResponse(QNetworkReply *reply)
         qWarning() << "Response body:" << reply->readAll();
         return;
     }
-
-    qDebug() << "Discord webhook success:" << reply->readAll();
 }

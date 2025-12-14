@@ -11,21 +11,33 @@ class QNetworkReply;
 class QTimer;
 class ServiceRegistry;
 
+struct AKASHI_NETWORK_EXPORT AkashiPublisherError
+{
+  public:
+    AkashiPublisherError(const QString &f_data);
+
+    QString title;
+    QString type;
+    QString keyword;
+    QString errorString;
+};
+
 class AKASHI_NETWORK_EXPORT ServerPublisher : public Service
 {
     Q_OBJECT
 
   public:
-    ServerPublisher(QNetworkAccessManager *f_net_man = nullptr,
-                    ServiceRegistry *f_registry = nullptr,
-                    QObject *parent = nullptr);
+      ServerPublisher(ServiceRegistry *f_registry = nullptr, QObject *parent = nullptr);
 
-    ServerPublisher &setProperty(const QString &f_key, const QVariant &f_value);
-    void removeProperty(const QString &f_key);
-    void setPublisherState(bool f_enabled);
-    void setServerListUrl(const QString &f_url);
+      ServerPublisher &setProperty(const QString &f_key, const QVariant &f_value);
+      void removeProperty(const QString &f_key);
+      void setPublisherState(bool f_enabled);
+      void setServerListUrl(const QString &f_url);
 
-  public slots:
+  Q_SIGNALS:
+    void errorOccured(AkashiPublisherError f_error);
+
+  public Q_SLOTS:
     void publishServer();
 
   private:
@@ -35,5 +47,6 @@ class AKASHI_NETWORK_EXPORT ServerPublisher : public Service
     QString m_serverlist_url;
     QVariantMap m_properties;
     QTimer *m_publishing_interval = nullptr;
-    QNetworkAccessManager *m_net_man = nullptr;
+    QNetworkAccessManager *m_network_manager = nullptr;
+    std::optional<AkashiPublisherError> m_last_error;
 };

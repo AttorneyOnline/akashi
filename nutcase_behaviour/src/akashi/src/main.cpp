@@ -1,7 +1,7 @@
 #include <QCoreApplication>
+#include <QDebug>
 
-#include "pluginmanager.h"
-#include "serviceregistry.h"
+#include "server.h"
 
 int main(int argc, char *argv[])
 {
@@ -9,9 +9,14 @@ int main(int argc, char *argv[])
     QCoreApplication::setApplicationName("akashi");
     QCoreApplication::setApplicationVersion("jackfruit (1.9)");
 
-    ServiceRegistry *registry = new ServiceRegistry(&app);
-    PluginManager *plug_man = new PluginManager(registry, &app);
-    plug_man->loadPluginsFromDirectory();
+    qDebug() << "Starting application.";
+
+    Server l_server(&app);
+    QObject::connect(&l_server,
+                     &Server::shutdownRequested,
+                     &app,
+                     &QCoreApplication::quit,
+                     Qt::QueuedConnection);
 
     return app.exec();
 }

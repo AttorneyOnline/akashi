@@ -1,4 +1,5 @@
 #include "serverpublisher.h"
+#include "servicewrapper.h"
 
 #include <QDebug>
 #include <QJsonDocument>
@@ -11,12 +12,19 @@ namespace {
 constexpr int PUBLISHING_INTERVAL_MS = 1000 * 60 * 5;
 }
 
-ServerPublisher::ServerPublisher(QNetworkAccessManager *f_net_man,
-                                 ServiceRegistry *f_registry,
-                                 QObject *parent) : Service{f_registry, parent},
-                                                    m_net_man{f_net_man},
-                                                    m_publishing_interval{new QTimer(this)}
+AkashiPublisherError::AkashiPublisherError(const QString &f_data)
 {
+    QJsonDocument l_error_doc = QJsonDocument::fromJson(f_data.toUtf8());
+}
+
+ServerPublisher::ServerPublisher(ServiceRegistry *f_registry, QObject *parent)
+    : Service{f_registry, parent}
+    , m_publishing_interval{new QTimer(this)}
+{
+    ServiceWrapper<QNetworkAccessManager> *l_wrapper
+        = m_registry->getService<ServiceWrapper<QNetworkAccessManager>>("qt.network.manager");
+    m_network_manager = l_wrapper->instance();
+
     m_publishing_interval->setInterval(PUBLISHING_INTERVAL_MS);
     m_publishing_interval->callOnTimeout(this, &ServerPublisher::publishServer);
 }
@@ -59,7 +67,9 @@ void ServerPublisher::publishServer()
     m_publishing_interval->start();
 
     l_request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-    QNetworkReply *l_reply = m_net_man->post(l_request, QJsonDocument::fromVariant(m_properties).toJson(QJsonDocument::Compact));
+    QNetworkReply *l_reply = m_network_manager->post(l_request,
+                                                     QJsonDocument::fromVariant(m_properties)
+                                                         .toJson(QJsonDocument::Compact));
     connect(l_reply, &QNetworkReply::finished, this, [this, l_reply]() { onServerListReply(l_reply); });
 }
 
@@ -67,9 +77,6 @@ void ServerPublisher::onServerListReply(QNetworkReply *f_reply)
 {
     QScopedPointer<QNetworkReply> l_reply(f_reply);
     if (l_reply->error() != QNetworkReply::NoError) {
-        qWarning() << "Publish failed:" << l_reply->errorString();
-    }
-    else {
-        qInfo() << "Published server to serverlist.";
+        const QByteArray l_data = l_reply->readAll();
     }
 }

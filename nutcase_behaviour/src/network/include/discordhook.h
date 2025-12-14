@@ -1,6 +1,6 @@
 #pragma once
 
-#include "akashi_core_global.h"
+#include "akashi_network_global.h"
 #include "service.h"
 
 #include <QByteArray>
@@ -22,7 +22,7 @@ class DiscordMessageCommon
     QString m_request_url;
 };
 
-class DiscordMessage : public DiscordMessageCommon
+class AKASHI_NETWORK_EXPORT DiscordMessage : public DiscordMessageCommon
 {
   public:
     DiscordMessage() = default;
@@ -75,7 +75,7 @@ struct DiscordMultipart
     {}
 };
 
-class DiscordMultipartMessage : public DiscordMessageCommon
+class AKASHI_NETWORK_EXPORT DiscordMultipartMessage : public DiscordMessageCommon
 {
   public:
     DiscordMultipartMessage() = default;
@@ -101,19 +101,16 @@ class DiscordMultipartMessage : public DiscordMessageCommon
     QJsonObject m_payload_json;
 };
 
-class DiscordHook : public Service
+class AKASHI_NETWORK_EXPORT DiscordHook : public Service
 {
     Q_OBJECT
-    Q_CLASSINFO("Author", "Salanto")
-    Q_CLASSINFO("Version", "1.0.0")
-    Q_CLASSINFO("Identifier", "akashi.discordhook")
 
   public:
-    DiscordHook(QNetworkAccessManager *network_manager, ServiceRegistry *registry, QObject *parent = nullptr);
-    ~DiscordHook() = default;
+      DiscordHook(ServiceRegistry *registry, QObject *parent = nullptr);
+      ~DiscordHook() = default;
 
-    void post(const DiscordMessage &message);
-    void post(const DiscordMultipartMessage &message);
+      void post(const DiscordMessage &message);
+      void post(const DiscordMultipartMessage &message);
 
   private slots:
     void onDiscordResponse(QNetworkReply *reply);

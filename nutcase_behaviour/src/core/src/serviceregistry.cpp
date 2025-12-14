@@ -15,14 +15,13 @@ bool ServiceRegistry::hasService(QString identifier)
 
 void ServiceRegistry::registerService(Service *f_pointer)
 {
-    const QString l_identifier = f_pointer->getClassValue("Identifier");
+    const QString l_identifier = f_pointer->getServiceProperty("identifier");
 
     if (hasService(l_identifier) || l_identifier.isEmpty()) {
         qDebug() << "Failed to add service. Identifier already used or empty. Deleting offending object.";
         f_pointer->deleteLater();
         return;
     }
-
     m_services.insert(l_identifier, f_pointer);
     qDebug() << "Added service with identifier" << l_identifier;
 }
@@ -47,5 +46,5 @@ std::optional<QString> ServiceRegistry::getServiceInfo(QString f_identifier, QSt
         return std::nullopt;
     }
 
-    return std::make_optional<QString>(l_service->getClassValue(f_key));
+    return std::make_optional<QString>(l_service->getServiceProperty(f_key));
 }

@@ -4,6 +4,7 @@ add_library(akashi_core SHARED
     include/serviceregistry.h src/serviceregistry.cpp
     include/akashi_core_global.h
     include/akashiplugin.h
+    include/servicewrapper.h
 )
 
 add_library(akashi::Core ALIAS akashi_core)

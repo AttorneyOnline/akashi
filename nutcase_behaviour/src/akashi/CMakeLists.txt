@@ -1,7 +1,10 @@
 qt_standard_project_setup()
+find_package(Qt6 REQUIRED COMPONENTS Core)
+
 qt_add_executable(akashi
     src/main.cpp
     src/pluginmanager.h src/pluginmanager.cpp
+    src/server.h src/server.cpp
 )
 
 target_link_libraries(akashi PRIVATE
