@@ -5,6 +5,11 @@ qt_add_executable(akashi
     src/main.cpp
     src/pluginmanager.h src/pluginmanager.cpp
     src/server.h src/server.cpp
+    src/softwareinformation.h
+)
+
+configure_file(
+  cmake/softwareinformation.h.in ${CMAKE_CURRENT_SOURCE_DIR}/src/softwareinformation.h @ONLY
 )
 
 target_link_libraries(akashi PRIVATE

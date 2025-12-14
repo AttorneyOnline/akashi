@@ -1,0 +1,32 @@
+#pragma once
+
+#include <QRandomGenerator>
+#include <QString>
+#include <QStringList>
+
+namespace SoftwareInfo
+{
+
+inline const QStringList SPLASH_MESSAGES = {
+    "90% cuter than competing brands."
+};
+
+inline QString getRandomSplash() {
+    int index = QRandomGenerator::global()->bounded(SPLASH_MESSAGES.size());
+    return SPLASH_MESSAGES[index];
+}
+
+ constexpr const char *NAME = "@PROJECT_NAME@";
+ constexpr const char *DISPLAY_NAME = "@PROJECT_DISPLAY_NAME@";
+ constexpr const char *CODENAME = "@PROJECT_CODENAME@";
+
+ constexpr int VERSION_MAJOR = @PROJECT_VERSION_MAJOR@;
+ constexpr int VERSION_MINOR = @PROJECT_VERSION_MINOR@;
+ constexpr const char *VERSION = "@PROJECT_VERSION@";
+
+ constexpr const char *BUILD_DATE = "@PROJECT_BUILD_DATE@";
+ constexpr const char *BUILD_TYPE = "@CMAKE_BUILD_TYPE@";
+
+ constexpr const char *GIT_COMMIT = "@GIT_COMMIT_HASH@";
+ constexpr const char *GIT_BRANCH = "@GIT_BRANCH@";
+}
