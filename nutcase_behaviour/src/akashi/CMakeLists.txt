@@ -16,6 +16,7 @@ target_link_libraries(akashi PRIVATE
     Qt6::Core
     akashi::Core
     akashi::Network
+    akashi::Protocol
 )
 
 if(WIN32)

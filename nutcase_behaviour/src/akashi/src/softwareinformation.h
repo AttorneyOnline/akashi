@@ -8,7 +8,8 @@ namespace SoftwareInfo
 {
 
 inline const QStringList SPLASH_MESSAGES = {
-    "90% cuter than competing brands."
+    "90% cuter than competing brands.",
+    "Powered by HVAC technology."
 };
 
 inline QString getRandomSplash() {
@@ -24,9 +25,9 @@ inline QString getRandomSplash() {
  constexpr int VERSION_MINOR = 0;
  constexpr const char *VERSION = "2.0";
 
- constexpr const char *BUILD_DATE = "2025-12-14 15:52:57";
- constexpr const char *BUILD_TYPE = "Release";
+ constexpr const char *BUILD_DATE = "2025-12-21 15:43:11";
+ constexpr const char *BUILD_TYPE = "Debug";
 
- constexpr const char *GIT_COMMIT = "b5ce446";
+ constexpr const char *GIT_COMMIT = "ffe0dcd";
  constexpr const char *GIT_BRANCH = "service-checkinbranch";
 }

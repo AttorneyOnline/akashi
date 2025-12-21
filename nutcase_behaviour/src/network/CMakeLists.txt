@@ -1,7 +1,7 @@
 add_library(akashi_network SHARED
     include/akashi_network_global.h
-    include/packet.h    src/packet.cpp
-    include/packetfactory.h src/packetfactory.cpp
+
+
     include/discordhook.h   src/discordhook.cpp
     include/serverpublisher.h   src/serverpublisher.cpp
 )

@@ -3,6 +3,8 @@
 #include "pluginmanager.h"
 #include "serviceregistry.h"
 
+#include "packet.h"
+
 Server::Server(QObject *parent)
     : QObject{parent}
 {
@@ -23,6 +25,11 @@ void Server::initializeServices()
 
     m_discord_hook = new DiscordHook(m_registry, this);
     m_plugins = new PluginManager(m_registry, this);
+
+    Packet l_packet("MS");
+    qDebug() << l_packet.set("somekey", 3);
+    qDebug() << l_packet.set("someotherkey", Packet());
+    qDebug() << l_packet.set("someotherkeykey", QString("This string"));
 
     m_plugins->loadPluginsFromDirectory();
 }

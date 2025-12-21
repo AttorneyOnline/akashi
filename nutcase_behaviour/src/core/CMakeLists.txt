@@ -5,6 +5,10 @@ add_library(akashi_core SHARED
     include/akashi_core_global.h
     include/akashiplugin.h
     include/servicewrapper.h
+    include/packet.h
+    src/packet.cpp
+    include/packetregistry.h
+    src/packetregistry.cpp
 )
 
 add_library(akashi::Core ALIAS akashi_core)

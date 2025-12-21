@@ -32,6 +32,7 @@ execute_process(
 
 add_subdirectory(src/core)
 add_subdirectory(src/network)
+add_subdirectory(src/protocol)
 add_subdirectory(src/akashi)
 
 option(BUILD_TESTS "Build tests" OFF)
