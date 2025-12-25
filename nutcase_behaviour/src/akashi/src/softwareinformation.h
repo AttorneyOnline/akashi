@@ -25,9 +25,9 @@ inline QString getRandomSplash() {
  constexpr int VERSION_MINOR = 0;
  constexpr const char *VERSION = "2.0";
 
- constexpr const char *BUILD_DATE = "2025-12-21 15:43:11";
+ constexpr const char *BUILD_DATE = "2025-12-25 01:22:19";
  constexpr const char *BUILD_TYPE = "Debug";
 
- constexpr const char *GIT_COMMIT = "ffe0dcd";
+ constexpr const char *GIT_COMMIT = "910f55e";
  constexpr const char *GIT_BRANCH = "service-checkinbranch";
 }

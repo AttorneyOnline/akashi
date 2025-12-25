@@ -9,6 +9,7 @@
 class QNetworkAccessManager;
 class DiscordHook;
 class PluginManager;
+class PacketRegistry;
 
 class Server : public QObject
 {
@@ -25,5 +26,6 @@ private:
     ServiceRegistry *m_registry;
     DiscordHook *m_discord_hook;
     PluginManager *m_plugins;
+    PacketRegistry *m_packet_registry;
     ServiceWrapper<QNetworkAccessManager> *m_network_service;
 };

@@ -4,6 +4,7 @@ add_library(akashi_network SHARED
 
     include/discordhook.h   src/discordhook.cpp
     include/serverpublisher.h   src/serverpublisher.cpp
+    include/serverclient.h include/serverclient.cpp
 )
 
 add_library(akashi::Network ALIAS akashi_network)

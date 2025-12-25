@@ -1,5 +1,6 @@
 add_library(akashi_protocol SHARED
     include/akashi_protocol_global.h
+    include/packet_ms.h src/packet_ms.cpp
 )
 
 add_library(akashi::Protocol ALIAS akashi_protocol)
@@ -23,7 +24,7 @@ target_include_directories(akashi_protocol
 
 target_link_libraries(akashi_protocol
     PUBLIC
-        Qt6::Core
+        akashi::Core
 )
 
 install(TARGETS akashi_protocol

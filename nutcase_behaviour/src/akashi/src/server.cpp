@@ -1,9 +1,10 @@
 #include "server.h"
 #include "discordhook.h"
+#include "packetregistry.h"
 #include "pluginmanager.h"
 #include "serviceregistry.h"
 
-#include "packet.h"
+#include "packet_ms.h"
 
 Server::Server(QObject *parent)
     : QObject{parent}
@@ -24,12 +25,11 @@ void Server::initializeServices()
                                                                   this);
 
     m_discord_hook = new DiscordHook(m_registry, this);
+    m_packet_registry = new PacketRegistry(m_registry, this);
+    m_packet_registry->registerPacket("AO2", "2.11.0", "MS", [](const PacketData &data) -> Packet * {
+        return new ServerPacket::MS_V26(data);
+    });
     m_plugins = new PluginManager(m_registry, this);
-
-    Packet l_packet("MS");
-    qDebug() << l_packet.set("somekey", 3);
-    qDebug() << l_packet.set("someotherkey", Packet());
-    qDebug() << l_packet.set("someotherkeykey", QString("This string"));
 
     m_plugins->loadPluginsFromDirectory();
 }
