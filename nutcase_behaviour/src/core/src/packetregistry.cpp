@@ -1,10 +1,20 @@
 #include "packetregistry.h"
+#include "serviceregistry.h"
 
 QString PacketRegistry::makeKey(const QString &f_arch,
                                 const QString &f_version,
                                 const QString &f_header) const
 {
     return f_arch + ":" + f_version + ":" + f_header;
+}
+
+PacketRegistry::PacketRegistry(ServiceRegistry *f_registry, QObject *parent)
+    : Service{f_registry, parent}
+{
+    m_service_properties = {{"author", "Salanto"},
+                            {"version", "1.0.0"},
+                            {"identifier", "akashi.core.packetregistry"}};
+    m_registry->registerService(this);
 }
 
 std::optional<Packet *> PacketRegistry::create(const QString &f_arch,

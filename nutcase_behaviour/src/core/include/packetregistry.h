@@ -22,13 +22,7 @@ class AKASHI_CORE_EXPORT PacketRegistry : public Service
     Q_OBJECT
 
 public:
-    PacketRegistry(ServiceRegistry *f_registry, QObject *parent)
-        : Service{f_registry, parent}
-    {
-        m_service_properties = {{"author", "Salanto"},
-                                {"version", "1.0.0"},
-                                {"identifier", "akashi.core.packetregistry"}};
-    }
+    PacketRegistry(ServiceRegistry *f_registry, QObject *parent);
 
     std::optional<Packet *> create(const QString &f_arch,
                                    const QString &f_version,
