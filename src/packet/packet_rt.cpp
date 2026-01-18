@@ -29,7 +29,7 @@ void PacketRT::handlePacket(AreaData *area, AOClient &client) const
         client.sendServerMessage("Spectators are blocked from using the judge controls.");
         return;
     }
-    
+
     if (client.m_is_wtce_blocked) {
         client.sendServerMessage("You are blocked from using the judge controls.");
         return;
