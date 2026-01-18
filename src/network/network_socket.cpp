@@ -31,7 +31,10 @@ NetworkSocket::NetworkSocket(QWebSocket *f_socket, QObject *parent) :
     // TLDR : We check if the header comes trough a proxy/tunnel running locally.
     // This is to ensure nobody can send those headers from the web.
     QNetworkRequest l_request = m_client_socket->request();
-    if (l_request.hasRawHeader("x-forwarded-for") && l_is_local) {
+    if (l_request.hasRawHeader("x-real-ip") && l_is_local) {
+        m_socket_ip = QHostAddress(QString::fromUtf8(l_request.rawHeader("x-real-ip")));
+    }
+    else if (l_request.hasRawHeader("x-forwarded-for") && l_is_local) {
         m_socket_ip = QHostAddress(QString::fromUtf8(l_request.rawHeader("x-forwarded-for")));
     }
     else {
