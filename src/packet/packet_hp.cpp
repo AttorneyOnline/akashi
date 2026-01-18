@@ -21,6 +21,16 @@ PacketInfo PacketHP::getPacketInfo() const
 
 void PacketHP::handlePacket(AreaData *area, AOClient &client) const
 {
+    if (client.m_is_spectator) {
+        client.sendServerMessage("Spectators are blocked from using the judge controls.");
+        return;
+    }
+
+    if (area->lockStatus() == AreaData::LockStatus::SPECTATABLE && !area->invited().contains(client.clientId()) && !client.checkPermission(ACLRole::BYPASS_LOCKS)) {
+        client.sendServerMessage("Spectators are blocked from using the judge controls.");
+        return;
+    }
+
     if (client.m_is_wtce_blocked) {
         client.sendServerMessage("You are blocked from using the judge controls.");
         return;
