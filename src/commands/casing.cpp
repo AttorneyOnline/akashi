@@ -113,12 +113,12 @@ void AOClient::cmdTestify(int argc, QStringList argv)
 
     AreaData *l_area = server->getAreaById(areaId());
     if (l_area->testimonyRecording() == AreaData::TestimonyRecording::RECORDING) {
-        sendServerMessage("Testimony recording is already in progress. Please stop it with /end before starting a new one.");
+        sendServerMessage("Testimony recording is already in progress. Please stop it with /pause before starting a new one.");
     }
     else {
         clearTestimony();
         l_area->setTestimonyRecording(AreaData::TestimonyRecording::RECORDING);
-        sendServerMessage("Started testimony recording. The next IC message will be a title. Use /end to stop recording.");
+        sendServerMessage("Started testimony recording. The next IC message will be a title. Use /pause to stop recording.");
     }
 }
 
@@ -140,7 +140,7 @@ void AOClient::cmdExamine(int argc, QStringList argv)
         }
     }
     else {
-        sendServerMessage("Unable to start replay without prior testimony. Use /testify to start Or load a testimony with /loadtestimony.");
+        sendServerMessage("Unable to start replay without prior testimony. Use /testify to start or load a testimony with the command: /loadtestimony.");
     }
 }
 
