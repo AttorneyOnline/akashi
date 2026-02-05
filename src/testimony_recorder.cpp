@@ -44,6 +44,9 @@ void AOClient::addStatement(QStringList packet)
         }
         else if (area->testimonyRecording() == AreaData::TestimonyRecording::ADD) {
             packet[14] = "1";
+            if (c_statement == 0) {
+                area->addStatement(c_statement, packet);
+            }
             area->addStatement(c_statement + 1, packet);
             area->setTestimonyRecording(AreaData::TestimonyRecording::PLAYBACK);
         }
