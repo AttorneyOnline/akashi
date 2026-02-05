@@ -1,58 +1,123 @@
 #include "packet_ms.h"
+#include "packet_decoder.h"
 
 ServerPacket::MS_V26::MS_V26(const PacketData &f_data)
 {
-    const auto &list = std::get<QStringList>(f_data);
+    setHeader("MS");
 
-    // Core fields (always present)
-    setFromList("desk_mod", list, 1, 0);
-    setFromList("preanim", list, 2, QString(""));
-    setFromList("character", list, 3, QString(""));
-    setFromList("emote", list, 4, QString(""));
-    setFromList("message", list, 5, QString(""));
-    setFromList("side", list, 6, QString("def"));
-    setFromList("sfx_name", list, 7, QString(""));
-    setFromList("emote_modifier", list, 8, 0);
-    setFromList("char_id", list, 9, -1);
-    setFromList("sfx_delay", list, 10, 0);
-    setFromList("shout_modifier", list, 11, 0);
-    setFromList("evidence", list, 12, 0);
-    setFromList("flip", list, 13, 0);
-    setFromList("realization", list, 14, 0);
-    setFromList("text_color", list, 15, 0);
+    if (std::holds_alternative<QStringList>(f_data))
+    {
+        const auto &list = std::get<QStringList>(f_data);
 
-    setFromList("showname", list, 16, QString(""));
-    setFromList("other_charid", list, 17, -1);
-    setFromList("other_name", list, 18, QString(""));
-    setFromList("other_emote", list, 19, QString(""));
-    setFromList("self_offset", list, 20, QString("0"));
-    setFromList("noninterrupting_preanim", list, 21, 0);
+        // Use PacketDecoder for cleaner code
+        PacketDecoder(*this)
+            .fromList(list)
+            .field<int>("desk_mod", 1, 0)
+            .field<QString>("preanim", 2, QString(""))
+            .field<QString>("character", 3, QString(""))
+            .field<QString>("emote", 4, QString(""))
+            .field<QString>("message", 5, QString(""))
+            .field<QString>("side", 6, QString("def"))
+            .field<QString>("sfx_name", 7, QString(""))
+            .field<int>("emote_modifier", 8, 0)
+            .field<int>("char_id", 9, -1)
+            .field<int>("sfx_delay", 10, 0)
+            .field<int>("shout_modifier", 11, 0)
+            .field<int>("evidence", 12, 0)
+            .field<int>("flip", 13, 0)
+            .field<int>("realization", 14, 0)
+            .field<int>("text_color", 15, 0)
+            .field<QString>("showname", 16, QString(""))
+            .field<int>("other_charid", 17, -1)
+            .field<QString>("other_name", 18, QString(""))
+            .field<QString>("other_emote", 19, QString(""))
+            .field<QString>("self_offset", 20, QString("0"))
+            .field<int>("noninterrupting_preanim", 21, 0);
+    }
+    else
+    {
+        const auto &json = std::get<QJsonObject>(f_data);
+
+        PacketDecoder(*this)
+            .fromJson(json)
+            .field<int>("desk_mod", 0)
+            .field<QString>("preanim", QString(""))
+            .field<QString>("character", QString(""))
+            .field<QString>("emote", QString(""))
+            .field<QString>("message", QString(""))
+            .field<QString>("side", QString("def"))
+            .field<QString>("sfx_name", QString(""))
+            .field<int>("emote_modifier", 0)
+            .field<int>("char_id", -1)
+            .field<int>("sfx_delay", 0)
+            .field<int>("shout_modifier", 0)
+            .field<int>("evidence", 0)
+            .field<int>("flip", 0)
+            .field<int>("realization", 0)
+            .field<int>("text_color", 0)
+            .field<QString>("showname", QString(""))
+            .field<int>("other_charid", -1)
+            .field<QString>("other_name", QString(""))
+            .field<QString>("other_emote", QString(""))
+            .field<QString>("self_offset", QString("0"))
+            .field<int>("noninterrupting_preanim", 0);
+    }
 }
 
 ClientPacket::MS_V26::MS_V26(const PacketData &f_data)
 {
-    const auto &list = std::get<QStringList>(f_data);
+    setHeader("MS");
 
-    // Core fields
-    setFromList("desk_mod", list, 1, 0);
-    setFromList("preanim", list, 2, QString(""));
-    setFromList("character", list, 3, QString(""));
-    setFromList("emote", list, 4, QString(""));
-    setFromList("message", list, 5, QString(""));
-    setFromList("side", list, 6, QString("def"));
-    setFromList("sfx_name", list, 7, QString(""));
-    setFromList("emote_modifier", list, 8, 0);
-    setFromList("char_id", list, 9, -1);
-    setFromList("sfx_delay", list, 10, 0);
-    setFromList("shout_modifier", list, 11, 0);
-    setFromList("evidence", list, 12, 0);
-    setFromList("flip", list, 13, 0);
-    setFromList("realization", list, 14, 0);
-    setFromList("text_color", list, 15, 0);
+    if (std::holds_alternative<QStringList>(f_data))
+    {
+        const auto &list = std::get<QStringList>(f_data);
 
-    // 2.6 fields (no other_name, other_emote)
-    setFromList("showname", list, 16, QString(""));
-    setFromList("other_charid", list, 17, -1);
-    setFromList("self_offset", list, 18, QString("0"));
-    setFromList("noninterrupting_preanim", list, 19, 0);
+        PacketDecoder(*this)
+            .fromList(list)
+            .field<int>("desk_mod", 1, 0)
+            .field<QString>("preanim", 2, QString(""))
+            .field<QString>("character", 3, QString(""))
+            .field<QString>("emote", 4, QString(""))
+            .field<QString>("message", 5, QString(""))
+            .field<QString>("side", 6, QString("def"))
+            .field<QString>("sfx_name", 7, QString(""))
+            .field<int>("emote_modifier", 8, 0)
+            .field<int>("char_id", 9, -1)
+            .field<int>("sfx_delay", 10, 0)
+            .field<int>("shout_modifier", 11, 0)
+            .field<int>("evidence", 12, 0)
+            .field<int>("flip", 13, 0)
+            .field<int>("realization", 14, 0)
+            .field<int>("text_color", 15, 0)
+            .field<QString>("showname", 16, QString(""))
+            .field<int>("other_charid", 17, -1)
+            .field<QString>("self_offset", 18, QString("0"))
+            .field<int>("noninterrupting_preanim", 19, 0);
+    }
+    else
+    {
+        const auto &json = std::get<QJsonObject>(f_data);
+
+        PacketDecoder(*this)
+            .fromJson(json)
+            .field<int>("desk_mod", 0)
+            .field<QString>("preanim", QString(""))
+            .field<QString>("character", QString(""))
+            .field<QString>("emote", QString(""))
+            .field<QString>("message", QString(""))
+            .field<QString>("side", QString("def"))
+            .field<QString>("sfx_name", QString(""))
+            .field<int>("emote_modifier", 0)
+            .field<int>("char_id", -1)
+            .field<int>("sfx_delay", 0)
+            .field<int>("shout_modifier", 0)
+            .field<int>("evidence", 0)
+            .field<int>("flip", 0)
+            .field<int>("realization", 0)
+            .field<int>("text_color", 0)
+            .field<QString>("showname", QString(""))
+            .field<int>("other_charid", -1)
+            .field<QString>("self_offset", QString("0"))
+            .field<int>("noninterrupting_preanim", 0);
+    }
 }

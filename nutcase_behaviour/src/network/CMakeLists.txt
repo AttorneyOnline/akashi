@@ -1,7 +1,5 @@
 add_library(akashi_network SHARED
     include/akashi_network_global.h
-
-
     include/discordhook.h   src/discordhook.cpp
     include/serverpublisher.h   src/serverpublisher.cpp
     include/serverclient.h include/serverclient.cpp

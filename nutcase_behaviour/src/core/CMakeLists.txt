@@ -1,20 +1,21 @@
 add_library(akashi_core SHARED
-
     include/service.h
     include/serviceregistry.h src/serviceregistry.cpp
     include/akashi_core_global.h
     include/akashiplugin.h
     include/servicewrapper.h
-    include/packet.h
-    src/packet.cpp
-    include/packetregistry.h
-    src/packetregistry.cpp
+    include/packet_types.h
+    include/packet_helpers.h
+    include/packet.h src/packet.cpp
+    include/packet_decoder.h src/packet_decoder.cpp
+    include/packet_builder.h src/packet_builder.cpp
+    include/packetregistry.h src/packetregistry.cpp
 )
 
 add_library(akashi::Core ALIAS akashi_core)
 
 set_target_properties(akashi_core PROPERTIES
-        LIBRARY_OUTPUT_DIRECTORY $<1:$${CMAKE_SOURCE_DIR}/bin>
+        LIBRARY_OUTPUT_DIRECTORY $<1:${CMAKE_SOURCE_DIR}/bin>
         RUNTIME_OUTPUT_DIRECTORY $<1:${CMAKE_SOURCE_DIR}/bin>
 )
 

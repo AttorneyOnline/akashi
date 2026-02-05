@@ -7,14 +7,13 @@
 #include <QStringList>
 #include <functional>
 #include <optional>
-#include <variant>
 
 #include "akashi_core_global.h"
+#include "packet_types.h"
 #include "service.h"
 
 class Packet;
 
-using PacketData = std::variant<QStringList, QJsonObject>;
 using PacketConstructor = std::function<Packet *(const PacketData &)>;
 
 class AKASHI_CORE_EXPORT PacketRegistry : public Service

@@ -35,9 +35,8 @@ add_subdirectory(src/network)
 add_subdirectory(src/protocol)
 add_subdirectory(src/akashi)
 
-option(BUILD_TESTS "Build tests" OFF)
+option(BUILD_TESTS "Build tests" ON)
 if(BUILD_TESTS)
-    enable_testing()
     add_subdirectory(tests)
 endif()
 
