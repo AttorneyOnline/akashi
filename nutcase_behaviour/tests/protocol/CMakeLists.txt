@@ -9,5 +9,7 @@ add_test(NAME ProtocolPacketMSTest COMMAND test_packet_ms)
 set_target_properties(
     test_packet_ms
     PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/tests/protocol
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/tests
 )
+
+add_dependencies(test_packet_ms copy_test_dlls)

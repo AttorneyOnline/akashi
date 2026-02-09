@@ -45,5 +45,7 @@ set_target_properties(
     test_serviceregistry
     test_servicewrapper
     PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/tests/core
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/tests
 )
+
+add_dependencies(test_packet copy_test_dlls)

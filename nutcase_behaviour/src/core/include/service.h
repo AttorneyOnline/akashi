@@ -16,10 +16,7 @@ class AKASHI_CORE_EXPORT Service : public QObject
   public:
       Service(ServiceRegistry *f_registry, QObject *parent = nullptr)
           : QObject{parent}
-          , m_registry{f_registry}
-          , m_service_properties{{"author", "Salanto"},
-                                 {"version", "1.0.0"},
-                                 {"identifier", "akashi.core.service"}} {};
+          , m_registry{f_registry} {};
       ~Service() = default;
 
       QString getServiceProperty(QString f_key) const

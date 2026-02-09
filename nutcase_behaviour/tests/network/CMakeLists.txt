@@ -15,5 +15,7 @@ set_target_properties(
     test_discordhook
     test_serverpublisher
     PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/tests/network
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/tests
 )
+
+add_dependencies(test_discordhook copy_test_dlls)

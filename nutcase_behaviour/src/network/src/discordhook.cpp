@@ -169,63 +169,59 @@ DiscordMessage &DiscordMessage::endEmbed()
 
 QJsonObject DiscordMessage::toJson() const
 {
-    QJsonObject l_json;
+    QJsonObject json;
 
+    // First handle all fields including content
     for (auto it = m_fields.begin(); it != m_fields.end(); ++it) {
         const QString &key = it.key();
-        const QString &value = it.value();
+        const QVariant &value = it.value();
 
-        if (key == "tts") {
-            l_json[key] = (value == "true");
-        }
-        else {
-            l_json[key] = value;
+        if (!value.isNull()) { // Only add non-null values
+            json[key] = QJsonValue::fromVariant(value);
         }
     }
 
+    // Handle embeds
     if (!m_embeds.isEmpty()) {
-        QJsonArray l_embeds_array;
+        QJsonArray embeds_array;
 
-        for (const auto &l_embed_map : m_embeds) {
-            QJsonObject l_embed_obj;
+        for (const auto &embed_map : m_embeds) {
+            QJsonObject embed_obj;
+            for (auto it = embed_map.begin(); it != embed_map.end(); ++it) {
+                const QString &key = it.key();
+                const QVariant &value = it.value();
 
-            for (auto it = l_embed_map.begin(); it != l_embed_map.end(); ++it) {
-                const QString &l_key = it.key();
-                const QVariant &l_value = it.value();
+                if (!value.isNull()) { // Only add non-null values
+                    if (value.canConvert<QVariantMap>()) {
+                        // Convert nested map to JSON
+                        QJsonObject nested_obj;
+                        for (auto nested_it = value.toMap().begin();
+                             nested_it != value.toMap().end();
+                             ++nested_it) {
+                            const QString &l_key = nested_it.key();
+                            const QVariant &l_value = nested_it.value();
 
-                if (l_value.canConvert<QVariantMap>()) {
-                    QJsonObject l_nested_obj;
-                    QVariantMap l_nested_map = l_value.toMap();
-                    for (auto nested_it = l_nested_map.begin(); nested_it != l_nested_map.end();
-                         ++nested_it) {
-                        l_nested_obj[nested_it.key()] = QJsonValue::fromVariant(nested_it.value());
-                    }
-                    l_embed_obj[l_key] = l_nested_obj;
-                } else if (l_value.canConvert<QVariantList>()) {
-                    QJsonArray fields_array;
-                    const QVariantList l_fields_list = l_value.toList();
-                    for (const auto &l_field_variant : l_fields_list) {
-                        QJsonObject l_field_obj;
-                        QVariantMap l_field_map = l_field_variant.toMap();
-                        for (auto field_it = l_field_map.begin(); field_it != l_field_map.end();
-                             ++field_it) {
-                            l_field_obj[field_it.key()] = QJsonValue::fromVariant(field_it.value());
+                            if (!l_value.isNull()) { // Only add non-null values
+                                nested_obj[l_key] = QJsonValue::fromVariant(l_value);
+                            }
                         }
-                        fields_array.append(l_field_obj);
+
+                        embed_obj[key] = nested_obj;
+                    } else {
+                        embed_obj[key] = QJsonValue::fromVariant(value);
                     }
-                    l_embed_obj[l_key] = fields_array;
-                } else {
-                    l_embed_obj[l_key] = QJsonValue::fromVariant(l_value);
                 }
             }
 
-            l_embeds_array.append(l_embed_obj);
+            if (!embed_obj.isEmpty()) { // Only add non-empty embeds
+                embeds_array.append(embed_obj);
+            }
         }
 
-        l_json["embeds"] = l_embeds_array;
+        json["embeds"] = embeds_array;
     }
 
-    return l_json;
+    return json;
 }
 
 DiscordMultipartMessage &DiscordMultipartMessage::setRequestUrl(const QString &url)

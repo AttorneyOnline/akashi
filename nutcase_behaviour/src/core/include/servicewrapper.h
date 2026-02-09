@@ -6,6 +6,9 @@
 
 class ServiceRegistry;
 
+/**
+ * @brief The ServiceWrapper class exposes non-Service objects to the ServiceRegistry, allowing Qt objects to be reused across different child-services.
+ */
 template<class T>
     requires std::is_base_of_v<QObject, T>
 class ServiceWrapper : public Service

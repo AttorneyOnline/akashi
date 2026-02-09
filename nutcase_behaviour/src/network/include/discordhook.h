@@ -51,8 +51,8 @@ class AKASHI_NETWORK_EXPORT DiscordMessage : public DiscordMessageCommon
 
   private:
     QMap<QString, QString> m_fields;
-    QVector<QMap<QString, QVariant>> m_embeds;
-    QMap<QString, QVariant> m_current_embed;
+    QVector<QVariantMap> m_embeds;
+    QVariantMap m_current_embed;
     bool m_building_embed = false;
 };
 

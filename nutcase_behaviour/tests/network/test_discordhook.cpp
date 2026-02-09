@@ -73,6 +73,7 @@ private slots:
         QCOMPARE(embeds.size(), 1);
 
         QJsonObject embed = embeds[0].toObject();
+        qDebug() << embed["title"].toString();
         QCOMPARE(embed["title"].toString(), QString("Embed Title"));
         QCOMPARE(embed["description"].toString(), QString("Embed Description"));
         QCOMPARE(embed["color"].toInt(), 0xFF0000);
