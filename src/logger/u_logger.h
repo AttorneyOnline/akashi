@@ -56,14 +56,14 @@ class ULogger : public QObject
     /**
      * @brief Adds an IC log entry to the area buffer and writes it to the respective log format.
      */
-    void logIC(const QString &f_char_name, const QString &f_ooc_name, const QString &f_ipid,
-               const QString &f_area_name, const QString &f_message);
+    void logIC(const QString &f_area_name, const QString &f_ipid, const QString &f_ooc_name,
+           const QString &f_id, const QString &f_char_name, const QString &f_message);
 
     /**
      * @brief Adds an OOC log entry to the area buffer and writes it to the respective log format.
      */
-    void logOOC(const QString &f_char_Name, const QString &f_ooc_name, const QString &f_ipid,
-                const QString &f_area_name, const QString &f_message);
+    void logOOC(const QString &f_area_name, const QString &f_ipid, const QString &f_ooc_name,
+          const QString &f_id, const QString &f_char_name, const QString &f_message);
 
     /**
      * @brief Adds an login attempt to the area buffer and writes it to the respective log format.
@@ -90,7 +90,7 @@ class ULogger : public QObject
     /**
      * @brief Adds a modcall event to the area buffer, also triggers modcall writing.
      */
-    void logModcall(const QString &f_char_name, const QString &f_ipid, const QString &f_ooc_name, const QString &f_area_name);
+    void logModcall(const QString &f_area_name, const QString &f_ipid, const QString &f_ooc_name, const QString &f_id, const QString &f_char_name);
 
     /**
      * @brief Logs any connection attempt to the server, wether sucessful or not.
@@ -143,7 +143,7 @@ class ULogger : public QObject
         {"cmd", "[%1][%2][CMD][%7][%3(%4)]/%5 %6"},
         {"kick", "[%1][%2][KICK][%3]"},
         {"ban", "[%1][%2][BAN][%3][%4]"},
-        {"modcall", "[%1][%2][MODCALL][%5][%3(%4)]"},
+        {"modcall", "[%1][%2][MODCALL][%3][%4][%5(%6)]"},
         {"connect", "[%1][CONNECT][%2][%3][%4]"}};
 };
 

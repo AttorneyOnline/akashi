@@ -27,7 +27,9 @@ void PacketZZ::handlePacket(AreaData *area, AOClient &client) const
 
     QString l_areaName = area->name();
 
-    QString l_modcallNotice = "!!!MODCALL!!!\nArea: " + l_areaName + "\nCaller: " + l_name + "\n";
+    QString l_id = QString::number(client.clientId());
+
+    QString l_modcallNotice = "!!!MODCALL!!!\nArea: " + l_areaName + "\nCaller: " "[" + l_id + "]" + l_name + "\n";
 
     int target_id = m_content.at(1).toInt();
     if (target_id != -1) {
@@ -43,7 +45,7 @@ void PacketZZ::handlePacket(AreaData *area, AOClient &client) const
         if (l_client->m_authenticated)
             l_client->sendPacket(PacketFactory::createPacket("ZZ", {l_modcallNotice}));
     }
-    emit client.logModcall((client.character() + " " + client.characterName()), client.m_ipid, client.name(), client.getServer()->getAreaById(client.areaId())->name());
+    emit client.logModcall(client.getServer()->getAreaById(client.areaId())->name(), client.m_ipid, client.name(), QString::number(client.clientId()), (client.character() + " " + client.characterName()));
 
     if (ConfigManager::discordModcallWebhookEnabled()) {
         QString l_name = client.name();
@@ -60,6 +62,6 @@ void PacketZZ::handlePacket(AreaData *area, AOClient &client) const
             }
         }
 
-        emit client.getServer()->modcallWebhookRequest(l_name, l_areaName, webhook_reason, client.getServer()->getAreaBuffer(l_areaName));
+        emit client.getServer()->modcallWebhookRequest(l_name, l_areaName, l_id, webhook_reason, client.getServer()->getAreaBuffer(l_areaName));
     }
 }
