@@ -141,6 +141,7 @@ class ULogger : public QObject
      */
     QHash<QString, QString> m_logtext{
         {"ic", "[%1][%5][IC][%2(%3)][%4]%6"},
+        {"music", "[%1][%5][MUSIC][%2(%3)][%4]%6"},
         {"ooc", "[%1][%5][OOC][%2(%3)][%4]%6"},
         {"login", "[%1][LOGIN][%2][%3][%4(%5)]"},
         {"cmdlogin", "[%1][%2][LOGIN][%5][%3(%4)]"},
