@@ -2157,6 +2157,11 @@ class AOClient : public QObject
      */
     void logIC(const QString &f_charName, const QString &f_oocName, const QString &f_ipid,
                const QString &f_areaName, const QString &f_message);
+    /**
+     * @brief Signal connected to universal logger. Sends music usage to the logger.
+     */
+    void logMusic(const QString &f_charName, const QString &f_oocName, const QString &f_ipid,
+                  const QString &f_areaName, const QString &f_track);
 
     /**
      * @brief Signal connected to universal logger. Sends OOC chat usage to the logger.
