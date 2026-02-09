@@ -78,6 +78,8 @@ void PacketMC::handlePacket(AreaData *area, AOClient &client) const
         AOPacket *l_music_change = PacketFactory::createPacket("MC", {l_final_song, m_content[1], client.characterName(), "1", "0", l_effects});
         client.getServer()->broadcast(l_music_change, client.areaId());
 
+        emit client.logMusic((client.character() + " " + client.characterName()), client.name(), client.m_ipid, client.getServer()->getAreaById(client.areaId())->name(), l_final_song);
+
         // Since we can't ensure a user has their showname set, we check if its empty to prevent
         //"played by ." in /currentmusic.
         if (client.characterName().isEmpty()) {

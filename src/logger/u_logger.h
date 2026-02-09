@@ -60,6 +60,12 @@ class ULogger : public QObject
                const QString &f_area_name, const QString &f_message);
 
     /**
+     * @brief Adds a music log entry to the area buffer and writes it to the respective log format.
+     */
+    void logMusic(const QString &f_char_name, const QString &f_ooc_name, const QString &f_ipid,
+                  const QString &f_area_name, const QString &f_track);
+
+    /**
      * @brief Adds an OOC log entry to the area buffer and writes it to the respective log format.
      */
     void logOOC(const QString &f_char_Name, const QString &f_ooc_name, const QString &f_ipid,
