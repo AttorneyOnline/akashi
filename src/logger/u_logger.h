@@ -56,14 +56,12 @@ class ULogger : public QObject
     /**
      * @brief Adds an IC log entry to the area buffer and writes it to the respective log format.
      */
-    void logIC(const QString &f_area_name, const QString &f_ipid, const QString &f_ooc_name,
-           const QString &f_id, const QString &f_char_name, const QString &f_message);
+    void logIC(const QString &f_area_name, const QString &f_ipid, const QString &f_ooc_name, const QString &f_id, const QString &f_char_name, const QString &f_message);
 
     /**
      * @brief Adds an OOC log entry to the area buffer and writes it to the respective log format.
      */
-    void logOOC(const QString &f_area_name, const QString &f_ipid, const QString &f_ooc_name,
-          const QString &f_id, const QString &f_char_name, const QString &f_message);
+    void logOOC(const QString &f_area_name, const QString &f_ipid, const QString &f_ooc_name, const QString &f_id, const QString &f_char_name, const QString &f_message);
 
     /**
      * @brief Adds an login attempt to the area buffer and writes it to the respective log format.

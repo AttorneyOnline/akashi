@@ -29,7 +29,7 @@ void PacketZZ::handlePacket(AreaData *area, AOClient &client) const
 
     QString l_id = QString::number(client.clientId());
 
-    QString l_modcallNotice = "!!!MODCALL!!!\nArea: " + l_areaName + "\nCaller: " "[" + l_id + "]" + l_name + "\n";
+    QString l_modcallNotice = "!!!MODCALL!!!\nArea: " + l_areaName + "\nCaller: " + "[" + l_id + "]" + l_name + "\n";
 
     int target_id = m_content.at(1).toInt();
     if (target_id != -1) {
