@@ -43,6 +43,7 @@ class DBManager;
 class Discord;
 class MusicManager;
 class ULogger;
+class ServiceRegistry;
 
 /**
  * @brief The class that represents the actual server as it is.
@@ -438,6 +439,8 @@ class Server : public QObject
      * @brief Handles all musiclists.
      */
     MusicManager *music_manager;
+
+    ServiceRegistry *service_registry;
 
     /**
      * @brief The port through which the server will accept WebSocket connections.

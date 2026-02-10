@@ -17,6 +17,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "server.h"
 
+#include "../library/include/serviceregistry.h"
 #include "acl_roles_handler.h"
 #include "aoclient.h"
 #include "area_data.h"
@@ -24,6 +25,7 @@
 #include "config_manager.h"
 #include "db_manager.h"
 #include "discord.h"
+#include "discordhook.h"
 #include "logger/u_logger.h"
 #include "music_manager.h"
 #include "network/network_socket.h"
@@ -54,6 +56,24 @@ Server::Server(int p_ws_port, QObject *parent) :
     connect(this, &Server::logConnectionAttempt, logger, &ULogger::logConnectionAttempt);
 
     AOPacket::registerPackets();
+
+    service_registry = new ServiceRegistry(this);
+    service_registry->createWrapped<QNetworkAccessManager>("qt.network.manager", QT_VERSION_STR, "Qt");
+    service_registry->create<DiscordHook>();
+
+    DiscordMessage l_message;
+    l_message.setRequestUrl("youwishedItoldyou")
+        .setContent("This is a sample message.")
+        .beginEmbed()
+        .setEmbedDescription("This is an embed description")
+        .setEmbedTitle("This is an embed title.")
+        .addEmbedField("Field1", "Field1Data", true)
+        .addEmbedField("Field2", "Field2Data", true)
+        .addEmbedField("\u200B", "\u200B")
+        .setEmbedImage("bunnyurl")
+        .endEmbed();
+
+    service_registry->get<DiscordHook>("akashi.network.discordhook").value()->post(l_message);
 }
 
 void Server::start()

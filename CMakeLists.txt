@@ -11,6 +11,8 @@ set(CMAKE_AUTOUIC ON)
 find_package(Qt6 6.4 REQUIRED COMPONENTS Core Network WebSockets Sql)
 find_package(Qt6 REQUIRED COMPONENTS Core Network WebSockets Sql)
 
+add_subdirectory(library)
+
 qt_standard_project_setup()
 qt_add_executable(akashi
   src/commands/area.cpp
@@ -118,6 +120,7 @@ target_link_libraries(akashi PRIVATE
     Qt6::Sql
     Qt6::Network
     Qt6::WebSockets
+    akashi_addon
 )
 
 target_include_directories(akashi PRIVATE src src/logger src/network src/packet)
