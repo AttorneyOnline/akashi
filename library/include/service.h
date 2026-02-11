@@ -2,13 +2,14 @@
 
 #include "akashi_addon_global.h"
 
+#include <QLoggingCategory>
 #include <QMap>
 #include <QObject>
 #include <QVariant>
-#include <QVersionNumber>
 
 class ServiceRegistry;
 
+Q_DECLARE_EXPORTED_LOGGING_CATEGORY(akashiService, AKASHI_ADDON_EXPORT)
 class AKASHI_ADDON_EXPORT Service : public QObject
 {
     Q_OBJECT
@@ -25,13 +26,11 @@ class AKASHI_ADDON_EXPORT Service : public QObject
     Service(QObject *parent = nullptr) : QObject{parent} {};
     ~Service() = default;
 
-    virtual void setServiceRegistry(ServiceRegistry *f_registry = nullptr) {};
-    Service::State getState() { return m_state; };
+    virtual void setServiceRegistry(ServiceRegistry *f_registry = nullptr);
+    void setState(Service::State f_state);
+    Service::State getState();
 
-    QString getServiceProperty(QString f_key) const
-    {
-        return m_service_properties.value(f_key, {});
-    }
+    QString getServiceProperty(QString f_key) const;
 
   protected:
     Service::State m_state = State::PENDING;

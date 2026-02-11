@@ -21,7 +21,9 @@
 #include "command_extension.h"
 #include "config_manager.h"
 #include "db_manager.h"
+#include "discordhook.h"
 #include "server.h"
+#include "serviceregistry.h"
 
 // This file is for commands under the moderation category in aoclient.h
 // Be sure to register the command in the header before adding it here!
@@ -85,8 +87,16 @@ void AOClient::cmdBan(int argc, QStringList argv)
         l_kick_counter++;
 
         emit logBan(l_ban.moderator, l_ban.ipid, l_ban_duration, l_ban.reason);
-        if (ConfigManager::discordBanWebhookEnabled())
-            emit server->banWebhookRequest(l_ban.ipid, l_ban.moderator, l_ban_duration, l_ban.reason, l_ban_id);
+        if (ConfigManager::discordBanWebhookEnabled() && m_service_registry->exists(DiscordHook::SERVICE_ID)) {
+            DiscordMessage l_message;
+            l_message.setRequestUrl(ConfigManager::discordBanWebhookUrl())
+                .beginEmbed()
+                .setEmbedColor(ConfigManager::discordWebhookColor())
+                .setEmbedTitle("Ban issued by " + l_ban.moderator)
+                .setEmbedDescription("Client IPID : " + l_ban.ipid + "\nBan ID: " + QString::number(l_ban.id) + "\nBan reason : " + l_ban.reason + "\nBanned until : " + QString::number(l_ban.duration))
+                .endEmbed();
+            m_service_registry->get<DiscordHook>(DiscordHook::SERVICE_ID).value()->post(l_message);
+        }
     }
 
     if (l_kick_counter > 1)

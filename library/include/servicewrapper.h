@@ -7,6 +7,8 @@
 
 // This is a non-owning wrapper. Because I say so. - Salanto
 
+Q_DECLARE_EXPORTED_LOGGING_CATEGORY(akashiServiceWrapper, AKASHI_ADDON_EXPORT)
+
 template <class T>
     requires std::is_base_of_v<QObject, T>
 class ServiceWrapper : public Service

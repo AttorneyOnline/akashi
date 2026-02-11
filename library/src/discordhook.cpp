@@ -11,6 +11,8 @@
 #include <QNetworkReply>
 #include <QNetworkRequest>
 
+Q_LOGGING_CATEGORY(akashiDiscordHook, "akashi.addon.discordhook")
+
 DiscordMessage &DiscordMessage::setRequestUrl(const QString &url)
 {
     m_request_url = url;
@@ -75,7 +77,7 @@ DiscordMessage &DiscordMessage::setEmbedUrl(const QString &url)
     return *this;
 }
 
-DiscordMessage &DiscordMessage::setEmbedColor(int color)
+DiscordMessage &DiscordMessage::setEmbedColor(QString color)
 {
     if (m_building_embed) {
         m_current_embed["color"] = color;
@@ -238,7 +240,7 @@ DiscordHook::DiscordHook(QObject *parent) : Service{parent}
 {
     m_service_properties = {{"author", "Salanto"},
                             {"version", "1.0.0"},
-                            {"identifier", "akashi.network.discordhook"}};
+                            {"identifier", SERVICE_ID}};
 }
 
 void DiscordHook::setServiceRegistry(ServiceRegistry *f_registry)
@@ -247,23 +249,23 @@ void DiscordHook::setServiceRegistry(ServiceRegistry *f_registry)
 
     auto l_service = m_registry->get<ServiceWrapper<QNetworkAccessManager>>("qt.network.manager");
     if (!l_service.has_value()) {
-        m_state = FAILED;
+        setState(State::FAILED);
     }
 
-    m_state = OK;
+    setState(State::OK);
     m_network_manager = l_service.value()->get();
 }
 
 void DiscordHook::post(const DiscordMessage &message)
 {
     if (!m_network_manager) {
-        qWarning() << "Cannot post DiscordMessage: QNetworkAccessManager not installed";
+        qCWarning(akashiDiscordHook) << "Cannot post DiscordMessage: QNetworkAccessManager not installed";
         return;
     }
 
     QUrl url(message.requestUrl());
     if (!url.isValid()) {
-        qWarning() << "Failed to post DiscordMessage: Invalid URL" << message.requestUrl();
+        qCWarning(akashiDiscordHook) << "Failed to post DiscordMessage: Invalid URL" << qUtf8Printable(message.requestUrl());
         return;
     }
 
@@ -280,26 +282,13 @@ void DiscordHook::post(const DiscordMessage &message)
 
 void DiscordHook::post(const DiscordMultipartMessage &message)
 {
-    if (!m_network_manager) {
-        qWarning() << "Cannot post DiscordMultipartMessage: QNetworkAccessManager not installed";
-        return;
-    }
-
     QUrl url(message.requestUrl());
     if (!url.isValid()) {
-        qWarning() << "Failed to post DiscordMultipartMessage: Invalid URL" << message.requestUrl();
+        qCWarning(akashiDiscordHook) << "Failed to post DiscordMultipartMessage: Invalid URL" << qUtf8Printable(message.requestUrl());
         return;
     }
 
     auto *multipart = new QHttpMultiPart(QHttpMultiPart::FormDataType);
-
-    if (!message.payloadJson().isEmpty()) {
-        QHttpPart json_part;
-        json_part.setHeader(QNetworkRequest::ContentDispositionHeader, "form-data; name=\"payload_json\"");
-        json_part.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-        json_part.setBody(QJsonDocument(message.payloadJson()).toJson(QJsonDocument::Compact));
-        multipart->append(json_part);
-    }
 
     for (int i = 0; i < message.size(); ++i) {
         const DiscordMultipart &part_data = message.partAt(i);
@@ -324,6 +313,14 @@ void DiscordHook::post(const DiscordMultipartMessage &message)
         multipart->append(http_part);
     }
 
+    if (!message.payloadJson().isEmpty()) {
+        QHttpPart json_part;
+        json_part.setHeader(QNetworkRequest::ContentDispositionHeader, "form-data; name=\"payload_json\"");
+        json_part.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+        json_part.setBody(QJsonDocument(message.payloadJson()).toJson(QJsonDocument::Compact));
+        multipart->append(json_part);
+    }
+
     QNetworkRequest request(url);
 
     QNetworkReply *reply = m_network_manager->post(request, multipart);
@@ -339,8 +336,8 @@ void DiscordHook::onDiscordResponse(QNetworkReply *reply)
     reply->deleteLater();
 
     if (reply->error() != QNetworkReply::NoError) {
-        qWarning() << "Discord webhook failed:" << reply->errorString();
-        qWarning() << "Response body:" << reply->readAll();
+        qCWarning(akashiDiscordHook) << "Discord webhook failed:" << qUtf8Printable(reply->errorString());
+        qCWarning(akashiDiscordHook) << "Response body:" << reply->readAll();
         return;
     }
 }

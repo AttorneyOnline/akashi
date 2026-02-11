@@ -38,7 +38,7 @@ class AKASHI_ADDON_EXPORT DiscordMessage : public DiscordMessageCommon
     DiscordMessage &setEmbedTitle(const QString &title);
     DiscordMessage &setEmbedDescription(const QString &description);
     DiscordMessage &setEmbedUrl(const QString &url);
-    DiscordMessage &setEmbedColor(int color);
+    DiscordMessage &setEmbedColor(QString color);
     DiscordMessage &setEmbedTimestamp(const QString &timestamp);
     DiscordMessage &setEmbedFooter(const QString &text, const QString &icon_url = "");
     DiscordMessage &setEmbedImage(const QString &url);
@@ -82,9 +82,9 @@ class AKASHI_ADDON_EXPORT DiscordMultipartMessage : public DiscordMessageCommon
     ~DiscordMultipartMessage() = default;
 
     template <typename T>
-    DiscordMultipartMessage &addPart(T data, QString name, QString filename = "")
+    DiscordMultipartMessage &addPart(T data, QString name, QString filename = "", QString mime_type = "", QString charset = "")
     {
-        m_parts.append(DiscordMultipart(std::move(data), std::move(name), std::move(filename)));
+        m_parts.append(DiscordMultipart(std::move(data), std::move(name), std::move(filename), std::move(mime_type), std::move(charset)));
         return *this;
     }
 
@@ -101,6 +101,7 @@ class AKASHI_ADDON_EXPORT DiscordMultipartMessage : public DiscordMessageCommon
     QJsonObject m_payload_json;
 };
 
+Q_DECLARE_EXPORTED_LOGGING_CATEGORY(akashiDiscordHook, AKASHI_ADDON_EXPORT)
 class AKASHI_ADDON_EXPORT DiscordHook : public Service
 {
     Q_OBJECT
@@ -109,7 +110,10 @@ class AKASHI_ADDON_EXPORT DiscordHook : public Service
     DiscordHook(QObject *parent = nullptr);
     ~DiscordHook() = default;
 
-    void setServiceRegistry(ServiceRegistry *f_registry = nullptr) override;
+    inline const static QString SERVICE_ID = "akashi.addon.discordook";
+
+    void
+    setServiceRegistry(ServiceRegistry *f_registry = nullptr) override;
 
     void
     post(const DiscordMessage &message);

@@ -97,8 +97,6 @@ qt_add_executable(akashi
   src/data_types.h
   src/db_manager.cpp
   src/db_manager.h
-  src/discord.cpp
-  src/discord.h
   src/main.cpp
   src/medieval_parser.cpp
   src/medieval_parser.h
