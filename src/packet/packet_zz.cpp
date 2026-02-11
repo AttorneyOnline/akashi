@@ -47,7 +47,7 @@ void PacketZZ::handlePacket(AreaData *area, AOClient &client) const
     }
     emit client.logModcall((client.character() + " " + client.characterName()), client.m_ipid, client.name(), client.getServer()->getAreaById(client.areaId())->name());
 
-    if (ConfigManager::discordModcallWebhookEnabled()) {
+    if (ConfigManager::discordModcallWebhookEnabled() && client.m_service_registry->exists(DiscordHook::SERVICE_ID)) {
         QString l_name = client.name();
         if (client.name().isEmpty())
             l_name = client.character();
