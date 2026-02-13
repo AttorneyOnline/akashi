@@ -26,6 +26,7 @@
 
 int main(int argc, char *argv[])
 {
+    qputenv("QT_LOGGING_CONF", "config/qtlogging.ini");
     QCoreApplication app(argc, argv);
     QCoreApplication::setApplicationName("akashi");
     QCoreApplication::setApplicationVersion("jackfruit (1.9)");

@@ -22,6 +22,7 @@
 #include "config_manager.h"
 #include "db_manager.h"
 #include "discordhook.h"
+#include "discordmessagehelper.h"
 #include "server.h"
 #include "serviceregistry.h"
 
@@ -88,14 +89,10 @@ void AOClient::cmdBan(int argc, QStringList argv)
 
         emit logBan(l_ban.moderator, l_ban.ipid, l_ban_duration, l_ban.reason);
         if (ConfigManager::discordBanWebhookEnabled() && m_service_registry->exists(DiscordHook::SERVICE_ID)) {
-            DiscordMessage l_message;
-            l_message.setRequestUrl(ConfigManager::discordBanWebhookUrl())
-                .beginEmbed()
-                .setEmbedColor(ConfigManager::discordWebhookColor())
-                .setEmbedTitle("Ban issued by " + l_ban.moderator)
-                .setEmbedDescription("Client IPID : " + l_ban.ipid + "\nBan ID: " + QString::number(l_ban.id) + "\nBan reason : " + l_ban.reason + "\nBanned until : " + QString::number(l_ban.duration))
-                .endEmbed();
-            m_service_registry->get<DiscordHook>(DiscordHook::SERVICE_ID).value()->post(l_message);
+            DiscordMessage l_message = DiscordMessageHelper::banMessage(l_ban.ipid, l_ban.moderator, l_ban_duration, l_ban.reason, l_ban_id);
+            if (std::optional<DiscordHook *> l_hook = m_service_registry->get<DiscordHook>(DiscordHook::SERVICE_ID); l_hook.has_value()) {
+                l_hook.value()->post(l_message);
+            }
         }
     }
 

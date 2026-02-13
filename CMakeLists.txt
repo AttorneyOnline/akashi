@@ -111,6 +111,7 @@ qt_add_executable(akashi
   src/serverpublisher.h
   src/testimony_recorder.cpp
   src/typedefs.h
+  src/discordmessagehelper.h
 )
 
 target_link_libraries(akashi PRIVATE

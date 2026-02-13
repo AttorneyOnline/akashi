@@ -4,6 +4,7 @@ add_library(akashi_addon SHARED
     include/serviceregistry.h src/serviceregistry.cpp
     include/servicewrapper.h src/servicewrapper.cpp
     include/discordhook.h src/discordhook.cpp
+    include/discordtypes.h
 )
 add_library(akashi::Addon ALIAS akashi_addon)
 

@@ -13,12 +13,12 @@ void Service::setServiceRegistry(ServiceRegistry *f_registry)
 void Service::setState(State f_state)
 {
     m_state = f_state;
-    qCDebug(akashiService) << "ServiceState of" << getServiceProperty("identifier") << "is set to" << m_state;
+    qCDebug(akashiService) << "Status of" << getServiceProperty("identifier") << "is set to" << m_state;
 }
 
 Service::State Service::getState()
 {
-    qCDebug(akashiService) << "ServiceState of" << getServiceProperty("identifier") << "is" << m_state;
+    qCDebug(akashiService) << "Status of" << getServiceProperty("identifier") << "is" << m_state;
     return m_state;
 }
 

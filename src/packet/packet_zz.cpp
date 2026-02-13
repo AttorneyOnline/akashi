@@ -1,6 +1,7 @@
 #include "packet/packet_zz.h"
 #include "config_manager.h"
 #include "discordhook.h"
+#include "discordmessagehelper.h"
 #include "packet/packet_factory.h"
 #include "server.h"
 #include "serviceregistry.h"
@@ -62,24 +63,9 @@ void PacketZZ::handlePacket(AreaData *area, AOClient &client) const
             }
         }
 
-        DiscordMessage l_message;
-        l_message.setContent(ConfigManager::discordModcallWebhookContent())
-            .beginEmbed()
-            .setEmbedColor(ConfigManager::discordWebhookColor())
-            .setEmbedTitle(l_name + " filed a modcall in " + l_areaName)
-            .setEmbedDescription(webhook_reason)
-            .endEmbed();
-
-        const auto l_data = client.getServer()->getAreaBuffer(l_areaName);
-        QString l_log;
-
-        for (const QString &l_entry : l_data) {
-            l_log.append(l_entry);
+        DiscordMultipartMessage l_message = DiscordMessageHelper::modcallMessage(l_name, l_areaName, webhook_reason, client.getServer()->getAreaBuffer(l_areaName));
+        if (std::optional<DiscordHook *> l_hook = client.m_service_registry->get<DiscordHook>(DiscordHook::SERVICE_ID); l_hook.has_value()) {
+            l_hook.value()->post(l_message);
         }
-        DiscordMultipartMessage l_multi_message;
-        l_multi_message.setRequestUrl(ConfigManager::discordModcallWebhookUrl());
-        l_multi_message.addPart(l_log.toUtf8(), "file", "log.txt", "text/plain", "utf-8").setPayloadJson(l_message.toJson());
-
-        client.m_service_registry->get<DiscordHook>(DiscordHook::SERVICE_ID).value()->post(l_multi_message);
     }
 }

@@ -3,6 +3,7 @@
 #include "config_manager.h"
 #include "db_manager.h"
 #include "discordhook.h"
+#include "discordmessagehelper.h"
 #include "server.h"
 #include "serviceregistry.h"
 
@@ -106,14 +107,10 @@ void PacketMA::handlePacket(AreaData *area, AOClient &client) const
 
         int ban_id = client.getServer()->getDatabaseManager()->getBanID(ban.ip);
         if (ConfigManager::discordBanWebhookEnabled() && client.m_service_registry->exists(DiscordHook::SERVICE_ID)) {
-            DiscordMessage l_message;
-            l_message.setRequestUrl(ConfigManager::discordBanWebhookUrl())
-                .beginEmbed()
-                .setEmbedColor(ConfigManager::discordWebhookColor())
-                .setEmbedTitle("Ban issued by " + ban.moderator)
-                .setEmbedDescription("Client IPID : " + ban.ipid + "\nBan ID: " + QString::number(ban_id) + "\nBan reason : " + ban.reason + "\nBanned until : " + QString::number(ban.duration))
-                .endEmbed();
-            client.m_service_registry->get<DiscordHook>(DiscordHook::SERVICE_ID).value()->post(l_message);
+            DiscordMessage l_message = DiscordMessageHelper::banMessage(ban.ipid, ban.moderator, timestamp, ban.reason, ban_id);
+            if (std::optional<DiscordHook *> l_hook = client.m_service_registry->get<DiscordHook>(DiscordHook::SERVICE_ID); l_hook.has_value()) {
+                l_hook.value()->post(l_message);
+            }
         }
     }
 }
