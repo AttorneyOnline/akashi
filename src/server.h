@@ -43,6 +43,7 @@ class DBManager;
 class Discord;
 class MusicManager;
 class ULogger;
+class ServiceRegistry;
 
 /**
  * @brief The class that represents the actual server as it is.
@@ -58,7 +59,7 @@ class Server : public QObject
      * @param p_ws_port The port to listen for connections on.
      * @param parent Qt-based parent, passed along to inherited constructor from QObject.
      */
-    Server(int p_ws_port, QObject *parent = nullptr);
+    Server(int p_ws_port, ServiceRegistry *f_registry = nullptr, QObject *parent = nullptr);
 
     /**
      * @brief Destructor for the Server class.
@@ -66,6 +67,11 @@ class Server : public QObject
      * @details Marks every Client, the WSProxy, the underlying #server, and the database manager to be deleted later.
      */
     ~Server();
+
+    /**
+     * @brief Initialises service instances.
+     */
+    bool initServices();
 
     /**
      * @brief Starts the server.
@@ -351,13 +357,6 @@ class Server : public QObject
     void clientConnected();
 
     /**
-     * @brief Method to construct and reconstruct Discord Webhook Integration.
-     *
-     * @details Constructs or rebuilds Discord Object during server startup and configuration reload.
-     */
-    void handleDiscordIntegration();
-
-    /**
      * @brief Marks a userID as free and ads it back to the available client id queue.
      */
     void markIDFree(const int &f_user_id);
@@ -386,26 +385,6 @@ class Server : public QObject
     void updateHTTPConfiguration();
 
     /**
-     * @brief Sends a modcall webhook request, emitted by AOClient::pktModcall.
-     *
-     * @param f_name The character or OOC name of the client who sent the modcall.
-     * @param f_area The name of the area the modcall was sent from.
-     * @param f_reason The reason the client specified for the modcall.
-     * @param f_buffer The area's log buffer.
-     */
-    void modcallWebhookRequest(const QString &f_name, const QString &f_area, const QString &f_reason, const QQueue<QString> &f_buffer);
-
-    /**
-     * @brief Sends a ban webhook request, emitted by AOClient::cmdBan
-     * @param f_ipid The IPID of the banned client.
-     * @param f_moderator The moderator who issued the ban.
-     * @param f_duration The duration of the ban in a human readable format.
-     * @param f_reason The reason for the ban.
-     * @param f_banID The ID of the issued ban.
-     */
-    void banWebhookRequest(const QString &f_ipid, const QString &f_moderator, const QString &f_duration, const QString &f_reason, const int &f_banID);
-
-    /**
      * @brief Signal connected to universal logger. Logs a client connection attempt.
      * @param f_ip_address The IP Address of the incoming connection.
      * @param f_ipid The IPID of the incoming connection.
@@ -418,11 +397,6 @@ class Server : public QObject
      * @brief Listens for incoming websocket connections.
      */
     QWebSocketServer *server;
-
-    /**
-     * @brief Handles Discord webhooks.
-     */
-    Discord *discord;
 
     /**
      * @brief Handles HTTP server advertising.
@@ -438,6 +412,8 @@ class Server : public QObject
      * @brief Handles all musiclists.
      */
     MusicManager *music_manager;
+
+    ServiceRegistry *m_service_registry;
 
     /**
      * @brief The port through which the server will accept WebSocket connections.

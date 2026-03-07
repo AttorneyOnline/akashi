@@ -11,6 +11,8 @@ set(CMAKE_AUTOUIC ON)
 find_package(Qt6 6.4 REQUIRED COMPONENTS Core Network WebSockets Sql)
 find_package(Qt6 REQUIRED COMPONENTS Core Network WebSockets Sql)
 
+add_subdirectory(library)
+
 qt_standard_project_setup()
 qt_add_executable(akashi
   src/commands/area.cpp
@@ -95,8 +97,6 @@ qt_add_executable(akashi
   src/data_types.h
   src/db_manager.cpp
   src/db_manager.h
-  src/discord.cpp
-  src/discord.h
   src/main.cpp
   src/medieval_parser.cpp
   src/medieval_parser.h
@@ -111,6 +111,7 @@ qt_add_executable(akashi
   src/serverpublisher.h
   src/testimony_recorder.cpp
   src/typedefs.h
+  src/discordmessagehelper.h
 )
 
 target_link_libraries(akashi PRIVATE
@@ -118,6 +119,7 @@ target_link_libraries(akashi PRIVATE
     Qt6::Sql
     Qt6::Network
     Qt6::WebSockets
+    akashi_addon
 )
 
 target_include_directories(akashi PRIVATE src src/logger src/network src/packet)

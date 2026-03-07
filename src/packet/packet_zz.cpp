@@ -1,7 +1,10 @@
 #include "packet/packet_zz.h"
 #include "config_manager.h"
+#include "discordhook.h"
+#include "discordmessagehelper.h"
 #include "packet/packet_factory.h"
 #include "server.h"
+#include "serviceregistry.h"
 
 #include <QQueue>
 
@@ -45,7 +48,7 @@ void PacketZZ::handlePacket(AreaData *area, AOClient &client) const
     }
     emit client.logModcall((client.character() + " " + client.characterName()), client.m_ipid, client.name(), client.getServer()->getAreaById(client.areaId())->name());
 
-    if (ConfigManager::discordModcallWebhookEnabled()) {
+    if (ConfigManager::discordModcallWebhookEnabled() && client.m_service_registry->exists(DiscordHook::SERVICE_ID)) {
         QString l_name = client.name();
         if (client.name().isEmpty())
             l_name = client.character();
@@ -60,6 +63,9 @@ void PacketZZ::handlePacket(AreaData *area, AOClient &client) const
             }
         }
 
-        emit client.getServer()->modcallWebhookRequest(l_name, l_areaName, webhook_reason, client.getServer()->getAreaBuffer(l_areaName));
+        DiscordMultipartMessage l_message = DiscordMessageHelper::modcallMessage(l_name, l_areaName, webhook_reason, client.getServer()->getAreaBuffer(l_areaName));
+        if (std::optional<DiscordHook *> l_hook = client.m_service_registry->get<DiscordHook>(DiscordHook::SERVICE_ID); l_hook.has_value()) {
+            l_hook.value()->post(l_message);
+        }
     }
 }

@@ -23,17 +23,21 @@
 #include "command_extension.h"
 #include "config_manager.h"
 #include "db_manager.h"
-#include "discord.h"
+#include "discordhook.h"
 #include "logger/u_logger.h"
 #include "music_manager.h"
 #include "network/network_socket.h"
 #include "packet/packet_factory.h"
 #include "serverpublisher.h"
+#include "serviceregistry.h"
 
-Server::Server(int p_ws_port, QObject *parent) :
+#include <QNetworkAccessManager>
+
+Server::Server(int p_ws_port, ServiceRegistry *f_registry, QObject *parent) :
     QObject(parent),
     m_port(p_ws_port),
-    m_player_count(0)
+    m_player_count(0),
+    m_service_registry{f_registry}
 {
     timer = new QTimer(this);
 
@@ -46,9 +50,6 @@ Server::Server(int p_ws_port, QObject *parent) :
     command_extension_collection = new CommandExtensionCollection;
     command_extension_collection->setCommandNameWhitelist(AOClient::COMMANDS.keys());
     command_extension_collection->loadFile("config/command_extensions.ini");
-
-    // We create it, even if its not used later on.
-    discord = new Discord(this);
 
     logger = new ULogger(this);
     connect(this, &Server::logConnectionAttempt, logger, &ULogger::logConnectionAttempt);
@@ -77,9 +78,6 @@ void Server::start()
                 this, &Server::clientConnected);
         qInfo() << "Server listening on" << server->serverPort();
     }
-
-    // Checks if any Discord webhooks are enabled.
-    handleDiscordIntegration();
 
     // Construct modern advertiser if enabled in config
     server_publisher = new ServerPublisher(server->serverPort(), &m_player_count, this);
@@ -151,7 +149,7 @@ void Server::clientConnected()
     }
 
     int user_id = m_available_ids.pop();
-    AOClient *client = new AOClient(this, l_socket, l_socket, user_id, music_manager);
+    AOClient *client = new AOClient(this, l_socket, l_socket, user_id, music_manager, m_service_registry);
     m_clients_ids.insert(user_id, client);
     m_player_state_observer.registerClient(client);
 
@@ -282,7 +280,6 @@ void Server::reloadSettings()
     ConfigManager::reloadSettings();
     emit reloadRequest(ConfigManager::serverName(), ConfigManager::serverDescription());
     emit updateHTTPConfiguration();
-    handleDiscordIntegration();
     logger->loadLogtext();
     m_ipban_list = ConfigManager::iprangeBans();
     acl_roles_handler->loadFile("config/acl_roles.ini");
@@ -490,21 +487,6 @@ void Server::allowMessage()
     m_can_send_ic_messages = true;
 }
 
-void Server::handleDiscordIntegration()
-{
-    // Prevent double connecting by preemtively disconnecting them.
-    disconnect(this, nullptr, discord, nullptr);
-
-    if (ConfigManager::discordWebhookEnabled()) {
-        if (ConfigManager::discordModcallWebhookEnabled())
-            connect(this, &Server::modcallWebhookRequest, discord, &Discord::onModcallWebhookRequested);
-
-        if (ConfigManager::discordBanWebhookEnabled())
-            connect(this, &Server::banWebhookRequest, discord, &Discord::onBanWebhookRequested);
-    }
-    return;
-}
-
 void Server::markIDFree(const int &f_user_id)
 {
     m_player_state_observer.unregisterClient(m_clients_ids[f_user_id]);
@@ -555,8 +537,20 @@ Server::~Server()
         l_client->deleteLater();
     }
     server->deleteLater();
-    discord->deleteLater();
     acl_roles_handler->deleteLater();
 
     delete db_manager;
+}
+
+bool Server::initServices()
+{
+    if (!m_service_registry) {
+        qCritical() << "Failed to create services. ServiceRegistry does not exist";
+        return false;
+    }
+
+    m_service_registry->createWrapped<QNetworkAccessManager>("qt.network.manager", QT_VERSION_STR, "Qt");
+    m_service_registry->create<DiscordHook>();
+
+    return true;
 }

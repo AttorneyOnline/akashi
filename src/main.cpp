@@ -17,25 +17,21 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "config_manager.h"
 #include "server.h"
+#include "serviceregistry.h"
 
 #include <cstdlib>
 
 #include <QCoreApplication>
 #include <QDebug>
 
-Server *server;
-
-void cleanup()
-{
-    server->deleteLater();
-}
-
 int main(int argc, char *argv[])
 {
+    qputenv("QT_LOGGING_CONF", "config/qtlogging.ini");
     QCoreApplication app(argc, argv);
     QCoreApplication::setApplicationName("akashi");
     QCoreApplication::setApplicationVersion("jackfruit (1.9)");
-    std::atexit(cleanup);
+
+    ServiceRegistry l_registry(&app);
 
     // Verify server configuration is sound.
     if (!ConfigManager::verifyServerConfig()) {
@@ -44,10 +40,10 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
         QCoreApplication::quit();
     }
-    else {
-        server = new Server(ConfigManager::serverPort(), &app);
-        server->start();
-    }
+
+    Server l_server(ConfigManager::serverPort(), &l_registry, &app);
+    l_server.initServices();
+    l_server.start();
 
     return app.exec();
 }
