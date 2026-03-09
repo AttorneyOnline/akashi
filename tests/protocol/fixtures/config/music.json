@@ -1,0 +1,558 @@
+[
+   {
+     "category": "== Prelude ==",
+     "songs": [
+       {
+         "name": "Ace Attorney/Prelude/[AA] Prelude.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Prelude/[JFA] Prelude.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Prelude/[T&T] Prelude.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Prelude/[AJ] Prelude.opus",
+         "length": -1
+       }
+     ]
+   },
+   {
+     "category": "== Trial ==",
+     "songs": [
+       {
+         "name": "Ace Attorney/Trial/[AA] Trial.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Trial/[JFA] Trial.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Trial/[T&T] Trial.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Trial/[AJ] Trial.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Trial/[AAI] Trial.opus",
+         "length": -1
+       }
+     ]
+   },
+   {
+     "category": "== Logic and Trick ==",
+     "songs": [
+       {
+         "name": "Ace Attorney/Logic and Trick/[AA] Logic and Trick.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Logic and Trick/[JFA] Tricks and Magic.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Logic and Trick/[AJ] Trance Logic.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Logic and Trick/[AAI] Tricks and Gimmicks.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Logic and Trick/[AAI] Tricks and Baroque.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Logic and Trick/[AAI2] Tricks Analysis.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Logic and Trick/[AAI2] Tricks Break.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Logic and Trick/[PLvsPW] Logic and Tricks ~ English.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Logic and Trick/[PLvsPW] Logic and Witchcraft.opus",
+         "length": -1
+       }
+     ]
+   },
+   {
+     "category": "== Questioning ==",
+     "songs": [
+       {
+         "name": "Ace Attorney/Questioning/[AA] Questioning ~ (Moderato).opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Questioning/[AA] Questioning ~ (Allegro).opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Questioning/[JFA] Questioning ~ (Moderato).opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Questioning/[JFA] Questioning ~ (Allegro).opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Questioning/[T&T] Questioning ~ (Moderato).opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Questioning/[T&T] Questioning ~ (Allegro).opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Questioning/[AJ] Questioning ~ (Moderato).opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Questioning/[AJ] Questioning ~ (Allegro).opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Questioning/[AAI] Confrontation ~ (Moderato).opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Questioning/[AAI] Confrontation ~ (Allegro).opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Questioning/[AAI] Confrontation ~ (Presto).opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Questioning/[AAI2] Confrontation ~ (Moderato).opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Questioning/[AAI2] Confrontation ~ (Allegro).opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Questioning/[AAI2] Confrontation ~ (Presto).opus",
+         "length": -1
+       }
+     ]
+   },
+   {
+     "category": "== Objection ==",
+     "songs": [
+       {
+         "name": "Ace Attorney/Objection/[AA] Objection.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Objection/[JFA] Objection.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Objection/[T&T] Objection.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Objection/[AJ] Objection.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Objection/[AAI] Objection.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Objection/[AAI2] Objection.opus",
+         "length": -1
+       }
+     ]
+   },
+   {
+     "category": "== Pursuit ==",
+     "songs": [
+       {
+         "name": "Ace Attorney/Pursuit/[AA] Pursuit.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Pursuit/[AA] Pursuit  ~ variation.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Pursuit/[JFA] Pursuit.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Pursuit/[JFA] Pursuit ~ variation.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Pursuit/[T&T] Pursuit.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Pursuit/[T&T] Pursuit ~ variation.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Pursuit/[AJ] Pursuit.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Pursuit/[AJ] Pursuit ~ variation.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Pursuit/[AAI] Pursuit.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Pursuit/[AAI] Pursuit ~ variation.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Pursuit/[AAI2] Pursuit.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Pursuit/[AAI2] Pursuit ~ variation.opus",
+         "length": -1
+       }
+     ]
+   },
+   {
+     "category": "== Announce The Truth ==",
+     "songs": [
+       {
+         "name": "Ace Attorney/Announce The Truth/[AA] Announce The Truth.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Announce The Truth/[JFA] Announce The Truth.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Announce The Truth/[T&T] Announce The Truth.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Announce The Truth/[AJ] Announce The Truth.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Announce The Truth/[AAI] Announce The Truth.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Announce The Truth/[AAI2] Announce The Truth.opus",
+         "length": -1
+       }
+     ]
+   },
+   {
+     "category": "== Suspense ==",
+     "songs": [
+       {
+         "name": "Ace Attorney/Suspense/[AA] Suspense.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Suspense/[AJ] Suspense.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Suspense/[PLvsPW] Suspense ~ English.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Suspense/[PLvsPW] Suspense.opus",
+         "length": -1
+       }
+     ]
+   },
+   {
+     "category": "== Crisis ==",
+     "songs": [
+       {
+         "name": "Ace Attorney/Crisis/[JFA] Hotline of Fate.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Crisis/[AAI] Crises of Fate.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Crisis/[AAI2] Trial of Fate .opus",
+         "length": -1
+       }
+     ]
+   },
+   {
+     "category": "== Investigation ==",
+     "songs": [
+       {
+         "name": "Ace Attorney/Investigation/[AA] Investigation ~ Opening.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Investigation/[AA] Investigation ~ Core.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Investigation/[JFA] Investigation ~ Opening.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Investigation/[JFA] Investigation ~ Middle.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Investigation/[JFA] Investigation ~ Core.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Investigation/[T&T] Investigation ~ Opening.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Investigation/[T&T] Investigation ~ Middle.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Investigation/[AJ] Investigation ~ Opening.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Investigation/[AJ] Investigation ~ Core.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Investigation/[AAI] Investigation ~ Opening.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Investigation/[AAI] Investigation ~ Middle.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Investigation/[AAI] Investigation ~ Core.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Investigation/[AAI] Deduction ~ Contradiction at the Crime Scene.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Investigation/[AAI2] Investigation ~ Opening.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Investigation/[AAI2] Investigation ~ Middle.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Investigation/[AAI2] Investigation ~ Core.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Investigation/[AAI2] Deduction ~ Truth about the Crime Scene.opus",
+         "length": -1
+       }
+     ]
+   },
+   {
+     "category": "== Character Themes ==",
+     "songs": [
+       {
+         "name": "Ace Attorney/Character Themes/[AA] Dick Gumshoe ~ It's Detective Gumshoe, Pal!.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Character Themes/[AA] Ema Skye ~ Turnabout Sisters' Theme.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Character Themes/[AA] Maya Fey ~ Turnabout Sisters' Theme.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Character Themes/[JFA] Franziska von Karma ~ Great Revival.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Character Themes/[JFA] Maya Fey ~ Turnabout Sisters' Theme.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Character Themes/[JFA] Miles Edgeworth ~ Great Revival.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Character Themes/[T&T] Godot - The Fragrance of Dark Coffee.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Character Themes/[T&T] Larry Butz ~ When Something Smells, It's Usually Me.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Character Themes/[T&T] Luke Atmey ~ I Just Want Love.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Character Themes/[T&T] Victor Kudo ~ How Sad, the Melody of This War Song.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Character Themes/[AJ] Ema Skye ~ The Scientific Detective.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Character Themes/[AJ] Klavier ~ Guilty love.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Character Themes/[AJ] Trucy's Theme ~ Child of Magic.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Character Themes/[AAI] Kay Faraday ~ The Great Truth Burglar.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Character Themes/[AAI] Lang ~ Speak up Pup.opus",
+         "length": -1
+       }
+     ]
+   },
+   {
+     "category": "== Reminiscence ==",
+     "songs": [
+       {
+         "name": "Ace Attorney/Reminiscence/[AA] Reminiscing ~ Maya's Grief.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Reminiscence/[AA] Reminiscing ~ Light and Shadow of the Film Studio.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Reminiscence/[AA] Reminiscing ~ The Class Trial.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Reminiscence/[AA] Reminiscing ~ The DL-6 Incident.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Reminiscence/[AA] Reminiscing ~ The SL-9 Incident.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Reminiscence/[JFA] Reminiscing ~ Scars Carved by Fire.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Reminiscence/[JFA] Reminiscing ~ The Steel Samurai's Ballad.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Reminiscence/[JFA] Reminiscing ~ True Pain.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Reminiscence/[T&T] Reminiscing ~ The Bitter Taste of Truth.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Reminiscence/[T&T] Reminiscing ~ The Scenery of Dusky Bridge.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Reminiscence/[T&T] Reminiscing ~ What The Others Have Seen.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Reminiscence/[AJ] Reminiscing ~ Fate Smeared by Tricks and Gimmicks.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Reminiscence/[AJ] Reminiscing ~ Forgotten Legend.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Reminiscence/[AJ] Reminiscing ~ Wounded Foxes.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Reminiscence/[AAI] Reminiscing ~ False Relationships.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Reminiscence/[AAI] Reminiscing ~ The Countries Torn Apart.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Reminiscence/[AAI] Reminiscing ~ The KG-8 Incident.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Reminiscence/[AAI2] Reminiscing ~ An Amnesiac Girl.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Reminiscence/[AAI2] Reminiscing ~ The IS-7 Incident.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Reminiscence/[AAI2] Reminiscing ~ The SS-5 Incident.opus",
+         "length": -1
+       }
+     ]
+   },
+   {
+     "category": "== Misc ==",
+     "songs": [
+       {
+         "name": "Ace Attorney/Misc/[AA] Blissful People.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Misc/[JFA] More Blissful People.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Misc/[AAI] Amusing People.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Misc/[AAI] Doubted People.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Misc/[AAI] Interesting People.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Misc/[AAI] Noisy People.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Misc/[AAI2] Lamenting People.opus",
+         "length": -1
+       },
+       {
+         "name": "Ace Attorney/Misc/[AAI2] Restless People.opus"
+       }
+     ]
+   }
+ ]

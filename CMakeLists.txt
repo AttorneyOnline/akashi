@@ -8,8 +8,10 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-find_package(Qt6 6.4 REQUIRED COMPONENTS Core Network WebSockets Sql)
+find_package(Qt6 6.4 REQUIRED COMPONENTS Core Network WebSockets Sql Test)
 find_package(Qt6 REQUIRED COMPONENTS Core Network WebSockets Sql)
+
+enable_testing()
 
 qt_standard_project_setup()
 qt_add_executable(akashi
@@ -137,3 +139,5 @@ endif()
 set_target_properties(akashi PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY $<1:${CMAKE_CURRENT_LIST_DIR}/bin>
         RUNTIME_OUTPUT_DIRECTORY $<1:${CMAKE_CURRENT_LIST_DIR}/bin>)
+
+add_subdirectory(tests)
