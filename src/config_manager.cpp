@@ -437,6 +437,7 @@ int ConfigManager::maxStatements()
     }
     return l_max;
 }
+
 int ConfigManager::multiClientLimit()
 {
     bool ok;

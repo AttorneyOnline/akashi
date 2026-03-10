@@ -657,3 +657,11 @@ void AOClient::cmdKickOther(int argc, QStringList argv)
     }
     sendServerMessage("Kicked " + QString::number(l_kick_counter) + " multiclients from the server.");
 }
+
+void AOClient::cmdTempLimit(int argc, QStringList argv)
+{
+    Q_UNUSED(argc);
+
+    server->setTempClientLimit(argv[0].toInt());
+    sendServerMessage("Set temporary client limit to " + argv[0]);
+}

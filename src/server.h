@@ -362,6 +362,11 @@ class Server : public QObject
      */
     void markIDFree(const int &f_user_id);
 
+    /**
+     * @brief Sets the temporary client limit for the server, which is a separate limit from the maximum player count.
+     */
+    void setTempClientLimit(const int &f_client_limit);
+
   signals:
 
     /**

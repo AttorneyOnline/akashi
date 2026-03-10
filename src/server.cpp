@@ -156,14 +156,19 @@ void Server::clientConnected()
     m_player_state_observer.registerClient(client);
 
     int multiclient_count = 1;
+    int total_client_count = 0;
     bool is_at_multiclient_limit = false;
     client->calculateIpid();
     auto ban = db_manager->isIPBanned(client->getIpid());
     bool is_banned = ban.first;
     for (AOClient *joined_client : qAsConst(m_clients)) {
+        total_client_count++;
         if (client->m_remote_ip.isEqual(joined_client->m_remote_ip))
             multiclient_count++;
     }
+
+    if (total_client_count > m_temp_client_limit && m_temp_client_limit > 0 && !client->m_remote_ip.isLoopback())
+        is_at_multiclient_limit = true;
 
     if (multiclient_count > ConfigManager::multiClientLimit() && !client->m_remote_ip.isLoopback())
         is_at_multiclient_limit = true;
@@ -510,6 +515,11 @@ void Server::markIDFree(const int &f_user_id)
     m_player_state_observer.unregisterClient(m_clients_ids[f_user_id]);
     m_clients_ids.insert(f_user_id, nullptr);
     m_available_ids.push(f_user_id);
+}
+
+void Server::setTempClientLimit(const int &f_client_limit)
+{
+    m_temp_client_limit = f_client_limit;
 }
 
 void Server::hookupAOClient(AOClient *client)

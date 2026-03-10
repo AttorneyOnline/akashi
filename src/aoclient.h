@@ -1365,6 +1365,17 @@ class AOClient : public QObject
      */
     void cmdKickOther(int argc, QStringList argv);
 
+    /**
+     * @brief Sets the temporary client limit for the server.
+     *
+     * @details This command sets the maximum number of clients that can connect to the server during a temporary lockdown.
+     *
+     * @arg argv The argument is the new temporary client limit.
+     *
+     * @iscommand
+     */
+    void cmdTempLimit(int argc, QStringList argv);
+
     ///@}
 
     /**
