@@ -14,7 +14,7 @@ set(UNIT_TESTS
 
 foreach(name ${UNIT_TESTS})
     qt_add_executable(tst_${name} tst_${name}.cpp)
-    target_link_libraries(tst_${name} PRIVATE akashi_testlib Qt6::Test)
+    target_link_libraries(tst_${name} PRIVATE akashi_core Qt6::Test)
     file(COPY fixtures/config DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/run_${name})
     add_test(NAME unit_${name} COMMAND tst_${name} WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/run_${name})
     set_tests_properties(unit_${name} PROPERTIES TIMEOUT 60)

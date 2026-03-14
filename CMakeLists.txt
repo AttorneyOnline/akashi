@@ -115,19 +115,17 @@ set(AKASHI_SOURCES
   src/typedefs.h
 )
 
-qt_add_executable(akashi
-  src/main.cpp
-  ${AKASHI_SOURCES}
-)
-
-target_link_libraries(akashi PRIVATE
+add_library(akashi_core STATIC ${AKASHI_SOURCES})
+target_include_directories(akashi_core PUBLIC src src/logger src/network src/packet)
+target_link_libraries(akashi_core PUBLIC
     Qt6::Core
     Qt6::Sql
     Qt6::Network
     Qt6::WebSockets
 )
 
-target_include_directories(akashi PRIVATE src src/logger src/network src/packet)
+qt_add_executable(akashi src/main.cpp)
+target_link_libraries(akashi PRIVATE akashi_core)
 
 set_target_properties(akashi PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin")
 
@@ -144,15 +142,5 @@ endif()
 set_target_properties(akashi PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY $<1:${CMAKE_CURRENT_LIST_DIR}/bin>
         RUNTIME_OUTPUT_DIRECTORY $<1:${CMAKE_CURRENT_LIST_DIR}/bin>)
-
-# Library used only by the unit tests, M1 makes it the real core library.
-add_library(akashi_testlib STATIC ${AKASHI_SOURCES})
-target_include_directories(akashi_testlib PUBLIC src src/logger src/network src/packet)
-target_link_libraries(akashi_testlib PUBLIC
-    Qt6::Core
-    Qt6::Sql
-    Qt6::Network
-    Qt6::WebSockets
-)
 
 add_subdirectory(tests)
