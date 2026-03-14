@@ -63,6 +63,7 @@ void NetworkSocket::handleMessage(QString f_data)
 
     if (l_data.toUtf8().size() > 30720) {
         m_client_socket->close(QWebSocketProtocol::CloseCodeTooMuchData);
+        return;
     }
 
     QStringList l_all_packets = l_data.split("%");

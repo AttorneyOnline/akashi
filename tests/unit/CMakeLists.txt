@@ -8,6 +8,8 @@ set(UNIT_TESTS
     config_manager
     crypto
     music_manager
+    playerstateobserver
+    ulogger
 )
 
 foreach(name ${UNIT_TESTS})

@@ -297,7 +297,10 @@ void Server::broadcast(AOPacket *packet, int area_index)
 {
     QVector<int> l_client_ids = m_areas.value(area_index)->joinedIDs();
     for (const int l_client_id : qAsConst(l_client_ids)) {
-        getClientByID(l_client_id)->sendPacket(packet);
+        AOClient *l_client = getClientByID(l_client_id);
+        if (l_client) {
+            l_client->sendPacket(packet);
+        }
     }
 }
 

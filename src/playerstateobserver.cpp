@@ -37,7 +37,10 @@ void PlayerStateObserver::registerClient(AOClient *client)
 
 void PlayerStateObserver::unregisterClient(AOClient *client)
 {
-    Q_ASSERT(m_client_list.contains(client));
+    // Clients that never joined are not registered, so there is nothing to do.
+    if (!m_client_list.contains(client)) {
+        return;
+    }
 
     disconnect(client, nullptr, this, nullptr);
 

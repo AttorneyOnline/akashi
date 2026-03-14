@@ -84,12 +84,12 @@ class ULogger : public QObject
     /**
      * @brief Adds a player kick to the area buffer and writes it to the respective log format.
      */
-    void logKick(const QString &f_moderator, const QString &f_target_ipid);
+    void logKick(const QString &f_moderator, const QString &f_target_ipid, const QString &f_reason);
 
     /**
      * @brief Adds a player ban to the area buffer and writes it to the respective log format.
      */
-    void logBan(const QString &f_moderator, const QString &f_target_ipid, const QString &f_duration);
+    void logBan(const QString &f_moderator, const QString &f_target_ipid, const QString &f_duration, const QString &f_reason);
 
     /**
      * @brief Adds a modcall event to the area buffer, also triggers modcall writing.
@@ -146,8 +146,8 @@ class ULogger : public QObject
         {"cmdrootpass", "[%1][%2][ROOTPASS][%5][%3(%4)]"},
         {"cmdadduser", "[%1][%2][USERADD][%6][%3(%4)]%5"},
         {"cmd", "[%1][%2][CMD][%7][%3(%4)]/%5 %6"},
-        {"kick", "[%1][%2][KICK][%3]"},
-        {"ban", "[%1][%2][BAN][%3][%4]"},
+        {"kick", "[%1][%2][KICK][%3]: %4"},
+        {"ban", "[%1][%2][BAN][%3][%4]: %5"},
         {"modcall", "[%1][%2][MODCALL][%3][%4][%5(%6)]"},
         {"connect", "[%1][CONNECT][%2][%3][%4]"}};
 };

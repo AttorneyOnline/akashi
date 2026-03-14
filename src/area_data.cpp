@@ -732,7 +732,7 @@ void AreaData::switchJukeboxSong()
         m_jukebox_timer->start(l_song.second * 1000);
     }
     else {
-        int l_random_index = QRandomGenerator::system()->bounded(m_jukebox_queue.size() - 1);
+        int l_random_index = QRandomGenerator::system()->bounded(m_jukebox_queue.size());
         l_song_name = m_jukebox_queue[l_random_index];
 
         QPair<QString, float> l_song = m_music_manager->songInformation(l_song_name, index());

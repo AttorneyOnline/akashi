@@ -121,6 +121,14 @@ class TestClient : public QObject
 
     int pendingCount() const { return m_received.size(); }
 
+    bool waitForDisconnect(int timeoutMs = 5000)
+    {
+        if (m_socket.state() == QAbstractSocket::UnconnectedState)
+            return true;
+        QSignalSpy spy(&m_socket, &QWebSocket::disconnected);
+        return spy.wait(timeoutMs);
+    }
+
     void close()
     {
         m_socket.close();
@@ -153,12 +161,13 @@ class ProtocolTest : public QObject
     void joinBurst();
     void oocRoundtrip();
     void escapeCodeRoundtrip();
+    void oversizedFrameDisconnects();
 
   private:
     // Runs and checks the handshake up to (not including) RD.
-    void performHandshake(TestClient &client);
+    void performHandshake(TestClient &client, int expectedPlayers = 0);
     // Handshake plus RD, ignoring the join packets.
-    void joinServer(TestClient &client);
+    void joinServer(TestClient &client, int expectedPlayers = 0);
 
     QTemporaryDir *m_workdir = nullptr;
     QProcess *m_server = nullptr;
@@ -205,7 +214,7 @@ void ProtocolTest::cleanup()
     m_workdir = nullptr;
 }
 
-void ProtocolTest::performHandshake(TestClient &client)
+void ProtocolTest::performHandshake(TestClient &client, int expectedPlayers)
 {
     QVERIFY2(client.connectTo(m_port), "could not connect to the server");
 
@@ -213,11 +222,14 @@ void ProtocolTest::performHandshake(TestClient &client)
     QCOMPARE(client.takeNext(), QStringLiteral("decryptor#NOENCRYPT#%"));
 
     client.send(QStringLiteral("HI#TESTHWID#%"));
-    QCOMPARE(client.takeNext(), QStringLiteral("ID#0#akashi#jackfruit (1.9)#%"));
+    const QString id = client.takeNext();
+    QVERIFY2(id.startsWith(QStringLiteral("ID#")) && id.endsWith(QStringLiteral("#akashi#jackfruit (1.9)#%")),
+             qPrintable("unexpected ID: " + id));
 
     client.send(QStringLiteral("ID#AO2#2.10.0#%"));
     QCOMPARE(client.takeNext(),
-             QStringLiteral("PN#0#100#This is a placeholder server description. Tell the world of AO who you are here!#%"));
+             QStringLiteral("PN#%1#100#This is a placeholder server description. Tell the world of AO who you are here!#%")
+                 .arg(expectedPlayers));
     QCOMPARE(client.takeNext(),
              QStringLiteral("FL#noencryption#yellowtext#prezoom#flipping#customobjections#fastloading#deskmod#"
                             "evidence#cccc_ic_support#arup#casing_alerts#modcall_reason#looping_sfx#additive#"
@@ -241,9 +253,9 @@ void ProtocolTest::performHandshake(TestClient &client)
     QCOMPARE(smFields, advertised);
 }
 
-void ProtocolTest::joinServer(TestClient &client)
+void ProtocolTest::joinServer(TestClient &client, int expectedPlayers)
 {
-    performHandshake(client);
+    performHandshake(client, expectedPlayers);
     client.send(QStringLiteral("RD#%"));
     QVERIFY2(client.waitForIdle(), "server did not go quiet after RD");
     while (client.pendingCount() > 0)
@@ -323,6 +335,32 @@ void ProtocolTest::escapeCodeRoundtrip()
     client.send(QStringLiteral("CT#Tester#") + escaped + QStringLiteral("#%"));
     QCOMPARE(client.takeNext(), QStringLiteral("PU#0#0#Tester#%"));
     QCOMPARE(client.takeNext(), QStringLiteral("CT#Tester#") + escaped + QStringLiteral("#0#%"));
+}
+
+void ProtocolTest::oversizedFrameDisconnects()
+{
+    TestClient witness;
+    joinServer(witness);
+
+    TestClient client;
+    joinServer(client, 1);
+
+    // Drop the join notifications the witness received.
+    QVERIFY(witness.waitForIdle());
+    while (witness.pendingCount() > 0)
+        witness.takeNext();
+
+    // An oversized frame must close the connection without processing its packets.
+    const QString frame = QStringLiteral("CT#Tester#hello#%") + QString(31000, QLatin1Char('A'));
+    client.send(frame);
+    QVERIFY(client.waitForDisconnect());
+
+    // The witness only sees the disconnect updates, never the chat message.
+    QVERIFY(witness.waitForIdle());
+    while (witness.pendingCount() > 0) {
+        const QString packet = witness.takeNext();
+        QVERIFY2(!packet.startsWith(QStringLiteral("CT#")), qPrintable("oversized frame was processed: " + packet));
+    }
 }
 
 QTEST_GUILESS_MAIN(ProtocolTest)

@@ -96,7 +96,7 @@ void ULogger::logCMD(const QString &f_char_name, const QString &f_ipid, const QS
                          .arg(l_time, f_area_name, f_char_name, f_ooc_name, f_ipid);
     }
     else if (f_command == "adduser" && !f_args.isEmpty()) {
-        l_logEntry = QString(m_logtext.value("adduser") + "\n")
+        l_logEntry = QString(m_logtext.value("cmdadduser") + "\n")
                          .arg(l_time, f_area_name, f_char_name, f_ooc_name, f_args.at(0), f_ipid);
     }
     else {
@@ -106,19 +106,19 @@ void ULogger::logCMD(const QString &f_char_name, const QString &f_ipid, const QS
     updateAreaBuffer(f_area_name, l_logEntry);
 }
 
-void ULogger::logKick(const QString &f_moderator, const QString &f_target_ipid)
+void ULogger::logKick(const QString &f_moderator, const QString &f_target_ipid, const QString &f_reason)
 {
     QString l_time = QDateTime::currentDateTime().toString("ddd MMMM d yyyy | hh:mm:ss");
     QString l_logEntry = QString(m_logtext.value("kick") + "\n")
-                             .arg(l_time, f_moderator, f_target_ipid);
+                             .arg(l_time, f_moderator, f_target_ipid, f_reason);
     updateAreaBuffer("SERVER", l_logEntry);
 }
 
-void ULogger::logBan(const QString &f_moderator, const QString &f_target_ipid, const QString &f_duration)
+void ULogger::logBan(const QString &f_moderator, const QString &f_target_ipid, const QString &f_duration, const QString &f_reason)
 {
     QString l_time = QDateTime::currentDateTime().toString("ddd MMMM d yyyy | hh:mm:ss");
     QString l_logEntry = QString(m_logtext.value("ban") + "\n")
-                             .arg(l_time, f_moderator, f_target_ipid, f_duration);
+                             .arg(l_time, f_moderator, f_target_ipid, f_duration, f_reason);
     updateAreaBuffer("SERVER", l_logEntry);
 }
 
