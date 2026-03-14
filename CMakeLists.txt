@@ -14,7 +14,8 @@ find_package(Qt6 REQUIRED COMPONENTS Core Network WebSockets Sql)
 enable_testing()
 
 qt_standard_project_setup()
-qt_add_executable(akashi
+
+set(AKASHI_SOURCES
   src/commands/area.cpp
   src/commands/authentication.cpp
   src/commands/casing.cpp
@@ -99,7 +100,6 @@ qt_add_executable(akashi
   src/db_manager.h
   src/discord.cpp
   src/discord.h
-  src/main.cpp
   src/medieval_parser.cpp
   src/medieval_parser.h
   src/music_manager.cpp
@@ -113,6 +113,11 @@ qt_add_executable(akashi
   src/serverpublisher.h
   src/testimony_recorder.cpp
   src/typedefs.h
+)
+
+qt_add_executable(akashi
+  src/main.cpp
+  ${AKASHI_SOURCES}
 )
 
 target_link_libraries(akashi PRIVATE
@@ -139,5 +144,15 @@ endif()
 set_target_properties(akashi PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY $<1:${CMAKE_CURRENT_LIST_DIR}/bin>
         RUNTIME_OUTPUT_DIRECTORY $<1:${CMAKE_CURRENT_LIST_DIR}/bin>)
+
+# Library used only by the unit tests, M1 makes it the real core library.
+add_library(akashi_testlib STATIC ${AKASHI_SOURCES})
+target_include_directories(akashi_testlib PUBLIC src src/logger src/network src/packet)
+target_link_libraries(akashi_testlib PUBLIC
+    Qt6::Core
+    Qt6::Sql
+    Qt6::Network
+    Qt6::WebSockets
+)
 
 add_subdirectory(tests)

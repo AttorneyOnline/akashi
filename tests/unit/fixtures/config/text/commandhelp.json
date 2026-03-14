@@ -1,0 +1,30 @@
+[
+   {
+      "names": [
+         "foo"
+      ],
+      "usage":"/foo <bar> [baz|qux]",
+      "text":"A sample explanation."
+   },
+   {
+      "names": [
+         "login"
+      ],
+      "usage":"/login",
+      "text":"Activates the login dialogue to enter your credentials. This command takes no arguments."
+   },
+   {
+      "names": [
+         "getareas"
+      ],
+      "usage":"/getareas",
+      "text":"Lists all clients in all areas. This command takes no arguments."
+   },
+   {
+      "names": [
+         "getarea"
+      ],
+      "usage":"/getarea",
+      "text":"Lists all clients in the area the caller is in. This command takes no arguments."
+   }
+]
