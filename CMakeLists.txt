@@ -9,7 +9,6 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
 find_package(Qt6 6.4 REQUIRED COMPONENTS Core Network WebSockets Sql Test)
-find_package(Qt6 REQUIRED COMPONENTS Core Network WebSockets Sql)
 
 enable_testing()
 
@@ -151,9 +150,11 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     target_sources(akashi PRIVATE ${APP_ICON_RESOURCE_WINDOWS})
     set_target_properties(akashi PROPERTIES LINK_FLAGS_RELEASE "/SUBSYSTEM:CONSOLE /ENTRY:mainCRTStartup")
   endif()
-  add_definitions(-DQT_NO_DEBUG_OUTPUT)
+  target_compile_definitions(akashi_core PRIVATE QT_NO_DEBUG_OUTPUT)
+  target_compile_definitions(akashi PRIVATE QT_NO_DEBUG_OUTPUT)
 endif()
 
+# The $<1:...> wrapper keeps multi-config generators from adding per-config subfolders.
 set_target_properties(akashi PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY $<1:${CMAKE_CURRENT_LIST_DIR}/bin>
         RUNTIME_OUTPUT_DIRECTORY $<1:${CMAKE_CURRENT_LIST_DIR}/bin>)

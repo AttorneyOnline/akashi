@@ -1,3 +1,8 @@
+#ifndef PACKET_FACTORY_H
+#define PACKET_FACTORY_H
+
+#include "akashi_core_export.h"
+
 #include "network/aopacket.h"
 
 class AKASHI_CORE_EXPORT PacketFactory
@@ -18,3 +23,5 @@ class AKASHI_CORE_EXPORT PacketFactory
 
     static inline type_map class_map;
 };
+
+#endif // PACKET_FACTORY_H
