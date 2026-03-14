@@ -20,6 +20,8 @@
 
 #define DB_VERSION 2
 
+#include "akashi_core_export.h"
+
 #include <QDateTime>
 #include <QFileInfo>
 #include <QHostAddress>
@@ -41,7 +43,7 @@
  * differently than the average user.
  * This comes in two forms, when the user's client is banned, and when the user is a moderator.
  */
-class DBManager : public QObject
+class AKASHI_CORE_EXPORT DBManager : public QObject
 {
     Q_OBJECT
 

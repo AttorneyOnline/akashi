@@ -18,6 +18,8 @@
 #ifndef AREA_DATA_H
 #define AREA_DATA_H
 
+#include "akashi_core_export.h"
+
 #include <QDebug>
 #include <QElapsedTimer>
 #include <QMap>
@@ -36,7 +38,7 @@ class AOPacket;
 /**
  * @brief Represents an area on the server, a distinct "room" for people to chat in.
  */
-class AreaData : public QObject
+class AKASHI_CORE_EXPORT AreaData : public QObject
 {
     Q_OBJECT
 

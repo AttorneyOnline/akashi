@@ -18,6 +18,8 @@
 #ifndef SERVER_H
 #define SERVER_H
 
+#include "akashi_core_export.h"
+
 #include <QCoreApplication>
 #include <QDebug>
 #include <QFile>
@@ -47,7 +49,7 @@ class ULogger;
 /**
  * @brief The class that represents the actual server as it is.
  */
-class Server : public QObject
+class AKASHI_CORE_EXPORT Server : public QObject
 {
     Q_OBJECT
 

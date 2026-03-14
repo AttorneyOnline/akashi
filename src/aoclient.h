@@ -18,6 +18,8 @@
 #ifndef AOCLIENT_H
 #define AOCLIENT_H
 
+#include "akashi_core_export.h"
+
 #include <algorithm>
 
 #include <QDateTime>
@@ -40,7 +42,7 @@ class AOPacket;
 /**
  * @brief Represents a client connected to the server running Attorney Online 2 or one of its derivatives.
  */
-class AOClient : public QObject
+class AKASHI_CORE_EXPORT AOClient : public QObject
 {
     Q_OBJECT
 

@@ -20,6 +20,8 @@
 
 #define CONFIG_VERSION 1
 
+#include "akashi_core_export.h"
+
 #include <QDebug>
 #include <QDir>
 #include <QElapsedTimer>
@@ -41,7 +43,7 @@
 /**
  * @brief The config file handler class.
  */
-class ConfigManager
+class AKASHI_CORE_EXPORT ConfigManager
 {
 
   public:

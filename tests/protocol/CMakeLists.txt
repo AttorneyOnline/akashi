@@ -15,3 +15,8 @@ target_compile_definitions(tst_protocol PRIVATE
 
 add_test(NAME protocol COMMAND tst_protocol)
 set_tests_properties(protocol PROPERTIES TIMEOUT 180)
+
+if(WIN32)
+    add_custom_command(TARGET tst_protocol POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:akashi_core> $<TARGET_FILE_DIR:tst_protocol>)
+endif()

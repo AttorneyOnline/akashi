@@ -18,4 +18,8 @@ foreach(name ${UNIT_TESTS})
     file(COPY fixtures/config DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/run_${name})
     add_test(NAME unit_${name} COMMAND tst_${name} WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/run_${name})
     set_tests_properties(unit_${name} PROPERTIES TIMEOUT 60)
+    if(WIN32)
+        add_custom_command(TARGET tst_${name} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:akashi_core> $<TARGET_FILE_DIR:tst_${name}>)
+    endif()
 endforeach()

@@ -1,11 +1,13 @@
 #ifndef ACL_ROLES_HANDLER_H
 #define ACL_ROLES_HANDLER_H
 
+#include "akashi_core_export.h"
+
 #include <QFlags>
 #include <QHash>
 #include <QObject>
 
-class ACLRole
+class AKASHI_CORE_EXPORT ACLRole
 {
     Q_GADGET
 
@@ -105,7 +107,7 @@ Q_DECLARE_METATYPE(ACLRole::Permission)
 
 class QSettings;
 
-class ACLRolesHandler : public QObject
+class AKASHI_CORE_EXPORT ACLRolesHandler : public QObject
 {
     Q_OBJECT
 

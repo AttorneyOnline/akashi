@@ -18,6 +18,8 @@
 #ifndef U_LOGGER_H
 #define U_LOGGER_H
 
+#include "akashi_core_export.h"
+
 #include "config_manager.h"
 #include "logger/writer_full.h"
 #include "logger/writer_modcall.h"
@@ -29,7 +31,7 @@
 /**
  * @brief The Universal Logger class to provide a common place to handle, store and write logs to file.
  */
-class ULogger : public QObject
+class AKASHI_CORE_EXPORT ULogger : public QObject
 {
     Q_OBJECT
 

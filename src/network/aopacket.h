@@ -18,6 +18,8 @@
 #ifndef PACKET_MANAGER_H
 #define PACKET_MANAGER_H
 
+#include "akashi_core_export.h"
+
 #include <QByteArray>
 #include <QDebug>
 #include <QString>
@@ -35,7 +37,7 @@ class AOClient;
  * @see https://github.com/AttorneyOnline/docs/blob/master/docs/development/network.md for a general explanation
  * on Attorney Online 2's network protocol.
  */
-class AOPacket
+class AKASHI_CORE_EXPORT AOPacket
 {
   public:
     AOPacket(QStringList p_contents);

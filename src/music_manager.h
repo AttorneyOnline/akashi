@@ -18,6 +18,8 @@
 #ifndef MUSIC_MANAGER_H
 #define MUSIC_MANAGER_H
 
+#include "akashi_core_export.h"
+
 #include <QHash>
 #include <QMap>
 #include <QObject>
@@ -28,7 +30,7 @@
 
 class ConfigManager;
 
-class MusicManager : public QObject
+class AKASHI_CORE_EXPORT MusicManager : public QObject
 {
     Q_OBJECT
 

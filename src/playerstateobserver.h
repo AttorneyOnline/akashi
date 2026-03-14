@@ -1,5 +1,7 @@
 #pragma once
 
+#include "akashi_core_export.h"
+
 #include "aoclient.h"
 #include "packet/packet_pr.h"
 
@@ -7,7 +9,7 @@
 #include <QObject>
 #include <QString>
 
-class PlayerStateObserver : public QObject
+class AKASHI_CORE_EXPORT PlayerStateObserver : public QObject
 {
   public:
     explicit PlayerStateObserver(QObject *parent = nullptr);

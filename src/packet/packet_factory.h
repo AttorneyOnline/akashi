@@ -1,6 +1,6 @@
 #include "network/aopacket.h"
 
-class PacketFactory
+class AKASHI_CORE_EXPORT PacketFactory
 {
   public:
     // thingy here to register/map strings to constructors

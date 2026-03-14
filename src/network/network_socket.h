@@ -18,6 +18,8 @@
 #ifndef NETWORK_SOCKET_H
 #define NETWORK_SOCKET_H
 
+#include "akashi_core_export.h"
+
 #include <QHostAddress>
 #include <QObject>
 #include <QWebSocket>
@@ -26,7 +28,7 @@
 
 class AOPacket;
 
-class NetworkSocket : public QObject
+class AKASHI_CORE_EXPORT NetworkSocket : public QObject
 {
     Q_OBJECT
 

@@ -115,8 +115,10 @@ set(AKASHI_SOURCES
   src/typedefs.h
 )
 
-add_library(akashi_core STATIC ${AKASHI_SOURCES})
-target_include_directories(akashi_core PUBLIC src src/logger src/network src/packet)
+add_library(akashi_core SHARED ${AKASHI_SOURCES})
+include(GenerateExportHeader)
+generate_export_header(akashi_core BASE_NAME AKASHI_CORE)
+target_include_directories(akashi_core PUBLIC src src/logger src/network src/packet ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(akashi_core PUBLIC
     Qt6::Core
     Qt6::Sql
@@ -140,6 +142,11 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
 endif()
 
 set_target_properties(akashi PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY $<1:${CMAKE_CURRENT_LIST_DIR}/bin>
+        RUNTIME_OUTPUT_DIRECTORY $<1:${CMAKE_CURRENT_LIST_DIR}/bin>)
+
+# The server loads the core library from its own folder.
+set_target_properties(akashi_core PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY $<1:${CMAKE_CURRENT_LIST_DIR}/bin>
         RUNTIME_OUTPUT_DIRECTORY $<1:${CMAKE_CURRENT_LIST_DIR}/bin>)
 

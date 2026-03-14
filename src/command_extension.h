@@ -1,6 +1,8 @@
 #ifndef COMMAND_EXTENSION_H
 #define COMMAND_EXTENSION_H
 
+#include "akashi_core_export.h"
+
 #include <QMap>
 #include <QObject>
 #include <QString>
@@ -8,7 +10,7 @@
 
 #include "acl_roles_handler.h"
 
-class CommandExtension
+class AKASHI_CORE_EXPORT CommandExtension
 {
   public:
     /**
@@ -123,7 +125,7 @@ class CommandExtension
     void updateMergedAliases();
 };
 
-class CommandExtensionCollection : public QObject
+class AKASHI_CORE_EXPORT CommandExtensionCollection : public QObject
 {
     Q_OBJECT
 
