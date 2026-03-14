@@ -118,7 +118,20 @@ set(AKASHI_SOURCES
 add_library(akashi_core SHARED ${AKASHI_SOURCES})
 include(GenerateExportHeader)
 generate_export_header(akashi_core BASE_NAME AKASHI_CORE)
-target_include_directories(akashi_core PUBLIC src src/logger src/network src/packet ${CMAKE_CURRENT_BINARY_DIR})
+target_include_directories(akashi_core PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>"
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/logger>"
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/network>"
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/packet>"
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>"
+)
+
+# Header-only library for the plugin SDK, filled in during M9 and M10.
+add_library(akashi_pluginapi INTERFACE)
+target_include_directories(akashi_pluginapi INTERFACE
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src2/include>"
+    "$<INSTALL_INTERFACE:include>"
+)
 target_link_libraries(akashi_core PUBLIC
     Qt6::Core
     Qt6::Sql
@@ -149,5 +162,24 @@ set_target_properties(akashi PROPERTIES
 set_target_properties(akashi_core PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY $<1:${CMAKE_CURRENT_LIST_DIR}/bin>
         RUNTIME_OUTPUT_DIRECTORY $<1:${CMAKE_CURRENT_LIST_DIR}/bin>)
+
+# Install rules, so plugins can later use find_package(akashi).
+include(CMakePackageConfigHelpers)
+install(TARGETS akashi_core akashi_pluginapi EXPORT akashiTargets
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib)
+install(DIRECTORY src2/include/ DESTINATION include)
+install(EXPORT akashiTargets NAMESPACE akashi:: DESTINATION lib/cmake/akashi)
+configure_package_config_file(cmake/akashiConfig.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/akashiConfig.cmake
+    INSTALL_DESTINATION lib/cmake/akashi)
+write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/akashiConfigVersion.cmake
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion)
+install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/akashiConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/akashiConfigVersion.cmake
+    DESTINATION lib/cmake/akashi)
 
 add_subdirectory(tests)
