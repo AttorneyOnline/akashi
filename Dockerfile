@@ -1,10 +1,10 @@
-### 
+###
 ### Build
 ###
 FROM ubuntu:noble@sha256:9cbed754112939e914291337b5e554b07ad7c392491dba6daf25eef1332a22e8
 
 # Install build dependencies
-RUN apt-get update && apt-get install build-essential qtbase5-dev qt5-qmake qttools5-dev qttools5-dev-tools libqt5websockets5-dev -y
+RUN apt-get update && apt-get install -y build-essential cmake qt6-base-dev qt6-websockets-dev
 
 # Copy files into image
 RUN mkdir /build
@@ -12,15 +12,15 @@ COPY . /build
 
 # Build akashi
 WORKDIR /build
-RUN qmake project-akashi.pro && make -j$(nproc)
+RUN cmake -B build -D CMAKE_BUILD_TYPE=Release && cmake --build build -j$(nproc)
 
-### 
+###
 ### Run
 ###
 FROM ubuntu:noble@sha256:9cbed754112939e914291337b5e554b07ad7c392491dba6daf25eef1332a22e8
 
 # Install runtime dependencies
-RUN apt-get update && apt-get install libqt5websockets5-dev -y
+RUN apt-get update && apt-get install -y qt6-base-dev qt6-websockets-dev libqt6sql6-sqlite && rm -rf /var/lib/apt/lists/*
 
 # Copy built assets
 RUN mkdir /app
