@@ -113,6 +113,8 @@ set(AKASHI_SOURCES
   src/testimony_recorder.cpp
   src/typedefs.h
   src2/core/exit_code.h
+  src2/core/json_settings.cpp
+  src2/core/json_settings.h
   src2/core/server_context.cpp
   src2/core/server_context.h
 )

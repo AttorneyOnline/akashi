@@ -7,6 +7,7 @@ set(UNIT_TESTS
     command_extension
     config_manager
     crypto
+    jsonsettings
     music_manager
     playerstateobserver
     ulogger
