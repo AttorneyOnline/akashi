@@ -112,6 +112,9 @@ set(AKASHI_SOURCES
   src/serverpublisher.h
   src/testimony_recorder.cpp
   src/typedefs.h
+  src2/core/exit_code.h
+  src2/core/server_context.cpp
+  src2/core/server_context.h
 )
 
 add_library(akashi_core SHARED ${AKASHI_SOURCES})
@@ -122,6 +125,7 @@ target_include_directories(akashi_core PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/logger>"
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/network>"
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/packet>"
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src2>"
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>"
 )
 

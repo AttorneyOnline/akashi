@@ -15,38 +15,21 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
-#include "config_manager.h"
-#include "server.h"
-
-#include <cstdlib>
+#include "core/server_context.h"
 
 #include <QCoreApplication>
-#include <QDebug>
-
-Server *server;
-
-void cleanup()
-{
-    server->deleteLater();
-}
 
 int main(int argc, char *argv[])
 {
     QCoreApplication app(argc, argv);
     QCoreApplication::setApplicationName("akashi");
     QCoreApplication::setApplicationVersion("jackfruit (1.9)");
-    std::atexit(cleanup);
 
-    // Verify server configuration is sound.
-    if (!ConfigManager::verifyServerConfig()) {
-        qCritical() << "config.ini is invalid!";
-        qCritical() << "Exiting server due to configuration issue.";
-        exit(EXIT_FAILURE);
-        QCoreApplication::quit();
-    }
-    else {
-        server = new Server(ConfigManager::serverPort(), &app);
-        server->start();
+    ServerContext context;
+    QObject::connect(&app, &QCoreApplication::aboutToQuit, &context, &ServerContext::shutdown);
+    ExitCode code = context.start();
+    if (code != ExitCode::Ok) {
+        return static_cast<int>(code);
     }
 
     return app.exec();

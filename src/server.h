@@ -31,6 +31,7 @@
 #include <QWebSocket>
 #include <QWebSocketServer>
 
+#include "core/exit_code.h"
 #include "medieval_parser.h"
 #include "network/aopacket.h"
 #include "playerstateobserver.h"
@@ -74,9 +75,9 @@ class AKASHI_CORE_EXPORT Server : public QObject
      *
      * @details Starts listening for incoming connections on the given port.
      *
-     * Advertising is not done here -- see Advertiser::contactMasterServer() for that.
+     * @return ExitCode::Ok on success, otherwise the exit code describing the error.
      */
-    void start();
+    ExitCode start();
 
     /**
      * @brief Enum to specifc different targets to send altered packets to a specific usergroup.
