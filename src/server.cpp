@@ -41,11 +41,11 @@ Server::Server(int p_ws_port, QObject *parent) :
     medieval_parser = new MedievalParser;
 
     acl_roles_handler = new ACLRolesHandler(this);
-    acl_roles_handler->loadFile("config/acl_roles.ini");
+    acl_roles_handler->loadFile(ConfigManager::path("acl_roles.json"));
 
     command_extension_collection = new CommandExtensionCollection;
     command_extension_collection->setCommandNameWhitelist(AOClient::COMMANDS.keys());
-    command_extension_collection->loadFile("config/command_extensions.ini");
+    command_extension_collection->loadFile(ConfigManager::path("command_extensions.json"));
 
     // We create it, even if its not used later on.
     discord = new Discord(this);
@@ -290,9 +290,10 @@ void Server::reloadSettings()
     emit updateHTTPConfiguration();
     handleDiscordIntegration();
     logger->loadLogtext();
+    music_manager->reloadRequest();
     m_ipban_list = ConfigManager::iprangeBans();
-    acl_roles_handler->loadFile("config/acl_roles.ini");
-    command_extension_collection->loadFile("config/command_extensions.ini");
+    acl_roles_handler->loadFile(ConfigManager::path("acl_roles.json"));
+    command_extension_collection->loadFile(ConfigManager::path("command_extensions.json"));
 }
 
 void Server::broadcast(AOPacket *packet, int area_index)

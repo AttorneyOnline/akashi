@@ -8,6 +8,10 @@
 
 class Server;
 
+namespace akashi {
+class ConfigStore;
+}
+
 // Owns the server and moves it through its lifecycle stages.
 class AKASHI_CORE_EXPORT ServerContext : public QObject
 {
@@ -37,6 +41,7 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
     void shutdown();
 
     Server *server() const;
+    akashi::ConfigStore *configStore() const;
     Stage stage() const;
 
   signals:
@@ -46,6 +51,7 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
     void setStage(Stage f_stage);
 
     Server *m_server = nullptr;
+    akashi::ConfigStore *m_config_store = nullptr;
     Stage m_stage = Stage::Configuring;
 };
 

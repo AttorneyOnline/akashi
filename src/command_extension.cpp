@@ -1,5 +1,7 @@
 #include "command_extension.h"
 
+#include "core/json_settings.h"
+
 #include <QDebug>
 #include <QSettings>
 
@@ -137,7 +139,8 @@ CommandExtension CommandExtensionCollection::getExtension(QString f_command_name
 
 bool CommandExtensionCollection::loadFile(QString f_filename)
 {
-    QSettings l_settings(f_filename, QSettings::IniFormat);
+    // JSON files use the custom format, anything else stays INI.
+    QSettings l_settings(f_filename, f_filename.endsWith(".json") ? JsonSettings::format() : QSettings::IniFormat);
     if (l_settings.status() != QSettings::NoError) {
         qWarning() << "[Command Extension Collection]"
                    << "error: failed to load file" << f_filename << "; aborting";

@@ -2,6 +2,7 @@
 #include <QString>
 #include <QTest>
 
+#include "akashi/config_store.h"
 #include "config_manager.h"
 
 namespace tests {
@@ -15,6 +16,7 @@ class tst_ConfigManager : public QObject
     typedef QMap<QString, QPair<QString, int>> MusicList;
 
   private slots:
+    void initTestCase();
     void verifyServerConfig();
     void bindIP();
     void charlist();
@@ -25,6 +27,11 @@ class tst_ConfigManager : public QObject
     void CommandInfo();
     void iprangeBans();
 };
+
+void tst_ConfigManager::initTestCase()
+{
+    ConfigManager::setStore(new akashi::ConfigStore("config", this));
+}
 
 void tst_ConfigManager::verifyServerConfig()
 {

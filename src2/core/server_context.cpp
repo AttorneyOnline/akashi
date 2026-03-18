@@ -1,5 +1,6 @@
 #include "core/server_context.h"
 
+#include "akashi/config_store.h"
 #include "config_manager.h"
 #include "server.h"
 
@@ -17,8 +18,10 @@ ServerContext::~ServerContext()
 ExitCode ServerContext::start()
 {
     setStage(Stage::Configuring);
+    m_config_store = new akashi::ConfigStore(akashi::ConfigStore::resolveRootPath(), this);
+    ConfigManager::setStore(m_config_store);
     if (!ConfigManager::verifyServerConfig()) {
-        qCritical() << "config.ini is invalid!";
+        qCritical() << "The server configuration is invalid!";
         return ExitCode::InvalidConfig;
     }
 
@@ -52,6 +55,11 @@ void ServerContext::shutdown()
 Server *ServerContext::server() const
 {
     return m_server;
+}
+
+akashi::ConfigStore *ServerContext::configStore() const
+{
+    return m_config_store;
 }
 
 ServerContext::Stage ServerContext::stage() const

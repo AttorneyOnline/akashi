@@ -40,6 +40,10 @@
 #include "data_types.h"
 #include "typedefs.h"
 
+namespace akashi {
+class ConfigStore;
+}
+
 /**
  * @brief The config file handler class.
  */
@@ -47,6 +51,16 @@ class AKASHI_CORE_EXPORT ConfigManager
 {
 
   public:
+    /**
+     * @brief Connects the manager to the config store that owns the settings files.
+     */
+    static void setStore(akashi::ConfigStore *f_store);
+
+    /**
+     * @brief Returns the path of a file inside the config folder.
+     */
+    static QString path(const QString &f_file_name);
+
     /**
      * @brief Verifies the server configuration, confirming all required files/directories exist and are valid.
      *
@@ -434,6 +448,11 @@ class AKASHI_CORE_EXPORT ConfigManager
      * @brief Contains the settings required for various commands.
      */
     static CommandSettings *m_commands;
+
+    /**
+     * @brief The config store that owns the settings files.
+     */
+    static akashi::ConfigStore *m_store;
 
     /**
      * @brief Stores all server configuration values.

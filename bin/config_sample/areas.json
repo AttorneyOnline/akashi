@@ -1,0 +1,18 @@
+{
+    "0:Basement": {
+        "background": "gs4",
+        "blankposting_allowed": "true",
+        "evidence_mod": "cm",
+        "force_immediate": "true",
+        "iniswap_allowed": "false",
+        "protected_area": "true"
+    },
+    "1:Courtroom 1": {
+        "background": "gs4",
+        "blankposting_allowed": "true",
+        "evidence_mod": "ffa",
+        "force_immediate": "false",
+        "iniswap_allowed": "true",
+        "protected_area": "false"
+    }
+}

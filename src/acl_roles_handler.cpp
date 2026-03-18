@@ -1,5 +1,7 @@
 #include "acl_roles_handler.h"
 
+#include "core/json_settings.h"
+
 #include <QDebug>
 #include <QSettings>
 
@@ -175,7 +177,8 @@ void ACLRolesHandler::clearRoles()
 
 bool ACLRolesHandler::loadFile(QString f_file_name)
 {
-    QSettings l_settings(f_file_name, QSettings::IniFormat);
+    // JSON files use the custom format, anything else stays INI.
+    QSettings l_settings(f_file_name, f_file_name.endsWith(".json") ? JsonSettings::format() : QSettings::IniFormat);
     if (!checkPermissionsIni(&l_settings)) {
         return false;
     }
@@ -216,7 +219,8 @@ bool ACLRolesHandler::loadFile(QString f_file_name)
 
 bool ACLRolesHandler::saveFile(QString f_file_name)
 {
-    QSettings l_settings(f_file_name, QSettings::IniFormat);
+    // JSON files use the custom format, anything else stays INI.
+    QSettings l_settings(f_file_name, f_file_name.endsWith(".json") ? JsonSettings::format() : QSettings::IniFormat);
     if (!checkPermissionsIni(&l_settings)) {
         return false;
     }

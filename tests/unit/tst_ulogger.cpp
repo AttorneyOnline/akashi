@@ -1,6 +1,8 @@
 // AI-generated: written by Claude.
 #include <QTest>
 
+#include "akashi/config_store.h"
+#include "config_manager.h"
 #include "u_logger.h"
 
 namespace tests {
@@ -11,10 +13,16 @@ class tst_ULogger : public QObject
     Q_OBJECT
 
   private slots:
+    void initTestCase();
     void kickEntryContainsReason();
     void banEntryContainsReason();
     void adduserEntryUsesTemplate();
 };
+
+void tst_ULogger::initTestCase()
+{
+    ConfigManager::setStore(new akashi::ConfigStore("config", this));
+}
 
 void tst_ULogger::kickEntryContainsReason()
 {

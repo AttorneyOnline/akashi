@@ -16,23 +16,44 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
 #include "config_manager.h"
+#include "akashi/config_store.h"
 #include <QSqlDatabase>
 #include <QSqlQuery>
 
-QSettings *ConfigManager::m_settings = new QSettings("config/config.ini", QSettings::IniFormat);
-QSettings *ConfigManager::m_discord = new QSettings("config/discord.ini", QSettings::IniFormat);
-QSettings *ConfigManager::m_areas = new QSettings("config/areas.ini", QSettings::IniFormat);
-QSettings *ConfigManager::m_logtext = new QSettings("config/text/logtext.ini", QSettings::IniFormat);
-QSettings *ConfigManager::m_ambience = new QSettings("config/ambience.ini", QSettings::IniFormat);
+akashi::ConfigStore *ConfigManager::m_store = nullptr;
+QSettings *ConfigManager::m_settings = nullptr;
+QSettings *ConfigManager::m_discord = nullptr;
+QSettings *ConfigManager::m_areas = nullptr;
+QSettings *ConfigManager::m_logtext = nullptr;
+QSettings *ConfigManager::m_ambience = nullptr;
 ConfigManager::CommandSettings *ConfigManager::m_commands = new CommandSettings();
 MusicList *ConfigManager::m_musicList = new MusicList;
 QHash<QString, ConfigManager::help> *ConfigManager::m_commands_help = new QHash<QString, ConfigManager::help>;
 QStringList *ConfigManager::m_ordered_list = new QStringList;
 
+void ConfigManager::setStore(akashi::ConfigStore *f_store)
+{
+    m_store = f_store;
+    m_settings = f_store->settings("config");
+    m_discord = f_store->settings("discord");
+    m_areas = f_store->settings("areas");
+    m_logtext = f_store->settings("text/logtext");
+    m_ambience = f_store->settings("ambience");
+
+    // Opened here so leftover INI files are converted before their loaders run.
+    f_store->settings("acl_roles");
+    f_store->settings("command_extensions");
+}
+
+QString ConfigManager::path(const QString &f_file_name)
+{
+    return m_store ? m_store->filePath(f_file_name) : "config/" + f_file_name;
+}
+
 bool ConfigManager::verifyServerConfig()
 {
     // Verify directories
-    QStringList l_directories{"config/", "config/text/"};
+    QStringList l_directories{path(""), path("text/")};
     for (const QString &l_directory : l_directories) {
         if (!dirExists(QFileInfo(l_directory))) {
             qCritical() << l_directory + " does not exist!";
@@ -41,9 +62,9 @@ bool ConfigManager::verifyServerConfig()
     }
 
     // Verify config files
-    QStringList l_config_files{"config/config.ini", "config/areas.ini", "config/backgrounds.txt", "config/characters.txt", "config/music.json",
-                               "config/discord.ini", "config/text/8ball.txt", "config/text/gimp.txt", "config/text/praise.txt",
-                               "config/text/reprimands.txt", "config/text/commandhelp.json", "config/text/cdns.txt", "config/ipbans.json"};
+    QStringList l_config_files{path("config.json"), path("areas.json"), path("backgrounds.txt"), path("characters.txt"), path("music.json"),
+                               path("discord.json"), path("text/8ball.txt"), path("text/gimp.txt"), path("text/praise.txt"),
+                               path("text/reprimands.txt"), path("text/commandhelp.json"), path("text/cdns.txt"), path("ipbans.json")};
     for (const QString &l_file : l_config_files) {
         if (!fileExists(QFileInfo(l_file))) {
             qCritical() << l_file + " does not exist!";
@@ -52,14 +73,13 @@ bool ConfigManager::verifyServerConfig()
     }
 
     // Verify areas
-    QSettings l_areas_ini("config/areas.ini", QSettings::IniFormat);
-    if (l_areas_ini.childGroups().length() < 1) {
-        qCritical() << "areas.ini is invalid!";
+    if (m_areas->childGroups().length() < 1) {
+        qCritical() << "areas.json is invalid!";
         return false;
     }
 
     // Read dices
-    QSettings l_dice_ini("config/dice.ini", QSettings::IniFormat);
+    QSettings &l_dice_ini = *m_store->settings("dice");
     QStringList dices = l_dice_ini.childGroups();
 
     for (const QString &dice : dices) {
@@ -150,7 +170,7 @@ QString ConfigManager::bindIP()
 QStringList ConfigManager::charlist()
 {
     QStringList l_charlist;
-    QFile l_file("config/characters.txt");
+    QFile l_file(path("characters.txt"));
     l_file.open(QIODevice::ReadOnly | QIODevice::Text);
     while (!l_file.atEnd()) {
         l_charlist.append(l_file.readLine().trimmed());
@@ -163,7 +183,7 @@ QStringList ConfigManager::charlist()
 QStringList ConfigManager::backgrounds()
 {
     QStringList l_backgrounds;
-    QFile l_file("config/backgrounds.txt");
+    QFile l_file(path("backgrounds.txt"));
     l_file.open(QIODevice::ReadOnly | QIODevice::Text);
     while (!l_file.atEnd()) {
         l_backgrounds.append(l_file.readLine().trimmed());
@@ -175,7 +195,7 @@ QStringList ConfigManager::backgrounds()
 
 MusicList ConfigManager::musiclist()
 {
-    QFile l_music_json("config/music.json");
+    QFile l_music_json(path("music.json"));
     l_music_json.open(QIODevice::ReadOnly | QIODevice::Text);
 
     QJsonParseError l_error;
@@ -233,7 +253,7 @@ QStringList ConfigManager::ordered_songs()
 
 void ConfigManager::loadCommandHelp()
 {
-    QFile l_help_json("config/text/commandhelp.json");
+    QFile l_help_json(path("text/commandhelp.json"));
     l_help_json.open(QIODevice::ReadOnly | QIODevice::Text);
 
     QJsonParseError l_error;
@@ -297,7 +317,7 @@ QStringList ConfigManager::rawAreaNames()
 
 QStringList ConfigManager::iprangeBans()
 {
-    QFile l_json_file("config/ipbans.json");
+    QFile l_json_file(path("ipbans.json"));
     l_json_file.open(QIODevice::ReadOnly | QIODevice::Text);
 
     QJsonParseError l_error;
@@ -331,15 +351,16 @@ QStringList ConfigManager::iprangeBans()
 
 void ConfigManager::reloadSettings()
 {
-    m_settings->sync();
-    m_discord->sync();
-    m_logtext->sync();
+    // Cleared so removed songs do not survive the reload.
+    m_musicList->clear();
+    m_ordered_list->clear();
+    m_store->reload();
 }
 
 QStringList ConfigManager::loadConfigFile(const QString filename)
 {
     QStringList stringlist;
-    QFile l_file("config/text/" + filename + ".txt");
+    QFile l_file(path("text/" + filename + ".txt"));
     l_file.open(QIODevice::ReadOnly | QIODevice::Text);
     while (!(l_file.atEnd())) {
         stringlist.append(l_file.readLine().trimmed());

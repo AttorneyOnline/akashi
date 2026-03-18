@@ -1,0 +1,101 @@
+{
+    "allow_blankposting": {
+        "aliases": "allowblankposting"
+    },
+    "allow_iniswap": {
+        "aliases": "allowiniswap"
+    },
+    "area_kick": {
+        "aliases": "kick_area areakick"
+    },
+    "area_lock": {
+        "aliases": "lock_area lock"
+    },
+    "area_spectate": {
+        "aliases": "spectatable"
+    },
+    "area_unlock": {
+        "aliases": "unlock_area unlock"
+    },
+    "background": {
+        "aliases": "bg"
+    },
+    "block_dj": {
+        "aliases": "blockdj"
+    },
+    "block_wtce": {
+        "aliases": "blockwtce"
+    },
+    "force_charselect": {
+        "aliases": "forcecharselect"
+    },
+    "force_noint_pres": {
+        "aliases": "forceimmediate"
+    },
+    "getarea": {
+        "aliases": "ga"
+    },
+    "getareas": {
+        "aliases": "gas"
+    },
+    "ignore_bglist": {
+        "aliases": "ignorebglist"
+    },
+    "jukebox_skip": {
+        "aliases": "jukeboxskip"
+    },
+    "kick_other": {
+        "aliases": "kickother"
+    },
+    "kick_uid": {
+        "aliases": "kickuid"
+    },
+    "lock_background": {
+        "aliases": "lock_bg lockbg bglock"
+    },
+    "medievalmode": {
+        "aliases": "medieval_mode"
+    },
+    "notecard_clear": {
+        "aliases": "clear_notecard notecardclear"
+    },
+    "notecard_reveal": {
+        "aliases": "reveal_notecard notecardreveal"
+    },
+    "ooc_mute": {
+        "aliases": "mute_ooc oocmute"
+    },
+    "ooc_unmute": {
+        "aliases": "unmute_ooc oocunmute"
+    },
+    "pause": {
+        "aliases": "end"
+    },
+    "play_ambience": {
+        "aliases": "playambience playa"
+    },
+    "roll": {
+        "aliases": "r"
+    },
+    "set_motd": {
+        "aliases": "setmotd"
+    },
+    "toggle_shouts": {
+        "aliases": "toggleshouts"
+    },
+    "toggle_wtce": {
+        "aliases": "togglewtce"
+    },
+    "unblock_dj": {
+        "aliases": "unblockdj"
+    },
+    "unblock_wtce": {
+        "aliases": "unblockwtce"
+    },
+    "unlock_background": {
+        "aliases": "unlock_bg unlockbg bgunlock"
+    },
+    "update_ban": {
+        "aliases": "updateban"
+    }
+}

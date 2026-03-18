@@ -1,5 +1,7 @@
 #include "medieval_parser.h"
 
+#include "config_manager.h"
+
 #include <QFile>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -53,7 +55,7 @@ void MedievalParser::parseDataFile()
 {
     datafile_valid = true;
 
-    QFile l_datafile_json("config/text/autorp.json");
+    QFile l_datafile_json(ConfigManager::path("text/autorp.json"));
     l_datafile_json.open(QIODevice::ReadOnly | QIODevice::Text);
 
     QJsonParseError l_error;

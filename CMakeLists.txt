@@ -112,11 +112,13 @@ set(AKASHI_SOURCES
   src/serverpublisher.h
   src/testimony_recorder.cpp
   src/typedefs.h
+  src2/core/config_store.cpp
   src2/core/exit_code.h
   src2/core/json_settings.cpp
   src2/core/json_settings.h
   src2/core/server_context.cpp
   src2/core/server_context.h
+  src2/include/akashi/config_store.h
 )
 
 add_library(akashi_core SHARED ${AKASHI_SOURCES})
@@ -128,6 +130,7 @@ target_include_directories(akashi_core PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/network>"
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/packet>"
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src2>"
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src2/include>"
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>"
 )
 
@@ -177,6 +180,7 @@ install(TARGETS akashi_core akashi_pluginapi EXPORT akashiTargets
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib)
 install(DIRECTORY src2/include/ DESTINATION include)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/akashi_core_export.h DESTINATION include)
 install(EXPORT akashiTargets NAMESPACE akashi:: DESTINATION lib/cmake/akashi)
 configure_package_config_file(cmake/akashiConfig.cmake.in
     ${CMAKE_CURRENT_BINARY_DIR}/akashiConfig.cmake
