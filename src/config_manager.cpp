@@ -21,8 +21,6 @@
 #include <QSqlQuery>
 
 akashi::ConfigStore *ConfigManager::m_store = nullptr;
-QSettings *ConfigManager::m_settings = nullptr;
-QSettings *ConfigManager::m_discord = nullptr;
 QSettings *ConfigManager::m_areas = nullptr;
 QSettings *ConfigManager::m_logtext = nullptr;
 QSettings *ConfigManager::m_ambience = nullptr;
@@ -34,8 +32,6 @@ QStringList *ConfigManager::m_ordered_list = new QStringList;
 void ConfigManager::setStore(akashi::ConfigStore *f_store)
 {
     m_store = f_store;
-    m_settings = f_store->settings("config");
-    m_discord = f_store->settings("discord");
     m_areas = f_store->settings("areas");
     m_logtext = f_store->settings("text/logtext");
     m_ambience = f_store->settings("ambience");
@@ -102,54 +98,19 @@ bool ConfigManager::verifyServerConfig()
         l_dice_ini.endGroup();
     }
 
-    // Verify config settings
-    m_settings->beginGroup("Options");
-    bool ok;
-    m_settings->value("ms_port", 27016).toInt(&ok);
-    if (!ok) {
-        qCritical("ms_port is not a valid port!");
-        return false;
-    }
-    m_settings->value("port", 27016).toInt(&ok);
-    if (!ok) {
-        qCritical("port is not a valid port!");
-        return false;
-    }
-    m_settings->value("secure_port", -1).toInt(&ok);
-    if (!ok) {
-        qCritical("secure_port is not a valid port!");
-        return false;
-    }
-
-    QString l_auth = m_settings->value("auth", "simple").toString().toLower();
-    if (!(l_auth == "simple" || l_auth == "advanced")) {
-        qCritical("auth is not a valid auth type!");
-        return false;
-    }
-
-    int l_soft_limit = m_settings->value("packet_rate_limit_soft", 10).toInt(&ok);
-    if (!ok) {
-        qCritical("packet_rate_limit_soft is not a valid limit!");
+    // Every single setting was already checked by the store, only the relation between the limits remains.
+    const int l_soft_limit = m_store->value("config", "Options/packet_rate_limit_soft").toInt();
+    const int l_hard_limit = m_store->value("config", "Options/packet_rate_limit_hard").toInt();
+    if (l_soft_limit > 0 && l_hard_limit <= l_soft_limit) {
+        qCritical("packet_rate_limit_hard must be greater than packet_rate_limit_soft!");
         return false;
     }
     if (l_soft_limit <= 0) {
         qWarning("packet_rate_limit_soft is 0 or less, warning threshold is disabled!");
     }
-
-    int l_hard_limit = m_settings->value("packet_rate_limit_hard", 20).toInt(&ok);
-    if (!ok) {
-        qCritical("packet_rate_limit_hard is not a valid limit!");
-        return false;
-    }
-    else if (l_soft_limit > 0 && l_hard_limit <= l_soft_limit) {
-        qCritical("packet_rate_limit_hard must be greater than packet_rate_limit_soft!");
-        return false;
-    }
     if (l_hard_limit <= 0) {
         qWarning("packet_rate_limit_hard is 0 or less, rate limiting is disabled!");
     }
-
-    m_settings->endGroup();
     m_commands->magic_8ball = (loadConfigFile("8ball"));
     m_commands->praises = (loadConfigFile("praise"));
     m_commands->reprimands = (loadConfigFile("reprimands"));
@@ -164,7 +125,7 @@ bool ConfigManager::verifyServerConfig()
 
 QString ConfigManager::bindIP()
 {
-    return m_settings->value("Options/bind_ip", "all").toString();
+    return m_store->value("config", "Options/bind_ip").toString();
 }
 
 QStringList ConfigManager::charlist()
@@ -372,7 +333,7 @@ QStringList ConfigManager::loadConfigFile(const QString filename)
 int ConfigManager::maxPlayers()
 {
     bool ok;
-    int l_players = m_settings->value("Options/max_players", 100).toInt(&ok);
+    int l_players = m_store->value("config", "Options/max_players").toInt(&ok);
     if (!ok) {
         qWarning("max_players is not an int!");
         l_players = 100;
@@ -382,60 +343,60 @@ int ConfigManager::maxPlayers()
 
 int ConfigManager::serverPort()
 {
-    if (m_settings->contains("Options/webao_port")) {
+    if (m_store->settings("config")->contains("Options/webao_port")) {
         qWarning("webao_port is deprecated, use port instead");
-        return m_settings->value("Options/webao_port", 27016).toInt();
+        return m_store->value("config", "Options/webao_port").toInt();
     }
 
-    return m_settings->value("Options/port", 27016).toInt();
+    return m_store->value("config", "Options/port").toInt();
 }
 
 int ConfigManager::securePort()
 {
-    return m_settings->value("Options/secure_port", -1).toInt();
+    return m_store->value("config", "Options/secure_port").toInt();
 }
 
 QString ConfigManager::serverDescription()
 {
-    return m_settings->value("Options/server_description", "This is my flashy new server!").toString();
+    return m_store->value("config", "Options/server_description").toString();
 }
 
 QString ConfigManager::serverName()
 {
-    return m_settings->value("Options/server_name", "An Unnamed Server").toString();
+    return m_store->value("config", "Options/server_name").toString();
 }
 
 QString ConfigManager::serverNickname()
 {
-    QString l_tag = m_settings->value("Options/server_nickname").toString();
+    QString l_tag = m_store->value("config", "Options/server_nickname").toString();
     return l_tag.isEmpty() ? serverName() : l_tag;
 }
 
 QString ConfigManager::motd()
 {
-    return m_settings->value("Options/motd", "MOTD not set").toString();
+    return m_store->value("config", "Options/motd").toString();
 }
 
 bool ConfigManager::webaoEnabled()
 {
-    return m_settings->value("Options/webao_enable", false).toBool();
+    return m_store->value("config", "Options/webao_enable").toBool();
 }
 
 DataTypes::AuthType ConfigManager::authType()
 {
-    QString l_auth = m_settings->value("Options/auth", "simple").toString().toUpper();
+    QString l_auth = m_store->value("config", "Options/auth").toString().toUpper();
     return toDataType<DataTypes::AuthType>(l_auth);
 }
 
 QString ConfigManager::modpass()
 {
-    return m_settings->value("Options/modpass", "changeme").toString();
+    return m_store->value("config", "Options/modpass").toString();
 }
 
 int ConfigManager::logBuffer()
 {
     bool ok;
-    int l_buffer = m_settings->value("Options/logbuffer", 500).toInt(&ok);
+    int l_buffer = m_store->value("config", "Options/logbuffer").toInt(&ok);
     if (!ok) {
         qWarning("logbuffer is not an int!");
         l_buffer = 500;
@@ -445,14 +406,14 @@ int ConfigManager::logBuffer()
 
 DataTypes::LogType ConfigManager::loggingType()
 {
-    QString l_log = m_settings->value("Options/logging", "modcall").toString().toUpper();
+    QString l_log = m_store->value("config", "Options/logging").toString().toUpper();
     return toDataType<DataTypes::LogType>(l_log);
 }
 
 int ConfigManager::maxStatements()
 {
     bool ok;
-    int l_max = m_settings->value("Options/maximum_statements", 10).toInt(&ok);
+    int l_max = m_store->value("config", "Options/maximum_statements").toInt(&ok);
     if (!ok) {
         qWarning("maximum_statements is not an int!");
         l_max = 10;
@@ -462,7 +423,7 @@ int ConfigManager::maxStatements()
 int ConfigManager::multiClientLimit()
 {
     bool ok;
-    int l_limit = m_settings->value("Options/multiclient_limit", 15).toInt(&ok);
+    int l_limit = m_store->value("config", "Options/multiclient_limit").toInt(&ok);
     if (!ok) {
         qWarning("multiclient_limit is not an int!");
         l_limit = 15;
@@ -473,7 +434,7 @@ int ConfigManager::multiClientLimit()
 int ConfigManager::maxCharacters()
 {
     bool ok;
-    int l_max = m_settings->value("Options/maximum_characters", 256).toInt(&ok);
+    int l_max = m_store->value("config", "Options/maximum_characters").toInt(&ok);
     if (!ok) {
         qWarning("maximum_characters is not an int!");
         l_max = 256;
@@ -484,7 +445,7 @@ int ConfigManager::maxCharacters()
 int ConfigManager::messageFloodguard()
 {
     bool ok;
-    int l_flood = m_settings->value("Options/message_floodguard", 250).toInt(&ok);
+    int l_flood = m_store->value("config", "Options/message_floodguard").toInt(&ok);
     if (!ok) {
         qWarning("message_floodguard is not an int!");
         l_flood = 250;
@@ -495,7 +456,7 @@ int ConfigManager::messageFloodguard()
 int ConfigManager::globalMessageFloodguard()
 {
     bool ok;
-    int l_flood = m_settings->value("Options/global_message_floodguard", 0).toInt(&ok);
+    int l_flood = m_store->value("config", "Options/global_message_floodguard").toInt(&ok);
     if (!ok) {
         qWarning("global_message_floodguard is not an int!");
         l_flood = 0;
@@ -506,7 +467,7 @@ int ConfigManager::globalMessageFloodguard()
 int ConfigManager::packetRateLimitSoft()
 {
     bool ok;
-    int l_limit = m_settings->value("Options/packet_rate_limit_soft", 10).toInt(&ok);
+    int l_limit = m_store->value("config", "Options/packet_rate_limit_soft").toInt(&ok);
     if (!ok) {
         qWarning("packet_rate_limit_soft is not an int!");
         l_limit = 10;
@@ -517,7 +478,7 @@ int ConfigManager::packetRateLimitSoft()
 int ConfigManager::packetRateLimitHard()
 {
     bool ok;
-    int l_limit = m_settings->value("Options/packet_rate_limit_hard", 20).toInt(&ok);
+    int l_limit = m_store->value("config", "Options/packet_rate_limit_hard").toInt(&ok);
     if (!ok) {
         qWarning("packet_rate_limit_hard is not an int!");
         l_limit = 20;
@@ -527,7 +488,7 @@ int ConfigManager::packetRateLimitHard()
 
 QUrl ConfigManager::assetUrl()
 {
-    QByteArray l_url = m_settings->value("Options/asset_url", "").toString().toUtf8();
+    QByteArray l_url = m_store->value("config", "Options/asset_url").toString().toUtf8();
     if (QUrl(l_url).isValid()) {
         return QUrl(l_url);
     }
@@ -540,7 +501,7 @@ QUrl ConfigManager::assetUrl()
 int ConfigManager::diceMaxValue()
 {
     bool ok;
-    int l_value = m_settings->value("Dice/max_value", 100).toInt(&ok);
+    int l_value = m_store->value("config", "Dice/max_value").toInt(&ok);
     if (!ok) {
         qWarning("max_value is not an int!");
         l_value = 100;
@@ -551,7 +512,7 @@ int ConfigManager::diceMaxValue()
 int ConfigManager::diceMaxDice()
 {
     bool ok;
-    int l_dice = m_settings->value("Dice/max_dice", 100).toInt(&ok);
+    int l_dice = m_store->value("config", "Dice/max_dice").toInt(&ok);
     if (!ok) {
         qWarning("max_dice is not an int!");
         l_dice = 100;
@@ -561,43 +522,43 @@ int ConfigManager::diceMaxDice()
 
 bool ConfigManager::discordWebhookEnabled()
 {
-    return m_discord->value("Discord/webhook_enabled", false).toBool();
+    return m_store->value("discord", "Discord/webhook_enabled").toBool();
 }
 
 bool ConfigManager::discordModcallWebhookEnabled()
 {
-    return m_discord->value("Discord/webhook_modcall_enabled", false).toBool();
+    return m_store->value("discord", "Discord/webhook_modcall_enabled").toBool();
 }
 
 QString ConfigManager::discordModcallWebhookUrl()
 {
-    return m_discord->value("Discord/webhook_modcall_url", "").toString();
+    return m_store->value("discord", "Discord/webhook_modcall_url").toString();
 }
 
 QString ConfigManager::discordModcallWebhookContent()
 {
-    return m_discord->value("Discord/webhook_modcall_content", "").toString();
+    return m_store->value("discord", "Discord/webhook_modcall_content").toString();
 }
 
 bool ConfigManager::discordModcallWebhookSendFile()
 {
-    return m_discord->value("Discord/webhook_modcall_sendfile", false).toBool();
+    return m_store->value("discord", "Discord/webhook_modcall_sendfile").toBool();
 }
 
 bool ConfigManager::discordBanWebhookEnabled()
 {
-    return m_discord->value("Discord/webhook_ban_enabled", false).toBool();
+    return m_store->value("discord", "Discord/webhook_ban_enabled").toBool();
 }
 
 QString ConfigManager::discordBanWebhookUrl()
 {
-    return m_discord->value("Discord/webhook_ban_url", "").toString();
+    return m_store->value("discord", "Discord/webhook_ban_url").toString();
 }
 
 QString ConfigManager::discordWebhookColor()
 {
     const QString l_default_color = "13312842";
-    QString l_color = m_discord->value("Discord/webhook_color", l_default_color).toString();
+    QString l_color = m_store->value("discord", "Discord/webhook_color").toString();
     if (l_color.isEmpty()) {
         return l_default_color;
     }
@@ -608,13 +569,13 @@ QString ConfigManager::discordWebhookColor()
 
 bool ConfigManager::passwordRequirements()
 {
-    return m_settings->value("Password/password_requirements", true).toBool();
+    return m_store->value("config", "Password/password_requirements").toBool();
 }
 
 int ConfigManager::passwordMinLength()
 {
     bool ok;
-    int l_min = m_settings->value("Password/pass_min_length", 8).toInt(&ok);
+    int l_min = m_store->value("config", "Password/pass_min_length").toInt(&ok);
     if (!ok) {
         qWarning("pass_min_length is not an int!");
         l_min = 8;
@@ -625,7 +586,7 @@ int ConfigManager::passwordMinLength()
 int ConfigManager::passwordMaxLength()
 {
     bool ok;
-    int l_max = m_settings->value("Password/pass_max_length", 0).toInt(&ok);
+    int l_max = m_store->value("config", "Password/pass_max_length").toInt(&ok);
     if (!ok) {
         qWarning("pass_max_length is not an int!");
         l_max = 0;
@@ -635,22 +596,22 @@ int ConfigManager::passwordMaxLength()
 
 bool ConfigManager::passwordRequireMixCase()
 {
-    return m_settings->value("Password/pass_required_mix_case", true).toBool();
+    return m_store->value("config", "Password/pass_required_mix_case").toBool();
 }
 
 bool ConfigManager::passwordRequireNumbers()
 {
-    return m_settings->value("Password/pass_required_numbers", true).toBool();
+    return m_store->value("config", "Password/pass_required_numbers").toBool();
 }
 
 bool ConfigManager::passwordRequireSpecialCharacters()
 {
-    return m_settings->value("Password/pass_required_special", true).toBool();
+    return m_store->value("config", "Password/pass_required_special").toBool();
 }
 
 bool ConfigManager::passwordCanContainUsername()
 {
-    return m_settings->value("Password/pass_can_contain_username", false).toBool();
+    return m_store->value("config", "Password/pass_can_contain_username").toBool();
 }
 
 QString ConfigManager::LogText(QString f_logtype)
@@ -661,7 +622,7 @@ QString ConfigManager::LogText(QString f_logtype)
 int ConfigManager::afkTimeout()
 {
     bool ok;
-    int l_afk = m_settings->value("Options/afk_timeout", 300).toInt(&ok);
+    int l_afk = m_store->value("config", "Options/afk_timeout").toInt(&ok);
     if (!ok) {
         qWarning("afk_timeout is not an int!");
         l_afk = 300;
@@ -671,7 +632,7 @@ int ConfigManager::afkTimeout()
 
 void ConfigManager::setAuthType(const DataTypes::AuthType f_auth)
 {
-    m_settings->setValue("Options/auth", fromDataType<DataTypes::AuthType>(f_auth).toLower());
+    m_store->setValue("config", "Options/auth", fromDataType<DataTypes::AuthType>(f_auth).toLower());
 }
 
 QStringList ConfigManager::diceFaces(const QString f_name)
@@ -711,22 +672,22 @@ QStringList ConfigManager::cdnList()
 
 bool ConfigManager::publishServerEnabled()
 {
-    return m_settings->value("Advertiser/advertise", "true").toBool();
+    return m_store->value("config", "Advertiser/advertise").toBool();
 }
 
 QUrl ConfigManager::serverlistURL()
 {
-    return m_settings->value("Advertiser/ms_ip", "").toUrl();
+    return m_store->value("config", "Advertiser/ms_ip").toUrl();
 }
 
 QString ConfigManager::serverDomainName()
 {
-    return m_settings->value("Advertiser/hostname", "").toString();
+    return m_store->value("config", "Advertiser/hostname").toString();
 }
 
 bool ConfigManager::advertiseWSProxy()
 {
-    return m_settings->value("Advertiser/cloudflare_enabled", "false").toBool();
+    return m_store->value("config", "Advertiser/cloudflare_enabled").toBool();
 }
 
 ConfigManager::help ConfigManager::commandHelp(QString f_command_name)
@@ -736,7 +697,7 @@ ConfigManager::help ConfigManager::commandHelp(QString f_command_name)
 
 void ConfigManager::setMotd(const QString f_motd)
 {
-    m_settings->setValue("Options/motd", f_motd);
+    m_store->setValue("config", "Options/motd", f_motd);
 }
 
 bool ConfigManager::fileExists(const QFileInfo &f_file)

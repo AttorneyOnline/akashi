@@ -3,6 +3,7 @@
 
 #include "akashi/config_store.h"
 #include "config_manager.h"
+#include "core/server_config_entries.h"
 #include "u_logger.h"
 
 namespace tests {
@@ -21,7 +22,10 @@ class tst_ULogger : public QObject
 
 void tst_ULogger::initTestCase()
 {
-    ConfigManager::setStore(new akashi::ConfigStore("config", this));
+    akashi::ConfigStore *l_store = new akashi::ConfigStore("config", this);
+    l_store->declare("config", serverConfigEntries());
+    l_store->declare("discord", discordConfigEntries());
+    ConfigManager::setStore(l_store);
 }
 
 void tst_ULogger::kickEntryContainsReason()

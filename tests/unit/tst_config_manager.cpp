@@ -4,6 +4,7 @@
 
 #include "akashi/config_store.h"
 #include "config_manager.h"
+#include "core/server_config_entries.h"
 
 namespace tests {
 namespace unittests {
@@ -30,7 +31,10 @@ class tst_ConfigManager : public QObject
 
 void tst_ConfigManager::initTestCase()
 {
-    ConfigManager::setStore(new akashi::ConfigStore("config", this));
+    akashi::ConfigStore *l_store = new akashi::ConfigStore("config", this);
+    l_store->declare("config", serverConfigEntries());
+    l_store->declare("discord", discordConfigEntries());
+    ConfigManager::setStore(l_store);
 }
 
 void tst_ConfigManager::verifyServerConfig()

@@ -455,16 +455,6 @@ class AKASHI_CORE_EXPORT ConfigManager
     static akashi::ConfigStore *m_store;
 
     /**
-     * @brief Stores all server configuration values.
-     */
-    static QSettings *m_settings;
-
-    /**
-     * @brief Stores all discord webhook configuration values.
-     */
-    static QSettings *m_discord;
-
-    /**
      * @brief Stores all of the area valus.
      */
     static QSettings *m_areas;

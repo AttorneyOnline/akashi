@@ -1,12 +1,12 @@
 {
     "Discord": {
-        "webhook_ban_enabled": "false",
+        "webhook_ban_enabled": false,
         "webhook_ban_url": "",
         "webhook_color": "",
-        "webhook_enabled": "false",
+        "webhook_enabled": false,
         "webhook_modcall_content": "",
-        "webhook_modcall_enabled": "false",
-        "webhook_modcall_sendfile": "false",
+        "webhook_modcall_enabled": false,
+        "webhook_modcall_sendfile": false,
         "webhook_modcall_url": ""
     }
 }

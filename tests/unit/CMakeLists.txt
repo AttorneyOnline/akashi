@@ -6,6 +6,7 @@ set(UNIT_TESTS
     area
     command_extension
     config_manager
+    configstore
     crypto
     jsonsettings
     music_manager

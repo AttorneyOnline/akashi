@@ -4,6 +4,7 @@
 #include "akashi/config_store.h"
 #include "area_data.h"
 #include "config_manager.h"
+#include "core/server_config_entries.h"
 
 Q_DECLARE_METATYPE(AreaData::Side);
 
@@ -40,7 +41,10 @@ class Area : public QObject
 
 void Area::initTestCase()
 {
-    ConfigManager::setStore(new akashi::ConfigStore("config", this));
+    akashi::ConfigStore *l_store = new akashi::ConfigStore("config", this);
+    l_store->declare("config", serverConfigEntries());
+    l_store->declare("discord", discordConfigEntries());
+    ConfigManager::setStore(l_store);
 }
 
 void Area::init()

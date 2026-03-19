@@ -2,6 +2,7 @@
 
 #include "akashi/config_store.h"
 #include "config_manager.h"
+#include "core/server_config_entries.h"
 #include "server.h"
 
 #include <QDebug>
@@ -19,8 +20,10 @@ ExitCode ServerContext::start()
 {
     setStage(Stage::Configuring);
     m_config_store = new akashi::ConfigStore(akashi::ConfigStore::resolveRootPath(), this);
+    const bool l_declared = m_config_store->declare("config", serverConfigEntries()) &&
+                            m_config_store->declare("discord", discordConfigEntries());
     ConfigManager::setStore(m_config_store);
-    if (!ConfigManager::verifyServerConfig()) {
+    if (!l_declared || !ConfigManager::verifyServerConfig()) {
         qCritical() << "The server configuration is invalid!";
         return ExitCode::InvalidConfig;
     }
