@@ -117,12 +117,13 @@ set(AKASHI_SOURCES
   src2/core/exit_code.h
   src2/core/json_settings.cpp
   src2/core/json_settings.h
-  src2/core/server_config_entries.cpp
-  src2/core/server_config_entries.h
+  src2/core/server_settings.h
+  src2/core/settings.cpp
   src2/core/server_context.cpp
   src2/core/server_context.h
   src2/include/akashi/config_entry.h
   src2/include/akashi/config_store.h
+  src2/include/akashi/settings.h
 )
 
 add_library(akashi_core SHARED ${AKASHI_SOURCES})

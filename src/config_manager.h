@@ -44,6 +44,9 @@ namespace akashi {
 class ConfigStore;
 }
 
+class ServerSettings;
+class DiscordSettings;
+
 /**
  * @brief The config file handler class.
  */
@@ -52,9 +55,11 @@ class AKASHI_CORE_EXPORT ConfigManager
 
   public:
     /**
-     * @brief Connects the manager to the config store that owns the settings files.
+     * @brief Connects the manager to the config store and declares the server settings.
+     *
+     * @return False if a setting in the config files has an unusable value.
      */
-    static void setStore(akashi::ConfigStore *f_store);
+    static bool setStore(akashi::ConfigStore *f_store);
 
     /**
      * @brief Returns the path of a file inside the config folder.
@@ -453,6 +458,16 @@ class AKASHI_CORE_EXPORT ConfigManager
      * @brief The config store that owns the settings files.
      */
     static akashi::ConfigStore *m_store;
+
+    /**
+     * @brief The declared settings of config.json.
+     */
+    static ServerSettings *m_server_settings;
+
+    /**
+     * @brief The declared settings of discord.json.
+     */
+    static DiscordSettings *m_discord_settings;
 
     /**
      * @brief Stores all of the area valus.
