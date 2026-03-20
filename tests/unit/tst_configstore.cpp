@@ -19,6 +19,7 @@ class tst_ConfigStore : public QObject
     void stringValuesConvertToDeclaredTypes();
     void badValueFailsDeclare();
     void failedCheckFailsDeclare();
+    void combinedChecksApplyAll();
     void unknownKeyWarns();
     void reloadSignalsChangedValues();
     void pluginDeclarationsWork();
@@ -66,6 +67,20 @@ void tst_ConfigStore::failedCheckFailsDeclare()
 
     ConfigStore l_store(l_dir.path());
     QCOMPARE(l_store.declare("config", {{"Options/port", 27016, "The port.", inRange(1, 65535)}}), false);
+}
+
+void tst_ConfigStore::combinedChecksApplyAll()
+{
+    QTemporaryDir l_dir;
+    writeFile(l_dir.path() + "/config.json", R"({"Options": {"port": 70000}})");
+
+    ConfigStore l_store(l_dir.path());
+    const ConfigEntry::Check l_check = allOf({atLeast(1), atMost(65535)});
+    QCOMPARE(l_store.declare("config", {{"Options/port", 27016, "The port.", l_check}}), false);
+
+    writeFile(l_dir.path() + "/config.json", R"({"Options": {"port": 8080}})");
+    ConfigStore l_second_store(l_dir.path());
+    QVERIFY(l_second_store.declare("config", {{"Options/port", 27016, "The port.", l_check}}));
 }
 
 void tst_ConfigStore::unknownKeyWarns()

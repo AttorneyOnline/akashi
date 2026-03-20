@@ -49,6 +49,25 @@ ConfigEntry::Check atLeast(double f_min)
     };
 }
 
+ConfigEntry::Check atMost(double f_max)
+{
+    return [f_max](const QVariant &f_value) {
+        return f_value.toDouble() <= f_max;
+    };
+}
+
+ConfigEntry::Check allOf(const QList<ConfigEntry::Check> &f_checks)
+{
+    return [f_checks](const QVariant &f_value) {
+        for (const ConfigEntry::Check &l_check : f_checks) {
+            if (!l_check(f_value)) {
+                return false;
+            }
+        }
+        return true;
+    };
+}
+
 ConfigEntry::Check oneOf(const QStringList &f_words)
 {
     return [f_words](const QVariant &f_value) {

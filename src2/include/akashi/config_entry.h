@@ -36,6 +36,10 @@ class AKASHI_CORE_EXPORT ConfigEntry
 AKASHI_CORE_EXPORT ConfigEntry::Check inRange(double f_min, double f_max);
 // The value must be a number of at least min.
 AKASHI_CORE_EXPORT ConfigEntry::Check atLeast(double f_min);
+// The value must be a number of at most max.
+AKASHI_CORE_EXPORT ConfigEntry::Check atMost(double f_max);
+// Every given check must pass.
+AKASHI_CORE_EXPORT ConfigEntry::Check allOf(const QList<ConfigEntry::Check> &f_checks);
 // The value must be one of the given words, compared without case.
 AKASHI_CORE_EXPORT ConfigEntry::Check oneOf(const QStringList &f_words);
 
