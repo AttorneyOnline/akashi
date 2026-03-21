@@ -32,6 +32,7 @@
 #include <QWebSocketServer>
 
 #include "core/exit_code.h"
+#include "core/mmdb_reader.h"
 #include "medieval_parser.h"
 #include "network/aopacket.h"
 #include "playerstateobserver.h"
@@ -514,6 +515,10 @@ class AKASHI_CORE_EXPORT Server : public QObject
      * @brief Collection of all IPs that are banned.
      */
     QStringList m_ipban_list;
+
+    // The ASNs that are banned and the database to look up who announces an address.
+    QList<quint32> m_banned_asns;
+    akashi::MmdbReader m_asn_reader;
 
     /**
      * @brief Timer until the next IC message can be sent.

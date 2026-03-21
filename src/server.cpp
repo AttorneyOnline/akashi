@@ -118,6 +118,10 @@ ExitCode Server::start()
 
     // Get IP bans
     m_ipban_list = ConfigManager::iprangeBans();
+    m_banned_asns = ConfigManager::bannedAsns();
+    if (QFile::exists("storage/GeoLite2-ASN.mmdb")) {
+        m_asn_reader.open("storage/GeoLite2-ASN.mmdb");
+    }
 
     // Rate-Limiter for IC-Chat
     m_message_floodguard_timer = new QTimer(this);
@@ -293,6 +297,10 @@ void Server::reloadSettings()
     logger->loadLogtext();
     music_manager->reloadRequest();
     m_ipban_list = ConfigManager::iprangeBans();
+    m_banned_asns = ConfigManager::bannedAsns();
+    if (QFile::exists("storage/GeoLite2-ASN.mmdb")) {
+        m_asn_reader.open("storage/GeoLite2-ASN.mmdb");
+    }
     acl_roles_handler->loadFile(ConfigManager::path("acl_roles.json"));
     command_extension_collection->loadFile(ConfigManager::path("command_extensions.json"));
 }
@@ -556,14 +564,15 @@ void Server::decreasePlayerCount()
 
 bool Server::isIPBanned(QHostAddress f_remote_IP)
 {
-    bool l_match_found = false;
     for (const QString &l_ipban : qAsConst(m_ipban_list)) {
         if (f_remote_IP.isInSubnet(QHostAddress::parseSubnet(l_ipban))) {
-            l_match_found = true;
-            break;
+            return true;
         }
     }
-    return l_match_found;
+
+    // The address is banned when the network it belongs to is owned by a banned ASN.
+    const quint32 l_asn = m_asn_reader.asnForAddress(f_remote_IP);
+    return l_asn != 0 && m_banned_asns.contains(l_asn);
 }
 
 Server::~Server()

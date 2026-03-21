@@ -129,6 +129,11 @@ class AKASHI_CORE_EXPORT ConfigManager
     static QStringList iprangeBans();
 
     /**
+     * @brief Returns the list of banned ASNs.
+     */
+    static QList<quint32> bannedAsns();
+
+    /**
      * @brief Returns the maximum number of players the server will allow..
      */
     static int maxPlayers();

@@ -16,6 +16,7 @@ bool MmdbReader::open(const QString &f_path)
         return false;
     }
     m_data = l_file.readAll();
+    m_cache.clear();
 
     const qsizetype l_marker = m_data.lastIndexOf(METADATA_MARKER);
     if (l_marker == -1) {
@@ -37,70 +38,62 @@ bool MmdbReader::open(const QString &f_path)
     return true;
 }
 
-QStringList MmdbReader::networksForAsns(const QList<quint32> &f_asns) const
+bool MmdbReader::isOpen() const
 {
-    struct Position
-    {
-        quint32 node;
-        int depth;
-        quint8 bits[16];
-    };
+    return m_node_count != 0;
+}
 
-    const int l_max_depth = m_ip_version == 4 ? 32 : 128;
-    QStringList l_networks;
-    QList<Position> l_stack;
-    l_stack.append(Position{0, 0, {}});
-
-    while (!l_stack.isEmpty()) {
-        const Position l_position = l_stack.takeLast();
-        for (int l_side = 0; l_side < 2; l_side++) {
-            const quint32 l_record = record(l_position.node, l_side);
-            if (l_record == m_node_count) {
-                continue;
-            }
-
-            Position l_next = l_position;
-            if (l_side == 1) {
-                l_next.bits[l_position.depth / 8] |= 1 << (7 - l_position.depth % 8);
-            }
-            l_next.depth++;
-
-            if (l_record < m_node_count) {
-                if (l_next.depth < l_max_depth) {
-                    l_next.node = l_record;
-                    l_stack.append(l_next);
-                }
-                continue;
-            }
-
-            // The record points at a data entry, check if its ASN is wanted.
-            quint32 l_offset = m_tree_size + (l_record - m_node_count);
-            const QVariantMap l_entry = readValue(l_offset).toMap();
-            const quint32 l_asn = l_entry.value("autonomous_system_number").toUInt();
-            if (!f_asns.contains(l_asn)) {
-                continue;
-            }
-
-            // IPv4 lives under 96 leading zero bits inside an IPv6 tree.
-            bool l_is_mapped_v4 = m_ip_version == 6 && l_next.depth >= 96;
-            for (int i = 0; l_is_mapped_v4 && i < 12; i++) {
-                l_is_mapped_v4 = l_next.bits[i] == 0;
-            }
-
-            if (m_ip_version == 4 || l_is_mapped_v4) {
-                const quint8 *l_v4 = m_ip_version == 4 ? l_next.bits : l_next.bits + 12;
-                const quint32 l_address = l_v4[0] << 24 | l_v4[1] << 16 | l_v4[2] << 8 | l_v4[3];
-                const int l_prefix = m_ip_version == 4 ? l_next.depth : l_next.depth - 96;
-                l_networks.append(QHostAddress(l_address).toString() + "/" + QString::number(l_prefix));
-            }
-            else {
-                Q_IPV6ADDR l_address;
-                memcpy(l_address.c, l_next.bits, 16);
-                l_networks.append(QHostAddress(l_address).toString() + "/" + QString::number(l_next.depth));
-            }
-        }
+quint32 MmdbReader::asnForAddress(const QHostAddress &f_address)
+{
+    if (!isOpen()) {
+        return 0;
     }
-    return l_networks;
+
+    const QString l_key = f_address.toString();
+    const auto l_cached = m_cache.constFind(l_key);
+    if (l_cached != m_cache.constEnd()) {
+        return l_cached.value();
+    }
+
+    // The address becomes the bit path through the search tree.
+    quint8 l_bits[16] = {};
+    int l_depth = m_ip_version == 4 ? 32 : 128;
+    bool l_is_v4 = false;
+    const quint32 l_v4 = f_address.toIPv4Address(&l_is_v4);
+    if (l_is_v4) {
+        // IPv4 lives under 96 leading zero bits inside an IPv6 tree.
+        const int l_start = m_ip_version == 4 ? 0 : 12;
+        l_bits[l_start] = l_v4 >> 24;
+        l_bits[l_start + 1] = l_v4 >> 16;
+        l_bits[l_start + 2] = l_v4 >> 8;
+        l_bits[l_start + 3] = l_v4;
+    }
+    else if (m_ip_version == 4) {
+        return 0;
+    }
+    else {
+        const Q_IPV6ADDR l_v6 = f_address.toIPv6Address();
+        memcpy(l_bits, l_v6.c, 16);
+    }
+
+    quint32 l_asn = 0;
+    quint32 l_node = 0;
+    for (int l_bit = 0; l_bit < l_depth; l_bit++) {
+        const int l_side = l_bits[l_bit / 8] >> (7 - l_bit % 8) & 1;
+        const quint32 l_record = record(l_node, l_side);
+        if (l_record == m_node_count) {
+            break;
+        }
+        if (l_record > m_node_count) {
+            quint32 l_offset = m_tree_size + (l_record - m_node_count);
+            l_asn = readValue(l_offset).toMap().value("autonomous_system_number").toUInt();
+            break;
+        }
+        l_node = l_record;
+    }
+
+    m_cache.insert(l_key, l_asn);
+    return l_asn;
 }
 
 quint32 MmdbReader::record(quint32 f_node, int f_side) const

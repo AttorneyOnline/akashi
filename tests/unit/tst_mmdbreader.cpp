@@ -14,7 +14,7 @@ class tst_MmdbReader : public QObject
     Q_OBJECT
 
   private slots:
-    void findsNetworksOfWantedAsns();
+    void looksUpTheAsnOfAnAddress();
     void rejectsOtherFiles();
 
   private:
@@ -69,7 +69,7 @@ QByteArray tst_MmdbReader::buildDatabase()
     return l_database;
 }
 
-void tst_MmdbReader::findsNetworksOfWantedAsns()
+void tst_MmdbReader::looksUpTheAsnOfAnAddress()
 {
     QTemporaryDir l_dir;
     const QString l_path = l_dir.path() + "/asn.mmdb";
@@ -81,12 +81,12 @@ void tst_MmdbReader::findsNetworksOfWantedAsns()
     MmdbReader l_reader;
     QVERIFY(l_reader.open(l_path));
 
-    QCOMPARE(l_reader.networksForAsns({100}), QStringList{"1.0.0.0/8"});
-    QCOMPARE(l_reader.networksForAsns({200}), QStringList{"2.0.0.0/8"});
-    QCOMPARE(l_reader.networksForAsns({300}), QStringList{});
+    QCOMPARE(l_reader.asnForAddress(QHostAddress("1.2.3.4")), 100);
+    QCOMPARE(l_reader.asnForAddress(QHostAddress("2.0.0.1")), 200);
+    QCOMPARE(l_reader.asnForAddress(QHostAddress("3.0.0.1")), 0);
 
-    const QStringList l_both = l_reader.networksForAsns({100, 200});
-    QCOMPARE(l_both.size(), 2);
+    // The second lookup of the same address comes from the cache.
+    QCOMPARE(l_reader.asnForAddress(QHostAddress("1.2.3.4")), 100);
 }
 
 void tst_MmdbReader::rejectsOtherFiles()

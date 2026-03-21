@@ -3,8 +3,9 @@
 
 #include "akashi_core_export.h"
 
+#include <QHash>
+#include <QHostAddress>
 #include <QString>
-#include <QStringList>
 #include <QVariant>
 
 namespace akashi {
@@ -14,9 +15,10 @@ class AKASHI_CORE_EXPORT MmdbReader
 {
   public:
     bool open(const QString &f_path);
+    bool isOpen() const;
 
-    // All networks announced by the given ASNs, as CIDR strings.
-    QStringList networksForAsns(const QList<quint32> &f_asns) const;
+    // The ASN that announces the given address, or 0 if it is unknown. Results are cached.
+    quint32 asnForAddress(const QHostAddress &f_address);
 
   private:
     quint32 record(quint32 f_node, int f_side) const;
@@ -27,6 +29,7 @@ class AKASHI_CORE_EXPORT MmdbReader
     int m_record_size = 0;
     int m_ip_version = 0;
     quint32 m_tree_size = 0;
+    QHash<QString, quint32> m_cache;
 };
 
 } // namespace akashi
