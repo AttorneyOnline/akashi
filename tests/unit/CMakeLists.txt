@@ -10,6 +10,7 @@ set(UNIT_TESTS
     dbmanager
     crypto
     jsonsettings
+    mmdbreader
     music_manager
     playerstateobserver
     ulogger

@@ -17,6 +17,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "config_manager.h"
 #include "akashi/config_store.h"
+#include "core/mmdb_reader.h"
 #include "core/server_settings.h"
 #include <QSqlDatabase>
 #include <QSqlQuery>
@@ -302,7 +303,18 @@ QStringList ConfigManager::iprangeBans()
     QStringList l_range_bans;
     l_range_bans.append(l_json_obj["ip_range"].toVariant().toStringList());
 
-    if (QFile::exists("storage/asn.sqlite3")) {
+    if (QFile::exists("storage/GeoLite2-ASN.mmdb")) {
+        akashi::MmdbReader l_reader;
+        if (l_reader.open("storage/GeoLite2-ASN.mmdb")) {
+            QList<quint32> l_asns;
+            const QStringList l_asn_texts = l_json_obj["asn"].toVariant().toStringList();
+            for (const QString &l_asn : l_asn_texts) {
+                l_asns.append(l_asn.toUInt());
+            }
+            l_range_bans.append(l_reader.networksForAsns(l_asns));
+        }
+    }
+    else if (QFile::exists("storage/asn.sqlite3")) {
         // The connection is reused on reload instead of being added again.
         QSqlDatabase asn_db = QSqlDatabase::contains("ASN") ? QSqlDatabase::database("ASN") : QSqlDatabase::addDatabase("QSQLITE", "ASN");
         asn_db.setDatabaseName("storage/asn.sqlite3");
