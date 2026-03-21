@@ -128,6 +128,9 @@ set(AKASHI_SOURCES
   src2/include/akashi/config_store.h
   src2/include/akashi/database_service.h
   src2/include/akashi/settings.h
+  src2/proto/ao2_protocol.h
+  src2/proto/packet.cpp
+  src2/proto/packet.h
 )
 
 add_library(akashi_core SHARED ${AKASHI_SOURCES})

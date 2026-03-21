@@ -11,6 +11,7 @@ set(UNIT_TESTS
     crypto
     jsonsettings
     mmdbreader
+    packet
     music_manager
     playerstateobserver
     ulogger
