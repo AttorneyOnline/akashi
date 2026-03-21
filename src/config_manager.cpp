@@ -303,12 +303,21 @@ QStringList ConfigManager::iprangeBans()
     l_range_bans.append(l_json_obj["ip_range"].toVariant().toStringList());
 
     if (QFile::exists("storage/asn.sqlite3")) {
-        QSqlDatabase asn_db = QSqlDatabase::addDatabase("QSQLITE", "ASN");
+        // The connection is reused on reload instead of being added again.
+        QSqlDatabase asn_db = QSqlDatabase::contains("ASN") ? QSqlDatabase::database("ASN") : QSqlDatabase::addDatabase("QSQLITE", "ASN");
         asn_db.setDatabaseName("storage/asn.sqlite3");
         asn_db.open();
 
-        // This is a dumb hack. Idk how else I can do this, but who gives a shit?
-        QSqlQuery query("SELECT ip FROM maxmind WHERE asn in (" + l_json_obj["asn"].toVariant().toStringList().join(",") + ")", asn_db);
+        const QStringList l_asns = l_json_obj["asn"].toVariant().toStringList();
+        QStringList l_placeholders;
+        for (int i = 0; i < l_asns.size(); i++) {
+            l_placeholders.append("?");
+        }
+        QSqlQuery query(asn_db);
+        query.prepare("SELECT ip FROM maxmind WHERE asn in (" + l_placeholders.join(",") + ")");
+        for (const QString &l_asn : l_asns) {
+            query.addBindValue(l_asn);
+        }
         query.exec();
         while (query.next()) {
             l_range_bans.append(query.value(0).toString());

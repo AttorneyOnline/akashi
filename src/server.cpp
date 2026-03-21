@@ -18,6 +18,7 @@
 #include "server.h"
 
 #include "acl_roles_handler.h"
+#include "akashi/database_service.h"
 #include "aoclient.h"
 #include "area_data.h"
 #include "command_extension.h"
@@ -30,14 +31,14 @@
 #include "packet/packet_factory.h"
 #include "serverpublisher.h"
 
-Server::Server(int p_ws_port, QObject *parent) :
+Server::Server(int p_ws_port, akashi::DatabaseService *f_database, QObject *parent) :
     QObject(parent),
     m_port(p_ws_port),
     m_player_count(0)
 {
     timer = new QTimer(this);
 
-    db_manager = new DBManager;
+    db_manager = new DBManager(f_database->database());
     medieval_parser = new MedievalParser;
 
     acl_roles_handler = new ACLRolesHandler(this);

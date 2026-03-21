@@ -1,6 +1,7 @@
 #include "core/server_context.h"
 
 #include "akashi/config_store.h"
+#include "akashi/database_service.h"
 #include "config_manager.h"
 #include "server.h"
 
@@ -24,7 +25,12 @@ ExitCode ServerContext::start()
         return ExitCode::InvalidConfig;
     }
 
-    m_server = new Server(ConfigManager::serverPort(), this);
+    m_database_service = new akashi::DatabaseService(QStringLiteral("data"), this);
+    if (!m_database_service->open(ConfigManager::path("akashi.db"))) {
+        return ExitCode::DatabaseError;
+    }
+
+    m_server = new Server(ConfigManager::serverPort(), m_database_service, this);
     setStage(Stage::ServicesConstructed);
 
     // Server::start() still loads content and opens the port in one go.

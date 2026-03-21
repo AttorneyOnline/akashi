@@ -10,6 +10,7 @@ class Server;
 
 namespace akashi {
 class ConfigStore;
+class DatabaseService;
 }
 
 // Owns the server and moves it through its lifecycle stages.
@@ -52,6 +53,7 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
 
     Server *m_server = nullptr;
     akashi::ConfigStore *m_config_store = nullptr;
+    akashi::DatabaseService *m_database_service = nullptr;
     Stage m_stage = Stage::Configuring;
 };
 

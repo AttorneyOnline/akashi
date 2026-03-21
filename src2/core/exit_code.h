@@ -11,6 +11,8 @@ enum class ExitCode : int
     InvalidBindAddress = 2,
     // The configured port could not be opened, for example because it is already in use.
     PortUnavailable = 3,
+    // The server database could not be opened.
+    DatabaseError = 4,
 };
 
 #endif // EXIT_CODE_H

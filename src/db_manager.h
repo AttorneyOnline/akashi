@@ -54,7 +54,7 @@ class AKASHI_CORE_EXPORT DBManager : public QObject
      * @details Creates a database file at `config/akashi.db`, and creates two tables in it:
      * one for banned clients, and one for authorised users / moderators.
      */
-    DBManager();
+    explicit DBManager(QSqlDatabase f_database);
 
     /**
      * @brief Destructor for the DBManager class. Closes the underlying database.
@@ -236,11 +236,6 @@ class AKASHI_CORE_EXPORT DBManager : public QObject
     bool updatePassword(QString username, QString password);
 
   private:
-    /**
-     * @brief The name of the database connection driver.
-     */
-    const QString DRIVER;
-
     /**
      * @note Unused.
      */

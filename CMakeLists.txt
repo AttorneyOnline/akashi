@@ -114,6 +114,7 @@ set(AKASHI_SOURCES
   src/typedefs.h
   src2/core/config_entry.cpp
   src2/core/config_store.cpp
+  src2/core/database_service.cpp
   src2/core/exit_code.h
   src2/core/json_settings.cpp
   src2/core/json_settings.h
@@ -123,6 +124,7 @@ set(AKASHI_SOURCES
   src2/core/server_context.h
   src2/include/akashi/config_entry.h
   src2/include/akashi/config_store.h
+  src2/include/akashi/database_service.h
   src2/include/akashi/settings.h
 )
 

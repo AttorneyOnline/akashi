@@ -36,6 +36,10 @@
 #include "network/aopacket.h"
 #include "playerstateobserver.h"
 
+namespace akashi {
+class DatabaseService;
+}
+
 class ACLRolesHandler;
 class ServerPublisher;
 class AOClient;
@@ -61,7 +65,7 @@ class AKASHI_CORE_EXPORT Server : public QObject
      * @param p_ws_port The port to listen for connections on.
      * @param parent Qt-based parent, passed along to inherited constructor from QObject.
      */
-    Server(int p_ws_port, QObject *parent = nullptr);
+    Server(int p_ws_port, akashi::DatabaseService *f_database, QObject *parent = nullptr);
 
     /**
      * @brief Destructor for the Server class.
