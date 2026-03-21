@@ -16,6 +16,7 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
 
+#include "proto/packet.h"
 #include <algorithm>
 
 #include "area_data.h"
@@ -114,10 +115,10 @@ void AreaData::addClient(int f_charId, int f_userId)
     m_joined_ids.append(f_userId);
     emit userJoinedArea(m_index, f_userId);
     // Send out ambience as well. Use channel 1 for that
-    emit sendAreaPacketClient(PacketFactory::createPacket("MC", {m_currentAmbience, QString::number(-1), ConfigManager::serverNickname(), QString::number(1), QString::number(1)}), f_userId);
+    emit sendAreaPacketClient(akashi::Packet("MC", {m_currentAmbience, QString::number(-1), ConfigManager::serverNickname(), QString::number(1), QString::number(1)}), f_userId);
     // The name will never be shown as we are using a spectator ID. Still nice for people who network sniff.
     // We auto-loop this so you'll never sit in silence unless wanted.
-    emit sendAreaPacketClient(PacketFactory::createPacket("MC", {m_currentMusic, QString::number(-1), ConfigManager::serverNickname(), QString::number(1)}), f_userId);
+    emit sendAreaPacketClient(akashi::Packet("MC", {m_currentMusic, QString::number(-1), ConfigManager::serverNickname(), QString::number(1)}), f_userId);
 }
 
 QList<int> AreaData::owners() const
@@ -702,7 +703,7 @@ QString AreaData::addJukeboxSong(QString f_song)
         if (l_song.second > 0) {
             if (m_jukebox_queue.size() == 0) {
 
-                emit sendAreaPacket(PacketFactory::createPacket("MC", {l_song.first, QString::number(-1)}), index());
+                emit sendAreaPacket(akashi::Packet("MC", {l_song.first, QString::number(-1)}), index());
                 m_jukebox_timer->start(l_song.second * 1000);
                 setCurrentMusic(f_song);
                 setMusicPlayedBy("Jukebox");
@@ -728,7 +729,7 @@ void AreaData::switchJukeboxSong()
     if (m_jukebox_queue.size() == 1) {
         l_song_name = m_jukebox_queue[0];
         QPair<QString, float> l_song = m_music_manager->songInformation(l_song_name, index());
-        emit sendAreaPacket(PacketFactory::createPacket("MC", {l_song.first, "-1"}), m_index);
+        emit sendAreaPacket(akashi::Packet("MC", {l_song.first, "-1"}), m_index);
         m_jukebox_timer->start(l_song.second * 1000);
     }
     else {
@@ -736,7 +737,7 @@ void AreaData::switchJukeboxSong()
         l_song_name = m_jukebox_queue[l_random_index];
 
         QPair<QString, float> l_song = m_music_manager->songInformation(l_song_name, index());
-        emit sendAreaPacket(PacketFactory::createPacket("MC", {l_song.first, "-1"}), m_index);
+        emit sendAreaPacket(akashi::Packet("MC", {l_song.first, "-1"}), m_index);
         m_jukebox_timer->start(l_song.second * 1000);
 
         m_jukebox_queue.remove(l_random_index);

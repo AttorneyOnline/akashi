@@ -16,6 +16,7 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
 #include "server.h"
+#include "proto/packet.h"
 
 #include "acl_roles_handler.h"
 #include "akashi/database_service.h"
@@ -96,7 +97,7 @@ ExitCode Server::start()
     MusicList l_musiclist = ConfigManager::musiclist();
     music_manager = new MusicManager(ConfigManager::cdnList(), l_musiclist, ConfigManager::ordered_songs(), this);
     connect(music_manager, &MusicManager::sendFMPacket, this, &Server::unicast);
-    connect(music_manager, &MusicManager::sendAreaFMPacket, this, QOverload<AOPacket *, int>::of(&Server::broadcast));
+    connect(music_manager, &MusicManager::sendAreaFMPacket, this, QOverload<const akashi::Packet &, int>::of(&Server::broadcast));
 
     // Get musiclist from config file
     m_music_list = music_manager->rootMusiclist();
@@ -107,7 +108,7 @@ ExitCode Server::start()
         QString area_name = QString::number(i) + ":" + m_area_names[i];
         AreaData *l_area = new AreaData(area_name, i, music_manager);
         m_areas.insert(i, l_area);
-        connect(l_area, &AreaData::sendAreaPacket, this, QOverload<AOPacket *, int>::of(&Server::broadcast));
+        connect(l_area, &AreaData::sendAreaPacket, this, QOverload<const akashi::Packet &, int>::of(&Server::broadcast));
         connect(l_area, &AreaData::sendAreaPacketClient, this, &Server::unicast);
         connect(l_area, &AreaData::userJoinedArea, music_manager, &MusicManager::userJoinedArea);
         music_manager->registerArea(i);
@@ -150,7 +151,7 @@ void Server::clientConnected()
     // Too many players. Reject connection!
     // This also enforces the maximum playercount.
     if (m_available_ids.empty()) {
-        AOPacket *disconnect_reason = PacketFactory::createPacket("BD", {"Maximum playercount has been reached."});
+        akashi::Packet disconnect_reason("BD", {"Maximum playercount has been reached."});
         l_socket->write(disconnect_reason);
         l_socket->close();
         l_socket->deleteLater();
@@ -182,8 +183,8 @@ void Server::clientConnected()
         else {
             ban_duration = "Permanently.";
         }
-        AOPacket *ban_reason = PacketFactory::createPacket("BD", {"Reason: " + ban.second.reason + "\nBan ID: " + QString::number(ban.second.id) + "\nUntil: " + ban_duration});
-        socket->sendTextMessage(ban_reason->toUtf8());
+        akashi::Packet ban_reason("BD", {"Reason: " + ban.second.reason + "\nBan ID: " + QString::number(ban.second.id) + "\nUntil: " + ban_duration});
+        socket->sendTextMessage(ban_reason.serialize());
     }
     if (is_banned || is_at_multiclient_limit) {
         client->deleteLater();
@@ -199,7 +200,7 @@ void Server::clientConnected()
 
     if (isIPBanned(l_remote_ip)) {
         QString l_reason = "Your IP has been banned by a moderator.";
-        AOPacket *l_ban_reason = PacketFactory::createPacket("BD", {l_reason});
+        akashi::Packet l_ban_reason("BD", {l_reason});
         l_socket->write(l_ban_reason);
         client->deleteLater();
         l_socket->close(QWebSocketProtocol::CloseCodeNormal);
@@ -220,7 +221,7 @@ void Server::clientConnected()
     // This is the infamous workaround for
     // tsuserver4. It should disable fantacrypt
     // completely in any client 2.4.3 or newer
-    AOPacket *decryptor = PacketFactory::createPacket("decryptor", {"NOENCRYPT"});
+    akashi::Packet decryptor("decryptor", {"NOENCRYPT"});
     client->sendPacket(decryptor);
     hookupAOClient(client);
 }
@@ -234,7 +235,7 @@ void Server::updateCharsTaken(AreaData *area)
                                : QStringLiteral("0"));
     }
 
-    AOPacket *response_cc = PacketFactory::createPacket("CharsCheck", chars_taken);
+    akashi::Packet response_cc("CharsCheck", chars_taken);
 
     for (AOClient *l_client : qAsConst(m_clients)) {
         if (l_client->areaId() == area->index()) {
@@ -242,7 +243,7 @@ void Server::updateCharsTaken(AreaData *area)
                 l_client->sendPacket(response_cc);
             else {
                 QStringList chars_taken_cursed = getCursedCharsTaken(l_client, chars_taken);
-                AOPacket *response_cc_cursed = PacketFactory::createPacket("CharsCheck", chars_taken_cursed);
+                akashi::Packet response_cc_cursed("CharsCheck", chars_taken_cursed);
                 l_client->sendPacket(response_cc_cursed);
             }
         }
@@ -305,7 +306,7 @@ void Server::reloadSettings()
     command_extension_collection->loadFile(ConfigManager::path("command_extensions.json"));
 }
 
-void Server::broadcast(AOPacket *packet, int area_index)
+void Server::broadcast(const akashi::Packet &packet, int area_index)
 {
     QVector<int> l_client_ids = m_areas.value(area_index)->joinedIDs();
     for (const int l_client_id : qAsConst(l_client_ids)) {
@@ -316,14 +317,14 @@ void Server::broadcast(AOPacket *packet, int area_index)
     }
 }
 
-void Server::broadcast(AOPacket *packet)
+void Server::broadcast(const akashi::Packet &packet)
 {
     for (AOClient *l_client : qAsConst(m_clients)) {
         l_client->sendPacket(packet);
     }
 }
 
-void Server::broadcast(AOPacket *packet, TARGET_TYPE target)
+void Server::broadcast(const akashi::Packet &packet, TARGET_TYPE target)
 {
     for (AOClient *l_client : qAsConst(m_clients)) {
         switch (target) {
@@ -343,7 +344,7 @@ void Server::broadcast(AOPacket *packet, TARGET_TYPE target)
     }
 }
 
-void Server::broadcast(AOPacket *packet, AOPacket *other_packet, TARGET_TYPE target)
+void Server::broadcast(const akashi::Packet &packet, const akashi::Packet &other_packet, TARGET_TYPE target)
 {
     switch (target) {
     case TARGET_TYPE::AUTHENTICATED:
@@ -363,7 +364,7 @@ void Server::broadcast(AOPacket *packet, AOPacket *other_packet, TARGET_TYPE tar
     }
 }
 
-void Server::unicast(AOPacket *f_packet, int f_client_id)
+void Server::unicast(const akashi::Packet &f_packet, int f_client_id)
 {
     AOClient *l_client = getClientByID(f_client_id);
     if (l_client != nullptr) { // This should never happen, but safety first.

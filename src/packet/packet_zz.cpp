@@ -43,7 +43,7 @@ void PacketZZ::handlePacket(AreaData *area, AOClient &client) const
     const QVector<AOClient *> l_clients = client.getServer()->getClients();
     for (AOClient *l_client : l_clients) {
         if (l_client->m_authenticated)
-            l_client->sendPacket(PacketFactory::createPacket("ZZ", {l_modcallNotice}));
+            l_client->sendPacket(akashi::Packet("ZZ", {l_modcallNotice}));
     }
     emit client.logModcall(client.getServer()->getAreaById(client.areaId())->name(), client.m_ipid, client.name(), QString::number(client.clientId()), (client.character() + " " + client.characterName()));
 

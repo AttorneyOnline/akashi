@@ -36,6 +36,7 @@
 #include "medieval_parser.h"
 #include "network/aopacket.h"
 #include "playerstateobserver.h"
+#include "proto/packet.h"
 
 namespace akashi {
 class DatabaseService;
@@ -187,14 +188,14 @@ class AKASHI_CORE_EXPORT Server : public QObject
      *
      * @note Does nothing if an area by the given index does not exist.
      */
-    void broadcast(AOPacket *packet, int area_index);
+    void broadcast(const akashi::Packet &packet, int area_index);
 
     /**
      * @brief Sends a packet to all clients in the server.
      *
      * @param packet The packet to send to the clients.
      */
-    void broadcast(AOPacket *packet);
+    void broadcast(const akashi::Packet &packet);
 
     /**
      * @brief Sends a packet to a specific usergroup..
@@ -203,7 +204,7 @@ class AKASHI_CORE_EXPORT Server : public QObject
      *
      * @param ENUM to determine the targets of the altered packet.
      */
-    void broadcast(AOPacket *packet, TARGET_TYPE target);
+    void broadcast(const akashi::Packet &packet, TARGET_TYPE target);
 
     /**
      * @brief Sends a packet to clients, sends an altered packet to a specific usergroup.
@@ -214,7 +215,7 @@ class AKASHI_CORE_EXPORT Server : public QObject
      *
      * @param ENUM to determine the targets of the altered packet.
      */
-    void broadcast(AOPacket *packet, AOPacket *other_packet, enum TARGET_TYPE target);
+    void broadcast(const akashi::Packet &packet, const akashi::Packet &other_packet, enum TARGET_TYPE target);
 
     /**
      * @brief Sends a packet to a single client.
@@ -223,7 +224,7 @@ class AKASHI_CORE_EXPORT Server : public QObject
      *
      * @param The temporary userID of the client.
      */
-    void unicast(AOPacket *f_packet, int f_client_id);
+    void unicast(const akashi::Packet &f_packet, int f_client_id);
 
     /**
      * @brief Returns the character's character ID (= their index in the character list).

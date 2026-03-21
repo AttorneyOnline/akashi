@@ -17,6 +17,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "network/network_socket.h"
 #include "packet/packet_factory.h"
+#include "proto/packet.h"
 
 NetworkSocket::NetworkSocket(QWebSocket *f_socket, QObject *parent) :
     QObject(parent)
@@ -82,10 +83,11 @@ void NetworkSocket::handleMessage(QString f_data)
         }
 
         emit handlePacket(l_packet);
+        delete l_packet;
     }
 }
 
-void NetworkSocket::write(AOPacket *f_packet)
+void NetworkSocket::write(const akashi::Packet &f_packet)
 {
-    m_client_socket->sendTextMessage(f_packet->toString());
+    m_client_socket->sendTextMessage(f_packet.serialize());
 }

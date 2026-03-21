@@ -16,6 +16,7 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
 #include "aoclient.h"
+#include "proto/packet.h"
 
 #include "area_data.h"
 #include "config_manager.h"
@@ -219,7 +220,7 @@ void AOClient::sendNotice(QString f_notice, bool f_global)
         l_message += "server-wide ";
     l_message += "notice:\n\n" + f_notice;
     sendServerMessageArea(l_message);
-    AOPacket *l_packet = PacketFactory::createPacket("BB", {l_message});
+    akashi::Packet l_packet("BB", {l_message});
     if (f_global)
         server->broadcast(l_packet);
     else

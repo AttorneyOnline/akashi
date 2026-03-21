@@ -56,7 +56,7 @@ void PacketCasea::handlePacket(AreaData *area, AOClient &client) const
     }
 
     for (AOClient *l_client : l_clients_to_alert) {
-        l_client->sendPacket(PacketFactory::createPacket("CASEA", {l_message, m_content[1], m_content[2], m_content[3], m_content[4], m_content[5], "1"}));
+        l_client->sendPacket(akashi::Packet("CASEA", {l_message, m_content[1], m_content[2], m_content[3], m_content[4], m_content[5], "1"}));
         // you may be thinking, "hey wait a minute the network protocol documentation doesn't mention that last argument!"
         // if you are in fact thinking that, you are correct! it is not in the documentation!
         // however for some inscrutable reason Attorney Online 2 will outright reject a CASEA packet that does not have

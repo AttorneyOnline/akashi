@@ -10,8 +10,7 @@ void PlayerStateObserver::registerClient(AOClient *client)
 {
     Q_ASSERT(!m_client_list.contains(client));
 
-    PacketPR packet(client->clientId(), PacketPR::ADD);
-    sendToClientList(packet);
+    sendToClientList(akashi::Packet("PR", {QString::number(client->clientId()), QString::number(PacketPR::ADD)}));
 
     m_client_list.append(client);
 
@@ -20,18 +19,13 @@ void PlayerStateObserver::registerClient(AOClient *client)
     connect(client, &AOClient::characterNameChanged, this, &PlayerStateObserver::notifyCharacterNameChanged);
     connect(client, &AOClient::areaIdChanged, this, &PlayerStateObserver::notifyAreaIdChanged);
 
-    QList<AOPacket *> packets;
     for (AOClient *i_client : qAsConst(m_client_list)) {
-        packets.append(new PacketPR(i_client->clientId(), PacketPR::ADD));
-        packets.append(new PacketPU(i_client->clientId(), PacketPU::NAME, i_client->name()));
-        packets.append(new PacketPU(i_client->clientId(), PacketPU::CHARACTER, i_client->character()));
-        packets.append(new PacketPU(i_client->clientId(), PacketPU::CHARACTER_NAME, i_client->characterName()));
-        packets.append(new PacketPU(i_client->clientId(), PacketPU::AREA_ID, i_client->areaId()));
-    }
-
-    for (AOPacket *packet : qAsConst(packets)) {
-        client->sendPacket(packet);
-        delete packet;
+        const QString l_id = QString::number(i_client->clientId());
+        client->sendPacket(akashi::Packet("PR", {l_id, QString::number(PacketPR::ADD)}));
+        client->sendPacket(akashi::Packet("PU", {l_id, QString::number(PacketPU::NAME), i_client->name()}));
+        client->sendPacket(akashi::Packet("PU", {l_id, QString::number(PacketPU::CHARACTER), i_client->character()}));
+        client->sendPacket(akashi::Packet("PU", {l_id, QString::number(PacketPU::CHARACTER_NAME), i_client->characterName()}));
+        client->sendPacket(akashi::Packet("PU", {l_id, QString::number(PacketPU::AREA_ID), QString::number(i_client->areaId())}));
     }
 }
 
@@ -46,33 +40,32 @@ void PlayerStateObserver::unregisterClient(AOClient *client)
 
     m_client_list.removeAll(client);
 
-    PacketPR packet(client->clientId(), PacketPR::REMOVE);
-    sendToClientList(packet);
+    sendToClientList(akashi::Packet("PR", {QString::number(client->clientId()), QString::number(PacketPR::REMOVE)}));
 }
 
-void PlayerStateObserver::sendToClientList(const AOPacket &packet)
+void PlayerStateObserver::sendToClientList(const akashi::Packet &packet)
 {
     for (AOClient *client : qAsConst(m_client_list)) {
-        client->sendPacket(&const_cast<AOPacket &>(packet));
+        client->sendPacket(packet);
     }
 }
 
 void PlayerStateObserver::notifyNameChanged(const QString &name)
 {
-    sendToClientList(PacketPU(qobject_cast<AOClient *>(sender())->clientId(), PacketPU::NAME, name));
+    sendToClientList(akashi::Packet("PU", {QString::number(qobject_cast<AOClient *>(sender())->clientId()), QString::number(PacketPU::NAME), name}));
 }
 
 void PlayerStateObserver::notifyCharacterChanged(const QString &character)
 {
-    sendToClientList(PacketPU(qobject_cast<AOClient *>(sender())->clientId(), PacketPU::CHARACTER, character));
+    sendToClientList(akashi::Packet("PU", {QString::number(qobject_cast<AOClient *>(sender())->clientId()), QString::number(PacketPU::CHARACTER), character}));
 }
 
 void PlayerStateObserver::notifyCharacterNameChanged(const QString &characterName)
 {
-    sendToClientList(PacketPU(qobject_cast<AOClient *>(sender())->clientId(), PacketPU::CHARACTER_NAME, characterName));
+    sendToClientList(akashi::Packet("PU", {QString::number(qobject_cast<AOClient *>(sender())->clientId()), QString::number(PacketPU::CHARACTER_NAME), characterName}));
 }
 
 void PlayerStateObserver::notifyAreaIdChanged(int areaId)
 {
-    sendToClientList(PacketPU(qobject_cast<AOClient *>(sender())->clientId(), PacketPU::AREA_ID, areaId));
+    sendToClientList(akashi::Packet("PU", {QString::number(qobject_cast<AOClient *>(sender())->clientId()), QString::number(PacketPU::AREA_ID), QString::number(areaId)}));
 }

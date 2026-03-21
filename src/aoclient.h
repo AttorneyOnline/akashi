@@ -32,6 +32,10 @@
 #include "network/aopacket.h"
 #include "network/network_socket.h"
 
+namespace akashi {
+class Packet;
+}
+
 class AreaData;
 class DBManager;
 class MusicManager;
@@ -633,7 +637,7 @@ class AKASHI_CORE_EXPORT AOClient : public QObject
      *
      * @param packet The packet to send.
      */
-    void sendPacket(AOPacket *packet);
+    void sendPacket(const akashi::Packet &packet);
 
     /**
      * @overload

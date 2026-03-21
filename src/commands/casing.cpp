@@ -16,6 +16,7 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
 #include "aoclient.h"
+#include "proto/packet.h"
 
 #include "area_data.h"
 #include "config_manager.h"
@@ -134,8 +135,8 @@ void AOClient::cmdExamine(int argc, QStringList argv)
         }
         else {
             l_area->restartTestimony();
-            server->broadcast(PacketFactory::createPacket("RT", {"testimony2", "0"}), areaId());
-            server->broadcast(PacketFactory::createPacket("MS", {l_area->testimony()[0]}), areaId());
+            server->broadcast(akashi::Packet("RT", {"testimony2", "0"}), areaId());
+            server->broadcast(akashi::Packet("MS", {l_area->testimony()[0]}), areaId());
             return;
         }
     }
@@ -196,7 +197,7 @@ void AOClient::cmdPauseTestimony(int argc, QStringList argv)
 
     AreaData *l_area = server->getAreaById(areaId());
     l_area->setTestimonyRecording(AreaData::TestimonyRecording::STOPPED);
-    server->broadcast(PacketFactory::createPacket("RT", {"testimony1", "1"}), areaId());
+    server->broadcast(akashi::Packet("RT", {"testimony1", "1"}), areaId());
     sendServerMessage("Testimony has been stopped. Use /examine to begin cross-examination.");
 }
 

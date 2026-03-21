@@ -28,6 +28,10 @@
 
 class AOPacket;
 
+namespace akashi {
+class Packet;
+}
+
 class AKASHI_CORE_EXPORT NetworkSocket : public QObject
 {
     Q_OBJECT
@@ -64,7 +68,7 @@ class AKASHI_CORE_EXPORT NetworkSocket : public QObject
      *
      * @param Packet to be written to the socket.
      */
-    void write(AOPacket *f_packet);
+    void write(const akashi::Packet &f_packet);
 
   signals:
     /**

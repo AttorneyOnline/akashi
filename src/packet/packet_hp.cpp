@@ -44,8 +44,8 @@ void PacketHP::handlePacket(AreaData *area, AOClient &client) const
         area->changeHP(AreaData::Side::PROSECUTOR, l_newValue);
     }
 
-    client.getServer()->broadcast(PacketFactory::createPacket("HP", {"1", QString::number(area->defHP())}), area->index());
-    client.getServer()->broadcast(PacketFactory::createPacket("HP", {"2", QString::number(area->proHP())}), area->index());
+    client.getServer()->broadcast(akashi::Packet("HP", {"1", QString::number(area->defHP())}), area->index());
+    client.getServer()->broadcast(akashi::Packet("HP", {"2", QString::number(area->proHP())}), area->index());
 
     client.updateJudgeLog(area, &client, "updated the penalties");
 }

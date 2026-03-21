@@ -31,12 +31,12 @@ void PacketMS::handlePacket(AreaData *area, AOClient &client) const
         return;
     }
 
-    AOPacket *validated_packet = validateIcPacket(client);
-    if (validated_packet->getPacketInfo().header == "INVALID")
+    akashi::Packet validated_packet = validateIcPacket(client);
+    if (validated_packet.header() == "INVALID")
         return;
 
     if (client.m_pos != "")
-        validated_packet->setContentField(5, client.m_pos);
+        validated_packet.setField(5, client.m_pos);
 
     // Check if evidence was presented and we need to handle HIDDEN_CM mode
     int evi_idx = m_content[11].toInt();
@@ -60,14 +60,14 @@ void PacketMS::handlePacket(AreaData *area, AOClient &client) const
         for (AOClient *l_client : l_clients) {
             if (l_client->areaId() == client.areaId()) {
                 // Create a copy of the packet content
-                QStringList packet_content = validated_packet->getContent();
+                QStringList packet_content = validated_packet.fields();
 
                 // Convert the real evidence index to visible index for this client
                 int visible_idx = area->getVisibleIndexByEvidenceIndex(real_evidence_idx, l_client->m_pos, l_client->checkPermission(ACLRole::CM));
                 packet_content[11] = QString::number(visible_idx);
 
                 // Send the customized packet to this client
-                AOPacket *custom_packet = PacketFactory::createPacket("MS", packet_content);
+                akashi::Packet custom_packet("MS", packet_content);
                 l_client->sendPacket(custom_packet);
             }
         }
@@ -78,13 +78,13 @@ void PacketMS::handlePacket(AreaData *area, AOClient &client) const
     }
 
     emit client.logIC(client.getServer()->getAreaById(client.areaId())->name(), client.m_ipid, client.name(), QString::number(client.clientId()), (client.character() + " " + client.characterName()), client.m_last_message);
-    area->updateLastICMessage(validated_packet->getContent());
+    area->updateLastICMessage(validated_packet.fields());
 
     area->startMessageFloodguard(ConfigManager::messageFloodguard());
     client.getServer()->startMessageFloodguard(ConfigManager::globalMessageFloodguard());
 }
 
-AOPacket *PacketMS::validateIcPacket(AOClient &client) const
+akashi::Packet PacketMS::validateIcPacket(AOClient &client) const
 {
     // Welcome to the super cursed server-side IC chat validation hell
 
@@ -96,7 +96,7 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
     // This packet can be sent with a minimum required args of 15.
     // 2.6+ extensions raise this to 19, and 2.8 further raises this to 26.
 
-    AOPacket *l_invalid = PacketFactory::createPacket("INVALID", {});
+    akashi::Packet l_invalid("INVALID", {});
     QStringList l_args;
     if (client.isSpectator() || client.character().isEmpty() || !client.m_joined)
         // Spectators cannot use IC
@@ -445,7 +445,7 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
         if (area->statement() == -1) {
             l_args[4] = "~~-- " + l_args[4] + " --";
             l_args[14] = "3";
-            client.getServer()->broadcast(PacketFactory::createPacket("RT", {"testimony1", "0"}), client.areaId());
+            client.getServer()->broadcast(akashi::Packet("RT", {"testimony1", "0"}), client.areaId());
         }
         client.addStatement(l_args);
     }
@@ -517,7 +517,7 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
         }
     }
 
-    return PacketFactory::createPacket("MS", l_args);
+    return akashi::Packet("MS", l_args);
 }
 
 QRegularExpressionMatch PacketMS::isTestimonyJumpCommand(QString message) const

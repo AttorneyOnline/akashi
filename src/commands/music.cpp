@@ -16,6 +16,7 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
 #include "aoclient.h"
+#include "proto/packet.h"
 
 #include "area_data.h"
 #include "config_manager.h"
@@ -54,7 +55,7 @@ void AOClient::cmdPlay(int argc, QStringList argv)
     else {
         l_area->changeMusic(characterName(), l_song);
     }
-    AOPacket *music_change = PacketFactory::createPacket("MC", {l_song, QString::number(server->getCharID(character())), characterName(), "1", "0"});
+    akashi::Packet music_change("MC", {l_song, QString::number(server->getCharID(character())), characterName(), "1", "0"});
     server->broadcast(music_change, areaId());
 }
 
@@ -77,7 +78,7 @@ void AOClient::cmdPlayAmbience(int argc, QStringList argv)
         return;
     }
     l_area->changeAmbience(l_song);
-    AOPacket *music_change = PacketFactory::createPacket("MC", {l_song, "-1", characterName(), "1", "1"});
+    akashi::Packet music_change("MC", {l_song, "-1", characterName(), "1", "1"});
     server->broadcast(music_change, areaId());
 }
 

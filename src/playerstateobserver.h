@@ -4,6 +4,7 @@
 
 #include "aoclient.h"
 #include "packet/packet_pr.h"
+#include "proto/packet.h"
 
 #include <QList>
 #include <QObject>
@@ -21,7 +22,7 @@ class AKASHI_CORE_EXPORT PlayerStateObserver : public QObject
   private:
     QList<AOClient *> m_client_list;
 
-    void sendToClientList(const AOPacket &packet);
+    void sendToClientList(const akashi::Packet &packet);
 
   private Q_SLOTS:
     void notifyNameChanged(const QString &name);

@@ -66,7 +66,7 @@ void PacketCT::handlePacket(AreaData *area, AOClient &client) const
         return;
     }
     else {
-        AOPacket *final_packet = PacketFactory::createPacket("CT", {client.name(), l_message, "0"});
+        akashi::Packet final_packet("CT", {client.name(), l_message, "0"});
         client.getServer()->broadcast(final_packet, client.areaId());
     }
     emit client.logOOC(client.getServer()->getAreaById(client.areaId())->name(), client.m_ipid, client.name(), QString::number(client.clientId()), (client.character() + " " + client.characterName()), l_message);

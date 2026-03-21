@@ -17,6 +17,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "aoclient.h"
 
+#include "proto/packet.h"
+
 #include "area_data.h"
 #include "command_extension.h"
 #include "config_manager.h"
@@ -423,7 +425,7 @@ void AOClient::arup(ARUPType type, bool broadcast)
         }
     }
     if (broadcast) {
-        server->broadcast(PacketFactory::createPacket("ARUP", l_arup_data));
+        server->broadcast(akashi::Packet("ARUP", l_arup_data));
     }
     else {
         sendPacket("ARUP", l_arup_data);
@@ -438,19 +440,19 @@ void AOClient::fullArup()
     arup(ARUPType::LOCKED, false);
 }
 
-void AOClient::sendPacket(AOPacket *packet)
+void AOClient::sendPacket(const akashi::Packet &packet)
 {
     m_socket->write(packet);
 }
 
 void AOClient::sendPacket(QString header, QStringList contents)
 {
-    sendPacket(PacketFactory::createPacket(header, contents));
+    sendPacket(akashi::Packet(header, contents));
 }
 
 void AOClient::sendPacket(QString header)
 {
-    sendPacket(PacketFactory::createPacket(header, {}));
+    sendPacket(akashi::Packet(header));
 }
 
 void AOClient::calculateIpid()
@@ -475,12 +477,12 @@ void AOClient::sendServerMessage(QString message)
 
 void AOClient::sendServerMessageArea(QString message)
 {
-    server->broadcast(PacketFactory::createPacket("CT", {ConfigManager::serverNickname(), message, "1"}), areaId());
+    server->broadcast(akashi::Packet("CT", {ConfigManager::serverNickname(), message, "1"}), areaId());
 }
 
 void AOClient::sendServerBroadcast(QString message)
 {
-    server->broadcast(PacketFactory::createPacket("CT", {ConfigManager::serverNickname(), message, "1"}));
+    server->broadcast(akashi::Packet("CT", {ConfigManager::serverNickname(), message, "1"}));
 }
 
 bool AOClient::checkPermission(ACLRole::Permission f_permission) const

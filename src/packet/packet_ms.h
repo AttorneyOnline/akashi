@@ -2,6 +2,7 @@
 #define PACKET_MS_H
 
 #include "network/aopacket.h"
+#include "proto/packet.h"
 
 class PacketMS : public AOPacket
 {
@@ -11,7 +12,7 @@ class PacketMS : public AOPacket
     virtual void handlePacket(AreaData *area, AOClient &client) const;
 
   private:
-    AOPacket *validateIcPacket(AOClient &client) const;
+    akashi::Packet validateIcPacket(AOClient &client) const;
     QRegularExpressionMatch isTestimonyJumpCommand(QString message) const;
 };
 #endif

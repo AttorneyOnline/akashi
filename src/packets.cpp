@@ -16,6 +16,7 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
 #include "aoclient.h"
+#include "proto/packet.h"
 
 #include <QQueue>
 
@@ -56,7 +57,7 @@ void AOClient::updateEvidenceList(AreaData *area)
         l_evidence_list.append(l_evidence_format.arg(evidence.name, evidence.description, evidence.image));
     }
 
-    sendPacket(PacketFactory::createPacket("LE", l_evidence_list));
+    sendPacket(akashi::Packet("LE", l_evidence_list));
 }
 
 QString AOClient::dezalgo(QString p_text)
