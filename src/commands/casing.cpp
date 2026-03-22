@@ -23,6 +23,8 @@
 #include "packet/packet_factory.h"
 #include "server.h"
 
+#include "akashiutils.h"
+
 // This file is for commands under the casing category in aoclient.h
 // Be sure to register the command in the header before adding it here!
 
@@ -237,7 +239,11 @@ void AOClient::cmdSaveTestimony(int argc, QStringList argv)
             l_dir_testimony.mkpath(".");
         }
 
-        QString l_testimony_name = argv[0].trimmed().toLower().replace("..", ""); // :)
+        QString l_testimony_name = AkashiUtils::sanitizedFileName(argv[0]);
+        if (l_testimony_name.isEmpty()) {
+            sendServerMessage("Invalid testimony name. Use only letters, numbers, dashes and underscores.");
+            return;
+        }
         QFile l_file("storage/testimony/" + l_testimony_name + ".txt");
         if (l_file.exists()) {
             sendServerMessage("Unable to save testimony. Testimony name already exists.");
@@ -270,7 +276,11 @@ void AOClient::cmdLoadTestimony(int argc, QStringList argv)
         return;
     }
 
-    QString l_testimony_name = argv[0].trimmed().toLower().replace("..", ""); // :)
+    QString l_testimony_name = AkashiUtils::sanitizedFileName(argv[0]);
+    if (l_testimony_name.isEmpty()) {
+        sendServerMessage("Invalid testimony name. Use only letters, numbers, dashes and underscores.");
+        return;
+    }
     QFile l_file("storage/testimony/" + l_testimony_name + ".txt");
     if (!l_file.exists()) {
         sendServerMessage("Unable to load testimony. Testimony name not found.");

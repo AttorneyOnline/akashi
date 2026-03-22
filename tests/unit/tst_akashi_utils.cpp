@@ -22,6 +22,9 @@ class tst_AkashiUtils : public QObject
 
     void doublep_data();
     void doublep();
+
+    void sanitizedFileName_data();
+    void sanitizedFileName();
 };
 
 void tst_AkashiUtils::integer_data()
@@ -102,6 +105,29 @@ void tst_AkashiUtils::doublep()
 
     bool result = AkashiUtils::checkArgType<double>(content);
     QCOMPARE(result, expected_result);
+}
+
+void tst_AkashiUtils::sanitizedFileName_data()
+{
+    QTest::addColumn<QString>("input");
+    QTest::addColumn<QString>("expected");
+
+    QTest::addRow("Plain name") << "my_testimony-1" << "my_testimony-1";
+    QTest::addRow("Lowercased and trimmed") << "  Case1  " << "case1";
+    QTest::addRow("Parent traversal") << "../../etc/passwd" << "";
+    QTest::addRow("Subdirectory") << "sub/name" << "";
+    QTest::addRow("Backslash") << "sub\\name" << "";
+    QTest::addRow("Dots") << "case.1" << "";
+    QTest::addRow("Empty") << "" << "";
+    QTest::addRow("Spaces inside") << "my case" << "";
+}
+
+void tst_AkashiUtils::sanitizedFileName()
+{
+    QFETCH(QString, input);
+    QFETCH(QString, expected);
+
+    QCOMPARE(AkashiUtils::sanitizedFileName(input), expected);
 }
 
 }
