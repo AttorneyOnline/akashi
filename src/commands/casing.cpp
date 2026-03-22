@@ -23,6 +23,7 @@
 #include "packet/packet_factory.h"
 #include "server.h"
 
+#include "akashi/filesystem_service.h"
 #include "akashiutils.h"
 
 // This file is for commands under the casing category in aoclient.h
@@ -240,11 +241,12 @@ void AOClient::cmdSaveTestimony(int argc, QStringList argv)
         }
 
         QString l_testimony_name = AkashiUtils::sanitizedFileName(argv[0]);
-        if (l_testimony_name.isEmpty()) {
+        const QString l_path = server->fileSystem()->resolve(akashi::FileSystemService::Scope::Storage, "testimony/" + l_testimony_name + ".txt");
+        if (l_testimony_name.isEmpty() || l_path.isEmpty()) {
             sendServerMessage("Invalid testimony name. Use only letters, numbers, dashes and underscores.");
             return;
         }
-        QFile l_file("storage/testimony/" + l_testimony_name + ".txt");
+        QFile l_file(l_path);
         if (l_file.exists()) {
             sendServerMessage("Unable to save testimony. Testimony name already exists.");
             return;
@@ -277,11 +279,12 @@ void AOClient::cmdLoadTestimony(int argc, QStringList argv)
     }
 
     QString l_testimony_name = AkashiUtils::sanitizedFileName(argv[0]);
-    if (l_testimony_name.isEmpty()) {
+    const QString l_path = server->fileSystem()->resolve(akashi::FileSystemService::Scope::Storage, "testimony/" + l_testimony_name + ".txt");
+    if (l_testimony_name.isEmpty() || l_path.isEmpty()) {
         sendServerMessage("Invalid testimony name. Use only letters, numbers, dashes and underscores.");
         return;
     }
-    QFile l_file("storage/testimony/" + l_testimony_name + ".txt");
+    QFile l_file(l_path);
     if (!l_file.exists()) {
         sendServerMessage("Unable to load testimony. Testimony name not found.");
         return;

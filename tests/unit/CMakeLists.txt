@@ -8,6 +8,7 @@ set(UNIT_TESTS
     config_manager
     configstore
     dbmanager
+    filesystem
     crypto
     jsonsettings
     mmdbreader

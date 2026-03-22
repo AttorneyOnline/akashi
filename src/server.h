@@ -40,6 +40,7 @@
 
 namespace akashi {
 class DatabaseService;
+class FileSystemService;
 }
 
 class ACLRolesHandler;
@@ -305,6 +306,11 @@ class AKASHI_CORE_EXPORT Server : public QObject
     DBManager *getDatabaseManager();
 
     /**
+     * @brief Returns the filesystem guard used for safe file access.
+     */
+    akashi::FileSystemService *fileSystem();
+
+    /**
      * @brief Returns a pointer to the server's Ye Olde Chat Filter
      */
     MedievalParser *getMedievalParser();
@@ -535,6 +541,11 @@ class AKASHI_CORE_EXPORT Server : public QObject
      * @brief The database manager on the server, used to store users' bans and authorisation details.
      */
     DBManager *db_manager;
+
+    /**
+     * @brief The filesystem guard used for safe file access.
+     */
+    akashi::FileSystemService *m_filesystem;
 
     /**
      * @brief Medieval mode text parser class

@@ -20,6 +20,7 @@
 
 #include "acl_roles_handler.h"
 #include "akashi/database_service.h"
+#include "akashi/filesystem_service.h"
 #include "aoclient.h"
 #include "area_data.h"
 #include "command_extension.h"
@@ -39,6 +40,7 @@ Server::Server(int p_ws_port, akashi::DatabaseService *f_database, QObject *pare
 {
     timer = new QTimer(this);
 
+    m_filesystem = new akashi::FileSystemService();
     db_manager = new DBManager(f_database->database());
     medieval_parser = new MedievalParser;
 
@@ -492,6 +494,11 @@ DBManager *Server::getDatabaseManager()
     return db_manager;
 }
 
+akashi::FileSystemService *Server::fileSystem()
+{
+    return m_filesystem;
+}
+
 MedievalParser *Server::getMedievalParser()
 {
     return medieval_parser;
@@ -586,4 +593,5 @@ Server::~Server()
     acl_roles_handler->deleteLater();
 
     delete db_manager;
+    delete m_filesystem;
 }
