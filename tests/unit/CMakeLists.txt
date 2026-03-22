@@ -12,6 +12,7 @@ set(UNIT_TESTS
     jsonsettings
     mmdbreader
     packet
+    packetcodec
     music_manager
     playerstateobserver
     ulogger

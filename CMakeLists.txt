@@ -129,6 +129,9 @@ set(AKASHI_SOURCES
   src2/include/akashi/database_service.h
   src2/include/akashi/settings.h
   src2/proto/ao2_protocol.h
+  src2/proto/client_profile.h
+  src2/proto/packet_codec.cpp
+  src2/proto/packet_codec.h
   src2/proto/packet.cpp
   src2/proto/packet.h
 )
