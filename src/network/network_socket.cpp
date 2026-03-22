@@ -36,7 +36,9 @@ NetworkSocket::NetworkSocket(QWebSocket *f_socket, QObject *parent) :
         m_socket_ip = QHostAddress(QString::fromUtf8(l_request.rawHeader("x-real-ip")));
     }
     else if (l_request.hasRawHeader("x-forwarded-for") && l_is_local) {
-        m_socket_ip = QHostAddress(QString::fromUtf8(l_request.rawHeader("x-forwarded-for")));
+        // x-forwarded-for is a comma-separated list; the original client is the first entry.
+        const QString l_forwarded = QString::fromUtf8(l_request.rawHeader("x-forwarded-for"));
+        m_socket_ip = QHostAddress(l_forwarded.split(',').first().trimmed());
     }
     else {
         m_socket_ip = f_socket->peerAddress();
