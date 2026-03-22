@@ -19,6 +19,7 @@
 #define CRYPTO_HELPER_H
 
 #include <QMessageAuthenticationCode>
+#include <QPasswordDigestor>
 #include <QString>
 #if QT_VERSION > QT_VERSION_CHECK(5, 10, 0)
 #include <QRandomGenerator>
@@ -79,19 +80,8 @@ class CryptoHelper
      */
     static QString pbkdf2(QByteArray salt, QString password)
     {
-        QByteArray bigendian_one("\x00\x00\x00\x01", 4);
-        QByteArray last_block = salt;
-        last_block.append(bigendian_one);
-
-        QByteArray result(pbkdf2_output_len, '\0');
-
-        for (unsigned int i = 0; i < pbkdf2_cost; i++) {
-            last_block = hmac(password.toUtf8(), last_block);
-            for (unsigned int n = 0; n < pbkdf2_output_len; n++)
-                result[n] = result[n] ^ last_block[n];
-        }
-
-        return result.toHex();
+        // Qt's vetted PBKDF2-HMAC-SHA256, same parameters as the old hand-rolled loop.
+        return QPasswordDigestor::deriveKeyPbkdf2(QCryptographicHash::Sha256, password.toUtf8(), salt, pbkdf2_cost, pbkdf2_output_len).toHex();
     }
 
   public:
@@ -123,6 +113,28 @@ class CryptoHelper
         }
 
         return pbkdf2(salt, password);
+    }
+
+    /**
+     * @brief Compares two hex-encoded hashes without leaking their contents through timing.
+     *
+     * @param f_left First hash.
+     * @param f_right Second hash.
+     * @return True if the hashes are equal.
+     */
+    static bool constantTimeEquals(const QString &f_left, const QString &f_right)
+    {
+        const QByteArray l_left = f_left.toUtf8();
+        const QByteArray l_right = f_right.toUtf8();
+        // The hash length is fixed and public, so comparing it up front leaks nothing.
+        if (l_left.size() != l_right.size()) {
+            return false;
+        }
+        quint8 l_difference = 0;
+        for (int i = 0; i < l_left.size(); i++) {
+            l_difference |= quint8(l_left[i]) ^ quint8(l_right[i]);
+        }
+        return l_difference == 0;
     }
 
     /**

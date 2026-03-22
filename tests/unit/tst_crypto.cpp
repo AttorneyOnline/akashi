@@ -14,6 +14,7 @@ class tst_Crypto : public QObject
   private slots:
     void checkHash();
     void checkHash_data();
+    void constantTimeEquals();
 };
 
 void tst_Crypto::checkHash_data()
@@ -38,6 +39,14 @@ void tst_Crypto::checkHash()
     QFETCH(QString, expected_hash);
 
     QCOMPARE(CryptoHelper::hash_password(QByteArray::fromHex(salt_hex.toUtf8()), password), expected_hash);
+}
+
+void tst_Crypto::constantTimeEquals()
+{
+    QCOMPARE(CryptoHelper::constantTimeEquals("abcdef", "abcdef"), true);
+    QCOMPARE(CryptoHelper::constantTimeEquals("abcdef", "abcdeg"), false);
+    QCOMPARE(CryptoHelper::constantTimeEquals("abc", "abcdef"), false);
+    QCOMPARE(CryptoHelper::constantTimeEquals("", ""), true);
 }
 
 }

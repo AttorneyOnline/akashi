@@ -250,12 +250,14 @@ bool DBManager::authenticate(QString username, QString password)
         return false;
     QString stored_pass = query_pass.value(0).toString();
 
+    const bool l_matches = CryptoHelper::constantTimeEquals(salted_password, stored_pass);
+
     // Update old-style hashes to new ones on the fly
-    if (QByteArray::fromHex(salt.toUtf8()).length() < CryptoHelper::pbkdf2_salt_len && salted_password == stored_pass) {
+    if (QByteArray::fromHex(salt.toUtf8()).length() < CryptoHelper::pbkdf2_salt_len && l_matches) {
         updatePassword(username, password);
     }
 
-    return salted_password == stored_pass;
+    return l_matches;
 }
 
 bool DBManager::updateACL(QString f_username, QString f_acl)
