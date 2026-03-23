@@ -14,6 +14,7 @@ set(UNIT_TESTS
     mmdbreader
     packet
     packetcodec
+    service
     music_manager
     playerstateobserver
     ulogger
