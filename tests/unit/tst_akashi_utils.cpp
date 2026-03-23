@@ -110,24 +110,30 @@ void tst_AkashiUtils::doublep()
 void tst_AkashiUtils::sanitizedFileName_data()
 {
     QTest::addColumn<QString>("input");
+    QTest::addColumn<bool>("valid");
     QTest::addColumn<QString>("expected");
 
-    QTest::addRow("Plain name") << "my_testimony-1" << "my_testimony-1";
-    QTest::addRow("Lowercased and trimmed") << "  Case1  " << "case1";
-    QTest::addRow("Parent traversal") << "../../etc/passwd" << "";
-    QTest::addRow("Subdirectory") << "sub/name" << "";
-    QTest::addRow("Backslash") << "sub\\name" << "";
-    QTest::addRow("Dots") << "case.1" << "";
-    QTest::addRow("Empty") << "" << "";
-    QTest::addRow("Spaces inside") << "my case" << "";
+    QTest::addRow("Plain name") << "my_testimony-1" << true << "my_testimony-1";
+    QTest::addRow("Lowercased and trimmed") << "  Case1  " << true << "case1";
+    QTest::addRow("Parent traversal") << "../../etc/passwd" << false << "";
+    QTest::addRow("Subdirectory") << "sub/name" << false << "";
+    QTest::addRow("Backslash") << "sub\\name" << false << "";
+    QTest::addRow("Dots") << "case.1" << false << "";
+    QTest::addRow("Empty") << "" << false << "";
+    QTest::addRow("Spaces inside") << "my case" << false << "";
 }
 
 void tst_AkashiUtils::sanitizedFileName()
 {
     QFETCH(QString, input);
+    QFETCH(bool, valid);
     QFETCH(QString, expected);
 
-    QCOMPARE(AkashiUtils::sanitizedFileName(input), expected);
+    const std::optional<QString> l_result = AkashiUtils::sanitizedFileName(input);
+    QCOMPARE(l_result.has_value(), valid);
+    if (valid) {
+        QCOMPARE(*l_result, expected);
+    }
 }
 
 }

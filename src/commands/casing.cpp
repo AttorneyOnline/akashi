@@ -240,13 +240,14 @@ void AOClient::cmdSaveTestimony(int argc, QStringList argv)
             l_dir_testimony.mkpath(".");
         }
 
-        QString l_testimony_name = AkashiUtils::sanitizedFileName(argv[0]);
-        const QString l_path = server->fileSystem()->resolve(akashi::FileSystemService::Scope::Storage, "testimony/" + l_testimony_name + ".txt");
-        if (l_testimony_name.isEmpty() || l_path.isEmpty()) {
+        const std::optional<QString> l_testimony_name = AkashiUtils::sanitizedFileName(argv[0]);
+        const std::optional<QString> l_path =
+            l_testimony_name ? server->fileSystem()->resolve(akashi::FileSystemService::Scope::Storage, "testimony/" + *l_testimony_name + ".txt") : std::nullopt;
+        if (!l_path) {
             sendServerMessage("Invalid testimony name. Use only letters, numbers, dashes and underscores.");
             return;
         }
-        QFile l_file(l_path);
+        QFile l_file(*l_path);
         if (l_file.exists()) {
             sendServerMessage("Unable to save testimony. Testimony name already exists.");
             return;
@@ -257,7 +258,7 @@ void AOClient::cmdSaveTestimony(int argc, QStringList argv)
             for (int i = 0; i <= l_area->testimony().size() - 1; i++) {
                 l_out << l_area->testimony().at(i).join("#") << "\n";
             }
-            sendServerMessage("Testimony saved. To load it use /loadtestimony " + l_testimony_name);
+            sendServerMessage("Testimony saved. To load it use /loadtestimony " + *l_testimony_name);
             m_testimony_saving = false;
         }
     }
@@ -278,13 +279,14 @@ void AOClient::cmdLoadTestimony(int argc, QStringList argv)
         return;
     }
 
-    QString l_testimony_name = AkashiUtils::sanitizedFileName(argv[0]);
-    const QString l_path = server->fileSystem()->resolve(akashi::FileSystemService::Scope::Storage, "testimony/" + l_testimony_name + ".txt");
-    if (l_testimony_name.isEmpty() || l_path.isEmpty()) {
+    const std::optional<QString> l_testimony_name = AkashiUtils::sanitizedFileName(argv[0]);
+    const std::optional<QString> l_path =
+        l_testimony_name ? server->fileSystem()->resolve(akashi::FileSystemService::Scope::Storage, "testimony/" + *l_testimony_name + ".txt") : std::nullopt;
+    if (!l_path) {
         sendServerMessage("Invalid testimony name. Use only letters, numbers, dashes and underscores.");
         return;
     }
-    QFile l_file(l_path);
+    QFile l_file(*l_path);
     if (!l_file.exists()) {
         sendServerMessage("Unable to load testimony. Testimony name not found.");
         return;

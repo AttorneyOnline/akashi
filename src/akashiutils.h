@@ -21,6 +21,7 @@
 #include <QRegularExpression>
 #include <QVariant>
 #include <math.h>
+#include <optional>
 
 class AkashiUtils
 {
@@ -28,13 +29,16 @@ class AkashiUtils
     AkashiUtils() {};
 
   public:
-    // Returns a safe file name from user input, or empty if the name is not allowed.
+    // Returns a safe file name from user input, or nullopt if the name is not allowed.
     // Only letters, numbers, dashes and underscores pass, ruling out path separators and traversal.
-    static inline QString sanitizedFileName(const QString &f_name)
+    static inline std::optional<QString> sanitizedFileName(const QString &f_name)
     {
         const QString l_trimmed = f_name.trimmed().toLower();
         static const QRegularExpression l_allowed("^[a-z0-9_-]+$");
-        return l_allowed.match(l_trimmed).hasMatch() ? l_trimmed : QString();
+        if (l_allowed.match(l_trimmed).hasMatch()) {
+            return l_trimmed;
+        }
+        return std::nullopt;
     }
 
     template <typename T>

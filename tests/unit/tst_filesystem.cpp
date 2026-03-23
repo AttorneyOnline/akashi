@@ -25,44 +25,52 @@ class tst_FileSystem : public QObject
 void tst_FileSystem::storageResolvesInsideStorage()
 {
     FileSystemService l_fs("/app");
-    QCOMPARE(l_fs.resolve(Scope::Storage, "testimony/case1.txt"), "/app/storage/testimony/case1.txt");
+    const auto l_result = l_fs.resolve(Scope::Storage, "testimony/case1.txt");
+    QVERIFY(l_result.has_value());
+    QCOMPARE(*l_result, QString("/app/storage/testimony/case1.txt"));
 }
 
 void tst_FileSystem::storageRejectsEscape()
 {
     FileSystemService l_fs("/app");
     // A user path may not climb out of storage into the rest of the application.
-    QCOMPARE(l_fs.resolve(Scope::Storage, "../config/config.json"), QString());
-    QCOMPARE(l_fs.resolve(Scope::Storage, "../../etc/passwd"), QString());
+    QVERIFY(!l_fs.resolve(Scope::Storage, "../config/config.json").has_value());
+    QVERIFY(!l_fs.resolve(Scope::Storage, "../../etc/passwd").has_value());
 }
 
 void tst_FileSystem::systemReachesTheWholeApplication()
 {
     FileSystemService l_fs("/app");
     // System scope may reach any application folder, including storage.
-    QCOMPARE(l_fs.resolve(Scope::System, "config/config.json"), "/app/config/config.json");
-    QCOMPARE(l_fs.resolve(Scope::System, "storage/testimony/case1.txt"), "/app/storage/testimony/case1.txt");
+    const auto l_config = l_fs.resolve(Scope::System, "config/config.json");
+    QVERIFY(l_config.has_value());
+    QCOMPARE(*l_config, QString("/app/config/config.json"));
+    const auto l_storage = l_fs.resolve(Scope::System, "storage/testimony/case1.txt");
+    QVERIFY(l_storage.has_value());
+    QCOMPARE(*l_storage, QString("/app/storage/testimony/case1.txt"));
 }
 
 void tst_FileSystem::systemRejectsEscapeAboveRoot()
 {
     FileSystemService l_fs("/app");
     // Even system scope may not climb above the application root.
-    QCOMPARE(l_fs.resolve(Scope::System, "../secrets"), QString());
-    QCOMPARE(l_fs.resolve(Scope::System, "../../etc/passwd"), QString());
+    QVERIFY(!l_fs.resolve(Scope::System, "../secrets").has_value());
+    QVERIFY(!l_fs.resolve(Scope::System, "../../etc/passwd").has_value());
 }
 
 void tst_FileSystem::absolutePathsAreRejected()
 {
     FileSystemService l_fs("/app");
-    QCOMPARE(l_fs.resolve(Scope::Storage, "/etc/passwd"), QString());
+    QVERIFY(!l_fs.resolve(Scope::Storage, "/etc/passwd").has_value());
 }
 
 void tst_FileSystem::lexicalParentInsideBoundaryIsFine()
 {
     FileSystemService l_fs("/app");
     // A .. that stays within the boundary is allowed.
-    QCOMPARE(l_fs.resolve(Scope::Storage, "a/../b.txt"), "/app/storage/b.txt");
+    const auto l_result = l_fs.resolve(Scope::Storage, "a/../b.txt");
+    QVERIFY(l_result.has_value());
+    QCOMPARE(*l_result, QString("/app/storage/b.txt"));
 }
 
 }
