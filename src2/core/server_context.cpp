@@ -2,6 +2,8 @@
 
 #include "akashi/config_store.h"
 #include "akashi/database_service.h"
+#include "akashi/network_service.h"
+#include "akashi/service_registry.h"
 #include "config_manager.h"
 #include "server.h"
 
@@ -30,7 +32,11 @@ ExitCode ServerContext::start()
         return ExitCode::DatabaseError;
     }
 
-    m_server = new Server(ConfigManager::serverPort(), m_database_service, this);
+    // Shared services the server and plugins can consume by id.
+    m_services = new akashi::ServiceRegistry(this);
+    m_services->registerService(std::make_shared<akashi::NetworkService>());
+
+    m_server = new Server(ConfigManager::serverPort(), m_database_service, m_services, this);
     setStage(Stage::ServicesConstructed);
 
     // Server::start() still loads content and opens the port in one go.
@@ -65,6 +71,11 @@ Server *ServerContext::server() const
 akashi::ConfigStore *ServerContext::configStore() const
 {
     return m_config_store;
+}
+
+akashi::ServiceRegistry *ServerContext::services() const
+{
+    return m_services;
 }
 
 ServerContext::Stage ServerContext::stage() const

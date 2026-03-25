@@ -33,13 +33,14 @@
 #include "packet/packet_factory.h"
 #include "serverpublisher.h"
 
-Server::Server(int p_ws_port, akashi::DatabaseService *f_database, QObject *parent) :
+Server::Server(int p_ws_port, akashi::DatabaseService *f_database, akashi::ServiceRegistry *f_services, QObject *parent) :
     QObject(parent),
     m_port(p_ws_port),
     m_player_count(0)
 {
     timer = new QTimer(this);
 
+    m_services = f_services;
     m_filesystem = new akashi::FileSystemService();
     db_manager = new DBManager(f_database->database());
     medieval_parser = new MedievalParser;
@@ -497,6 +498,11 @@ DBManager *Server::getDatabaseManager()
 akashi::FileSystemService *Server::fileSystem()
 {
     return m_filesystem;
+}
+
+akashi::ServiceRegistry *Server::services()
+{
+    return m_services;
 }
 
 MedievalParser *Server::getMedievalParser()

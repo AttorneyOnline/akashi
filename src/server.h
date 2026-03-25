@@ -41,6 +41,7 @@
 namespace akashi {
 class DatabaseService;
 class FileSystemService;
+class ServiceRegistry;
 }
 
 class ACLRolesHandler;
@@ -68,7 +69,7 @@ class AKASHI_CORE_EXPORT Server : public QObject
      * @param p_ws_port The port to listen for connections on.
      * @param parent Qt-based parent, passed along to inherited constructor from QObject.
      */
-    Server(int p_ws_port, akashi::DatabaseService *f_database, QObject *parent = nullptr);
+    Server(int p_ws_port, akashi::DatabaseService *f_database, akashi::ServiceRegistry *f_services, QObject *parent = nullptr);
 
     /**
      * @brief Destructor for the Server class.
@@ -311,6 +312,11 @@ class AKASHI_CORE_EXPORT Server : public QObject
     akashi::FileSystemService *fileSystem();
 
     /**
+     * @brief Returns the registry of shared services.
+     */
+    akashi::ServiceRegistry *services();
+
+    /**
      * @brief Returns a pointer to the server's Ye Olde Chat Filter
      */
     MedievalParser *getMedievalParser();
@@ -546,6 +552,11 @@ class AKASHI_CORE_EXPORT Server : public QObject
      * @brief The filesystem guard used for safe file access.
      */
     akashi::FileSystemService *m_filesystem;
+
+    /**
+     * @brief The registry of shared services, owned by the server context.
+     */
+    akashi::ServiceRegistry *m_services;
 
     /**
      * @brief Medieval mode text parser class

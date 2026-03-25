@@ -116,6 +116,7 @@ set(AKASHI_SOURCES
   src2/core/config_store.cpp
   src2/core/database_service.cpp
   src2/core/exit_code.h
+  src2/core/network_service.cpp
   src2/core/service.cpp
   src2/core/service_registry.cpp
   src2/core/filesystem_service.cpp
@@ -131,6 +132,7 @@ set(AKASHI_SOURCES
   src2/include/akashi/config_store.h
   src2/include/akashi/database_service.h
   src2/include/akashi/filesystem_service.h
+  src2/include/akashi/network_service.h
   src2/include/akashi/service.h
   src2/include/akashi/service_registry.h
   src2/include/akashi/settings.h

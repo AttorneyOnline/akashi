@@ -19,6 +19,9 @@ class AKASHI_CORE_EXPORT ServiceRegistry : public QObject
     Q_OBJECT
 
   public:
+    explicit ServiceRegistry(QObject *parent = nullptr) :
+        QObject(parent) {}
+
     // Registers a service. Fails if the id is already taken.
     bool registerService(std::shared_ptr<IService> f_service, const QString &f_owner_id = QString());
 
