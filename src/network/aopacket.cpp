@@ -17,26 +17,19 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "network/aopacket.h"
 
-#include "packet/packet_askchaa.h"
 #include "packet/packet_casea.h"
-#include "packet/packet_cc.h"
 #include "packet/packet_ch.h"
 #include "packet/packet_ct.h"
 #include "packet/packet_de.h"
 #include "packet/packet_ee.h"
 #include "packet/packet_factory.h"
-#include "packet/packet_hi.h"
 #include "packet/packet_hp.h"
-#include "packet/packet_id.h"
 #include "packet/packet_ma.h"
 #include "packet/packet_mc.h"
 #include "packet/packet_ms.h"
 #include "packet/packet_pe.h"
 #include "packet/packet_pr.h"
 #include "packet/packet_pw.h"
-#include "packet/packet_rc.h"
-#include "packet/packet_rd.h"
-#include "packet/packet_rm.h"
 #include "packet/packet_rt.h"
 #include "packet/packet_setcase.h"
 #include "packet/packet_zz.h"
@@ -114,25 +107,20 @@ bool AOPacket::isPacketEscaped()
     return m_escaped;
 }
 
+// The handshake family (HI, ID, askchaa, RC, RM, RD, CC) lives in the
+// packet registry now; this list shrinks as the other families move over.
 void AOPacket::registerPackets()
 {
-    PacketFactory::registerClass<PacketAskchaa>("askchaa");
     PacketFactory::registerClass<PacketCasea>("CASEA");
-    PacketFactory::registerClass<PacketCC>("CC");
     PacketFactory::registerClass<PacketCH>("CH");
     PacketFactory::registerClass<PacketCT>("CT");
     PacketFactory::registerClass<PacketDE>("DE");
     PacketFactory::registerClass<PacketEE>("EE");
-    PacketFactory::registerClass<PacketHI>("HI");
     PacketFactory::registerClass<PacketHP>("HP");
-    PacketFactory::registerClass<PacketID>("ID");
     PacketFactory::registerClass<PacketMC>("MC");
     PacketFactory::registerClass<PacketMS>("MS");
     PacketFactory::registerClass<PacketPE>("PE");
     PacketFactory::registerClass<PacketPW>("PW");
-    PacketFactory::registerClass<PacketRC>("RC");
-    PacketFactory::registerClass<PacketRD>("RD");
-    PacketFactory::registerClass<PacketRM>("RM");
     PacketFactory::registerClass<PacketRT>("RT");
     PacketFactory::registerClass<PacketSetcase>("SETCASE");
     PacketFactory::registerClass<PacketMA>("MA");

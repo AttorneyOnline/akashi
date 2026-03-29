@@ -5,6 +5,8 @@
 #include "akashi/network_service.h"
 #include "akashi/service_registry.h"
 #include "config_manager.h"
+#include "proto/handshake.h"
+#include "proto/packet_service.h"
 #include "server.h"
 
 #include <QDebug>
@@ -35,6 +37,11 @@ ExitCode ServerContext::start()
     // Shared services the server and plugins can consume by id.
     m_services = new akashi::ServiceRegistry(this);
     m_services->registerService(std::make_shared<akashi::NetworkService>());
+
+    // The packet pipeline, preloaded with the packet families that moved over.
+    auto l_packets = std::make_shared<akashi::PacketService>();
+    akashi::registerHandshakePackets(l_packets->handlers(), l_packets->codecs());
+    m_services->registerService(l_packets);
 
     m_server = new Server(ConfigManager::serverPort(), m_database_service, m_services, this);
     setStage(Stage::ServicesConstructed);

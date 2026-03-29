@@ -24,6 +24,7 @@ class tst_PacketCodec : public QObject
     void picksByArchAndVersion();
     void higherPriorityWins();
     void unregisteredHeaderFallsBackToDefault();
+    void wildcardLosesTiesToTheHeadersOwnCodec();
     void unregisterAllRemovesOwnersCodecs();
     void combinedRulesApplyAll();
     void dropCodecDecodesNothing();
@@ -76,6 +77,25 @@ void tst_PacketCodec::unregisteredHeaderFallsBackToDefault()
 
     // No codec is registered for CT, so the wildcard default applies.
     QCOMPARE(l_registry.resolve(profile("AO2", 2, 10, 0)).codecFor("CT"), l_default);
+}
+
+void tst_PacketCodec::wildcardLosesTiesToTheHeadersOwnCodec()
+{
+    auto l_specific = std::make_shared<MarkerCodec>();
+    auto l_fallback = std::make_shared<MarkerCodec>();
+    auto l_override = std::make_shared<MarkerCodec>();
+
+    PacketCodecRegistry l_registry;
+    l_registry.registerCodec("HI", always(), 0, l_specific);
+    // Registered later at the same priority, but only a fallback.
+    l_registry.registerCodec("*", always(), 0, l_fallback);
+
+    QCOMPARE(l_registry.resolve(profile("AO2", 2, 10, 0)).codecFor("HI"), l_specific);
+    QCOMPARE(l_registry.resolve(profile("AO2", 2, 10, 0)).codecFor("MS"), l_fallback);
+
+    // A higher priority still lets a wildcard take over a header.
+    l_registry.registerCodec("*", always(), 50, l_override);
+    QCOMPARE(l_registry.resolve(profile("AO2", 2, 10, 0)).codecFor("HI"), l_override);
 }
 
 void tst_PacketCodec::unregisterAllRemovesOwnersCodecs()

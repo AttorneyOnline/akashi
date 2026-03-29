@@ -2,6 +2,12 @@
 
 namespace akashi {
 
+Packet Codec::encode(const Message &f_message) const
+{
+    Q_UNUSED(f_message)
+    return Packet();
+}
+
 std::unique_ptr<Message> DropCodec::decode(const Packet &f_packet) const
 {
     Q_UNUSED(f_packet)
@@ -88,20 +94,25 @@ void PacketCodecRegistry::unregisterAll(const QString &f_owner_id)
 std::shared_ptr<Codec> PacketCodecRegistry::best(const QString &f_header, const ClientProfile &f_profile) const
 {
     const Entry *l_best = nullptr;
+    bool l_best_is_wildcard = false;
     // Both the header's own codecs and the wildcard default codecs are candidates.
     for (const QString &l_key : {f_header, QStringLiteral("*")}) {
         const auto l_iterator = m_entries.constFind(l_key);
         if (l_iterator == m_entries.constEnd()) {
             continue;
         }
+        const bool l_is_wildcard = l_key == QStringLiteral("*") && f_header != QStringLiteral("*");
         for (const Entry &l_entry : l_iterator.value()) {
             if (!l_entry.rule(f_profile)) {
                 continue;
             }
-            // Highest priority wins; a later registration breaks ties.
+            // Highest priority wins. On a tie the header's own codec beats the
+            // wildcard, and after that the later registration wins.
             if (!l_best || l_entry.priority > l_best->priority ||
-                (l_entry.priority == l_best->priority && l_entry.order > l_best->order)) {
+                (l_entry.priority == l_best->priority && l_best_is_wildcard && !l_is_wildcard) ||
+                (l_entry.priority == l_best->priority && l_best_is_wildcard == l_is_wildcard && l_entry.order > l_best->order)) {
                 l_best = &l_entry;
+                l_best_is_wildcard = l_is_wildcard;
             }
         }
     }

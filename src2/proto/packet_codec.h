@@ -3,6 +3,7 @@
 
 #include "akashi_core_export.h"
 #include "proto/client_profile.h"
+#include "proto/message.h"
 #include "proto/packet.h"
 
 #include <QHash>
@@ -13,21 +14,15 @@
 
 namespace akashi {
 
-// The dialect-free form of a packet. Concrete packets derive from this,
-// for example an ICMessage. Codecs decode into it and handlers act on it.
-class AKASHI_CORE_EXPORT Message
-{
-  public:
-    virtual ~Message() = default;
-};
-
 // Translates one packet type between the wire and its Message, for one dialect.
 class AKASHI_CORE_EXPORT Codec
 {
   public:
     virtual ~Codec() = default;
     virtual std::unique_ptr<Message> decode(const Packet &f_packet) const = 0;
-    virtual Packet encode(const Message &f_message) const = 0;
+
+    // Until server-to-client traffic is built from messages, codecs only decode.
+    virtual Packet encode(const Message &f_message) const;
 };
 
 // Future-proofing: decodes nothing. Registered under a feature-gated

@@ -16,8 +16,6 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
 #include "network/network_socket.h"
-#include "packet/packet_factory.h"
-#include "proto/packet.h"
 
 NetworkSocket::NetworkSocket(QWebSocket *f_socket, QObject *parent) :
     QObject(parent)
@@ -78,14 +76,7 @@ void NetworkSocket::handleMessage(QString f_data)
     }
 
     for (const QString &l_single_packet : qAsConst(l_all_packets)) {
-        AOPacket *l_packet = PacketFactory::createPacket(l_single_packet);
-        if (!l_packet) {
-            qDebug() << "Unimplemented packet: " << l_single_packet;
-            continue;
-        }
-
-        emit handlePacket(l_packet);
-        delete l_packet;
+        emit packetReceived(akashi::Packet::parse(l_single_packet));
     }
 }
 

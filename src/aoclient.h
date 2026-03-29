@@ -29,24 +29,24 @@
 #include <QtGlobal>
 
 #include "acl_roles_handler.h"
-#include "network/aopacket.h"
 #include "network/network_socket.h"
+#include "proto/packet_codec.h"
+#include "proto/packet_context.h"
+#include "proto/packet_service.h"
 
-namespace akashi {
-class Packet;
-}
+#include <memory>
+#include <optional>
 
 class AreaData;
 class DBManager;
 class MusicManager;
 class Server;
 class NetworkSocket;
-class AOPacket;
 
 /**
  * @brief Represents a client connected to the server running Attorney Online 2 or one of its derivatives.
  */
-class AKASHI_CORE_EXPORT AOClient : public QObject
+class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContext
 {
     Q_OBJECT
 
@@ -402,7 +402,7 @@ class AKASHI_CORE_EXPORT AOClient : public QObject
      *
      * @param message The text of the message to send.
      */
-    void sendServerMessage(QString message);
+    void sendServerMessage(const QString &message) override;
 
     /**
      * @brief Like with AOClient::sendServerMessage(), but to every client in the client's area.
@@ -619,13 +619,37 @@ class AKASHI_CORE_EXPORT AOClient : public QObject
      */
     const int SPECTATOR_ID = -1;
 
-  public slots:
+    // The akashi::IPacketContext view of this client, used by packet handlers.
+    // This is the seam the session classes grow out of later.
+    void closeConnection() override;
+    QString hwid() const override;
+    const akashi::ClientProfile &profile() const override;
+    bool isIdentified() const override;
+    void setHwid(const QString &f_hwid) override;
+    void identify(const akashi::ClientProfile &f_profile) override;
+    void markJoined() override;
+    void finishJoin() override;
+    void logConnectionAttempt() override;
+    std::optional<akashi::BanRecord> hardwareBan() const override;
+    int playerCount() const override;
+    QStringList characters() const override;
+    QStringList areaNames() const override;
+    QStringList musicList() const override;
+    akashi::AreaSnapshot areaState() const override;
+    akashi::TimerSnapshot globalTimer() const override;
+    void announceCharsTaken() override;
+    void sendEvidenceList() override;
+    void sendFullArup() override;
+    void broadcastPlayerCount() override;
+    bool selectCharacter(int f_char_id) override;
+
+  public Q_SLOTS:
     /**
      * @brief Handles an incoming packet, checking for authorisation and minimum argument count.
      *
      * @param packet The incoming packet.
      */
-    void handlePacket(AOPacket *packet);
+    void handlePacket(const akashi::Packet &packet);
 
     /**
      * @brief A slot for when the client disconnects from the server.
@@ -637,7 +661,7 @@ class AKASHI_CORE_EXPORT AOClient : public QObject
      *
      * @param packet The packet to send.
      */
-    void sendPacket(const akashi::Packet &packet);
+    void sendPacket(const akashi::Packet &packet) override;
 
     /**
      * @overload
@@ -654,7 +678,7 @@ class AKASHI_CORE_EXPORT AOClient : public QObject
      */
     void onAfkTimeout();
 
-  signals:
+  Q_SIGNALS:
     /**
      * @brief This signal is emitted when the client has completed the participation handshake.
      */
@@ -685,6 +709,31 @@ class AKASHI_CORE_EXPORT AOClient : public QObject
      * @brief A pointer to the Server, used for updating server variables that depend on the client (e.g. amount of players in an area).
      */
     Server *server;
+
+    /**
+     * @brief What the client told the server about itself, filled in during the handshake.
+     */
+    akashi::ClientProfile m_profile;
+
+    /**
+     * @brief The server's packet pipeline, holding the handlers and codecs.
+     */
+    std::shared_ptr<akashi::PacketService> m_packets;
+
+    /**
+     * @brief The codecs picked for this client, refreshed when it identifies.
+     */
+    akashi::ResolvedCodecs m_codecs;
+
+    /**
+     * @brief Runs a packet through its registered handler after the usual checks.
+     */
+    void handleRegisteredPacket(const akashi::Packet &f_packet, const akashi::PacketSpec &f_spec);
+
+    /**
+     * @brief Marks the client active again; any packet except the keepalive counts.
+     */
+    void resetAfk(const QString &f_header);
 
     /**
      * @brief Changes the client's in-character position.

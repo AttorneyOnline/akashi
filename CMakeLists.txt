@@ -33,12 +33,8 @@ set(AKASHI_SOURCES
   src/network/aopacket.h
   src/network/network_socket.cpp
   src/network/network_socket.h
-  src/packet/packet_askchaa.cpp
-  src/packet/packet_askchaa.h
   src/packet/packet_casea.cpp
   src/packet/packet_casea.h
-  src/packet/packet_cc.cpp
-  src/packet/packet_cc.h
   src/packet/packet_ch.cpp
   src/packet/packet_ch.h
   src/packet/packet_ct.cpp
@@ -51,12 +47,8 @@ set(AKASHI_SOURCES
   src/packet/packet_factory.h
   src/packet/packet_generic.cpp
   src/packet/packet_generic.h
-  src/packet/packet_hi.cpp
-  src/packet/packet_hi.h
   src/packet/packet_hp.cpp
   src/packet/packet_hp.h
-  src/packet/packet_id.cpp
-  src/packet/packet_id.h
   src/packet/packet_info.h
   src/packet/packet_ma.cpp
   src/packet/packet_ma.h
@@ -70,12 +62,6 @@ set(AKASHI_SOURCES
   src/packet/packet_pr.h
   src/packet/packet_pw.cpp
   src/packet/packet_pw.h
-  src/packet/packet_rc.cpp
-  src/packet/packet_rc.h
-  src/packet/packet_rd.cpp
-  src/packet/packet_rd.h
-  src/packet/packet_rm.cpp
-  src/packet/packet_rm.h
   src/packet/packet_rt.cpp
   src/packet/packet_rt.h
   src/packet/packet_setcase.cpp
@@ -138,8 +124,18 @@ set(AKASHI_SOURCES
   src2/include/akashi/settings.h
   src2/proto/ao2_protocol.h
   src2/proto/client_profile.h
+  src2/proto/handshake.cpp
+  src2/proto/handshake.h
+  src2/proto/handshake_messages.h
+  src2/proto/message.h
   src2/proto/packet_codec.cpp
   src2/proto/packet_codec.h
+  src2/proto/packet_context.h
+  src2/proto/packet_handler.h
+  src2/proto/packet_registry.cpp
+  src2/proto/packet_registry.h
+  src2/proto/packet_service.cpp
+  src2/proto/packet_service.h
   src2/proto/packet.cpp
   src2/proto/packet.h
 )

@@ -24,13 +24,7 @@
 #include <QObject>
 #include <QWebSocket>
 
-#include "network/aopacket.h"
-
-class AOPacket;
-
-namespace akashi {
-class Packet;
-}
+#include "proto/packet.h"
 
 class AKASHI_CORE_EXPORT NetworkSocket : public QObject
 {
@@ -72,10 +66,10 @@ class AKASHI_CORE_EXPORT NetworkSocket : public QObject
 
   signals:
     /**
-     * @brief handlePacket
-     * @param f_packet
+     * @brief Emitted for every packet parsed from the socket, including null
+     * packets from unreadable data so the receiver can rate limit them.
      */
-    void handlePacket(AOPacket *f_packet);
+    void packetReceived(const akashi::Packet &f_packet);
 
     /**
      * @brief Emitted when the socket has been closed and the client is disconnected.
@@ -84,9 +78,7 @@ class AKASHI_CORE_EXPORT NetworkSocket : public QObject
 
   private slots:
     /**
-     * @brief Handles the processing of WebSocket data.
-     *
-     * @return Decoded AOPacket to be processed by the child AOClient object.
+     * @brief Splits incoming WebSocket data into packets.
      */
     void handleMessage(QString f_data);
 

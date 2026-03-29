@@ -21,6 +21,7 @@
 #include "acl_roles_handler.h"
 #include "akashi/database_service.h"
 #include "akashi/filesystem_service.h"
+#include "akashi/service_registry.h"
 #include "aoclient.h"
 #include "area_data.h"
 #include "command_extension.h"
@@ -31,6 +32,7 @@
 #include "music_manager.h"
 #include "network/network_socket.h"
 #include "packet/packet_factory.h"
+#include "proto/packet_service.h"
 #include "serverpublisher.h"
 
 Server::Server(int p_ws_port, akashi::DatabaseService *f_database, akashi::ServiceRegistry *f_services, QObject *parent) :
@@ -41,6 +43,9 @@ Server::Server(int p_ws_port, akashi::DatabaseService *f_database, akashi::Servi
     timer = new QTimer(this);
 
     m_services = f_services;
+    if (m_services) {
+        m_packets = m_services->resolve<akashi::PacketService>("akashi.packets");
+    }
     m_filesystem = new akashi::FileSystemService();
     db_manager = new DBManager(f_database->database());
     medieval_parser = new MedievalParser;
@@ -219,7 +224,7 @@ void Server::clientConnected()
         m_clients.removeAll(client);
         l_socket->deleteLater();
     });
-    connect(l_socket, &NetworkSocket::handlePacket, client, &AOClient::handlePacket);
+    connect(l_socket, &NetworkSocket::packetReceived, client, &AOClient::handlePacket);
 
     // This is the infamous workaround for
     // tsuserver4. It should disable fantacrypt
@@ -503,6 +508,11 @@ akashi::FileSystemService *Server::fileSystem()
 akashi::ServiceRegistry *Server::services()
 {
     return m_services;
+}
+
+std::shared_ptr<akashi::PacketService> Server::packets()
+{
+    return m_packets;
 }
 
 MedievalParser *Server::getMedievalParser()

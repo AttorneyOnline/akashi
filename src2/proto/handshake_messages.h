@@ -1,0 +1,36 @@
+#ifndef PROTO_HANDSHAKE_MESSAGES_H
+#define PROTO_HANDSHAKE_MESSAGES_H
+
+#include "akashi_core_export.h"
+#include "proto/client_profile.h"
+#include "proto/message.h"
+
+#include <QString>
+
+namespace akashi {
+
+// HI: the client announces its hardware id.
+class AKASHI_CORE_EXPORT HelloMessage : public Message
+{
+  public:
+    QString hwid;
+};
+
+// ID: the client names its software and version.
+class AKASHI_CORE_EXPORT IdentifyMessage : public Message
+{
+  public:
+    QString arch;
+    ClientVersion version;
+};
+
+// CC: the client picks a character; the spectator id -1 means none.
+class AKASHI_CORE_EXPORT CharacterSelectMessage : public Message
+{
+  public:
+    int char_id = -1;
+};
+
+} // namespace akashi
+
+#endif // PROTO_HANDSHAKE_MESSAGES_H

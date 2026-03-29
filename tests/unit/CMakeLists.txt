@@ -14,6 +14,8 @@ set(UNIT_TESTS
     mmdbreader
     packet
     packetcodec
+    packetregistry
+    handshake
     networkservice
     service
     music_manager

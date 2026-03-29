@@ -38,9 +38,12 @@
 #include "playerstateobserver.h"
 #include "proto/packet.h"
 
+#include <memory>
+
 namespace akashi {
 class DatabaseService;
 class FileSystemService;
+class PacketService;
 class ServiceRegistry;
 }
 
@@ -317,6 +320,11 @@ class AKASHI_CORE_EXPORT Server : public QObject
     akashi::ServiceRegistry *services();
 
     /**
+     * @brief Returns the packet pipeline with its handlers and codecs.
+     */
+    std::shared_ptr<akashi::PacketService> packets();
+
+    /**
      * @brief Returns a pointer to the server's Ye Olde Chat Filter
      */
     MedievalParser *getMedievalParser();
@@ -557,6 +565,11 @@ class AKASHI_CORE_EXPORT Server : public QObject
      * @brief The registry of shared services, owned by the server context.
      */
     akashi::ServiceRegistry *m_services;
+
+    /**
+     * @brief The packet pipeline, resolved from the service registry.
+     */
+    std::shared_ptr<akashi::PacketService> m_packets;
 
     /**
      * @brief Medieval mode text parser class

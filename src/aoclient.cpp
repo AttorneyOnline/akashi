@@ -22,7 +22,9 @@
 #include "area_data.h"
 #include "command_extension.h"
 #include "config_manager.h"
+#include "db_manager.h"
 #include "packet/packet_factory.h"
+#include "playerstateobserver.h"
 #include "server.h"
 
 const QMap<QString, AOClient::CommandInfo> AOClient::COMMANDS{
@@ -189,10 +191,10 @@ void AOClient::clientDisconnected()
     emit clientSuccessfullyDisconnected(clientId());
 }
 
-void AOClient::handlePacket(AOPacket *packet)
+void AOClient::handlePacket(const akashi::Packet &packet)
 {
 #ifdef NET_DEBUG
-    qDebug() << "Received packet:" << packet->getPacketInfo().header << ":" << packet->getContent() << "args length:" << packet->getContent().length();
+    qDebug() << "Received packet:" << packet.header() << ":" << packet.fields() << "args length:" << packet.fieldCount();
 #endif
 
     qint64 current_tick = QDateTime::currentSecsSinceEpoch();
@@ -214,17 +216,72 @@ void AOClient::handlePacket(AOPacket *packet)
         sendServerMessage("You are sending messages too quickly. Please slow down.");
     }
 
+    // Unreadable data still counts against the rate limit above.
+    if (packet.isNull()) {
+        return;
+    }
+
+    if (packet.fields().join("").size() > 16384) {
+        return;
+    }
+
+    if (m_packets) {
+        if (const auto l_spec = m_packets->handlers().spec(packet.header())) {
+            handleRegisteredPacket(packet, *l_spec);
+            return;
+        }
+    }
+
+    // Packet families that have not moved to the registry yet go the old way.
+    const std::unique_ptr<AOPacket> l_packet(PacketFactory::createPacket(packet.header(), packet.fields()));
     AreaData *l_area = server->getAreaById(areaId());
 
-    if (packet->getContent().join("").size() > 16384) {
+    if (!checkPermission(l_packet->getPacketInfo().acl_permission)) {
         return;
     }
 
-    if (!checkPermission(packet->getPacketInfo().acl_permission)) {
+    resetAfk(packet.header());
+
+    if (l_packet->getContent().length() < l_packet->getPacketInfo().min_args) {
+#ifdef NET_DEBUG
+        qDebug() << "Invalid packet args length. Minimum is" << l_packet->getPacketInfo().min_args << "but only" << l_packet->getContent().length() << "were given.";
+#endif
         return;
     }
 
-    if (packet->getPacketInfo().header != "CH" && m_joined) {
+    l_packet->handlePacket(l_area, *this);
+}
+
+void AOClient::handleRegisteredPacket(const akashi::Packet &f_packet, const akashi::PacketSpec &f_spec)
+{
+    ACLRole::Permission l_permission = ACLRole::NONE;
+    if (!f_spec.required_permission.isEmpty()) {
+        l_permission = ACLRole::PERMISSION_CAPTIONS.key(f_spec.required_permission, ACLRole::NONE);
+    }
+    if (!checkPermission(l_permission)) {
+        return;
+    }
+
+    resetAfk(f_packet.header());
+
+    if (f_packet.fieldCount() < f_spec.min_args) {
+        return;
+    }
+
+    const std::shared_ptr<akashi::Codec> l_codec = m_codecs.codecFor(f_packet.header());
+    if (!l_codec) {
+        return;
+    }
+    const std::unique_ptr<akashi::Message> l_message = l_codec->decode(f_packet);
+    if (!l_message) {
+        return;
+    }
+    m_packets->handlers().handler(f_packet.header())->handle(*l_message, *this);
+}
+
+void AOClient::resetAfk(const QString &f_header)
+{
+    if (f_header != "CH" && m_joined) {
         if (m_is_afk) {
             sendServerMessage("You are no longer AFK.");
         }
@@ -234,15 +291,6 @@ void AOClient::handlePacket(AOPacket *packet)
         }
         m_afk_timer->start(ConfigManager::afkTimeout() * 1000);
     }
-
-    if (packet->getContent().length() < packet->getPacketInfo().min_args) {
-#ifdef NET_DEBUG
-        qDebug() << "Invalid packet args length. Minimum is" << packet->getPacketInfo().min_args << "but only" << packet->getContent().length() << "were given.";
-#endif
-        return;
-    }
-
-    packet->handlePacket(l_area, *this);
 }
 
 void AOClient::changeArea(int new_area)
@@ -470,7 +518,7 @@ void AOClient::calculateIpid()
     m_ipid = hash.result().toHex().right(8); // Use the last 8 characters (4 bytes)
 }
 
-void AOClient::sendServerMessage(QString message)
+void AOClient::sendServerMessage(const QString &message)
 {
     sendPacket("CT", {ConfigManager::serverNickname(), message, "1"});
 }
@@ -626,10 +674,160 @@ AOClient::AOClient(Server *p_server, NetworkSocket *socket, QObject *parent, int
     m_afk_timer = new QTimer;
     m_afk_timer->setSingleShot(true);
     connect(m_afk_timer, &QTimer::timeout, this, &AOClient::onAfkTimeout);
+
+    if (server) {
+        m_packets = server->packets();
+        if (m_packets) {
+            // Picked again with the real profile once the client identifies.
+            m_codecs = m_packets->codecs().resolve(m_profile);
+        }
+    }
 }
 
 AOClient::~AOClient()
 {
     clientDisconnected();
     m_socket->deleteLater();
+}
+
+void AOClient::closeConnection()
+{
+    m_socket->close();
+}
+
+QString AOClient::hwid() const
+{
+    return m_hwid;
+}
+
+const akashi::ClientProfile &AOClient::profile() const
+{
+    return m_profile;
+}
+
+bool AOClient::isIdentified() const
+{
+    return m_version.release == 2;
+}
+
+void AOClient::setHwid(const QString &f_hwid)
+{
+    m_hwid = f_hwid;
+}
+
+void AOClient::identify(const akashi::ClientProfile &f_profile)
+{
+    m_profile = f_profile;
+    m_version.release = f_profile.version.release;
+    m_version.major = f_profile.version.major;
+    m_version.minor = f_profile.version.minor;
+    if (m_packets) {
+        m_codecs = m_packets->codecs().resolve(m_profile);
+    }
+}
+
+void AOClient::markJoined()
+{
+    m_joined = true;
+}
+
+void AOClient::finishJoin()
+{
+    Q_EMIT joined();
+    server->getAreaById(areaId())->addClient(-1, clientId());
+    server->getPlayerStateObserver()->registerClient(this);
+}
+
+void AOClient::logConnectionAttempt()
+{
+    Q_EMIT server->logConnectionAttempt(m_remote_ip.toString(), m_ipid, m_hwid);
+}
+
+std::optional<akashi::BanRecord> AOClient::hardwareBan() const
+{
+    const auto l_ban = server->getDatabaseManager()->isHDIDBanned(m_hwid);
+    if (!l_ban.first) {
+        return std::nullopt;
+    }
+
+    akashi::BanRecord l_record;
+    l_record.id = l_ban.second.id;
+    l_record.reason = l_ban.second.reason;
+    l_record.permanent = l_ban.second.duration == -2;
+    if (!l_record.permanent) {
+        l_record.end = QDateTime::fromSecsSinceEpoch(l_ban.second.time).addSecs(l_ban.second.duration);
+    }
+    return l_record;
+}
+
+int AOClient::playerCount() const
+{
+    return server->getPlayerCount();
+}
+
+QStringList AOClient::characters() const
+{
+    return server->getCharacters();
+}
+
+QStringList AOClient::areaNames() const
+{
+    return server->getAreaNames();
+}
+
+QStringList AOClient::musicList() const
+{
+    return server->getMusicList();
+}
+
+akashi::AreaSnapshot AOClient::areaState() const
+{
+    AreaData *l_area = server->getAreaById(areaId());
+
+    akashi::AreaSnapshot l_snapshot;
+    l_snapshot.def_hp = l_area->defHP();
+    l_snapshot.pro_hp = l_area->proHP();
+    l_snapshot.background = l_area->background();
+    l_snapshot.side = l_area->side();
+    const QList<QTimer *> l_timers = l_area->timers();
+    for (QTimer *l_timer : l_timers) {
+        l_snapshot.timers.append(akashi::TimerSnapshot{l_timer->isActive(), QTime(0, 0).msecsTo(QTime(0, 0).addMSecs(l_timer->remainingTime()))});
+    }
+    return l_snapshot;
+}
+
+akashi::TimerSnapshot AOClient::globalTimer() const
+{
+    return akashi::TimerSnapshot{server->timer->isActive(), QTime(0, 0).msecsTo(QTime(0, 0).addMSecs(server->timer->remainingTime()))};
+}
+
+void AOClient::announceCharsTaken()
+{
+    server->updateCharsTaken(server->getAreaById(areaId()));
+}
+
+void AOClient::sendEvidenceList()
+{
+    sendEvidenceList(server->getAreaById(areaId()));
+}
+
+void AOClient::sendFullArup()
+{
+    fullArup();
+}
+
+void AOClient::broadcastPlayerCount()
+{
+    arup(ARUPType::PLAYER_COUNT, true);
+}
+
+bool AOClient::selectCharacter(int f_char_id)
+{
+    if (changeCharacter(f_char_id)) {
+        m_char_id = f_char_id;
+    }
+    if (m_char_id > SPECTATOR_ID) {
+        setSpectator(false);
+    }
+    return m_char_id == f_char_id;
 }
