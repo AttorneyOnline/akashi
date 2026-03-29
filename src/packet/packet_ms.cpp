@@ -77,7 +77,7 @@ void PacketMS::handlePacket(AreaData *area, AOClient &client) const
         client.getServer()->broadcast(validated_packet, client.areaId());
     }
 
-    emit client.logIC(client.getServer()->getAreaById(client.areaId())->name(), client.m_ipid, client.name(), QString::number(client.clientId()), (client.character() + " " + client.characterName()), client.m_last_message);
+    Q_EMIT client.logIC(client.getServer()->getAreaById(client.areaId())->name(), client.m_ipid, client.name(), QString::number(client.clientId()), (client.character() + " " + client.characterName()), client.m_last_message);
     area->updateLastICMessage(validated_packet.fields());
 
     area->startMessageFloodguard(ConfigManager::messageFloodguard());
@@ -178,11 +178,10 @@ akashi::Packet PacketMS::validateIcPacket(AOClient &client) const
 
     client.m_last_message = l_incoming_msg;
 
-    if (!ConfigManager::filterList().isEmpty()) {
-        foreach (const QString &regex, ConfigManager::filterList()) {
-            QRegularExpression re(regex, QRegularExpression::CaseInsensitiveOption);
-            l_incoming_msg.replace(re, "❌");
-        }
+    const QStringList l_filters = ConfigManager::filterList();
+    for (const QString &regex : l_filters) {
+        QRegularExpression re(regex, QRegularExpression::CaseInsensitiveOption);
+        l_incoming_msg.replace(re, "❌");
     }
 
     if (client.m_is_gimped) {

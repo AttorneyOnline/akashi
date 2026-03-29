@@ -58,7 +58,7 @@ class AKASHI_CORE_EXPORT ConfigStore : public QObject
     // Picks the config folder from --config-root, AKASHI_CONFIG_ROOT or the default config/.
     static QString resolveRootPath();
 
-  signals:
+  Q_SIGNALS:
     void configReloaded();
     // Emitted on reload for every declared setting whose value changed.
     void valueChanged(const QString &f_name, const QString &f_key, const QVariant &f_old, const QVariant &f_new);

@@ -15,7 +15,7 @@ class tst_ACLRolesHandler : public QObject
   public:
     ACLRolesHandler *m_handler;
 
-  private slots:
+  private Q_SLOTS:
     void init();
 
     void checkReadOnlyRoles();

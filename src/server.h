@@ -370,7 +370,7 @@ class AKASHI_CORE_EXPORT Server : public QObject
      */
     PlayerStateObserver *getPlayerStateObserver();
 
-  public slots:
+  public Q_SLOTS:
     /**
      * @brief Convenience class to call a reload of available configuraiton elements.
      */
@@ -396,7 +396,7 @@ class AKASHI_CORE_EXPORT Server : public QObject
      */
     void markIDFree(const int &f_user_id);
 
-  signals:
+  Q_SIGNALS:
 
     /**
      * @brief Sends the server name and description, emitted by /reload.
@@ -591,7 +591,7 @@ class AKASHI_CORE_EXPORT Server : public QObject
      **/
     void hookupAOClient(AOClient *client);
 
-  private slots:
+  private Q_SLOTS:
     /**
      * @brief Increase the current player count by one.
      */

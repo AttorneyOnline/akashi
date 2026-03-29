@@ -9,7 +9,7 @@ class tst_AkashiUtils : public QObject
 {
     Q_OBJECT
 
-  private slots:
+  private Q_SLOTS:
 
     void integer_data();
     void integer();

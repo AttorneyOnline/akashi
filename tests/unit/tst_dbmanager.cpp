@@ -11,7 +11,7 @@ class tst_DBManager : public QObject
 {
     Q_OBJECT
 
-  private slots:
+  private Q_SLOTS:
     void olderActiveBanStillCounts();
 };
 

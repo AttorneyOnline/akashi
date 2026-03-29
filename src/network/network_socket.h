@@ -64,7 +64,7 @@ class AKASHI_CORE_EXPORT NetworkSocket : public QObject
      */
     void write(const akashi::Packet &f_packet);
 
-  signals:
+  Q_SIGNALS:
     /**
      * @brief Emitted for every packet parsed from the socket, including null
      * packets from unreadable data so the receiver can rate limit them.
@@ -76,7 +76,7 @@ class AKASHI_CORE_EXPORT NetworkSocket : public QObject
      */
     void clientDisconnected();
 
-  private slots:
+  private Q_SLOTS:
     /**
      * @brief Splits incoming WebSocket data into packets.
      */

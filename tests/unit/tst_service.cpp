@@ -29,7 +29,7 @@ class tst_Service : public QObject
 {
     Q_OBJECT
 
-  private slots:
+  private Q_SLOTS:
     void versionSatisfies_data();
     void versionSatisfies();
     void registerAndResolve();

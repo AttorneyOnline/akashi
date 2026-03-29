@@ -20,7 +20,7 @@ class tst_PacketCodec : public QObject
 {
     Q_OBJECT
 
-  private slots:
+  private Q_SLOTS:
     void picksByArchAndVersion();
     void higherPriorityWins();
     void unregisteredHeaderFallsBackToDefault();

@@ -188,7 +188,7 @@ void AOClient::clientDisconnected()
         arup(ARUPType::LOCKED, true);
     }
     arup(ARUPType::CM, true);
-    emit clientSuccessfullyDisconnected(clientId());
+    Q_EMIT clientSuccessfullyDisconnected(clientId());
 }
 
 void AOClient::handlePacket(const akashi::Packet &packet)

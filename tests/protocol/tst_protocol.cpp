@@ -134,7 +134,7 @@ class TestClient : public QObject
         m_socket.close();
     }
 
-  private slots:
+  private Q_SLOTS:
     void onFrame(const QString &frame)
     {
         // Split on % in case a frame contains more than one packet.
@@ -153,7 +153,7 @@ class ProtocolTest : public QObject
 {
     Q_OBJECT
 
-  private slots:
+  private Q_SLOTS:
     void init();
     void cleanup();
 

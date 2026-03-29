@@ -13,7 +13,7 @@ class tst_FileSystem : public QObject
 {
     Q_OBJECT
 
-  private slots:
+  private Q_SLOTS:
     void storageResolvesInsideStorage();
     void storageRejectsEscape();
     void systemReachesTheWholeApplication();

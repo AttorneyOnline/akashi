@@ -12,7 +12,7 @@ class tst_PlayerStateObserver : public QObject
 {
     Q_OBJECT
 
-  private slots:
+  private Q_SLOTS:
     void unregisterUnknownClient();
     void registerAndUnregister();
 

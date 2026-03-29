@@ -45,7 +45,7 @@ void PacketZZ::handlePacket(AreaData *area, AOClient &client) const
         if (l_client->m_authenticated)
             l_client->sendPacket(akashi::Packet("ZZ", {l_modcallNotice}));
     }
-    emit client.logModcall(client.getServer()->getAreaById(client.areaId())->name(), client.m_ipid, client.name(), QString::number(client.clientId()), (client.character() + " " + client.characterName()));
+    Q_EMIT client.logModcall(client.getServer()->getAreaById(client.areaId())->name(), client.m_ipid, client.name(), QString::number(client.clientId()), (client.character() + " " + client.characterName()));
 
     if (ConfigManager::discordModcallWebhookEnabled()) {
         QString l_name = client.name();
@@ -62,6 +62,6 @@ void PacketZZ::handlePacket(AreaData *area, AOClient &client) const
             }
         }
 
-        emit client.getServer()->modcallWebhookRequest(l_name, l_areaName, l_id, webhook_reason, client.getServer()->getAreaBuffer(l_areaName));
+        Q_EMIT client.getServer()->modcallWebhookRequest(l_name, l_areaName, l_id, webhook_reason, client.getServer()->getAreaBuffer(l_areaName));
     }
 }

@@ -58,7 +58,7 @@ class Discord : public QObject
      */
     void stopUptimeTimer();
 
-  public slots:
+  public Q_SLOTS:
     /**
      * @brief Handles a modcall webhook request.
      *
@@ -111,7 +111,7 @@ class Discord : public QObject
      */
     QHttpMultiPart *constructLogMultipart(const QQueue<QString> &f_buffer) const;
 
-  private slots:
+  private Q_SLOTS:
     /**
      * @brief Handles a network reply from a webhook POST request.
      *

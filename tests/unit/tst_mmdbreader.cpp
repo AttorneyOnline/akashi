@@ -13,7 +13,7 @@ class tst_MmdbReader : public QObject
 {
     Q_OBJECT
 
-  private slots:
+  private Q_SLOTS:
     void looksUpTheAsnOfAnAddress();
     void rejectsOtherFiles();
 

@@ -14,7 +14,7 @@ class tst_NetworkService : public QObject
 {
     Q_OBJECT
 
-  private slots:
+  private Q_SLOTS:
     void providesAManager();
     void resolvableThroughTheRegistry();
 };

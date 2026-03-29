@@ -17,7 +17,7 @@ class tst_CommandExtension : public QObject
 
     CommandExtension m_extension;
 
-  private slots:
+  private Q_SLOTS:
     void init();
 
     void checkCommandName_data();

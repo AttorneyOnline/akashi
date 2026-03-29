@@ -1010,14 +1010,14 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
      */
     void startMessageFloodguard(int f_duration);
 
-  public slots:
+  public Q_SLOTS:
 
     /**
      * @brief Plays a random song from the jukebox. Plays the same if only one is left.
      */
     void switchJukeboxSong();
 
-  signals:
+  Q_SIGNALS:
 
     /**
      * @brief Sends a packet to every client inside the area.
@@ -1321,7 +1321,7 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
      */
     bool m_medieval_mode = false;
 
-  private slots:
+  private Q_SLOTS:
     /**
      * @brief Allow game messages to be broadcasted.
      */

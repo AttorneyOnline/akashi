@@ -132,12 +132,12 @@ void ConfigStore::reload()
         const QHash<QString, QVariant> l_new_values = m_values.value(l_name);
         for (auto l_value_iterator = l_new_values.begin(); l_value_iterator != l_new_values.end(); ++l_value_iterator) {
             if (l_old_values.value(l_value_iterator.key()) != l_value_iterator.value()) {
-                emit valueChanged(l_name, l_value_iterator.key(), l_old_values.value(l_value_iterator.key()), l_value_iterator.value());
+                Q_EMIT valueChanged(l_name, l_value_iterator.key(), l_old_values.value(l_value_iterator.key()), l_value_iterator.value());
             }
         }
     }
 
-    emit configReloaded();
+    Q_EMIT configReloaded();
 }
 
 QString ConfigStore::resolveRootPath()

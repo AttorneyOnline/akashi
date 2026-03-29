@@ -166,6 +166,9 @@ target_link_libraries(akashi_core PUBLIC
     Qt6::WebSockets
 )
 
+# The whole project uses Q_EMIT/Q_SIGNALS/Q_SLOTS instead of the lowercase keywords.
+target_compile_definitions(akashi_core PUBLIC QT_NO_KEYWORDS)
+
 qt_add_executable(akashi src/main.cpp)
 target_link_libraries(akashi PRIVATE akashi_core)
 

@@ -15,7 +15,7 @@ bool ServiceRegistry::registerService(std::shared_ptr<IService> f_service, const
         return false;
     }
     m_services.insert(l_id, Entry{f_service, f_owner_id});
-    emit serviceRegistered(l_id);
+    Q_EMIT serviceRegistered(l_id);
     return true;
 }
 
@@ -24,9 +24,9 @@ void ServiceRegistry::unregisterService(const QString &f_service_id)
     if (!m_services.contains(f_service_id)) {
         return;
     }
-    emit serviceAboutToUnregister(f_service_id);
+    Q_EMIT serviceAboutToUnregister(f_service_id);
     m_services.remove(f_service_id);
-    emit serviceUnregistered(f_service_id);
+    Q_EMIT serviceUnregistered(f_service_id);
 }
 
 void ServiceRegistry::unregisterServicesOwnedBy(const QString &f_owner_id)

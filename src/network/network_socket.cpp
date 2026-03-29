@@ -76,7 +76,7 @@ void NetworkSocket::handleMessage(QString f_data)
     }
 
     for (const QString &l_single_packet : qAsConst(l_all_packets)) {
-        emit packetReceived(akashi::Packet::parse(l_single_packet));
+        Q_EMIT packetReceived(akashi::Packet::parse(l_single_packet));
     }
 }
 

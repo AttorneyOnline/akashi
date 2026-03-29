@@ -11,7 +11,7 @@ class tst_JsonSettings : public QObject
 {
     Q_OBJECT
 
-  private slots:
+  private Q_SLOTS:
     void writeAndReadBack();
     void readHandwrittenFile();
     void rejectInvalidFile();

@@ -84,9 +84,9 @@ void AOClient::cmdBan(int argc, QStringList argv)
         l_client->m_socket->close();
         l_kick_counter++;
 
-        emit logBan(l_ban.moderator, l_ban.ipid, l_ban_duration, l_ban.reason);
+        Q_EMIT logBan(l_ban.moderator, l_ban.ipid, l_ban_duration, l_ban.reason);
         if (ConfigManager::discordBanWebhookEnabled())
-            emit server->banWebhookRequest(l_ban.ipid, l_ban.moderator, l_ban_duration, l_ban.reason, l_ban_id);
+            Q_EMIT server->banWebhookRequest(l_ban.ipid, l_ban.moderator, l_ban_duration, l_ban.reason, l_ban_id);
     }
 
     if (l_kick_counter > 1)
@@ -120,10 +120,10 @@ void AOClient::cmdKick(int argc, QStringList argv)
 
     if (l_kick_counter > 0) {
         if (ConfigManager::authType() == DataTypes::AuthType::ADVANCED) {
-            emit logKick(m_moderator_name, l_target_ipid, l_reason);
+            Q_EMIT logKick(m_moderator_name, l_target_ipid, l_reason);
         }
         else {
-            emit logKick("Moderator", l_target_ipid, l_reason);
+            Q_EMIT logKick("Moderator", l_target_ipid, l_reason);
         }
         sendServerMessage("Kicked " + QString::number(l_kick_counter) + " client(s) with ipid " + l_target_ipid + " for reason: " + l_reason);
     }

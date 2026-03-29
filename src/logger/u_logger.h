@@ -53,7 +53,7 @@ class AKASHI_CORE_EXPORT ULogger : public QObject
      */
     QQueue<QString> buffer(const QString &f_areaName);
 
-  public slots:
+  public Q_SLOTS:
 
     /**
      * @brief Adds an IC log entry to the area buffer and writes it to the respective log format.

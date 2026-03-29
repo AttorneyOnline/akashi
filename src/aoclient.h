@@ -2196,7 +2196,7 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
      */
     int packet_count;
 
-  signals:
+  Q_SIGNALS:
 
     /**
      * @brief Signal connected to universal logger. Sends IC chat usage to the logger.

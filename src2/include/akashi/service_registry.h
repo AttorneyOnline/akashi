@@ -42,7 +42,7 @@ class AKASHI_CORE_EXPORT ServiceRegistry : public QObject
         return std::dynamic_pointer_cast<T>(find(f_service_id, f_version_range));
     }
 
-  signals:
+  Q_SIGNALS:
     void serviceRegistered(const QString &f_service_id);
     void serviceAboutToUnregister(const QString &f_service_id);
     void serviceUnregistered(const QString &f_service_id);

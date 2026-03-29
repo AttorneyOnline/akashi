@@ -300,8 +300,8 @@ PlayerStateObserver *Server::getPlayerStateObserver()
 void Server::reloadSettings()
 {
     ConfigManager::reloadSettings();
-    emit reloadRequest(ConfigManager::serverNickname(), ConfigManager::serverDescription());
-    emit updateHTTPConfiguration();
+    Q_EMIT reloadRequest(ConfigManager::serverNickname(), ConfigManager::serverDescription());
+    Q_EMIT updateHTTPConfiguration();
     handleDiscordIntegration();
     logger->loadLogtext();
     music_manager->reloadRequest();
@@ -577,13 +577,13 @@ void Server::hookupAOClient(AOClient *client)
 void Server::increasePlayerCount()
 {
     m_player_count++;
-    emit playerCountUpdated(m_player_count);
+    Q_EMIT playerCountUpdated(m_player_count);
 }
 
 void Server::decreasePlayerCount()
 {
     m_player_count--;
-    emit playerCountUpdated(m_player_count);
+    Q_EMIT playerCountUpdated(m_player_count);
 }
 
 bool Server::isIPBanned(QHostAddress f_remote_IP)

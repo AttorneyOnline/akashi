@@ -17,7 +17,7 @@ class Area : public QObject
   public:
     AreaData *m_area;
 
-  private slots:
+  private Q_SLOTS:
     void initTestCase();
     void init();
 

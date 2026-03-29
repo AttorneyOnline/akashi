@@ -11,7 +11,7 @@ class tst_Crypto : public QObject
     Q_OBJECT
 
   public:
-  private slots:
+  private Q_SLOTS:
     void checkHash();
     void checkHash_data();
     void constantTimeEquals();

@@ -96,5 +96,5 @@ void ServerContext::setStage(Stage f_stage)
         return;
     }
     m_stage = f_stage;
-    emit stageChanged(m_stage);
+    Q_EMIT stageChanged(m_stage);
 }

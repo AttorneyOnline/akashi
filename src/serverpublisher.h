@@ -34,7 +34,7 @@ class ServerPublisher : public QObject
     explicit ServerPublisher(int port, int *player_count, QObject *parent = nullptr);
     virtual ~ServerPublisher(){};
 
-  public slots:
+  public Q_SLOTS:
 
     /**
      * @brief Establishes a connection with masterserver to register or update the listing on the masterserver.

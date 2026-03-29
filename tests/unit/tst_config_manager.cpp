@@ -15,7 +15,7 @@ class tst_ConfigManager : public QObject
 
     typedef QMap<QString, QPair<QString, int>> MusicList;
 
-  private slots:
+  private Q_SLOTS:
     void initTestCase();
     void verifyServerConfig();
     void bindIP();

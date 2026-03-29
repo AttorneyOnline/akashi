@@ -47,7 +47,7 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
     akashi::ServiceRegistry *services() const;
     Stage stage() const;
 
-  signals:
+  Q_SIGNALS:
     void stageChanged(ServerContext::Stage f_stage);
 
   private:

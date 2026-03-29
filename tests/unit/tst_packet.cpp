@@ -12,7 +12,7 @@ class tst_Packet : public QObject
 {
     Q_OBJECT
 
-  private slots:
+  private Q_SLOTS:
     void parse_data();
     void parse();
     void parseRejectsBrokenInput_data();
