@@ -36,6 +36,7 @@ class MusicManager;
 class Server;
 class NetworkSocket;
 class AOPacket;
+class ServiceRegistry;
 
 /**
  * @brief Represents a client connected to the server running Attorney Online 2 or one of its derivatives.
@@ -84,7 +85,7 @@ class AOClient : public QObject
      * @param user_id The user ID of the client.
      * @param parent Qt-based parent, passed along to inherited constructor from QObject.
      */
-    AOClient(Server *p_server, NetworkSocket *socket, QObject *parent = nullptr, int user_id = 0, MusicManager *p_manager = nullptr);
+    AOClient(Server *p_server, NetworkSocket *socket, QObject *parent = nullptr, int user_id = 0, MusicManager *p_manager = nullptr, ServiceRegistry *f_registry = nullptr);
 
     /**
      * @brief Destructor for the AOClient instance.
@@ -526,6 +527,11 @@ class AOClient : public QObject
      * @brief Pointer to the servers music manager instance.
      */
     MusicManager *m_music_manager;
+
+    /**
+     * @brief Pointer to the servers service registry.
+     */
+    ServiceRegistry *m_service_registry;
 
     /**
      * @brief The text of the last in-character message that was sent by the client.

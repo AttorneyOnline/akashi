@@ -607,13 +607,14 @@ void AOClient::onAfkTimeout()
     m_is_afk = true;
 }
 
-AOClient::AOClient(Server *p_server, NetworkSocket *socket, QObject *parent, int user_id, MusicManager *p_manager) :
+AOClient::AOClient(Server *p_server, NetworkSocket *socket, QObject *parent, int user_id, MusicManager *p_manager, ServiceRegistry *f_registry) :
     QObject(parent),
     m_remote_ip(socket->peerAddress()),
     m_password(""),
     m_joined(false),
     m_socket(socket),
     m_music_manager(p_manager),
+    m_service_registry(f_registry),
     m_last_wtce_time(0),
     m_id(user_id),
     m_current_area(0),
