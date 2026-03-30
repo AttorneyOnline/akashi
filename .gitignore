@@ -82,3 +82,4 @@ doxygen/html
 
 .vscode/
 *.TMP
+bin/data/
