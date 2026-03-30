@@ -2,8 +2,10 @@
 // A headless AO2 client built on the real client's netcode. It joins a
 // running akashi server the same way the desktop client does, then walks
 // the playtest checklist: pick a character, chat in OOC and IC, change
-// the music, send a keepalive, and disconnect. Exits 0 when every step
-// got the expected answer, 1 on a timeout or protocol failure.
+// the music, keepalive, get denied a mod command, fail a login, log in
+// with the modpass and run a database-backed mod command. Exits 0 when
+// every step got the expected answer, 1 on a timeout or protocol failure.
+// Usage: ao2_miniclient [address] [port] [modpass]
 #include "aopacket.h"
 #include "websocketconnection.h"
 
@@ -17,8 +19,9 @@ class MiniClient : public QObject
     Q_OBJECT
 
   public:
-    MiniClient(const QString &f_address, int f_port, QObject *parent = nullptr) :
-        QObject(parent)
+    MiniClient(const QString &f_address, int f_port, const QString &f_modpass, QObject *parent = nullptr) :
+        QObject(parent),
+        m_modpass(f_modpass)
     {
         m_connection = new WebSocketConnection(this);
         m_watchdog = new QTimer(this);
@@ -131,6 +134,42 @@ class MiniClient : public QObject
             break;
         case Step::Keepalive:
             if (l_header == "CHECK") {
+                step(Step::ModCommandDenied, "permission denial");
+                send(AOPacket("CT", {"miniclient", "/baninfo 1"}));
+            }
+            break;
+        case Step::ModCommandDenied:
+            if (l_header == "CT" && l_content.value(1).contains("You do not have permission")) {
+                step(Step::LoginPrompt, "login prompt");
+                send(AOPacket("CT", {"miniclient", "/login"}));
+            }
+            break;
+        case Step::LoginPrompt:
+            if (l_header == "CT" && l_content.value(1).contains("Entering login prompt")) {
+                step(Step::LoginWrong, "AUTH 0");
+                send(AOPacket("CT", {"miniclient", "not-the-modpass"}));
+            }
+            break;
+        case Step::LoginWrong:
+            if (l_header == "AUTH" && l_content.value(0) == "0") {
+                step(Step::LoginPromptAgain, "login prompt");
+                send(AOPacket("CT", {"miniclient", "/login"}));
+            }
+            break;
+        case Step::LoginPromptAgain:
+            if (l_header == "CT" && l_content.value(1).contains("Entering login prompt")) {
+                step(Step::LoginRight, "AUTH 1");
+                send(AOPacket("CT", {"miniclient", m_modpass}));
+            }
+            break;
+        case Step::LoginRight:
+            if (l_header == "AUTH" && l_content.value(0) == "1") {
+                step(Step::DatabaseQuery, "ban info");
+                send(AOPacket("CT", {"miniclient", "/baninfo 1"}));
+            }
+            break;
+        case Step::DatabaseQuery:
+            if (l_header == "CT" && l_content.value(1).contains("Ban Info for 1")) {
                 m_done = true;
                 m_watchdog->stop();
                 say("every step answered, disconnecting");
@@ -155,6 +194,12 @@ class MiniClient : public QObject
         IcChat,
         MusicChange,
         Keepalive,
+        ModCommandDenied,
+        LoginPrompt,
+        LoginWrong,
+        LoginPromptAgain,
+        LoginRight,
+        DatabaseQuery,
     };
 
     void send(AOPacket f_packet)
@@ -195,6 +240,7 @@ class MiniClient : public QObject
     Step m_step = Step::Connect;
     QString m_waiting_for;
     QString m_hdid = "miniclient-hdid";
+    QString m_modpass;
     QString m_requested_song;
     int m_client_id = -1;
     int m_char_id = -1;
@@ -208,7 +254,8 @@ int main(int argc, char *argv[])
     QCoreApplication app(argc, argv);
     const QString l_address = app.arguments().value(1, "127.0.0.1");
     const int l_port = app.arguments().value(2, "27016").toInt();
-    MiniClient l_client(l_address, l_port);
+    const QString l_modpass = app.arguments().value(3, "changeme");
+    MiniClient l_client(l_address, l_port, l_modpass);
     return app.exec();
 }
 
