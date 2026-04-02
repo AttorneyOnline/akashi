@@ -37,23 +37,14 @@ void Packet::createPacketSubclass_data()
     QTest::addColumn<QString>("expected_header");
     QTest::addColumn<int>("expected_minargs");
 
-    // The handshake family (HI, ID, askchaa, RC, RM, RD, CC) moved to the
-    // packet registry; tst_handshake covers it now.
+    // The handshake and chat families moved to the packet registry;
+    // tst_handshake and tst_chat cover them now.
     QTest::newRow("CASEA") << "CASEA#"
                            << "CASEA"
                            << 6;
     QTest::newRow("CH") << "CH#"
                         << "CH"
                         << 1;
-    QTest::newRow("CT") << "CT#"
-                        << "CT"
-                        << 2;
-    QTest::newRow("DE") << "DE#"
-                        << "DE"
-                        << 1;
-    QTest::newRow("EE") << "EE#"
-                        << "EE"
-                        << 4;
     QTest::newRow("GENERIC") << "GENERIC#"
                              << "GENERIC"
                              << 0;
@@ -75,9 +66,6 @@ void Packet::createPacketSubclass_data()
     QTest::newRow("RT") << "RT#"
                         << "RT"
                         << 1;
-    QTest::newRow("SETCASE") << "SETCASE#"
-                             << "SETCASE"
-                             << 7;
     QTest::newRow("ZZ") << "ZZ#"
                         << "ZZ"
                         << 2;

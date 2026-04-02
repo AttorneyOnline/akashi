@@ -565,7 +565,7 @@ QString AOClient::getHwid() const
     return m_hwid;
 }
 
-bool AOClient::hasJoined() const
+bool AOClient::isJoined() const
 {
     return m_joined;
 }
@@ -830,4 +830,75 @@ bool AOClient::selectCharacter(int f_char_id)
         setSpectator(false);
     }
     return m_char_id == f_char_id;
+}
+
+bool AOClient::canUseOocChat() const
+{
+    return !m_is_ooc_muted;
+}
+
+QString AOClient::oocName() const
+{
+    return name();
+}
+
+void AOClient::setOocName(const QString &f_name)
+{
+    setName(f_name);
+}
+
+bool AOClient::isInLoginPrompt() const
+{
+    return m_is_logging_in;
+}
+
+void AOClient::attemptLogin(const QString &f_message)
+{
+    loginAttempt(f_message);
+}
+
+void AOClient::runCommand(const QString &f_command, const QStringList &f_arguments)
+{
+    handleCommand(f_command, f_arguments.size(), f_arguments);
+    Q_EMIT logCMD((character() + " " + characterName()), m_ipid, name(), f_command, f_arguments, server->getAreaById(areaId())->name());
+}
+
+void AOClient::broadcastOoc(const QString &f_message)
+{
+    server->broadcast(akashi::Packet("CT", {name(), f_message, "0"}), areaId());
+    Q_EMIT logOOC(server->getAreaById(areaId())->name(), m_ipid, name(), QString::number(clientId()), (character() + " " + characterName()), f_message);
+}
+
+bool AOClient::canModifyEvidence()
+{
+    return checkEvidenceAccess(server->getAreaById(areaId()));
+}
+
+bool AOClient::isEvidenceHiddenCm() const
+{
+    return server->getAreaById(areaId())->eviMod() == AreaData::EvidenceMod::HIDDEN_CM;
+}
+
+int AOClient::evidenceCount() const
+{
+    return server->getAreaById(areaId())->evidence().size();
+}
+
+void AOClient::deleteEvidence(int f_index)
+{
+    server->getAreaById(areaId())->deleteEvidence(f_index);
+}
+
+void AOClient::replaceEvidence(int f_index, const QString &f_name, const QString &f_description, const QString &f_image)
+{
+    AreaData::Evidence l_evidence;
+    l_evidence.name = f_name;
+    l_evidence.description = f_description;
+    l_evidence.image = f_image;
+    server->getAreaById(areaId())->replaceEvidence(f_index, l_evidence);
+}
+
+void AOClient::setCasingPreferences(const QList<bool> &f_preferences)
+{
+    m_casing_preferences = f_preferences;
 }

@@ -189,7 +189,7 @@ class JoinHandler : public PacketHandler
             return;
         }
 
-        if (f_context.hasJoined()) {
+        if (f_context.isJoined()) {
             return;
         }
 
@@ -239,7 +239,7 @@ class CharacterSelectHandler : public PacketHandler
     void handle(const Message &f_message, IPacketContext &f_context) const override
     {
         const auto &l_select = static_cast<const CharacterSelectMessage &>(f_message);
-        if (!f_context.hasJoined()) {
+        if (!f_context.isJoined()) {
             // No character selecting when you aren't joined.
             return;
         }

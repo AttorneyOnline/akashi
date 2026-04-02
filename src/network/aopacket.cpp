@@ -19,9 +19,6 @@
 
 #include "packet/packet_casea.h"
 #include "packet/packet_ch.h"
-#include "packet/packet_ct.h"
-#include "packet/packet_de.h"
-#include "packet/packet_ee.h"
 #include "packet/packet_factory.h"
 #include "packet/packet_hp.h"
 #include "packet/packet_ma.h"
@@ -31,7 +28,6 @@
 #include "packet/packet_pr.h"
 #include "packet/packet_pw.h"
 #include "packet/packet_rt.h"
-#include "packet/packet_setcase.h"
 #include "packet/packet_zz.h"
 
 AOPacket::AOPacket(QStringList p_contents) :
@@ -107,22 +103,19 @@ bool AOPacket::isPacketEscaped()
     return m_escaped;
 }
 
-// The handshake family (HI, ID, askchaa, RC, RM, RD, CC) lives in the
-// packet registry now; this list shrinks as the other families move over.
+// The handshake family (HI, ID, askchaa, RC, RM, RD, CC) and the chat
+// family minus MS (CT, DE, EE, SETCASE) live in the packet registry now;
+// this list shrinks as the other families move over.
 void AOPacket::registerPackets()
 {
     PacketFactory::registerClass<PacketCasea>("CASEA");
     PacketFactory::registerClass<PacketCH>("CH");
-    PacketFactory::registerClass<PacketCT>("CT");
-    PacketFactory::registerClass<PacketDE>("DE");
-    PacketFactory::registerClass<PacketEE>("EE");
     PacketFactory::registerClass<PacketHP>("HP");
     PacketFactory::registerClass<PacketMC>("MC");
     PacketFactory::registerClass<PacketMS>("MS");
     PacketFactory::registerClass<PacketPE>("PE");
     PacketFactory::registerClass<PacketPW>("PW");
     PacketFactory::registerClass<PacketRT>("RT");
-    PacketFactory::registerClass<PacketSetcase>("SETCASE");
     PacketFactory::registerClass<PacketMA>("MA");
     PacketFactory::registerClass<PacketZZ>("ZZ");
     PacketFactory::registerClass<PacketPR>("PR");

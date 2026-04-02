@@ -122,7 +122,7 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
      *
      * @return True if the client has completed the participation handshake. False otherwise.
      */
-    bool hasJoined() const;
+    bool isJoined() const;
 
     /**
      * @brief Returns true if the client has logged-in as a role.
@@ -642,6 +642,19 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     void sendFullArup() override;
     void broadcastPlayerCount() override;
     bool selectCharacter(int f_char_id) override;
+    bool canUseOocChat() const override;
+    QString oocName() const override;
+    void setOocName(const QString &f_name) override;
+    bool isInLoginPrompt() const override;
+    void attemptLogin(const QString &f_message) override;
+    void runCommand(const QString &f_command, const QStringList &f_arguments) override;
+    void broadcastOoc(const QString &f_message) override;
+    bool canModifyEvidence() override;
+    bool isEvidenceHiddenCm() const override;
+    int evidenceCount() const override;
+    void deleteEvidence(int f_index) override;
+    void replaceEvidence(int f_index, const QString &f_name, const QString &f_description, const QString &f_image) override;
+    void setCasingPreferences(const QList<bool> &f_preferences) override;
 
   public Q_SLOTS:
     /**

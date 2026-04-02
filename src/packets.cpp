@@ -17,6 +17,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "aoclient.h"
 #include "proto/packet.h"
+#include "proto/text_utils.h"
 
 #include <QQueue>
 
@@ -62,9 +63,7 @@ void AOClient::updateEvidenceList(AreaData *area)
 
 QString AOClient::dezalgo(QString p_text)
 {
-    QRegularExpression rxp("([̴̵̶̷̸̡̢̧̨̛̖̗̘̙̜̝̞̟̠̣̤̥̦̩̪̫̬̭̮̯̰̱̲̳̹̺̻̼͇͈͉͍͎̀́̂̃̄̅̆̇̈̉̊̋̌̍̎̏̐̑̒̓̔̽̾̿̀́͂̓̈́͆͊͋͌̕̚ͅ͏͓͔͕͖͙͚͐͑͒͗͛ͣͤͥͦͧͨͩͪͫͬͭͮͯ͘͜͟͢͝͞͠͡])");
-    QString filtered = p_text.replace(rxp, "");
-    return filtered;
+    return akashi::stripZalgo(p_text);
 }
 
 bool AOClient::checkEvidenceAccess(AreaData *area)

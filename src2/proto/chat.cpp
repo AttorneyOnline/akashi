@@ -1,0 +1,203 @@
+#include "proto/chat.h"
+
+#include "config_manager.h"
+#include "proto/ao2_protocol.h"
+#include "proto/chat_messages.h"
+#include "proto/packet_codec.h"
+#include "proto/packet_registry.h"
+#include "proto/text_utils.h"
+
+#include <QRegularExpression>
+
+namespace akashi {
+
+namespace {
+
+class OocCodec : public Codec
+{
+  public:
+    std::unique_ptr<Message> decode(const Packet &f_packet) const override
+    {
+        auto l_message = std::make_unique<OocMessage>();
+        l_message->name = f_packet.field(0);
+        l_message->message = f_packet.field(1);
+        return l_message;
+    }
+};
+
+class EvidenceDeleteCodec : public Codec
+{
+  public:
+    std::unique_ptr<Message> decode(const Packet &f_packet) const override
+    {
+        auto l_message = std::make_unique<EvidenceDeleteMessage>();
+        bool l_ok;
+        const int l_index = f_packet.field(0).toInt(&l_ok);
+        if (l_ok) {
+            l_message->index = l_index;
+        }
+        return l_message;
+    }
+};
+
+class EvidenceEditCodec : public Codec
+{
+  public:
+    std::unique_ptr<Message> decode(const Packet &f_packet) const override
+    {
+        auto l_message = std::make_unique<EvidenceEditMessage>();
+        l_message->index = f_packet.field(0).toInt();
+        l_message->name = f_packet.field(1);
+        l_message->description = f_packet.field(2);
+        l_message->image = f_packet.field(3);
+        return l_message;
+    }
+};
+
+class CasingPreferencesCodec : public Codec
+{
+  public:
+    std::unique_ptr<Message> decode(const Packet &f_packet) const override
+    {
+        auto l_message = std::make_unique<CasingPreferencesMessage>();
+        QList<bool> l_preferences;
+        for (int i = 2; i <= 6; i++) {
+            bool l_ok;
+            const int l_value = f_packet.field(i).toInt(&l_ok);
+            if (!l_ok) {
+                return l_message;
+            }
+            l_preferences.append(l_value);
+        }
+        l_message->preferences = l_preferences;
+        return l_message;
+    }
+};
+
+class OocHandler : public PacketHandler
+{
+  public:
+    void handle(const Message &f_message, IPacketContext &f_context) const override
+    {
+        const auto &l_ooc = static_cast<const OocMessage &>(f_message);
+        if (!f_context.canUseOocChat()) {
+            f_context.sendServerMessage("You are OOC muted, and cannot speak.");
+            return;
+        }
+
+        static const QRegularExpression l_forbidden("\\[|\\]|\\{|\\}|\\#|\\$|\\%|\\&");
+        QString l_name = stripZalgo(l_ooc.name);
+        l_name.replace(l_forbidden, "");
+        f_context.setOocName(l_name);
+        // Impersonation and empty name protection.
+        if (f_context.oocName().trimmed().replace("​", "").isEmpty() || f_context.oocName() == ConfigManager::serverNickname()) {
+            return;
+        }
+
+        if (f_context.oocName().length() > 30) {
+            f_context.sendServerMessage("Your name is too long! Please limit it to under 30 characters.");
+            return;
+        }
+
+        // A client in the login prompt is sending its password, not a chat line.
+        if (f_context.isInLoginPrompt()) {
+            f_context.attemptLogin(l_ooc.message);
+            return;
+        }
+
+        QString l_message = stripZalgo(l_ooc.message);
+        if (l_message.length() == 0 || l_message.length() > ConfigManager::maxCharacters()) {
+            return;
+        }
+
+        const QStringList l_filters = ConfigManager::filterList();
+        for (const QString &l_filter : l_filters) {
+            QRegularExpression l_pattern(l_filter, QRegularExpression::CaseInsensitiveOption);
+            l_message.replace(l_pattern, "❌");
+        }
+
+        if (l_message.at(0) == '/') {
+            QStringList l_arguments = l_message.split(" ", Qt::SkipEmptyParts);
+            const QString l_command = l_arguments.takeFirst().trimmed().toLower().mid(1);
+            f_context.runCommand(l_command, l_arguments);
+            return;
+        }
+
+        f_context.broadcastOoc(l_message);
+    }
+};
+
+class EvidenceDeleteHandler : public PacketHandler
+{
+  public:
+    void handle(const Message &f_message, IPacketContext &f_context) const override
+    {
+        const auto &l_delete = static_cast<const EvidenceDeleteMessage &>(f_message);
+        if (!f_context.canModifyEvidence()) {
+            return;
+        }
+        if (l_delete.index && *l_delete.index >= 0 && *l_delete.index < f_context.evidenceCount()) {
+            f_context.deleteEvidence(*l_delete.index);
+        }
+        f_context.sendEvidenceList();
+    }
+};
+
+class EvidenceEditHandler : public PacketHandler
+{
+  public:
+    void handle(const Message &f_message, IPacketContext &f_context) const override
+    {
+        const auto &l_edit = static_cast<const EvidenceEditMessage &>(f_message);
+        if (!f_context.canModifyEvidence()) {
+            return;
+        }
+        if (l_edit.index < 0 || l_edit.index >= f_context.evidenceCount()) {
+            return;
+        }
+
+        QString l_description = l_edit.description;
+        // Hidden-CM areas tag untagged evidence as visible to everyone.
+        if (f_context.isEvidenceHiddenCm()) {
+            static const QRegularExpression l_owner_tag("<owner=(.*?)>");
+            if (!l_owner_tag.match(l_description).hasMatch()) {
+                l_description = "<owner=all>\n" + l_description;
+            }
+        }
+
+        f_context.replaceEvidence(l_edit.index, l_edit.name, l_description, l_edit.image);
+        f_context.sendEvidenceList();
+    }
+};
+
+class CasingPreferencesHandler : public PacketHandler
+{
+  public:
+    void handle(const Message &f_message, IPacketContext &f_context) const override
+    {
+        const auto &l_casing = static_cast<const CasingPreferencesMessage &>(f_message);
+        if (l_casing.preferences.size() != 5) {
+            return;
+        }
+        f_context.setCasingPreferences(l_casing.preferences);
+    }
+};
+
+} // namespace
+
+void registerChatPackets(PacketRegistry &f_handlers, PacketCodecRegistry &f_codecs)
+{
+    const QString l_owner = QStringLiteral("core");
+
+    f_handlers.registerHandler({ao2::HEADER_CT, 2, {}}, std::make_shared<OocHandler>(), l_owner);
+    f_handlers.registerHandler({ao2::HEADER_DE, 1, {}}, std::make_shared<EvidenceDeleteHandler>(), l_owner);
+    f_handlers.registerHandler({ao2::HEADER_EE, 4, {}}, std::make_shared<EvidenceEditHandler>(), l_owner);
+    f_handlers.registerHandler({ao2::HEADER_SETCASE, 7, {}}, std::make_shared<CasingPreferencesHandler>(), l_owner);
+
+    f_codecs.registerCodec(ao2::HEADER_CT, always(), 0, std::make_shared<OocCodec>(), l_owner);
+    f_codecs.registerCodec(ao2::HEADER_DE, always(), 0, std::make_shared<EvidenceDeleteCodec>(), l_owner);
+    f_codecs.registerCodec(ao2::HEADER_EE, always(), 0, std::make_shared<EvidenceEditCodec>(), l_owner);
+    f_codecs.registerCodec(ao2::HEADER_SETCASE, always(), 0, std::make_shared<CasingPreferencesCodec>(), l_owner);
+}
+
+} // namespace akashi

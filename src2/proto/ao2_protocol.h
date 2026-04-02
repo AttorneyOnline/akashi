@@ -13,6 +13,12 @@ inline constexpr char HEADER_RM[] = "RM";
 inline constexpr char HEADER_RD[] = "RD";
 inline constexpr char HEADER_CC[] = "CC";
 
+// The chat family.
+inline constexpr char HEADER_CT[] = "CT";
+inline constexpr char HEADER_DE[] = "DE";
+inline constexpr char HEADER_EE[] = "EE";
+inline constexpr char HEADER_SETCASE[] = "SETCASE";
+
 // Server to client.
 inline constexpr char HEADER_BD[] = "BD";
 inline constexpr char HEADER_PN[] = "PN";

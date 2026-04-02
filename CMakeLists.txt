@@ -37,12 +37,6 @@ set(AKASHI_SOURCES
   src/packet/packet_casea.h
   src/packet/packet_ch.cpp
   src/packet/packet_ch.h
-  src/packet/packet_ct.cpp
-  src/packet/packet_ct.h
-  src/packet/packet_de.cpp
-  src/packet/packet_de.h
-  src/packet/packet_ee.cpp
-  src/packet/packet_ee.h
   src/packet/packet_factory.cpp
   src/packet/packet_factory.h
   src/packet/packet_generic.cpp
@@ -64,8 +58,6 @@ set(AKASHI_SOURCES
   src/packet/packet_pw.h
   src/packet/packet_rt.cpp
   src/packet/packet_rt.h
-  src/packet/packet_setcase.cpp
-  src/packet/packet_setcase.h
   src/packet/packet_zz.cpp
   src/packet/packet_zz.h
   src/acl_roles_handler.cpp
@@ -123,6 +115,9 @@ set(AKASHI_SOURCES
   src2/include/akashi/service_registry.h
   src2/include/akashi/settings.h
   src2/proto/ao2_protocol.h
+  src2/proto/chat.cpp
+  src2/proto/chat.h
+  src2/proto/chat_messages.h
   src2/proto/client_profile.h
   src2/proto/handshake.cpp
   src2/proto/handshake.h
@@ -138,6 +133,8 @@ set(AKASHI_SOURCES
   src2/proto/packet_service.h
   src2/proto/packet.cpp
   src2/proto/packet.h
+  src2/proto/text_utils.cpp
+  src2/proto/text_utils.h
 )
 
 add_library(akashi_core SHARED ${AKASHI_SOURCES})

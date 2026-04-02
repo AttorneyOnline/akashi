@@ -197,7 +197,7 @@ void AOClient::cmdLock(int argc, QStringList argv)
     area->lock();
     const QVector<AOClient *> l_clients = server->getClients();
     for (AOClient *l_client : l_clients) {
-        if (l_client->areaId() == areaId() && l_client->hasJoined()) {
+        if (l_client->areaId() == areaId() && l_client->isJoined()) {
             area->invite(l_client->clientId());
         }
     }
@@ -218,7 +218,7 @@ void AOClient::cmdSpectatable(int argc, QStringList argv)
     l_area->spectatable();
     const QVector<AOClient *> l_clients = server->getClients();
     for (AOClient *l_client : l_clients) {
-        if (l_client->areaId() == areaId() && l_client->hasJoined()) {
+        if (l_client->areaId() == areaId() && l_client->isJoined()) {
             l_area->invite(l_client->clientId());
         }
     }

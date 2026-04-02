@@ -3,6 +3,7 @@
 
 #include "akashi/config_store.h"
 #include "config_manager.h"
+#include "fake_packet_context.h"
 #include "proto/handshake.h"
 #include "proto/packet_codec.h"
 #include "proto/packet_registry.h"
@@ -12,94 +13,6 @@ namespace unittests {
 
 using namespace akashi;
 
-// Records everything a handler does, so each test can check calls and order.
-class FakeContext : public IPacketContext
-{
-  public:
-    QList<Packet> sent;
-    QStringList calls;
-    bool closed = false;
-
-    int client_id = 5;
-    QString stored_hwid;
-    ClientProfile stored_profile;
-    bool identified = false;
-    bool joined = false;
-
-    int player_count = 3;
-    QStringList character_list = {"Phoenix", "Edgeworth", "Maya"};
-    QStringList area_name_list = {"Basement", "Courtroom"};
-    QStringList music_name_list = {"song1.opus", "song2.opus"};
-    AreaSnapshot area;
-    TimerSnapshot global_timer;
-    std::optional<BanRecord> ban;
-    int selected_char_id = -100;
-
-    void sendPacket(const Packet &f_packet) override
-    {
-        sent.append(f_packet);
-        calls.append("send:" + f_packet.header());
-    }
-
-    void sendServerMessage(const QString &f_message) override
-    {
-        calls.append("message:" + f_message);
-    }
-
-    void closeConnection() override
-    {
-        closed = true;
-        calls.append("close");
-    }
-
-    int clientId() const override { return client_id; }
-    QString hwid() const override { return stored_hwid; }
-    const ClientProfile &profile() const override { return stored_profile; }
-    bool isIdentified() const override { return identified; }
-    bool hasJoined() const override { return joined; }
-
-    void setHwid(const QString &f_hwid) override
-    {
-        stored_hwid = f_hwid;
-        calls.append("setHwid");
-    }
-
-    void identify(const ClientProfile &f_profile) override
-    {
-        stored_profile = f_profile;
-        identified = true;
-        calls.append("identify");
-    }
-
-    void markJoined() override
-    {
-        joined = true;
-        calls.append("markJoined");
-    }
-
-    void finishJoin() override { calls.append("finishJoin"); }
-    void logConnectionAttempt() override { calls.append("logConnectionAttempt"); }
-    std::optional<BanRecord> hardwareBan() const override { return ban; }
-
-    int playerCount() const override { return player_count; }
-    QStringList characters() const override { return character_list; }
-    QStringList areaNames() const override { return area_name_list; }
-    QStringList musicList() const override { return music_name_list; }
-    AreaSnapshot areaState() const override { return area; }
-    TimerSnapshot globalTimer() const override { return global_timer; }
-
-    void announceCharsTaken() override { calls.append("announceCharsTaken"); }
-    void sendEvidenceList() override { calls.append("sendEvidenceList"); }
-    void sendFullArup() override { calls.append("sendFullArup"); }
-    void broadcastPlayerCount() override { calls.append("broadcastPlayerCount"); }
-
-    bool selectCharacter(int f_char_id) override
-    {
-        selected_char_id = f_char_id;
-        calls.append("selectCharacter");
-        return true;
-    }
-};
 
 class tst_Handshake : public QObject
 {

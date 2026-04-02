@@ -218,7 +218,7 @@ void Server::clientConnected()
 
     m_clients.append(client);
     connect(l_socket, &NetworkSocket::clientDisconnected, this, [=, this] {
-        if (client->hasJoined()) {
+        if (client->isJoined()) {
             decreasePlayerCount();
         }
         m_clients.removeAll(client);
@@ -553,7 +553,7 @@ void Server::handleDiscordIntegration()
 void Server::markIDFree(const int &f_user_id)
 {
     AOClient *l_client = m_clients_ids[f_user_id];
-    if (l_client && l_client->hasJoined()) {
+    if (l_client && l_client->isJoined()) {
         m_player_state_observer.unregisterClient(l_client);
     }
     m_clients_ids.insert(f_user_id, nullptr);

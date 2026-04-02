@@ -16,6 +16,7 @@ set(UNIT_TESTS
     packetcodec
     packetregistry
     handshake
+    chat
     networkservice
     service
     music_manager

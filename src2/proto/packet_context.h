@@ -56,7 +56,7 @@ class AKASHI_CORE_EXPORT IPacketContext
     virtual QString hwid() const = 0;
     virtual const ClientProfile &profile() const = 0;
     virtual bool isIdentified() const = 0;
-    virtual bool hasJoined() const = 0;
+    virtual bool isJoined() const = 0;
 
     // Handshake steps, in the order a client performs them.
     virtual void setHwid(const QString &f_hwid) = 0;
@@ -82,6 +82,25 @@ class AKASHI_CORE_EXPORT IPacketContext
     virtual void sendFullArup() = 0;
     virtual void broadcastPlayerCount() = 0;
     virtual bool selectCharacter(int f_char_id) = 0;
+
+    // Out-of-character chat.
+    virtual bool canUseOocChat() const = 0;
+    virtual QString oocName() const = 0;
+    virtual void setOocName(const QString &f_name) = 0;
+    virtual bool isInLoginPrompt() const = 0;
+    virtual void attemptLogin(const QString &f_message) = 0;
+    virtual void runCommand(const QString &f_command, const QStringList &f_arguments) = 0;
+    virtual void broadcastOoc(const QString &f_message) = 0;
+
+    // Evidence in the client's area.
+    virtual bool canModifyEvidence() = 0;
+    virtual bool isEvidenceHiddenCm() const = 0;
+    virtual int evidenceCount() const = 0;
+    virtual void deleteEvidence(int f_index) = 0;
+    virtual void replaceEvidence(int f_index, const QString &f_name, const QString &f_description, const QString &f_image) = 0;
+
+    // Casing alerts.
+    virtual void setCasingPreferences(const QList<bool> &f_preferences) = 0;
 };
 
 } // namespace akashi
