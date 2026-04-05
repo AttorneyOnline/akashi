@@ -60,6 +60,7 @@ jobs:
   
   build-windows:
     needs: formatting-check
+    if: always()
     runs-on: windows-latest
     
     steps:
