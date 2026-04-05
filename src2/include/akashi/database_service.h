@@ -35,6 +35,8 @@ class AKASHI_CORE_EXPORT DatabaseService : public QObject
     static int schemaVersion(QSqlDatabase f_database);
 
   private:
+    static void applyPragmas(QSqlDatabase &f_database);
+
     QString m_data_root;
     QStringList m_connection_names;
 };

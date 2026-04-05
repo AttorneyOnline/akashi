@@ -18,7 +18,7 @@
 #ifndef BAN_MANAGER_H
 #define BAN_MANAGER_H
 
-#define DB_VERSION 2
+#define DB_VERSION 3
 
 #include "akashi_core_export.h"
 

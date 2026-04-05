@@ -141,7 +141,7 @@ void DBManager::addBan(BanInfo ban)
     query.addBindValue(ban.ipid);
     query.addBindValue(ban.hdid);
     query.addBindValue(ban.ip.toString());
-    query.addBindValue(QString::number(ban.time));
+    query.addBindValue(QVariant::fromValue<qulonglong>(ban.time));
     query.addBindValue(ban.reason);
     query.addBindValue(ban.duration);
     query.addBindValue(ban.moderator);
@@ -232,23 +232,16 @@ QString DBManager::acl(QString moderator_name)
 
 bool DBManager::authenticate(QString username, QString password)
 {
-    QSqlQuery query_salt(db);
-    query_salt.prepare("SELECT SALT FROM users WHERE USERNAME = ?");
-    query_salt.addBindValue(username);
-    query_salt.exec();
-    if (!query_salt.first())
+    QSqlQuery query(db);
+    query.prepare("SELECT SALT, PASSWORD FROM users WHERE USERNAME = ?");
+    query.addBindValue(username);
+    query.exec();
+    if (!query.first())
         return false;
-    QString salt = query_salt.value(0).toString();
+    QString salt = query.value(0).toString();
+    QString stored_pass = query.value(1).toString();
 
     QString salted_password = CryptoHelper::hash_password(QByteArray::fromHex(salt.toUtf8()), password);
-
-    QSqlQuery query_pass(db);
-    query_pass.prepare("SELECT PASSWORD FROM users WHERE USERNAME = ?");
-    query_pass.addBindValue(username);
-    query_pass.exec();
-    if (!query_pass.first())
-        return false;
-    QString stored_pass = query_pass.value(0).toString();
 
     const bool l_matches = CryptoHelper::constantTimeEquals(salted_password, stored_pass);
 
@@ -385,8 +378,17 @@ void DBManager::updateDB(int current_version)
         });
         Q_FALLTHROUGH();
     case 1:
-        akashi::DatabaseService::applyMigration(db, DB_VERSION, [](QSqlDatabase &f_db) {
+        akashi::DatabaseService::applyMigration(db, 2, [](QSqlDatabase &f_db) {
             return QSqlQuery(f_db).exec("UPDATE users SET ACL = 'SUPER' WHERE USERNAME = 'root'");
+        });
+        Q_FALLTHROUGH();
+    case 2:
+        // The ban checks run on every connection; without these they scan the whole table.
+        akashi::DatabaseService::applyMigration(db, 3, [](QSqlDatabase &f_db) {
+            return QSqlQuery(f_db).exec("CREATE INDEX IF NOT EXISTS bans_ipid_time ON bans(IPID, TIME)") &&
+                   QSqlQuery(f_db).exec("CREATE INDEX IF NOT EXISTS bans_hdid_time ON bans(HDID, TIME)") &&
+                   QSqlQuery(f_db).exec("CREATE INDEX IF NOT EXISTS bans_ip ON bans(IP)") &&
+                   QSqlQuery(f_db).exec("CREATE INDEX IF NOT EXISTS users_username ON users(USERNAME)");
         });
         break;
     }

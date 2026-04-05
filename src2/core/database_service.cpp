@@ -40,7 +40,18 @@ bool DatabaseService::open(const QString &f_legacy_path)
         qCritical() << "Database error:" << l_database.lastError().text();
         return false;
     }
+    applyPragmas(l_database);
     return true;
+}
+
+// Write-ahead logging keeps writes from blocking readers and cuts fsync cost;
+// the busy timeout keeps future extra connections from failing outright.
+void DatabaseService::applyPragmas(QSqlDatabase &f_database)
+{
+    QSqlQuery l_query(f_database);
+    l_query.exec("PRAGMA journal_mode = WAL");
+    l_query.exec("PRAGMA synchronous = NORMAL");
+    l_query.exec("PRAGMA busy_timeout = 5000");
 }
 
 QSqlDatabase DatabaseService::database() const
@@ -61,6 +72,9 @@ QSqlDatabase DatabaseService::pluginDatabase(const QString &f_plugin_id)
     m_connection_names.append(l_name);
     if (!l_database.open()) {
         qCritical() << "Database error:" << l_database.lastError().text();
+    }
+    else {
+        applyPragmas(l_database);
     }
     return l_database;
 }
