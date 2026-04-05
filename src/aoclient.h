@@ -2155,8 +2155,8 @@ class AOClient : public QObject
     /**
      * @brief Signal connected to universal logger. Sends IC chat usage to the logger.
      */
-    void logIC(const QString &f_charName, const QString &f_oocName, const QString &f_ipid,
-               const QString &f_areaName, const QString &f_message);
+    void logIC(const QString &f_areaName, const QString &f_ipid, const QString &f_oocName, const QString &f_id, const QString &f_charName, const QString &f_message);
+
     /**
      * @brief Signal connected to universal logger. Sends music usage to the logger.
      */
@@ -2166,8 +2166,7 @@ class AOClient : public QObject
     /**
      * @brief Signal connected to universal logger. Sends OOC chat usage to the logger.
      */
-    void logOOC(const QString &f_charName, const QString &f_oocName, const QString &f_ipid,
-                const QString &f_areaName, const QString &f_message);
+    void logOOC(const QString &f_areaName, const QString &f_ipid, const QString &f_oocName, const QString &f_id, const QString &f_charName, const QString &f_message);
 
     /**
      * @brief Signal connected to universal logger. Sends login attempt to the logger.
@@ -2195,7 +2194,7 @@ class AOClient : public QObject
      * @brief Signal connected to universal logger. Sends modcall information to the logger, triggering a write of the buffer
      *        when modcall logging is used.
      */
-    void logModcall(const QString &f_charName, const QString &f_ipid, const QString &f_oocName, const QString &f_areaName);
+    void logModcall(const QString &f_area_name, const QString &f_ipid, const QString &f_ooc_name, const QString &f_id, const QString &f_char_name);
 
     /**
      * @brief Signals the server that the client has disconnected and marks its userID as free again.

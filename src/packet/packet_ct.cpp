@@ -69,5 +69,5 @@ void PacketCT::handlePacket(AreaData *area, AOClient &client) const
         AOPacket *final_packet = PacketFactory::createPacket("CT", {client.name(), l_message, "0"});
         client.getServer()->broadcast(final_packet, client.areaId());
     }
-    emit client.logOOC((client.character() + " " + client.characterName()), client.name(), client.m_ipid, area->name(), l_message);
+    emit client.logOOC(client.getServer()->getAreaById(client.areaId())->name(), client.m_ipid, client.name(), QString::number(client.clientId()), (client.character() + " " + client.characterName()), l_message);
 }

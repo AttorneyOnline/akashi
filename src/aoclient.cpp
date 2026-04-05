@@ -32,7 +32,7 @@ const QMap<QString, AOClient::CommandInfo> AOClient::COMMANDS{
     {"changeauth", {{ACLRole::SUPER}, 0, &AOClient::cmdChangeAuth}},
     {"rootpass", {{ACLRole::SUPER}, 1, &AOClient::cmdSetRootPass}},
     {"background", {{ACLRole::NONE}, 1, &AOClient::cmdSetBackground}},
-    {"side", {{ACLRole::NONE}, 0, &AOClient::cmdSetSide}},
+    {"side", {{ACLRole::CM}, 0, &AOClient::cmdSetSide}},
     {"lock_background", {{ACLRole::CM}, 0, &AOClient::cmdBgLock}},
     {"unlock_background", {{ACLRole::CM}, 0, &AOClient::cmdBgUnlock}},
     {"adduser", {{ACLRole::MODIFY_USERS}, 2, &AOClient::cmdAddUser}},

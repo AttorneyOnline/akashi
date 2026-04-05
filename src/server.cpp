@@ -329,11 +329,13 @@ void Server::broadcast(AOPacket *packet, AOPacket *other_packet, TARGET_TYPE tar
     switch (target) {
     case TARGET_TYPE::AUTHENTICATED:
         for (AOClient *l_client : qAsConst(m_clients)) {
-            if (l_client->isAuthenticated()) {
-                l_client->sendPacket(other_packet);
-            }
-            else {
-                l_client->sendPacket(packet);
+            if (l_client->m_global_enabled) {
+                if (l_client->isAuthenticated()) {
+                    l_client->sendPacket(other_packet);
+                }
+                else {
+                    l_client->sendPacket(packet);
+                }
             }
         }
     default:

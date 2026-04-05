@@ -45,11 +45,11 @@ ULogger::~ULogger()
     }
 }
 
-void ULogger::logIC(const QString &f_char_name, const QString &f_ooc_name, const QString &f_ipid,
-                    const QString &f_area_name, const QString &f_message)
+void ULogger::logIC(const QString &f_area_name, const QString &f_ipid, const QString &f_ooc_name,
+                    const QString &f_id, const QString &f_char_name, const QString &f_message)
 {
     QString l_time = QDateTime::currentDateTime().toString("ddd MMMM d yyyy | hh:mm:ss");
-    QString l_logEntry = QString(m_logtext.value("ic") + "\n").arg(l_time, f_char_name, f_ooc_name, f_ipid, f_area_name, f_message);
+    QString l_logEntry = QString(m_logtext.value("ic") + "\n").arg(l_time, f_area_name, f_ipid, f_id, f_char_name, f_ooc_name, f_message);
     updateAreaBuffer(f_area_name, l_logEntry);
 }
 
@@ -61,12 +61,12 @@ void ULogger::logMusic(const QString &f_char_name, const QString &f_ooc_name, co
     updateAreaBuffer(f_area_name, l_logEntry);
 }
 
-void ULogger::logOOC(const QString &f_char_name, const QString &f_ooc_name, const QString &f_ipid,
-                     const QString &f_area_name, const QString &f_message)
+void ULogger::logOOC(const QString &f_area_name, const QString &f_ipid, const QString &f_ooc_name,
+                     const QString &f_id, const QString &f_char_name, const QString &f_message)
 {
     QString l_time = QDateTime::currentDateTime().toString("ddd MMMM d yyyy | hh:mm:ss");
     QString l_logEntry = QString(m_logtext.value("ooc") + "\n")
-                             .arg(l_time, f_char_name, f_ooc_name, f_ipid, f_area_name, f_message);
+                             .arg(l_time, f_area_name, f_ipid, f_id, f_char_name, f_ooc_name, f_message);
     updateAreaBuffer(f_area_name, l_logEntry);
 }
 
@@ -122,11 +122,11 @@ void ULogger::logBan(const QString &f_moderator, const QString &f_target_ipid, c
     updateAreaBuffer("SERVER", l_logEntry);
 }
 
-void ULogger::logModcall(const QString &f_char_name, const QString &f_ipid, const QString &f_ooc_name, const QString &f_area_name)
+void ULogger::logModcall(const QString &f_area_name, const QString &f_ipid, const QString &f_ooc_name, const QString &f_id, const QString &f_char_name)
 {
     QString l_time = QDateTime::currentDateTime().toString("ddd MMMM d yyyy | hh:mm:ss");
     QString l_logEvent = QString(m_logtext.value("modcall") + "\n")
-                             .arg(l_time, f_area_name, f_char_name, f_ooc_name, f_ipid);
+                             .arg(l_time, f_area_name, f_ipid, f_id, f_char_name, f_ooc_name);
     updateAreaBuffer(f_area_name, l_logEvent);
 
     if (ConfigManager::loggingType() == DataTypes::LogType::MODCALL) {

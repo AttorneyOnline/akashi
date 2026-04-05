@@ -67,7 +67,7 @@ class Discord : public QObject
      * @param f_reason The reason for the modcall.
      * @param f_buffer The area's log buffer.
      */
-    void onModcallWebhookRequested(const QString &f_name, const QString &f_area, const QString &f_reason, const QQueue<QString> &f_buffer);
+    void onModcallWebhookRequested(const QString &f_name, const QString &f_area, const QString &f_id, const QString &f_reason, const QQueue<QString> &f_buffer);
 
     /**
      * @brief Handles a ban webhook request.
@@ -95,11 +95,12 @@ class Discord : public QObject
      *
      * @param f_name The name of the modcall sender.
      * @param f_area The name of the area the modcall was sent from.
+     * @param f_id The client id of the client who sent the modcall.
      * @param f_reason The reason for the modcall.
      *
      * @return A JSON document for the modcall.
      */
-    QJsonDocument constructModcallJson(const QString &f_name, const QString &f_area, const QString &f_reason) const;
+    QJsonDocument constructModcallJson(const QString &f_name, const QString &f_area, const QString &f_id, const QString &f_reason) const;
 
     /**
      * @brief Constructs a new QHttpMultiPart document for log files.
