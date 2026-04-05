@@ -5,7 +5,7 @@
 // the music, keepalive, get denied a mod command, fail a login, log in
 // with the modpass and run a database-backed mod command. Exits 0 when
 // every step got the expected answer, 1 on a timeout or protocol failure.
-// Usage: ao2_miniclient [address] [port] [modpass]
+// Usage: ao2_miniclient [address] [port] [modpass] [classic]
 #include "aopacket.h"
 #include "websocketconnection.h"
 
@@ -116,11 +116,11 @@ class MiniClient : public QObject
         case Step::OocChat:
             if (l_header == "CT" && l_content.value(1) == "Hello from the mini client!") {
                 step(Step::IcChat, "MS echo");
-                send(AOPacket("MS", {"chat", "-", "Phoenix", "normal", "Hello court, mini client speaking!", "def", "1", "0", QString::number(m_char_id), "0", "0", "0", "0", "0", "0"}));
+                send(icMessage("Hello court, mini client speaking!"));
             }
             break;
         case Step::IcChat:
-            if (l_header == "MS" && l_content.value(4) == "Hello court, mini client speaking!") {
+            if (l_header == "MS" && icEchoText(l_content) == "Hello court, mini client speaking!") {
                 m_requested_song = m_songs.value(1);
                 step(Step::MusicChange, "MC echo");
                 send(AOPacket("MC", {m_requested_song, QString::number(m_char_id), "", "0"}));
@@ -206,6 +206,17 @@ class MiniClient : public QObject
     {
         say("C: " + trim(f_packet.toString()));
         m_connection->sendPacket(f_packet);
+    }
+
+    AOPacket icMessage(const QString &f_text) const
+    {
+        return AOPacket("MS", {"chat", "-", "Phoenix", "normal", f_text, "def", "1", "0", QString::number(m_char_id), "0", "0", "0", "0", "0", "0"});
+    }
+
+    // Reads the message text back out of an MS echo.
+    QString icEchoText(const QStringList &f_content) const
+    {
+        return f_content.value(4);
     }
 
     void step(Step f_step, const QString &f_waiting_for)
