@@ -30,7 +30,7 @@
 
 void AOClient::sendEvidenceList(AreaData *area) const
 {
-    const QVector<AOClient *> l_clients = server->getClients();
+    const QVector<AOClient *> l_clients = m_server->clients();
     for (AOClient *l_client : l_clients) {
         if (l_client->areaId() == areaId())
             l_client->updateEvidenceList(area);
@@ -44,7 +44,7 @@ void AOClient::updateEvidenceList(AreaData *area)
 
     const QList<AreaData::Evidence> l_area_evidence = area->evidence();
     for (const AreaData::Evidence &evidence : l_area_evidence) {
-        if (!checkPermission(ACLRole::CM) && area->eviMod() == AreaData::EvidenceMod::HIDDEN_CM) {
+        if (!canPerform(ACLRole::CM) && area->eviMod() == AreaData::EvidenceMod::HIDDEN_CM) {
             QRegularExpression l_regex("<owner=(.*?)>");
             QRegularExpressionMatch l_match = l_regex.match(evidence.description);
             if (l_match.hasMatch()) {
@@ -66,14 +66,14 @@ QString AOClient::dezalgo(QString p_text)
     return akashi::stripZalgo(p_text);
 }
 
-bool AOClient::checkEvidenceAccess(AreaData *area)
+bool AOClient::canModifyEvidence(AreaData *area)
 {
     switch (area->eviMod()) {
     case AreaData::EvidenceMod::FFA:
         return true;
     case AreaData::EvidenceMod::CM:
     case AreaData::EvidenceMod::HIDDEN_CM:
-        return checkPermission(ACLRole::CM);
+        return canPerform(ACLRole::CM);
     case AreaData::EvidenceMod::MOD:
         return m_authenticated;
     default:
@@ -86,7 +86,7 @@ void AOClient::updateJudgeLog(AreaData *area, AOClient *client, QString action)
     QString l_timestamp = QTime::currentTime().toString("hh:mm:ss");
     QString l_uid = QString::number(client->clientId());
     QString l_char_name = client->character();
-    QString l_ipid = client->getIpid();
+    QString l_ipid = client->ipid();
     QString l_message = action;
     QString l_logmessage = QString("[%1]: [%2] %3 (%4) %5").arg(l_timestamp, l_uid, l_char_name, l_ipid, l_message);
     area->appendJudgelog(l_logmessage);
@@ -117,7 +117,7 @@ void AOClient::loginAttempt(QString message)
             sendServerMessage("Incorrect password.");
         }
         Q_EMIT logLogin((character() + " " + characterName()), name(), "Moderator",
-                      m_ipid, server->getAreaById(areaId())->name(), m_authenticated);
+                      m_ipid, m_server->areaById(areaId())->name(), m_authenticated);
         break;
     case DataTypes::AuthType::ADVANCED:
         QStringList l_login = message.split(" ");
@@ -129,9 +129,9 @@ void AOClient::loginAttempt(QString message)
         }
         QString username = l_login[0];
         QString password = l_login[1];
-        if (server->getDatabaseManager()->authenticate(username, password)) {
+        if (m_server->databaseManager()->authenticate(username, password)) {
             m_authenticated = true;
-            m_acl_role_id = server->getDatabaseManager()->getACL(username);
+            m_acl_role_id = m_server->databaseManager()->acl(username);
             m_moderator_name = username;
             sendPacket("AUTH", {"1"});
             if (m_version.release <= 2 && m_version.major <= 9 && m_version.minor <= 0)
@@ -143,7 +143,7 @@ void AOClient::loginAttempt(QString message)
             sendServerMessage("Incorrect password.");
         }
         Q_EMIT logLogin((character() + " " + characterName()), name(), username, m_ipid,
-                      server->getAreaById(areaId())->name(), m_authenticated);
+                      m_server->areaById(areaId())->name(), m_authenticated);
         break;
     }
     sendServerMessage("Exiting login prompt.");

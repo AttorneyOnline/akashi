@@ -43,9 +43,9 @@ void AOClient::cmdPlay(int argc, QStringList argv)
         sendServerMessage("The song you tried to play is not from an approved CDN.");
         return;
     }
-    AreaData *l_area = server->getAreaById(areaId());
-    const ACLRole l_role = server->getACLRolesHandler()->getRoleById(m_acl_role_id);
-    if (!l_area->owners().contains(clientId()) && !l_area->isPlayEnabled() && !l_role.checkPermission(ACLRole::CM)) { // Make sure we have permission to play music
+    AreaData *l_area = m_server->areaById(areaId());
+    const ACLRole l_role = m_server->aclRolesHandler()->roleById(m_acl_role_id);
+    if (!l_area->owners().contains(clientId()) && !l_area->isPlayEnabled() && !l_role.canPerform(ACLRole::CM)) { // Make sure we have permission to play music
         sendServerMessage("Free music play is disabled in this area.");
         return;
     }
@@ -55,8 +55,8 @@ void AOClient::cmdPlay(int argc, QStringList argv)
     else {
         l_area->changeMusic(characterName(), l_song);
     }
-    akashi::Packet music_change("MC", {l_song, QString::number(server->getCharID(character())), characterName(), "1", "0"});
-    server->broadcast(music_change, areaId());
+    akashi::Packet music_change("MC", {l_song, QString::number(m_server->characterId(character())), characterName(), "1", "0"});
+    m_server->broadcast(music_change, areaId());
 }
 
 void AOClient::cmdPlayAmbience(int argc, QStringList argv)
@@ -67,7 +67,7 @@ void AOClient::cmdPlayAmbience(int argc, QStringList argv)
         sendServerMessage("You are blocked from changing the ambience.");
         return;
     }
-    AreaData *l_area = server->getAreaById(areaId());
+    AreaData *l_area = m_server->areaById(areaId());
     if (!l_area->owners().contains(clientId()) && !l_area->isPlayEnabled()) { // Make sure we have permission to play music
         sendServerMessage("Free ambience play is disabled in this area.");
         return;
@@ -79,7 +79,7 @@ void AOClient::cmdPlayAmbience(int argc, QStringList argv)
     }
     l_area->changeAmbience(l_song);
     akashi::Packet music_change("MC", {l_song, "-1", characterName(), "1", "1"});
-    server->broadcast(music_change, areaId());
+    m_server->broadcast(music_change, areaId());
 }
 
 void AOClient::cmdCurrentMusic(int argc, QStringList argv)
@@ -87,7 +87,7 @@ void AOClient::cmdCurrentMusic(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData *l_area = server->getAreaById(areaId());
+    AreaData *l_area = m_server->areaById(areaId());
     if (!l_area->currentMusic().isEmpty() && !l_area->currentMusic().contains("~stop.mp3")) // dummy track for stopping music
         sendServerMessage("The current song is " + l_area->currentMusic() + " played by " + l_area->musicPlayerBy());
     else
@@ -105,7 +105,7 @@ void AOClient::cmdBlockDj(int argc, QStringList argv)
         return;
     }
 
-    AOClient *l_target = server->getClientByID(l_uid);
+    AOClient *l_target = m_server->clientById(l_uid);
 
     if (l_target == nullptr) {
         sendServerMessage("No client with that ID found.");
@@ -116,7 +116,7 @@ void AOClient::cmdBlockDj(int argc, QStringList argv)
         sendServerMessage("That player is already DJ blocked!");
     else {
         sendServerMessage("DJ blocked player.");
-        l_target->sendServerMessage("You were blocked from changing the music by a moderator. " + getReprimand());
+        l_target->sendServerMessage("You were blocked from changing the music by a moderator. " + reprimand());
     }
     l_target->m_is_dj_blocked = true;
 }
@@ -132,7 +132,7 @@ void AOClient::cmdUnBlockDj(int argc, QStringList argv)
         return;
     }
 
-    AOClient *l_target = server->getClientByID(l_uid);
+    AOClient *l_target = m_server->clientById(l_uid);
 
     if (l_target == nullptr) {
         sendServerMessage("No client with that ID found.");
@@ -143,7 +143,7 @@ void AOClient::cmdUnBlockDj(int argc, QStringList argv)
         sendServerMessage("That player is not DJ blocked!");
     else {
         sendServerMessage("DJ permissions restored to player.");
-        l_target->sendServerMessage("A moderator restored your music permissions. " + getReprimand(true));
+        l_target->sendServerMessage("A moderator restored your music permissions. " + reprimand(true));
     }
     l_target->m_is_dj_blocked = false;
 }
@@ -153,7 +153,7 @@ void AOClient::cmdToggleMusic(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData *l_area = server->getAreaById(areaId());
+    AreaData *l_area = m_server->areaById(areaId());
     l_area->toggleMusic();
     QString l_state = l_area->isMusicAllowed() ? "allowed." : "disallowed.";
     sendServerMessage("Music in this area is now " + l_state);
@@ -164,9 +164,9 @@ void AOClient::cmdToggleJukebox(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData *l_area = server->getAreaById(areaId());
+    AreaData *l_area = m_server->areaById(areaId());
     l_area->toggleJukebox();
-    QString l_state = l_area->isjukeboxEnabled() ? "enabled." : "disabled.";
+    QString l_state = l_area->isJukeboxEnabled() ? "enabled." : "disabled.";
     sendServerMessageArea("The jukebox in this area has been " + l_state);
 }
 
@@ -256,10 +256,10 @@ void AOClient::cmdJukeboxSkip(int argc, QStringList argv)
         l_name = characterName();
     }
 
-    AreaData *l_area = server->getAreaById(areaId());
+    AreaData *l_area = m_server->areaById(areaId());
 
-    if (l_area->isjukeboxEnabled()) {
-        if (l_area->getJukeboxQueueSize() >= 1) {
+    if (l_area->isJukeboxEnabled()) {
+        if (l_area->jukeboxQueueSize() >= 1) {
             l_area->switchJukeboxSong();
             sendServerMessageArea(l_name + " has forced a skip. Playing the next available song.");
             return;

@@ -136,7 +136,7 @@ void MedievalParser::parseDataFile()
     }
 }
 
-QString MedievalParser::getRandomPre()
+QString MedievalParser::randomPre()
 {
     if (randomInt(1, 4) != 1) {
         return "";
@@ -154,7 +154,7 @@ QString MedievalParser::getRandomPre()
     return prepended_words[prevPre];
 }
 
-QString MedievalParser::getRandomPost()
+QString MedievalParser::randomPost()
 {
     if (randomInt(1, 5) != 1) {
         return "";
@@ -358,7 +358,7 @@ QString MedievalParser::modifySpeech(QString text, bool generate_pre_and_post, b
     QString final_text;
     if (generate_pre_and_post) {
         // See if we generate a pre. If we do, modify it as well so we can perform replacements on it.
-        QString pre = getRandomPre();
+        QString pre = randomPre();
         if (pre != "") {
             final_text.append(modifySpeech(pre, false, true) + " ");
         }
@@ -493,7 +493,7 @@ QString MedievalParser::modifySpeech(QString text, bool generate_pre_and_post, b
             QChar pszLC = final_text[final_text.length() - 1];
             if (pszLC != '?' && pszLC != '!') {
                 // See if we generate a post. If we do, modify it as well so we can perform replacements on it.
-                QString post = getRandomPost();
+                QString post = randomPost();
                 if (!post.isEmpty()) {
                     if (pszLC != '.') {
                         final_text.append(". ");

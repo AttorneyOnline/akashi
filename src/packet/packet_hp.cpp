@@ -10,7 +10,7 @@ PacketHP::PacketHP(QStringList &contents) :
 {
 }
 
-PacketInfo PacketHP::getPacketInfo() const
+PacketInfo PacketHP::packetInfo() const
 {
     PacketInfo info{
         .acl_permission = ACLRole::Permission::NONE,
@@ -26,7 +26,7 @@ void PacketHP::handlePacket(AreaData *area, AOClient &client) const
         return;
     }
 
-    if (area->lockStatus() == AreaData::LockStatus::SPECTATABLE && !area->invited().contains(client.clientId()) && !client.checkPermission(ACLRole::BYPASS_LOCKS)) {
+    if (area->lockStatus() == AreaData::LockStatus::SPECTATABLE && !area->invited().contains(client.clientId()) && !client.canPerform(ACLRole::BYPASS_LOCKS)) {
         client.sendServerMessage("Spectators are blocked from using the judge controls.");
         return;
     }
@@ -44,8 +44,8 @@ void PacketHP::handlePacket(AreaData *area, AOClient &client) const
         area->changeHP(AreaData::Side::PROSECUTOR, l_newValue);
     }
 
-    client.getServer()->broadcast(akashi::Packet("HP", {"1", QString::number(area->defHP())}), area->index());
-    client.getServer()->broadcast(akashi::Packet("HP", {"2", QString::number(area->proHP())}), area->index());
+    client.server()->broadcast(akashi::Packet("HP", {"1", QString::number(area->defHP())}), area->index());
+    client.server()->broadcast(akashi::Packet("HP", {"2", QString::number(area->proHP())}), area->index());
 
     client.updateJudgeLog(area, &client, "updated the penalties");
 }

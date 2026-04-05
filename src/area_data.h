@@ -293,7 +293,7 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
      *
      * @see #m_blankpostingAllowed
      */
-    bool blankpostingAllowed() const;
+    bool isBlankpostingAllowed() const;
 
     /**
      * @brief Swaps between blankposting being allowed and forbidden in the area.
@@ -327,14 +327,14 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
      *
      * @see #m_jukebox
      */
-    bool isjukeboxEnabled() const;
+    bool isJukeboxEnabled() const;
 
     /**
      * @brief Returns the amount of songs pending in the Jukebox queue.
      *
      * @return Remaining entries of the queue as int.
      */
-    int getJukeboxQueueSize() const;
+    int jukeboxQueueSize() const;
 
     /**
      * @brief Returns whether /play is allowed without CM in this area
@@ -483,7 +483,7 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
      * @param f_isCM Whether the client is a Case Manager.
      * @return The real index in the evidence array, or -1 if not found.
      */
-    int getEvidenceIndexByVisibleIndex(int f_visibleIndex, const QString &f_clientPos, bool f_isCM) const;
+    int evidenceIndexByVisibleIndex(int f_visibleIndex, const QString &f_clientPos, bool f_isCM) const;
 
     /**
      * @brief Gets the visible index by real evidence index for a specific client position.
@@ -493,7 +493,7 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
      * @param f_isCM Whether the client is a Case Manager.
      * @return The visible index (1-based) as seen by the client, or 0 if not visible.
      */
-    int getVisibleIndexByEvidenceIndex(int f_evidenceIndex, const QString &f_clientPos, bool f_isCM) const;
+    int visibleIndexByEvidenceIndex(int f_evidenceIndex, const QString &f_clientPos, bool f_isCM) const;
 
     /**
      * @brief Returns the status of the area.
@@ -579,7 +579,7 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
      *
      * @see #m_shownameAllowed
      */
-    bool shownameAllowed() const;
+    bool isShownameAllowed() const;
 
     /**
      * @brief Returns if iniswapping is allowed in the area.
@@ -588,7 +588,7 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
      *
      * @see #m_iniswapAllowed
      */
-    bool iniswapAllowed() const;
+    bool isIniswapAllowed() const;
 
     /**
      * @brief Toggles whether iniswap is allowed in the area.
@@ -604,7 +604,7 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
      *
      * @see #m_bgLocked
      */
-    bool bgLocked() const;
+    bool isBgLocked() const;
 
     /**
      * @brief Toggles whether backgrounds changing is allowed in the area.
@@ -778,7 +778,7 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
      * @return Returns a QStringList with the format of `name: message`, with newlines at the end
      * of each message.
      */
-    QStringList getNotecards();
+    QStringList notecards();
 
     /**
      * @brief Returns the state of the testimony recording process in the area.

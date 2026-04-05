@@ -47,8 +47,8 @@ class MedievalParser
         bool used_prev_word;
     };
 
-    QString getRandomPre();
-    QString getRandomPost();
+    QString randomPre();
+    QString randomPost();
     QString modifySpeech(QString text, bool generate_pre_and_post, bool in_pre_post);
     MatchResult wordMatches(WordReplacement *rep, ReplacementCheck *check);
     bool replaceWord(ReplacementCheck *check, QString *rep, bool symbols, bool word_list_only);

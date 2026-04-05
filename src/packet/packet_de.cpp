@@ -9,7 +9,7 @@ PacketDE::PacketDE(QStringList &contents) :
 {
 }
 
-PacketInfo PacketDE::getPacketInfo() const
+PacketInfo PacketDE::packetInfo() const
 {
     PacketInfo info{
         .acl_permission = ACLRole::Permission::NONE,
@@ -20,7 +20,7 @@ PacketInfo PacketDE::getPacketInfo() const
 
 void PacketDE::handlePacket(AreaData *area, AOClient &client) const
 {
-    if (!client.checkEvidenceAccess(area))
+    if (!client.canModifyEvidence(area))
         return;
     bool is_int = false;
     int l_idx = m_content[0].toInt(&is_int);

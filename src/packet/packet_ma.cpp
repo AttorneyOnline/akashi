@@ -9,7 +9,7 @@ PacketMA::PacketMA(QStringList &contents) :
 {
 }
 
-PacketInfo PacketMA::getPacketInfo() const
+PacketInfo PacketMA::packetInfo() const
 {
     PacketInfo info{
         .acl_permission = ACLRole::Permission::NONE,
@@ -33,19 +33,19 @@ void PacketMA::handlePacket(AreaData *area, AOClient &client) const
 
     bool is_kick = duration == 0;
     if (is_kick) {
-        if (!client.checkPermission(ACLRole::KICK)) {
+        if (!client.canPerform(ACLRole::KICK)) {
             client.sendServerMessage("You do not have permission to kick users.");
             return;
         }
     }
     else {
-        if (!client.checkPermission(ACLRole::BAN)) {
+        if (!client.canPerform(ACLRole::BAN)) {
             client.sendServerMessage("You do not have permission to ban users.");
             return;
         }
     }
 
-    AOClient *target = client.getServer()->getClientByID(client_id);
+    AOClient *target = client.server()->clientById(client_id);
     if (target == nullptr) {
         client.sendServerMessage("User not found.");
         return;
@@ -59,7 +59,7 @@ void PacketMA::handlePacket(AreaData *area, AOClient &client) const
         moderator_name = "Moderator";
     }
 
-    QList<AOClient *> clients = client.getServer()->getClientsByIpid(target->m_ipid);
+    QList<AOClient *> clients = client.server()->clientsByIpid(target->m_ipid);
     if (is_kick) {
         for (AOClient *subclient : clients) {
             subclient->sendPacket("KK", {reason});
@@ -92,7 +92,7 @@ void PacketMA::handlePacket(AreaData *area, AOClient &client) const
         for (AOClient *subclient : clients) {
             ban.hdid = subclient->m_hwid;
 
-            client.getServer()->getDatabaseManager()->addBan(ban);
+            client.server()->databaseManager()->addBan(ban);
 
             subclient->sendPacket("KB", {reason});
             subclient->m_socket->close();
@@ -102,9 +102,9 @@ void PacketMA::handlePacket(AreaData *area, AOClient &client) const
 
         client.sendServerMessage("Banned " + QString::number(clients.size()) + " client(s) with ipid " + target->m_ipid + " for reason: " + reason);
 
-        int ban_id = client.getServer()->getDatabaseManager()->getBanID(ban.ip);
+        int ban_id = client.server()->databaseManager()->banId(ban.ip);
         if (ConfigManager::discordBanWebhookEnabled()) {
-            Q_EMIT client.getServer()->banWebhookRequest(ban.ipid, ban.moderator, timestamp, ban.reason, ban_id);
+            Q_EMIT client.server()->banWebhookRequest(ban.ipid, ban.moderator, timestamp, ban.reason, ban_id);
         }
     }
 }

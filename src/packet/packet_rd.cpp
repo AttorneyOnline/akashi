@@ -9,7 +9,7 @@ PacketRD::PacketRD(QStringList &contents) :
 {
 }
 
-PacketInfo PacketRD::getPacketInfo() const
+PacketInfo PacketRD::packetInfo() const
 {
     PacketInfo info{
         .acl_permission = ACLRole::Permission::NONE,
@@ -31,11 +31,11 @@ void PacketRD::handlePacket(AreaData *area, AOClient &client) const
     }
 
     client.m_joined = true;
-    client.getServer()->updateCharsTaken(area);
+    client.server()->updateCharsTaken(area);
     client.sendEvidenceList(area);
     client.sendPacket("HP", {"1", QString::number(area->defHP())});
     client.sendPacket("HP", {"2", QString::number(area->proHP())});
-    client.sendPacket("FA", client.getServer()->getAreaNames());
+    client.sendPacket("FA", client.server()->areaNames());
     // Here lies OPPASS, the genius of FanatSors who send the modpass to everyone in plain text.
     client.sendPacket("DONE");
     client.sendPacket("BN", {area->background(), area->side()});
@@ -43,9 +43,9 @@ void PacketRD::handlePacket(AreaData *area, AOClient &client) const
     client.sendServerMessage("=== MOTD ===\r\n" + ConfigManager::motd() + "\r\n=============");
 
     client.fullArup(); // Give client all the area data
-    if (client.getServer()->timer->isActive()) {
+    if (client.server()->timer->isActive()) {
         client.sendPacket("TI", {"0", "2"});
-        client.sendPacket("TI", {"0", "0", QString::number(QTime(0, 0).msecsTo(QTime(0, 0).addMSecs(client.getServer()->timer->remainingTime())))});
+        client.sendPacket("TI", {"0", "0", QString::number(QTime(0, 0).msecsTo(QTime(0, 0).addMSecs(client.server()->timer->remainingTime())))});
     }
     else {
         client.sendPacket("TI", {"0", "3"});
@@ -63,6 +63,6 @@ void PacketRD::handlePacket(AreaData *area, AOClient &client) const
     }
     Q_EMIT client.joined();
     area->addClient(-1, client.clientId());
-    client.getServer()->getPlayerStateObserver()->registerClient(&client);
+    client.server()->playerStateObserver()->registerClient(&client);
     client.arup(client.ARUPType::PLAYER_COUNT, true); // Tell everyone there is a new player
 }

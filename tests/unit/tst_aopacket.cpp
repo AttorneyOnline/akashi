@@ -78,15 +78,15 @@ void Packet::createPacketSubclass()
     QFETCH(int, expected_minargs);
 
     AOPacket *packet = PacketFactory::createPacket(incoming_packet);
-    QCOMPARE(packet->getPacketInfo().header, expected_header);
-    QCOMPARE(packet->getPacketInfo().min_args, expected_minargs);
+    QCOMPARE(packet->packetInfo().header, expected_header);
+    QCOMPARE(packet->packetInfo().min_args, expected_minargs);
 }
 
 void Packet::createPacket()
 {
     AOPacket *packet = PacketFactory::createPacket("HI", {"HDID"});
-    QCOMPARE(packet->getPacketInfo().header, "HI");
-    QCOMPARE(packet->getContent(), {"HDID"});
+    QCOMPARE(packet->packetInfo().header, "HI");
+    QCOMPARE(packet->content(), {"HDID"});
 }
 
 void Packet::createPacketFromString_data()
@@ -130,8 +130,8 @@ void Packet::createPacketFromString()
     QFETCH(QStringList, expected_content);
 
     AOPacket *packet = PacketFactory::createPacket(incoming_packet);
-    QCOMPARE(packet->getPacketInfo().header, expected_header);
-    QCOMPARE(packet->getContent(), expected_content);
+    QCOMPARE(packet->packetInfo().header, expected_header);
+    QCOMPARE(packet->content(), expected_content);
 }
 
 }

@@ -6,6 +6,6 @@ class PacketMA : public AOPacket
 {
   public:
     PacketMA(QStringList &contents);
-    virtual PacketInfo getPacketInfo() const;
+    virtual PacketInfo packetInfo() const;
     virtual void handlePacket(AreaData *area, AOClient &client) const;
 };

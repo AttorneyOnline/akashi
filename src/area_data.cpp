@@ -145,7 +145,7 @@ bool AreaData::removeOwner(int f_clientId)
     return false;
 }
 
-bool AreaData::blankpostingAllowed() const
+bool AreaData::isBlankpostingAllowed() const
 {
     return m_blankpostingAllowed;
 }
@@ -165,12 +165,12 @@ AreaData::LockStatus AreaData::lockStatus() const
     return m_locked;
 }
 
-bool AreaData::isjukeboxEnabled() const
+bool AreaData::isJukeboxEnabled() const
 {
     return m_jukebox;
 }
 
-int AreaData::getJukeboxQueueSize() const
+int AreaData::jukeboxQueueSize() const
 {
     return m_jukebox_queue.size();
 }
@@ -501,7 +501,7 @@ bool AreaData::addNotecard(const QString &f_owner_r, const QString &f_notecard_r
     return true;
 }
 
-QStringList AreaData::getNotecards()
+QStringList AreaData::notecards()
 {
     QMapIterator<QString, QString> l_noteIter(m_notecards);
     QStringList l_notecards;
@@ -602,7 +602,7 @@ void AreaData::clearAreaMessage()
     changeAreaMessage(QString{});
 }
 
-bool AreaData::bgLocked() const
+bool AreaData::isBgLocked() const
 {
     return m_bgLocked;
 }
@@ -612,7 +612,7 @@ void AreaData::toggleBgLock()
     m_bgLocked = !m_bgLocked;
 }
 
-bool AreaData::iniswapAllowed() const
+bool AreaData::isIniswapAllowed() const
 {
     return m_iniswapAllowed;
 }
@@ -622,7 +622,7 @@ void AreaData::toggleIniswap()
     m_iniswapAllowed = !m_iniswapAllowed;
 }
 
-bool AreaData::shownameAllowed() const
+bool AreaData::isShownameAllowed() const
 {
     return m_shownameAllowed;
 }
@@ -752,7 +752,7 @@ void AreaData::allowMessage()
     m_can_send_ic_messages = true;
 }
 
-int AreaData::getEvidenceIndexByVisibleIndex(int f_visibleIndex, const QString &f_clientPos, bool f_isCM) const
+int AreaData::evidenceIndexByVisibleIndex(int f_visibleIndex, const QString &f_clientPos, bool f_isCM) const
 {
     if (f_visibleIndex <= 0) {
         return -1;
@@ -786,7 +786,7 @@ int AreaData::getEvidenceIndexByVisibleIndex(int f_visibleIndex, const QString &
     return -1; // Not found
 }
 
-int AreaData::getVisibleIndexByEvidenceIndex(int f_evidenceIndex, const QString &f_clientPos, bool f_isCM) const
+int AreaData::visibleIndexByEvidenceIndex(int f_evidenceIndex, const QString &f_clientPos, bool f_isCM) const
 {
     if (f_evidenceIndex < 0 || f_evidenceIndex >= m_evidence.size()) {
         return 0; // Invalid index or not visible

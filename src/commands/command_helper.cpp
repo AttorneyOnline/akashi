@@ -38,8 +38,8 @@ void AOClient::cmdDefault(int argc, QStringList argv)
 QStringList AOClient::buildAreaList(int area_idx)
 {
     QStringList entries;
-    QString area_name = server->getAreaName(area_idx);
-    AreaData *area = server->getAreaById(area_idx);
+    QString area_name = m_server->areaName(area_idx);
+    AreaData *area = m_server->areaById(area_idx);
     entries.append("=== " + area_name + " ===");
     switch (area->lockStatus()) {
     case AreaData::LockStatus::LOCKED:
@@ -53,7 +53,7 @@ QStringList AOClient::buildAreaList(int area_idx)
         break;
     }
     entries.append("[" + QString::number(area->playerCount()) + " users][" + QVariant::fromValue(area->status()).toString().replace("_", "-") + "]");
-    const QVector<AOClient *> l_clients = server->getClients();
+    const QVector<AOClient *> l_clients = m_server->clients();
     for (AOClient *l_client : l_clients) {
         if (l_client->areaId() == area_idx && l_client->isJoined()) {
             QString char_entry = "[" + QString::number(l_client->clientId()) + "] " + l_client->character();
@@ -64,7 +64,7 @@ QStringList AOClient::buildAreaList(int area_idx)
             if (area->owners().contains(l_client->clientId()))
                 char_entry.insert(0, "[CM] ");
             if (m_authenticated)
-                char_entry += " (" + l_client->getIpid() + "): " + l_client->name();
+                char_entry += " (" + l_client->ipid() + "): " + l_client->name();
             entries.append(char_entry);
         }
     }
@@ -100,14 +100,14 @@ void AOClient::diceThrower(int sides, int dice, bool p_roll, int roll_modifier)
         sendServerMessageArea(name() + " rolled a " + QString::number(dice) + "d" + QString::number(sides) + ". Results: " + total_results);
 }
 
-QString AOClient::getAreaTimer(int area_idx, int timer_idx)
+QString AOClient::areaTimer(int area_idx, int timer_idx)
 {
-    AreaData *l_area = server->getAreaById(area_idx);
+    AreaData *l_area = m_server->areaById(area_idx);
     QTimer *l_timer;
     QString l_timer_name = (timer_idx == 0) ? "Global timer" : "Timer " + QString::number(timer_idx);
 
     if (timer_idx == 0)
-        l_timer = server->timer;
+        l_timer = m_server->timer;
     else if (timer_idx > 0 && timer_idx <= 4)
         l_timer = l_area->timers().at(timer_idx - 1);
     else
@@ -166,7 +166,7 @@ long long AOClient::parseTime(QString input)
     return l_total;
 }
 
-QString AOClient::getReprimand(bool f_positive)
+QString AOClient::reprimand(bool f_positive)
 {
     if (f_positive) {
         return ConfigManager::praiseList().at(genRand(0, ConfigManager::praiseList().size() - 1));
@@ -222,7 +222,7 @@ void AOClient::sendNotice(QString f_notice, bool f_global)
     sendServerMessageArea(l_message);
     akashi::Packet l_packet("BB", {l_message});
     if (f_global)
-        server->broadcast(l_packet);
+        m_server->broadcast(l_packet);
     else
-        server->broadcast(l_packet, areaId());
+        m_server->broadcast(l_packet, areaId());
 }

@@ -106,19 +106,19 @@ class AKASHI_CORE_EXPORT DBManager : public QObject
      * @return The ID of the ban if the IP address is actually banned,
      * or `-1` if the IP address is not actually banned.
      */
-    int getBanID(QHostAddress ip);
+    int banId(QHostAddress ip);
 
     /**
      * @overload
      */
-    int getBanID(QString hdid);
+    int banId(QString hdid);
 
     /**
      * @brief Gets the last five bans made on the server.
      *
      * @return See brief description.
      */
-    QList<BanInfo> getRecentBans();
+    QList<BanInfo> recentBans();
 
     /**
      * @brief Registers a ban into the database.
@@ -169,7 +169,7 @@ class AKASHI_CORE_EXPORT DBManager : public QObject
      *
      * @see ACLRolesHandler for details about ACL roles.
      */
-    QString getACL(QString f_username);
+    QString acl(QString f_username);
 
     /**
      * @brief Authenticates a given user.
@@ -200,7 +200,7 @@ class AKASHI_CORE_EXPORT DBManager : public QObject
      *
      * @return See brief description.
      */
-    QStringList getUsers();
+    QStringList users();
 
     /**
      * @brief Gets information on a ban.
@@ -209,7 +209,7 @@ class AKASHI_CORE_EXPORT DBManager : public QObject
      *
      * @param id A Ban ID, IPID, or HDID to search for
      */
-    QList<BanInfo> getBanInfo(QString lookup_type, QString id);
+    QList<BanInfo> banInfo(QString lookup_type, QString id);
 
     /**
      * @brief Updates a ban.

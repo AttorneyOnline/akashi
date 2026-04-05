@@ -10,7 +10,7 @@ PacketID::PacketID(QStringList &contents) :
 {
 }
 
-PacketInfo PacketID::getPacketInfo() const
+PacketInfo PacketID::packetInfo() const
 {
     PacketInfo info{
         .acl_permission = ACLRole::Permission::NONE,
@@ -50,7 +50,7 @@ void PacketID::handlePacket(AreaData *area, AOClient &client) const
         return;
     }
 
-    client.sendPacket("PN", {QString::number(client.getServer()->getPlayerCount()), QString::number(ConfigManager::maxPlayers()), ConfigManager::serverDescription()});
+    client.sendPacket("PN", {QString::number(client.server()->playerCount()), QString::number(ConfigManager::maxPlayers()), ConfigManager::serverDescription()});
 
     QStringList l_feature_list = {
         "noencryption", "yellowtext", "prezoom",

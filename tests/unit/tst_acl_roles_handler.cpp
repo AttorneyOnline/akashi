@@ -44,28 +44,28 @@ void tst_ACLRolesHandler::checkReadOnlyRoles()
         // Checks if the role exists
         QCOMPARE(m_handler->roleExists(l_role_name), true);
 
-        ACLRole l_role = m_handler->getRoleById(ACLRolesHandler::NONE_ID);
+        ACLRole l_role = m_handler->roleById(ACLRolesHandler::NONE_ID);
         // Checks every permissions
-        QCOMPARE(l_role.checkPermission(ACLRole::NONE), true);
-        QCOMPARE(l_role.checkPermission(ACLRole::KICK), false);
-        QCOMPARE(l_role.checkPermission(ACLRole::BAN), false);
-        QCOMPARE(l_role.checkPermission(ACLRole::BGLOCK), false);
-        QCOMPARE(l_role.checkPermission(ACLRole::MODIFY_USERS), false);
-        QCOMPARE(l_role.checkPermission(ACLRole::CM), false);
-        QCOMPARE(l_role.checkPermission(ACLRole::GLOBAL_TIMER), false);
-        QCOMPARE(l_role.checkPermission(ACLRole::EVI_MOD), false);
-        QCOMPARE(l_role.checkPermission(ACLRole::MOTD), false);
-        QCOMPARE(l_role.checkPermission(ACLRole::ANNOUNCE), false);
-        QCOMPARE(l_role.checkPermission(ACLRole::MODCHAT), false);
-        QCOMPARE(l_role.checkPermission(ACLRole::MUTE), false);
-        QCOMPARE(l_role.checkPermission(ACLRole::UNCM), false);
-        QCOMPARE(l_role.checkPermission(ACLRole::SAVETEST), false);
-        QCOMPARE(l_role.checkPermission(ACLRole::FORCE_CHARSELECT), false);
-        QCOMPARE(l_role.checkPermission(ACLRole::BYPASS_LOCKS), false);
-        QCOMPARE(l_role.checkPermission(ACLRole::IGNORE_BGLIST), false);
-        QCOMPARE(l_role.checkPermission(ACLRole::SEND_NOTICE), false);
-        QCOMPARE(l_role.checkPermission(ACLRole::JUKEBOX), false);
-        QCOMPARE(l_role.checkPermission(ACLRole::SUPER), false);
+        QCOMPARE(l_role.canPerform(ACLRole::NONE), true);
+        QCOMPARE(l_role.canPerform(ACLRole::KICK), false);
+        QCOMPARE(l_role.canPerform(ACLRole::BAN), false);
+        QCOMPARE(l_role.canPerform(ACLRole::BGLOCK), false);
+        QCOMPARE(l_role.canPerform(ACLRole::MODIFY_USERS), false);
+        QCOMPARE(l_role.canPerform(ACLRole::CM), false);
+        QCOMPARE(l_role.canPerform(ACLRole::GLOBAL_TIMER), false);
+        QCOMPARE(l_role.canPerform(ACLRole::EVI_MOD), false);
+        QCOMPARE(l_role.canPerform(ACLRole::MOTD), false);
+        QCOMPARE(l_role.canPerform(ACLRole::ANNOUNCE), false);
+        QCOMPARE(l_role.canPerform(ACLRole::MODCHAT), false);
+        QCOMPARE(l_role.canPerform(ACLRole::MUTE), false);
+        QCOMPARE(l_role.canPerform(ACLRole::UNCM), false);
+        QCOMPARE(l_role.canPerform(ACLRole::SAVETEST), false);
+        QCOMPARE(l_role.canPerform(ACLRole::FORCE_CHARSELECT), false);
+        QCOMPARE(l_role.canPerform(ACLRole::BYPASS_LOCKS), false);
+        QCOMPARE(l_role.canPerform(ACLRole::IGNORE_BGLIST), false);
+        QCOMPARE(l_role.canPerform(ACLRole::SEND_NOTICE), false);
+        QCOMPARE(l_role.canPerform(ACLRole::JUKEBOX), false);
+        QCOMPARE(l_role.canPerform(ACLRole::SUPER), false);
     }
 
     {
@@ -74,28 +74,28 @@ void tst_ACLRolesHandler::checkReadOnlyRoles()
         // Checks if the role exists
         QCOMPARE(m_handler->roleExists(l_role_name), true);
 
-        ACLRole l_role = m_handler->getRoleById(l_role_name);
+        ACLRole l_role = m_handler->roleById(l_role_name);
         // Checks every permissions
-        QCOMPARE(l_role.checkPermission(ACLRole::NONE), true);
-        QCOMPARE(l_role.checkPermission(ACLRole::KICK), true);
-        QCOMPARE(l_role.checkPermission(ACLRole::BAN), true);
-        QCOMPARE(l_role.checkPermission(ACLRole::BGLOCK), true);
-        QCOMPARE(l_role.checkPermission(ACLRole::MODIFY_USERS), true);
-        QCOMPARE(l_role.checkPermission(ACLRole::CM), true);
-        QCOMPARE(l_role.checkPermission(ACLRole::GLOBAL_TIMER), true);
-        QCOMPARE(l_role.checkPermission(ACLRole::EVI_MOD), true);
-        QCOMPARE(l_role.checkPermission(ACLRole::MOTD), true);
-        QCOMPARE(l_role.checkPermission(ACLRole::ANNOUNCE), true);
-        QCOMPARE(l_role.checkPermission(ACLRole::MODCHAT), true);
-        QCOMPARE(l_role.checkPermission(ACLRole::MUTE), true);
-        QCOMPARE(l_role.checkPermission(ACLRole::UNCM), true);
-        QCOMPARE(l_role.checkPermission(ACLRole::SAVETEST), true);
-        QCOMPARE(l_role.checkPermission(ACLRole::FORCE_CHARSELECT), true);
-        QCOMPARE(l_role.checkPermission(ACLRole::BYPASS_LOCKS), true);
-        QCOMPARE(l_role.checkPermission(ACLRole::IGNORE_BGLIST), true);
-        QCOMPARE(l_role.checkPermission(ACLRole::SEND_NOTICE), true);
-        QCOMPARE(l_role.checkPermission(ACLRole::JUKEBOX), true);
-        QCOMPARE(l_role.checkPermission(ACLRole::SUPER), true);
+        QCOMPARE(l_role.canPerform(ACLRole::NONE), true);
+        QCOMPARE(l_role.canPerform(ACLRole::KICK), true);
+        QCOMPARE(l_role.canPerform(ACLRole::BAN), true);
+        QCOMPARE(l_role.canPerform(ACLRole::BGLOCK), true);
+        QCOMPARE(l_role.canPerform(ACLRole::MODIFY_USERS), true);
+        QCOMPARE(l_role.canPerform(ACLRole::CM), true);
+        QCOMPARE(l_role.canPerform(ACLRole::GLOBAL_TIMER), true);
+        QCOMPARE(l_role.canPerform(ACLRole::EVI_MOD), true);
+        QCOMPARE(l_role.canPerform(ACLRole::MOTD), true);
+        QCOMPARE(l_role.canPerform(ACLRole::ANNOUNCE), true);
+        QCOMPARE(l_role.canPerform(ACLRole::MODCHAT), true);
+        QCOMPARE(l_role.canPerform(ACLRole::MUTE), true);
+        QCOMPARE(l_role.canPerform(ACLRole::UNCM), true);
+        QCOMPARE(l_role.canPerform(ACLRole::SAVETEST), true);
+        QCOMPARE(l_role.canPerform(ACLRole::FORCE_CHARSELECT), true);
+        QCOMPARE(l_role.canPerform(ACLRole::BYPASS_LOCKS), true);
+        QCOMPARE(l_role.canPerform(ACLRole::IGNORE_BGLIST), true);
+        QCOMPARE(l_role.canPerform(ACLRole::SEND_NOTICE), true);
+        QCOMPARE(l_role.canPerform(ACLRole::JUKEBOX), true);
+        QCOMPARE(l_role.canPerform(ACLRole::SUPER), true);
     }
 }
 
@@ -135,12 +135,12 @@ void tst_ACLRolesHandler::modifyRoles()
         // Checks if the role exists.
         QCOMPARE(m_handler->roleExists(l_role_id), true);
 
-        const ACLRole l_role = m_handler->getRoleById(l_role_id);
+        const ACLRole l_role = m_handler->roleById(l_role_id);
         // Checks every permissions
-        QCOMPARE(l_role.checkPermission(ACLRole::NONE), true);
-        QCOMPARE(l_role.checkPermission(ACLRole::KICK), false);
-        QCOMPARE(l_role.checkPermission(ACLRole::MODIFY_USERS), true);
-        QCOMPARE(l_role.checkPermission(ACLRole::SUPER), false);
+        QCOMPARE(l_role.canPerform(ACLRole::NONE), true);
+        QCOMPARE(l_role.canPerform(ACLRole::KICK), false);
+        QCOMPARE(l_role.canPerform(ACLRole::MODIFY_USERS), true);
+        QCOMPARE(l_role.canPerform(ACLRole::SUPER), false);
 
         // Removes the role.
         QCOMPARE(m_handler->removeRole(l_role_id), true);
@@ -166,28 +166,28 @@ void tst_ACLRolesHandler::loadRolesFromIni()
     {
         QString l_role_id = "moderator";
         QCOMPARE(m_handler->roleExists(l_role_id), true);
-        ACLRole l_role = m_handler->getRoleById(l_role_id);
+        ACLRole l_role = m_handler->roleById(l_role_id);
 
-        QCOMPARE(l_role.checkPermission(ACLRole::NONE), true);
-        QCOMPARE(l_role.checkPermission(ACLRole::KICK), true);
-        QCOMPARE(l_role.checkPermission(ACLRole::BAN), true);
-        QCOMPARE(l_role.checkPermission(ACLRole::BGLOCK), true);
-        QCOMPARE(l_role.checkPermission(ACLRole::MODIFY_USERS), false);
-        QCOMPARE(l_role.checkPermission(ACLRole::CM), false);
-        QCOMPARE(l_role.checkPermission(ACLRole::GLOBAL_TIMER), false);
-        QCOMPARE(l_role.checkPermission(ACLRole::EVI_MOD), false);
-        QCOMPARE(l_role.checkPermission(ACLRole::MOTD), false);
-        QCOMPARE(l_role.checkPermission(ACLRole::ANNOUNCE), false);
-        QCOMPARE(l_role.checkPermission(ACLRole::MODCHAT), true);
-        QCOMPARE(l_role.checkPermission(ACLRole::MUTE), true);
-        QCOMPARE(l_role.checkPermission(ACLRole::UNCM), false);
-        QCOMPARE(l_role.checkPermission(ACLRole::SAVETEST), false);
-        QCOMPARE(l_role.checkPermission(ACLRole::FORCE_CHARSELECT), false);
-        QCOMPARE(l_role.checkPermission(ACLRole::BYPASS_LOCKS), true);
-        QCOMPARE(l_role.checkPermission(ACLRole::IGNORE_BGLIST), true);
-        QCOMPARE(l_role.checkPermission(ACLRole::SEND_NOTICE), false);
-        QCOMPARE(l_role.checkPermission(ACLRole::JUKEBOX), false);
-        QCOMPARE(l_role.checkPermission(ACLRole::SUPER), false);
+        QCOMPARE(l_role.canPerform(ACLRole::NONE), true);
+        QCOMPARE(l_role.canPerform(ACLRole::KICK), true);
+        QCOMPARE(l_role.canPerform(ACLRole::BAN), true);
+        QCOMPARE(l_role.canPerform(ACLRole::BGLOCK), true);
+        QCOMPARE(l_role.canPerform(ACLRole::MODIFY_USERS), false);
+        QCOMPARE(l_role.canPerform(ACLRole::CM), false);
+        QCOMPARE(l_role.canPerform(ACLRole::GLOBAL_TIMER), false);
+        QCOMPARE(l_role.canPerform(ACLRole::EVI_MOD), false);
+        QCOMPARE(l_role.canPerform(ACLRole::MOTD), false);
+        QCOMPARE(l_role.canPerform(ACLRole::ANNOUNCE), false);
+        QCOMPARE(l_role.canPerform(ACLRole::MODCHAT), true);
+        QCOMPARE(l_role.canPerform(ACLRole::MUTE), true);
+        QCOMPARE(l_role.canPerform(ACLRole::UNCM), false);
+        QCOMPARE(l_role.canPerform(ACLRole::SAVETEST), false);
+        QCOMPARE(l_role.canPerform(ACLRole::FORCE_CHARSELECT), false);
+        QCOMPARE(l_role.canPerform(ACLRole::BYPASS_LOCKS), true);
+        QCOMPARE(l_role.canPerform(ACLRole::IGNORE_BGLIST), true);
+        QCOMPARE(l_role.canPerform(ACLRole::SEND_NOTICE), false);
+        QCOMPARE(l_role.canPerform(ACLRole::JUKEBOX), false);
+        QCOMPARE(l_role.canPerform(ACLRole::SUPER), false);
     }
 }
 

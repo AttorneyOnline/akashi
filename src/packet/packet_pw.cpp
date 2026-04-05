@@ -8,7 +8,7 @@ PacketPW::PacketPW(QStringList &contents) :
 {
 }
 
-PacketInfo PacketPW::getPacketInfo() const
+PacketInfo PacketPW::packetInfo() const
 {
     PacketInfo info{
         .acl_permission = ACLRole::Permission::NONE,

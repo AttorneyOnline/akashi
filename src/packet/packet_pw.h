@@ -7,7 +7,7 @@ class PacketPW : public AOPacket
 {
   public:
     PacketPW(QStringList &contents);
-    virtual PacketInfo getPacketInfo() const;
+    virtual PacketInfo packetInfo() const;
     virtual void handlePacket(AreaData *area, AOClient &client) const;
 };
 #endif

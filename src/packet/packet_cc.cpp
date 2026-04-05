@@ -10,7 +10,7 @@ PacketCC::PacketCC(QStringList &contents) :
 {
 }
 
-PacketInfo PacketCC::getPacketInfo() const
+PacketInfo PacketCC::packetInfo() const
 {
     PacketInfo info{
         .acl_permission = ACLRole::Permission::NONE,
@@ -34,7 +34,7 @@ void PacketCC::handlePacket(AreaData *area, AOClient &client) const
         l_selected_char_id = client.SPECTATOR_ID;
     }
 
-    if (l_selected_char_id < -1 || l_selected_char_id > client.getServer()->getCharacters().size() - 1) {
+    if (l_selected_char_id < -1 || l_selected_char_id > client.server()->characters().size() - 1) {
         client.sendPacket("KK", {"A protocol error has been encountered.Packet : CC\nCharacter ID out of range."});
         client.m_socket->close();
     }

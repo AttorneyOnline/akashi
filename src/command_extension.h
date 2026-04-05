@@ -35,7 +35,7 @@ class AKASHI_CORE_EXPORT CommandExtension
      *
      * @details The command's name act as a possible identifier to determine whatever the command extension matches a command or not.
      */
-    QString getCommandName() const;
+    QString commandName() const;
 
     /**
      * @brief Sets the command name.
@@ -56,12 +56,12 @@ class AKASHI_CORE_EXPORT CommandExtension
     /**
      * @brief Returns the aliases of the command.
      */
-    QStringList getAliases() const;
+    QStringList aliases() const;
 
     /**
      * @brief Returns the command name decorated with its aliases if any
      */
-    QString getDisplayName() const;
+    QString displayName() const;
 
     /**
      * @brief Sets the aliases of the command to the given aliases.
@@ -75,12 +75,12 @@ class AKASHI_CORE_EXPORT CommandExtension
      *
      * @param f_defaultPermissions A list of permissions to return if the extensions's permissions are not set or empty.
      */
-    QVector<ACLRole::Permission> getPermissions(QVector<ACLRole::Permission> f_defaultPermissions) const;
+    QVector<ACLRole::Permission> permissions(QVector<ACLRole::Permission> f_defaultPermissions) const;
 
     /**
      * @brief Returns the list of permissions.
      */
-    QVector<ACLRole::Permission> getPermissions() const;
+    QVector<ACLRole::Permission> permissions() const;
 
     /**
      * @brief Sets the list of permissions to the given list of permissions.
@@ -158,7 +158,7 @@ class AKASHI_CORE_EXPORT CommandExtensionCollection : public QObject
      *
      * @see CommandExtension
      */
-    QList<CommandExtension> getExtensions() const;
+    QList<CommandExtension> extensions() const;
 
     /**
      * @brief Checks if a command extension associated to the given command name or aliases exists.
@@ -176,7 +176,7 @@ class AKASHI_CORE_EXPORT CommandExtensionCollection : public QObject
      *
      * @return Returns a command extension or null if none matches.
      */
-    CommandExtension getExtension(QString f_command_name) const;
+    CommandExtension extension(QString f_command_name) const;
 
     /**
      * @brief Clear the current command extensions and load command extensions from the given file. The file must be of the INI format.

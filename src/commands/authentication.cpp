@@ -83,7 +83,7 @@ void AOClient::cmdSetRootPass(int argc, QStringList argv)
 
     QByteArray l_salt = CryptoHelper::randbytes(16);
 
-    server->getDatabaseManager()->createUser("root", l_salt, argv[0], ACLRolesHandler::SUPER_ID);
+    m_server->databaseManager()->createUser("root", l_salt, argv[0], ACLRolesHandler::SUPER_ID);
 }
 
 void AOClient::cmdAddUser(int argc, QStringList argv)
@@ -97,7 +97,7 @@ void AOClient::cmdAddUser(int argc, QStringList argv)
 
     QByteArray l_salt = CryptoHelper::randbytes(16);
 
-    if (server->getDatabaseManager()->createUser(argv[0], l_salt, argv[1], ACLRolesHandler::NONE_ID))
+    if (m_server->databaseManager()->createUser(argv[0], l_salt, argv[1], ACLRolesHandler::NONE_ID))
         sendServerMessage("Created user " + argv[0] + ".\nUse /setperms to modify their permissions.");
     else
         sendServerMessage("Unable to create user " + argv[0] + ".\nDoes a user with that name already exist?");
@@ -107,7 +107,7 @@ void AOClient::cmdRemoveUser(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
 
-    if (server->getDatabaseManager()->deleteUser(argv[0]))
+    if (m_server->databaseManager()->deleteUser(argv[0]))
         sendServerMessage("Successfully removed user " + argv[0] + ".");
     else
         sendServerMessage("Unable to remove user " + argv[0] + ".\nDoes it exist?");
@@ -115,7 +115,7 @@ void AOClient::cmdRemoveUser(int argc, QStringList argv)
 
 void AOClient::cmdListPerms(int argc, QStringList argv)
 {
-    const ACLRole l_role = server->getACLRolesHandler()->getRoleById(m_acl_role_id);
+    const ACLRole l_role = m_server->aclRolesHandler()->roleById(m_acl_role_id);
 
     ACLRole l_target_role = l_role;
     QStringList l_message;
@@ -123,25 +123,25 @@ void AOClient::cmdListPerms(int argc, QStringList argv)
         l_message.append("You have been given the following permissions:");
     }
     else {
-        if (!l_role.checkPermission(ACLRole::MODIFY_USERS)) {
+        if (!l_role.canPerform(ACLRole::MODIFY_USERS)) {
             sendServerMessage("You do not have permission to view other users' permissions.");
             return;
         }
 
         l_message.append("User " + argv[0] + " has the following permissions:");
-        l_target_role = server->getACLRolesHandler()->getRoleById(argv[0]);
+        l_target_role = m_server->aclRolesHandler()->roleById(argv[0]);
     }
 
-    if (l_target_role.getPermissions() == ACLRole::NONE) {
+    if (l_target_role.permissions() == ACLRole::NONE) {
         l_message.append("NONE");
     }
-    else if (l_target_role.checkPermission(ACLRole::SUPER)) {
+    else if (l_target_role.canPerform(ACLRole::SUPER)) {
         l_message.append("SUPER (Be careful! This grants the user all permissions.)");
     }
     else {
         const QList<ACLRole::Permission> l_permissions = ACLRole::PERMISSION_CAPTIONS.keys();
         for (const ACLRole::Permission i_permission : l_permissions) {
-            if (l_target_role.checkPermission(i_permission)) {
+            if (l_target_role.canPerform(i_permission)) {
                 l_message.append(ACLRole::PERMISSION_CAPTIONS.value(i_permission));
             }
         }
@@ -154,12 +154,12 @@ void AOClient::cmdSetPerms(int argc, QStringList argv)
     Q_UNUSED(argc);
 
     const QString l_target_acl = argv[1];
-    if (!server->getACLRolesHandler()->roleExists(l_target_acl)) {
+    if (!m_server->aclRolesHandler()->roleExists(l_target_acl)) {
         sendServerMessage("That role doesn't exist!");
         return;
     }
 
-    if (l_target_acl == ACLRolesHandler::SUPER_ID && !checkPermission(ACLRole::SUPER)) {
+    if (l_target_acl == ACLRolesHandler::SUPER_ID && !canPerform(ACLRole::SUPER)) {
         sendServerMessage("You aren't allowed to set that role!");
         return;
     }
@@ -170,7 +170,7 @@ void AOClient::cmdSetPerms(int argc, QStringList argv)
         return;
     }
 
-    if (server->getDatabaseManager()->updateACL(l_target_username, l_target_acl)) {
+    if (m_server->databaseManager()->updateACL(l_target_username, l_target_acl)) {
         sendServerMessage("Successfully applied role " + l_target_acl + " to user " + l_target_username);
     }
     else {
@@ -189,7 +189,7 @@ void AOClient::cmdListUsers(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    QStringList l_users = server->getDatabaseManager()->getUsers();
+    QStringList l_users = m_server->databaseManager()->users();
     sendServerMessage("All users:\n" + l_users.join("\n"));
 }
 
@@ -221,7 +221,7 @@ void AOClient::cmdChangePassword(int argc, QStringList argv)
     }
     else if (argc == 2) {
 
-        if (checkPermission(ACLRole::SUPER)) {
+        if (canPerform(ACLRole::SUPER)) {
             l_username = argv[1];
         }
         else {
@@ -238,7 +238,7 @@ void AOClient::cmdChangePassword(int argc, QStringList argv)
         return;
     }
 
-    if (server->getDatabaseManager()->updatePassword(l_username, l_password)) {
+    if (m_server->databaseManager()->updatePassword(l_username, l_password)) {
         sendServerMessage("Successfully changed password.");
     }
     else {

@@ -8,7 +8,7 @@ PacketSetcase::PacketSetcase(QStringList &contents) :
 {
 }
 
-PacketInfo PacketSetcase::getPacketInfo() const
+PacketInfo PacketSetcase::packetInfo() const
 {
     PacketInfo info{
         .acl_permission = ACLRole::Permission::NONE,

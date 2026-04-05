@@ -83,7 +83,7 @@ QPair<bool, DBManager::BanInfo> DBManager::isHDIDBanned(QString hdid)
     return {false, ban};
 }
 
-int DBManager::getBanID(QString hdid)
+int DBManager::banId(QString hdid)
 {
     QSqlQuery query(db);
     query.prepare("SELECT ID FROM BANS WHERE HDID = ? ORDER BY TIME DESC");
@@ -97,7 +97,7 @@ int DBManager::getBanID(QString hdid)
     }
 }
 
-int DBManager::getBanID(QHostAddress ip)
+int DBManager::banId(QHostAddress ip)
 {
     QSqlQuery query(db);
     query.prepare("SELECT ID FROM BANS WHERE IP = ? ORDER BY TIME DESC");
@@ -111,7 +111,7 @@ int DBManager::getBanID(QHostAddress ip)
     }
 }
 
-QList<DBManager::BanInfo> DBManager::getRecentBans()
+QList<DBManager::BanInfo> DBManager::recentBans()
 {
     QList<BanInfo> return_list;
     QSqlQuery query(db);
@@ -217,7 +217,7 @@ bool DBManager::deleteUser(QString username)
     }
 }
 
-QString DBManager::getACL(QString moderator_name)
+QString DBManager::acl(QString moderator_name)
 {
     if (moderator_name == "")
         return 0;
@@ -278,7 +278,7 @@ bool DBManager::updateACL(QString f_username, QString f_acl)
     return true;
 }
 
-QStringList DBManager::getUsers()
+QStringList DBManager::users()
 {
     QStringList users;
 
@@ -291,7 +291,7 @@ QStringList DBManager::getUsers()
     return users;
 }
 
-QList<DBManager::BanInfo> DBManager::getBanInfo(QString lookup_type, QString id)
+QList<DBManager::BanInfo> DBManager::banInfo(QString lookup_type, QString id)
 {
     QList<BanInfo> return_list;
     QSqlQuery query(db);

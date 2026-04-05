@@ -106,7 +106,7 @@ class AKASHI_CORE_EXPORT Server : public QObject
      *
      * @return A list of all clients currently in the server.
      */
-    QVector<AOClient *> getClients();
+    QVector<AOClient *> clients();
 
     /**
      * @brief Gets a pointer to a client by IPID.
@@ -115,9 +115,9 @@ class AKASHI_CORE_EXPORT Server : public QObject
      *
      * @return A pointer to the client if found, a nullpointer if not.
      *
-     * @see Server::getClientsByIpid() to get all clients ran by the same user.
+     * @see Server::clientsByIpid() to get all clients ran by the same user.
      */
-    AOClient *getClient(QString ipid);
+    AOClient *client(QString ipid);
 
     /**
      * @brief Gets a list of pointers to all clients with the given IPID.
@@ -126,7 +126,7 @@ class AKASHI_CORE_EXPORT Server : public QObject
      *
      * @return A list of clients whose IPID match. List may be empty.
      */
-    QList<AOClient *> getClientsByIpid(QString ipid);
+    QList<AOClient *> clientsByIpid(QString ipid);
 
     /**
      * @brief Gets a list of pointers to all clients with the given HWID.
@@ -135,7 +135,7 @@ class AKASHI_CORE_EXPORT Server : public QObject
      *
      * @return A list of clients whose HWID match. List may be empty.
      */
-    QList<AOClient *> getClientsByHwid(QString f_hwid);
+    QList<AOClient *> clientsByHwid(QString f_hwid);
 
     /**
      * @brief Gets a pointer to a client by user ID.
@@ -144,28 +144,28 @@ class AKASHI_CORE_EXPORT Server : public QObject
      *
      * @return A pointer to the client if found, a nullpointer if not.
      */
-    AOClient *getClientByID(int id);
+    AOClient *clientById(int id);
 
     /**
      * @brief Returns the overall player count in the server.
      *
      * @return The overall player count in the server.
      */
-    int getPlayerCount();
+    int playerCount();
 
     /**
      * @brief Returns a list of the available characters on the server to use.
      *
      * @return A list of the available characters on the server to use.
      */
-    QStringList getCharacters();
+    QStringList characters();
 
     /**
      * @brief Returns the count of available characters on the server to use.
      *
      * @return The count of available characters on the server to use.
      */
-    int getCharacterCount();
+    int characterCount();
 
     /**
      * @brief Get the available character by index.
@@ -174,7 +174,7 @@ class AKASHI_CORE_EXPORT Server : public QObject
      *
      * @return The character if it exist, otherwise an empty stirng.
      */
-    QString getCharacterById(int f_chr_id);
+    QString characterById(int f_chr_id);
 
     /**
      * @brief Updates which characters are taken in the given area, and sends out an update packet to
@@ -239,7 +239,7 @@ class AKASHI_CORE_EXPORT Server : public QObject
      *
      * @return The character ID if a character with that name exists in the character selection list, `-1` if not.
      */
-    int getCharID(QString char_name);
+    int characterId(QString char_name);
 
     /**
      * @brief Checks if an IP is in a subnet of the IPBanlist.
@@ -251,12 +251,12 @@ class AKASHI_CORE_EXPORT Server : public QObject
      *
      * @return A list of areas.
      */
-    QVector<AreaData *> getAreas();
+    QVector<AreaData *> areas();
 
     /**
      * @brief Returns the number of areas in the server.
      */
-    int getAreaCount();
+    int areaCount();
 
     /**
      * @brief Returns a pointer to the area associated with the index.
@@ -265,19 +265,19 @@ class AKASHI_CORE_EXPORT Server : public QObject
      *
      * @return A pointer to the area or null.
      */
-    AreaData *getAreaById(int f_area_id);
+    AreaData *areaById(int f_area_id);
 
     /**
      * @brief Getter for an area specific buffer from the logger.
      */
-    QQueue<QString> getAreaBuffer(const QString &f_areaName);
+    QQueue<QString> areaBuffer(const QString &f_areaName);
 
     /**
      * @brief The names of the areas on the server.
      *
      * @return A list of names.
      */
-    QStringList getAreaNames();
+    QStringList areaNames();
 
     /**
      * @brief Returns the name of the area associated with the index.
@@ -286,28 +286,28 @@ class AKASHI_CORE_EXPORT Server : public QObject
      *
      * @return The name of the area or empty.
      */
-    QString getAreaName(int f_area_id);
+    QString areaName(int f_area_id);
 
     /**
      * @brief Returns the available songs on the server.
      *
      * @return A list of songs.
      */
-    QStringList getMusicList();
+    QStringList musicList();
 
     /**
      * @brief Returns the available backgrounds on the server.
      *
      * @return A list of backgrounds.
      */
-    QStringList getBackgrounds();
+    QStringList backgrounds();
 
     /**
      * @brief Returns a pointer to a database manager.
      *
      * @return A pointer to a database manager.
      */
-    DBManager *getDatabaseManager();
+    DBManager *databaseManager();
 
     /**
      * @brief Returns the filesystem guard used for safe file access.
@@ -327,24 +327,24 @@ class AKASHI_CORE_EXPORT Server : public QObject
     /**
      * @brief Returns a pointer to the server's Ye Olde Chat Filter
      */
-    MedievalParser *getMedievalParser();
+    MedievalParser *medievalParser();
 
     /**
      * @brief Returns a pointer to ACL role handler.
      */
-    ACLRolesHandler *getACLRolesHandler();
+    ACLRolesHandler *aclRolesHandler();
 
     /**
      * @brief Returns a pointer to a command extension collection.
      */
-    CommandExtensionCollection *getCommandExtensionCollection();
+    CommandExtensionCollection *commandExtensionCollection();
 
     /**
      * @brief The server-wide global timer.
      */
     QTimer *timer;
 
-    QStringList getCursedCharsTaken(AOClient *client, QStringList chars_taken);
+    QStringList cursedCharsTaken(AOClient *client, QStringList chars_taken);
 
     /**
      * @brief Returns whatever a game message may be broadcasted or not.
@@ -368,7 +368,7 @@ class AKASHI_CORE_EXPORT Server : public QObject
     /**
      * @brief Returns a raw-pointer of the curr
      */
-    PlayerStateObserver *getPlayerStateObserver();
+    PlayerStateObserver *playerStateObserver();
 
   public Q_SLOTS:
     /**

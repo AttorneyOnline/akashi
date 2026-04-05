@@ -38,14 +38,14 @@ AOPacket::AOPacket(QStringList p_contents) :
 
 AOPacket::~AOPacket() {}
 
-const QStringList AOPacket::getContent()
+const QStringList AOPacket::content()
 {
     return m_content;
 }
 
 QString AOPacket::toString()
 {
-    if (!isPacketEscaped() && !(getPacketInfo().header == "LE")) {
+    if (!isPacketEscaped() && !(packetInfo().header == "LE")) {
         // We will never send unescaped data to a client, unless its evidence.
         this->escapeContent();
     }
@@ -53,7 +53,7 @@ QString AOPacket::toString()
         // Of course AO has SOME expection to the rule.
         this->escapeEvidence();
     }
-    return QString("%1#%2#%3").arg(getPacketInfo().header, m_content.join("#"), packetFinished);
+    return QString("%1#%2#%3").arg(packetInfo().header, m_content.join("#"), packetFinished);
 }
 
 QByteArray AOPacket::toUtf8()

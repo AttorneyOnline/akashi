@@ -9,7 +9,7 @@ PacketRT::PacketRT(QStringList &contents) :
 {
 }
 
-PacketInfo PacketRT::getPacketInfo() const
+PacketInfo PacketRT::packetInfo() const
 {
     PacketInfo info{
         .acl_permission = ACLRole::Permission::NONE,
@@ -25,7 +25,7 @@ void PacketRT::handlePacket(AreaData *area, AOClient &client) const
         return;
     }
 
-    if (area->lockStatus() == AreaData::LockStatus::SPECTATABLE && !area->invited().contains(client.clientId()) && !client.checkPermission(ACLRole::BYPASS_LOCKS)) {
+    if (area->lockStatus() == AreaData::LockStatus::SPECTATABLE && !area->invited().contains(client.clientId()) && !client.canPerform(ACLRole::BYPASS_LOCKS)) {
         client.sendServerMessage("Spectators are blocked from using the judge controls.");
         return;
     }
@@ -43,6 +43,6 @@ void PacketRT::handlePacket(AreaData *area, AOClient &client) const
     if (QDateTime::currentDateTime().toSecsSinceEpoch() - client.m_last_wtce_time <= 5)
         return;
     client.m_last_wtce_time = QDateTime::currentDateTime().toSecsSinceEpoch();
-    client.getServer()->broadcast(akashi::Packet("RT", m_content), client.areaId());
+    client.server()->broadcast(akashi::Packet("RT", m_content), client.areaId());
     client.updateJudgeLog(area, &client, "WT/CE");
 }

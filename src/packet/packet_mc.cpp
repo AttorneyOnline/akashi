@@ -10,7 +10,7 @@ PacketMC::PacketMC(QStringList &contents) :
 {
 }
 
-PacketInfo PacketMC::getPacketInfo() const
+PacketInfo PacketMC::packetInfo() const
 {
     PacketInfo info{
         .acl_permission = ACLRole::Permission::NONE,
@@ -29,7 +29,7 @@ void PacketMC::handlePacket(AreaData *area, AOClient &client) const
     // argument is a valid song
     QString l_argument = m_content[0];
 
-    if (client.getServer()->getMusicList().contains(l_argument) || client.m_music_manager->isCustom(client.areaId(), l_argument) || l_argument == "~stop.mp3") { // ~stop.mp3 is a dummy track used by 2.9+
+    if (client.server()->musicList().contains(l_argument) || client.m_music_manager->isCustom(client.areaId(), l_argument) || l_argument == "~stop.mp3") { // ~stop.mp3 is a dummy track used by 2.9+
         // We have a song here
 
         if (client.m_is_spectator) {
@@ -37,7 +37,7 @@ void PacketMC::handlePacket(AreaData *area, AOClient &client) const
             return;
         }
 
-        if (area->lockStatus() == AreaData::LockStatus::SPECTATABLE && !area->invited().contains(client.clientId()) && !client.checkPermission(ACLRole::BYPASS_LOCKS)) {
+        if (area->lockStatus() == AreaData::LockStatus::SPECTATABLE && !area->invited().contains(client.clientId()) && !client.canPerform(ACLRole::BYPASS_LOCKS)) {
             client.sendServerMessage("Spectators are blocked from changing the music.");
             return;
         }
@@ -46,7 +46,7 @@ void PacketMC::handlePacket(AreaData *area, AOClient &client) const
             client.sendServerMessage("You are blocked from changing the music.");
             return;
         }
-        if (!area->isMusicAllowed() && !client.checkPermission(ACLRole::CM)) {
+        if (!area->isMusicAllowed() && !client.canPerform(ACLRole::CM)) {
             client.sendServerMessage("Music is disabled in this area.");
             return;
         }
@@ -64,7 +64,7 @@ void PacketMC::handlePacket(AreaData *area, AOClient &client) const
             l_final_song = l_argument;
 
         // Jukebox intercepts the direct playing of messages.
-        if (area->isjukeboxEnabled()) {
+        if (area->isJukeboxEnabled()) {
             QString l_jukebox_reply = area->addJukeboxSong(l_final_song);
             client.sendServerMessage(l_jukebox_reply);
             return;
@@ -76,9 +76,9 @@ void PacketMC::handlePacket(AreaData *area, AOClient &client) const
             l_final_song = l_song.first;
         }
         akashi::Packet l_music_change("MC", {l_final_song, m_content[1], client.characterName(), "1", "0", l_effects});
-        client.getServer()->broadcast(l_music_change, client.areaId());
+        client.server()->broadcast(l_music_change, client.areaId());
 
-        Q_EMIT client.logMusic((client.character() + " " + client.characterName()), client.name(), client.m_ipid, client.getServer()->getAreaById(client.areaId())->name(), l_final_song);
+        Q_EMIT client.logMusic((client.character() + " " + client.characterName()), client.name(), client.m_ipid, client.server()->areaById(client.areaId())->name(), l_final_song);
 
         // Since we can't ensure a user has their showname set, we check if its empty to prevent
         //"played by ." in /currentmusic.
@@ -90,8 +90,8 @@ void PacketMC::handlePacket(AreaData *area, AOClient &client) const
         return;
     }
 
-    for (int i = 0; i < client.getServer()->getAreaCount(); i++) {
-        QString l_area = client.getServer()->getAreaName(i);
+    for (int i = 0; i < client.server()->areaCount(); i++) {
+        QString l_area = client.server()->areaName(i);
         if (l_area == l_argument) {
             client.changeArea(i);
             break;

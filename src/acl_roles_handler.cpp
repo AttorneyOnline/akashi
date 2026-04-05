@@ -106,12 +106,12 @@ ACLRole::ACLRole(ACLRole::Permissions f_permissions) :
 
 ACLRole::~ACLRole() {}
 
-ACLRole::Permissions ACLRole::getPermissions() const
+ACLRole::Permissions ACLRole::permissions() const
 {
     return m_permissions;
 }
 
-bool ACLRole::checkPermission(Permission f_permission) const
+bool ACLRole::canPerform(Permission f_permission) const
 {
     if (f_permission == ACLRole::NONE) {
         return true;
@@ -141,7 +141,7 @@ bool ACLRolesHandler::roleExists(QString f_id)
     return readonly_roles.contains(f_id) || m_roles.contains(f_id);
 }
 
-ACLRole ACLRolesHandler::getRoleById(QString f_id)
+ACLRole ACLRolesHandler::roleById(QString f_id)
 {
     f_id = f_id.toUpper();
     return readonly_roles.contains(f_id) ? readonly_roles.value(f_id) : m_roles.value(f_id);
@@ -235,13 +235,13 @@ bool ACLRolesHandler::saveFile(QString f_file_name)
 
         const ACLRole i_role = m_roles.value(l_upper_role_id);
         l_settings.beginGroup(l_upper_role_id);
-        if (i_role.checkPermission(ACLRole::SUPER)) {
+        if (i_role.canPerform(ACLRole::SUPER)) {
             l_settings.setValue(ACLRole::PERMISSION_CAPTIONS.value(ACLRole::SUPER), true);
         }
         else {
             const QList<ACLRole::Permission> l_permissions = ACLRole::PERMISSION_CAPTIONS.keys();
             for (const ACLRole::Permission i_permission : l_permissions) {
-                if (!i_role.checkPermission(i_permission)) {
+                if (!i_role.canPerform(i_permission)) {
                     continue;
                 }
                 l_settings.setValue(ACLRole::PERMISSION_CAPTIONS.value(i_permission), true);

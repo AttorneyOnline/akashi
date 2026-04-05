@@ -12,7 +12,7 @@ PacketCT::PacketCT(QStringList &contents) :
 {
 }
 
-PacketInfo PacketCT::getPacketInfo() const
+PacketInfo PacketCT::packetInfo() const
 {
     PacketInfo info{
         .acl_permission = ACLRole::Permission::NONE,
@@ -61,12 +61,12 @@ void PacketCT::handlePacket(AreaData *area, AOClient &client) const
         int l_cmd_argc = l_cmd_argv.length();
 
         client.handleCommand(l_command, l_cmd_argc, l_cmd_argv);
-        Q_EMIT client.logCMD((client.character() + " " + client.characterName()), client.m_ipid, client.name(), l_command, l_cmd_argv, client.getServer()->getAreaById(client.areaId())->name());
+        Q_EMIT client.logCMD((client.character() + " " + client.characterName()), client.m_ipid, client.name(), l_command, l_cmd_argv, client.server()->areaById(client.areaId())->name());
         return;
     }
     else {
         akashi::Packet final_packet("CT", {client.name(), l_message, "0"});
-        client.getServer()->broadcast(final_packet, client.areaId());
+        client.server()->broadcast(final_packet, client.areaId());
     }
-    Q_EMIT client.logOOC(client.getServer()->getAreaById(client.areaId())->name(), client.m_ipid, client.name(), QString::number(client.clientId()), (client.character() + " " + client.characterName()), l_message);
+    Q_EMIT client.logOOC(client.server()->areaById(client.areaId())->name(), client.m_ipid, client.name(), QString::number(client.clientId()), (client.character() + " " + client.characterName()), l_message);
 }

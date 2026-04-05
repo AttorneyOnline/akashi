@@ -8,7 +8,7 @@ PacketRC::PacketRC(QStringList &contents) :
 {
 }
 
-PacketInfo PacketRC::getPacketInfo() const
+PacketInfo PacketRC::packetInfo() const
 {
     PacketInfo info{
         .acl_permission = ACLRole::Permission::NONE,
@@ -21,5 +21,5 @@ void PacketRC::handlePacket(AreaData *area, AOClient &client) const
 {
     Q_UNUSED(area)
 
-    client.sendPacket("SC", client.getServer()->getCharacters());
+    client.sendPacket("SC", client.server()->characters());
 }

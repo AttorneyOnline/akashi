@@ -52,7 +52,7 @@ class AKASHI_CORE_EXPORT AOPacket
      *
      * @return The content of the packet.
      */
-    const QStringList getContent();
+    const QStringList content();
 
     /**
      * @brief Converts the header and content into a single string.
@@ -113,7 +113,7 @@ class AKASHI_CORE_EXPORT AOPacket
      */
     bool isPacketEscaped();
 
-    virtual PacketInfo getPacketInfo() const = 0;
+    virtual PacketInfo packetInfo() const = 0;
     virtual void handlePacket(AreaData *area, AOClient &client) const = 0;
 
     static void registerPackets();

@@ -9,7 +9,7 @@ PacketAskchaa::PacketAskchaa(QStringList &contents) :
 {
 }
 
-PacketInfo PacketAskchaa::getPacketInfo() const
+PacketInfo PacketAskchaa::packetInfo() const
 {
     PacketInfo info{
         .acl_permission = ACLRole::Permission::NONE,
@@ -24,5 +24,5 @@ void PacketAskchaa::handlePacket(AreaData *area, AOClient &client) const
     // Evidence isn't loaded during this part anymore
     // As a result, we can always send "0" for evidence length
     // Client only cares about what it gets from LE
-    client.sendPacket("SI", {QString::number(client.getServer()->getCharacterCount()), "0", QString::number(client.getServer()->getAreaCount() + client.getServer()->getMusicList().length())});
+    client.sendPacket("SI", {QString::number(client.server()->characterCount()), "0", QString::number(client.server()->areaCount() + client.server()->musicList().length())});
 }

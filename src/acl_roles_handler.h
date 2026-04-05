@@ -70,7 +70,7 @@ class AKASHI_CORE_EXPORT ACLRole
      *
      * @return Permission flags.
      */
-    ACLRole::Permissions getPermissions() const;
+    ACLRole::Permissions permissions() const;
 
     /**
      * @brief Checks if a given permission is set.
@@ -79,7 +79,7 @@ class AKASHI_CORE_EXPORT ACLRole
      *
      * @return True if the permission is set, false otherwise.
      */
-    bool checkPermission(ACLRole::Permission f_permission) const;
+    bool canPerform(ACLRole::Permission f_permission) const;
 
     /**
      * @brief Sets the permission if f_mode is true or unsets if f_mode is false.
@@ -156,7 +156,7 @@ class AKASHI_CORE_EXPORT ACLRolesHandler : public QObject
      *
      * @return A role.
      */
-    ACLRole getRoleById(QString f_id);
+    ACLRole roleById(QString f_id);
 
     /**
      * @brief Inserts a role with the given identifier. If a role already exists, it will be overwritten. Read-only roles cannot be replaced and will return false.

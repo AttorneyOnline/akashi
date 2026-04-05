@@ -106,16 +106,7 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
      *
      * @see #ipid
      */
-    QString getIpid() const;
-
-    /**
-     * @brief Getter for the client's HWID.
-     *
-     * @return The HWID.
-     *
-     * @see #hwid
-     */
-    QString getHwid() const;
+    QString ipid() const;
 
     /**
      * @brief Returns true if the client has completed the participation handshake. False otherwise.
@@ -145,7 +136,7 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
      *
      * @see #server
      */
-    Server *getServer();
+    Server *server();
 
     int clientId() const;
 
@@ -367,7 +358,7 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
      *
      * @return True if the client has permission, false otherwise.
      */
-    bool checkPermission(ACLRole::Permission f_permission) const;
+    bool canPerform(ACLRole::Permission f_permission) const;
 
     /**
      * @brief Returns if the client is a spectator.
@@ -450,7 +441,7 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
      *
      * @return True if the client can modify the evidence, false if not.
      */
-    bool checkEvidenceAccess(AreaData *area);
+    bool canModifyEvidence(AreaData *area);
 
     /**
      * @brief Changes the client's character.
@@ -721,7 +712,7 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     /**
      * @brief A pointer to the Server, used for updating server variables that depend on the client (e.g. amount of players in an area).
      */
-    Server *server;
+    Server *m_server;
 
     /**
      * @brief What the client told the server about itself, filled in during the handshake.
@@ -2096,7 +2087,7 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
      * @return A textual representation of the time left over on the Timer,
      * or `"Timer is inactive"` if the timer wasn't started.
      */
-    QString getAreaTimer(int area_idx, int timer_idx);
+    QString areaTimer(int area_idx, int timer_idx);
 
     /**
      * @brief Generates a tsuserver3-style area list to be displayed to the user in the out-of-character chat.
@@ -2145,7 +2136,7 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
      * @return The parsed text, converted into their respective durations, summed up, then converted into seconds.
      */
     long long parseTime(QString input);
-    QString getReprimand(bool f_positive = false);
+    QString reprimand(bool f_positive = false);
 
     /**
      * @brief Clears QVector of the current area.

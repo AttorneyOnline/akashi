@@ -10,7 +10,7 @@ PacketEE::PacketEE(QStringList &contents) :
 {
 }
 
-PacketInfo PacketEE::getPacketInfo() const
+PacketInfo PacketEE::packetInfo() const
 {
     PacketInfo info{
         .acl_permission = ACLRole::Permission::NONE,
@@ -21,7 +21,7 @@ PacketInfo PacketEE::getPacketInfo() const
 
 void PacketEE::handlePacket(AreaData *area, AOClient &client) const
 {
-    if (!client.checkEvidenceAccess(area))
+    if (!client.canModifyEvidence(area))
         return;
 
     int l_evi_id = m_content[0].toInt();

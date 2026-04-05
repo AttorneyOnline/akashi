@@ -8,7 +8,7 @@ PacketPR::PacketPR(int f_id, UPDATE_TYPE f_update) :
     AOPacket(QStringList{QString::number(f_id), QString::number(f_update)})
 {}
 
-PacketInfo PacketPR::getPacketInfo() const { return PacketInfo{.acl_permission = ACLRole::NONE, .min_args = 2, .header = "PR"}; }
+PacketInfo PacketPR::packetInfo() const { return PacketInfo{.acl_permission = ACLRole::NONE, .min_args = 2, .header = "PR"}; }
 
 void PacketPR::handlePacket(AreaData *area, AOClient &client) const
 {
@@ -29,7 +29,7 @@ PacketPU::PacketPU(int f_id, DATA_TYPE f_type, int f_data) :
 {
 }
 
-PacketInfo PacketPU::getPacketInfo() const
+PacketInfo PacketPU::packetInfo() const
 {
     return PacketInfo{.acl_permission = ACLRole::NONE, .min_args = 3, .header = "PU"};
 }

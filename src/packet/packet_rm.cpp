@@ -8,7 +8,7 @@ PacketRM::PacketRM(QStringList &contents) :
 {
 }
 
-PacketInfo PacketRM::getPacketInfo() const
+PacketInfo PacketRM::packetInfo() const
 {
     PacketInfo info{
         .acl_permission = ACLRole::Permission::NONE,
@@ -21,5 +21,5 @@ void PacketRM::handlePacket(AreaData *area, AOClient &client) const
 {
     Q_UNUSED(area)
 
-    client.sendPacket("SM", client.getServer()->getAreaNames() + client.getServer()->getMusicList());
+    client.sendPacket("SM", client.server()->areaNames() + client.server()->musicList());
 }

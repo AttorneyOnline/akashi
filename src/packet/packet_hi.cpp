@@ -11,7 +11,7 @@ PacketHI::PacketHI(QStringList &contents) :
 {
 }
 
-PacketInfo PacketHI::getPacketInfo() const
+PacketInfo PacketHI::packetInfo() const
 {
     PacketInfo info{
         .acl_permission = ACLRole::Permission::NONE,
@@ -33,8 +33,8 @@ void PacketHI::handlePacket(AreaData *area, AOClient &client) const
     }
 
     client.m_hwid = incoming_hwid;
-    Q_EMIT client.getServer()->logConnectionAttempt(client.m_remote_ip.toString(), client.m_ipid, client.m_hwid);
-    auto ban = client.getServer()->getDatabaseManager()->isHDIDBanned(client.m_hwid);
+    Q_EMIT client.server()->logConnectionAttempt(client.m_remote_ip.toString(), client.m_ipid, client.m_hwid);
+    auto ban = client.server()->databaseManager()->isHDIDBanned(client.m_hwid);
     if (ban.first) {
         QString ban_duration;
         if (!(ban.second.duration == -2)) {

@@ -32,9 +32,9 @@ class tst_CommandExtension : public QObject
 
     void checkAlias();
 
-    void checkPermission_data();
+    void canPerform_data();
 
-    void checkPermission();
+    void canPerform();
 
     void setPermissionsByCaption_data();
 
@@ -68,13 +68,13 @@ void tst_CommandExtension::checkCommandName()
 
     {
         CommandExtension l_extension(name);
-        QCOMPARE(l_extension.getCommandName() == expected_name, expected_result);
+        QCOMPARE(l_extension.commandName() == expected_name, expected_result);
     }
 
     {
         CommandExtension l_extension;
         l_extension.setCommandName(name);
-        QCOMPARE(l_extension.getCommandName() == expected_name, expected_result);
+        QCOMPARE(l_extension.commandName() == expected_name, expected_result);
     }
 }
 
@@ -99,20 +99,20 @@ void tst_CommandExtension::checkAliases()
     {
         CommandExtension l_extension;
         l_extension.setAliases(aliases);
-        QCOMPARE(l_extension.getAliases() == expected_aliases, expected_result);
+        QCOMPARE(l_extension.aliases() == expected_aliases, expected_result);
     }
 
     {
         CommandExtension l_extension(name);
         l_extension.setAliases(aliases);
-        QCOMPARE(l_extension.getAliases() == expected_aliases, expected_result);
+        QCOMPARE(l_extension.aliases() == expected_aliases, expected_result);
     }
 
     {
         CommandExtension l_extension;
         l_extension.setCommandName(name);
         l_extension.setAliases(aliases);
-        QCOMPARE(l_extension.getAliases() == expected_aliases, expected_result);
+        QCOMPARE(l_extension.aliases() == expected_aliases, expected_result);
     }
 }
 
@@ -166,11 +166,11 @@ void tst_CommandExtension::setPermissionsByCaption()
             QTest::ignoreMessage(QtWarningMsg, QRegularExpression("\\[Command Extension\\] error: permission \".*?\" does not exist"));
         }
         m_extension.setPermissionsByCaption(permission_captions);
-        QCOMPARE(m_extension.getPermissions() == expected_permissions, expected_result);
+        QCOMPARE(m_extension.permissions() == expected_permissions, expected_result);
     }
 }
 
-void tst_CommandExtension::checkPermission_data()
+void tst_CommandExtension::canPerform_data()
 {
     QTest::addColumn<PermVector>("permissions");
     QTest::addColumn<PermVector>("default_permissions");
@@ -181,7 +181,7 @@ void tst_CommandExtension::checkPermission_data()
     QTest::addRow("Matches default permissions") << PermVector{} << PermVector{ACLRole::NONE} << PermVector{ACLRole::NONE} << true;
 }
 
-void tst_CommandExtension::checkPermission()
+void tst_CommandExtension::canPerform()
 {
     QFETCH(PermVector, permissions);
     QFETCH(PermVector, default_permissions);
@@ -190,7 +190,7 @@ void tst_CommandExtension::checkPermission()
 
     {
         m_extension.setPermissions(permissions);
-        QCOMPARE(m_extension.getPermissions(default_permissions) == expected_permissions, expected_result);
+        QCOMPARE(m_extension.permissions(default_permissions) == expected_permissions, expected_result);
     }
 }
 

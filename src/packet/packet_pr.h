@@ -15,7 +15,7 @@ class PacketPR : public AOPacket
 
     PacketPR(QStringList &contents);
     PacketPR(int f_id, UPDATE_TYPE f_update);
-    PacketInfo getPacketInfo() const override;
+    PacketInfo packetInfo() const override;
     void handlePacket(AreaData *area, AOClient &client) const override;
 };
 
@@ -33,6 +33,6 @@ class PacketPU : public AOPacket
     PacketPU(QStringList &contents);
     PacketPU(int f_id, DATA_TYPE f_type, const QString &f_data);
     PacketPU(int f_id, DATA_TYPE f_type, int f_data);
-    PacketInfo getPacketInfo() const override;
+    PacketInfo packetInfo() const override;
     void handlePacket(AreaData *area, AOClient &client) const override;
 };

@@ -10,7 +10,7 @@ PacketZZ::PacketZZ(QStringList &contents) :
 {
 }
 
-PacketInfo PacketZZ::getPacketInfo() const
+PacketInfo PacketZZ::packetInfo() const
 {
     PacketInfo info{
         .acl_permission = ACLRole::Permission::NONE,
@@ -33,19 +33,19 @@ void PacketZZ::handlePacket(AreaData *area, AOClient &client) const
 
     int target_id = m_content.at(1).toInt();
     if (target_id != -1) {
-        AOClient *target = client.getServer()->getClientByID(target_id);
+        AOClient *target = client.server()->clientById(target_id);
         if (target) {
             l_modcallNotice.append("Regarding: " + target->name() + "\n");
         }
     }
     l_modcallNotice.append("Reason: " + m_content[0]);
 
-    const QVector<AOClient *> l_clients = client.getServer()->getClients();
+    const QVector<AOClient *> l_clients = client.server()->clients();
     for (AOClient *l_client : l_clients) {
         if (l_client->m_authenticated)
             l_client->sendPacket(akashi::Packet("ZZ", {l_modcallNotice}));
     }
-    Q_EMIT client.logModcall(client.getServer()->getAreaById(client.areaId())->name(), client.m_ipid, client.name(), QString::number(client.clientId()), (client.character() + " " + client.characterName()));
+    Q_EMIT client.logModcall(client.server()->areaById(client.areaId())->name(), client.m_ipid, client.name(), QString::number(client.clientId()), (client.character() + " " + client.characterName()));
 
     if (ConfigManager::discordModcallWebhookEnabled()) {
         QString l_name = client.name();
@@ -56,12 +56,12 @@ void PacketZZ::handlePacket(AreaData *area, AOClient &client) const
 
         QString webhook_reason = m_content.value(0);
         if (target_id != -1) {
-            AOClient *target = client.getServer()->getClientByID(target_id);
+            AOClient *target = client.server()->clientById(target_id);
             if (target) {
                 webhook_reason.append(" (Regarding: " + target->name() + ")");
             }
         }
 
-        Q_EMIT client.getServer()->modcallWebhookRequest(l_name, l_areaName, l_id, webhook_reason, client.getServer()->getAreaBuffer(l_areaName));
+        Q_EMIT client.server()->modcallWebhookRequest(l_name, l_areaName, l_id, webhook_reason, client.server()->areaBuffer(l_areaName));
     }
 }

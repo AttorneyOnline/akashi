@@ -9,7 +9,7 @@ PacketPE::PacketPE(QStringList &contents) :
 {
 }
 
-PacketInfo PacketPE::getPacketInfo() const
+PacketInfo PacketPE::packetInfo() const
 {
     PacketInfo info{
         .acl_permission = ACLRole::Permission::NONE,
@@ -20,7 +20,7 @@ PacketInfo PacketPE::getPacketInfo() const
 
 void PacketPE::handlePacket(AreaData *area, AOClient &client) const
 {
-    if (!client.checkEvidenceAccess(area))
+    if (!client.canModifyEvidence(area))
         return;
 
     QString description = m_content[1];

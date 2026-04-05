@@ -14,7 +14,7 @@ CommandExtension::CommandExtension(QString f_command_name)
 
 CommandExtension::~CommandExtension() {}
 
-QString CommandExtension::getCommandName() const
+QString CommandExtension::commandName() const
 {
     return m_command_name;
 }
@@ -30,12 +30,12 @@ bool CommandExtension::checkCommandNameAndAlias(QString f_alias) const
     return m_merged_aliases.contains(f_alias, Qt::CaseInsensitive);
 }
 
-QStringList CommandExtension::getAliases() const
+QStringList CommandExtension::aliases() const
 {
     return m_aliases;
 }
 
-QString CommandExtension::getDisplayName() const
+QString CommandExtension::displayName() const
 {
     if (m_aliases.isEmpty()) {
         return m_command_name;
@@ -54,14 +54,14 @@ void CommandExtension::setAliases(QStringList f_aliases)
     updateMergedAliases();
 }
 
-QVector<ACLRole::Permission> CommandExtension::getPermissions(QVector<ACLRole::Permission> f_defaultPermissions) const
+QVector<ACLRole::Permission> CommandExtension::permissions(QVector<ACLRole::Permission> f_defaultPermissions) const
 {
     return m_permissions.isEmpty() ? f_defaultPermissions : m_permissions;
 }
 
-QVector<ACLRole::Permission> CommandExtension::getPermissions() const
+QVector<ACLRole::Permission> CommandExtension::permissions() const
 {
-    return getPermissions(QVector<ACLRole::Permission>{});
+    return permissions(QVector<ACLRole::Permission>{});
 }
 
 void CommandExtension::setPermissions(QVector<ACLRole::Permission> f_permissions)
@@ -104,7 +104,7 @@ void CommandExtensionCollection::setCommandNameWhitelist(QStringList f_command_n
     }
 }
 
-QList<CommandExtension> CommandExtensionCollection::getExtensions() const
+QList<CommandExtension> CommandExtensionCollection::extensions() const
 {
     return m_extensions.values();
 }
@@ -123,7 +123,7 @@ bool CommandExtensionCollection::containsExtension(QString f_command_name) const
     return false;
 }
 
-CommandExtension CommandExtensionCollection::getExtension(QString f_command_name) const
+CommandExtension CommandExtensionCollection::extension(QString f_command_name) const
 {
     if (m_extensions.contains(f_command_name)) {
         return m_extensions.value(f_command_name);

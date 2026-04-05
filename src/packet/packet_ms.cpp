@@ -11,7 +11,7 @@ PacketMS::PacketMS(QStringList &contents) :
 {
 }
 
-PacketInfo PacketMS::getPacketInfo() const
+PacketInfo PacketMS::packetInfo() const
 {
     PacketInfo info{
         .acl_permission = ACLRole::Permission::NONE,
@@ -27,7 +27,7 @@ void PacketMS::handlePacket(AreaData *area, AOClient &client) const
         return;
     }
 
-    if (!area->isMessageAllowed() || !client.getServer()->isMessageAllowed()) {
+    if (!area->isMessageAllowed() || !client.server()->isMessageAllowed()) {
         return;
     }
 
@@ -45,7 +45,7 @@ void PacketMS::handlePacket(AreaData *area, AOClient &client) const
 
     if (evi_idx > 0 && area->eviMod() == AreaData::EvidenceMod::HIDDEN_CM) {
         // Find the real evidence index
-        real_evidence_idx = area->getEvidenceIndexByVisibleIndex(evi_idx, client.m_pos, client.checkPermission(ACLRole::CM));
+        real_evidence_idx = area->evidenceIndexByVisibleIndex(evi_idx, client.m_pos, client.canPerform(ACLRole::CM));
         if (real_evidence_idx >= 0) {
             area->setEvidenceOwnerToAll(real_evidence_idx);
             // Update evidence list for all clients in the area
@@ -56,14 +56,14 @@ void PacketMS::handlePacket(AreaData *area, AOClient &client) const
 
     if (evidence_presented) {
         // Send individual packets to each client with correct evidence indices
-        const QVector<AOClient *> l_clients = client.getServer()->getClients();
+        const QVector<AOClient *> l_clients = client.server()->clients();
         for (AOClient *l_client : l_clients) {
             if (l_client->areaId() == client.areaId()) {
                 // Create a copy of the packet content
                 QStringList packet_content = validated_packet.fields();
 
                 // Convert the real evidence index to visible index for this client
-                int visible_idx = area->getVisibleIndexByEvidenceIndex(real_evidence_idx, l_client->m_pos, l_client->checkPermission(ACLRole::CM));
+                int visible_idx = area->visibleIndexByEvidenceIndex(real_evidence_idx, l_client->m_pos, l_client->canPerform(ACLRole::CM));
                 packet_content[11] = QString::number(visible_idx);
 
                 // Send the customized packet to this client
@@ -74,14 +74,14 @@ void PacketMS::handlePacket(AreaData *area, AOClient &client) const
     }
     else {
         // Normal broadcast for non-evidence messages or non-HIDDEN_CM areas
-        client.getServer()->broadcast(validated_packet, client.areaId());
+        client.server()->broadcast(validated_packet, client.areaId());
     }
 
-    Q_EMIT client.logIC(client.getServer()->getAreaById(client.areaId())->name(), client.m_ipid, client.name(), QString::number(client.clientId()), (client.character() + " " + client.characterName()), client.m_last_message);
+    Q_EMIT client.logIC(client.server()->areaById(client.areaId())->name(), client.m_ipid, client.name(), QString::number(client.clientId()), (client.character() + " " + client.characterName()), client.m_last_message);
     area->updateLastICMessage(validated_packet.fields());
 
     area->startMessageFloodguard(ConfigManager::messageFloodguard());
-    client.getServer()->startMessageFloodguard(ConfigManager::globalMessageFloodguard());
+    client.server()->startMessageFloodguard(ConfigManager::globalMessageFloodguard());
 }
 
 akashi::Packet PacketMS::validateIcPacket(AOClient &client) const
@@ -101,8 +101,8 @@ akashi::Packet PacketMS::validateIcPacket(AOClient &client) const
     if (client.isSpectator() || client.character().isEmpty() || !client.m_joined)
         // Spectators cannot use IC
         return l_invalid;
-    AreaData *area = client.getServer()->getAreaById(client.areaId());
-    if (area->lockStatus() == AreaData::LockStatus::SPECTATABLE && !area->invited().contains(client.clientId()) && !client.checkPermission(ACLRole::BYPASS_LOCKS))
+    AreaData *area = client.server()->areaById(client.areaId());
+    if (area->lockStatus() == AreaData::LockStatus::SPECTATABLE && !area->invited().contains(client.clientId()) && !client.canPerform(ACLRole::BYPASS_LOCKS))
         // Non-invited players cannot speak in spectatable areas
         return l_invalid;
 
@@ -142,12 +142,12 @@ akashi::Packet PacketMS::validateIcPacket(AOClient &client) const
     if (client.character().toLower() != l_incoming_args[2].toString().toLower()) {
         // Selected char is different from supplied folder name
         // This means the user is INI-swapped
-        if (!area->iniswapAllowed()) {
+        if (!area->isIniswapAllowed()) {
             QStringList l_character_split = l_incoming_args[2].toString().split("/");
-            if (!client.getServer()->getCharacters().contains(l_character_split.at(0), Qt::CaseInsensitive) || l_character_split.contains(".."))
+            if (!client.server()->characters().contains(l_character_split.at(0), Qt::CaseInsensitive) || l_character_split.contains(".."))
                 return l_invalid;
         }
-        qDebug() << "INI swap detected from " << client.getIpid();
+        qDebug() << "INI swap detected from " << client.ipid();
     }
     client.m_current_iniswap = l_incoming_args[2].toString();
     l_args.append(l_incoming_args[2].toString());
@@ -171,7 +171,7 @@ akashi::Packet PacketMS::validateIcPacket(AOClient &client) const
         && !msg_is_testimony_cmd)                  // and it's not a testimony command,
         return l_invalid;                          // get it the hell outta here!
 
-    if (l_incoming_msg == "" && area->blankpostingAllowed() == false) {
+    if (l_incoming_msg == "" && area->isBlankpostingAllowed() == false) {
         client.sendServerMessage("Blankposting has been forbidden in this area.");
         return l_invalid;
     }
@@ -190,7 +190,7 @@ akashi::Packet PacketMS::validateIcPacket(AOClient &client) const
     }
 
     if (client.m_is_medieval || area->isMedievalMode()) {
-        QString l_medieval_message = client.getServer()->getMedievalParser()->degrootify(l_incoming_msg);
+        QString l_medieval_message = client.server()->medievalParser()->degrootify(l_incoming_msg);
         l_incoming_msg = l_medieval_message;
     }
 
@@ -222,7 +222,7 @@ akashi::Packet PacketMS::validateIcPacket(AOClient &client) const
     if (client.m_pos != l_incoming_args[5].toString()) {
         client.m_pos = l_incoming_args[5].toString();
         client.m_pos.replace("../", "").replace("..\\", "");
-        client.updateEvidenceList(client.getServer()->getAreaById(client.areaId()));
+        client.updateEvidenceList(client.server()->areaById(client.areaId()));
     }
 
     // sfx name
@@ -303,7 +303,7 @@ akashi::Packet PacketMS::validateIcPacket(AOClient &client) const
     if (l_incoming_args.length() >= 19) {
         // showname
         QString l_incoming_showname = client.dezalgo(l_incoming_args[15].toString().trimmed());
-        if (!(l_incoming_showname == client.character() || l_incoming_showname.isEmpty()) && !area->shownameAllowed()) {
+        if (!(l_incoming_showname == client.character() || l_incoming_showname.isEmpty()) && !area->isShownameAllowed()) {
             client.sendServerMessage("Shownames are not allowed in this area!");
             return l_invalid;
         }
@@ -333,7 +333,7 @@ akashi::Packet PacketMS::validateIcPacket(AOClient &client) const
         QString l_other_offset = "0";
         QString l_other_flip = "0";
         for (int l_client_id : area->joinedIDs()) {
-            AOClient *l_client = client.getServer()->getClientByID(l_client_id);
+            AOClient *l_client = client.server()->clientById(l_client_id);
             if (l_client == nullptr)
                 continue;
             if (l_client->m_pairing_with == client.m_char_id && l_other_charid != client.m_char_id && l_client->m_char_id == client.m_pairing_with && l_client->m_pos == client.m_pos) {
@@ -444,7 +444,7 @@ akashi::Packet PacketMS::validateIcPacket(AOClient &client) const
         if (area->statement() == -1) {
             l_args[4] = "~~-- " + l_args[4] + " --";
             l_args[14] = "3";
-            client.getServer()->broadcast(akashi::Packet("RT", {"testimony1", "0"}), client.areaId());
+            client.server()->broadcast(akashi::Packet("RT", {"testimony1", "0"}), client.areaId());
         }
         client.addStatement(l_args);
     }

@@ -146,7 +146,7 @@ ExitCode Server::start()
     return ExitCode::Ok;
 }
 
-QVector<AOClient *> Server::getClients()
+QVector<AOClient *> Server::clients()
 {
     return m_clients;
 }
@@ -173,7 +173,7 @@ void Server::clientConnected()
     int multiclient_count = 1;
     bool is_at_multiclient_limit = false;
     client->calculateIpid();
-    auto ban = db_manager->isIPBanned(client->getIpid());
+    auto ban = db_manager->isIPBanned(client->ipid());
     bool is_banned = ban.first;
     for (AOClient *joined_client : qAsConst(m_clients)) {
         if (client->m_remote_ip.isEqual(joined_client->m_remote_ip))
@@ -238,7 +238,7 @@ void Server::updateCharsTaken(AreaData *area)
 {
     QStringList chars_taken;
     for (const QString &cur_char : qAsConst(m_characters)) {
-        chars_taken.append(area->charactersTaken().contains(getCharID(cur_char))
+        chars_taken.append(area->charactersTaken().contains(characterId(cur_char))
                                ? QStringLiteral("-1")
                                : QStringLiteral("0"));
     }
@@ -250,7 +250,7 @@ void Server::updateCharsTaken(AreaData *area)
             if (!l_client->m_is_charcursed)
                 l_client->sendPacket(response_cc);
             else {
-                QStringList chars_taken_cursed = getCursedCharsTaken(l_client, chars_taken);
+                QStringList chars_taken_cursed = cursedCharsTaken(l_client, chars_taken);
                 akashi::Packet response_cc_cursed("CharsCheck", chars_taken_cursed);
                 l_client->sendPacket(response_cc_cursed);
             }
@@ -258,7 +258,7 @@ void Server::updateCharsTaken(AreaData *area)
     }
 }
 
-QStringList Server::getCursedCharsTaken(AOClient *client, QStringList chars_taken)
+QStringList Server::cursedCharsTaken(AOClient *client, QStringList chars_taken)
 {
     QStringList chars_taken_cursed;
     for (int i = 0; i < chars_taken.length(); i++) {
@@ -292,7 +292,7 @@ QHostAddress Server::parseToIPv4(QHostAddress f_remote_ip)
     return l_remote_ip;
 }
 
-PlayerStateObserver *Server::getPlayerStateObserver()
+PlayerStateObserver *Server::playerStateObserver()
 {
     return &m_player_state_observer;
 }
@@ -318,7 +318,7 @@ void Server::broadcast(const akashi::Packet &packet, int area_index)
 {
     QVector<int> l_client_ids = m_areas.value(area_index)->joinedIDs();
     for (const int l_client_id : qAsConst(l_client_ids)) {
-        AOClient *l_client = getClientByID(l_client_id);
+        AOClient *l_client = clientById(l_client_id);
         if (l_client) {
             l_client->sendPacket(packet);
         }
@@ -337,7 +337,7 @@ void Server::broadcast(const akashi::Packet &packet, TARGET_TYPE target)
     for (AOClient *l_client : qAsConst(m_clients)) {
         switch (target) {
         case TARGET_TYPE::MODCHAT:
-            if (l_client->checkPermission(ACLRole::MODCHAT)) {
+            if (l_client->canPerform(ACLRole::MODCHAT)) {
                 l_client->sendPacket(packet);
             }
             break;
@@ -374,54 +374,54 @@ void Server::broadcast(const akashi::Packet &packet, const akashi::Packet &other
 
 void Server::unicast(const akashi::Packet &f_packet, int f_client_id)
 {
-    AOClient *l_client = getClientByID(f_client_id);
+    AOClient *l_client = clientById(f_client_id);
     if (l_client != nullptr) { // This should never happen, but safety first.
         l_client->sendPacket(f_packet);
         return;
     }
 }
 
-QList<AOClient *> Server::getClientsByIpid(QString ipid)
+QList<AOClient *> Server::clientsByIpid(QString ipid)
 {
     QList<AOClient *> return_clients;
     for (AOClient *l_client : qAsConst(m_clients)) {
-        if (l_client->getIpid() == ipid)
+        if (l_client->ipid() == ipid)
             return_clients.append(l_client);
     }
     return return_clients;
 }
 
-QList<AOClient *> Server::getClientsByHwid(QString f_hwid)
+QList<AOClient *> Server::clientsByHwid(QString f_hwid)
 {
     QList<AOClient *> return_clients;
     for (AOClient *l_client : qAsConst(m_clients)) {
-        if (l_client->getHwid() == f_hwid)
+        if (l_client->hwid() == f_hwid)
             return_clients.append(l_client);
     }
     return return_clients;
 }
 
-AOClient *Server::getClientByID(int id)
+AOClient *Server::clientById(int id)
 {
     return m_clients_ids.value(id);
 }
 
-int Server::getPlayerCount()
+int Server::playerCount()
 {
     return m_player_count;
 }
 
-QStringList Server::getCharacters()
+QStringList Server::characters()
 {
     return m_characters;
 }
 
-int Server::getCharacterCount()
+int Server::characterCount()
 {
     return m_characters.length();
 }
 
-QString Server::getCharacterById(int f_chr_id)
+QString Server::characterById(int f_chr_id)
 {
     QString l_chr;
 
@@ -432,7 +432,7 @@ QString Server::getCharacterById(int f_chr_id)
     return l_chr;
 }
 
-int Server::getCharID(QString char_name)
+int Server::characterId(QString char_name)
 {
     for (int i = 0; i < m_characters.length(); i++) {
         if (m_characters[i].toLower() == char_name.toLower()) {
@@ -443,17 +443,17 @@ int Server::getCharID(QString char_name)
     return -1; // character does not exist
 }
 
-QVector<AreaData *> Server::getAreas()
+QVector<AreaData *> Server::areas()
 {
     return m_areas;
 }
 
-int Server::getAreaCount()
+int Server::areaCount()
 {
     return m_areas.length();
 }
 
-AreaData *Server::getAreaById(int f_area_id)
+AreaData *Server::areaById(int f_area_id)
 {
     AreaData *l_area = nullptr;
 
@@ -464,17 +464,17 @@ AreaData *Server::getAreaById(int f_area_id)
     return l_area;
 }
 
-QQueue<QString> Server::getAreaBuffer(const QString &f_areaName)
+QQueue<QString> Server::areaBuffer(const QString &f_areaName)
 {
     return logger->buffer(f_areaName);
 }
 
-QStringList Server::getAreaNames()
+QStringList Server::areaNames()
 {
     return m_area_names;
 }
 
-QString Server::getAreaName(int f_area_id)
+QString Server::areaName(int f_area_id)
 {
     QString l_name;
 
@@ -485,17 +485,17 @@ QString Server::getAreaName(int f_area_id)
     return l_name;
 }
 
-QStringList Server::getMusicList()
+QStringList Server::musicList()
 {
     return m_music_list;
 }
 
-QStringList Server::getBackgrounds()
+QStringList Server::backgrounds()
 {
     return m_backgrounds;
 }
 
-DBManager *Server::getDatabaseManager()
+DBManager *Server::databaseManager()
 {
     return db_manager;
 }
@@ -515,17 +515,17 @@ std::shared_ptr<akashi::PacketService> Server::packets()
     return m_packets;
 }
 
-MedievalParser *Server::getMedievalParser()
+MedievalParser *Server::medievalParser()
 {
     return medieval_parser;
 }
 
-ACLRolesHandler *Server::getACLRolesHandler()
+ACLRolesHandler *Server::aclRolesHandler()
 {
     return acl_roles_handler;
 }
 
-CommandExtensionCollection *Server::getCommandExtensionCollection()
+CommandExtensionCollection *Server::commandExtensionCollection()
 {
     return command_extension_collection;
 }

@@ -9,7 +9,7 @@ PacketCH::PacketCH(QStringList &contents) :
 {
 }
 
-PacketInfo PacketCH::getPacketInfo() const
+PacketInfo PacketCH::packetInfo() const
 {
     PacketInfo info{
         .acl_permission = ACLRole::Permission::NONE,

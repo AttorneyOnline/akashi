@@ -8,7 +8,7 @@ PacketGeneric::PacketGeneric(QString header, QStringList contents) :
 {
 }
 
-PacketInfo PacketGeneric::getPacketInfo() const
+PacketInfo PacketGeneric::packetInfo() const
 {
     PacketInfo info{
         .acl_permission = ACLRole::Permission::NONE,

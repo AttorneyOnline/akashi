@@ -185,7 +185,7 @@ void AOClient::cmdRollP(int argc, QStringList argv)
 
 void AOClient::cmdTimer(int argc, QStringList argv)
 {
-    AreaData *l_area = server->getAreaById(areaId());
+    AreaData *l_area = m_server->areaById(areaId());
 
     // Called without arguments
     // Shows a brief of all timers
@@ -193,7 +193,7 @@ void AOClient::cmdTimer(int argc, QStringList argv)
         QStringList l_timers;
         l_timers.append("Currently active timers:");
         for (int i = 0; i <= 4; i++) {
-            l_timers.append(getAreaTimer(l_area->index(), i));
+            l_timers.append(areaTimer(l_area->index(), i));
         }
         sendServerMessage(l_timers.join("\n"));
         return;
@@ -210,7 +210,7 @@ void AOClient::cmdTimer(int argc, QStringList argv)
     // Called with one argument
     // Shows the status of one timer
     if (argc == 1) {
-        sendServerMessage(getAreaTimer(l_area->index(), l_timer_id));
+        sendServerMessage(areaTimer(l_area->index(), l_timer_id));
         return;
     }
 
@@ -221,11 +221,11 @@ void AOClient::cmdTimer(int argc, QStringList argv)
     // Check against permissions if global timer is selected
     QTimer *l_requested_timer;
     if (l_timer_id == 0) {
-        if (!checkPermission(ACLRole::GLOBAL_TIMER)) {
+        if (!canPerform(ACLRole::GLOBAL_TIMER)) {
             sendServerMessage("You are not authorized to alter the global timer.");
             return;
         }
-        l_requested_timer = server->timer;
+        l_requested_timer = m_server->timer;
     }
     else
         l_requested_timer = l_area->timers().at(l_timer_id - 1);
@@ -242,8 +242,8 @@ void AOClient::cmdTimer(int argc, QStringList argv)
         l_requested_timer->start();
         sendServerMessage("Set timer " + QString::number(l_timer_id) + " to " + argv[1] + ".");
         akashi::Packet l_update_timer("TI", {QString::number(l_timer_id), "0", QString::number(QTime(0, 0).msecsTo(l_requested_time))});
-        l_is_global ? server->broadcast(l_show_timer) : server->broadcast(l_show_timer, areaId()); // Show the timer
-        l_is_global ? server->broadcast(l_update_timer) : server->broadcast(l_update_timer, areaId());
+        l_is_global ? m_server->broadcast(l_show_timer) : m_server->broadcast(l_show_timer, areaId()); // Show the timer
+        l_is_global ? m_server->broadcast(l_update_timer) : m_server->broadcast(l_update_timer, areaId());
         return;
     }
     // Otherwise, update the state of the timer
@@ -252,22 +252,22 @@ void AOClient::cmdTimer(int argc, QStringList argv)
             l_requested_timer->start();
             sendServerMessage("Started timer " + QString::number(l_timer_id) + ".");
             akashi::Packet l_update_timer("TI", {QString::number(l_timer_id), "0", QString::number(QTime(0, 0).msecsTo(QTime(0, 0).addMSecs(l_requested_timer->remainingTime())))});
-            l_is_global ? server->broadcast(l_show_timer) : server->broadcast(l_show_timer, areaId());
-            l_is_global ? server->broadcast(l_update_timer) : server->broadcast(l_update_timer, areaId());
+            l_is_global ? m_server->broadcast(l_show_timer) : m_server->broadcast(l_show_timer, areaId());
+            l_is_global ? m_server->broadcast(l_update_timer) : m_server->broadcast(l_update_timer, areaId());
         }
         else if (argv[1] == "pause" || argv[1] == "stop") {
             l_requested_timer->setInterval(l_requested_timer->remainingTime());
             l_requested_timer->stop();
             sendServerMessage("Stopped timer " + QString::number(l_timer_id) + ".");
             akashi::Packet l_update_timer("TI", {QString::number(l_timer_id), "1", QString::number(QTime(0, 0).msecsTo(QTime(0, 0).addMSecs(l_requested_timer->interval())))});
-            l_is_global ? server->broadcast(l_update_timer) : server->broadcast(l_update_timer, areaId());
+            l_is_global ? m_server->broadcast(l_update_timer) : m_server->broadcast(l_update_timer, areaId());
         }
         else if (argv[1] == "hide" || argv[1] == "unset") {
             l_requested_timer->setInterval(0);
             l_requested_timer->stop();
             sendServerMessage("Hid timer " + QString::number(l_timer_id) + ".");
             // Hide the timer
-            l_is_global ? server->broadcast(l_hide_timer) : server->broadcast(l_hide_timer, areaId());
+            l_is_global ? m_server->broadcast(l_hide_timer) : m_server->broadcast(l_hide_timer, areaId());
         }
     }
 }
@@ -276,7 +276,7 @@ void AOClient::cmdNoteCard(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
 
-    AreaData *l_area = server->getAreaById(areaId());
+    AreaData *l_area = m_server->areaById(areaId());
     QString l_notecard = argv.join(" ");
     l_area->addNotecard(character(), l_notecard);
     sendServerMessageArea(character() + " wrote a note card.");
@@ -287,7 +287,7 @@ void AOClient::cmdNoteCardClear(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData *l_area = server->getAreaById(areaId());
+    AreaData *l_area = m_server->areaById(areaId());
     if (!l_area->addNotecard(character(), QString())) {
         sendServerMessageArea(character() + " erased their note card.");
     }
@@ -298,8 +298,8 @@ void AOClient::cmdNoteCardReveal(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData *l_area = server->getAreaById(areaId());
-    const QStringList l_notecards = l_area->getNotecards();
+    AreaData *l_area = m_server->areaById(areaId());
+    const QStringList l_notecards = l_area->notecards();
 
     if (l_notecards.isEmpty()) {
         sendServerMessage("There are no cards to reveal in this area.");
@@ -334,7 +334,7 @@ void AOClient::cmdSubTheme(int argc, QStringList argv)
     Q_UNUSED(argc);
 
     QString l_subtheme = argv.join(" ");
-    const QVector<AOClient *> l_clients = server->getClients();
+    const QVector<AOClient *> l_clients = m_server->clients();
     for (AOClient *l_client : l_clients) {
         if (l_client->areaId() == areaId())
             l_client->sendPacket("ST", {l_subtheme, "1"});
