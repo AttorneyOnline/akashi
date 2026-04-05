@@ -59,6 +59,12 @@ class ULogger : public QObject
     void logIC(const QString &f_area_name, const QString &f_ipid, const QString &f_ooc_name, const QString &f_id, const QString &f_char_name, const QString &f_message);
 
     /**
+     * @brief Adds a music log entry to the area buffer and writes it to the respective log format.
+     */
+    void logMusic(const QString &f_char_name, const QString &f_ooc_name, const QString &f_ipid,
+                  const QString &f_area_name, const QString &f_track);
+
+    /**
      * @brief Adds an OOC log entry to the area buffer and writes it to the respective log format.
      */
     void logOOC(const QString &f_area_name, const QString &f_ipid, const QString &f_ooc_name, const QString &f_id, const QString &f_char_name, const QString &f_message);
@@ -133,6 +139,7 @@ class ULogger : public QObject
      */
     QHash<QString, QString> m_logtext{
         {"ic", "[%1][%5][IC][%2(%3)][%4]%6"},
+        {"music", "[%1][%5][MUSIC][%2(%3)][%4]%6"},
         {"ooc", "[%1][%5][OOC][%2(%3)][%4]%6"},
         {"login", "[%1][LOGIN][%2][%3][%4(%5)]"},
         {"cmdlogin", "[%1][%2][LOGIN][%5][%3(%4)]"},

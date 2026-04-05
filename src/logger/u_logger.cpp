@@ -53,6 +53,14 @@ void ULogger::logIC(const QString &f_area_name, const QString &f_ipid, const QSt
     updateAreaBuffer(f_area_name, l_logEntry);
 }
 
+void ULogger::logMusic(const QString &f_char_name, const QString &f_ooc_name, const QString &f_ipid,
+                       const QString &f_area_name, const QString &f_track)
+{
+    QString l_time = QDateTime::currentDateTime().toString("ddd MMMM d yyyy | hh:mm:ss");
+    QString l_logEntry = QString(m_logtext.value("music") + "\n").arg(l_time, f_char_name, f_ooc_name, f_ipid, f_area_name, f_track);
+    updateAreaBuffer(f_area_name, l_logEntry);
+}
+
 void ULogger::logOOC(const QString &f_area_name, const QString &f_ipid, const QString &f_ooc_name,
                      const QString &f_id, const QString &f_char_name, const QString &f_message)
 {
