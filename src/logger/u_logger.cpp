@@ -54,7 +54,7 @@ void ULogger::logIC(const QString &f_area_name, const QString &f_ipid, const QSt
 }
 
 void ULogger::logMusic(const QString &f_char_name, const QString &f_ooc_name, const QString &f_ipid,
-                    const QString &f_area_name, const QString &f_track)
+                       const QString &f_area_name, const QString &f_track)
 {
     QString l_time = QDateTime::currentDateTime().toString("ddd MMMM d yyyy | hh:mm:ss");
     QString l_logEntry = QString(m_logtext.value("music") + "\n").arg(l_time, f_char_name, f_ooc_name, f_ipid, f_area_name, f_track);
