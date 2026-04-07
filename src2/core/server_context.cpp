@@ -54,6 +54,15 @@ ExitCode ServerContext::start()
     if (code != ExitCode::Ok) {
         return code;
     }
+
+    // Nightly database housekeeping, held back while too many players are on.
+    std::function<bool()> l_busy_check;
+    const int l_max_players = ConfigManager::maintenanceMaxPlayers();
+    if (l_max_players >= 0) {
+        Server *l_server = m_server;
+        l_busy_check = [l_server, l_max_players] { return l_server->playerCount() > l_max_players; };
+    }
+    m_database_service->scheduleMaintenance(ConfigManager::maintenanceTime(), ConfigManager::maintenanceVacuum(), l_busy_check);
     setStage(Stage::ContentLoaded);
     setStage(Stage::PluginsLoaded);
     setStage(Stage::Listening);

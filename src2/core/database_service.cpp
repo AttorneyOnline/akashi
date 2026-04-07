@@ -2,10 +2,12 @@
 
 #include <QDebug>
 #include <QDir>
+#include <QElapsedTimer>
 #include <QFile>
 #include <QFileInfo>
 #include <QSqlError>
 #include <QSqlQuery>
+#include <QTimer>
 
 namespace akashi {
 
@@ -107,6 +109,66 @@ int DatabaseService::schemaVersion(QSqlDatabase f_database)
     QSqlQuery l_query(f_database);
     l_query.exec("PRAGMA user_version");
     return l_query.first() ? l_query.value(0).toInt() : 0;
+}
+
+void DatabaseService::scheduleMaintenance(const QTime &f_time, bool f_vacuum, const std::function<bool()> &f_busy_check)
+{
+    m_maintenance_time = f_time;
+    m_maintenance_vacuum = f_vacuum;
+    m_busy_check = f_busy_check;
+    if (!f_time.isValid()) {
+        return;
+    }
+
+    if (!m_maintenance_timer) {
+        m_maintenance_timer = new QTimer(this);
+        m_maintenance_timer->setSingleShot(true);
+        connect(m_maintenance_timer, &QTimer::timeout, this, &DatabaseService::onMaintenanceDue);
+    }
+    m_maintenance_timer->start(msecsToNextOccurrence(f_time, QDateTime::currentDateTime()));
+    qInfo() << "Database maintenance scheduled daily at" << f_time.toString("hh:mm");
+}
+
+void DatabaseService::onMaintenanceDue()
+{
+    // A busy server gets another try in half an hour.
+    if (m_busy_check && m_busy_check()) {
+        qInfo() << "Database maintenance postponed, the server is busy.";
+        m_maintenance_timer->start(30 * 60 * 1000);
+        return;
+    }
+
+    runMaintenance();
+    m_maintenance_timer->start(msecsToNextOccurrence(m_maintenance_time, QDateTime::currentDateTime()));
+}
+
+void DatabaseService::runMaintenance()
+{
+    for (const QString &l_name : std::as_const(m_connection_names)) {
+        QSqlDatabase l_database = QSqlDatabase::database(l_name);
+        if (!l_database.isOpen()) {
+            continue;
+        }
+
+        QElapsedTimer l_stopwatch;
+        l_stopwatch.start();
+        QSqlQuery l_query(l_database);
+        l_query.exec("PRAGMA optimize");
+        l_query.exec("PRAGMA wal_checkpoint(TRUNCATE)");
+        if (m_maintenance_vacuum) {
+            l_query.exec("VACUUM");
+        }
+        qInfo() << "Database maintenance on" << l_database.databaseName() << "took" << l_stopwatch.elapsed() << "ms";
+    }
+}
+
+qint64 DatabaseService::msecsToNextOccurrence(const QTime &f_time, const QDateTime &f_now)
+{
+    QDateTime l_next(f_now.date(), f_time);
+    if (l_next <= f_now) {
+        l_next = l_next.addDays(1);
+    }
+    return f_now.msecsTo(l_next);
 }
 
 } // namespace akashi

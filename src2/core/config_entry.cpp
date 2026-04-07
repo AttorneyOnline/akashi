@@ -1,5 +1,7 @@
 #include "akashi/config_entry.h"
 
+#include <QTime>
+
 namespace akashi {
 
 ConfigEntry::ConfigEntry(const QString &f_key, const QVariant &f_default, const QString &f_description, Check f_check) :
@@ -72,6 +74,13 @@ ConfigEntry::Check oneOf(const QStringList &f_words)
 {
     return [f_words](const QVariant &f_value) {
         return f_words.contains(f_value.toString(), Qt::CaseInsensitive);
+    };
+}
+
+ConfigEntry::Check emptyOrTime()
+{
+    return [](const QVariant &f_value) {
+        return f_value.toString().isEmpty() || f_value.toTime().isValid();
     };
 }
 

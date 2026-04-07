@@ -404,6 +404,21 @@ QString ConfigManager::motd()
     return m_server_settings->motd();
 }
 
+QTime ConfigManager::maintenanceTime()
+{
+    return m_server_settings->maintenance_time();
+}
+
+bool ConfigManager::maintenanceVacuum()
+{
+    return m_server_settings->maintenance_vacuum();
+}
+
+int ConfigManager::maintenanceMaxPlayers()
+{
+    return m_server_settings->maintenance_max_players();
+}
+
 bool ConfigManager::webaoEnabled()
 {
     return m_server_settings->webao_enable();

@@ -30,6 +30,7 @@
 #include <QHostAddress>
 #include <QMetaEnum>
 #include <QSettings>
+#include <QTime>
 #include <QUrl>
 
 // JSON loading requirements
@@ -167,6 +168,21 @@ class AKASHI_CORE_EXPORT ConfigManager
      * @brief Returns the server's Message of the Day..
      */
     static QString motd();
+
+    /**
+     * @brief Returns the daily time database maintenance runs, invalid when disabled.
+     */
+    static QTime maintenanceTime();
+
+    /**
+     * @brief Returns whether database maintenance also runs VACUUM.
+     */
+    static bool maintenanceVacuum();
+
+    /**
+     * @brief Returns the player count above which maintenance waits, or -1 for no limit.
+     */
+    static int maintenanceMaxPlayers();
 
     /**
      * @brief Returns true if the server should accept webAO connections..

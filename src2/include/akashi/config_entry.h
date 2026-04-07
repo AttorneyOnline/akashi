@@ -42,6 +42,8 @@ AKASHI_CORE_EXPORT ConfigEntry::Check atMost(double f_max);
 AKASHI_CORE_EXPORT ConfigEntry::Check allOf(const QList<ConfigEntry::Check> &f_checks);
 // The value must be one of the given words, compared without case.
 AKASHI_CORE_EXPORT ConfigEntry::Check oneOf(const QStringList &f_words);
+// The value must be empty or a time of day like 04:30.
+AKASHI_CORE_EXPORT ConfigEntry::Check emptyOrTime();
 
 } // namespace akashi
 

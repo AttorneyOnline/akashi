@@ -3,6 +3,8 @@
 
 #include "akashi/settings.h"
 
+#include <QTime>
+
 // The settings of config.json. Every setting is declared exactly once, here.
 class AKASHI_CORE_EXPORT ServerSettings : public akashi::Settings
 {
@@ -47,6 +49,9 @@ class AKASHI_CORE_EXPORT ServerSettings : public akashi::Settings
     akashi::Setting<bool> pass_required_numbers{this, "Password/pass_required_numbers", true, "Whether passwords need at least one number."};
     akashi::Setting<bool> pass_required_special{this, "Password/pass_required_special", true, "Whether passwords need at least one special character."};
     akashi::Setting<bool> pass_can_contain_username{this, "Password/pass_can_contain_username", false, "Whether passwords may contain the username."};
+    akashi::Setting<QTime> maintenance_time{this, "Database/maintenance_time", QTime(), "The daily time when database maintenance runs, for example 04:30. Empty to disable.", akashi::emptyOrTime()};
+    akashi::Setting<bool> maintenance_vacuum{this, "Database/maintenance_vacuum", false, "Whether maintenance also compacts the databases with VACUUM."};
+    akashi::Setting<int> maintenance_max_players{this, "Database/maintenance_max_players", -1, "Maintenance waits while more players than this are online, or -1 to run regardless.", akashi::atLeast(-1)};
 };
 
 // The settings of discord.json.
