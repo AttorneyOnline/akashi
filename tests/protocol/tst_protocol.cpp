@@ -161,6 +161,7 @@ class ProtocolTest : public QObject
     void joinBurst();
     void oocRoundtrip();
     void escapeCodeRoundtrip();
+    void pipelinedFrame();
     void oversizedFrameDisconnects();
 
   private:
@@ -335,6 +336,25 @@ void ProtocolTest::escapeCodeRoundtrip()
     client.send(QStringLiteral("CT#Tester#") + escaped + QStringLiteral("#%"));
     QCOMPARE(client.takeNext(), QStringLiteral("PU#0#0#Tester#%"));
     QCOMPARE(client.takeNext(), QStringLiteral("CT#Tester#") + escaped + QStringLiteral("#0#%"));
+}
+
+void ProtocolTest::pipelinedFrame()
+{
+    TestClient client;
+    joinServer(client);
+
+    // Pick a character so the music change is allowed.
+    client.send(QStringLiteral("CC#0#1#TESTHWID#%"));
+    QVERIFY(client.waitForIdle());
+    while (client.pendingCount() > 0)
+        client.takeNext();
+
+    // Two packets in one frame. The old framing dropped everything after
+    // a leading MC packet.
+    client.send(QStringLiteral("MC#Ace Attorney/Prelude/[AA] Prelude.opus#1#%CT#Tester#after the music#%"));
+    QCOMPARE(client.takeNext(), QStringLiteral("MC#Ace Attorney/Prelude/[AA] Prelude.opus#1##1#0#0#%"));
+    QCOMPARE(client.takeNext(), QStringLiteral("PU#0#0#Tester#%"));
+    QCOMPARE(client.takeNext(), QStringLiteral("CT#Tester#after the music#0#%"));
 }
 
 void ProtocolTest::oversizedFrameDisconnects()

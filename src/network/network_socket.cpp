@@ -67,16 +67,15 @@ void NetworkSocket::handleMessage(QString f_data)
         return;
     }
 
-    QStringList l_all_packets = l_data.split("%");
-    l_all_packets.removeLast();  // Remove the entry after the last delimiter
+    // Split on the packet terminator, not on bare %, so an unescaped % in a
+    // field only breaks its own packet instead of shredding the whole frame.
+    QStringList l_all_packets = l_data.split("#%");
+    l_all_packets.removeLast();  // Remove the entry after the last terminator
     l_all_packets.removeAll({}); // Remove empty or null strings.
 
-    if (l_all_packets.value(0).startsWith("MC", Qt::CaseInsensitive)) {
-        l_all_packets = QStringList{l_all_packets.value(0)};
-    }
-
     for (const QString &l_single_packet : qAsConst(l_all_packets)) {
-        Q_EMIT packetReceived(akashi::Packet::parse(l_single_packet));
+        // Parsing wants the field separator back that the split consumed.
+        Q_EMIT packetReceived(akashi::Packet::parse(l_single_packet + "#"));
     }
 }
 
