@@ -54,9 +54,6 @@ void Packet::createPacketSubclass_data()
     QTest::newRow("MC") << "MC#"
                         << "MC"
                         << 2;
-    QTest::newRow("MS") << "MS#"
-                        << "MS"
-                        << 15;
     QTest::newRow("PE") << "PE#"
                         << "PE"
                         << 3;

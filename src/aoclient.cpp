@@ -23,8 +23,11 @@
 #include "command_extension.h"
 #include "config_manager.h"
 #include "db_manager.h"
+#include "medieval_parser.h"
+#include "music_manager.h"
 #include "packet/packet_factory.h"
 #include "playerstateobserver.h"
+#include "proto/ic.h"
 #include "server.h"
 
 const QMap<QString, AOClient::CommandInfo> AOClient::COMMANDS{
@@ -897,3 +900,294 @@ void AOClient::setCasingPreferences(const QList<bool> &f_preferences)
 {
     m_casing_preferences = f_preferences;
 }
+
+bool AOClient::canUseIcChat() const
+{
+    return !m_is_muted;
+}
+
+int AOClient::characterId() const
+{
+    return m_char_id;
+}
+
+bool AOClient::isFirstPerson() const
+{
+    return m_first_person;
+}
+
+void AOClient::setIniswap(const QString &f_character)
+{
+    m_current_iniswap = f_character;
+}
+
+void AOClient::setEmote(const QString &f_emote)
+{
+    m_emote = f_emote;
+}
+
+void AOClient::setOffset(const QString &f_offset)
+{
+    m_offset = f_offset;
+}
+
+void AOClient::setFlipping(const QString &f_flipping)
+{
+    m_flipping = f_flipping;
+}
+
+QString AOClient::lastIcMessage() const
+{
+    return m_last_message;
+}
+
+void AOClient::setLastIcMessage(const QString &f_message)
+{
+    m_last_message = f_message;
+}
+
+void AOClient::updatePosition(const QString &f_position)
+{
+    if (m_pos != f_position) {
+        m_pos = f_position;
+        m_pos.replace("../", "").replace("..\\", "");
+        updateEvidenceList(m_server->areaById(areaId()));
+    }
+}
+
+QString AOClient::gimpText()
+{
+    return ConfigManager::gimpList().at(genRand(1, ConfigManager::gimpList().size() - 1));
+}
+
+QString AOClient::medievalText(const QString &f_text)
+{
+    QString l_text = f_text;
+    return m_server->medievalParser()->degrootify(l_text);
+}
+
+bool AOClient::isGimped() const
+{
+    return m_is_gimped;
+}
+
+bool AOClient::isMedieval() const
+{
+    return m_is_medieval || m_server->areaById(areaId())->isMedievalMode();
+}
+
+bool AOClient::isShaken() const
+{
+    return m_is_shaken;
+}
+
+bool AOClient::isDisemvoweled() const
+{
+    return m_is_disemvoweled;
+}
+
+bool AOClient::isIcMessageAllowed() const
+{
+    return m_server->areaById(areaId())->isMessageAllowed() && m_server->isMessageAllowed();
+}
+
+bool AOClient::canSpeakInArea()
+{
+    AreaData *l_area = m_server->areaById(areaId());
+    return !(l_area->lockStatus() == AreaData::LockStatus::SPECTATABLE && !l_area->invited().contains(clientId()) && !canPerform(ACLRole::BYPASS_LOCKS));
+}
+
+bool AOClient::isIniswapAllowed() const
+{
+    return m_server->areaById(areaId())->isIniswapAllowed();
+}
+
+bool AOClient::isBlankpostingAllowed() const
+{
+    return m_server->areaById(areaId())->isBlankpostingAllowed();
+}
+
+bool AOClient::isShoutAllowed() const
+{
+    return m_server->areaById(areaId())->isShoutAllowed();
+}
+
+bool AOClient::isShownameAllowed() const
+{
+    return m_server->areaById(areaId())->isShownameAllowed();
+}
+
+bool AOClient::isImmediateForced() const
+{
+    return m_server->areaById(areaId())->forceImmediate();
+}
+
+QString AOClient::areaSide() const
+{
+    return m_server->areaById(areaId())->side();
+}
+
+QStringList AOClient::lastAreaMessage() const
+{
+    return m_server->areaById(areaId())->lastICMessage();
+}
+
+akashi::PairInfo AOClient::resolvePair(int f_pair_id)
+{
+    m_pairing_with = f_pair_id;
+    akashi::PairInfo l_pair;
+    AreaData *l_area = m_server->areaById(areaId());
+    const QList<int> l_joined = l_area->joinedIDs();
+    for (int l_client_id : l_joined) {
+        AOClient *l_client = m_server->clientById(l_client_id);
+        if (l_client == nullptr) {
+            continue;
+        }
+        if (l_client->m_pairing_with == m_char_id && f_pair_id != m_char_id && l_client->m_char_id == m_pairing_with && l_client->m_pos == m_pos) {
+            l_pair.name = l_client->m_current_iniswap;
+            l_pair.emote = l_client->m_emote;
+            l_pair.offset = l_client->m_offset;
+            l_pair.flip = l_client->m_flipping;
+            l_pair.paired = true;
+        }
+    }
+    return l_pair;
+}
+
+QStringList AOClient::applyTestimony(const QStringList &f_fields)
+{
+    QStringList l_args = f_fields;
+    AreaData *area = m_server->areaById(areaId());
+
+    QString client_name = name();
+    if (client_name == "") {
+        client_name = character(); // fallback in case of empty ooc name
+    }
+
+    if ((area->testimonyRecording() == AreaData::TestimonyRecording::RECORDING || area->testimonyRecording() == AreaData::TestimonyRecording::ADD) && !l_args[4].isEmpty()) {
+        // -1 indicates title
+        if (area->statement() == -1) {
+            l_args[4] = "~~-- " + l_args[4] + " --";
+            l_args[14] = "3";
+            m_server->broadcast(akashi::Packet("RT", {"testimony1", "0"}), areaId());
+        }
+        addStatement(l_args);
+    }
+    else if (area->testimonyRecording() == AreaData::TestimonyRecording::UPDATE) {
+        l_args = updateStatement(l_args);
+    }
+    else if (area->testimonyRecording() == AreaData::TestimonyRecording::PLAYBACK) {
+        AreaData::TestimonyProgress l_progress;
+
+        if (l_args[4] == ">") {
+            auto l_statement = area->jumpToStatement(area->statement() + 1);
+            l_args = l_statement.first;
+            l_progress = l_statement.second;
+            m_pos = l_args[5];
+
+            sendServerMessageArea(client_name + " moved to the next statement.");
+
+            if (l_progress == AreaData::TestimonyProgress::LOOPED) {
+                sendServerMessageArea("Last statement reached. Looping to first statement.");
+            }
+        }
+        if (l_args[4] == "<") {
+            auto l_statement = area->jumpToStatement(area->statement() - 1);
+            l_args = l_statement.first;
+            l_progress = l_statement.second;
+            m_pos = l_args[5];
+
+            sendServerMessageArea(client_name + " moved to the previous statement.");
+
+            if (l_progress == AreaData::TestimonyProgress::STAYED_AT_FIRST) {
+                sendServerMessage("First statement reached.");
+            }
+        }
+        if (l_args[4] == "=") {
+            auto l_statement = area->jumpToStatement(area->statement());
+            l_args = l_statement.first;
+            l_progress = l_statement.second;
+            m_pos = l_args[5];
+
+            sendServerMessageArea(client_name + " repeated the current statement.");
+        }
+
+        QRegularExpression jump("(?<arrow>>|<)(?<int>\\d+)");
+        QRegularExpressionMatch match = jump.match(decodeMessage(l_args[4]));
+        if (match.hasMatch()) {
+            int jump_idx = match.captured("int").toInt();
+            auto l_statement = area->jumpToStatement(jump_idx);
+            l_args = l_statement.first;
+            l_progress = l_statement.second;
+            m_pos = l_args[5];
+
+            sendServerMessageArea(client_name + " jumped to statement number " + QString::number(jump_idx) + ".");
+
+            switch (l_progress) {
+            case AreaData::TestimonyProgress::LOOPED:
+            {
+                sendServerMessageArea("Last statement reached. Looping to first statement.");
+                break;
+            }
+            case AreaData::TestimonyProgress::STAYED_AT_FIRST:
+            {
+                sendServerMessage("First statement reached.");
+                Q_FALLTHROUGH();
+            }
+            case AreaData::TestimonyProgress::OK:
+            default:
+                // No need to handle.
+                break;
+            }
+        }
+    }
+
+    return l_args;
+}
+
+void AOClient::broadcastIc(const QStringList &f_fields, int f_evidence_index)
+{
+    QStringList l_fields = f_fields;
+    if (m_pos != "") {
+        l_fields[5] = m_pos;
+    }
+    AreaData *l_area = m_server->areaById(areaId());
+
+    // Presenting evidence in a hidden-CM area reveals it to everyone, and each
+    // client gets the index as it appears in its own filtered list.
+    int l_real_index = -1;
+    bool l_evidence_presented = false;
+    if (f_evidence_index > 0 && l_area->eviMod() == AreaData::EvidenceMod::HIDDEN_CM) {
+        l_real_index = l_area->evidenceIndexByVisibleIndex(f_evidence_index, m_pos, canPerform(ACLRole::CM));
+        if (l_real_index >= 0) {
+            l_area->setEvidenceOwnerToAll(l_real_index);
+            sendEvidenceList(l_area);
+            l_evidence_presented = true;
+        }
+    }
+
+    const akashi::Packet l_classic("MS", l_fields);
+    const QVector<AOClient *> l_clients = m_server->clients();
+    for (AOClient *l_client : l_clients) {
+        if (l_client->areaId() != areaId()) {
+            continue;
+        }
+        QStringList l_client_fields = l_fields;
+        if (l_evidence_presented) {
+            l_client_fields[11] = QString::number(l_area->visibleIndexByEvidenceIndex(l_real_index, l_client->m_pos, l_client->canPerform(ACLRole::CM)));
+        }
+        if (l_evidence_presented) {
+            l_client->sendPacket(akashi::Packet("MS", l_client_fields));
+        }
+        else {
+            l_client->sendPacket(l_classic);
+        }
+    }
+
+    Q_EMIT logIC(l_area->name(), m_ipid, name(), QString::number(clientId()), (character() + " " + characterName()), m_last_message);
+    l_area->updateLastICMessage(l_fields);
+
+    l_area->startMessageFloodguard(ConfigManager::messageFloodguard());
+    m_server->startMessageFloodguard(ConfigManager::globalMessageFloodguard());
+}
+

@@ -7,6 +7,7 @@
 #include "config_manager.h"
 #include "proto/chat.h"
 #include "proto/handshake.h"
+#include "proto/ic.h"
 #include "proto/packet_service.h"
 #include "server.h"
 
@@ -43,6 +44,7 @@ ExitCode ServerContext::start()
     auto l_packets = std::make_shared<akashi::PacketService>();
     akashi::registerHandshakePackets(l_packets->handlers(), l_packets->codecs());
     akashi::registerChatPackets(l_packets->handlers(), l_packets->codecs());
+    akashi::registerIcPackets(l_packets->handlers(), l_packets->codecs());
     m_services->registerService(l_packets);
 
     m_server = new Server(ConfigManager::serverPort(), m_database_service, m_services, this);

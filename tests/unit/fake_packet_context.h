@@ -156,6 +156,99 @@ class FakeContext : public akashi::IPacketContext
         casing_preferences = f_preferences;
         calls.append("setCasingPreferences");
     }
+
+    bool ic_chat_allowed = true;
+    bool spectator = false;
+    QString current_character = "Phoenix";
+    QString current_character_name;
+    int current_character_id = 0;
+    bool first_person = false;
+    QString iniswap;
+    QString emote;
+    QString offset;
+    QString flipping;
+    QString last_ic_message;
+    QString position;
+    bool gimped = false;
+    bool medieval = false;
+    bool shaken = false;
+    bool disemvoweled = false;
+    bool ic_message_allowed = true;
+    bool area_speech_allowed = true;
+    bool iniswap_allowed = true;
+    bool blankposting_allowed = true;
+    bool shout_allowed = true;
+    bool showname_allowed = true;
+    bool immediate_forced = false;
+    QString area_side;
+    QStringList last_area_message;
+    akashi::PairInfo pair;
+    int pair_request = -100;
+    QStringList broadcast_ic_fields;
+    int broadcast_ic_evidence = -100;
+
+    bool canUseIcChat() const override { return ic_chat_allowed; }
+    bool isSpectator() const override { return spectator; }
+    QString character() const override { return current_character; }
+    QString characterName() const override { return current_character_name; }
+
+    void setCharacterName(const QString &f_showname) override
+    {
+        current_character_name = f_showname;
+        calls.append("setCharacterName");
+    }
+
+    int characterId() const override { return current_character_id; }
+    bool isFirstPerson() const override { return first_person; }
+    void setIniswap(const QString &f_character) override { iniswap = f_character; }
+    void setEmote(const QString &f_emote) override { emote = f_emote; }
+    void setOffset(const QString &f_offset) override { offset = f_offset; }
+    void setFlipping(const QString &f_flipping) override { flipping = f_flipping; }
+    QString lastIcMessage() const override { return last_ic_message; }
+    void setLastIcMessage(const QString &f_message) override { last_ic_message = f_message; }
+
+    void updatePosition(const QString &f_position) override
+    {
+        position = f_position;
+        calls.append("updatePosition");
+    }
+
+    QString gimpText() override { return "I am a heinous criminal."; }
+    QString medievalText(const QString &f_text) override { return "Ye olde " + f_text; }
+    bool isGimped() const override { return gimped; }
+    bool isMedieval() const override { return medieval; }
+    bool isShaken() const override { return shaken; }
+    bool isDisemvoweled() const override { return disemvoweled; }
+    bool isIcMessageAllowed() const override { return ic_message_allowed; }
+    bool canSpeakInArea() override { return area_speech_allowed; }
+    bool isIniswapAllowed() const override { return iniswap_allowed; }
+    bool isBlankpostingAllowed() const override { return blankposting_allowed; }
+    bool isShoutAllowed() const override { return shout_allowed; }
+    bool isShownameAllowed() const override { return showname_allowed; }
+    bool isImmediateForced() const override { return immediate_forced; }
+    QString areaSide() const override { return area_side; }
+    QStringList lastAreaMessage() const override { return last_area_message; }
+
+    akashi::PairInfo resolvePair(int f_pair_id) override
+    {
+        pair_request = f_pair_id;
+        calls.append("resolvePair");
+        return pair;
+    }
+
+    QStringList applyTestimony(const QStringList &f_fields) override
+    {
+        calls.append("applyTestimony");
+        return f_fields;
+    }
+
+    void broadcastIc(const QStringList &f_fields, int f_evidence_index) override
+    {
+        broadcast_ic_fields = f_fields;
+        broadcast_ic_evidence = f_evidence_index;
+        calls.append("broadcastIc");
+    }
+
 };
 
 #endif // TESTS_FAKE_PACKET_CONTEXT_H

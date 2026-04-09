@@ -39,6 +39,16 @@ struct AreaSnapshot
     QList<TimerSnapshot> timers;
 };
 
+// A pair partner's visible state, resolved for an in-character message.
+struct PairInfo
+{
+    QString name = "0";
+    QString emote = "0";
+    QString offset = "0";
+    QString flip = "0";
+    bool paired = false;
+};
+
 // Everything a packet handler may see and do. The connection implements it,
 // so handlers never depend on the server's concrete classes.
 class AKASHI_CORE_EXPORT IPacketContext
@@ -101,6 +111,45 @@ class AKASHI_CORE_EXPORT IPacketContext
 
     // Casing alerts.
     virtual void setCasingPreferences(const QList<bool> &f_preferences) = 0;
+
+    // In-character chat: who is speaking.
+    virtual bool canUseIcChat() const = 0;
+    virtual bool isSpectator() const = 0;
+    virtual QString character() const = 0;
+    virtual QString characterName() const = 0;
+    virtual void setCharacterName(const QString &f_showname) = 0;
+    virtual int characterId() const = 0;
+    virtual bool isFirstPerson() const = 0;
+    virtual void setIniswap(const QString &f_character) = 0;
+    virtual void setEmote(const QString &f_emote) = 0;
+    virtual void setOffset(const QString &f_offset) = 0;
+    virtual void setFlipping(const QString &f_flipping) = 0;
+    virtual QString lastIcMessage() const = 0;
+    virtual void setLastIcMessage(const QString &f_message) = 0;
+    virtual void updatePosition(const QString &f_position) = 0;
+    virtual QString gimpText() = 0;
+    virtual QString medievalText(const QString &f_text) = 0;
+    virtual bool isGimped() const = 0;
+    virtual bool isMedieval() const = 0;
+    virtual bool isShaken() const = 0;
+    virtual bool isDisemvoweled() const = 0;
+
+    // In-character chat: the area's rules and state.
+    virtual bool isIcMessageAllowed() const = 0;
+    virtual bool canSpeakInArea() = 0;
+    virtual bool isIniswapAllowed() const = 0;
+    virtual bool isBlankpostingAllowed() const = 0;
+    virtual bool isShoutAllowed() const = 0;
+    virtual bool isShownameAllowed() const = 0;
+    virtual bool isImmediateForced() const = 0;
+    virtual QString areaSide() const = 0;
+    virtual QStringList lastAreaMessage() const = 0;
+
+    // In-character chat: doing things with the finished message. The evidence
+    // index is the sender's own, since testimony playback may swap the fields.
+    virtual PairInfo resolvePair(int f_pair_id) = 0;
+    virtual QStringList applyTestimony(const QStringList &f_fields) = 0;
+    virtual void broadcastIc(const QStringList &f_fields, int f_evidence_index) = 0;
 };
 
 } // namespace akashi

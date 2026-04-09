@@ -646,6 +646,34 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     void deleteEvidence(int f_index) override;
     void replaceEvidence(int f_index, const QString &f_name, const QString &f_description, const QString &f_image) override;
     void setCasingPreferences(const QList<bool> &f_preferences) override;
+    bool canUseIcChat() const override;
+    int characterId() const override;
+    bool isFirstPerson() const override;
+    void setIniswap(const QString &f_character) override;
+    void setEmote(const QString &f_emote) override;
+    void setOffset(const QString &f_offset) override;
+    void setFlipping(const QString &f_flipping) override;
+    QString lastIcMessage() const override;
+    void setLastIcMessage(const QString &f_message) override;
+    void updatePosition(const QString &f_position) override;
+    QString gimpText() override;
+    QString medievalText(const QString &f_text) override;
+    bool isGimped() const override;
+    bool isMedieval() const override;
+    bool isShaken() const override;
+    bool isDisemvoweled() const override;
+    bool isIcMessageAllowed() const override;
+    bool canSpeakInArea() override;
+    bool isIniswapAllowed() const override;
+    bool isBlankpostingAllowed() const override;
+    bool isShoutAllowed() const override;
+    bool isShownameAllowed() const override;
+    bool isImmediateForced() const override;
+    QString areaSide() const override;
+    QStringList lastAreaMessage() const override;
+    akashi::PairInfo resolvePair(int f_pair_id) override;
+    QStringList applyTestimony(const QStringList &f_fields) override;
+    void broadcastIc(const QStringList &f_fields, int f_evidence_index) override;
 
   public Q_SLOTS:
     /**

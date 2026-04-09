@@ -17,6 +17,7 @@ inline constexpr char HEADER_CC[] = "CC";
 inline constexpr char HEADER_CT[] = "CT";
 inline constexpr char HEADER_DE[] = "DE";
 inline constexpr char HEADER_EE[] = "EE";
+inline constexpr char HEADER_MS[] = "MS";
 inline constexpr char HEADER_SETCASE[] = "SETCASE";
 
 // Server to client.

@@ -18,6 +18,7 @@ set(UNIT_TESTS
     packetregistry
     handshake
     chat
+    ic
     networkservice
     service
     music_manager

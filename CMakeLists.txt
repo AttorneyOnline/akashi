@@ -48,8 +48,6 @@ set(AKASHI_SOURCES
   src/packet/packet_ma.h
   src/packet/packet_mc.cpp
   src/packet/packet_mc.h
-  src/packet/packet_ms.cpp
-  src/packet/packet_ms.h
   src/packet/packet_pe.cpp
   src/packet/packet_pe.h
   src/packet/packet_pr.cpp
@@ -122,6 +120,9 @@ set(AKASHI_SOURCES
   src2/proto/handshake.cpp
   src2/proto/handshake.h
   src2/proto/handshake_messages.h
+  src2/proto/ic.cpp
+  src2/proto/ic.h
+  src2/proto/ic_message.h
   src2/proto/message.h
   src2/proto/packet_codec.cpp
   src2/proto/packet_codec.h

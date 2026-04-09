@@ -23,7 +23,6 @@
 #include "packet/packet_hp.h"
 #include "packet/packet_ma.h"
 #include "packet/packet_mc.h"
-#include "packet/packet_ms.h"
 #include "packet/packet_pe.h"
 #include "packet/packet_pr.h"
 #include "packet/packet_pw.h"
@@ -104,7 +103,7 @@ bool AOPacket::isPacketEscaped()
 }
 
 // The handshake family (HI, ID, askchaa, RC, RM, RD, CC) and the chat
-// family minus MS (CT, DE, EE, SETCASE) live in the packet registry now;
+// family (CT, MS, DE, EE, SETCASE) live in the packet registry now;
 // this list shrinks as the other families move over.
 void AOPacket::registerPackets()
 {
@@ -112,7 +111,6 @@ void AOPacket::registerPackets()
     PacketFactory::registerClass<PacketCH>("CH");
     PacketFactory::registerClass<PacketHP>("HP");
     PacketFactory::registerClass<PacketMC>("MC");
-    PacketFactory::registerClass<PacketMS>("MS");
     PacketFactory::registerClass<PacketPE>("PE");
     PacketFactory::registerClass<PacketPW>("PW");
     PacketFactory::registerClass<PacketRT>("RT");
