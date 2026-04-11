@@ -2,9 +2,10 @@
 // A headless AO2 client built on the real client's netcode. It joins a
 // running akashi server the same way the desktop client does, then walks
 // the playtest checklist: pick a character, chat in OOC and IC, change
-// the music, keepalive, get denied a mod command, fail a login, log in
-// with the modpass and run a database-backed mod command. Exits 0 when
-// every step got the expected answer, 1 on a timeout or protocol failure.
+// the music, throw a judge splash, present evidence with every escape
+// character in it, keepalive, get denied a mod command, fail a login, log
+// in with the modpass and run a database-backed mod command. Exits 0
+// when every step got the expected answer, 1 on a timeout or failure.
 // Usage: ao2_miniclient [address] [port] [modpass] [classic]
 #include "aopacket.h"
 #include "websocketconnection.h"
@@ -27,6 +28,19 @@ class MiniClient : public QObject
         m_watchdog = new QTimer(this);
         m_watchdog->setSingleShot(true);
         connect(m_watchdog, &QTimer::timeout, this, [this] { fail("timed out waiting for: " + m_waiting_for); });
+
+        // Sends are paced like a human client, or the burst of a full run
+        // trips the server's packets-per-second limit.
+        m_pacer = new QTimer(this);
+        connect(m_pacer, &QTimer::timeout, this, [this] {
+            if (m_outbox.isEmpty()) {
+                m_pacer->stop();
+                return;
+            }
+            AOPacket l_packet = m_outbox.takeFirst();
+            say("C: " + trim(l_packet.toString()));
+            m_connection->sendPacket(l_packet);
+        });
         connect(m_connection, &WebSocketConnection::receivedPacket, this, &MiniClient::handlePacket);
         connect(m_connection, &WebSocketConnection::errorOccurred, this, [this](QString error) { fail("connection error: " + error); });
         connect(m_connection, &WebSocketConnection::disconnectedFromServer, this, [this] {
@@ -128,6 +142,27 @@ class MiniClient : public QObject
             break;
         case Step::MusicChange:
             if (l_header == "MC" && l_content.value(0) == m_requested_song) {
+                step(Step::JudgeSplash, "RT echo");
+                send(AOPacket("RT", {"testimony1"}));
+            }
+            break;
+        case Step::JudgeSplash:
+            if (l_header == "RT" && l_content.value(0) == "testimony1") {
+                // Move to Courtroom 1, where the evidence mod allows adding.
+                step(Step::AreaMove, "area move confirmation");
+                send(AOPacket("MC", {"Courtroom 1", QString::number(m_char_id)}));
+            }
+            break;
+        case Step::AreaMove:
+            if (l_header == "CT" && l_content.value(1).contains("You moved to area Courtroom 1")) {
+                step(Step::Evidence, "LE with the new evidence");
+                send(AOPacket("PE", {"Cross & Sword", "It has a # and a % on it.", "sword&shield.png"}));
+            }
+            break;
+        case Step::Evidence:
+            // The connection decodes fields on receipt, so the packed
+            // evidence field reads with its escape codes resolved.
+            if (l_header == "LE" && l_content.contains("Cross & Sword&It has a # and a % on it.&sword&shield.png")) {
                 step(Step::Keepalive, "CHECK");
                 send(AOPacket("CH", {QString::number(m_char_id)}));
             }
@@ -193,6 +228,9 @@ class MiniClient : public QObject
         OocChat,
         IcChat,
         MusicChange,
+        JudgeSplash,
+        AreaMove,
+        Evidence,
         Keepalive,
         ModCommandDenied,
         LoginPrompt,
@@ -204,8 +242,10 @@ class MiniClient : public QObject
 
     void send(AOPacket f_packet)
     {
-        say("C: " + trim(f_packet.toString()));
-        m_connection->sendPacket(f_packet);
+        m_outbox.append(f_packet);
+        if (!m_pacer->isActive()) {
+            m_pacer->start(150);
+        }
     }
 
     AOPacket icMessage(const QString &f_text) const
@@ -248,6 +288,8 @@ class MiniClient : public QObject
 
     WebSocketConnection *m_connection;
     QTimer *m_watchdog;
+    QTimer *m_pacer;
+    QList<AOPacket> m_outbox;
     Step m_step = Step::Connect;
     QString m_waiting_for;
     QString m_hdid = "miniclient-hdid";
