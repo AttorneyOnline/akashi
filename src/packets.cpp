@@ -26,6 +26,7 @@
 #include "db_manager.h"
 #include "music_manager.h"
 #include "packet/packet_factory.h"
+#include "proto/evidence.h"
 #include "server.h"
 
 void AOClient::sendEvidenceList(AreaData *area) const
@@ -40,7 +41,6 @@ void AOClient::sendEvidenceList(AreaData *area) const
 void AOClient::updateEvidenceList(AreaData *area)
 {
     QStringList l_evidence_list;
-    QString l_evidence_format("%1&%2&%3");
 
     const QList<AreaData::Evidence> l_area_evidence = area->evidence();
     for (const AreaData::Evidence &evidence : l_area_evidence) {
@@ -55,7 +55,7 @@ void AOClient::updateEvidenceList(AreaData *area)
             }
             // no match = show it to all
         }
-        l_evidence_list.append(l_evidence_format.arg(evidence.name, evidence.description, evidence.image));
+        l_evidence_list.append(akashi::Evidence{evidence.name, evidence.description, evidence.image}.toLeField());
     }
 
     sendPacket(akashi::Packet("LE", l_evidence_list));

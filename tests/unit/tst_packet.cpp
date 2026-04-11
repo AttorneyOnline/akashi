@@ -1,6 +1,7 @@
 // AI-generated: written by Claude.
 #include <QTest>
 
+#include "proto/evidence.h"
 #include "proto/packet.h"
 
 namespace tests {
@@ -20,6 +21,7 @@ class tst_Packet : public QObject
     void serializeMatchesTheWireFormat();
     void serializeDoesNotChangeThePacket();
     void evidenceKeepsItsSeparator();
+    void evidenceFieldSurvivesSpecialCharacters();
 };
 
 void tst_Packet::parse_data()
@@ -83,6 +85,23 @@ void tst_Packet::serializeDoesNotChangeThePacket()
 void tst_Packet::evidenceKeepsItsSeparator()
 {
     QCOMPARE(Packet("LE", {"name&description&image"}).serialize(), "LE#name&description&image#%");
+}
+
+void tst_Packet::evidenceFieldSurvivesSpecialCharacters()
+{
+    // A literal & inside a part used to misalign the client's three-way split.
+    const Evidence l_evidence{"Cross & Sword", "It has a # and a % on it.", "sword&shield.png"};
+    const QString l_field = l_evidence.toLeField();
+    QCOMPARE(l_field, QString("Cross <and> Sword&It has a <num> and a <percent> on it.&sword<and>shield.png"));
+
+    // Serializing keeps the joining & untouched and re-escapes nothing.
+    QCOMPARE(Packet("LE", {l_field}).serialize(), "LE#" + l_field + "#%");
+
+    // The client splits the raw field on & and decodes each part.
+    const Evidence l_read = Evidence::fromLeField(l_field);
+    QCOMPARE(l_read.name, l_evidence.name);
+    QCOMPARE(l_read.description, l_evidence.description);
+    QCOMPARE(l_read.image, l_evidence.image);
 }
 
 }

@@ -114,6 +114,8 @@ set(AKASHI_SOURCES
   src2/proto/area_music.cpp
   src2/proto/area_music.h
   src2/proto/area_music_messages.h
+  src2/proto/evidence.cpp
+  src2/proto/evidence.h
   src2/proto/handshake.cpp
   src2/proto/handshake.h
   src2/proto/handshake_messages.h
