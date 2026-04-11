@@ -20,6 +20,14 @@ inline constexpr char HEADER_EE[] = "EE";
 inline constexpr char HEADER_MS[] = "MS";
 inline constexpr char HEADER_SETCASE[] = "SETCASE";
 
+// The area and music family.
+inline constexpr char HEADER_MC[] = "MC";
+inline constexpr char HEADER_RT[] = "RT";
+inline constexpr char HEADER_PE[] = "PE";
+
+// The dummy track 2.9+ clients use to stop the music.
+inline constexpr char STOP_MUSIC[] = "~stop.mp3";
+
 // Server to client.
 inline constexpr char HEADER_BD[] = "BD";
 inline constexpr char HEADER_PN[] = "PN";

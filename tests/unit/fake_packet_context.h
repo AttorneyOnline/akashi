@@ -4,6 +4,8 @@
 
 #include "proto/packet_context.h"
 
+#include <QHash>
+
 // Records everything a handler does, so tests can check calls and order.
 class FakeContext : public akashi::IPacketContext
 {
@@ -174,7 +176,7 @@ class FakeContext : public akashi::IPacketContext
     bool shaken = false;
     bool disemvoweled = false;
     bool ic_message_allowed = true;
-    bool area_speech_allowed = true;
+    bool area_act_allowed = true;
     bool iniswap_allowed = true;
     bool blankposting_allowed = true;
     bool shout_allowed = true;
@@ -220,7 +222,7 @@ class FakeContext : public akashi::IPacketContext
     bool isShaken() const override { return shaken; }
     bool isDisemvoweled() const override { return disemvoweled; }
     bool isIcMessageAllowed() const override { return ic_message_allowed; }
-    bool canSpeakInArea() override { return area_speech_allowed; }
+    bool canActInArea() override { return area_act_allowed; }
     bool isIniswapAllowed() const override { return iniswap_allowed; }
     bool isBlankpostingAllowed() const override { return blankposting_allowed; }
     bool isShoutAllowed() const override { return shout_allowed; }
@@ -249,6 +251,72 @@ class FakeContext : public akashi::IPacketContext
         calls.append("broadcastIc");
     }
 
+    bool dj_blocked = false;
+    bool music_allowed = true;
+    bool jukebox_enabled = false;
+    QString jukebox_reply = "Song added to the jukebox.";
+    QString queued_jukebox_song;
+    QHash<QString, QString> song_aliases;
+    QString recorded_music;
+    bool wtce_blocked = false;
+    bool wtce_allowed = true;
+    bool wtce_ready = true;
+    QStringList judge_actions;
+    QList<akashi::Packet> area_broadcasts;
+    QStringList added_evidence;
+    int changed_area = -100;
+
+    bool hasSong(const QString &f_name) const override { return music_name_list.contains(f_name); }
+    bool isDjBlocked() const override { return dj_blocked; }
+    bool isMusicAllowed() const override { return music_allowed; }
+    bool isJukeboxEnabled() const override { return jukebox_enabled; }
+
+    QString queueJukeboxSong(const QString &f_song) override
+    {
+        queued_jukebox_song = f_song;
+        calls.append("queueJukeboxSong");
+        return jukebox_reply;
+    }
+
+    QString resolveSongAlias(const QString &f_song) override
+    {
+        calls.append("resolveSongAlias");
+        return song_aliases.value(f_song, f_song);
+    }
+
+    void recordMusicChange(const QString &f_song) override
+    {
+        recorded_music = f_song;
+        calls.append("recordMusicChange");
+    }
+
+    bool isWtceBlocked() const override { return wtce_blocked; }
+    bool isWtceAllowed() const override { return wtce_allowed; }
+    bool startWtceCooldown() override { return wtce_ready; }
+
+    void logJudgeAction(const QString &f_action) override
+    {
+        judge_actions.append(f_action);
+        calls.append("logJudgeAction");
+    }
+
+    void changeArea(int f_area_index) override
+    {
+        changed_area = f_area_index;
+        calls.append("changeArea");
+    }
+
+    void addEvidence(const QString &f_name, const QString &f_description, const QString &f_image) override
+    {
+        added_evidence = {f_name, f_description, f_image};
+        calls.append("addEvidence");
+    }
+
+    void broadcastArea(const akashi::Packet &f_packet) override
+    {
+        area_broadcasts.append(f_packet);
+        calls.append("broadcastArea:" + f_packet.header());
+    }
 };
 
 #endif // TESTS_FAKE_PACKET_CONTEXT_H

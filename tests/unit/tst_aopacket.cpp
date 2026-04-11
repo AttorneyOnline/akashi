@@ -51,17 +51,8 @@ void Packet::createPacketSubclass_data()
     QTest::newRow("HP") << "HP#"
                         << "HP"
                         << 2;
-    QTest::newRow("MC") << "MC#"
-                        << "MC"
-                        << 2;
-    QTest::newRow("PE") << "PE#"
-                        << "PE"
-                        << 3;
     QTest::newRow("PW") << "PW#"
                         << "PW"
-                        << 1;
-    QTest::newRow("RT") << "RT#"
-                        << "RT"
                         << 1;
     QTest::newRow("ZZ") << "ZZ#"
                         << "ZZ"

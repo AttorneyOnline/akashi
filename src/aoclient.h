@@ -462,7 +462,7 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
      *
      * @param new_area The ID of the new area.
      */
-    void changeArea(int new_area);
+    void changeArea(int new_area) override;
 
     /**
      * @brief Handles an incoming command, checking for authorisation and minimum argument count.
@@ -663,7 +663,7 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     bool isShaken() const override;
     bool isDisemvoweled() const override;
     bool isIcMessageAllowed() const override;
-    bool canSpeakInArea() override;
+    bool canActInArea() override;
     bool isIniswapAllowed() const override;
     bool isBlankpostingAllowed() const override;
     bool isShoutAllowed() const override;
@@ -674,6 +674,19 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     akashi::PairInfo resolvePair(int f_pair_id) override;
     QStringList applyTestimony(const QStringList &f_fields) override;
     void broadcastIc(const QStringList &f_fields, int f_evidence_index) override;
+    bool hasSong(const QString &f_name) const override;
+    bool isDjBlocked() const override;
+    bool isMusicAllowed() const override;
+    bool isJukeboxEnabled() const override;
+    QString queueJukeboxSong(const QString &f_song) override;
+    QString resolveSongAlias(const QString &f_song) override;
+    void recordMusicChange(const QString &f_song) override;
+    bool isWtceBlocked() const override;
+    bool isWtceAllowed() const override;
+    bool startWtceCooldown() override;
+    void logJudgeAction(const QString &f_action) override;
+    void addEvidence(const QString &f_name, const QString &f_description, const QString &f_image) override;
+    void broadcastArea(const akashi::Packet &f_packet) override;
 
   public Q_SLOTS:
     /**

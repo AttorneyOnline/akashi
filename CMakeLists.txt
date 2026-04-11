@@ -46,16 +46,10 @@ set(AKASHI_SOURCES
   src/packet/packet_info.h
   src/packet/packet_ma.cpp
   src/packet/packet_ma.h
-  src/packet/packet_mc.cpp
-  src/packet/packet_mc.h
-  src/packet/packet_pe.cpp
-  src/packet/packet_pe.h
   src/packet/packet_pr.cpp
   src/packet/packet_pr.h
   src/packet/packet_pw.cpp
   src/packet/packet_pw.h
-  src/packet/packet_rt.cpp
-  src/packet/packet_rt.h
   src/packet/packet_zz.cpp
   src/packet/packet_zz.h
   src/acl_roles_handler.cpp
@@ -117,6 +111,9 @@ set(AKASHI_SOURCES
   src2/proto/chat.h
   src2/proto/chat_messages.h
   src2/proto/client_profile.h
+  src2/proto/area_music.cpp
+  src2/proto/area_music.h
+  src2/proto/area_music_messages.h
   src2/proto/handshake.cpp
   src2/proto/handshake.h
   src2/proto/handshake_messages.h

@@ -5,6 +5,7 @@
 #include "akashi/network_service.h"
 #include "akashi/service_registry.h"
 #include "config_manager.h"
+#include "proto/area_music.h"
 #include "proto/chat.h"
 #include "proto/handshake.h"
 #include "proto/ic.h"
@@ -45,6 +46,7 @@ ExitCode ServerContext::start()
     akashi::registerHandshakePackets(l_packets->handlers(), l_packets->codecs());
     akashi::registerChatPackets(l_packets->handlers(), l_packets->codecs());
     akashi::registerIcPackets(l_packets->handlers(), l_packets->codecs());
+    akashi::registerAreaMusicPackets(l_packets->handlers(), l_packets->codecs());
     m_services->registerService(l_packets);
 
     m_server = new Server(ConfigManager::serverPort(), m_database_service, m_services, this);

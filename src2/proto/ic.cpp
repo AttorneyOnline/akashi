@@ -137,7 +137,7 @@ class IcHandler : public PacketHandler
             // Spectators cannot use IC.
             return;
         }
-        if (!f_context.canSpeakInArea()) {
+        if (!f_context.canActInArea()) {
             // Non-invited players cannot speak in spectatable areas.
             return;
         }

@@ -136,7 +136,7 @@ class AKASHI_CORE_EXPORT IPacketContext
 
     // In-character chat: the area's rules and state.
     virtual bool isIcMessageAllowed() const = 0;
-    virtual bool canSpeakInArea() = 0;
+    virtual bool canActInArea() = 0;
     virtual bool isIniswapAllowed() const = 0;
     virtual bool isBlankpostingAllowed() const = 0;
     virtual bool isShoutAllowed() const = 0;
@@ -150,6 +150,31 @@ class AKASHI_CORE_EXPORT IPacketContext
     virtual PairInfo resolvePair(int f_pair_id) = 0;
     virtual QStringList applyTestimony(const QStringList &f_fields) = 0;
     virtual void broadcastIc(const QStringList &f_fields, int f_evidence_index) = 0;
+
+    // Music.
+    virtual bool hasSong(const QString &f_name) const = 0;
+    virtual bool isDjBlocked() const = 0;
+    virtual bool isMusicAllowed() const = 0;
+    virtual bool isJukeboxEnabled() const = 0;
+    virtual QString queueJukeboxSong(const QString &f_song) = 0;
+    virtual QString resolveSongAlias(const QString &f_song) = 0;
+    virtual void recordMusicChange(const QString &f_song) = 0;
+
+    // Judge controls.
+    virtual bool isWtceBlocked() const = 0;
+    virtual bool isWtceAllowed() const = 0;
+    // True when the judge controls are off cooldown; stamps the new use.
+    virtual bool startWtceCooldown() = 0;
+    virtual void logJudgeAction(const QString &f_action) = 0;
+
+    // Areas.
+    virtual void changeArea(int f_area_index) = 0;
+
+    // Evidence creation; deletion and edits are further up.
+    virtual void addEvidence(const QString &f_name, const QString &f_description, const QString &f_image) = 0;
+
+    // Sends one finished packet to everyone in the area.
+    virtual void broadcastArea(const Packet &f_packet) = 0;
 };
 
 } // namespace akashi

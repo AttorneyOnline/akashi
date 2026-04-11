@@ -991,7 +991,7 @@ bool AOClient::isIcMessageAllowed() const
     return m_server->areaById(areaId())->isMessageAllowed() && m_server->isMessageAllowed();
 }
 
-bool AOClient::canSpeakInArea()
+bool AOClient::canActInArea()
 {
     AreaData *l_area = m_server->areaById(areaId());
     return !(l_area->lockStatus() == AreaData::LockStatus::SPECTATABLE && !l_area->invited().contains(clientId()) && !canPerform(ACLRole::BYPASS_LOCKS));
@@ -1191,3 +1191,86 @@ void AOClient::broadcastIc(const QStringList &f_fields, int f_evidence_index)
     m_server->startMessageFloodguard(ConfigManager::globalMessageFloodguard());
 }
 
+bool AOClient::hasSong(const QString &f_name) const
+{
+    return m_server->musicList().contains(f_name) || m_music_manager->isCustom(areaId(), f_name);
+}
+
+bool AOClient::isDjBlocked() const
+{
+    return m_is_dj_blocked;
+}
+
+bool AOClient::isMusicAllowed() const
+{
+    return m_server->areaById(areaId())->isMusicAllowed() || canPerform(ACLRole::CM);
+}
+
+bool AOClient::isJukeboxEnabled() const
+{
+    return m_server->areaById(areaId())->isJukeboxEnabled();
+}
+
+QString AOClient::queueJukeboxSong(const QString &f_song)
+{
+    return m_server->areaById(areaId())->addJukeboxSong(f_song);
+}
+
+QString AOClient::resolveSongAlias(const QString &f_song)
+{
+    return m_music_manager->songInformation(f_song, areaId()).first;
+}
+
+void AOClient::recordMusicChange(const QString &f_song)
+{
+    AreaData *l_area = m_server->areaById(areaId());
+    Q_EMIT logMusic((character() + " " + characterName()), name(), m_ipid, l_area->name(), f_song);
+
+    // An empty showname would show as "played by ." in /currentmusic.
+    if (characterName().isEmpty()) {
+        l_area->changeMusic(character(), f_song);
+        return;
+    }
+    l_area->changeMusic(characterName(), f_song);
+}
+
+bool AOClient::isWtceBlocked() const
+{
+    return m_is_wtce_blocked;
+}
+
+bool AOClient::isWtceAllowed() const
+{
+    return m_server->areaById(areaId())->isWtceAllowed();
+}
+
+bool AOClient::startWtceCooldown()
+{
+    const qint64 l_now = QDateTime::currentDateTime().toSecsSinceEpoch();
+    if (l_now - m_last_wtce_time <= 5) {
+        return false;
+    }
+    m_last_wtce_time = l_now;
+    return true;
+}
+
+void AOClient::logJudgeAction(const QString &f_action)
+{
+    updateJudgeLog(m_server->areaById(areaId()), this, f_action);
+}
+
+void AOClient::addEvidence(const QString &f_name, const QString &f_description, const QString &f_image)
+{
+    AreaData::Evidence l_evidence;
+    l_evidence.name = f_name;
+    l_evidence.description = f_description;
+    l_evidence.image = f_image;
+    AreaData *l_area = m_server->areaById(areaId());
+    l_area->appendEvidence(l_evidence);
+    sendEvidenceList(l_area);
+}
+
+void AOClient::broadcastArea(const akashi::Packet &f_packet)
+{
+    m_server->broadcast(f_packet, areaId());
+}

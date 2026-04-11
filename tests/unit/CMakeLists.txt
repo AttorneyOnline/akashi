@@ -19,6 +19,7 @@ set(UNIT_TESTS
     handshake
     chat
     ic
+    area_music
     networkservice
     service
     music_manager
