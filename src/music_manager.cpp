@@ -5,6 +5,26 @@
 
 #include <QUrl>
 
+namespace {
+
+// A custom music entry must never be able to form a packet on the wire.
+// The field separator #, the terminator's %, and the escape sequences a
+// client decodes back into them are all forbidden: otherwise a crafted
+// song name, replayed as an MC packet by another player who picks it from
+// the list, would break out of its field and inject a packet from them.
+bool formatsAsPacket(const QString &f_text)
+{
+    static const QStringList l_forbidden = {"#", "%", "<num>", "<percent>"};
+    for (const QString &l_token : l_forbidden) {
+        if (f_text.contains(l_token, Qt::CaseInsensitive)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+} // namespace
+
 MusicManager::MusicManager(QStringList f_cdns, MusicList f_root_list, QStringList f_root_ordered, QObject *parent) :
     QObject(parent),
     m_root_list(f_root_list),
@@ -93,6 +113,11 @@ bool MusicManager::validateSong(QString f_song_name, QStringList f_approved_cdns
 
 bool MusicManager::addCustomSong(QString f_song_name, QString f_real_name, int f_duration, int f_area_id)
 {
+    // A name that could form a packet is refused before anything else.
+    if (formatsAsPacket(f_song_name) || formatsAsPacket(f_real_name)) {
+        return false;
+    }
+
     // Validate if simple name.
     QString l_song_name = f_song_name;
     if (f_song_name.split(".").size() == 1) {
@@ -132,6 +157,10 @@ bool MusicManager::addCustomSong(QString f_song_name, QString f_real_name, int f
 
 bool MusicManager::addCustomCategory(QString f_category_name, int f_area_id)
 {
+    if (formatsAsPacket(f_category_name)) {
+        return false;
+    }
+
     if (f_category_name.split(".").size() > 1) {
         return false;
     }

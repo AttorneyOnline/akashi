@@ -28,6 +28,8 @@ class MusicListManager : public QObject
 
     void addCustomCategory();
 
+    void customMusicCannotFormAPacket();
+
     void sanitiseCustomList();
 
     void removeCustomMusic();
@@ -181,6 +183,26 @@ void MusicListManager::addCustomCategory()
         QCOMPARE(m_music_manager->musiclist(0).size(), 5);
         QCOMPARE(m_music_manager->musiclist(0).at(4), "===Music===");
     }
+}
+
+void MusicListManager::customMusicCannotFormAPacket()
+{
+    m_music_manager->registerArea(0);
+    const int l_start = m_music_manager->musiclist(0).size();
+
+    // A name carrying the field separator, the terminator's percent, or the
+    // escape sequences a client decodes back into them is refused, so it can
+    // never be replayed as an injected packet.
+    QCOMPARE(m_music_manager->addCustomSong("evil#%ZZ#-1", "evil#%ZZ#-1", 0, 0), false);
+    QCOMPARE(m_music_manager->addCustomSong("evil<num><percent>ZZ", "evil<num><percent>ZZ", 0, 0), false);
+    QCOMPARE(m_music_manager->addCustomSong("clean", "https://my.cdn.com/x.opus#%ZZ", 0, 0), false);
+    QCOMPARE(m_music_manager->addCustomCategory("cat<percent>egory", 0), false);
+    QCOMPARE(m_music_manager->musiclist(0).size(), l_start);
+
+    // An ordinary name and a plain CDN URL still go in.
+    QCOMPARE(m_music_manager->addCustomSong("safesong", "safesong.opus", 0, 0), true);
+    QCOMPARE(m_music_manager->addCustomSong("safeurl", "https://my.cdn.com/song.opus", 0, 0), true);
+    QCOMPARE(m_music_manager->musiclist(0).size(), l_start + 2);
 }
 
 void MusicListManager::sanitiseCustomList()
