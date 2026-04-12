@@ -152,6 +152,20 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     int areaId() const;
     void setAreaId(const int f_area_id);
 
+    // Timed moderation sanctions, toggled by the moderation commands and
+    // read by the chat/music/judge packet handlers. Per-session today; a
+    // persistent sanction store backs these in M6. The isDjBlocked() and
+    // isWtceBlocked() getters live with the packet-context overrides below.
+    bool isMuted() const;
+    void setMuted(bool f_muted);
+
+    bool isOocMuted() const;
+    void setOocMuted(bool f_ooc_muted);
+
+    void setDjBlocked(bool f_dj_blocked);
+
+    void setWtceBlocked(bool f_wtce_blocked);
+
     /**
      * @brief The IP address of the client.
      */
@@ -208,26 +222,6 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
      * @see AOClient::cmdFirstPerson
      */
     bool m_first_person = false;
-
-    /**
-     * @brief If true, the client may not use in-character chat.
-     */
-    bool m_is_muted = false;
-
-    /**
-     * @brief If true, the client may not use out-of-character chat.
-     */
-    bool m_is_ooc_muted = false;
-
-    /**
-     * @brief If true, the client may not use the music list.
-     */
-    bool m_is_dj_blocked = false;
-
-    /**
-     * @brief If true, the client may not use the judge controls.
-     */
-    bool m_is_wtce_blocked = false;
 
     /**
      * @brief Represents the client's client software, and its version.
@@ -747,6 +741,26 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     void areaIdChanged(int);
 
   private:
+    /**
+     * @brief If true, the client may not use in-character chat.
+     */
+    bool m_is_muted = false;
+
+    /**
+     * @brief If true, the client may not use out-of-character chat.
+     */
+    bool m_is_ooc_muted = false;
+
+    /**
+     * @brief If true, the client may not use the music list.
+     */
+    bool m_is_dj_blocked = false;
+
+    /**
+     * @brief If true, the client may not use the judge controls.
+     */
+    bool m_is_wtce_blocked = false;
+
     /**
      * @brief The user ID of the client.
      */

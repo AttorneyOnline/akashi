@@ -888,6 +888,36 @@ bool AOClient::canUseIcChat() const
     return !m_is_muted;
 }
 
+bool AOClient::isMuted() const
+{
+    return m_is_muted;
+}
+
+void AOClient::setMuted(bool f_muted)
+{
+    m_is_muted = f_muted;
+}
+
+bool AOClient::isOocMuted() const
+{
+    return m_is_ooc_muted;
+}
+
+void AOClient::setOocMuted(bool f_ooc_muted)
+{
+    m_is_ooc_muted = f_ooc_muted;
+}
+
+void AOClient::setDjBlocked(bool f_dj_blocked)
+{
+    m_is_dj_blocked = f_dj_blocked;
+}
+
+void AOClient::setWtceBlocked(bool f_wtce_blocked)
+{
+    m_is_wtce_blocked = f_wtce_blocked;
+}
+
 int AOClient::characterId() const
 {
     return m_char_id;

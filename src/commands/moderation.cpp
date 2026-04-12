@@ -344,13 +344,13 @@ void AOClient::cmdMute(int argc, QStringList argv)
         return;
     }
 
-    if (target->m_is_muted)
+    if (target->isMuted())
         sendServerMessage("That player is already muted!");
     else {
         sendServerMessage("Muted player.");
         target->sendServerMessage("You were muted by a moderator. " + reprimand());
     }
-    target->m_is_muted = true;
+    target->setMuted(true);
 }
 
 void AOClient::cmdUnMute(int argc, QStringList argv)
@@ -371,13 +371,13 @@ void AOClient::cmdUnMute(int argc, QStringList argv)
         return;
     }
 
-    if (!l_target->m_is_muted)
+    if (!l_target->isMuted())
         sendServerMessage("That player is not muted!");
     else {
         sendServerMessage("Unmuted player.");
         l_target->sendServerMessage("You were unmuted by a moderator. " + reprimand(true));
     }
-    l_target->m_is_muted = false;
+    l_target->setMuted(false);
 }
 
 void AOClient::cmdOocMute(int argc, QStringList argv)
@@ -398,13 +398,13 @@ void AOClient::cmdOocMute(int argc, QStringList argv)
         return;
     }
 
-    if (l_target->m_is_ooc_muted)
+    if (l_target->isOocMuted())
         sendServerMessage("That player is already OOC muted!");
     else {
         sendServerMessage("OOC muted player.");
         l_target->sendServerMessage("You were OOC muted by a moderator. " + reprimand());
     }
-    l_target->m_is_ooc_muted = true;
+    l_target->setOocMuted(true);
 }
 
 void AOClient::cmdOocUnMute(int argc, QStringList argv)
@@ -425,13 +425,13 @@ void AOClient::cmdOocUnMute(int argc, QStringList argv)
         return;
     }
 
-    if (!l_target->m_is_ooc_muted)
+    if (!l_target->isOocMuted())
         sendServerMessage("That player is not OOC muted!");
     else {
         sendServerMessage("OOC unmuted player.");
         l_target->sendServerMessage("You were OOC unmuted by a moderator. " + reprimand(true));
     }
-    l_target->m_is_ooc_muted = false;
+    l_target->setOocMuted(false);
 }
 
 void AOClient::cmdBlockWtce(int argc, QStringList argv)
@@ -452,13 +452,13 @@ void AOClient::cmdBlockWtce(int argc, QStringList argv)
         return;
     }
 
-    if (l_target->m_is_wtce_blocked)
+    if (l_target->isWtceBlocked())
         sendServerMessage("That player is already judge blocked!");
     else {
         sendServerMessage("Revoked player's access to judge controls.");
         l_target->sendServerMessage("A moderator revoked your judge controls access. " + reprimand());
     }
-    l_target->m_is_wtce_blocked = true;
+    l_target->setWtceBlocked(true);
 }
 
 void AOClient::cmdUnBlockWtce(int argc, QStringList argv)
@@ -479,13 +479,13 @@ void AOClient::cmdUnBlockWtce(int argc, QStringList argv)
         return;
     }
 
-    if (!l_target->m_is_wtce_blocked)
+    if (!l_target->isWtceBlocked())
         sendServerMessage("That player is not judge blocked!");
     else {
         sendServerMessage("Restored player's access to judge controls.");
         l_target->sendServerMessage("A moderator restored your judge controls access. " + reprimand(true));
     }
-    l_target->m_is_wtce_blocked = false;
+    l_target->setWtceBlocked(false);
 }
 
 void AOClient::cmdAllowBlankposting(int argc, QStringList argv)

@@ -111,13 +111,13 @@ void AOClient::cmdBlockDj(int argc, QStringList argv)
         return;
     }
 
-    if (l_target->m_is_dj_blocked)
+    if (l_target->isDjBlocked())
         sendServerMessage("That player is already DJ blocked!");
     else {
         sendServerMessage("DJ blocked player.");
         l_target->sendServerMessage("You were blocked from changing the music by a moderator. " + reprimand());
     }
-    l_target->m_is_dj_blocked = true;
+    l_target->setDjBlocked(true);
 }
 
 void AOClient::cmdUnBlockDj(int argc, QStringList argv)
@@ -138,13 +138,13 @@ void AOClient::cmdUnBlockDj(int argc, QStringList argv)
         return;
     }
 
-    if (!l_target->m_is_dj_blocked)
+    if (!l_target->isDjBlocked())
         sendServerMessage("That player is not DJ blocked!");
     else {
         sendServerMessage("DJ permissions restored to player.");
         l_target->sendServerMessage("A moderator restored your music permissions. " + reprimand(true));
     }
-    l_target->m_is_dj_blocked = false;
+    l_target->setDjBlocked(false);
 }
 
 void AOClient::cmdToggleMusic(int argc, QStringList argv)
