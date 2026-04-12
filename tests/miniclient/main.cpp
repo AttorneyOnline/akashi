@@ -4,8 +4,11 @@
 // the playtest checklist: pick a character, chat in OOC and IC, change
 // the music, throw a judge splash, present evidence with every escape
 // character in it, keepalive, get denied a mod command, fail a login, log
-// in with the modpass and run a database-backed mod command. Exits 0
-// when every step got the expected answer, 1 on a timeout or failure.
+// in with the modpass and run a database-backed mod command; then, as a
+// moderator: set a judge penalty, call a mod, announce a case, and end
+// the session by kicking itself through the MA packet. Exits 0 when
+// every step got the expected answer, 1 on a timeout or failure.
+//
 // Usage: ao2_miniclient [address] [port] [modpass] [classic]
 #include "aopacket.h"
 #include "websocketconnection.h"
@@ -205,10 +208,34 @@ class MiniClient : public QObject
             break;
         case Step::DatabaseQuery:
             if (l_header == "CT" && l_content.value(1).contains("Ban Info for 1")) {
+                step(Step::JudgePenalty, "HP echo");
+                send(AOPacket("HP", {"1", "7"}));
+            }
+            break;
+        case Step::JudgePenalty:
+            if (l_header == "HP" && l_content.value(0) == "1" && l_content.value(1) == "7") {
+                step(Step::Modcall, "modcall notice");
+                send(AOPacket("ZZ", {"Testing the modcall", "-1"}));
+            }
+            break;
+        case Step::Modcall:
+            // Logged in as a moderator, so our own call comes right back.
+            if (l_header == "ZZ" && l_content.value(0).contains("!!!MODCALL!!!")) {
+                step(Step::CaseAlert, "case announcement");
+                send(AOPacket("CASEA", {"Test Case", "1", "0", "0", "0", "0"}));
+            }
+            break;
+        case Step::CaseAlert:
+            if (l_header == "CASEA" && l_content.value(0).contains("=== Case Announcement ===")) {
+                step(Step::SelfKick, "KK");
+                send(AOPacket("MA", {QString::number(m_client_id), "0", "kicked by the playtest"}));
+            }
+            break;
+        case Step::SelfKick:
+            if (l_header == "KK") {
                 m_done = true;
                 m_watchdog->stop();
-                say("every step answered, disconnecting");
-                m_connection->disconnectFromServer();
+                say("every step answered, kicked ourselves goodbye");
                 QTimer::singleShot(500, qApp, [] { qApp->exit(0); });
             }
             break;
@@ -238,6 +265,10 @@ class MiniClient : public QObject
         LoginPromptAgain,
         LoginRight,
         DatabaseQuery,
+        JudgePenalty,
+        Modcall,
+        CaseAlert,
+        SelfKick,
     };
 
     void send(AOPacket f_packet)
