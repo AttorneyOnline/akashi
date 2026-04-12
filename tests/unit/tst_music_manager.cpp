@@ -2,6 +2,7 @@
 #include <QTest>
 
 #include "music_manager.h"
+#include "proto/packet.h"
 
 namespace tests {
 namespace unittests {
@@ -28,7 +29,7 @@ class MusicListManager : public QObject
 
     void addCustomCategory();
 
-    void customMusicCannotFormAPacket();
+    void customMusicNamesAreInertOnTheWire();
 
     void sanitiseCustomList();
 
@@ -185,24 +186,25 @@ void MusicListManager::addCustomCategory()
     }
 }
 
-void MusicListManager::customMusicCannotFormAPacket()
+void MusicListManager::customMusicNamesAreInertOnTheWire()
 {
     m_music_manager->registerArea(0);
-    const int l_start = m_music_manager->musiclist(0).size();
 
-    // A name carrying the field separator, the terminator's percent, or the
-    // escape sequences a client decodes back into them is refused, so it can
-    // never be replayed as an injected packet.
-    QCOMPARE(m_music_manager->addCustomSong("evil#%ZZ#-1", "evil#%ZZ#-1", 0, 0), false);
-    QCOMPARE(m_music_manager->addCustomSong("evil<num><percent>ZZ", "evil<num><percent>ZZ", 0, 0), false);
-    QCOMPARE(m_music_manager->addCustomSong("clean", "https://my.cdn.com/x.opus#%ZZ", 0, 0), false);
-    QCOMPARE(m_music_manager->addCustomCategory("cat<percent>egory", 0), false);
-    QCOMPARE(m_music_manager->musiclist(0).size(), l_start);
+    // # and % are valid characters in a filename, so these names must be
+    // accepted, not rejected.
+    QCOMPARE(m_music_manager->addCustomSong("Track #1", "Track #1.opus", 0, 0), true);
+    QCOMPARE(m_music_manager->addCustomSong("100% Cooler", "100% Cooler.opus", 0, 0), true);
+    // Even a name crafted to look like a packet is accepted: it is made
+    // harmless by escaping when the list is serialised, never by rejection.
+    QCOMPARE(m_music_manager->addCustomSong("x#%ZZ#-1", "x#%ZZ#-1", 0, 0), true);
 
-    // An ordinary name and a plain CDN URL still go in.
-    QCOMPARE(m_music_manager->addCustomSong("safesong", "safesong.opus", 0, 0), true);
-    QCOMPARE(m_music_manager->addCustomSong("safeurl", "https://my.cdn.com/song.opus", 0, 0), true);
-    QCOMPARE(m_music_manager->musiclist(0).size(), l_start + 2);
+    // On the wire every delimiter inside a name is escaped, so no name can
+    // break its field and form a packet of its own.
+    const QString l_wire = akashi::Packet("FM", m_music_manager->musiclist(0)).serialize();
+    QVERIFY(l_wire.contains("Track <num>1.opus"));
+    QVERIFY(l_wire.contains("100<percent> Cooler.opus"));
+    QVERIFY(l_wire.contains("x<num><percent>ZZ<num>-1.opus"));
+    QVERIFY(!l_wire.contains("x#%ZZ"));
 }
 
 void MusicListManager::sanitiseCustomList()
