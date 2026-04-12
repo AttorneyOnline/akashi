@@ -317,6 +317,78 @@ class FakeContext : public akashi::IPacketContext
         area_broadcasts.append(f_packet);
         calls.append("broadcastArea:" + f_packet.header());
     }
+
+    QHash<int, int> penalties = {{1, 10}, {2, 10}};
+    QList<bool> case_alert_needs;
+    QList<akashi::Packet> case_alerts;
+    QString character_password;
+    bool authenticated = false;
+    QStringList permissions;
+    QString current_area_name = "Basement";
+    QHash<int, QString> player_names;
+    QList<akashi::Packet> moderator_broadcasts;
+    QString webhook_reason;
+    QStringList kicks;
+    QStringList bans;
+
+    void setPenalty(int f_bar, int f_value) override
+    {
+        penalties[f_bar] = f_value;
+        calls.append("setPenalty");
+    }
+
+    int penalty(int f_bar) const override { return penalties.value(f_bar); }
+
+    void broadcastCaseAlert(const QList<bool> &f_needs, const akashi::Packet &f_packet) override
+    {
+        case_alert_needs = f_needs;
+        case_alerts.append(f_packet);
+        calls.append("broadcastCaseAlert");
+    }
+
+    void setCharacterPassword(const QString &f_password) override
+    {
+        character_password = f_password;
+        calls.append("setCharacterPassword");
+    }
+
+    bool isAuthenticated() const override { return authenticated; }
+    bool canPerform(const QString &f_permission) const override { return permissions.contains(f_permission); }
+    QString areaName() const override { return current_area_name; }
+
+    std::optional<QString> playerName(int f_client_id) const override
+    {
+        if (!player_names.contains(f_client_id)) {
+            return std::nullopt;
+        }
+        return player_names.value(f_client_id);
+    }
+
+    void broadcastModerators(const akashi::Packet &f_packet) override
+    {
+        moderator_broadcasts.append(f_packet);
+        calls.append("broadcastModerators");
+    }
+
+    void recordModcall() override { calls.append("recordModcall"); }
+
+    void requestModcallWebhook(const QString &f_reason) override
+    {
+        webhook_reason = f_reason;
+        calls.append("requestModcallWebhook");
+    }
+
+    void kickPlayer(int f_client_id, const QString &f_reason) override
+    {
+        kicks.append(QString::number(f_client_id) + "|" + f_reason);
+        calls.append("kickPlayer");
+    }
+
+    void banPlayer(int f_client_id, int f_duration, const QString &f_reason) override
+    {
+        bans.append(QString::number(f_client_id) + "|" + QString::number(f_duration) + "|" + f_reason);
+        calls.append("banPlayer");
+    }
 };
 
 #endif // TESTS_FAKE_PACKET_CONTEXT_H

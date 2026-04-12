@@ -28,7 +28,6 @@
 #include <QString>
 #include <QTimer>
 
-#include "network/aopacket.h"
 
 namespace akashi {
 class Packet;
@@ -37,7 +36,6 @@ class Packet;
 class ConfigManager;
 class Logger;
 class MusicManager;
-class AOPacket;
 
 /**
  * @brief Represents an area on the server, a distinct "room" for people to chat in.

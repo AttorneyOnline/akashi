@@ -29,29 +29,8 @@ set(AKASHI_SOURCES
   src/logger/writer_full.h
   src/logger/writer_modcall.cpp
   src/logger/writer_modcall.h
-  src/network/aopacket.cpp
-  src/network/aopacket.h
   src/network/network_socket.cpp
   src/network/network_socket.h
-  src/packet/packet_casea.cpp
-  src/packet/packet_casea.h
-  src/packet/packet_ch.cpp
-  src/packet/packet_ch.h
-  src/packet/packet_factory.cpp
-  src/packet/packet_factory.h
-  src/packet/packet_generic.cpp
-  src/packet/packet_generic.h
-  src/packet/packet_hp.cpp
-  src/packet/packet_hp.h
-  src/packet/packet_info.h
-  src/packet/packet_ma.cpp
-  src/packet/packet_ma.h
-  src/packet/packet_pr.cpp
-  src/packet/packet_pr.h
-  src/packet/packet_pw.cpp
-  src/packet/packet_pw.h
-  src/packet/packet_zz.cpp
-  src/packet/packet_zz.h
   src/acl_roles_handler.cpp
   src/acl_roles_handler.h
   src/akashiutils.h
@@ -123,6 +102,9 @@ set(AKASHI_SOURCES
   src2/proto/ic.h
   src2/proto/ic_message.h
   src2/proto/message.h
+  src2/proto/moderation.cpp
+  src2/proto/moderation.h
+  src2/proto/moderation_messages.h
   src2/proto/packet_codec.cpp
   src2/proto/packet_codec.h
   src2/proto/packet_context.h

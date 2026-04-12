@@ -183,6 +183,61 @@ class CasingPreferencesHandler : public PacketHandler
     }
 };
 
+class CaseAnnouncementCodec : public Codec
+{
+  public:
+    std::unique_ptr<Message> decode(const Packet &f_packet) const override
+    {
+        auto l_message = std::make_unique<CaseAnnouncementMessage>();
+        l_message->title = f_packet.field(0);
+        for (int i = 1; i <= 5; i++) {
+            bool l_ok;
+            const int l_need = f_packet.field(i).toInt(&l_ok);
+            if (!l_ok) {
+                l_message->needs.clear();
+                l_message->needs_raw.clear();
+                return l_message;
+            }
+            l_message->needs.append(l_need);
+            l_message->needs_raw.append(f_packet.field(i));
+        }
+        return l_message;
+    }
+};
+
+class CaseAnnouncementHandler : public PacketHandler
+{
+  public:
+    void handle(const Message &f_message, IPacketContext &f_context) const override
+    {
+        const auto &l_case = static_cast<const CaseAnnouncementMessage &>(f_message);
+        if (l_case.needs.size() != 5) {
+            return;
+        }
+
+        static const QStringList l_roles = {"defense attorney", "prosecutor", "judge", "jurors", "stenographer"};
+        QStringList l_needed_roles;
+        for (int i = 0; i < 5; i++) {
+            if (l_case.needs.at(i)) {
+                l_needed_roles.append(l_roles.at(i));
+            }
+        }
+        if (l_needed_roles.isEmpty()) {
+            return;
+        }
+
+        const QString l_announcer = f_context.oocName().isEmpty() ? f_context.character() : f_context.oocName();
+        const QString l_alert = "=== Case Announcement ===\r\n" + l_announcer + " needs " + l_needed_roles.join(", ") +
+                                " for " + (l_case.title.isEmpty() ? "a case" : l_case.title) + "!";
+
+        // The trailing 1 is undocumented, but the client rejects a CASEA
+        // with fewer than seven fields.
+        QStringList l_fields = {l_alert};
+        l_fields << l_case.needs_raw << "1";
+        f_context.broadcastCaseAlert(l_case.needs, Packet(ao2::HEADER_CASEA, l_fields));
+    }
+};
+
 } // namespace
 
 void registerChatPackets(PacketRegistry &f_handlers, PacketCodecRegistry &f_codecs)
@@ -193,11 +248,13 @@ void registerChatPackets(PacketRegistry &f_handlers, PacketCodecRegistry &f_code
     f_handlers.registerHandler({ao2::HEADER_DE, 1, {}}, std::make_shared<EvidenceDeleteHandler>(), l_owner);
     f_handlers.registerHandler({ao2::HEADER_EE, 4, {}}, std::make_shared<EvidenceEditHandler>(), l_owner);
     f_handlers.registerHandler({ao2::HEADER_SETCASE, 7, {}}, std::make_shared<CasingPreferencesHandler>(), l_owner);
+    f_handlers.registerHandler({ao2::HEADER_CASEA, 6, {}}, std::make_shared<CaseAnnouncementHandler>(), l_owner);
 
     f_codecs.registerCodec(ao2::HEADER_CT, always(), 0, std::make_shared<OocCodec>(), l_owner);
     f_codecs.registerCodec(ao2::HEADER_DE, always(), 0, std::make_shared<EvidenceDeleteCodec>(), l_owner);
     f_codecs.registerCodec(ao2::HEADER_EE, always(), 0, std::make_shared<EvidenceEditCodec>(), l_owner);
     f_codecs.registerCodec(ao2::HEADER_SETCASE, always(), 0, std::make_shared<CasingPreferencesCodec>(), l_owner);
+    f_codecs.registerCodec(ao2::HEADER_CASEA, always(), 0, std::make_shared<CaseAnnouncementCodec>(), l_owner);
 }
 
 } // namespace akashi

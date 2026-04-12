@@ -29,6 +29,8 @@ class tst_Chat : public QObject
     void evidenceEditChecksAccessAndBounds();
     void evidenceEditTagsHiddenCmEvidence();
     void casingPreferencesNeedFiveNumbers();
+    void caseAnnouncementAlertsMatchingClients();
+    void caseAnnouncementNeedsAValidRole();
 
   private:
     // Runs a packet the way the dispatcher does: resolve, decode, handle.
@@ -196,6 +198,36 @@ void tst_Chat::casingPreferencesNeedFiveNumbers()
     run(Packet("SETCASE", {"", "", "1", "yes", "1", "0", "1"}), l_garbage);
     QVERIFY(l_garbage.casing_preferences.isEmpty());
     QVERIFY(l_garbage.calls.isEmpty());
+}
+
+void tst_Chat::caseAnnouncementAlertsMatchingClients()
+{
+    FakeContext l_context;
+    run(Packet("CASEA", {"My Case", "1", "0", "0", "0", "0"}), l_context);
+
+    QCOMPARE(l_context.case_alerts.size(), 1);
+    QCOMPARE(l_context.case_alert_needs, QList<bool>({true, false, false, false, false}));
+    const QStringList l_fields = l_context.case_alerts.first().fields();
+    QCOMPARE(l_fields.first(), QString("=== Case Announcement ===\r\nPhoenix needs defense attorney for My Case!"));
+    // The needs echo as sent, with the undocumented seventh field.
+    QCOMPARE(l_fields.mid(1), QStringList({"1", "0", "0", "0", "0", "1"}));
+
+    // An untitled case is announced as "a case", named by the OOC name.
+    FakeContext l_untitled;
+    l_untitled.ooc_name = "Nick";
+    run(Packet("CASEA", {"", "0", "1", "1", "0", "0"}), l_untitled);
+    QCOMPARE(l_untitled.case_alerts.first().field(0), QString("=== Case Announcement ===\r\nNick needs prosecutor, judge for a case!"));
+}
+
+void tst_Chat::caseAnnouncementNeedsAValidRole()
+{
+    FakeContext l_no_roles;
+    run(Packet("CASEA", {"My Case", "0", "0", "0", "0", "0"}), l_no_roles);
+    QVERIFY(l_no_roles.case_alerts.isEmpty());
+
+    FakeContext l_garbage;
+    run(Packet("CASEA", {"My Case", "1", "yes", "0", "0", "0"}), l_garbage);
+    QVERIFY(l_garbage.case_alerts.isEmpty());
 }
 
 }

@@ -34,7 +34,6 @@
 #include "core/exit_code.h"
 #include "core/mmdb_reader.h"
 #include "medieval_parser.h"
-#include "network/aopacket.h"
 #include "playerstateobserver.h"
 #include "proto/packet.h"
 

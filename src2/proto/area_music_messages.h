@@ -43,6 +43,14 @@ class AKASHI_CORE_EXPORT EvidenceAddMessage : public Message
     QString image;
 };
 
+// HP: a judge sets a penalty bar; 1 is the defence, 2 the prosecution.
+class AKASHI_CORE_EXPORT PenaltyMessage : public Message
+{
+  public:
+    int bar = 0;
+    int value = 0;
+};
+
 } // namespace akashi
 
 #endif // PROTO_AREA_MUSIC_MESSAGES_H

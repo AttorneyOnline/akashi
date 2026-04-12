@@ -21,7 +21,6 @@
 #include "area_data.h"
 #include "config_manager.h"
 #include "music_manager.h"
-#include "packet/packet_factory.h"
 #include "server.h"
 
 // This file is for commands under the music category in aoclient.h

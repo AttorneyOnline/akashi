@@ -25,6 +25,13 @@ inline constexpr char HEADER_MC[] = "MC";
 inline constexpr char HEADER_RT[] = "RT";
 inline constexpr char HEADER_PE[] = "PE";
 
+// The moderation and state-sync family.
+inline constexpr char HEADER_ZZ[] = "ZZ";
+inline constexpr char HEADER_MA[] = "MA";
+inline constexpr char HEADER_CH[] = "CH";
+inline constexpr char HEADER_CASEA[] = "CASEA";
+inline constexpr char HEADER_PW[] = "PW";
+
 // The dummy track 2.9+ clients use to stop the music.
 inline constexpr char STOP_MUSIC[] = "~stop.mp3";
 
@@ -42,7 +49,27 @@ inline constexpr char HEADER_DONE[] = "DONE";
 inline constexpr char HEADER_BN[] = "BN";
 inline constexpr char HEADER_TI[] = "TI";
 inline constexpr char HEADER_KK[] = "KK";
+inline constexpr char HEADER_KB[] = "KB";
 inline constexpr char HEADER_LE[] = "LE";
+inline constexpr char HEADER_CHECK[] = "CHECK";
+
+// PR adds or removes a player list entry, PU updates one player's data.
+inline constexpr char HEADER_PR[] = "PR";
+inline constexpr char HEADER_PU[] = "PU";
+
+enum PlayerListUpdate
+{
+    PLAYER_LIST_ADD = 0,
+    PLAYER_LIST_REMOVE = 1,
+};
+
+enum PlayerDataType
+{
+    PLAYER_DATA_NAME = 0,
+    PLAYER_DATA_CHARACTER = 1,
+    PLAYER_DATA_CHARACTER_NAME = 2,
+    PLAYER_DATA_AREA_ID = 3,
+};
 
 } // namespace ao2
 

@@ -73,6 +73,18 @@ class EvidenceAddCodec : public Codec
     }
 };
 
+class PenaltyCodec : public Codec
+{
+  public:
+    std::unique_ptr<Message> decode(const Packet &f_packet) const override
+    {
+        auto l_message = std::make_unique<PenaltyMessage>();
+        l_message->bar = f_packet.field(0).toInt();
+        l_message->value = f_packet.field(1).toInt();
+        return l_message;
+    }
+};
+
 class MusicChangeHandler : public PacketHandler
 {
   public:
@@ -179,6 +191,32 @@ class EvidenceAddHandler : public PacketHandler
     }
 };
 
+class PenaltyHandler : public PacketHandler
+{
+  public:
+    void handle(const Message &f_message, IPacketContext &f_context) const override
+    {
+        const auto &l_penalty = static_cast<const PenaltyMessage &>(f_message);
+
+        if (f_context.isSpectator() || !f_context.canActInArea()) {
+            f_context.sendServerMessage("Spectators are blocked from using the judge controls.");
+            return;
+        }
+        if (f_context.isWtceBlocked()) {
+            f_context.sendServerMessage("You are blocked from using the judge controls.");
+            return;
+        }
+
+        // An unknown bar changes nothing, but the bars still echo.
+        if (l_penalty.bar == 1 || l_penalty.bar == 2) {
+            f_context.setPenalty(l_penalty.bar, l_penalty.value);
+        }
+        f_context.broadcastArea(Packet(ao2::HEADER_HP, {"1", QString::number(f_context.penalty(1))}));
+        f_context.broadcastArea(Packet(ao2::HEADER_HP, {"2", QString::number(f_context.penalty(2))}));
+        f_context.logJudgeAction("updated the penalties");
+    }
+};
+
 } // namespace
 
 void registerAreaMusicPackets(PacketRegistry &f_handlers, PacketCodecRegistry &f_codecs)
@@ -188,10 +226,12 @@ void registerAreaMusicPackets(PacketRegistry &f_handlers, PacketCodecRegistry &f
     f_handlers.registerHandler({ao2::HEADER_MC, 2, {}}, std::make_shared<MusicChangeHandler>(), l_owner);
     f_handlers.registerHandler({ao2::HEADER_RT, 1, {}}, std::make_shared<JudgeSplashHandler>(), l_owner);
     f_handlers.registerHandler({ao2::HEADER_PE, 3, {}}, std::make_shared<EvidenceAddHandler>(), l_owner);
+    f_handlers.registerHandler({ao2::HEADER_HP, 2, {}}, std::make_shared<PenaltyHandler>(), l_owner);
 
     f_codecs.registerCodec(ao2::HEADER_MC, always(), 0, std::make_shared<MusicChangeCodec>(), l_owner);
     f_codecs.registerCodec(ao2::HEADER_RT, always(), 0, std::make_shared<JudgeSplashCodec>(), l_owner);
     f_codecs.registerCodec(ao2::HEADER_PE, always(), 0, std::make_shared<EvidenceAddCodec>(), l_owner);
+    f_codecs.registerCodec(ao2::HEADER_HP, always(), 0, std::make_shared<PenaltyCodec>(), l_owner);
 }
 
 } // namespace akashi

@@ -20,7 +20,6 @@
 
 #include "area_data.h"
 #include "config_manager.h"
-#include "packet/packet_factory.h"
 #include "server.h"
 
 // This file is for commands under the messaging category in aoclient.h

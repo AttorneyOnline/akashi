@@ -31,6 +31,8 @@ class tst_Handshake : public QObject
     void joinSendsTheWholeWorldInOrder();
     void joinNeedsAHwidAndHappensOnce();
     void characterSelectFollowsTheOldRules();
+    void keepaliveAnswersWithCheck();
+    void characterPasswordIsRemembered();
 
   private:
     // Runs a packet the way the dispatcher does: resolve, decode, handle.
@@ -236,6 +238,20 @@ void tst_Handshake::characterSelectFollowsTheOldRules()
     FakeContext l_not_joined;
     run(Packet("CC", {"0", "1", "pass"}), l_not_joined);
     QCOMPARE(l_not_joined.selected_char_id, -100);
+}
+
+void tst_Handshake::keepaliveAnswersWithCheck()
+{
+    FakeContext l_context;
+    run(Packet("CH", {"0"}), l_context);
+    QCOMPARE(l_context.calls, QStringList({"send:CHECK"}));
+}
+
+void tst_Handshake::characterPasswordIsRemembered()
+{
+    FakeContext l_context;
+    run(Packet("PW", {"hunter2"}), l_context);
+    QCOMPARE(l_context.character_password, QString("hunter2"));
 }
 
 }

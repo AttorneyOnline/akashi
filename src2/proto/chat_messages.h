@@ -6,6 +6,7 @@
 
 #include <QList>
 #include <QString>
+#include <QStringList>
 
 #include <optional>
 
@@ -43,6 +44,17 @@ class AKASHI_CORE_EXPORT CasingPreferencesMessage : public Message
 {
   public:
     QList<bool> preferences;
+};
+
+// CASEA: a case announcement naming the five roles it still needs. The
+// needs list is empty when the client sent values that are not numbers;
+// the raw values go back out in the alert.
+class AKASHI_CORE_EXPORT CaseAnnouncementMessage : public Message
+{
+  public:
+    QString title;
+    QList<bool> needs;
+    QStringList needs_raw;
 };
 
 } // namespace akashi

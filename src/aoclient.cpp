@@ -19,13 +19,14 @@
 
 #include "proto/packet.h"
 
+#include <QQueue>
+
 #include "area_data.h"
 #include "command_extension.h"
 #include "config_manager.h"
 #include "db_manager.h"
 #include "medieval_parser.h"
 #include "music_manager.h"
-#include "packet/packet_factory.h"
 #include "playerstateobserver.h"
 #include "proto/ic.h"
 #include "server.h"
@@ -231,28 +232,9 @@ void AOClient::handlePacket(const akashi::Packet &packet)
     if (m_packets) {
         if (const auto l_spec = m_packets->handlers().spec(packet.header())) {
             handleRegisteredPacket(packet, *l_spec);
-            return;
         }
     }
-
-    // Packet families that have not moved to the registry yet go the old way.
-    const std::unique_ptr<AOPacket> l_packet(PacketFactory::createPacket(packet.header(), packet.fields()));
-    AreaData *l_area = m_server->areaById(areaId());
-
-    if (!canPerform(l_packet->packetInfo().acl_permission)) {
-        return;
-    }
-
-    resetAfk(packet.header());
-
-    if (l_packet->content().length() < l_packet->packetInfo().min_args) {
-#ifdef NET_DEBUG
-        qDebug() << "Invalid packet args length. Minimum is" << l_packet->packetInfo().min_args << "but only" << l_packet->content().length() << "were given.";
-#endif
-        return;
-    }
-
-    l_packet->handlePacket(l_area, *this);
+    // A header nobody registered is dropped.
 }
 
 void AOClient::handleRegisteredPacket(const akashi::Packet &f_packet, const akashi::PacketSpec &f_spec)
@@ -1273,4 +1255,149 @@ void AOClient::addEvidence(const QString &f_name, const QString &f_description, 
 void AOClient::broadcastArea(const akashi::Packet &f_packet)
 {
     m_server->broadcast(f_packet, areaId());
+}
+
+void AOClient::setPenalty(int f_bar, int f_value)
+{
+    AreaData *l_area = m_server->areaById(areaId());
+    if (f_bar == 1) {
+        l_area->changeHP(AreaData::Side::DEFENCE, f_value);
+    }
+    else if (f_bar == 2) {
+        l_area->changeHP(AreaData::Side::PROSECUTOR, f_value);
+    }
+}
+
+int AOClient::penalty(int f_bar) const
+{
+    AreaData *l_area = m_server->areaById(areaId());
+    return f_bar == 1 ? l_area->defHP() : l_area->proHP();
+}
+
+void AOClient::broadcastCaseAlert(const QList<bool> &f_needs, const akashi::Packet &f_packet)
+{
+    const QSet<bool> l_needs_set(f_needs.begin(), f_needs.end());
+    const QVector<AOClient *> l_clients = m_server->clients();
+    for (AOClient *l_client : l_clients) {
+        QSet<bool> l_matches(l_client->m_casing_preferences.begin(), l_client->m_casing_preferences.end());
+        l_matches.intersect(l_needs_set);
+        if (!l_matches.isEmpty()) {
+            l_client->sendPacket(f_packet);
+        }
+    }
+}
+
+void AOClient::setCharacterPassword(const QString &f_password)
+{
+    m_password = f_password;
+}
+
+bool AOClient::canPerform(const QString &f_permission) const
+{
+    return canPerform(ACLRole::PERMISSION_CAPTIONS.key(f_permission, ACLRole::NONE));
+}
+
+QString AOClient::areaName() const
+{
+    return m_server->areaById(areaId())->name();
+}
+
+std::optional<QString> AOClient::playerName(int f_client_id) const
+{
+    AOClient *l_client = m_server->clientById(f_client_id);
+    if (l_client == nullptr) {
+        return std::nullopt;
+    }
+    return l_client->name();
+}
+
+void AOClient::broadcastModerators(const akashi::Packet &f_packet)
+{
+    const QVector<AOClient *> l_clients = m_server->clients();
+    for (AOClient *l_client : l_clients) {
+        if (l_client->m_authenticated) {
+            l_client->sendPacket(f_packet);
+        }
+    }
+}
+
+void AOClient::recordModcall()
+{
+    Q_EMIT logModcall(m_server->areaById(areaId())->name(), m_ipid, name(), QString::number(clientId()), (character() + " " + characterName()));
+}
+
+void AOClient::requestModcallWebhook(const QString &f_reason)
+{
+    QString l_name = name();
+    if (l_name.isEmpty()) {
+        l_name = character();
+    }
+    const QString l_area_name = m_server->areaById(areaId())->name();
+    Q_EMIT m_server->modcallWebhookRequest(l_name, l_area_name, QString::number(clientId()), f_reason, m_server->areaBuffer(l_area_name));
+}
+
+void AOClient::kickPlayer(int f_client_id, const QString &f_reason)
+{
+    AOClient *l_target = m_server->clientById(f_client_id);
+    if (l_target == nullptr) {
+        return;
+    }
+    QString l_moderator_name = "Moderator";
+    if (ConfigManager::authType() == DataTypes::AuthType::ADVANCED) {
+        l_moderator_name = m_moderator_name;
+    }
+
+    const QList<AOClient *> l_clients = m_server->clientsByIpid(l_target->m_ipid);
+    for (AOClient *l_client : l_clients) {
+        l_client->sendPacket("KK", {f_reason});
+        l_client->m_socket->close();
+    }
+
+    Q_EMIT logKick(l_moderator_name, l_target->m_ipid, f_reason);
+    sendServerMessage("Kicked " + QString::number(l_clients.size()) + " client(s) with ipid " + l_target->m_ipid + " for reason: " + f_reason);
+}
+
+void AOClient::banPlayer(int f_client_id, int f_duration, const QString &f_reason)
+{
+    AOClient *l_target = m_server->clientById(f_client_id);
+    if (l_target == nullptr) {
+        return;
+    }
+    QString l_moderator_name = "Moderator";
+    if (ConfigManager::authType() == DataTypes::AuthType::ADVANCED) {
+        l_moderator_name = m_moderator_name;
+    }
+
+    DBManager::BanInfo l_ban;
+    l_ban.ip = l_target->m_remote_ip;
+    l_ban.ipid = l_target->m_ipid;
+    l_ban.moderator = l_moderator_name;
+    l_ban.reason = f_reason;
+    l_ban.time = QDateTime::currentDateTime().toSecsSinceEpoch();
+
+    QString l_timestamp;
+    if (f_duration == -1) {
+        l_ban.duration = -2;
+        l_timestamp = "permanently";
+    }
+    else {
+        l_ban.duration = f_duration * 60;
+        l_timestamp = QDateTime::fromSecsSinceEpoch(l_ban.time).addSecs(l_ban.duration).toString("MM/dd/yyyy, hh:mm");
+    }
+
+    const QList<AOClient *> l_clients = m_server->clientsByIpid(l_target->m_ipid);
+    for (AOClient *l_client : l_clients) {
+        l_ban.hdid = l_client->m_hwid;
+        m_server->databaseManager()->addBan(l_ban);
+        l_client->sendPacket("KB", {f_reason});
+        l_client->m_socket->close();
+    }
+
+    Q_EMIT logBan(l_moderator_name, l_target->m_ipid, l_timestamp, f_reason);
+    sendServerMessage("Banned " + QString::number(l_clients.size()) + " client(s) with ipid " + l_target->m_ipid + " for reason: " + f_reason);
+
+    const int l_ban_id = m_server->databaseManager()->banId(l_ban.ip);
+    if (ConfigManager::discordBanWebhookEnabled()) {
+        Q_EMIT m_server->banWebhookRequest(l_ban.ipid, l_ban.moderator, l_timestamp, l_ban.reason, l_ban_id);
+    }
 }

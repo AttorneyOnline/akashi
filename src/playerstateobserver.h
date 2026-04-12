@@ -3,7 +3,7 @@
 #include "akashi_core_export.h"
 
 #include "aoclient.h"
-#include "packet/packet_pr.h"
+#include "proto/ao2_protocol.h"
 #include "proto/packet.h"
 
 #include <QList>

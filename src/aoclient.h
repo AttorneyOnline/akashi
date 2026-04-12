@@ -120,7 +120,7 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
      *
      * @return True if loggged-in, false otherwise.
      */
-    bool isAuthenticated() const;
+    bool isAuthenticated() const override;
 
     /**
      * @brief Calculates the client's IPID based on a hashed version of its IP.
@@ -687,6 +687,18 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     void logJudgeAction(const QString &f_action) override;
     void addEvidence(const QString &f_name, const QString &f_description, const QString &f_image) override;
     void broadcastArea(const akashi::Packet &f_packet) override;
+    void setPenalty(int f_bar, int f_value) override;
+    int penalty(int f_bar) const override;
+    void broadcastCaseAlert(const QList<bool> &f_needs, const akashi::Packet &f_packet) override;
+    void setCharacterPassword(const QString &f_password) override;
+    bool canPerform(const QString &f_permission) const override;
+    QString areaName() const override;
+    std::optional<QString> playerName(int f_client_id) const override;
+    void broadcastModerators(const akashi::Packet &f_packet) override;
+    void recordModcall() override;
+    void requestModcallWebhook(const QString &f_reason) override;
+    void kickPlayer(int f_client_id, const QString &f_reason) override;
+    void banPlayer(int f_client_id, int f_duration, const QString &f_reason) override;
 
   public Q_SLOTS:
     /**

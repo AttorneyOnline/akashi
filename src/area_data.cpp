@@ -22,7 +22,6 @@
 #include "area_data.h"
 #include "config_manager.h"
 #include "music_manager.h"
-#include "packet/packet_factory.h"
 
 #include <QRegularExpression>
 

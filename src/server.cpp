@@ -31,7 +31,6 @@
 #include "logger/u_logger.h"
 #include "music_manager.h"
 #include "network/network_socket.h"
-#include "packet/packet_factory.h"
 #include "proto/packet_service.h"
 #include "serverpublisher.h"
 
@@ -63,7 +62,6 @@ Server::Server(int p_ws_port, akashi::DatabaseService *f_database, akashi::Servi
     logger = new ULogger(this);
     connect(this, &Server::logConnectionAttempt, logger, &ULogger::logConnectionAttempt);
 
-    AOPacket::registerPackets();
 }
 
 ExitCode Server::start()

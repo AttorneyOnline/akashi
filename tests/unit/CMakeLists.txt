@@ -2,7 +2,6 @@
 set(UNIT_TESTS
     acl_roles_handler
     akashi_utils
-    aopacket
     area
     command_extension
     config_manager
@@ -20,6 +19,7 @@ set(UNIT_TESTS
     chat
     ic
     area_music
+    moderation
     networkservice
     service
     music_manager

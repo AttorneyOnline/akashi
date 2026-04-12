@@ -25,7 +25,6 @@
 #include <QObject>
 #include <QPair>
 
-#include "network/aopacket.h"
 #include "typedefs.h"
 
 namespace akashi {

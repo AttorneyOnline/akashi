@@ -254,6 +254,38 @@ class CharacterSelectHandler : public PacketHandler
     }
 };
 
+// CH: the keepalive; the client measures its ping on the answer.
+class KeepaliveHandler : public PacketHandler
+{
+  public:
+    void handle(const Message &f_message, IPacketContext &f_context) const override
+    {
+        Q_UNUSED(f_message)
+        f_context.sendPacket(Packet(ao2::HEADER_CHECK));
+    }
+};
+
+class CharacterPasswordCodec : public Codec
+{
+  public:
+    std::unique_ptr<Message> decode(const Packet &f_packet) const override
+    {
+        auto l_message = std::make_unique<CharacterPasswordMessage>();
+        l_message->password = f_packet.field(0);
+        return l_message;
+    }
+};
+
+class CharacterPasswordHandler : public PacketHandler
+{
+  public:
+    void handle(const Message &f_message, IPacketContext &f_context) const override
+    {
+        const auto &l_password = static_cast<const CharacterPasswordMessage &>(f_message);
+        f_context.setCharacterPassword(l_password.password);
+    }
+};
+
 } // namespace
 
 void registerHandshakePackets(PacketRegistry &f_handlers, PacketCodecRegistry &f_codecs)
@@ -267,10 +299,13 @@ void registerHandshakePackets(PacketRegistry &f_handlers, PacketCodecRegistry &f
     f_handlers.registerHandler({ao2::HEADER_RM, 0, {}}, std::make_shared<MusicListHandler>(), l_owner);
     f_handlers.registerHandler({ao2::HEADER_RD, 0, {}}, std::make_shared<JoinHandler>(), l_owner);
     f_handlers.registerHandler({ao2::HEADER_CC, 3, {}}, std::make_shared<CharacterSelectHandler>(), l_owner);
+    f_handlers.registerHandler({ao2::HEADER_CH, 1, {}}, std::make_shared<KeepaliveHandler>(), l_owner);
+    f_handlers.registerHandler({ao2::HEADER_PW, 1, {}}, std::make_shared<CharacterPasswordHandler>(), l_owner);
 
     f_codecs.registerCodec(ao2::HEADER_HI, always(), 0, std::make_shared<HelloCodec>(), l_owner);
     f_codecs.registerCodec(ao2::HEADER_ID, always(), 0, std::make_shared<IdentifyCodec>(), l_owner);
     f_codecs.registerCodec(ao2::HEADER_CC, always(), 0, std::make_shared<CharacterSelectCodec>(), l_owner);
+    f_codecs.registerCodec(ao2::HEADER_PW, always(), 0, std::make_shared<CharacterPasswordCodec>(), l_owner);
     // Every other packet decodes to the empty message until its family moves over.
     f_codecs.registerCodec(QStringLiteral("*"), always(), 0, std::make_shared<EmptyCodec>(), l_owner);
 }

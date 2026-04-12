@@ -31,6 +31,13 @@ class AKASHI_CORE_EXPORT CharacterSelectMessage : public Message
     int char_id = -1;
 };
 
+// PW: the password the client offers for a protected character.
+class AKASHI_CORE_EXPORT CharacterPasswordMessage : public Message
+{
+  public:
+    QString password;
+};
+
 } // namespace akashi
 
 #endif // PROTO_HANDSHAKE_MESSAGES_H

@@ -28,6 +28,8 @@ class tst_AreaMusic : public QObject
     void judgeSplashRespectsBlocksAndCooldown();
     void evidenceIsAddedWithAccess();
     void hiddenCmAreaTagsNewEvidence();
+    void penaltyUpdatesAndEchoesBothBars();
+    void penaltyRespectsJudgeBlocks();
 
   private:
     void run(const Packet &f_packet, FakeContext &f_context);
@@ -203,6 +205,38 @@ void tst_AreaMusic::hiddenCmAreaTagsNewEvidence()
     l_tagged.evidence_hidden_cm = true;
     run(Packet("PE", {"Knife", "<owner=def>\nA bloody knife.", "knife.png"}), l_tagged);
     QCOMPARE(l_tagged.added_evidence.at(1), QString("<owner=def>\nA bloody knife."));
+}
+
+void tst_AreaMusic::penaltyUpdatesAndEchoesBothBars()
+{
+    FakeContext l_context;
+    run(Packet("HP", {"1", "5"}), l_context);
+
+    QCOMPARE(l_context.penalties.value(1), 5);
+    QCOMPARE(l_context.area_broadcasts.size(), 2);
+    QCOMPARE(l_context.area_broadcasts.at(0).fields(), QStringList({"1", "5"}));
+    QCOMPARE(l_context.area_broadcasts.at(1).fields(), QStringList({"2", "10"}));
+    QCOMPARE(l_context.judge_actions, QStringList({"updated the penalties"}));
+
+    // An unknown bar changes nothing but still echoes both bars.
+    FakeContext l_unknown;
+    run(Packet("HP", {"3", "5"}), l_unknown);
+    QVERIFY(!l_unknown.calls.contains("setPenalty"));
+    QCOMPARE(l_unknown.area_broadcasts.size(), 2);
+}
+
+void tst_AreaMusic::penaltyRespectsJudgeBlocks()
+{
+    FakeContext l_spectator;
+    l_spectator.spectator = true;
+    run(Packet("HP", {"1", "5"}), l_spectator);
+    QCOMPARE(l_spectator.calls, QStringList({"message:Spectators are blocked from using the judge controls."}));
+
+    FakeContext l_blocked;
+    l_blocked.wtce_blocked = true;
+    run(Packet("HP", {"1", "5"}), l_blocked);
+    QCOMPARE(l_blocked.calls, QStringList({"message:You are blocked from using the judge controls."}));
+    QCOMPARE(l_blocked.penalties.value(1), 10);
 }
 
 }

@@ -175,6 +175,28 @@ class AKASHI_CORE_EXPORT IPacketContext
 
     // Sends one finished packet to everyone in the area.
     virtual void broadcastArea(const Packet &f_packet) = 0;
+
+    // Judge penalty bars; the bar is 1 for defence, 2 for prosecution.
+    virtual void setPenalty(int f_bar, int f_value) = 0;
+    virtual int penalty(int f_bar) const = 0;
+
+    // Casing: sends the alert to every client whose preferences match a need.
+    virtual void broadcastCaseAlert(const QList<bool> &f_needs, const Packet &f_packet) = 0;
+
+    // The password a client wants to unlock a protected character with.
+    virtual void setCharacterPassword(const QString &f_password) = 0;
+
+    // Moderation.
+    virtual bool isAuthenticated() const = 0;
+    virtual bool canPerform(const QString &f_permission) const = 0;
+    virtual QString areaName() const = 0;
+    // The OOC name of another connected player; empty-but-present names stay.
+    virtual std::optional<QString> playerName(int f_client_id) const = 0;
+    virtual void broadcastModerators(const Packet &f_packet) = 0;
+    virtual void recordModcall() = 0;
+    virtual void requestModcallWebhook(const QString &f_reason) = 0;
+    virtual void kickPlayer(int f_client_id, const QString &f_reason) = 0;
+    virtual void banPlayer(int f_client_id, int f_duration, const QString &f_reason) = 0;
 };
 
 } // namespace akashi
