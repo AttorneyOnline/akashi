@@ -35,6 +35,11 @@ MedievalParser::MedievalParser()
     parseDataFile();
 }
 
+MedievalParser::MedievalParser(const QByteArray &f_json_data)
+{
+    parseData(f_json_data);
+}
+
 QString MedievalParser::degrootify(QString message)
 {
     if (!datafile_valid) {
@@ -53,13 +58,21 @@ QString MedievalParser::degrootify(QString message)
 
 void MedievalParser::parseDataFile()
 {
+    QFile l_datafile_json(ConfigManager::path("text/autorp.json"));
+    if (!l_datafile_json.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        qWarning() << "Unable to open the Medieval Mode data file.";
+        datafile_valid = false;
+        return;
+    }
+    parseData(l_datafile_json.readAll());
+}
+
+void MedievalParser::parseData(const QByteArray &f_json)
+{
     datafile_valid = true;
 
-    QFile l_datafile_json(ConfigManager::path("text/autorp.json"));
-    l_datafile_json.open(QIODevice::ReadOnly | QIODevice::Text);
-
     QJsonParseError l_error;
-    const QJsonDocument &l_datafile_list_json = QJsonDocument::fromJson(l_datafile_json.readAll(), &l_error);
+    const QJsonDocument &l_datafile_list_json = QJsonDocument::fromJson(f_json, &l_error);
     if (!(l_error.error == QJsonParseError::NoError)) { // Non-Terminating error.
         qWarning() << "Unable to load Medieval Mode data file. The following error occurred: " + l_error.errorString();
         datafile_valid = false;
@@ -117,13 +130,13 @@ void MedievalParser::parseDataFile()
             }
             else if (key == "word_plural") {
                 replacement_struct.plurals = QVector<QString>(rep_obj[key].toVariant().toStringList().toVector());
-                for (const QString &word : replacement_struct.words) {
+                for (const QString &word : replacement_struct.plurals) {
                     word_vector.append(word);
                 }
             }
             else if (key == "prev") {
                 replacement_struct.prev_words = QVector<QString>(rep_obj[key].toVariant().toStringList().toVector());
-                for (const QString &word : replacement_struct.words) {
+                for (const QString &word : replacement_struct.prev_words) {
                     word_vector.append(word);
                 }
             }
@@ -214,18 +227,33 @@ bool MedievalParser::replaceWord(ReplacementCheck *check, QString *rep_str, bool
             continue;
         }
 
+        // A plural match uses the plural list, falling back to the singular
+        // list when it has none. If neither has words there is nothing to
+        // replace with, so leave the word alone rather than index an empty
+        // list; wordMatches may have flagged the previous word, so undo that.
+        const QVector<QString> &l_pool = (result == MATCHES_PLURAL && !rep_ptr->plural_replacements.isEmpty())
+                                             ? rep_ptr->plural_replacements
+                                             : rep_ptr->replacements;
+        if (l_pool.isEmpty()) {
+            check->used_prev_word = false;
+            continue;
+        }
+
         if (rep_ptr->prepended.count() > 0) {
             QVector<int> vector_used;
-            for (int count = 0; count < rep_ptr->prepend_count; count++) {
+            // Never ask for more distinct prepends than exist, or the
+            // "no repeats" loop below could never find an unused index.
+            const int l_prepend_count = qMin(rep_ptr->prepend_count, rep_ptr->prepended.count());
+            for (int count = 0; count < l_prepend_count; count++) {
                 // Ensure we don't choose two of the same prepends
                 int rnd = 0;
                 do {
-                    rnd = randomInt(0, rep_ptr->prepended.count());
+                    rnd = randomInt(0, rep_ptr->prepended.count() - 1);
                 } while (vector_used.contains(rnd));
                 vector_used.append(rnd);
 
                 rep_str->append(rep_ptr->prepended[rnd]);
-                if (count + 1 < rep_ptr->prepend_count) { // we have more prepends to prepend
+                if (count + 1 < l_prepend_count) { // we have more prepends to prepend
                     rep_str->append(", ");
                 }
                 else {
@@ -234,14 +262,7 @@ bool MedievalParser::replaceWord(ReplacementCheck *check, QString *rep_str, bool
             }
         }
 
-        if (result == MATCHES_SINGULAR) {
-            int rnd = randomInt(0, rep_ptr->replacements.count() - 1);
-            rep_str->append(rep_ptr->replacements[rnd]);
-        }
-        else if (result == MATCHES_PLURAL) {
-            int rnd = randomInt(0, rep_ptr->plural_replacements.count() - 1);
-            rep_str->append(rep_ptr->plural_replacements[rnd]);
-        }
+        rep_str->append(l_pool[randomInt(0, l_pool.count() - 1)]);
 
         return true;
     }

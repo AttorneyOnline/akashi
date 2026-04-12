@@ -20,6 +20,7 @@ set(UNIT_TESTS
     ic
     area_music
     moderation
+    medieval_parser
     networkservice
     service
     music_manager

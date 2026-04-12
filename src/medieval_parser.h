@@ -2,8 +2,11 @@
 #define MEDIEVAL_PARSER_H
 #pragma once
 
+#include "akashi_core_export.h"
+
 #include <QObject>
 #include <QString>
+#include <QVector>
 ///
 /// Medieval text parser, reimplemented from tf_autorp in the Source 1 SDK 2013
 /// Please do not report bugs found in this parser without confirming they do not also exist in TF2
@@ -16,20 +19,24 @@ enum MatchResult
     MATCHES_PLURAL
 };
 
-class MedievalParser
+class AKASHI_CORE_EXPORT MedievalParser
 {
   public:
     MedievalParser();
+
+    // Parses inline data instead of the config file, for tests.
+    explicit MedievalParser(const QByteArray &f_json_data);
 
     QString degrootify(QString message);
 
   private:
     void parseDataFile();
+    void parseData(const QByteArray &f_json);
 
     struct WordReplacement
     {
-        int chance;
-        int prepend_count;
+        int chance = 1;
+        int prepend_count = 0;
         QVector<QString> prepended;           // Words that prepend the replacement
         QVector<QString> replacements;        // Words that replace the original word
         QVector<QString> plural_replacements; // If the match was a plural match, use these replacements instead, if they exist
