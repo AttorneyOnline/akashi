@@ -985,7 +985,12 @@ bool AOClient::isGimped() const
 
 bool AOClient::isMedieval() const
 {
-    return m_is_medieval || m_server->areaById(areaId())->isMedievalMode();
+    return m_is_medieval;
+}
+
+bool AOClient::isMedievalArea() const
+{
+    return m_server->areaById(areaId())->isMedievalMode();
 }
 
 bool AOClient::isShaken() const
@@ -996,6 +1001,26 @@ bool AOClient::isShaken() const
 bool AOClient::isDisemvoweled() const
 {
     return m_is_disemvoweled;
+}
+
+void AOClient::setGimped(bool f_gimped)
+{
+    m_is_gimped = f_gimped;
+}
+
+void AOClient::setMedieval(bool f_medieval)
+{
+    m_is_medieval = f_medieval;
+}
+
+void AOClient::setShaken(bool f_shaken)
+{
+    m_is_shaken = f_shaken;
+}
+
+void AOClient::setDisemvoweled(bool f_disemvoweled)
+{
+    m_is_disemvoweled = f_disemvoweled;
 }
 
 bool AOClient::isIcMessageAllowed() const

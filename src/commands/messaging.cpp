@@ -216,13 +216,13 @@ void AOClient::cmdGimp(int argc, QStringList argv)
         return;
     }
 
-    if (l_target->m_is_gimped)
+    if (l_target->isGimped())
         sendServerMessage("That player is already gimped!");
     else {
         sendServerMessage("Gimped player.");
         l_target->sendServerMessage("You have been gimped! " + reprimand());
     }
-    l_target->m_is_gimped = true;
+    l_target->setGimped(true);
 }
 
 void AOClient::cmdUnGimp(int argc, QStringList argv)
@@ -243,13 +243,13 @@ void AOClient::cmdUnGimp(int argc, QStringList argv)
         return;
     }
 
-    if (!(l_target->m_is_gimped))
+    if (!(l_target->isGimped()))
         sendServerMessage("That player is not gimped!");
     else {
         sendServerMessage("Ungimped player.");
         l_target->sendServerMessage("A moderator has ungimped you! " + reprimand(true));
     }
-    l_target->m_is_gimped = false;
+    l_target->setGimped(false);
 }
 
 void AOClient::cmdDisemvowel(int argc, QStringList argv)
@@ -270,13 +270,13 @@ void AOClient::cmdDisemvowel(int argc, QStringList argv)
         return;
     }
 
-    if (l_target->m_is_disemvoweled)
+    if (l_target->isDisemvoweled())
         sendServerMessage("That player is already disemvoweled!");
     else {
         sendServerMessage("Disemvoweled player.");
         l_target->sendServerMessage("You have been disemvoweled! " + reprimand());
     }
-    l_target->m_is_disemvoweled = true;
+    l_target->setDisemvoweled(true);
 }
 
 void AOClient::cmdUnDisemvowel(int argc, QStringList argv)
@@ -297,13 +297,13 @@ void AOClient::cmdUnDisemvowel(int argc, QStringList argv)
         return;
     }
 
-    if (!(l_target->m_is_disemvoweled))
+    if (!(l_target->isDisemvoweled()))
         sendServerMessage("That player is not disemvoweled!");
     else {
         sendServerMessage("Undisemvoweled player.");
         l_target->sendServerMessage("A moderator has undisemvoweled you! " + reprimand(true));
     }
-    l_target->m_is_disemvoweled = false;
+    l_target->setDisemvoweled(false);
 }
 
 void AOClient::cmdShake(int argc, QStringList argv)
@@ -324,13 +324,13 @@ void AOClient::cmdShake(int argc, QStringList argv)
         return;
     }
 
-    if (l_target->m_is_shaken)
+    if (l_target->isShaken())
         sendServerMessage("That player is already shaken!");
     else {
         sendServerMessage("Shook player.");
         l_target->sendServerMessage("A moderator has shaken your words! " + reprimand());
     }
-    l_target->m_is_shaken = true;
+    l_target->setShaken(true);
 }
 
 void AOClient::cmdUnShake(int argc, QStringList argv)
@@ -351,13 +351,13 @@ void AOClient::cmdUnShake(int argc, QStringList argv)
         return;
     }
 
-    if (!(l_target->m_is_shaken))
+    if (!(l_target->isShaken()))
         sendServerMessage("That player is not shaken!");
     else {
         sendServerMessage("Unshook player.");
         l_target->sendServerMessage("A moderator has unshook you! " + reprimand(true));
     }
-    l_target->m_is_shaken = false;
+    l_target->setShaken(false);
 }
 
 void AOClient::cmdMedieval(int argc, QStringList argv)
@@ -378,13 +378,13 @@ void AOClient::cmdMedieval(int argc, QStringList argv)
         return;
     }
 
-    if (l_target->m_is_medieval)
+    if (l_target->isMedieval())
         sendServerMessage("That player is already speaking Ye Olde English!");
     else {
         sendServerMessage("It is done, sire.");
         l_target->sendServerMessage("Forsooth! Thine speech will henceforth be Ye Olde!");
     }
-    l_target->m_is_medieval = true;
+    l_target->setMedieval(true);
 }
 
 void AOClient::cmdUnMedieval(int argc, QStringList argv)
@@ -405,13 +405,13 @@ void AOClient::cmdUnMedieval(int argc, QStringList argv)
         return;
     }
 
-    if (!(l_target->m_is_medieval))
+    if (!(l_target->isMedieval()))
         sendServerMessage("That player is not shaken!");
     else {
         sendServerMessage("Un-medieval'd player.");
         l_target->sendServerMessage("Hark! Thine speech hast been returneth to normal.");
     }
-    l_target->m_is_medieval = false;
+    l_target->setMedieval(false);
 }
 
 void AOClient::cmdMutePM(int argc, QStringList argv)

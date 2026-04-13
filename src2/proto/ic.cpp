@@ -194,7 +194,7 @@ class IcHandler : public PacketHandler
         if (f_context.isGimped()) {
             l_text = f_context.gimpText();
         }
-        if (f_context.isMedieval()) {
+        if (f_context.isMedieval() || f_context.isMedievalArea()) {
             l_text = f_context.medievalText(l_text);
         }
         if (f_context.isShaken()) {

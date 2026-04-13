@@ -130,7 +130,9 @@ class AKASHI_CORE_EXPORT IPacketContext
     virtual QString gimpText() = 0;
     virtual QString medievalText(const QString &f_text) = 0;
     virtual bool isGimped() const = 0;
+    // The client's own medieval curse; the whole area can also be medieval.
     virtual bool isMedieval() const = 0;
+    virtual bool isMedievalArea() const = 0;
     virtual bool isShaken() const = 0;
     virtual bool isDisemvoweled() const = 0;
 

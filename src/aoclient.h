@@ -249,26 +249,6 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     QList<bool> m_casing_preferences = {false, false, false, false, false};
 
     /**
-     * @brief If true, the client's in-character messages will have their word order randomised.
-     */
-    bool m_is_shaken = false;
-
-    /**
-     * @brief If true, the client's in-character messages will have their vowels (English alphabet only) removed.
-     */
-    bool m_is_disemvoweled = false;
-
-    /**
-     * @brief If true, the client's in-character messages will be overwritten by a randomly picked predetermined message.
-     */
-    bool m_is_gimped = false;
-
-    /**
-     * @brief If true, the client's in-character messages will be run through a chat parser to make them into Ye Olde English.
-     */
-    bool m_is_medieval = false;
-
-    /**
      * @brief If true, the client will be marked as AFK in /getarea. Automatically applied when a configurable
      * amount of time has passed since the last interaction, or manually applied by /afk.
      */
@@ -654,8 +634,13 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     QString medievalText(const QString &f_text) override;
     bool isGimped() const override;
     bool isMedieval() const override;
+    bool isMedievalArea() const override;
     bool isShaken() const override;
     bool isDisemvoweled() const override;
+    void setGimped(bool f_gimped);
+    void setMedieval(bool f_medieval);
+    void setShaken(bool f_shaken);
+    void setDisemvoweled(bool f_disemvoweled);
     bool isIcMessageAllowed() const override;
     bool canActInArea() override;
     bool isIniswapAllowed() const override;
@@ -760,6 +745,26 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
      * @brief If true, the client may not use the judge controls.
      */
     bool m_is_wtce_blocked = false;
+
+    /**
+     * @brief If true, the client's in-character messages will have their word order randomised.
+     */
+    bool m_is_shaken = false;
+
+    /**
+     * @brief If true, the client's in-character messages will have their vowels (English alphabet only) removed.
+     */
+    bool m_is_disemvoweled = false;
+
+    /**
+     * @brief If true, the client's in-character messages will be overwritten by a randomly picked predetermined message.
+     */
+    bool m_is_gimped = false;
+
+    /**
+     * @brief If true, the client's in-character messages will be run through a chat parser to make them into Ye Olde English.
+     */
+    bool m_is_medieval = false;
 
     /**
      * @brief The user ID of the client.

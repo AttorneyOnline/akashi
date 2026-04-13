@@ -173,6 +173,7 @@ class FakeContext : public akashi::IPacketContext
     QString position;
     bool gimped = false;
     bool medieval = false;
+    bool medieval_area = false;
     bool shaken = false;
     bool disemvoweled = false;
     bool ic_message_allowed = true;
@@ -219,6 +220,7 @@ class FakeContext : public akashi::IPacketContext
     QString medievalText(const QString &f_text) override { return "Ye olde " + f_text; }
     bool isGimped() const override { return gimped; }
     bool isMedieval() const override { return medieval; }
+    bool isMedievalArea() const override { return medieval_area; }
     bool isShaken() const override { return shaken; }
     bool isDisemvoweled() const override { return disemvoweled; }
     bool isIcMessageAllowed() const override { return ic_message_allowed; }
