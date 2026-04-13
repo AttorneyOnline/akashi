@@ -68,7 +68,7 @@ class AKASHI_CORE_EXPORT MedievalParser
     QVector<QString> prepended_words;
     QVector<QString> appended_words;
 
-    bool datafile_valid;
+    bool datafile_valid = false;
 
     int randomInt(int min, int max);
     bool containsCaseInsensitive(const QVector<QString> &vector, const QString &str);
