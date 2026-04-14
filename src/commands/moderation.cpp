@@ -66,8 +66,8 @@ void AOClient::cmdBan(int argc, QStringList argv)
     const QList<AOClient *> l_targets = m_server->clientsByIpid(l_ban.ipid);
     for (AOClient *l_client : l_targets) {
         if (!l_ban_logged) {
-            l_ban.ip = l_client->m_remote_ip;
-            l_ban.hdid = l_client->m_hwid;
+            l_ban.ip = l_client->remoteIp();
+            l_ban.hdid = l_client->hwid();
             m_server->databaseManager()->addBan(l_ban);
             sendServerMessage("Banned user with ipid " + l_ban.ipid + " for reason: " + l_ban.reason);
             l_ban_logged = true;
@@ -140,11 +140,11 @@ void AOClient::cmdMods(int argc, QStringList argv)
     int l_online_count = 0;
     const QVector<AOClient *> l_clients = m_server->clients();
     for (AOClient *l_client : l_clients) {
-        if (l_client->m_authenticated) {
+        if (l_client->isAuthenticated()) {
             l_entries << "---";
             if (ConfigManager::authType() != DataTypes::AuthType::SIMPLE) {
-                l_entries << "Moderator: " + l_client->m_moderator_name;
-                l_entries << "Role:" << l_client->m_acl_role_id;
+                l_entries << "Moderator: " + l_client->moderatorName();
+                l_entries << "Role:" << l_client->aclRoleId();
             }
             l_entries << "OOC name: " + l_client->name();
             l_entries << "ID: " + QString::number(l_client->clientId());

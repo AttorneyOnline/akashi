@@ -174,11 +174,11 @@ void Server::clientConnected()
     auto ban = db_manager->isIPBanned(client->ipid());
     bool is_banned = ban.first;
     for (AOClient *joined_client : qAsConst(m_clients)) {
-        if (client->m_remote_ip.isEqual(joined_client->m_remote_ip))
+        if (client->remoteIp().isEqual(joined_client->remoteIp()))
             multiclient_count++;
     }
 
-    if (multiclient_count > ConfigManager::multiClientLimit() && !client->m_remote_ip.isLoopback())
+    if (multiclient_count > ConfigManager::multiClientLimit() && !client->remoteIp().isLoopback())
         is_at_multiclient_limit = true;
 
     if (is_banned) {
@@ -199,7 +199,7 @@ void Server::clientConnected()
         return;
     }
 
-    QHostAddress l_remote_ip = client->m_remote_ip;
+    QHostAddress l_remote_ip = client->remoteIp();
     if (l_remote_ip.protocol() == QAbstractSocket::IPv6Protocol) {
         l_remote_ip = parseToIPv4(l_remote_ip);
     }

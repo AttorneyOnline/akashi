@@ -167,16 +167,6 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     void setWtceBlocked(bool f_wtce_blocked);
 
     /**
-     * @brief The IP address of the client.
-     */
-    QHostAddress m_remote_ip;
-
-    /**
-     * @brief The stored character password for the client, used to be able to select passworded characters.
-     */
-    QString m_password;
-
-    /**
      * @brief True if the client is actually in the server.
      *
      * @details To explain: In AO, clients immediately establish connection to the server when the user clicks on the server's name in the server
@@ -186,11 +176,6 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
      * its client has sent the standard handshake packets, which does signify that the client intended to 'join' this server.
      */
     bool m_joined;
-
-    /**
-     * @brief If using advanced authentication, this is the moderator name that the client has logged in with.
-     */
-    QString m_moderator_name = "";
 
     /**
      * @brief The out-of-character name of the client, generally the nickname of the user themself.
@@ -230,13 +215,6 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     };
 
     /**
-     * @brief The software and version of the client.
-     *
-     * @see The struct itself for more details.
-     */
-    ClientVersion m_version;
-
-    /**
      * @brief A list of 5 casing preferences (def, pro, judge, jury, steno)
      */
     QList<bool> m_casing_preferences = {false, false, false, false, false};
@@ -262,24 +240,9 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     bool m_is_spectator = true;
 
     /**
-     * @brief The hardware ID of the client.
-     *
-     * @details Generated based on the client's own supplied hardware ID.
-     * The client supplied hardware ID is generally a machine unique ID.
-     */
-    QString m_hwid;
-
-    /**
      * @brief The network socket used by the client.
      */
     NetworkSocket *m_socket;
-
-    /**
-     * @brief The IPID of the client.
-     *
-     * @details Generated based on the client's IP, but cannot be reversed to identify the client's IP.
-     */
-    QString m_ipid;
 
     /**
      * @brief The type of area update, used for area update (ARUP) packets.
@@ -481,23 +444,6 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     long m_last_wtce_time;
 
     /**
-     * @name Packet helper global variables
-     */
-    ///@{
-
-    /**
-     * @brief If true, the client is a logged-in moderator.
-     */
-    bool m_authenticated = false;
-
-    /**
-     * @brief The ACL role identifier, used to determine what ACL role the client is linked to.
-     */
-    QString m_acl_role_id;
-
-    ///@}
-
-    /**
      * @brief The client's character ID.
      *
      * @details A character ID is just the character's index in the server's character list.
@@ -595,6 +541,10 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
 
     bool isTestimonySaving() const;
     void setTestimonySaving(bool f_testimony_saving);
+
+    QHostAddress remoteIp() const;
+    QString moderatorName() const;
+    QString aclRoleId() const;
     bool isIcMessageAllowed() const override;
     bool canActInArea() override;
     bool isIniswapAllowed() const override;
@@ -775,6 +725,46 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
      * @brief The last reported position of the client.
      */
     QString m_pos = "";
+
+    /**
+     * @brief The IP address of the client.
+     */
+    QHostAddress m_remote_ip;
+
+    /**
+     * @brief The stored character password for the client, used to be able to select passworded characters.
+     */
+    QString m_password;
+
+    /**
+     * @brief The hardware ID of the client.
+     */
+    QString m_hwid;
+
+    /**
+     * @brief The IPID of the client, a non-reversible hash of its IP.
+     */
+    QString m_ipid;
+
+    /**
+     * @brief The software and version of the client.
+     */
+    ClientVersion m_version;
+
+    /**
+     * @brief If true, the client is a logged-in moderator.
+     */
+    bool m_authenticated = false;
+
+    /**
+     * @brief The ACL role identifier the client is linked to.
+     */
+    QString m_acl_role_id;
+
+    /**
+     * @brief If using advanced authentication, the moderator name the client logged in with.
+     */
+    QString m_moderator_name = "";
 
     /**
      * @brief The user ID of the client.

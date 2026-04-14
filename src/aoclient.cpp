@@ -1108,6 +1108,21 @@ void AOClient::setTestimonySaving(bool f_testimony_saving)
     m_testimony_saving = f_testimony_saving;
 }
 
+QHostAddress AOClient::remoteIp() const
+{
+    return m_remote_ip;
+}
+
+QString AOClient::moderatorName() const
+{
+    return m_moderator_name;
+}
+
+QString AOClient::aclRoleId() const
+{
+    return m_acl_role_id;
+}
+
 bool AOClient::isIcMessageAllowed() const
 {
     return m_server->areaById(areaId())->isMessageAllowed() && m_server->isMessageAllowed();
@@ -1455,7 +1470,7 @@ void AOClient::broadcastModerators(const akashi::Packet &f_packet)
 {
     const QVector<AOClient *> l_clients = m_server->clients();
     for (AOClient *l_client : l_clients) {
-        if (l_client->m_authenticated) {
+        if (l_client->isAuthenticated()) {
             l_client->sendPacket(f_packet);
         }
     }
@@ -1487,14 +1502,14 @@ void AOClient::kickPlayer(int f_client_id, const QString &f_reason)
         l_moderator_name = m_moderator_name;
     }
 
-    const QList<AOClient *> l_clients = m_server->clientsByIpid(l_target->m_ipid);
+    const QList<AOClient *> l_clients = m_server->clientsByIpid(l_target->ipid());
     for (AOClient *l_client : l_clients) {
         l_client->sendPacket("KK", {f_reason});
         l_client->m_socket->close();
     }
 
-    Q_EMIT logKick(l_moderator_name, l_target->m_ipid, f_reason);
-    sendServerMessage("Kicked " + QString::number(l_clients.size()) + " client(s) with ipid " + l_target->m_ipid + " for reason: " + f_reason);
+    Q_EMIT logKick(l_moderator_name, l_target->ipid(), f_reason);
+    sendServerMessage("Kicked " + QString::number(l_clients.size()) + " client(s) with ipid " + l_target->ipid() + " for reason: " + f_reason);
 }
 
 void AOClient::banPlayer(int f_client_id, int f_duration, const QString &f_reason)
@@ -1509,8 +1524,8 @@ void AOClient::banPlayer(int f_client_id, int f_duration, const QString &f_reaso
     }
 
     DBManager::BanInfo l_ban;
-    l_ban.ip = l_target->m_remote_ip;
-    l_ban.ipid = l_target->m_ipid;
+    l_ban.ip = l_target->remoteIp();
+    l_ban.ipid = l_target->ipid();
     l_ban.moderator = l_moderator_name;
     l_ban.reason = f_reason;
     l_ban.time = QDateTime::currentDateTime().toSecsSinceEpoch();
@@ -1525,16 +1540,16 @@ void AOClient::banPlayer(int f_client_id, int f_duration, const QString &f_reaso
         l_timestamp = QDateTime::fromSecsSinceEpoch(l_ban.time).addSecs(l_ban.duration).toString("MM/dd/yyyy, hh:mm");
     }
 
-    const QList<AOClient *> l_clients = m_server->clientsByIpid(l_target->m_ipid);
+    const QList<AOClient *> l_clients = m_server->clientsByIpid(l_target->ipid());
     for (AOClient *l_client : l_clients) {
-        l_ban.hdid = l_client->m_hwid;
+        l_ban.hdid = l_client->hwid();
         m_server->databaseManager()->addBan(l_ban);
         l_client->sendPacket("KB", {f_reason});
         l_client->m_socket->close();
     }
 
-    Q_EMIT logBan(l_moderator_name, l_target->m_ipid, l_timestamp, f_reason);
-    sendServerMessage("Banned " + QString::number(l_clients.size()) + " client(s) with ipid " + l_target->m_ipid + " for reason: " + f_reason);
+    Q_EMIT logBan(l_moderator_name, l_target->ipid(), l_timestamp, f_reason);
+    sendServerMessage("Banned " + QString::number(l_clients.size()) + " client(s) with ipid " + l_target->ipid() + " for reason: " + f_reason);
 
     const int l_ban_id = m_server->databaseManager()->banId(l_ban.ip);
     if (ConfigManager::discordBanWebhookEnabled()) {
