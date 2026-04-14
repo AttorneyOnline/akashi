@@ -154,7 +154,7 @@ void AOClient::cmdPM(int argc, QStringList argv)
         sendServerMessage("No client with that ID found.");
         return;
     }
-    if (l_target_client->m_pm_mute) {
+    if (l_target_client->isPmMuted()) {
         sendServerMessage("That user is not recieving PMs.");
         return;
     }
@@ -419,8 +419,8 @@ void AOClient::cmdMutePM(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    m_pm_mute = !m_pm_mute;
-    QString l_str_en = m_pm_mute ? "muted" : "unmuted";
+    setPmMuted(!isPmMuted());
+    QString l_str_en = isPmMuted() ? "muted" : "unmuted";
     sendServerMessage("PM's are now " + l_str_en);
 }
 
@@ -429,8 +429,8 @@ void AOClient::cmdToggleAdverts(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    m_advert_enabled = !m_advert_enabled;
-    QString l_str_en = m_advert_enabled ? "on" : "off";
+    setAdvertEnabled(!isAdvertEnabled());
+    QString l_str_en = isAdvertEnabled() ? "on" : "off";
     sendServerMessage("Advertisements turned " + l_str_en);
 }
 
@@ -439,7 +439,7 @@ void AOClient::cmdAfk(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    m_is_afk = true;
+    setAfk(true);
     sendServerMessage("You are now AFK.");
     setCharacterName(characterName() + " [AFK]");
 }
@@ -460,7 +460,7 @@ void AOClient::cmdCharCurse(int argc, QStringList argv)
         return;
     }
 
-    if (l_target->m_is_charcursed) {
+    if (l_target->isCharCursed()) {
         sendServerMessage("That player is already charcursed!");
         return;
     }
@@ -483,7 +483,7 @@ void AOClient::cmdCharCurse(int argc, QStringList argv)
         }
     }
 
-    l_target->m_is_charcursed = true;
+    l_target->setCharCursed(true);
 
     // Kick back to char select screen
     if (!l_target->m_charcurse_list.contains(m_server->characterId(l_target->character()))) {
@@ -517,11 +517,11 @@ void AOClient::cmdUnCharCurse(int argc, QStringList argv)
         return;
     }
 
-    if (!l_target->m_is_charcursed) {
+    if (!l_target->isCharCursed()) {
         sendServerMessage("That player is not charcursed!");
         return;
     }
-    l_target->m_is_charcursed = false;
+    l_target->setCharCursed(false);
     l_target->m_charcurse_list.clear();
     m_server->updateCharsTaken(m_server->areaById(areaId()));
     sendServerMessage("Uncharcursed player.");

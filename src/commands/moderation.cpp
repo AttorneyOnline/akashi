@@ -586,7 +586,7 @@ void AOClient::cmdPermitSaving(int argc, QStringList argv)
         sendServerMessage("Invalid ID.");
         return;
     }
-    l_client->m_testimony_saving = true;
+    l_client->setTestimonySaving(true);
     sendServerMessage("Testimony saving has been enabled for client " + QString::number(l_client->clientId()));
 }
 

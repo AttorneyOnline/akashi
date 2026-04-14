@@ -245,7 +245,7 @@ void Server::updateCharsTaken(AreaData *area)
 
     for (AOClient *l_client : qAsConst(m_clients)) {
         if (l_client->areaId() == area->index()) {
-            if (!l_client->m_is_charcursed)
+            if (!l_client->isCharCursed())
                 l_client->sendPacket(response_cc);
             else {
                 QStringList chars_taken_cursed = cursedCharsTaken(l_client, chars_taken);
@@ -340,7 +340,7 @@ void Server::broadcast(const akashi::Packet &packet, TARGET_TYPE target)
             }
             break;
         case TARGET_TYPE::ADVERT:
-            if (l_client->m_advert_enabled) {
+            if (l_client->isAdvertEnabled()) {
                 l_client->sendPacket(packet);
             }
             break;

@@ -1023,6 +1023,56 @@ void AOClient::setDisemvoweled(bool f_disemvoweled)
     m_is_disemvoweled = f_disemvoweled;
 }
 
+bool AOClient::isAfk() const
+{
+    return m_is_afk;
+}
+
+void AOClient::setAfk(bool f_afk)
+{
+    m_is_afk = f_afk;
+}
+
+bool AOClient::isPmMuted() const
+{
+    return m_pm_mute;
+}
+
+void AOClient::setPmMuted(bool f_pm_muted)
+{
+    m_pm_mute = f_pm_muted;
+}
+
+bool AOClient::isAdvertEnabled() const
+{
+    return m_advert_enabled;
+}
+
+void AOClient::setAdvertEnabled(bool f_advert_enabled)
+{
+    m_advert_enabled = f_advert_enabled;
+}
+
+bool AOClient::isCharCursed() const
+{
+    return m_is_charcursed;
+}
+
+void AOClient::setCharCursed(bool f_char_cursed)
+{
+    m_is_charcursed = f_char_cursed;
+}
+
+bool AOClient::isTestimonySaving() const
+{
+    return m_testimony_saving;
+}
+
+void AOClient::setTestimonySaving(bool f_testimony_saving)
+{
+    m_testimony_saving = f_testimony_saving;
+}
+
 bool AOClient::isIcMessageAllowed() const
 {
     return m_server->areaById(areaId())->isMessageAllowed() && m_server->isMessageAllowed();

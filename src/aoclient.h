@@ -249,27 +249,6 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     QList<bool> m_casing_preferences = {false, false, false, false, false};
 
     /**
-     * @brief If true, the client will be marked as AFK in /getarea. Automatically applied when a configurable
-     * amount of time has passed since the last interaction, or manually applied by /afk.
-     */
-    bool m_is_afk = false;
-
-    /**
-     * @brief If true, the client will not recieve PM messages.
-     */
-    bool m_pm_mute = false;
-
-    /**
-     * @brief If true, the client will recieve advertisements.
-     */
-    bool m_advert_enabled = true;
-
-    /**
-     * @brief If true, the client is restricted to only changing into certain characters.
-     */
-    bool m_is_charcursed = false;
-
-    /**
      * @brief Timer for tracking user interaction. Automatically restarted whenever a user interacts (i.e. sends any packet besides CH)
      */
     QTimer *m_afk_timer;
@@ -278,11 +257,6 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
      * @brief The list of char IDs a charcursed player is allowed to switch to.
      */
     QList<int> m_charcurse_list;
-
-    /**
-     * @brief Temporary client permission if client is allowed to save a testimony to server storage.
-     */
-    bool m_testimony_saving = false;
 
     /**
      * @brief If true, the client's next OOC message will be interpreted as a moderator login.
@@ -641,6 +615,21 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     void setMedieval(bool f_medieval);
     void setShaken(bool f_shaken);
     void setDisemvoweled(bool f_disemvoweled);
+
+    bool isAfk() const;
+    void setAfk(bool f_afk);
+
+    bool isPmMuted() const;
+    void setPmMuted(bool f_pm_muted);
+
+    bool isAdvertEnabled() const;
+    void setAdvertEnabled(bool f_advert_enabled);
+
+    bool isCharCursed() const;
+    void setCharCursed(bool f_char_cursed);
+
+    bool isTestimonySaving() const;
+    void setTestimonySaving(bool f_testimony_saving);
     bool isIcMessageAllowed() const override;
     bool canActInArea() override;
     bool isIniswapAllowed() const override;
@@ -765,6 +754,32 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
      * @brief If true, the client's in-character messages will be run through a chat parser to make them into Ye Olde English.
      */
     bool m_is_medieval = false;
+
+    /**
+     * @brief If true, the client will be marked as AFK in /getarea. Automatically applied when a configurable
+     * amount of time has passed since the last interaction, or manually applied by /afk.
+     */
+    bool m_is_afk = false;
+
+    /**
+     * @brief If true, the client will not recieve PM messages.
+     */
+    bool m_pm_mute = false;
+
+    /**
+     * @brief If true, the client will recieve advertisements.
+     */
+    bool m_advert_enabled = true;
+
+    /**
+     * @brief If true, the client is restricted to only changing into certain characters.
+     */
+    bool m_is_charcursed = false;
+
+    /**
+     * @brief Temporary client permission if client is allowed to save a testimony to server storage.
+     */
+    bool m_testimony_saving = false;
 
     /**
      * @brief The user ID of the client.

@@ -224,7 +224,7 @@ void AOClient::cmdSaveTestimony(int argc, QStringList argv)
     if (canPerform(ACLRole::SAVETEST))
         l_permission_found = true;
 
-    if (m_testimony_saving == true)
+    if (isTestimonySaving())
         l_permission_found = true;
 
     if (l_permission_found) {
@@ -258,7 +258,7 @@ void AOClient::cmdSaveTestimony(int argc, QStringList argv)
                 l_out << l_area->testimony().at(i).join("#") << "\n";
             }
             sendServerMessage("Testimony saved. To load it use /loadtestimony " + *l_testimony_name);
-            m_testimony_saving = false;
+            setTestimonySaving(false);
         }
     }
     else {
