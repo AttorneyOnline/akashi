@@ -184,8 +184,11 @@ class IcHandler : public PacketHandler
         }
         f_context.setLastIcMessage(l_text);
 
-        // The text filter chain. M9 turns these into registered ITextFilters
-        // with a drop verdict; the order is load-bearing.
+        // The text filter chain, in a load-bearing order. M9 replaces this
+        // whole block with a TextFilterRegistry walk: each effect becomes a
+        // registered (text -> verdict) function and the per-client bool getters
+        // below collapse into isFilterActive(id), so plugins can add their own
+        // manglers with no core field. See the roadmap PR 9.5 / decision log.
         const QStringList l_filters = ConfigManager::filterList();
         for (const QString &l_filter : l_filters) {
             QRegularExpression l_pattern(l_filter, QRegularExpression::CaseInsensitiveOption);
