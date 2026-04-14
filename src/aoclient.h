@@ -188,13 +188,6 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     bool m_joined;
 
     /**
-     * @brief The internal name of the character the client is iniswapped to.
-     *
-     * @note This will be the same as current_char if the client is not iniswapped.
-     */
-    QString m_current_iniswap;
-
-    /**
      * @brief If using advanced authentication, this is the moderator name that the client has logged in with.
      */
     QString m_moderator_name = "";
@@ -502,41 +495,6 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
      */
     QString m_acl_role_id;
 
-    /**
-     * @brief The character ID of the other character that the client wants to pair up with.
-     *
-     * @details Though this uses character ID, a client with *that* character ID must exist in the area for the pairing to work.
-     * Furthermore, the owner of that character ID must also do the reverse to this client, making their `pairing_with` equal
-     * to this client's character ID.
-     */
-    int m_pairing_with = -1;
-
-    /**
-     * @brief The name of the emote last used by the client. No extension.
-     *
-     * @details This is used for pairing mainly, for the server to be able to craft a smooth-looking transition from one
-     * paired-up client talking to the next.
-     */
-    QString m_emote = "";
-
-    /**
-     * @brief The amount the client was last offset by.
-     *
-     * @details This used to be just a plain number ranging from -100 to 100, but then Crystal mangled it by building some extra data into it.
-     * Cheers, love.
-     */
-    QString m_offset = "";
-
-    /**
-     * @brief The last flipped state of the client.
-     */
-    QString m_flipping = "";
-
-    /**
-     * @brief The last reported position of the client.
-     */
-    QString m_pos = "";
-
     ///@}
 
     /**
@@ -601,6 +559,13 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     void setEmote(const QString &f_emote) override;
     void setOffset(const QString &f_offset) override;
     void setFlipping(const QString &f_flipping) override;
+    QString iniswap() const;
+    QString emote() const;
+    QString offset() const;
+    QString flipping() const;
+    QString pos() const;
+    int pairingWith() const;
+    void setPairingWith(int f_char_id);
     QString lastIcMessage() const override;
     void setLastIcMessage(const QString &f_message) override;
     void updatePosition(const QString &f_position) override;
@@ -780,6 +745,36 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
      * @brief Temporary client permission if client is allowed to save a testimony to server storage.
      */
     bool m_testimony_saving = false;
+
+    /**
+     * @brief The internal name of the character the client is iniswapped to.
+     */
+    QString m_current_iniswap;
+
+    /**
+     * @brief The character ID of the other character that the client wants to pair up with.
+     */
+    int m_pairing_with = -1;
+
+    /**
+     * @brief The name of the emote last used by the client. No extension.
+     */
+    QString m_emote = "";
+
+    /**
+     * @brief The amount the client was last offset by.
+     */
+    QString m_offset = "";
+
+    /**
+     * @brief The last flipped state of the client.
+     */
+    QString m_flipping = "";
+
+    /**
+     * @brief The last reported position of the client.
+     */
+    QString m_pos = "";
 
     /**
      * @brief The user ID of the client.

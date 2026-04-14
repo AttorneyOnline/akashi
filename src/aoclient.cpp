@@ -948,6 +948,41 @@ void AOClient::setFlipping(const QString &f_flipping)
     m_flipping = f_flipping;
 }
 
+QString AOClient::iniswap() const
+{
+    return m_current_iniswap;
+}
+
+QString AOClient::emote() const
+{
+    return m_emote;
+}
+
+QString AOClient::offset() const
+{
+    return m_offset;
+}
+
+QString AOClient::flipping() const
+{
+    return m_flipping;
+}
+
+QString AOClient::pos() const
+{
+    return m_pos;
+}
+
+int AOClient::pairingWith() const
+{
+    return m_pairing_with;
+}
+
+void AOClient::setPairingWith(int f_char_id)
+{
+    m_pairing_with = f_char_id;
+}
+
 QString AOClient::lastIcMessage() const
 {
     return m_last_message;
@@ -1130,11 +1165,11 @@ akashi::PairInfo AOClient::resolvePair(int f_pair_id)
         if (l_client == nullptr) {
             continue;
         }
-        if (l_client->m_pairing_with == m_char_id && f_pair_id != m_char_id && l_client->m_char_id == m_pairing_with && l_client->m_pos == m_pos) {
-            l_pair.name = l_client->m_current_iniswap;
-            l_pair.emote = l_client->m_emote;
-            l_pair.offset = l_client->m_offset;
-            l_pair.flip = l_client->m_flipping;
+        if (l_client->pairingWith() == m_char_id && f_pair_id != m_char_id && l_client->characterId() == m_pairing_with && l_client->pos() == m_pos) {
+            l_pair.name = l_client->iniswap();
+            l_pair.emote = l_client->emote();
+            l_pair.offset = l_client->offset();
+            l_pair.flip = l_client->flipping();
             l_pair.paired = true;
         }
     }
@@ -1261,7 +1296,7 @@ void AOClient::broadcastIc(const QStringList &f_fields, int f_evidence_index)
         }
         QStringList l_client_fields = l_fields;
         if (l_evidence_presented) {
-            l_client_fields[11] = QString::number(l_area->visibleIndexByEvidenceIndex(l_real_index, l_client->m_pos, l_client->canPerform(ACLRole::CM)));
+            l_client_fields[11] = QString::number(l_area->visibleIndexByEvidenceIndex(l_real_index, l_client->pos(), l_client->canPerform(ACLRole::CM)));
         }
         if (l_evidence_presented) {
             l_client->sendPacket(akashi::Packet("MS", l_client_fields));
