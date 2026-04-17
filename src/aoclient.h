@@ -167,41 +167,6 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     void setWtceBlocked(bool f_wtce_blocked);
 
     /**
-     * @brief True if the client is actually in the server.
-     *
-     * @details To explain: In AO, clients immediately establish connection to the server when the user clicks on the server's name in the server
-     * browser. Thus, as the user browses servers, they constantly connect and disconnect to and from servers.
-     *
-     * The purpose of this variable is to determine if the user isn't just doing that, but has actually double-clicked the server, and
-     * its client has sent the standard handshake packets, which does signify that the client intended to 'join' this server.
-     */
-    bool m_joined;
-
-    /**
-     * @brief The out-of-character name of the client, generally the nickname of the user themself.
-     */
-    QString m_ooc_name = "";
-
-    /**
-     * @brief The custom showname of the client, used when "renaming" already existing characters in-character.
-     */
-    QString m_showname = "";
-
-    /**
-     * @brief If true, the client is willing to receive global messages.
-     *
-     * @see AOClient::cmdG and AOClient::cmdToggleGlobal
-     */
-    bool m_global_enabled = true;
-
-    /**
-     * @brief If true, the client's messages will be sent in first-person mode.
-     *
-     * @see AOClient::cmdFirstPerson
-     */
-    bool m_first_person = false;
-
-    /**
      * @brief Represents the client's client software, and its version.
      *
      * @note Though the version number and naming scheme looks vaguely semver-like,
@@ -213,36 +178,6 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
         int major = -1;
         int minor = -1;
     };
-
-    /**
-     * @brief A list of 5 casing preferences (def, pro, judge, jury, steno)
-     */
-    QList<bool> m_casing_preferences = {false, false, false, false, false};
-
-    /**
-     * @brief Timer for tracking user interaction. Automatically restarted whenever a user interacts (i.e. sends any packet besides CH)
-     */
-    QTimer *m_afk_timer;
-
-    /**
-     * @brief The list of char IDs a charcursed player is allowed to switch to.
-     */
-    QList<int> m_charcurse_list;
-
-    /**
-     * @brief If true, the client's next OOC message will be interpreted as a moderator login.
-     */
-    bool m_is_logging_in = false;
-
-    /**
-     * @brief If true, the client is a spectator and his IC interactions will be limtied.
-     */
-    bool m_is_spectator = true;
-
-    /**
-     * @brief The network socket used by the client.
-     */
-    NetworkSocket *m_socket;
 
     /**
      * @brief The type of area update, used for area update (ARUP) packets.
@@ -424,35 +359,6 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     void updateJudgeLog(AreaData *area, AOClient *client, QString action);
 
     /**
-     * @brief Pointer to the servers music manager instance.
-     */
-    MusicManager *m_music_manager;
-
-    /**
-     * @brief The text of the last in-character message that was sent by the client.
-     *
-     * @details Used to determine if the incoming message is a duplicate.
-     */
-    QString m_last_message;
-
-    /**
-     * @brief The time in seconds since the client last sent a Witness Testimony / Cross Examination
-     * popup packet.
-     *
-     * @details Used to filter out potential spam.
-     */
-    long m_last_wtce_time;
-
-    /**
-     * @brief The client's character ID.
-     *
-     * @details A character ID is just the character's index in the server's character list.
-     *
-     * In general, the client assumes that this is a continuous block starting from 0.
-     */
-    int m_char_id = -1;
-
-    /**
      * @brief The spectator character ID
      *
      * @details You may assume that AO has a sane way to determine if a user is a spectator
@@ -545,6 +451,17 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     QHostAddress remoteIp() const;
     QString moderatorName() const;
     QString aclRoleId() const;
+
+    void setInLoginPrompt(bool f_in_login_prompt);
+    void setCharacterId(int f_char_id);
+    void setFirstPerson(bool f_first_person);
+    bool isGlobalEnabled() const;
+    void setGlobalEnabled(bool f_global_enabled);
+    QList<bool> casingPreferences() const;
+    QList<int> charCurseList() const;
+    void addCharCurse(int f_char_id);
+    void clearCharCurse();
+    void closeSocket();
     bool isIcMessageAllowed() const override;
     bool canActInArea() override;
     bool isIniswapAllowed() const override;
@@ -765,6 +682,81 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
      * @brief If using advanced authentication, the moderator name the client logged in with.
      */
     QString m_moderator_name = "";
+
+    /**
+     * @brief True once the client has completed the handshake and joined the server.
+     */
+    bool m_joined;
+
+    /**
+     * @brief The out-of-character name of the client.
+     */
+    QString m_ooc_name = "";
+
+    /**
+     * @brief The custom showname of the client.
+     */
+    QString m_showname = "";
+
+    /**
+     * @brief If true, the client is willing to receive global messages.
+     */
+    bool m_global_enabled = true;
+
+    /**
+     * @brief If true, the client's messages are sent in first-person mode.
+     */
+    bool m_first_person = false;
+
+    /**
+     * @brief The five casing preferences (def, pro, judge, jury, steno).
+     */
+    QList<bool> m_casing_preferences = {false, false, false, false, false};
+
+    /**
+     * @brief Timer for tracking user interaction.
+     */
+    QTimer *m_afk_timer;
+
+    /**
+     * @brief The char IDs a charcursed player is allowed to switch to.
+     */
+    QList<int> m_charcurse_list;
+
+    /**
+     * @brief If true, the client's next OOC message is a moderator login.
+     */
+    bool m_is_logging_in = false;
+
+    /**
+     * @brief If true, the client is a spectator.
+     */
+    bool m_is_spectator = true;
+
+    /**
+     * @brief The network socket used by the client.
+     */
+    NetworkSocket *m_socket;
+
+    /**
+     * @brief Pointer to the server's music manager instance.
+     */
+    MusicManager *m_music_manager;
+
+    /**
+     * @brief The text of the last in-character message, for duplicate detection.
+     */
+    QString m_last_message;
+
+    /**
+     * @brief The time in seconds of the client's last WT/CE popup, for spam filtering.
+     */
+    long m_last_wtce_time;
+
+    /**
+     * @brief The client's character ID, its index in the server's character list.
+     */
+    int m_char_id = -1;
 
     /**
      * @brief The user ID of the client.

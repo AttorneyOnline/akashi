@@ -260,7 +260,7 @@ QStringList Server::cursedCharsTaken(AOClient *client, QStringList chars_taken)
 {
     QStringList chars_taken_cursed;
     for (int i = 0; i < chars_taken.length(); i++) {
-        if (!client->m_charcurse_list.contains(i))
+        if (!client->charCurseList().contains(i))
             chars_taken_cursed.append("-1");
         else
             chars_taken_cursed.append(chars_taken.value(i));
@@ -355,7 +355,7 @@ void Server::broadcast(const akashi::Packet &packet, const akashi::Packet &other
     switch (target) {
     case TARGET_TYPE::AUTHENTICATED:
         for (AOClient *l_client : qAsConst(m_clients)) {
-            if (l_client->m_global_enabled) {
+            if (l_client->isGlobalEnabled()) {
                 if (l_client->isAuthenticated()) {
                     l_client->sendPacket(other_packet);
                 }

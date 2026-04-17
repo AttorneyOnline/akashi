@@ -1123,6 +1123,56 @@ QString AOClient::aclRoleId() const
     return m_acl_role_id;
 }
 
+void AOClient::setInLoginPrompt(bool f_in_login_prompt)
+{
+    m_is_logging_in = f_in_login_prompt;
+}
+
+void AOClient::setCharacterId(int f_char_id)
+{
+    m_char_id = f_char_id;
+}
+
+void AOClient::setFirstPerson(bool f_first_person)
+{
+    m_first_person = f_first_person;
+}
+
+bool AOClient::isGlobalEnabled() const
+{
+    return m_global_enabled;
+}
+
+void AOClient::setGlobalEnabled(bool f_global_enabled)
+{
+    m_global_enabled = f_global_enabled;
+}
+
+QList<bool> AOClient::casingPreferences() const
+{
+    return m_casing_preferences;
+}
+
+QList<int> AOClient::charCurseList() const
+{
+    return m_charcurse_list;
+}
+
+void AOClient::addCharCurse(int f_char_id)
+{
+    m_charcurse_list.append(f_char_id);
+}
+
+void AOClient::clearCharCurse()
+{
+    m_charcurse_list.clear();
+}
+
+void AOClient::closeSocket()
+{
+    m_socket->close();
+}
+
 bool AOClient::isIcMessageAllowed() const
 {
     return m_server->areaById(areaId())->isMessageAllowed() && m_server->isMessageAllowed();
@@ -1434,7 +1484,8 @@ void AOClient::broadcastCaseAlert(const QList<bool> &f_needs, const akashi::Pack
     const QSet<bool> l_needs_set(f_needs.begin(), f_needs.end());
     const QVector<AOClient *> l_clients = m_server->clients();
     for (AOClient *l_client : l_clients) {
-        QSet<bool> l_matches(l_client->m_casing_preferences.begin(), l_client->m_casing_preferences.end());
+        const QList<bool> l_preferences = l_client->casingPreferences();
+        QSet<bool> l_matches(l_preferences.begin(), l_preferences.end());
         l_matches.intersect(l_needs_set);
         if (!l_matches.isEmpty()) {
             l_client->sendPacket(f_packet);
@@ -1505,7 +1556,7 @@ void AOClient::kickPlayer(int f_client_id, const QString &f_reason)
     const QList<AOClient *> l_clients = m_server->clientsByIpid(l_target->ipid());
     for (AOClient *l_client : l_clients) {
         l_client->sendPacket("KK", {f_reason});
-        l_client->m_socket->close();
+        l_client->closeSocket();
     }
 
     Q_EMIT logKick(l_moderator_name, l_target->ipid(), f_reason);
@@ -1545,7 +1596,7 @@ void AOClient::banPlayer(int f_client_id, int f_duration, const QString &f_reaso
         l_ban.hdid = l_client->hwid();
         m_server->databaseManager()->addBan(l_ban);
         l_client->sendPacket("KB", {f_reason});
-        l_client->m_socket->close();
+        l_client->closeSocket();
     }
 
     Q_EMIT logBan(l_moderator_name, l_target->ipid(), l_timestamp, f_reason);

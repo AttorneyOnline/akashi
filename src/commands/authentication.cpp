@@ -42,13 +42,13 @@ void AOClient::cmdLogin(int argc, QStringList argv)
         }
         else {
             sendServerMessage("Entering login prompt.\nPlease enter the server modpass.");
-            m_is_logging_in = true;
+            setInLoginPrompt(true);
             return;
         }
         break;
     case DataTypes::AuthType::ADVANCED:
         sendServerMessage("Entering login prompt.\nPlease enter your username and password.");
-        m_is_logging_in = true;
+        setInLoginPrompt(true);
         return;
         break;
     }

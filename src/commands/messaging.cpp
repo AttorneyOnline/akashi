@@ -103,7 +103,7 @@ void AOClient::cmdSwitch(int argc, QStringList argv)
         return;
     }
     if (changeCharacter(l_selected_char_id)) {
-        m_char_id = l_selected_char_id;
+        setCharacterId(l_selected_char_id);
     }
     else {
         sendServerMessage("The character you picked is either taken or invalid.");
@@ -125,7 +125,7 @@ void AOClient::cmdRandomChar(int argc, QStringList argv)
         }
     }
     if (changeCharacter(l_selected_char_id)) {
-        m_char_id = l_selected_char_id;
+        setCharacterId(l_selected_char_id);
     }
 }
 
@@ -134,8 +134,8 @@ void AOClient::cmdToggleGlobal(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    m_global_enabled = !m_global_enabled;
-    QString l_str_en = m_global_enabled ? "shown" : "hidden";
+    setGlobalEnabled(!isGlobalEnabled());
+    QString l_str_en = isGlobalEnabled() ? "shown" : "hidden";
     sendServerMessage("Global chat set to " + l_str_en);
 }
 
@@ -466,27 +466,27 @@ void AOClient::cmdCharCurse(int argc, QStringList argv)
     }
 
     if (argc == 1) {
-        l_target->m_charcurse_list.append(m_server->characterId(l_target->character()));
+        l_target->addCharCurse(m_server->characterId(l_target->character()));
     }
     else {
         argv.removeFirst();
         QStringList l_char_names = argv.join(" ").split(",");
 
-        l_target->m_charcurse_list.clear();
+        l_target->clearCharCurse();
         for (const QString &l_char_name : qAsConst(l_char_names)) {
             int char_id = m_server->characterId(l_char_name);
             if (char_id == -1) {
                 sendServerMessage("Could not find character: " + l_char_name);
                 return;
             }
-            l_target->m_charcurse_list.append(char_id);
+            l_target->addCharCurse(char_id);
         }
     }
 
     l_target->setCharCursed(true);
 
     // Kick back to char select screen
-    if (!l_target->m_charcurse_list.contains(m_server->characterId(l_target->character()))) {
+    if (!l_target->charCurseList().contains(m_server->characterId(l_target->character()))) {
         l_target->changeCharacter(-1);
         m_server->updateCharsTaken(m_server->areaById(areaId()));
         l_target->sendPacket("DONE");
@@ -522,7 +522,7 @@ void AOClient::cmdUnCharCurse(int argc, QStringList argv)
         return;
     }
     l_target->setCharCursed(false);
-    l_target->m_charcurse_list.clear();
+    l_target->clearCharCurse();
     m_server->updateCharsTaken(m_server->areaById(areaId()));
     sendServerMessage("Uncharcursed player.");
     l_target->sendServerMessage("You were uncharcursed.");
@@ -602,7 +602,7 @@ void AOClient::cmdFirstPerson(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    m_first_person = !m_first_person;
-    QString l_str_en = m_first_person ? "enabled" : "disabled";
+    setFirstPerson(!isFirstPerson());
+    QString l_str_en = isFirstPerson() ? "enabled" : "disabled";
     sendServerMessage("First person mode " + l_str_en + ".");
 }
