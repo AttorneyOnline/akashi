@@ -20,6 +20,8 @@
 
 #include "akashi_core_export.h"
 
+#include "core/player_state.h"
+
 #include <algorithm>
 
 #include <QDateTime>
@@ -583,11 +585,6 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     bool m_is_gimped = false;
 
     /**
-     * @brief If true, the client's in-character messages will be run through a chat parser to make them into Ye Olde English.
-     */
-    bool m_is_medieval = false;
-
-    /**
      * @brief If true, the client will be marked as AFK in /getarea. Automatically applied when a configurable
      * amount of time has passed since the last interaction, or manually applied by /afk.
      */
@@ -612,36 +609,6 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
      * @brief Temporary client permission if client is allowed to save a testimony to server storage.
      */
     bool m_testimony_saving = false;
-
-    /**
-     * @brief The internal name of the character the client is iniswapped to.
-     */
-    QString m_current_iniswap;
-
-    /**
-     * @brief The character ID of the other character that the client wants to pair up with.
-     */
-    int m_pairing_with = -1;
-
-    /**
-     * @brief The name of the emote last used by the client. No extension.
-     */
-    QString m_emote = "";
-
-    /**
-     * @brief The amount the client was last offset by.
-     */
-    QString m_offset = "";
-
-    /**
-     * @brief The last flipped state of the client.
-     */
-    QString m_flipping = "";
-
-    /**
-     * @brief The last reported position of the client.
-     */
-    QString m_pos = "";
 
     /**
      * @brief The IP address of the client.
@@ -689,24 +656,9 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     bool m_joined;
 
     /**
-     * @brief The out-of-character name of the client.
-     */
-    QString m_ooc_name = "";
-
-    /**
-     * @brief The custom showname of the client.
-     */
-    QString m_showname = "";
-
-    /**
      * @brief If true, the client is willing to receive global messages.
      */
     bool m_global_enabled = true;
-
-    /**
-     * @brief If true, the client's messages are sent in first-person mode.
-     */
-    bool m_first_person = false;
 
     /**
      * @brief The five casing preferences (def, pro, judge, jury, steno).
@@ -729,11 +681,6 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     bool m_is_logging_in = false;
 
     /**
-     * @brief If true, the client is a spectator.
-     */
-    bool m_is_spectator = true;
-
-    /**
      * @brief The network socket used by the client.
      */
     NetworkSocket *m_socket;
@@ -744,34 +691,20 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     MusicManager *m_music_manager;
 
     /**
-     * @brief The text of the last in-character message, for duplicate detection.
-     */
-    QString m_last_message;
-
-    /**
      * @brief The time in seconds of the client's last WT/CE popup, for spam filtering.
      */
     long m_last_wtce_time;
 
     /**
-     * @brief The client's character ID, its index in the server's character list.
+     * @brief The character(s) this connection is playing. A session
+     * owns exactly one today; a richer protocol may own several.
      */
-    int m_char_id = -1;
+    akashi::PlayerState m_player;
 
     /**
      * @brief The user ID of the client.
      */
     int m_id;
-
-    /**
-     * @brief The ID of the area the client is currently in.
-     */
-    int m_current_area;
-
-    /**
-     * @brief The internal name of the character the client is currently using.
-     */
-    QString m_current_char;
 
     /**
      * @brief A pointer to the Server, used for updating server variables that depend on the client (e.g. amount of players in an area).

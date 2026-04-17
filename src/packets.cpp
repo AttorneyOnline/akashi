@@ -48,7 +48,7 @@ void AOClient::updateEvidenceList(AreaData *area)
             QRegularExpressionMatch l_match = l_regex.match(evidence.description);
             if (l_match.hasMatch()) {
                 QStringList owners = l_match.captured(1).split(",");
-                if (!owners.contains("all", Qt::CaseSensitivity::CaseInsensitive) && !owners.contains(m_pos, Qt::CaseSensitivity::CaseInsensitive)) {
+                if (!owners.contains("all", Qt::CaseSensitivity::CaseInsensitive) && !owners.contains(m_player.pos, Qt::CaseSensitivity::CaseInsensitive)) {
                     continue;
                 }
             }

@@ -73,6 +73,7 @@ set(AKASHI_SOURCES
   src2/core/json_settings.h
   src2/core/mmdb_reader.cpp
   src2/core/mmdb_reader.h
+  src2/core/player_state.h
   src2/core/server_settings.h
   src2/core/settings.cpp
   src2/core/server_context.cpp

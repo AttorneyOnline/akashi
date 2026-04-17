@@ -293,14 +293,14 @@ void AOClient::changeArea(int new_area)
         m_server->areaById(areaId())->changeCharacter(m_server->characterId(character()), -1);
         m_server->updateCharsTaken(m_server->areaById(areaId()));
     }
-    m_server->areaById(areaId())->removeClient(m_char_id, clientId());
+    m_server->areaById(areaId())->removeClient(m_player.char_id, clientId());
     bool l_character_taken = false;
     if (m_server->areaById(new_area)->charactersTaken().contains(m_server->characterId(character()))) {
         setCharacter("");
-        m_char_id = -1;
+        m_player.char_id = -1;
         l_character_taken = true;
     }
-    m_server->areaById(new_area)->addClient(m_char_id, clientId());
+    m_server->areaById(new_area)->addClient(m_player.char_id, clientId());
     setAreaId(new_area);
     arup(ARUPType::PLAYER_COUNT, true);
     sendEvidenceList(m_server->areaById(new_area));
@@ -347,14 +347,14 @@ bool AOClient::changeCharacter(int char_id)
 
     if (char_id < 0) {
         setCharacter("");
-        m_char_id = char_id;
+        m_player.char_id = char_id;
         setSpectator(true);
     }
 
     if (l_successfulChange == true) {
         QString l_char_selected = m_server->characterById(char_id);
         setCharacter(l_char_selected);
-        m_pos = "";
+        m_player.pos = "";
         m_server->updateCharsTaken(l_area);
         sendPacket("PV", {QString::number(clientId()), "CID", QString::number(char_id)});
         return true;
@@ -364,9 +364,9 @@ bool AOClient::changeCharacter(int char_id)
 
 void AOClient::changePosition(QString new_pos)
 {
-    m_pos = new_pos;
-    sendServerMessage("Position changed to " + m_pos + ".");
-    sendPacket("SP", {m_pos});
+    m_player.pos = new_pos;
+    sendServerMessage("Position changed to " + m_player.pos + ".");
+    sendPacket("SP", {m_player.pos});
 }
 
 void AOClient::handleCommand(QString command, int argc, QStringList argv)
@@ -567,64 +567,64 @@ int AOClient::clientId() const
 
 QString AOClient::name() const
 {
-    return m_ooc_name;
+    return m_player.ooc_name;
 }
 
 void AOClient::setName(const QString &f_name)
 {
-    if (f_name != m_ooc_name) {
-        m_ooc_name = f_name;
-        Q_EMIT nameChanged(m_ooc_name);
+    if (f_name != m_player.ooc_name) {
+        m_player.ooc_name = f_name;
+        Q_EMIT nameChanged(m_player.ooc_name);
     }
 }
 
 int AOClient::areaId() const
 {
-    return m_current_area;
+    return m_player.area_id;
 }
 
 void AOClient::setAreaId(const int f_area_id)
 {
-    if (f_area_id != m_current_area) {
-        m_current_area = f_area_id;
-        Q_EMIT areaIdChanged(m_current_area);
+    if (f_area_id != m_player.area_id) {
+        m_player.area_id = f_area_id;
+        Q_EMIT areaIdChanged(m_player.area_id);
     }
 }
 
 QString AOClient::character() const
 {
-    return m_current_char;
+    return m_player.character;
 }
 
 void AOClient::setCharacter(const QString &f_character)
 {
-    if (f_character != m_current_char) {
-        m_current_char = f_character;
-        Q_EMIT characterChanged(m_current_char);
+    if (f_character != m_player.character) {
+        m_player.character = f_character;
+        Q_EMIT characterChanged(m_player.character);
     }
 }
 
 QString AOClient::characterName() const
 {
-    return m_showname;
+    return m_player.showname;
 }
 
 void AOClient::setCharacterName(const QString &f_showname)
 {
-    if (f_showname != m_showname) {
-        m_showname = f_showname;
-        Q_EMIT characterNameChanged(m_showname);
+    if (f_showname != m_player.showname) {
+        m_player.showname = f_showname;
+        Q_EMIT characterNameChanged(m_player.showname);
     }
 }
 
 void AOClient::setSpectator(bool f_spectator)
 {
-    m_is_spectator = f_spectator;
+    m_player.spectator = f_spectator;
 }
 
 bool AOClient::isSpectator() const
 {
-    return m_is_spectator;
+    return m_player.spectator;
 }
 
 void AOClient::onAfkTimeout()
@@ -645,8 +645,6 @@ AOClient::AOClient(Server *p_server, NetworkSocket *socket, QObject *parent, int
     m_music_manager(p_manager),
     m_last_wtce_time(0),
     m_id(user_id),
-    m_current_area(0),
-    m_current_char(""),
     m_server(p_server),
     rate_limit_tick(0),
     packet_count(0)
@@ -804,12 +802,12 @@ void AOClient::broadcastPlayerCount()
 bool AOClient::selectCharacter(int f_char_id)
 {
     if (changeCharacter(f_char_id)) {
-        m_char_id = f_char_id;
+        m_player.char_id = f_char_id;
     }
-    if (m_char_id > SPECTATOR_ID) {
+    if (m_player.char_id > SPECTATOR_ID) {
         setSpectator(false);
     }
-    return m_char_id == f_char_id;
+    return m_player.char_id == f_char_id;
 }
 
 bool AOClient::canUseOocChat() const
@@ -920,84 +918,84 @@ void AOClient::setWtceBlocked(bool f_wtce_blocked)
 
 int AOClient::characterId() const
 {
-    return m_char_id;
+    return m_player.char_id;
 }
 
 bool AOClient::isFirstPerson() const
 {
-    return m_first_person;
+    return m_player.first_person;
 }
 
 void AOClient::setIniswap(const QString &f_character)
 {
-    m_current_iniswap = f_character;
+    m_player.iniswap = f_character;
 }
 
 void AOClient::setEmote(const QString &f_emote)
 {
-    m_emote = f_emote;
+    m_player.emote = f_emote;
 }
 
 void AOClient::setOffset(const QString &f_offset)
 {
-    m_offset = f_offset;
+    m_player.offset = f_offset;
 }
 
 void AOClient::setFlipping(const QString &f_flipping)
 {
-    m_flipping = f_flipping;
+    m_player.flipping = f_flipping;
 }
 
 QString AOClient::iniswap() const
 {
-    return m_current_iniswap;
+    return m_player.iniswap;
 }
 
 QString AOClient::emote() const
 {
-    return m_emote;
+    return m_player.emote;
 }
 
 QString AOClient::offset() const
 {
-    return m_offset;
+    return m_player.offset;
 }
 
 QString AOClient::flipping() const
 {
-    return m_flipping;
+    return m_player.flipping;
 }
 
 QString AOClient::pos() const
 {
-    return m_pos;
+    return m_player.pos;
 }
 
 int AOClient::pairingWith() const
 {
-    return m_pairing_with;
+    return m_player.pairing_with;
 }
 
 void AOClient::setPairingWith(int f_char_id)
 {
-    m_pairing_with = f_char_id;
+    m_player.pairing_with = f_char_id;
 }
 
 QString AOClient::lastIcMessage() const
 {
-    return m_last_message;
+    return m_player.last_message;
 }
 
 void AOClient::setLastIcMessage(const QString &f_message)
 {
-    m_last_message = f_message;
+    m_player.last_message = f_message;
 }
 
 void AOClient::updatePosition(const QString &f_position)
 {
-    if (m_pos != f_position) {
-        m_pos = f_position;
-        m_pos.replace("../", "").replace("..\\", "");
+    if (m_player.pos != f_position) {
+        m_player.pos = f_position;
+        m_player.pos.replace("../", "").replace("..\\", "");
         updateEvidenceList(m_server->areaById(areaId()));
     }
 }
@@ -1020,7 +1018,7 @@ bool AOClient::isGimped() const
 
 bool AOClient::isMedieval() const
 {
-    return m_is_medieval;
+    return m_player.medieval;
 }
 
 bool AOClient::isMedievalArea() const
@@ -1045,7 +1043,7 @@ void AOClient::setGimped(bool f_gimped)
 
 void AOClient::setMedieval(bool f_medieval)
 {
-    m_is_medieval = f_medieval;
+    m_player.medieval = f_medieval;
 }
 
 void AOClient::setShaken(bool f_shaken)
@@ -1130,12 +1128,12 @@ void AOClient::setInLoginPrompt(bool f_in_login_prompt)
 
 void AOClient::setCharacterId(int f_char_id)
 {
-    m_char_id = f_char_id;
+    m_player.char_id = f_char_id;
 }
 
 void AOClient::setFirstPerson(bool f_first_person)
 {
-    m_first_person = f_first_person;
+    m_player.first_person = f_first_person;
 }
 
 bool AOClient::isGlobalEnabled() const
@@ -1221,7 +1219,7 @@ QStringList AOClient::lastAreaMessage() const
 
 akashi::PairInfo AOClient::resolvePair(int f_pair_id)
 {
-    m_pairing_with = f_pair_id;
+    m_player.pairing_with = f_pair_id;
     akashi::PairInfo l_pair;
     AreaData *l_area = m_server->areaById(areaId());
     const QList<int> l_joined = l_area->joinedIDs();
@@ -1230,7 +1228,7 @@ akashi::PairInfo AOClient::resolvePair(int f_pair_id)
         if (l_client == nullptr) {
             continue;
         }
-        if (l_client->pairingWith() == m_char_id && f_pair_id != m_char_id && l_client->characterId() == m_pairing_with && l_client->pos() == m_pos) {
+        if (l_client->pairingWith() == m_player.char_id && f_pair_id != m_player.char_id && l_client->characterId() == m_player.pairing_with && l_client->pos() == m_player.pos) {
             l_pair.name = l_client->iniswap();
             l_pair.emote = l_client->emote();
             l_pair.offset = l_client->offset();
@@ -1270,7 +1268,7 @@ QStringList AOClient::applyTestimony(const QStringList &f_fields)
             auto l_statement = area->jumpToStatement(area->statement() + 1);
             l_args = l_statement.first;
             l_progress = l_statement.second;
-            m_pos = l_args[5];
+            m_player.pos = l_args[5];
 
             sendServerMessageArea(client_name + " moved to the next statement.");
 
@@ -1282,7 +1280,7 @@ QStringList AOClient::applyTestimony(const QStringList &f_fields)
             auto l_statement = area->jumpToStatement(area->statement() - 1);
             l_args = l_statement.first;
             l_progress = l_statement.second;
-            m_pos = l_args[5];
+            m_player.pos = l_args[5];
 
             sendServerMessageArea(client_name + " moved to the previous statement.");
 
@@ -1294,7 +1292,7 @@ QStringList AOClient::applyTestimony(const QStringList &f_fields)
             auto l_statement = area->jumpToStatement(area->statement());
             l_args = l_statement.first;
             l_progress = l_statement.second;
-            m_pos = l_args[5];
+            m_player.pos = l_args[5];
 
             sendServerMessageArea(client_name + " repeated the current statement.");
         }
@@ -1306,7 +1304,7 @@ QStringList AOClient::applyTestimony(const QStringList &f_fields)
             auto l_statement = area->jumpToStatement(jump_idx);
             l_args = l_statement.first;
             l_progress = l_statement.second;
-            m_pos = l_args[5];
+            m_player.pos = l_args[5];
 
             sendServerMessageArea(client_name + " jumped to statement number " + QString::number(jump_idx) + ".");
 
@@ -1335,8 +1333,8 @@ QStringList AOClient::applyTestimony(const QStringList &f_fields)
 void AOClient::broadcastIc(const QStringList &f_fields, int f_evidence_index)
 {
     QStringList l_fields = f_fields;
-    if (m_pos != "") {
-        l_fields[5] = m_pos;
+    if (m_player.pos != "") {
+        l_fields[5] = m_player.pos;
     }
     AreaData *l_area = m_server->areaById(areaId());
 
@@ -1345,7 +1343,7 @@ void AOClient::broadcastIc(const QStringList &f_fields, int f_evidence_index)
     int l_real_index = -1;
     bool l_evidence_presented = false;
     if (f_evidence_index > 0 && l_area->eviMod() == AreaData::EvidenceMod::HIDDEN_CM) {
-        l_real_index = l_area->evidenceIndexByVisibleIndex(f_evidence_index, m_pos, canPerform(ACLRole::CM));
+        l_real_index = l_area->evidenceIndexByVisibleIndex(f_evidence_index, m_player.pos, canPerform(ACLRole::CM));
         if (l_real_index >= 0) {
             l_area->setEvidenceOwnerToAll(l_real_index);
             sendEvidenceList(l_area);
@@ -1371,7 +1369,7 @@ void AOClient::broadcastIc(const QStringList &f_fields, int f_evidence_index)
         }
     }
 
-    Q_EMIT logIC(l_area->name(), m_ipid, name(), QString::number(clientId()), (character() + " " + characterName()), m_last_message);
+    Q_EMIT logIC(l_area->name(), m_ipid, name(), QString::number(clientId()), (character() + " " + characterName()), m_player.last_message);
     l_area->updateLastICMessage(l_fields);
 
     l_area->startMessageFloodguard(ConfigManager::messageFloodguard());
