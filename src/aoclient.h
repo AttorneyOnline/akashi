@@ -551,19 +551,9 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
 
   private:
     /**
-     * @brief Temporary client permission if client is allowed to save a testimony to server storage.
-     */
-    bool m_testimony_saving = false;
-
-    /**
      * @brief The software and version of the client.
      */
     ClientVersion m_version;
-
-    /**
-     * @brief If true, the client is willing to receive global messages.
-     */
-    bool m_global_enabled = true;
 
     /**
      * @brief Timer for tracking user interaction.
