@@ -2,6 +2,7 @@
 #define CORE_CLIENT_SESSION_H
 
 #include "akashi_core_export.h"
+#include "proto/client_profile.h"
 
 #include <QHostAddress>
 #include <QList>
@@ -23,6 +24,10 @@ class AKASHI_CORE_EXPORT ClientSession
     QString hwid;
     QString ipid;
     bool joined = false;
+
+    // What the client told us about itself at the handshake (arch, version,
+    // negotiated features). The client version lives here as profile.version.
+    ClientProfile profile;
 
     // Authentication.
     bool authenticated = false;

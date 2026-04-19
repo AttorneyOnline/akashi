@@ -170,19 +170,6 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     void setWtceBlocked(bool f_wtce_blocked);
 
     /**
-     * @brief Represents the client's client software, and its version.
-     *
-     * @note Though the version number and naming scheme looks vaguely semver-like,
-     * do not be misled into thinking it is that.
-     */
-    struct ClientVersion
-    {
-        int release = -1;
-        int major = -1;
-        int minor = -1;
-    };
-
-    /**
      * @brief The type of area update, used for area update (ARUP) packets.
      */
     enum ARUPType
@@ -551,11 +538,6 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
 
   private:
     /**
-     * @brief The software and version of the client.
-     */
-    ClientVersion m_version;
-
-    /**
      * @brief Timer for tracking user interaction.
      */
     QTimer *m_afk_timer;
@@ -586,11 +568,6 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
      * @brief A pointer to the Server, used for updating server variables that depend on the client (e.g. amount of players in an area).
      */
     Server *m_server;
-
-    /**
-     * @brief What the client told the server about itself, filled in during the handshake.
-     */
-    akashi::ClientProfile m_profile;
 
     /**
      * @brief The server's packet pipeline, holding the handlers and codecs.

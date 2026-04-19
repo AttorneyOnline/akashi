@@ -653,7 +653,7 @@ AOClient::AOClient(Server *p_server, NetworkSocket *socket, QObject *parent, int
         m_packets = m_server->packets();
         if (m_packets) {
             // Picked again with the real profile once the client identifies.
-            m_codecs = m_packets->codecs().resolve(m_profile);
+            m_codecs = m_packets->codecs().resolve(m_session.profile);
         }
     }
 }
@@ -676,12 +676,12 @@ QString AOClient::hwid() const
 
 const akashi::ClientProfile &AOClient::profile() const
 {
-    return m_profile;
+    return m_session.profile;
 }
 
 bool AOClient::isIdentified() const
 {
-    return m_version.release == 2;
+    return m_session.profile.version.release == 2;
 }
 
 void AOClient::setHwid(const QString &f_hwid)
@@ -691,12 +691,9 @@ void AOClient::setHwid(const QString &f_hwid)
 
 void AOClient::identify(const akashi::ClientProfile &f_profile)
 {
-    m_profile = f_profile;
-    m_version.release = f_profile.version.release;
-    m_version.major = f_profile.version.major;
-    m_version.minor = f_profile.version.minor;
+    m_session.profile = f_profile;
     if (m_packets) {
-        m_codecs = m_packets->codecs().resolve(m_profile);
+        m_codecs = m_packets->codecs().resolve(m_session.profile);
     }
 }
 

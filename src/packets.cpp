@@ -106,7 +106,7 @@ void AOClient::loginAttempt(QString message)
     case DataTypes::AuthType::SIMPLE:
         if (message == ConfigManager::modpass()) {
             sendPacket("AUTH", {"1"});
-            if (m_version.release <= 2 && m_version.major <= 9 && m_version.minor <= 0)
+            if (m_session.profile.version.release <= 2 && m_session.profile.version.major <= 9 && m_session.profile.version.minor <= 0)
                 sendServerMessage("Logged in as a moderator.");
             m_session.authenticated = true;
             m_session.acl_role_id = ACLRolesHandler::SUPER_ID;
@@ -133,7 +133,7 @@ void AOClient::loginAttempt(QString message)
             m_session.acl_role_id = m_server->databaseManager()->acl(username);
             m_session.moderator_name = username;
             sendPacket("AUTH", {"1"});
-            if (m_version.release <= 2 && m_version.major <= 9 && m_version.minor <= 0)
+            if (m_session.profile.version.release <= 2 && m_session.profile.version.major <= 9 && m_session.profile.version.minor <= 0)
                 sendServerMessage("Logged in as a moderator.");
             sendServerMessage("Welcome, " + username);
         }
