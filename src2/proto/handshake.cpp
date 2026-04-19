@@ -50,7 +50,6 @@ class IdentifyCodec : public Codec
             l_message->version.release = l_match.captured(1).toInt();
             l_message->version.major = l_match.captured(2).toInt();
             l_message->version.minor = l_match.captured(3).toInt();
-            l_message->version_valid = true;
         }
         return l_message;
     }
@@ -117,14 +116,10 @@ class IdentifyHandler : public PacketHandler
             return;
         }
 
-        // Any release that parses is accepted (AO2 is release 2, DRO reports
-        // release 1, etc.); only a version field with no X.Y.Z is a protocol error.
-        if (!l_identify.version_valid) {
-            f_context.sendPacket(Packet(ao2::HEADER_BD, {"A protocol error has been encountered. Packet : ID\nVersion not recognised."}));
-            f_context.closeConnection();
-            return;
-        }
-
+        // The ID is accepted whatever the version says: a real X.Y.Z is parsed,
+        // anything else just leaves the default 0.0.0 and the client runs in a
+        // compatible state. A plugin can register a custom ID handler/codec for
+        // a client that needs special treatment.
         ClientProfile l_profile;
         l_profile.arch = l_identify.arch;
         l_profile.version = l_identify.version;
