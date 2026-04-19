@@ -636,7 +636,7 @@ void AOClient::onAfkTimeout()
     m_session.afk = true;
 }
 
-AOClient::AOClient(Server *p_server, NetworkSocket *socket, QObject *parent, int user_id, MusicManager *p_manager) :
+AOClient::AOClient(Server *p_server, akashi::ITransport *socket, QObject *parent, int user_id, MusicManager *p_manager) :
     QObject(parent),
     m_socket(socket),
     m_music_manager(p_manager),
@@ -644,6 +644,14 @@ AOClient::AOClient(Server *p_server, NetworkSocket *socket, QObject *parent, int
 {
     m_session.id = user_id;
     m_session.remote_ip = socket->peerAddress();
+
+    // The capabilities the client announced while connecting, the header
+    // side of the FL exchange. In the profile before ID resolves codecs,
+    // so codec rules can key on them.
+    const QStringList l_announced = socket->connectTimeFeatures();
+    for (const QString &l_feature : l_announced) {
+        m_session.profile.features.insert(l_feature);
+    }
 
     m_afk_timer = new QTimer;
     m_afk_timer->setSingleShot(true);
@@ -691,7 +699,11 @@ void AOClient::setHwid(const QString &f_hwid)
 
 void AOClient::identify(const akashi::ClientProfile &f_profile)
 {
+    // ID only learns arch and version; the features announced at connect
+    // time outlive it.
+    const QSet<QString> l_announced = m_session.profile.features;
     m_session.profile = f_profile;
+    m_session.profile.features.unite(l_announced);
     m_session.identified = true;
     if (m_packets) {
         m_codecs = m_packets->codecs().resolve(m_session.profile);

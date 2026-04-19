@@ -34,7 +34,7 @@ struct AKASHI_CORE_EXPORT ClientProfile
 {
     QString arch;           // "AO2", "webAO" or a fork identifier
     ClientVersion version;  // parsed from the ID packet
-    QSet<QString> features; // negotiated from the FL feature list
+    QSet<QString> features; // the capabilities the client announced at connect time
 
     bool hasFeature(const QString &f_feature) const { return features.contains(f_feature); }
 };

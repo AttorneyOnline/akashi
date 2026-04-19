@@ -19,14 +19,18 @@
 #define NETWORK_SOCKET_H
 
 #include "akashi_core_export.h"
+#include "core/transport.h"
 
 #include <QHostAddress>
-#include <QObject>
+#include <QNetworkRequest>
 #include <QWebSocket>
 
 #include "proto/packet.h"
 
-class AKASHI_CORE_EXPORT NetworkSocket : public QObject
+// The WebSocket transport: the one ITransport implementation core ships. Keeps
+// the WebSocket framing and reverse-proxy IP resolution; the rest of the server
+// only sees the akashi::ITransport interface.
+class AKASHI_CORE_EXPORT NetworkSocket : public akashi::ITransport
 {
     Q_OBJECT
 
@@ -43,38 +47,25 @@ class AKASHI_CORE_EXPORT NetworkSocket : public QObject
      */
     ~NetworkSocket();
 
+    QHostAddress peerAddress() const override;
+    void write(const akashi::Packet &f_packet) override;
+    void close() override;
+    akashi::ITransport::Capabilities capabilities() const override;
+    QStringList connectTimeFeatures() const override;
+
     /**
-     * @brief Returns the Address of the remote socket.
+     * @brief Reads the client's announced capabilities out of the upgrade
+     * request - the FL exchange's other direction, carried in the header.
      *
-     * @return QHostAddress object of the socket.
+     * @details The subprotocol offer list is the client's feature list.
+     * A network_-prefixed token becomes a feature under the same name FL
+     * uses ("network_auth_password" reads as "auth_password"), and a
+     * client-assembled packet key like "ao_ms_2.11.1" is kept whole. The
+     * response may echo only one token (the first offered one the server
+     * speaks), so the echo is an acceptance mark, not the exchange itself.
+     * Static and pure so it can be tested directly.
      */
-    QHostAddress peerAddress();
-
-    /**
-     * @brief Closes the socket by request of the child AOClient object or the server.
-     *
-     * @param The close code to the send to the client.
-     */
-    void close(QWebSocketProtocol::CloseCode f_code = QWebSocketProtocol::CloseCodeNormal);
-
-    /**
-     * @brief Writes data to the network socket.
-     *
-     * @param Packet to be written to the socket.
-     */
-    void write(const akashi::Packet &f_packet);
-
-  Q_SIGNALS:
-    /**
-     * @brief Emitted for every packet parsed from the socket, including null
-     * packets from unreadable data so the receiver can rate limit them.
-     */
-    void packetReceived(const akashi::Packet &f_packet);
-
-    /**
-     * @brief Emitted when the socket has been closed and the client is disconnected.
-     */
-    void clientDisconnected();
+    static QStringList parseCapabilityTokens(const QNetworkRequest &f_request);
 
   private Q_SLOTS:
     /**
@@ -91,6 +82,11 @@ class AKASHI_CORE_EXPORT NetworkSocket : public QObject
      * @details In the case of the WebSocket we also check if this has been proxy forwarded.
      */
     QHostAddress m_socket_ip;
+
+    /**
+     * @brief The capabilities the client announced in the upgrade request.
+     */
+    QStringList m_connect_features;
 };
 
 #endif

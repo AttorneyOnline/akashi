@@ -18,7 +18,7 @@
 #include "network/network_socket.h"
 
 NetworkSocket::NetworkSocket(QWebSocket *f_socket, QObject *parent) :
-    QObject(parent)
+    akashi::ITransport(parent)
 {
     m_client_socket = f_socket;
     connect(m_client_socket, &QWebSocket::textMessageReceived, this, &NetworkSocket::handleMessage);
@@ -41,6 +41,33 @@ NetworkSocket::NetworkSocket(QWebSocket *f_socket, QObject *parent) :
     else {
         m_socket_ip = f_socket->peerAddress();
     }
+
+    m_connect_features = parseCapabilityTokens(m_client_socket->request());
+}
+
+QStringList NetworkSocket::parseCapabilityTokens(const QNetworkRequest &f_request)
+{
+    QStringList l_features;
+    const QString l_offered = QString::fromUtf8(f_request.rawHeader("Sec-WebSocket-Protocol"));
+    const QStringList l_tokens = l_offered.split(QLatin1Char(','), Qt::SkipEmptyParts);
+    for (const QString &l_token : l_tokens) {
+        const QString l_trimmed = l_token.trimmed();
+        // The network_ namespace carries FL feature names; a three-part
+        // [arch]_[packet]_[version] key is kept whole. Anything else is
+        // some other protocol's token and stays foreign.
+        if (l_trimmed.startsWith(QStringLiteral("network_")) && l_trimmed.size() > 8) {
+            l_features.append(l_trimmed.mid(8));
+        }
+        else if (l_trimmed.count(QLatin1Char('_')) >= 2) {
+            l_features.append(l_trimmed);
+        }
+    }
+    return l_features;
+}
+
+QStringList NetworkSocket::connectTimeFeatures() const
+{
+    return m_connect_features;
 }
 
 NetworkSocket::~NetworkSocket()
@@ -48,14 +75,21 @@ NetworkSocket::~NetworkSocket()
     m_client_socket->deleteLater();
 }
 
-QHostAddress NetworkSocket::peerAddress()
+QHostAddress NetworkSocket::peerAddress() const
 {
     return m_socket_ip;
 }
 
-void NetworkSocket::close(QWebSocketProtocol::CloseCode f_code)
+void NetworkSocket::close()
 {
-    m_client_socket->close(f_code);
+    m_client_socket->close(QWebSocketProtocol::CloseCodeNormal);
+}
+
+akashi::ITransport::Capabilities NetworkSocket::capabilities() const
+{
+    // The WebSocket upgrade carries handshake-time headers, so connect-time
+    // negotiation is possible on this transport.
+    return akashi::ITransport::ConnectTimeMetadata;
 }
 
 void NetworkSocket::handleMessage(QString f_data)

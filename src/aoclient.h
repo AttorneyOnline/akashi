@@ -32,7 +32,7 @@
 #include <QtGlobal>
 
 #include "acl_roles_handler.h"
-#include "network/network_socket.h"
+#include "core/transport.h"
 #include "proto/packet_codec.h"
 #include "proto/packet_context.h"
 #include "proto/packet_service.h"
@@ -44,7 +44,6 @@ class AreaData;
 class DBManager;
 class MusicManager;
 class Server;
-class NetworkSocket;
 
 /**
  * @brief Represents a client connected to the server running Attorney Online 2 or one of its derivatives.
@@ -93,7 +92,7 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
      * @param user_id The user ID of the client.
      * @param parent Qt-based parent, passed along to inherited constructor from QObject.
      */
-    AOClient(Server *p_server, NetworkSocket *socket, QObject *parent = nullptr, int user_id = 0, MusicManager *p_manager = nullptr);
+    AOClient(Server *p_server, akashi::ITransport *socket, QObject *parent = nullptr, int user_id = 0, MusicManager *p_manager = nullptr);
 
     /**
      * @brief Destructor for the AOClient instance.
@@ -545,7 +544,7 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     /**
      * @brief The network socket used by the client.
      */
-    NetworkSocket *m_socket;
+    akashi::ITransport *m_socket;
 
     /**
      * @brief Pointer to the server's music manager instance.

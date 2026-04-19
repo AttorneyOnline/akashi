@@ -132,14 +132,7 @@ class IdentifyHandler : public PacketHandler
 
         f_context.sendPacket(Packet(ao2::HEADER_PN, {QString::number(f_context.playerCount()), QString::number(ConfigManager::maxPlayers()), ConfigManager::serverDescription()}));
 
-        const QStringList l_feature_list = {
-            "noencryption", "yellowtext", "prezoom",
-            "flipping", "customobjections", "fastloading",
-            "deskmod", "evidence", "cccc_ic_support",
-            "arup", "casing_alerts", "modcall_reason",
-            "looping_sfx", "additive", "effects",
-            "y_offset", "expanded_desk_mods", "auth_packet", "custom_blips"};
-        f_context.sendPacket(Packet(ao2::HEADER_FL, l_feature_list));
+        f_context.sendPacket(Packet(ao2::HEADER_FL, serverFeatures()));
 
         if (ConfigManager::assetUrl().isValid()) {
             const QByteArray l_asset_url = ConfigManager::assetUrl().toEncoded(QUrl::EncodeSpaces);
@@ -290,6 +283,17 @@ class CharacterPasswordHandler : public PacketHandler
 };
 
 } // namespace
+
+QStringList serverFeatures()
+{
+    return {
+        "noencryption", "yellowtext", "prezoom",
+        "flipping", "customobjections", "fastloading",
+        "deskmod", "evidence", "cccc_ic_support",
+        "arup", "casing_alerts", "modcall_reason",
+        "looping_sfx", "additive", "effects",
+        "y_offset", "expanded_desk_mods", "auth_packet", "custom_blips"};
+}
 
 void registerHandshakePackets(PacketRegistry &f_handlers, PacketCodecRegistry &f_codecs)
 {

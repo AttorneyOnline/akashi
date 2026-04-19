@@ -31,6 +31,7 @@
 #include "logger/u_logger.h"
 #include "music_manager.h"
 #include "network/network_socket.h"
+#include "proto/handshake.h"
 #include "proto/packet_service.h"
 #include "serverpublisher.h"
 
@@ -78,6 +79,17 @@ ExitCode Server::start()
     }
 
     server = new QWebSocketServer("Akashi", QWebSocketServer::NonSecureMode, this);
+
+    // The FL capability list doubles as the subprotocol vocabulary. The
+    // echo picks the client's first offered token found here, so the
+    // client leads with what it needs accepted; offering only tokens the
+    // server does not speak fails the handshake, which IS the refusal.
+    QStringList l_spoken;
+    const QStringList l_features = akashi::serverFeatures();
+    for (const QString &l_feature : l_features) {
+        l_spoken.append(QStringLiteral("network_") + l_feature);
+    }
+    server->setSupportedSubprotocols(l_spoken);
     if (!server->listen(bind_addr, m_port)) {
         qCritical() << "Server error:" << server->errorString();
         return ExitCode::PortUnavailable;
@@ -194,7 +206,7 @@ void Server::clientConnected()
     }
     if (is_banned || is_at_multiclient_limit) {
         client->deleteLater();
-        l_socket->close(QWebSocketProtocol::CloseCodeNormal);
+        l_socket->close();
         markIDFree(user_id);
         return;
     }
@@ -209,7 +221,7 @@ void Server::clientConnected()
         akashi::Packet l_ban_reason("BD", {l_reason});
         l_socket->write(l_ban_reason);
         client->deleteLater();
-        l_socket->close(QWebSocketProtocol::CloseCodeNormal);
+        l_socket->close();
         markIDFree(user_id);
         return;
     }
