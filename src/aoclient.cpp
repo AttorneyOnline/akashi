@@ -681,7 +681,7 @@ const akashi::ClientProfile &AOClient::profile() const
 
 bool AOClient::isIdentified() const
 {
-    return m_session.profile.version.release == 2;
+    return m_session.identified;
 }
 
 void AOClient::setHwid(const QString &f_hwid)
@@ -692,6 +692,7 @@ void AOClient::setHwid(const QString &f_hwid)
 void AOClient::identify(const akashi::ClientProfile &f_profile)
 {
     m_session.profile = f_profile;
+    m_session.identified = true;
     if (m_packets) {
         m_codecs = m_packets->codecs().resolve(m_session.profile);
     }

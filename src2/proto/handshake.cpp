@@ -50,6 +50,7 @@ class IdentifyCodec : public Codec
             l_message->version.release = l_match.captured(1).toInt();
             l_message->version.major = l_match.captured(2).toInt();
             l_message->version.minor = l_match.captured(3).toInt();
+            l_message->version_valid = true;
         }
         return l_message;
     }
@@ -116,8 +117,10 @@ class IdentifyHandler : public PacketHandler
             return;
         }
 
-        if (l_identify.version.release != 2) {
-            f_context.sendPacket(Packet(ao2::HEADER_BD, {"A protocol error has been encountered. Packet : ID\nRelease version not recognised."}));
+        // Any release that parses is accepted (AO2 is release 2, DRO reports
+        // release 1, etc.); only a version field with no X.Y.Z is a protocol error.
+        if (!l_identify.version_valid) {
+            f_context.sendPacket(Packet(ao2::HEADER_BD, {"A protocol error has been encountered. Packet : ID\nVersion not recognised."}));
             f_context.closeConnection();
             return;
         }

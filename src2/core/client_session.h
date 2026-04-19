@@ -23,6 +23,7 @@ class AKASHI_CORE_EXPORT ClientSession
     QHostAddress remote_ip;
     QString hwid;
     QString ipid;
+    bool identified = false; // has completed the ID handshake
     bool joined = false;
 
     // What the client told us about itself at the handshake (arch, version,

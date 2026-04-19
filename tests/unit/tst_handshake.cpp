@@ -25,7 +25,7 @@ class tst_Handshake : public QObject
     void helloRefusesEmptyAndDoubleHwid();
     void helloTurnsAwayBannedHardware();
     void identifyAcceptsAo2AndDescribesServer();
-    void identifyRefusesDoubleAndUnknownVersions();
+    void identifyRefusesDoubleAndUnparseableVersions();
     void resourceCountsMatchTheLists();
     void characterAndMusicListsAreSent();
     void joinSendsTheWholeWorldInOrder();
@@ -122,7 +122,7 @@ void tst_Handshake::identifyAcceptsAo2AndDescribesServer()
     QCOMPARE(l_context.sent.at(2).field(0), QString("http://attorneyoffline.de/base/"));
 }
 
-void tst_Handshake::identifyRefusesDoubleAndUnknownVersions()
+void tst_Handshake::identifyRefusesDoubleAndUnparseableVersions()
 {
     FakeContext l_double;
     l_double.identified = true;
@@ -130,11 +130,13 @@ void tst_Handshake::identifyRefusesDoubleAndUnknownVersions()
     QVERIFY(l_double.closed);
     QCOMPARE(l_double.sent.at(0).header(), QString("BD"));
 
-    FakeContext l_old;
-    run(Packet("ID", {"AO2", "1.7.5"}), l_old);
-    QVERIFY(l_old.closed);
-    QVERIFY(!l_old.identified);
+    // Any release that parses is accepted - a release-1 client (e.g. DRO) too.
+    FakeContext l_dro;
+    run(Packet("ID", {"AO2", "1.7.5"}), l_dro);
+    QVERIFY(!l_dro.closed);
+    QVERIFY(l_dro.identified);
 
+    // Only a version field with no parseable X.Y.Z is refused.
     FakeContext l_garbage;
     run(Packet("ID", {"AO2", "banana"}), l_garbage);
     QVERIFY(l_garbage.closed);
