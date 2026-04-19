@@ -25,7 +25,7 @@ class tst_Handshake : public QObject
     void helloRefusesEmptyAndDoubleHwid();
     void helloTurnsAwayBannedHardware();
     void identifyAcceptsAo2AndDescribesServer();
-    void identifyAcceptsAnyVersionButRefusesDouble();
+    void identifyRefusesDoubleAndUnparseableVersions();
     void resourceCountsMatchTheLists();
     void characterAndMusicListsAreSent();
     void joinSendsTheWholeWorldInOrder();
@@ -122,26 +122,25 @@ void tst_Handshake::identifyAcceptsAo2AndDescribesServer()
     QCOMPARE(l_context.sent.at(2).field(0), QString("http://attorneyoffline.de/base/"));
 }
 
-void tst_Handshake::identifyAcceptsAnyVersionButRefusesDouble()
+void tst_Handshake::identifyRefusesDoubleAndUnparseableVersions()
 {
-    // A second ID packet is the one protocol error the handler still rejects.
     FakeContext l_double;
     l_double.identified = true;
     run(Packet("ID", {"AO2", "2.10.1"}), l_double);
     QVERIFY(l_double.closed);
     QCOMPARE(l_double.sent.at(0).header(), QString("BD"));
 
-    // A release-1 client (e.g. DRO) is accepted.
+    // Any release that parses is accepted - a release-1 client (e.g. DRO) too.
     FakeContext l_dro;
     run(Packet("ID", {"AO2", "1.7.5"}), l_dro);
     QVERIFY(!l_dro.closed);
     QVERIFY(l_dro.identified);
 
-    // Even a version that does not parse is accepted; it just defaults to 0.0.0.
-    FakeContext l_odd;
-    run(Packet("ID", {"AO2", "banana"}), l_odd);
-    QVERIFY(!l_odd.closed);
-    QVERIFY(l_odd.identified);
+    // Only a version field with no parseable X.Y.Z is refused.
+    FakeContext l_garbage;
+    run(Packet("ID", {"AO2", "banana"}), l_garbage);
+    QVERIFY(l_garbage.closed);
+    QVERIFY(!l_garbage.identified);
 }
 
 void tst_Handshake::resourceCountsMatchTheLists()

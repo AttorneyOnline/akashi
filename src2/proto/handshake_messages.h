@@ -16,13 +16,15 @@ class AKASHI_CORE_EXPORT HelloMessage : public Message
     QString hwid;
 };
 
-// ID: the client names its software and version. A version that does not parse
-// as X.Y.Z just stays at the default 0.0.0; the handshake accepts it regardless.
+// ID: the client names its software and version. version_valid is false when
+// the version field carried no parseable X.Y.Z - the only thing the handshake
+// rejects, so any release (AO2, DRO, ...) that parses is accepted.
 class AKASHI_CORE_EXPORT IdentifyMessage : public Message
 {
   public:
     QString arch;
     ClientVersion version;
+    bool version_valid = false;
 };
 
 // CC: the client picks a character; the spectator id -1 means none.
