@@ -74,7 +74,7 @@ bool AOClient::canModifyEvidence(AreaData *area)
     case AreaData::EvidenceMod::HIDDEN_CM:
         return canPerform(ACLRole::CM);
     case AreaData::EvidenceMod::MOD:
-        return m_authenticated;
+        return m_session.authenticated;
     default:
         return false;
     }
@@ -108,30 +108,30 @@ void AOClient::loginAttempt(QString message)
             sendPacket("AUTH", {"1"});
             if (m_version.release <= 2 && m_version.major <= 9 && m_version.minor <= 0)
                 sendServerMessage("Logged in as a moderator.");
-            m_authenticated = true;
-            m_acl_role_id = ACLRolesHandler::SUPER_ID;
+            m_session.authenticated = true;
+            m_session.acl_role_id = ACLRolesHandler::SUPER_ID;
         }
         else {
             sendPacket("AUTH", {"0"}); // Client: "Login unsuccessful."
             sendServerMessage("Incorrect password.");
         }
         Q_EMIT logLogin((character() + " " + characterName()), name(), "Moderator",
-                      m_ipid, m_server->areaById(areaId())->name(), m_authenticated);
+                      m_session.ipid, m_server->areaById(areaId())->name(), m_session.authenticated);
         break;
     case DataTypes::AuthType::ADVANCED:
         QStringList l_login = message.split(" ");
         if (l_login.size() < 2) {
             sendServerMessage("You must specify a username and a password");
             sendServerMessage("Exiting login prompt.");
-            m_is_logging_in = false;
+            m_session.logging_in = false;
             return;
         }
         QString username = l_login[0];
         QString password = l_login[1];
         if (m_server->databaseManager()->authenticate(username, password)) {
-            m_authenticated = true;
-            m_acl_role_id = m_server->databaseManager()->acl(username);
-            m_moderator_name = username;
+            m_session.authenticated = true;
+            m_session.acl_role_id = m_server->databaseManager()->acl(username);
+            m_session.moderator_name = username;
             sendPacket("AUTH", {"1"});
             if (m_version.release <= 2 && m_version.major <= 9 && m_version.minor <= 0)
                 sendServerMessage("Logged in as a moderator.");
@@ -141,11 +141,11 @@ void AOClient::loginAttempt(QString message)
             sendPacket("AUTH", {"0"});
             sendServerMessage("Incorrect password.");
         }
-        Q_EMIT logLogin((character() + " " + characterName()), name(), username, m_ipid,
-                      m_server->areaById(areaId())->name(), m_authenticated);
+        Q_EMIT logLogin((character() + " " + characterName()), name(), username, m_session.ipid,
+                      m_server->areaById(areaId())->name(), m_session.authenticated);
         break;
     }
     sendServerMessage("Exiting login prompt.");
-    m_is_logging_in = false;
+    m_session.logging_in = false;
     return;
 }

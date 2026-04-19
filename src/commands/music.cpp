@@ -30,7 +30,7 @@ void AOClient::cmdPlay(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
     QString l_song = argv.join(" ");
-    if (m_is_dj_blocked) {
+    if (isDjBlocked()) {
         sendServerMessage("You are blocked from changing the music.");
         return;
     }
@@ -43,7 +43,7 @@ void AOClient::cmdPlay(int argc, QStringList argv)
         return;
     }
     AreaData *l_area = m_server->areaById(areaId());
-    const ACLRole l_role = m_server->aclRolesHandler()->roleById(m_acl_role_id);
+    const ACLRole l_role = m_server->aclRolesHandler()->roleById(m_session.acl_role_id);
     if (!l_area->owners().contains(clientId()) && !l_area->isPlayEnabled() && !l_role.canPerform(ACLRole::CM)) { // Make sure we have permission to play music
         sendServerMessage("Free music play is disabled in this area.");
         return;
@@ -62,7 +62,7 @@ void AOClient::cmdPlayAmbience(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
 
-    if (m_is_dj_blocked) {
+    if (isDjBlocked()) {
         sendServerMessage("You are blocked from changing the ambience.");
         return;
     }

@@ -30,7 +30,7 @@ void AOClient::cmdLogin(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    if (m_authenticated) {
+    if (m_session.authenticated) {
         sendServerMessage("You are already logged in!");
         return;
     }
@@ -78,7 +78,7 @@ void AOClient::cmdSetRootPass(int argc, QStringList argv)
     }
 
     sendServerMessage("Changing auth type and setting root password.\nLogin again with /login root [password]");
-    m_authenticated = false;
+    m_session.authenticated = false;
     ConfigManager::setAuthType(DataTypes::AuthType::ADVANCED);
 
     QByteArray l_salt = CryptoHelper::randbytes(16);
@@ -115,7 +115,7 @@ void AOClient::cmdRemoveUser(int argc, QStringList argv)
 
 void AOClient::cmdListPerms(int argc, QStringList argv)
 {
-    const ACLRole l_role = m_server->aclRolesHandler()->roleById(m_acl_role_id);
+    const ACLRole l_role = m_server->aclRolesHandler()->roleById(m_session.acl_role_id);
 
     ACLRole l_target_role = l_role;
     QStringList l_message;
@@ -198,13 +198,13 @@ void AOClient::cmdLogout(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    if (!m_authenticated) {
+    if (!m_session.authenticated) {
         sendServerMessage("You are not logged in!");
         return;
     }
-    m_authenticated = false;
-    m_acl_role_id = "";
-    m_moderator_name = "";
+    m_session.authenticated = false;
+    m_session.acl_role_id = "";
+    m_session.moderator_name = "";
     sendPacket("AUTH", {"-1"}); // Client: "You were logged out."
 }
 
@@ -213,11 +213,11 @@ void AOClient::cmdChangePassword(int argc, QStringList argv)
     QString l_username;
     QString l_password = argv[0];
     if (argc == 1) {
-        if (m_moderator_name.isEmpty()) {
+        if (m_session.moderator_name.isEmpty()) {
             sendServerMessage("You do not have permission to use that command. You must be logged in.");
             return;
         }
-        l_username = m_moderator_name;
+        l_username = m_session.moderator_name;
     }
     else if (argc == 2) {
 

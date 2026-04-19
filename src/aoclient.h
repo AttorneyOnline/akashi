@@ -20,6 +20,7 @@
 
 #include "akashi_core_export.h"
 
+#include "core/client_session.h"
 #include "core/player_state.h"
 
 #include <algorithm>
@@ -550,85 +551,9 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
 
   private:
     /**
-     * @brief If true, the client may not use in-character chat.
-     */
-    bool m_is_muted = false;
-
-    /**
-     * @brief If true, the client may not use out-of-character chat.
-     */
-    bool m_is_ooc_muted = false;
-
-    /**
-     * @brief If true, the client may not use the music list.
-     */
-    bool m_is_dj_blocked = false;
-
-    /**
-     * @brief If true, the client may not use the judge controls.
-     */
-    bool m_is_wtce_blocked = false;
-
-    /**
-     * @brief If true, the client's in-character messages will have their word order randomised.
-     */
-    bool m_is_shaken = false;
-
-    /**
-     * @brief If true, the client's in-character messages will have their vowels (English alphabet only) removed.
-     */
-    bool m_is_disemvoweled = false;
-
-    /**
-     * @brief If true, the client's in-character messages will be overwritten by a randomly picked predetermined message.
-     */
-    bool m_is_gimped = false;
-
-    /**
-     * @brief If true, the client will be marked as AFK in /getarea. Automatically applied when a configurable
-     * amount of time has passed since the last interaction, or manually applied by /afk.
-     */
-    bool m_is_afk = false;
-
-    /**
-     * @brief If true, the client will not recieve PM messages.
-     */
-    bool m_pm_mute = false;
-
-    /**
-     * @brief If true, the client will recieve advertisements.
-     */
-    bool m_advert_enabled = true;
-
-    /**
-     * @brief If true, the client is restricted to only changing into certain characters.
-     */
-    bool m_is_charcursed = false;
-
-    /**
      * @brief Temporary client permission if client is allowed to save a testimony to server storage.
      */
     bool m_testimony_saving = false;
-
-    /**
-     * @brief The IP address of the client.
-     */
-    QHostAddress m_remote_ip;
-
-    /**
-     * @brief The stored character password for the client, used to be able to select passworded characters.
-     */
-    QString m_password;
-
-    /**
-     * @brief The hardware ID of the client.
-     */
-    QString m_hwid;
-
-    /**
-     * @brief The IPID of the client, a non-reversible hash of its IP.
-     */
-    QString m_ipid;
 
     /**
      * @brief The software and version of the client.
@@ -636,49 +561,14 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     ClientVersion m_version;
 
     /**
-     * @brief If true, the client is a logged-in moderator.
-     */
-    bool m_authenticated = false;
-
-    /**
-     * @brief The ACL role identifier the client is linked to.
-     */
-    QString m_acl_role_id;
-
-    /**
-     * @brief If using advanced authentication, the moderator name the client logged in with.
-     */
-    QString m_moderator_name = "";
-
-    /**
-     * @brief True once the client has completed the handshake and joined the server.
-     */
-    bool m_joined;
-
-    /**
      * @brief If true, the client is willing to receive global messages.
      */
     bool m_global_enabled = true;
 
     /**
-     * @brief The five casing preferences (def, pro, judge, jury, steno).
-     */
-    QList<bool> m_casing_preferences = {false, false, false, false, false};
-
-    /**
      * @brief Timer for tracking user interaction.
      */
     QTimer *m_afk_timer;
-
-    /**
-     * @brief The char IDs a charcursed player is allowed to switch to.
-     */
-    QList<int> m_charcurse_list;
-
-    /**
-     * @brief If true, the client's next OOC message is a moderator login.
-     */
-    bool m_is_logging_in = false;
 
     /**
      * @brief The network socket used by the client.
@@ -691,20 +581,16 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     MusicManager *m_music_manager;
 
     /**
-     * @brief The time in seconds of the client's last WT/CE popup, for spam filtering.
+     * @brief The connection and the person behind it - identity, auth,
+     * sanctions and preferences.
      */
-    long m_last_wtce_time;
+    akashi::ClientSession m_session;
 
     /**
      * @brief The character(s) this connection is playing. A session
      * owns exactly one today; a richer protocol may own several.
      */
     akashi::PlayerState m_player;
-
-    /**
-     * @brief The user ID of the client.
-     */
-    int m_id;
 
     /**
      * @brief A pointer to the Server, used for updating server variables that depend on the client (e.g. amount of players in an area).
@@ -2186,16 +2072,6 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
      * @see cmdChangeAuth and cmdSetRootPass
      */
     bool change_auth_started = false;
-
-    /**
-     * @brief Timestamp (in seconds since Epoch) of the current tick.
-     */
-    qint64 rate_limit_tick;
-
-    /**
-     * @brief Number of packets received for the current tick.
-     */
-    int packet_count;
 
   Q_SIGNALS:
 
