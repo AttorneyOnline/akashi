@@ -62,7 +62,7 @@ QStringList AOClient::buildAreaList(int area_idx)
                 char_entry += " (" + l_client->characterName() + ")";
             if (area->owners().contains(l_client->clientId()))
                 char_entry.insert(0, "[CM] ");
-            if (m_session.authenticated)
+            if (m_session->authenticated)
                 char_entry += " (" + l_client->ipid() + "): " + l_client->name();
             entries.append(char_entry);
         }

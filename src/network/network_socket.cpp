@@ -17,12 +17,31 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "network/network_socket.h"
 
+#include <QTimer>
+
+// Ping cadence and how many may go unanswered before the peer counts as dead.
+// Both Qt clients and browsers answer pings in their network stack, so a
+// missed pong means a dead wire or a frozen client, not a busy one.
+static const int PING_INTERVAL_MS = 30000;
+static const int MAX_UNANSWERED_PINGS = 2;
+
+// How long a started close exchange may wait for the peer before we abort.
+static const int CLOSE_GRACE_MS = 10000;
+
 NetworkSocket::NetworkSocket(QWebSocket *f_socket, QObject *parent) :
     akashi::ITransport(parent)
 {
     m_client_socket = f_socket;
+    m_client_socket->setParent(this);
     connect(m_client_socket, &QWebSocket::textMessageReceived, this, &NetworkSocket::handleMessage);
-    connect(m_client_socket, &QWebSocket::disconnected, this, &NetworkSocket::clientDisconnected);
+    connect(m_client_socket, &QWebSocket::disconnected, this, &NetworkSocket::reportDisconnect);
+    connect(m_client_socket, &QWebSocket::pong, this, [this](quint64, const QByteArray &) {
+        m_unanswered_pings = 0;
+    });
+
+    m_liveness_timer = new QTimer(this);
+    connect(m_liveness_timer, &QTimer::timeout, this, &NetworkSocket::checkLiveness);
+    m_liveness_timer->start(PING_INTERVAL_MS);
 
     bool l_is_local = (m_client_socket->peerAddress() == QHostAddress::LocalHost) ||
                       (m_client_socket->peerAddress() == QHostAddress::LocalHostIPv6) ||
@@ -70,11 +89,6 @@ QStringList NetworkSocket::connectTimeFeatures() const
     return m_connect_features;
 }
 
-NetworkSocket::~NetworkSocket()
-{
-    m_client_socket->deleteLater();
-}
-
 QHostAddress NetworkSocket::peerAddress() const
 {
     return m_socket_ip;
@@ -82,7 +96,12 @@ QHostAddress NetworkSocket::peerAddress() const
 
 void NetworkSocket::close()
 {
-    m_client_socket->close(QWebSocketProtocol::CloseCodeNormal);
+    closeWithCode(QWebSocketProtocol::CloseCodeNormal);
+}
+
+bool NetworkSocket::isOpen() const
+{
+    return !m_closing && !m_disconnect_reported && m_client_socket->state() == QAbstractSocket::ConnectedState;
 }
 
 akashi::ITransport::Capabilities NetworkSocket::capabilities() const
@@ -92,12 +111,61 @@ akashi::ITransport::Capabilities NetworkSocket::capabilities() const
     return akashi::ITransport::ConnectTimeMetadata;
 }
 
+void NetworkSocket::closeWithCode(QWebSocketProtocol::CloseCode f_code)
+{
+    if (m_closing || m_disconnect_reported) {
+        return;
+    }
+    m_closing = true;
+
+    // A peer that never answers the close exchange must not hold the slot
+    // open, so the wire is dropped once the grace period runs out.
+    QTimer::singleShot(CLOSE_GRACE_MS, this, [this] {
+        if (!m_disconnect_reported) {
+            abortConnection();
+        }
+    });
+    m_client_socket->close(f_code);
+}
+
+void NetworkSocket::abortConnection()
+{
+    m_client_socket->abort();
+    reportDisconnect();
+}
+
+void NetworkSocket::reportDisconnect()
+{
+    if (m_disconnect_reported) {
+        return;
+    }
+    m_disconnect_reported = true;
+    m_liveness_timer->stop();
+    Q_EMIT clientDisconnected();
+}
+
+void NetworkSocket::checkLiveness()
+{
+    if (m_unanswered_pings >= MAX_UNANSWERED_PINGS) {
+        abortConnection();
+        return;
+    }
+    ++m_unanswered_pings;
+    m_client_socket->ping();
+}
+
 void NetworkSocket::handleMessage(QString f_data)
 {
+    // The connection is over once close() is called; frames racing in after
+    // that (a rejected client still talking) must not reach the server.
+    if (m_closing || m_disconnect_reported) {
+        return;
+    }
+
     QString l_data = f_data;
 
     if (l_data.toUtf8().size() > 30720) {
-        m_client_socket->close(QWebSocketProtocol::CloseCodeTooMuchData);
+        closeWithCode(QWebSocketProtocol::CloseCodeTooMuchData);
         return;
     }
 
@@ -115,5 +183,8 @@ void NetworkSocket::handleMessage(QString f_data)
 
 void NetworkSocket::write(const akashi::Packet &f_packet)
 {
+    if (!isOpen()) {
+        return;
+    }
     m_client_socket->sendTextMessage(f_packet.serialize());
 }

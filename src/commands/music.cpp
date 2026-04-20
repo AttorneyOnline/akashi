@@ -35,7 +35,7 @@ void AOClient::cmdPlay(int argc, QStringList argv)
         return;
     }
     if (l_song == "sin.mp3") {
-        m_socket->close();
+        m_session->transport->close();
         return;
     }
     if ((l_song.startsWith("http://", Qt::CaseInsensitive) || l_song.startsWith("https://", Qt::CaseInsensitive)) && !m_music_manager->validateSong(l_song, ConfigManager::cdnList())) {
@@ -43,7 +43,7 @@ void AOClient::cmdPlay(int argc, QStringList argv)
         return;
     }
     AreaData *l_area = m_server->areaById(areaId());
-    const ACLRole l_role = m_server->aclRolesHandler()->roleById(m_session.acl_role_id);
+    const ACLRole l_role = m_server->aclRolesHandler()->roleById(m_session->acl_role_id);
     if (!l_area->owners().contains(clientId()) && !l_area->isPlayEnabled() && !l_role.canPerform(ACLRole::CM)) { // Make sure we have permission to play music
         sendServerMessage("Free music play is disabled in this area.");
         return;

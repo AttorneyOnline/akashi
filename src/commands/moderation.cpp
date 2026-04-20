@@ -59,7 +59,7 @@ void AOClient::cmdBan(int argc, QStringList argv)
         l_ban.moderator = "moderator";
         break;
     case DataTypes::AuthType::ADVANCED:
-        l_ban.moderator = m_session.moderator_name;
+        l_ban.moderator = m_session->moderator_name;
         break;
     }
 
@@ -120,7 +120,7 @@ void AOClient::cmdKick(int argc, QStringList argv)
 
     if (l_kick_counter > 0) {
         if (ConfigManager::authType() == DataTypes::AuthType::ADVANCED) {
-            Q_EMIT logKick(m_session.moderator_name, l_target_ipid, l_reason);
+            Q_EMIT logKick(m_session->moderator_name, l_target_ipid, l_reason);
         }
         else {
             Q_EMIT logKick("Moderator", l_target_ipid, l_reason);
@@ -678,8 +678,8 @@ void AOClient::cmdKickOther(int argc, QStringList argv)
     int l_kick_counter = 0;
 
     QList<AOClient *> l_target_clients;
-    const QList<AOClient *> l_targets_hwid = m_server->clientsByHwid(m_session.hwid);
-    l_target_clients = m_server->clientsByIpid(m_session.ipid);
+    const QList<AOClient *> l_targets_hwid = m_server->clientsByHwid(m_session->hwid);
+    l_target_clients = m_server->clientsByIpid(m_session->ipid);
 
     // Merge both lookups into one single list.)
     for (AOClient *l_target_candidate : qAsConst(l_targets_hwid)) {

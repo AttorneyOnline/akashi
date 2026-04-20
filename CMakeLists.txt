@@ -71,6 +71,7 @@ set(AKASHI_SOURCES
   src2/core/filesystem_service.cpp
   src2/core/json_settings.cpp
   src2/core/json_settings.h
+  src2/core/client_session.cpp
   src2/core/client_session.h
   src2/core/mmdb_reader.cpp
   src2/core/mmdb_reader.h

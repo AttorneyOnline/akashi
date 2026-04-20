@@ -97,7 +97,8 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     /**
      * @brief Destructor for the AOClient instance.
      *
-     * @details Sets the socket to delete later.
+     * @details Runs leave() as a safety net; the server normally calls it
+     * explicitly before deletion.
      */
     ~AOClient();
 
@@ -498,9 +499,11 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     void handlePacket(const akashi::Packet &packet);
 
     /**
-     * @brief A slot for when the client disconnects from the server.
+     * @brief Withdraws the client's presence from the server: area roster,
+     * ARUP counts, invites and CM spots. Idempotent, and must run while the
+     * client is alive - never from the destructor doing real work.
      */
-    void clientDisconnected();
+    void leave();
 
     /**
      * @brief A slot for sending a packet to the client.
@@ -530,6 +533,11 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
      */
     void joined();
 
+    /**
+     * @brief The client's transport has closed; the server tears the client down on this.
+     */
+    void disconnected();
+
     void nameChanged(const QString &);
     void characterChanged(const QString &);
     void characterNameChanged(const QString &);
@@ -537,25 +545,21 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
 
   private:
     /**
-     * @brief Timer for tracking user interaction.
-     */
-    QTimer *m_afk_timer;
-
-    /**
-     * @brief The network socket used by the client.
-     */
-    akashi::ITransport *m_socket;
-
-    /**
      * @brief Pointer to the server's music manager instance.
      */
     MusicManager *m_music_manager;
 
     /**
-     * @brief The connection and the person behind it - identity, auth,
-     * sanctions and preferences.
+     * @brief The connection and the person behind it - owns the transport,
+     * the packet pipeline, identity, auth, sanctions and preferences.
+     * An owned child, so it lives exactly as long as the client.
      */
-    akashi::ClientSession m_session;
+    akashi::ClientSession *m_session;
+
+    /**
+     * @brief Set once leave() has run, making it idempotent.
+     */
+    bool m_left = false;
 
     /**
      * @brief The character(s) this connection is playing. A session
@@ -567,16 +571,6 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
      * @brief A pointer to the Server, used for updating server variables that depend on the client (e.g. amount of players in an area).
      */
     Server *m_server;
-
-    /**
-     * @brief The server's packet pipeline, holding the handlers and codecs.
-     */
-    std::shared_ptr<akashi::PacketService> m_packets;
-
-    /**
-     * @brief The codecs picked for this client, refreshed when it identifies.
-     */
-    akashi::ResolvedCodecs m_codecs;
 
     /**
      * @brief Runs a packet through its registered handler after the usual checks.

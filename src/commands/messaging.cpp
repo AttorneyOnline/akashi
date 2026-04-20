@@ -78,7 +78,7 @@ void AOClient::cmdG(int argc, QStringList argv)
     QString l_sender_area = m_server->areaName(areaId());
     QString l_sender_message = argv.join(" ");
     // Better readability thanks to AwesomeAim.
-    akashi::Packet l_mod_packet("CT", {"[G][" + m_session.ipid + "][" + l_sender_area + "]" + l_sender_name, l_sender_message});
+    akashi::Packet l_mod_packet("CT", {"[G][" + m_session->ipid + "][" + l_sender_area + "]" + l_sender_name, l_sender_message});
     akashi::Packet l_user_packet("CT", {"[G][" + l_sender_area + "]" + l_sender_name, l_sender_message});
     m_server->broadcast(l_user_packet, l_mod_packet, Server::TARGET_TYPE::AUTHENTICATED);
     return;

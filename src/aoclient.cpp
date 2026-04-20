@@ -163,35 +163,41 @@ const QMap<QString, AOClient::CommandInfo> AOClient::COMMANDS{
     {"medievalmode", {{ACLRole::MUTE}, 0, &AOClient::cmdMedievalMode}},
 };
 
-void AOClient::clientDisconnected()
+void AOClient::leave()
 {
+    if (m_left) {
+        return;
+    }
+    m_left = true;
 #ifdef NET_DEBUG
-    qDebug() << m_session.remote_ip.toString() << "disconnected";
+    qDebug() << m_session->remote_ip.toString() << "disconnected";
 #endif
-    if (m_session.joined) {
+    // A client that never joined has no presence to withdraw - and a rejected
+    // (banned) connection must not broadcast ARUPs to the whole server.
+    if (m_session->joined) {
         m_server->areaById(areaId())->removeClient(m_server->characterId(character()), clientId());
         arup(ARUPType::PLAYER_COUNT, true);
-    }
 
-    if (character() != "") {
-        m_server->updateCharsTaken(m_server->areaById(areaId()));
-    }
-
-    bool l_updateLocks = false;
-
-    const QVector<AreaData *> l_areas = m_server->areas();
-    for (AreaData *l_area : l_areas) {
-        if (l_area->invited().contains(m_session.id)) {
-            l_area->uninvite(m_session.id);
+        if (character() != "") {
+            m_server->updateCharsTaken(m_server->areaById(areaId()));
         }
 
-        l_updateLocks = l_updateLocks || l_area->removeOwner(clientId());
-    }
+        bool l_updateLocks = false;
 
-    if (l_updateLocks) {
-        arup(ARUPType::LOCKED, true);
+        const QVector<AreaData *> l_areas = m_server->areas();
+        for (AreaData *l_area : l_areas) {
+            if (l_area->invited().contains(m_session->id)) {
+                l_area->uninvite(m_session->id);
+            }
+
+            l_updateLocks = l_updateLocks || l_area->removeOwner(clientId());
+        }
+
+        if (l_updateLocks) {
+            arup(ARUPType::LOCKED, true);
+        }
+        arup(ARUPType::CM, true);
     }
-    arup(ARUPType::CM, true);
     Q_EMIT clientSuccessfullyDisconnected(clientId());
 }
 
@@ -202,21 +208,21 @@ void AOClient::handlePacket(const akashi::Packet &packet)
 #endif
 
     qint64 current_tick = QDateTime::currentSecsSinceEpoch();
-    if (m_session.rate_limit_tick < current_tick) {
-        m_session.rate_limit_tick = current_tick;
-        m_session.packet_count = 0;
+    if (m_session->rate_limit_tick < current_tick) {
+        m_session->rate_limit_tick = current_tick;
+        m_session->packet_count = 0;
     }
 
-    ++m_session.packet_count;
+    ++m_session->packet_count;
     int hard_limit = ConfigManager::packetRateLimitHard();
     int soft_limit = ConfigManager::packetRateLimitSoft();
 
-    if (hard_limit > 0 && m_session.packet_count >= hard_limit) {
+    if (hard_limit > 0 && m_session->packet_count >= hard_limit) {
         sendPacket("BD", {"You have been disconnected for sending messages too quickly."});
-        m_socket->close();
+        m_session->transport->close();
         return;
     }
-    else if (soft_limit > 0 && m_session.packet_count >= soft_limit) {
+    else if (soft_limit > 0 && m_session->packet_count >= soft_limit) {
         sendServerMessage("You are sending messages too quickly. Please slow down.");
     }
 
@@ -229,8 +235,8 @@ void AOClient::handlePacket(const akashi::Packet &packet)
         return;
     }
 
-    if (m_packets) {
-        if (const auto l_spec = m_packets->handlers().spec(packet.header())) {
+    if (m_session->packets) {
+        if (const auto l_spec = m_session->packets->handlers().spec(packet.header())) {
             handleRegisteredPacket(packet, *l_spec);
         }
     }
@@ -253,7 +259,7 @@ void AOClient::handleRegisteredPacket(const akashi::Packet &f_packet, const akas
         return;
     }
 
-    const std::shared_ptr<akashi::Codec> l_codec = m_codecs.codecFor(f_packet.header());
+    const std::shared_ptr<akashi::Codec> l_codec = m_session->codecs.codecFor(f_packet.header());
     if (!l_codec) {
         return;
     }
@@ -261,20 +267,20 @@ void AOClient::handleRegisteredPacket(const akashi::Packet &f_packet, const akas
     if (!l_message) {
         return;
     }
-    m_packets->handlers().handler(f_packet.header())->handle(*l_message, *this);
+    m_session->packets->handlers().handler(f_packet.header())->handle(*l_message, *this);
 }
 
 void AOClient::resetAfk(const QString &f_header)
 {
-    if (f_header != "CH" && m_session.joined) {
-        if (m_session.afk) {
+    if (f_header != "CH" && m_session->joined) {
+        if (m_session->afk) {
             sendServerMessage("You are no longer AFK.");
         }
-        m_session.afk = false;
+        m_session->afk = false;
         if (characterName().endsWith(" [AFK]")) {
             setCharacterName(characterName().remove(" [AFK]"));
         }
-        m_afk_timer->start(ConfigManager::afkTimeout() * 1000);
+        m_session->afk_timer->start(ConfigManager::afkTimeout() * 1000);
     }
 }
 
@@ -339,7 +345,7 @@ bool AOClient::changeCharacter(int char_id)
         return false;
     }
 
-    if (isCharCursed() && !m_session.charcurse_list.contains(char_id)) {
+    if (isCharCursed() && !m_session->charcurse_list.contains(char_id)) {
         return false;
     }
 
@@ -475,7 +481,7 @@ void AOClient::fullArup()
 
 void AOClient::sendPacket(const akashi::Packet &packet)
 {
-    m_socket->write(packet);
+    m_session->write(packet);
 }
 
 void AOClient::sendPacket(QString header, QStringList contents)
@@ -498,9 +504,9 @@ void AOClient::calculateIpid()
 
     QCryptographicHash hash(QCryptographicHash::Md5); // Don't need security, just hashing for uniqueness
 
-    hash.addData(m_session.remote_ip.toString().toUtf8());
+    hash.addData(m_session->remote_ip.toString().toUtf8());
 
-    m_session.ipid = hash.result().toHex().right(8); // Use the last 8 characters (4 bytes)
+    m_session->ipid = hash.result().toHex().right(8); // Use the last 8 characters (4 bytes)
 }
 
 void AOClient::sendServerMessage(const QString &message)
@@ -536,23 +542,23 @@ bool AOClient::canPerform(ACLRole::Permission f_permission) const
         return true;
     }
 
-    const ACLRole l_role = m_server->aclRolesHandler()->roleById(m_session.acl_role_id);
+    const ACLRole l_role = m_server->aclRolesHandler()->roleById(m_session->acl_role_id);
     return l_role.canPerform(f_permission);
 }
 
 QString AOClient::ipid() const
 {
-    return m_session.ipid;
+    return m_session->ipid;
 }
 
 bool AOClient::isJoined() const
 {
-    return m_session.joined;
+    return m_session->joined;
 }
 
 bool AOClient::isAuthenticated() const
 {
-    return m_session.authenticated;
+    return m_session->authenticated;
 }
 
 Server *AOClient::server()
@@ -562,7 +568,7 @@ Server *AOClient::server()
 
 int AOClient::clientId() const
 {
-    return m_session.id;
+    return m_session->id;
 }
 
 QString AOClient::name() const
@@ -629,90 +635,89 @@ bool AOClient::isSpectator() const
 
 void AOClient::onAfkTimeout()
 {
-    if (!m_session.afk) {
+    if (!m_session->afk) {
         sendServerMessage("You are now AFK.");
         setCharacterName(characterName() + " [AFK]");
     }
-    m_session.afk = true;
+    m_session->afk = true;
 }
+
+// How long a connection may sit unidentified before it is dropped. A stock
+// client identifies within its first second; anything silent this long is a
+// dead or hostile connection squatting a player slot.
+static const int IDENTIFICATION_TIMEOUT_MS = 60000;
 
 AOClient::AOClient(Server *p_server, akashi::ITransport *socket, QObject *parent, int user_id, MusicManager *p_manager) :
     QObject(parent),
-    m_socket(socket),
     m_music_manager(p_manager),
     m_server(p_server)
 {
-    m_session.id = user_id;
-    m_session.remote_ip = socket->peerAddress();
+    m_session = new akashi::ClientSession(user_id, socket, this);
+    connect(m_session, &akashi::ClientSession::packetReceived, this, &AOClient::handlePacket);
+    connect(m_session, &akashi::ClientSession::transportClosed, this, &AOClient::disconnected);
+    connect(m_session->afk_timer, &QTimer::timeout, this, &AOClient::onAfkTimeout);
 
-    // The capabilities the client announced while connecting, the header
-    // side of the FL exchange. In the profile before ID resolves codecs,
-    // so codec rules can key on them.
-    const QStringList l_announced = socket->connectTimeFeatures();
-    for (const QString &l_feature : l_announced) {
-        m_session.profile.features.insert(l_feature);
-    }
-
-    m_afk_timer = new QTimer;
-    m_afk_timer->setSingleShot(true);
-    connect(m_afk_timer, &QTimer::timeout, this, &AOClient::onAfkTimeout);
+    QTimer::singleShot(IDENTIFICATION_TIMEOUT_MS, this, [this] {
+        if (!m_session->identified) {
+            m_session->transport->close();
+        }
+    });
 
     if (m_server) {
-        m_packets = m_server->packets();
-        if (m_packets) {
+        m_session->packets = m_server->packets();
+        if (m_session->packets) {
             // Picked again with the real profile once the client identifies.
-            m_codecs = m_packets->codecs().resolve(m_session.profile);
+            m_session->codecs = m_session->packets->codecs().resolve(m_session->profile);
         }
     }
 }
 
 AOClient::~AOClient()
 {
-    clientDisconnected();
-    m_socket->deleteLater();
+    leave();
 }
 
 void AOClient::closeConnection()
 {
-    m_socket->close();
+    m_session->transport->close();
 }
 
 QString AOClient::hwid() const
 {
-    return m_session.hwid;
+    return m_session->hwid;
 }
 
 const akashi::ClientProfile &AOClient::profile() const
 {
-    return m_session.profile;
+    return m_session->profile;
 }
 
 bool AOClient::isIdentified() const
 {
-    return m_session.identified;
+    return m_session->identified;
 }
 
 void AOClient::setHwid(const QString &f_hwid)
 {
-    m_session.hwid = f_hwid;
+    m_session->hwid = f_hwid;
 }
 
 void AOClient::identify(const akashi::ClientProfile &f_profile)
 {
     // ID only learns arch and version; the features announced at connect
     // time outlive it.
-    const QSet<QString> l_announced = m_session.profile.features;
-    m_session.profile = f_profile;
-    m_session.profile.features.unite(l_announced);
-    m_session.identified = true;
-    if (m_packets) {
-        m_codecs = m_packets->codecs().resolve(m_session.profile);
+    const QSet<QString> l_announced = m_session->profile.features;
+    m_session->profile = f_profile;
+    m_session->profile.features.unite(l_announced);
+    m_session->identified = true;
+    if (m_session->packets) {
+        m_session->codecs = m_session->packets->codecs().resolve(m_session->profile);
     }
 }
 
 void AOClient::markJoined()
 {
-    m_session.joined = true;
+    m_session->joined = true;
 }
 
 void AOClient::finishJoin()
@@ -724,12 +729,12 @@ void AOClient::finishJoin()
 
 void AOClient::logConnectionAttempt()
 {
-    Q_EMIT m_server->logConnectionAttempt(m_session.remote_ip.toString(), m_session.ipid, m_session.hwid);
+    Q_EMIT m_server->logConnectionAttempt(m_session->remote_ip.toString(), m_session->ipid, m_session->hwid);
 }
 
 std::optional<akashi::BanRecord> AOClient::hardwareBan() const
 {
-    const auto l_ban = m_server->databaseManager()->isHDIDBanned(m_session.hwid);
+    const auto l_ban = m_server->databaseManager()->isHDIDBanned(m_session->hwid);
     if (!l_ban.first) {
         return std::nullopt;
     }
@@ -818,7 +823,7 @@ bool AOClient::selectCharacter(int f_char_id)
 
 bool AOClient::canUseOocChat() const
 {
-    return !m_session.hasSanction(akashi::Sanction::OocMute);
+    return !m_session->hasSanction(akashi::Sanction::OocMute);
 }
 
 QString AOClient::oocName() const
@@ -833,7 +838,7 @@ void AOClient::setOocName(const QString &f_name)
 
 bool AOClient::isInLoginPrompt() const
 {
-    return m_session.logging_in;
+    return m_session->logging_in;
 }
 
 void AOClient::attemptLogin(const QString &f_message)
@@ -844,13 +849,13 @@ void AOClient::attemptLogin(const QString &f_message)
 void AOClient::runCommand(const QString &f_command, const QStringList &f_arguments)
 {
     handleCommand(f_command, f_arguments.size(), f_arguments);
-    Q_EMIT logCMD((character() + " " + characterName()), m_session.ipid, name(), f_command, f_arguments, m_server->areaById(areaId())->name());
+    Q_EMIT logCMD((character() + " " + characterName()), m_session->ipid, name(), f_command, f_arguments, m_server->areaById(areaId())->name());
 }
 
 void AOClient::broadcastOoc(const QString &f_message)
 {
     m_server->broadcast(akashi::Packet("CT", {name(), f_message, "0"}), areaId());
-    Q_EMIT logOOC(m_server->areaById(areaId())->name(), m_session.ipid, name(), QString::number(clientId()), (character() + " " + characterName()), f_message);
+    Q_EMIT logOOC(m_server->areaById(areaId())->name(), m_session->ipid, name(), QString::number(clientId()), (character() + " " + characterName()), f_message);
 }
 
 bool AOClient::canModifyEvidence()
@@ -884,42 +889,42 @@ void AOClient::replaceEvidence(int f_index, const QString &f_name, const QString
 
 void AOClient::setCasingPreferences(const QList<bool> &f_preferences)
 {
-    m_session.casing_preferences = f_preferences;
+    m_session->casing_preferences = f_preferences;
 }
 
 bool AOClient::canUseIcChat() const
 {
-    return !m_session.hasSanction(akashi::Sanction::Mute);
+    return !m_session->hasSanction(akashi::Sanction::Mute);
 }
 
 bool AOClient::isMuted() const
 {
-    return m_session.hasSanction(akashi::Sanction::Mute);
+    return m_session->hasSanction(akashi::Sanction::Mute);
 }
 
 void AOClient::setMuted(bool f_muted)
 {
-    m_session.setSanction(akashi::Sanction::Mute, f_muted);
+    m_session->setSanction(akashi::Sanction::Mute, f_muted);
 }
 
 bool AOClient::isOocMuted() const
 {
-    return m_session.hasSanction(akashi::Sanction::OocMute);
+    return m_session->hasSanction(akashi::Sanction::OocMute);
 }
 
 void AOClient::setOocMuted(bool f_ooc_muted)
 {
-    m_session.setSanction(akashi::Sanction::OocMute, f_ooc_muted);
+    m_session->setSanction(akashi::Sanction::OocMute, f_ooc_muted);
 }
 
 void AOClient::setDjBlocked(bool f_dj_blocked)
 {
-    m_session.setSanction(akashi::Sanction::DjBlock, f_dj_blocked);
+    m_session->setSanction(akashi::Sanction::DjBlock, f_dj_blocked);
 }
 
 void AOClient::setWtceBlocked(bool f_wtce_blocked)
 {
-    m_session.setSanction(akashi::Sanction::WtceBlock, f_wtce_blocked);
+    m_session->setSanction(akashi::Sanction::WtceBlock, f_wtce_blocked);
 }
 
 int AOClient::characterId() const
@@ -1019,7 +1024,7 @@ QString AOClient::medievalText(const QString &f_text)
 
 bool AOClient::isGimped() const
 {
-    return m_session.hasSanction(akashi::Sanction::Gimp);
+    return m_session->hasSanction(akashi::Sanction::Gimp);
 }
 
 bool AOClient::isMedieval() const
@@ -1034,17 +1039,17 @@ bool AOClient::isMedievalArea() const
 
 bool AOClient::isShaken() const
 {
-    return m_session.hasSanction(akashi::Sanction::Shake);
+    return m_session->hasSanction(akashi::Sanction::Shake);
 }
 
 bool AOClient::isDisemvoweled() const
 {
-    return m_session.hasSanction(akashi::Sanction::Disemvowel);
+    return m_session->hasSanction(akashi::Sanction::Disemvowel);
 }
 
 void AOClient::setGimped(bool f_gimped)
 {
-    m_session.setSanction(akashi::Sanction::Gimp, f_gimped);
+    m_session->setSanction(akashi::Sanction::Gimp, f_gimped);
 }
 
 void AOClient::setMedieval(bool f_medieval)
@@ -1054,82 +1059,82 @@ void AOClient::setMedieval(bool f_medieval)
 
 void AOClient::setShaken(bool f_shaken)
 {
-    m_session.setSanction(akashi::Sanction::Shake, f_shaken);
+    m_session->setSanction(akashi::Sanction::Shake, f_shaken);
 }
 
 void AOClient::setDisemvoweled(bool f_disemvoweled)
 {
-    m_session.setSanction(akashi::Sanction::Disemvowel, f_disemvoweled);
+    m_session->setSanction(akashi::Sanction::Disemvowel, f_disemvoweled);
 }
 
 bool AOClient::isAfk() const
 {
-    return m_session.afk;
+    return m_session->afk;
 }
 
 void AOClient::setAfk(bool f_afk)
 {
-    m_session.afk = f_afk;
+    m_session->afk = f_afk;
 }
 
 bool AOClient::isPmMuted() const
 {
-    return m_session.pm_muted;
+    return m_session->pm_muted;
 }
 
 void AOClient::setPmMuted(bool f_pm_muted)
 {
-    m_session.pm_muted = f_pm_muted;
+    m_session->pm_muted = f_pm_muted;
 }
 
 bool AOClient::isAdvertEnabled() const
 {
-    return m_session.advert_enabled;
+    return m_session->advert_enabled;
 }
 
 void AOClient::setAdvertEnabled(bool f_advert_enabled)
 {
-    m_session.advert_enabled = f_advert_enabled;
+    m_session->advert_enabled = f_advert_enabled;
 }
 
 bool AOClient::isCharCursed() const
 {
-    return m_session.hasSanction(akashi::Sanction::CharCurse);
+    return m_session->hasSanction(akashi::Sanction::CharCurse);
 }
 
 void AOClient::setCharCursed(bool f_char_cursed)
 {
-    m_session.setSanction(akashi::Sanction::CharCurse, f_char_cursed);
+    m_session->setSanction(akashi::Sanction::CharCurse, f_char_cursed);
 }
 
 bool AOClient::isTestimonySaving() const
 {
-    return m_session.testimony_saving;
+    return m_session->testimony_saving;
 }
 
 void AOClient::setTestimonySaving(bool f_testimony_saving)
 {
-    m_session.testimony_saving = f_testimony_saving;
+    m_session->testimony_saving = f_testimony_saving;
 }
 
 QHostAddress AOClient::remoteIp() const
 {
-    return m_session.remote_ip;
+    return m_session->remote_ip;
 }
 
 QString AOClient::moderatorName() const
 {
-    return m_session.moderator_name;
+    return m_session->moderator_name;
 }
 
 QString AOClient::aclRoleId() const
 {
-    return m_session.acl_role_id;
+    return m_session->acl_role_id;
 }
 
 void AOClient::setInLoginPrompt(bool f_in_login_prompt)
 {
-    m_session.logging_in = f_in_login_prompt;
+    m_session->logging_in = f_in_login_prompt;
 }
 
 void AOClient::setCharacterId(int f_char_id)
@@ -1144,37 +1149,37 @@ void AOClient::setFirstPerson(bool f_first_person)
 
 bool AOClient::isGlobalEnabled() const
 {
-    return m_session.global_enabled;
+    return m_session->global_enabled;
 }
 
 void AOClient::setGlobalEnabled(bool f_global_enabled)
 {
-    m_session.global_enabled = f_global_enabled;
+    m_session->global_enabled = f_global_enabled;
 }
 
 QList<bool> AOClient::casingPreferences() const
 {
-    return m_session.casing_preferences;
+    return m_session->casing_preferences;
 }
 
 QList<int> AOClient::charCurseList() const
 {
-    return m_session.charcurse_list;
+    return m_session->charcurse_list;
 }
 
 void AOClient::addCharCurse(int f_char_id)
 {
-    m_session.charcurse_list.append(f_char_id);
+    m_session->charcurse_list.append(f_char_id);
 }
 
 void AOClient::clearCharCurse()
 {
-    m_session.charcurse_list.clear();
+    m_session->charcurse_list.clear();
 }
 
 void AOClient::closeSocket()
 {
-    m_socket->close();
+    m_session->transport->close();
 }
 
 bool AOClient::isIcMessageAllowed() const
@@ -1375,7 +1380,7 @@ void AOClient::broadcastIc(const QStringList &f_fields, int f_evidence_index)
         }
     }
 
-    Q_EMIT logIC(l_area->name(), m_session.ipid, name(), QString::number(clientId()), (character() + " " + characterName()), m_player.last_message);
+    Q_EMIT logIC(l_area->name(), m_session->ipid, name(), QString::number(clientId()), (character() + " " + characterName()), m_player.last_message);
     l_area->updateLastICMessage(l_fields);
 
     l_area->startMessageFloodguard(ConfigManager::messageFloodguard());
@@ -1389,7 +1394,7 @@ bool AOClient::hasSong(const QString &f_name) const
 
 bool AOClient::isDjBlocked() const
 {
-    return m_session.hasSanction(akashi::Sanction::DjBlock);
+    return m_session->hasSanction(akashi::Sanction::DjBlock);
 }
 
 bool AOClient::isMusicAllowed() const
@@ -1415,7 +1420,7 @@ QString AOClient::resolveSongAlias(const QString &f_song)
 void AOClient::recordMusicChange(const QString &f_song)
 {
     AreaData *l_area = m_server->areaById(areaId());
-    Q_EMIT logMusic((character() + " " + characterName()), name(), m_session.ipid, l_area->name(), f_song);
+    Q_EMIT logMusic((character() + " " + characterName()), name(), m_session->ipid, l_area->name(), f_song);
 
     // An empty showname would show as "played by ." in /currentmusic.
     if (characterName().isEmpty()) {
@@ -1427,7 +1432,7 @@ void AOClient::recordMusicChange(const QString &f_song)
 
 bool AOClient::isWtceBlocked() const
 {
-    return m_session.hasSanction(akashi::Sanction::WtceBlock);
+    return m_session->hasSanction(akashi::Sanction::WtceBlock);
 }
 
 bool AOClient::isWtceAllowed() const
@@ -1438,10 +1443,10 @@ bool AOClient::isWtceAllowed() const
 bool AOClient::startWtceCooldown()
 {
     const qint64 l_now = QDateTime::currentDateTime().toSecsSinceEpoch();
-    if (l_now - m_session.last_wtce_time <= 5) {
+    if (l_now - m_session->last_wtce_time <= 5) {
         return false;
     }
-    m_session.last_wtce_time = l_now;
+    m_session->last_wtce_time = l_now;
     return true;
 }
 
@@ -1499,7 +1504,7 @@ void AOClient::broadcastCaseAlert(const QList<bool> &f_needs, const akashi::Pack
 
 void AOClient::setCharacterPassword(const QString &f_password)
 {
-    m_session.password = f_password;
+    m_session->password = f_password;
 }
 
 bool AOClient::canPerform(const QString &f_permission) const
@@ -1533,7 +1538,7 @@ void AOClient::broadcastModerators(const akashi::Packet &f_packet)
 
 void AOClient::recordModcall()
 {
-    Q_EMIT logModcall(m_server->areaById(areaId())->name(), m_session.ipid, name(), QString::number(clientId()), (character() + " " + characterName()));
+    Q_EMIT logModcall(m_server->areaById(areaId())->name(), m_session->ipid, name(), QString::number(clientId()), (character() + " " + characterName()));
 }
 
 void AOClient::requestModcallWebhook(const QString &f_reason)
@@ -1554,7 +1559,7 @@ void AOClient::kickPlayer(int f_client_id, const QString &f_reason)
     }
     QString l_moderator_name = "Moderator";
     if (ConfigManager::authType() == DataTypes::AuthType::ADVANCED) {
-        l_moderator_name = m_session.moderator_name;
+        l_moderator_name = m_session->moderator_name;
     }
 
     const QList<AOClient *> l_clients = m_server->clientsByIpid(l_target->ipid());
@@ -1575,7 +1580,7 @@ void AOClient::banPlayer(int f_client_id, int f_duration, const QString &f_reaso
     }
     QString l_moderator_name = "Moderator";
     if (ConfigManager::authType() == DataTypes::AuthType::ADVANCED) {
-        l_moderator_name = m_session.moderator_name;
+        l_moderator_name = m_session->moderator_name;
     }
 
     DBManager::BanInfo l_ban;

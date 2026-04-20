@@ -2,23 +2,53 @@
 #define CORE_CLIENT_SESSION_H
 
 #include "akashi_core_export.h"
+#include "core/transport.h"
 #include "proto/client_profile.h"
+#include "proto/packet_codec.h"
+#include "proto/packet_service.h"
 
 #include <QHostAddress>
 #include <QList>
+#include <QObject>
+#include <QQueue>
 #include <QSet>
 #include <QString>
+#include <QTimer>
+
+#include <memory>
 
 namespace akashi {
 
 // One connection - the person behind it. A session owns 1..N PlayerStates
-// (characters); everything here is per-person: identity, auth, the rate
-// limiter, receive-preferences, and the moderation sanctions (keyed by
-// ipid/hdid in the store, so they cover all the person's characters).
-class AKASHI_CORE_EXPORT ClientSession
+// (characters); everything here is per-person: the transport, identity, auth,
+// the rate limiter, receive-preferences, and the moderation sanctions (keyed
+// by ipid/hdid in the store, so they cover all the person's characters).
+class AKASHI_CORE_EXPORT ClientSession : public QObject
 {
+    Q_OBJECT
+
   public:
+    // Takes ownership of the transport. The session outlives any one socket:
+    // its signals are the stable seam the server wires against, so a
+    // reconnect can bind a fresh transport to the same session.
+    ClientSession(int f_id, ITransport *f_transport, QObject *parent = nullptr);
+
+    // Sends a packet, or holds it while the wire is down so a returning
+    // client gets it replayed. All outbound traffic goes through here.
+    void write(const Packet &f_packet);
+
+    // Adopts a new wire for this session, replacing and deleting the old one,
+    // and replays whatever was held while no wire was open.
+    void bindTransport(ITransport *f_transport);
+
     // Transport and identity.
+    ITransport *transport = nullptr;
+
+    // Outbound packets held while the wire is down, replayed on rebind.
+    // Bounded: when full the oldest is dropped and the overflow is recorded,
+    // so a future resume can tell the replay is incomplete and force a resync.
+    QQueue<Packet> pending_packets;
+    bool pending_overflowed = false;
     int id = 0;
     QHostAddress remote_ip;
     QString hwid;
@@ -30,6 +60,11 @@ class AKASHI_CORE_EXPORT ClientSession
     // negotiated features). The client version lives here as profile.version.
     ClientProfile profile;
 
+    // The server's packet pipeline and the codecs picked for this client,
+    // refreshed when it identifies.
+    std::shared_ptr<PacketService> packets;
+    ResolvedCodecs codecs;
+
     // Authentication.
     bool authenticated = false;
     QString acl_role_id;
@@ -37,8 +72,9 @@ class AKASHI_CORE_EXPORT ClientSession
     QString password;
     bool logging_in = false;
 
-    // Idle tracking (the timer itself stays with the owner for now).
+    // Idle tracking.
     bool afk = false;
+    QTimer *afk_timer = nullptr;
 
     // Rate limiter.
     qint64 rate_limit_tick = 0;
@@ -70,6 +106,11 @@ class AKASHI_CORE_EXPORT ClientSession
     // Misc person-level state.
     long last_wtce_time = 0;
     bool testimony_saving = false;
+
+  Q_SIGNALS:
+    // Forwarded from the owned transport, so receivers never touch the socket.
+    void packetReceived(const Packet &f_packet);
+    void transportClosed();
 };
 
 // The ids of the built-in sanctions. Plugins register their own alongside.

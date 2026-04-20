@@ -164,20 +164,28 @@ QVector<AOClient *> Server::clients()
 void Server::clientConnected()
 {
     QWebSocket *socket = server->nextPendingConnection();
-    NetworkSocket *l_socket = new NetworkSocket(socket, socket);
+    NetworkSocket *l_socket = new NetworkSocket(socket);
+
+    // A connection that died while queued emitted its signals before anyone
+    // listened; without this check it would linger as a phantom client
+    // forever, holding a player slot with no wire left to tear it down.
+    if (!l_socket->isOpen()) {
+        l_socket->deleteLater();
+        return;
+    }
 
     // Too many players. Reject connection!
     // This also enforces the maximum playercount.
     if (m_available_ids.empty()) {
         akashi::Packet disconnect_reason("BD", {"Maximum playercount has been reached."});
         l_socket->write(disconnect_reason);
+        connect(l_socket, &akashi::ITransport::clientDisconnected, l_socket, &QObject::deleteLater);
         l_socket->close();
-        l_socket->deleteLater();
         return;
     }
 
     int user_id = m_available_ids.pop();
-    AOClient *client = new AOClient(this, l_socket, l_socket, user_id, music_manager);
+    AOClient *client = new AOClient(this, l_socket, nullptr, user_id, music_manager);
     m_clients_ids.insert(user_id, client);
 
     int multiclient_count = 1;
@@ -205,9 +213,11 @@ void Server::clientConnected()
         socket->sendTextMessage(ban_reason.serialize());
     }
     if (is_banned || is_at_multiclient_limit) {
-        client->deleteLater();
-        l_socket->close();
         markIDFree(user_id);
+        // The client is deleted once the transport reports the close, so the
+        // rejection message still flushes; the transport bounds the wait.
+        connect(l_socket, &akashi::ITransport::clientDisconnected, client, &QObject::deleteLater);
+        l_socket->close();
         return;
     }
 
@@ -220,21 +230,23 @@ void Server::clientConnected()
         QString l_reason = "Your IP has been banned by a moderator.";
         akashi::Packet l_ban_reason("BD", {l_reason});
         l_socket->write(l_ban_reason);
-        client->deleteLater();
-        l_socket->close();
         markIDFree(user_id);
+        connect(l_socket, &akashi::ITransport::clientDisconnected, client, &QObject::deleteLater);
+        l_socket->close();
         return;
     }
 
     m_clients.append(client);
-    connect(l_socket, &NetworkSocket::clientDisconnected, this, [=, this] {
+    connect(client, &AOClient::disconnected, this, [this, client] {
         if (client->isJoined()) {
             decreasePlayerCount();
         }
         m_clients.removeAll(client);
-        l_socket->deleteLater();
+        // Withdraw the client's presence while it is alive, then delete it -
+        // the destructor never does the real teardown.
+        client->leave();
+        client->deleteLater();
     });
-    connect(l_socket, &NetworkSocket::packetReceived, client, &AOClient::handlePacket);
 
     // This is the infamous workaround for
     // tsuserver4. It should disable fantacrypt
@@ -611,13 +623,16 @@ bool Server::isIPBanned(QHostAddress f_remote_IP)
 
 Server::~Server()
 {
-    for (AOClient *l_client : qAsConst(m_clients)) {
-        l_client->deleteLater();
-    }
-    server->deleteLater();
-    discord->deleteLater();
-    acl_roles_handler->deleteLater();
+    // Empty the roster first so no teardown broadcast writes to a neighbour
+    // mid-destruction, then delete synchronously - a deleteLater posted here
+    // never runs, because the event loop is already gone at this point.
+    const QVector<AOClient *> l_clients = m_clients;
+    m_clients.clear();
+    qDeleteAll(l_clients);
 
+    delete server;
+    delete discord;
+    delete acl_roles_handler;
     delete db_manager;
     delete m_filesystem;
 }

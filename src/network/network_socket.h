@@ -20,36 +20,34 @@
 
 #include "akashi_core_export.h"
 #include "core/transport.h"
+#include "proto/packet.h"
 
 #include <QHostAddress>
 #include <QNetworkRequest>
 #include <QWebSocket>
 
-#include "proto/packet.h"
+class QTimer;
 
 // The WebSocket transport: the one ITransport implementation core ships. Keeps
 // the WebSocket framing and reverse-proxy IP resolution; the rest of the server
 // only sees the akashi::ITransport interface.
+//
+// It enforces the ITransport lifecycle contract itself: the peer is pinged and
+// aborted when it stops answering (catches half-open TCP and frozen clients),
+// a close() that the peer never completes is aborted after a grace period, and
+// clientDisconnected() is emitted exactly once whichever way the wire dies.
 class AKASHI_CORE_EXPORT NetworkSocket : public akashi::ITransport
 {
     Q_OBJECT
 
   public:
-    /**
-     * @brief Constructor for the network socket class.
-     * @param QWebSocket for communication with external AO2-Client or WebAO clients.
-     * @param Pointer to the server object.
-     */
-    NetworkSocket(QWebSocket *f_socket, QObject *parent = nullptr);
-
-    /**
-     * @brief Default destructor for the NetworkSocket object.
-     */
-    ~NetworkSocket();
+    // Takes ownership of the QWebSocket.
+    explicit NetworkSocket(QWebSocket *f_socket, QObject *parent = nullptr);
 
     QHostAddress peerAddress() const override;
     void write(const akashi::Packet &f_packet) override;
     void close() override;
+    bool isOpen() const override;
     akashi::ITransport::Capabilities capabilities() const override;
     QStringList connectTimeFeatures() const override;
 
@@ -73,7 +71,27 @@ class AKASHI_CORE_EXPORT NetworkSocket : public akashi::ITransport
      */
     void handleMessage(QString f_data);
 
+    /**
+     * @brief Forwards the wire-level disconnect as exactly one clientDisconnected().
+     */
+    void reportDisconnect();
+
+    /**
+     * @brief Pings the peer; aborts a peer that stopped answering.
+     */
+    void checkLiveness();
+
   private:
+    /**
+     * @brief Starts the WebSocket close exchange, aborting if the peer never finishes it.
+     */
+    void closeWithCode(QWebSocketProtocol::CloseCode f_code);
+
+    /**
+     * @brief Drops the connection immediately and reports the disconnect.
+     */
+    void abortConnection();
+
     QWebSocket *m_client_socket;
 
     /**
@@ -87,6 +105,23 @@ class AKASHI_CORE_EXPORT NetworkSocket : public akashi::ITransport
      * @brief The capabilities the client announced in the upgrade request.
      */
     QStringList m_connect_features;
+
+    /**
+     * @brief Guards the exactly-once clientDisconnected() emission.
+     */
+    bool m_disconnect_reported = false;
+
+    /**
+     * @brief Set once close() is called; inbound frames are dropped from then on.
+     */
+    bool m_closing = false;
+
+    /**
+     * @brief Pings sent since the last pong came back.
+     */
+    int m_unanswered_pings = 0;
+
+    QTimer *m_liveness_timer;
 };
 
 #endif

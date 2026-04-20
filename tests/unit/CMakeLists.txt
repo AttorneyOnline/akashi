@@ -17,6 +17,7 @@ set(UNIT_TESTS
     packetregistry
     handshake
     chat
+    clientsession
     ic
     area_music
     moderation
