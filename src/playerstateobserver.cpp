@@ -1,5 +1,7 @@
 #include "playerstateobserver.h"
 
+#include "aoclient.h"
+
 PlayerStateObserver::PlayerStateObserver(QObject *parent) :
     QObject{parent}
 {}

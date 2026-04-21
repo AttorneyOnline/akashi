@@ -18,6 +18,7 @@
 #include "aoclient.h"
 #include "area_data.h"
 #include "config_manager.h"
+#include "core/client_session.h"
 #include "db_manager.h"
 #include "music_manager.h"
 #include "proto/evidence.h"

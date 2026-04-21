@@ -20,12 +20,8 @@
 
 #include "acl_roles_handler.h"
 #include "akashi_core_export.h"
-#include "core/client_session.h"
 #include "core/player_state.h"
-#include "core/transport.h"
-#include "proto/packet_codec.h"
 #include "proto/packet_context.h"
-#include "proto/packet_service.h"
 
 #include <QDateTime>
 #include <QHostAddress>
@@ -41,6 +37,12 @@ class AreaData;
 class DBManager;
 class MusicManager;
 class Server;
+
+namespace akashi {
+class ClientSession;
+class ITransport;
+struct PacketSpec;
+}
 
 /**
  * @brief Represents a client connected to the server running Attorney Online 2 or one of its derivatives.

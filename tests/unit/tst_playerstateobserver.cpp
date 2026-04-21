@@ -1,4 +1,5 @@
 // AI-generated: written by Claude.
+#include "aoclient.h"
 #include "network/network_socket.h"
 #include "playerstateobserver.h"
 

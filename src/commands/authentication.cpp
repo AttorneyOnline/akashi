@@ -17,6 +17,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "aoclient.h"
 #include "config_manager.h"
+#include "core/client_session.h"
 #include "crypto_helper.h"
 #include "db_manager.h"
 #include "server.h"
