@@ -17,10 +17,10 @@ class AKASHI_CORE_EXPORT PlayerState
   public:
     // Character identity, shown in the player list.
     int char_id = -1;
-    QString character;   // internal character folder name
-    QString iniswap;     // folder actually shown, differs when iniswapped
-    QString ooc_name;    // out-of-character nickname
-    QString showname;    // custom in-character showname
+    QString character; // internal character folder name
+    QString iniswap;   // folder actually shown, differs when iniswapped
+    QString ooc_name;  // out-of-character nickname
+    QString showname;  // custom in-character showname
     bool spectator = true;
 
     // Where the character is and how it presents.

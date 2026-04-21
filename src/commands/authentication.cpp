@@ -16,7 +16,6 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
 #include "aoclient.h"
-
 #include "config_manager.h"
 #include "crypto_helper.h"
 #include "db_manager.h"

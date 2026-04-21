@@ -1,7 +1,6 @@
 #pragma once
 
 #include "akashi_core_export.h"
-
 #include "aoclient.h"
 #include "proto/ao2_protocol.h"
 #include "proto/packet.h"

@@ -15,15 +15,13 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
-#include "aoclient.h"
-#include "proto/packet.h"
-
-#include "area_data.h"
-#include "config_manager.h"
-#include "server.h"
-
 #include "akashi/filesystem_service.h"
 #include "akashiutils.h"
+#include "aoclient.h"
+#include "area_data.h"
+#include "config_manager.h"
+#include "proto/packet.h"
+#include "server.h"
 
 // This file is for commands under the casing category in aoclient.h
 // Be sure to register the command in the header before adding it here!

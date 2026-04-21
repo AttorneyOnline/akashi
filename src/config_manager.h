@@ -34,12 +34,12 @@
 #include <QUrl>
 
 // JSON loading requirements
+#include "data_types.h"
+#include "typedefs.h"
+
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
-
-#include "data_types.h"
-#include "typedefs.h"
 
 namespace akashi {
 class ConfigStore;

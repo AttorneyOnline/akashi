@@ -1,14 +1,13 @@
 #ifndef COMMAND_EXTENSION_H
 #define COMMAND_EXTENSION_H
 
+#include "acl_roles_handler.h"
 #include "akashi_core_export.h"
 
 #include <QMap>
 #include <QObject>
 #include <QString>
 #include <QVector>
-
-#include "acl_roles_handler.h"
 
 class AKASHI_CORE_EXPORT CommandExtension
 {

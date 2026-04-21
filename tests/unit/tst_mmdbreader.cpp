@@ -1,8 +1,8 @@
 // AI-generated: written by Claude.
+#include "core/mmdb_reader.h"
+
 #include <QTemporaryDir>
 #include <QTest>
-
-#include "core/mmdb_reader.h"
 
 namespace tests {
 namespace unittests {

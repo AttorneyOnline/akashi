@@ -19,6 +19,11 @@
 #define SERVER_H
 
 #include "akashi_core_export.h"
+#include "core/exit_code.h"
+#include "core/mmdb_reader.h"
+#include "medieval_parser.h"
+#include "playerstateobserver.h"
+#include "proto/packet.h"
 
 #include <QCoreApplication>
 #include <QDebug>
@@ -30,12 +35,6 @@
 #include <QTimer>
 #include <QWebSocket>
 #include <QWebSocketServer>
-
-#include "core/exit_code.h"
-#include "core/mmdb_reader.h"
-#include "medieval_parser.h"
-#include "playerstateobserver.h"
-#include "proto/packet.h"
 
 #include <memory>
 

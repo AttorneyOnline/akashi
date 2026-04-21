@@ -1,9 +1,9 @@
 // AI-generated: written by Claude.
-#include <QString>
-#include <QTest>
-
 #include "akashi/config_store.h"
 #include "config_manager.h"
+
+#include <QString>
+#include <QTest>
 
 namespace tests {
 namespace unittests {

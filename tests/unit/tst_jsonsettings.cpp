@@ -1,8 +1,8 @@
 // AI-generated: written by Claude.
+#include "core/json_settings.h"
+
 #include <QTemporaryDir>
 #include <QTest>
-
-#include "core/json_settings.h"
 
 namespace tests {
 namespace unittests {

@@ -19,13 +19,12 @@
 #define MUSIC_MANAGER_H
 
 #include "akashi_core_export.h"
+#include "typedefs.h"
 
 #include <QHash>
 #include <QMap>
 #include <QObject>
 #include <QPair>
-
-#include "typedefs.h"
 
 namespace akashi {
 class Packet;

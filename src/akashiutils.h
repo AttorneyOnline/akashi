@@ -20,6 +20,7 @@
 
 #include <QRegularExpression>
 #include <QVariant>
+
 #include <math.h>
 #include <optional>
 

@@ -16,8 +16,10 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
 #include "config_manager.h"
+
 #include "akashi/config_store.h"
 #include "core/server_settings.h"
+
 #include <QSqlDatabase>
 #include <QSqlQuery>
 

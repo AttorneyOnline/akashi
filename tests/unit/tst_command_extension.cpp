@@ -1,9 +1,9 @@
 // AI-generated: written by Claude.
+#include "command_extension.h"
+
 #include <QDebug>
 #include <QRegularExpression>
 #include <QTest>
-
-#include "command_extension.h"
 
 namespace tests {
 namespace unittests {

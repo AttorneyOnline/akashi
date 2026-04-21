@@ -1,9 +1,9 @@
 // AI-generated: written by Claude.
-#include <QObject>
-#include <QTest>
-
 #include "network/aopacket.h"
 #include "packet/packet_factory.h"
+
+#include <QObject>
+#include <QTest>
 
 namespace tests {
 namespace unittests {

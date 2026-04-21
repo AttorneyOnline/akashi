@@ -1,11 +1,11 @@
 // AI-generated: written by Claude.
-#include <QTest>
-
 #include "akashi/config_store.h"
 #include "config_manager.h"
 #include "fake_packet_context.h"
 #include "proto/ic.h"
 #include "proto/packet_registry.h"
+
+#include <QTest>
 
 namespace tests {
 namespace unittests {

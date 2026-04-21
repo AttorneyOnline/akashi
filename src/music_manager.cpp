@@ -1,7 +1,7 @@
-#include "proto/packet.h"
 #include "music_manager.h"
 
 #include "config_manager.h"
+#include "proto/packet.h"
 
 #include <QUrl>
 

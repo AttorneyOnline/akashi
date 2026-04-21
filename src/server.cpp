@@ -16,7 +16,6 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
 #include "server.h"
-#include "proto/packet.h"
 
 #include "acl_roles_handler.h"
 #include "akashi/database_service.h"
@@ -32,6 +31,7 @@
 #include "music_manager.h"
 #include "network/network_socket.h"
 #include "proto/handshake.h"
+#include "proto/packet.h"
 #include "proto/packet_service.h"
 #include "serverpublisher.h"
 
@@ -62,7 +62,6 @@ Server::Server(int p_ws_port, akashi::DatabaseService *f_database, akashi::Servi
 
     logger = new ULogger(this);
     connect(this, &Server::logConnectionAttempt, logger, &ULogger::logConnectionAttempt);
-
 }
 
 ExitCode Server::start()

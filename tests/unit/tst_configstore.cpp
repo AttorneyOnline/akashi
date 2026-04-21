@@ -1,9 +1,9 @@
 // AI-generated: written by Claude.
+#include "akashi/config_store.h"
+
 #include <QSignalSpy>
 #include <QTemporaryDir>
 #include <QTest>
-
-#include "akashi/config_store.h"
 
 namespace tests {
 namespace unittests {

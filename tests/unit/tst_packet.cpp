@@ -1,8 +1,8 @@
 // AI-generated: written by Claude.
-#include <QTest>
-
 #include "proto/evidence.h"
 #include "proto/packet.h"
+
+#include <QTest>
 
 namespace tests {
 namespace unittests {

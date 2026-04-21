@@ -1,9 +1,9 @@
 // AI-generated: written by Claude.
-#include <QTest>
-
 #include "akashi/config_store.h"
 #include "config_manager.h"
 #include "u_logger.h"
+
+#include <QTest>
 
 namespace tests {
 namespace unittests {

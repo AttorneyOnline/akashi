@@ -1,9 +1,9 @@
 // AI-generated: written by Claude.
-#include <QtTest>
-
 #include "akashi/config_store.h"
 #include "area_data.h"
 #include "config_manager.h"
+
+#include <QtTest>
 
 Q_DECLARE_METATYPE(AreaData::Side);
 

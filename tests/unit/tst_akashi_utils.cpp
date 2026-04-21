@@ -1,5 +1,6 @@
 // AI-generated: written by Claude.
 #include "akashiutils.h"
+
 #include <QTest>
 
 namespace tests {

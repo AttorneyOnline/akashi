@@ -1,10 +1,10 @@
 // AI-generated: written by Claude.
-#include <QTest>
-
 #include "fake_packet_context.h"
 #include "proto/area_music.h"
 #include "proto/packet_codec.h"
 #include "proto/packet_registry.h"
+
+#include <QTest>
 
 namespace tests {
 namespace unittests {

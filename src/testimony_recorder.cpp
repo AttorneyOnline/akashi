@@ -16,10 +16,9 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
 #include "aoclient.h"
-#include "proto/packet.h"
-
 #include "area_data.h"
 #include "config_manager.h"
+#include "proto/packet.h"
 #include "server.h"
 
 void AOClient::addStatement(QStringList packet)

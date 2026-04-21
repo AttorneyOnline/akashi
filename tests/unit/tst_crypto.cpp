@@ -1,7 +1,7 @@
 // AI-generated: written by Claude.
-#include <QTest>
-
 #include "crypto_helper.h"
+
+#include <QTest>
 
 namespace tests {
 namespace unittests {

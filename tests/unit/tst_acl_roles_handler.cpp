@@ -1,9 +1,9 @@
 // AI-generated: written by Claude.
+#include "acl_roles_handler.h"
+
 #include <QDebug>
 #include <QFile>
 #include <QTest>
-
-#include "acl_roles_handler.h"
 
 namespace tests {
 namespace unittests {

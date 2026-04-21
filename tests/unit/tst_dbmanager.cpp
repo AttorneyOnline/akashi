@@ -1,10 +1,10 @@
 // AI-generated: written by Claude.
+#include "akashi/database_service.h"
+#include "db_manager.h"
+
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QTest>
-
-#include "akashi/database_service.h"
-#include "db_manager.h"
 
 namespace tests {
 namespace unittests {

@@ -1,9 +1,9 @@
 // AI-generated: written by Claude.
+#include "akashi/database_service.h"
+
 #include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QTest>
-
-#include "akashi/database_service.h"
 
 namespace tests {
 namespace unittests {

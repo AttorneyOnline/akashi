@@ -1,7 +1,7 @@
 // AI-generated: written by Claude.
-#include <QTest>
-
 #include "medieval_parser.h"
+
+#include <QTest>
 
 namespace tests {
 namespace unittests {

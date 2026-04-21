@@ -28,7 +28,6 @@
 #include <QString>
 #include <QTimer>
 
-
 namespace akashi {
 class Packet;
 }

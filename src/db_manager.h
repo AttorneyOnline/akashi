@@ -20,7 +20,9 @@
 
 #define DB_VERSION 3
 
+#include "acl_roles_handler.h"
 #include "akashi_core_export.h"
+#include "crypto_helper.h"
 
 #include <QDateTime>
 #include <QFileInfo>
@@ -29,9 +31,6 @@
 #include <QSqlDriver>
 #include <QSqlError>
 #include <QSqlQuery>
-
-#include "acl_roles_handler.h"
-#include "crypto_helper.h"
 
 /**
  * @brief A class used to handle database interaction.

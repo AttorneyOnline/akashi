@@ -16,7 +16,6 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
 #include "aoclient.h"
-
 #include "area_data.h"
 #include "command_extension.h"
 #include "config_manager.h"

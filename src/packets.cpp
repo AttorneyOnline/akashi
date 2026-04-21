@@ -16,17 +16,16 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
 #include "aoclient.h"
-#include "proto/packet.h"
-#include "proto/text_utils.h"
-
-#include <QQueue>
-
 #include "area_data.h"
 #include "config_manager.h"
 #include "db_manager.h"
 #include "music_manager.h"
 #include "proto/evidence.h"
+#include "proto/packet.h"
+#include "proto/text_utils.h"
 #include "server.h"
+
+#include <QQueue>
 
 void AOClient::sendEvidenceList(AreaData *area) const
 {
@@ -116,7 +115,7 @@ void AOClient::loginAttempt(QString message)
             sendServerMessage("Incorrect password.");
         }
         Q_EMIT logLogin((character() + " " + characterName()), name(), "Moderator",
-                      m_session->ipid, m_server->areaById(areaId())->name(), m_session->authenticated);
+                        m_session->ipid, m_server->areaById(areaId())->name(), m_session->authenticated);
         break;
     case DataTypes::AuthType::ADVANCED:
         QStringList l_login = message.split(" ");
@@ -142,7 +141,7 @@ void AOClient::loginAttempt(QString message)
             sendServerMessage("Incorrect password.");
         }
         Q_EMIT logLogin((character() + " " + characterName()), name(), username, m_session->ipid,
-                      m_server->areaById(areaId())->name(), m_session->authenticated);
+                        m_server->areaById(areaId())->name(), m_session->authenticated);
         break;
     }
     sendServerMessage("Exiting login prompt.");

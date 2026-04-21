@@ -16,14 +16,15 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "proto/packet.h"
-#include <algorithm>
-
 #include "area_data.h"
+
 #include "config_manager.h"
 #include "music_manager.h"
+#include "proto/packet.h"
 
 #include <QRegularExpression>
+
+#include <algorithm>
 
 AreaData::AreaData(QString p_name, int p_index, MusicManager *p_music_manager = nullptr) :
     m_index(p_index),

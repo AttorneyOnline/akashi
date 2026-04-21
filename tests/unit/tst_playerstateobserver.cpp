@@ -1,9 +1,9 @@
 // AI-generated: written by Claude.
-#include <QTest>
-#include <QWebSocket>
-
 #include "network/network_socket.h"
 #include "playerstateobserver.h"
+
+#include <QTest>
+#include <QWebSocket>
 
 namespace tests {
 namespace unittests {

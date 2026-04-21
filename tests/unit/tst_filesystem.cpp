@@ -1,7 +1,7 @@
 // AI-generated: written by Claude.
-#include <QTest>
-
 #include "akashi/filesystem_service.h"
+
+#include <QTest>
 
 namespace tests {
 namespace unittests {

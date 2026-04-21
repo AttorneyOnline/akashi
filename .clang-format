@@ -17,5 +17,14 @@ ColumnLimit: 0
 EmptyLineAfterAccessModifier: Never
 EmptyLineBeforeAccessModifier: Always
 FixNamespaceComments: false
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex: '^<Q'
+    Priority: 3
+  - Regex: '^<'
+    Priority: 4
+  - Regex: '.*'
+    Priority: 2
 IndentWidth: 4
 PackConstructorInitializers: CurrentLine
+SortIncludes: CaseSensitive

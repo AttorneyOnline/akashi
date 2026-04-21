@@ -17,10 +17,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "aoclient.h"
 
-#include "proto/packet.h"
-
-#include <QQueue>
-
 #include "area_data.h"
 #include "command_extension.h"
 #include "config_manager.h"
@@ -29,7 +25,10 @@
 #include "music_manager.h"
 #include "playerstateobserver.h"
 #include "proto/ic.h"
+#include "proto/packet.h"
 #include "server.h"
+
+#include <QQueue>
 
 const QMap<QString, AOClient::CommandInfo> AOClient::COMMANDS{
     {"login", {{ACLRole::NONE}, 0, &AOClient::cmdLogin}},

@@ -1,8 +1,8 @@
 // AI-generated: written by Claude.
+#include "akashi/service_registry.h"
+
 #include <QSignalSpy>
 #include <QTest>
-
-#include "akashi/service_registry.h"
 
 namespace tests {
 namespace unittests {

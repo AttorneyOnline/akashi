@@ -16,10 +16,9 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
 #include "aoclient.h"
-#include "proto/packet.h"
-
 #include "area_data.h"
 #include "config_manager.h"
+#include "proto/packet.h"
 #include "server.h"
 
 // This file is for functions used by various commands, defined in the command helper function category in aoclient.h

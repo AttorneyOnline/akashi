@@ -1,9 +1,9 @@
 // AI-generated: written by Claude.
-#include <QNetworkAccessManager>
-#include <QTest>
-
 #include "akashi/network_service.h"
 #include "akashi/service_registry.h"
+
+#include <QNetworkAccessManager>
+#include <QTest>
 
 namespace tests {
 namespace unittests {

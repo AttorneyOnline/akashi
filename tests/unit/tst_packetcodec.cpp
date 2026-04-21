@@ -1,7 +1,7 @@
 // AI-generated: written by Claude.
-#include <QTest>
-
 #include "proto/packet_codec.h"
+
+#include <QTest>
 
 namespace tests {
 namespace unittests {

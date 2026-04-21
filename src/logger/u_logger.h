@@ -19,10 +19,10 @@
 #define U_LOGGER_H
 
 #include "akashi_core_export.h"
-
 #include "config_manager.h"
 #include "logger/writer_full.h"
 #include "logger/writer_modcall.h"
+
 #include <QDateTime>
 #include <QMap>
 #include <QObject>

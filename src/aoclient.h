@@ -18,12 +18,14 @@
 #ifndef AOCLIENT_H
 #define AOCLIENT_H
 
+#include "acl_roles_handler.h"
 #include "akashi_core_export.h"
-
 #include "core/client_session.h"
 #include "core/player_state.h"
-
-#include <algorithm>
+#include "core/transport.h"
+#include "proto/packet_codec.h"
+#include "proto/packet_context.h"
+#include "proto/packet_service.h"
 
 #include <QDateTime>
 #include <QHostAddress>
@@ -31,12 +33,7 @@
 #include <QTimer>
 #include <QtGlobal>
 
-#include "acl_roles_handler.h"
-#include "core/transport.h"
-#include "proto/packet_codec.h"
-#include "proto/packet_context.h"
-#include "proto/packet_service.h"
-
+#include <algorithm>
 #include <memory>
 #include <optional>
 
