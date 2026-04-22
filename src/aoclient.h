@@ -20,7 +20,6 @@
 
 #include "acl_roles_handler.h"
 #include "akashi_core_export.h"
-#include "core/player_state.h"
 #include "proto/packet_context.h"
 
 #include <QDateTime>
@@ -41,6 +40,7 @@ class Server;
 namespace akashi {
 class ClientSession;
 class ITransport;
+class PlayerState;
 struct PacketSpec;
 }
 
@@ -141,6 +141,12 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     Server *server();
 
     int clientId() const;
+
+    /**
+     * @brief The characters this connection plays; legacy clients have
+     * exactly one. Each is its own entry in the player list.
+     */
+    QList<akashi::PlayerState *> players() const;
 
     QString name() const;
     void setName(const QString &f_name);
@@ -537,11 +543,6 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
      */
     void disconnected();
 
-    void nameChanged(const QString &);
-    void characterChanged(const QString &);
-    void characterNameChanged(const QString &);
-    void areaIdChanged(int);
-
   private:
     /**
      * @brief Pointer to the server's music manager instance.
@@ -550,8 +551,8 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
 
     /**
      * @brief The connection and the person behind it - owns the transport,
-     * the packet pipeline, identity, auth, sanctions and preferences.
-     * An owned child, so it lives exactly as long as the client.
+     * the packet pipeline, the PlayerStates, identity, auth, sanctions and
+     * preferences. An owned child, so it lives exactly as long as the client.
      */
     akashi::ClientSession *m_session;
 
@@ -561,10 +562,10 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     bool m_left = false;
 
     /**
-     * @brief The character(s) this connection is playing. A session
-     * owns exactly one today; a richer protocol may own several.
+     * @brief The session's active character - the one the classic positional
+     * wire addresses.
      */
-    akashi::PlayerState m_player;
+    akashi::PlayerState *player() const;
 
     /**
      * @brief A pointer to the Server, used for updating server variables that depend on the client (e.g. amount of players in an area).

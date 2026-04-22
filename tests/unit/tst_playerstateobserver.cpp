@@ -1,10 +1,10 @@
 // AI-generated: written by Claude.
-#include "aoclient.h"
-#include "network/network_socket.h"
+#include "fake_transport.h"
+#include "core/client_session.h"
+#include "core/player_state.h"
 #include "playerstateobserver.h"
 
 #include <QTest>
-#include <QWebSocket>
 
 namespace tests {
 namespace unittests {
@@ -14,40 +14,137 @@ class tst_PlayerStateObserver : public QObject
     Q_OBJECT
 
   private Q_SLOTS:
-    void unregisterUnknownClient();
-    void registerAndUnregister();
-
-  private:
-    AOClient *makeClient(int id);
+    void unregisterUnknownPlayer();
+    void registerSendsRosterAndAnnouncement();
+    void changesReachEveryone();
+    void unregisterAnnouncesRemovalOnce();
+    void multiCharacterSessionHearsBroadcastsOnce();
 };
 
-// The clients leak on purpose, AOClient cannot be destroyed without a server (fixed in M6).
-AOClient *tst_PlayerStateObserver::makeClient(int id)
+// One person with one character, watching through a fake wire.
+struct Person
 {
-    NetworkSocket *socket = new NetworkSocket(new QWebSocket());
-    return new AOClient(nullptr, socket, nullptr, id, nullptr);
-}
+    FakeTransport *transport;
+    akashi::ClientSession *session;
 
-void tst_PlayerStateObserver::unregisterUnknownClient()
+    explicit Person(int id)
+    {
+        transport = new FakeTransport(true);
+        session = new akashi::ClientSession(id, transport);
+    }
+    ~Person() { delete session; }
+    akashi::PlayerState *player() const { return session->active_player; }
+    QStringList wire() const
+    {
+        QStringList l_lines;
+        for (const akashi::Packet &l_packet : transport->written) {
+            l_lines.append(l_packet.serialize());
+        }
+        return l_lines;
+    }
+};
+
+void tst_PlayerStateObserver::unregisterUnknownPlayer()
 {
     PlayerStateObserver observer;
-    AOClient *client = makeClient(0);
+    Person alice(0);
 
-    // A client that never registered must be ignored.
-    observer.unregisterClient(client);
-    observer.unregisterClient(client);
+    // A player that never registered must be ignored, repeatedly.
+    observer.unregisterPlayer(alice.player());
+    observer.unregisterPlayer(alice.player());
+
+    QVERIFY(alice.transport->written.isEmpty());
 }
 
-void tst_PlayerStateObserver::registerAndUnregister()
+void tst_PlayerStateObserver::registerSendsRosterAndAnnouncement()
 {
     PlayerStateObserver observer;
-    AOClient *client = makeClient(0);
+    Person alice(0);
+    Person bob(1);
+    alice.player()->setOocName("alice");
 
-    observer.registerClient(client);
-    observer.unregisterClient(client);
+    observer.registerPlayer(alice.player());
 
-    // A second unregister must be ignored.
-    observer.unregisterClient(client);
+    // The first arrival gets the roster: their own entry and its four fields.
+    QCOMPARE(alice.wire(), QStringList({"PR#0#0#%",
+                                        "PU#0#0#alice#%",
+                                        "PU#0#1##%",
+                                        "PU#0#2##%",
+                                        "PU#0#3#0#%"}));
+
+    alice.transport->written.clear();
+    observer.registerPlayer(bob.player());
+
+    // Everyone already watching hears the newcomer...
+    QCOMPARE(alice.wire(), QStringList({"PR#1#0#%"}));
+    // ...and the newcomer gets the whole roster, themselves included.
+    QCOMPARE(bob.wire(), QStringList({"PR#0#0#%",
+                                      "PU#0#0#alice#%",
+                                      "PU#0#1##%",
+                                      "PU#0#2##%",
+                                      "PU#0#3#0#%",
+                                      "PR#1#0#%",
+                                      "PU#1#0##%",
+                                      "PU#1#1##%",
+                                      "PU#1#2##%",
+                                      "PU#1#3#0#%"}));
+}
+
+void tst_PlayerStateObserver::changesReachEveryone()
+{
+    PlayerStateObserver observer;
+    Person alice(0);
+    Person bob(1);
+    observer.registerPlayer(alice.player());
+    observer.registerPlayer(bob.player());
+    alice.transport->written.clear();
+    bob.transport->written.clear();
+
+    bob.player()->setCharacter("Phoenix");
+    bob.player()->setCharacter("Phoenix"); // no change, no packet
+    bob.player()->setAreaId(2);
+
+    const QStringList l_expected = {"PU#1#1#Phoenix#%", "PU#1#3#2#%"};
+    QCOMPARE(alice.wire(), l_expected);
+    QCOMPARE(bob.wire(), l_expected);
+}
+
+void tst_PlayerStateObserver::unregisterAnnouncesRemovalOnce()
+{
+    PlayerStateObserver observer;
+    Person alice(0);
+    Person bob(1);
+    observer.registerPlayer(alice.player());
+    observer.registerPlayer(bob.player());
+    alice.transport->written.clear();
+    bob.transport->written.clear();
+
+    observer.unregisterPlayer(alice.player());
+    observer.unregisterPlayer(alice.player()); // a second unregister is ignored
+
+    QCOMPARE(bob.wire(), QStringList({"PR#0#1#%"}));
+    // The leaver hears nothing, and their later changes stay silent.
+    alice.player()->setOocName("still here?");
+    QVERIFY(alice.transport->written.isEmpty());
+    QCOMPARE(bob.wire(), QStringList({"PR#0#1#%"}));
+}
+
+void tst_PlayerStateObserver::multiCharacterSessionHearsBroadcastsOnce()
+{
+    PlayerStateObserver observer;
+    Person alice(0);
+    akashi::PlayerState *l_second = alice.session->spawnPlayer(7, 2);
+    QVERIFY(l_second);
+
+    observer.registerPlayer(alice.player());
+    observer.registerPlayer(l_second);
+    Person bob(1);
+    alice.transport->written.clear();
+
+    observer.registerPlayer(bob.player());
+
+    // Two characters, one person: the announcement arrives exactly once.
+    QCOMPARE(alice.wire(), QStringList({"PR#1#0#%"}));
 }
 
 }

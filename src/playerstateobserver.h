@@ -8,25 +8,32 @@
 #include <QObject>
 #include <QString>
 
-class AOClient;
+namespace akashi {
+class PlayerState;
+}
 
+// Keeps every connected client's player list current. The observed unit is
+// the PlayerState, not the connection: each character a person plays is its
+// own PR/PU entry, keyed by the PlayerState id.
 class AKASHI_CORE_EXPORT PlayerStateObserver : public QObject
 {
   public:
     explicit PlayerStateObserver(QObject *parent = nullptr);
     virtual ~PlayerStateObserver();
 
-    void registerClient(AOClient *client);
-    void unregisterClient(AOClient *client);
+    void registerPlayer(akashi::PlayerState *f_player);
+    void unregisterPlayer(akashi::PlayerState *f_player);
 
   private:
-    QList<AOClient *> m_client_list;
+    QList<akashi::PlayerState *> m_players;
 
-    void sendToClientList(const akashi::Packet &packet);
+    // Delivers one packet to every watching person once - a session with
+    // several characters still receives a single copy.
+    void sendToSessions(const akashi::Packet &f_packet);
 
   private Q_SLOTS:
-    void notifyNameChanged(const QString &name);
-    void notifyCharacterChanged(const QString &character);
-    void notifyCharacterNameChanged(const QString &characterName);
-    void notifyAreaIdChanged(int areaId);
+    void notifyNameChanged(const QString &f_name);
+    void notifyCharacterChanged(const QString &f_character);
+    void notifyShownameChanged(const QString &f_showname);
+    void notifyAreaIdChanged(int f_area_id);
 };

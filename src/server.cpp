@@ -575,7 +575,9 @@ void Server::markIDFree(const int &f_user_id)
 {
     AOClient *l_client = m_clients_ids[f_user_id];
     if (l_client && l_client->isJoined()) {
-        m_player_state_observer.unregisterClient(l_client);
+        for (akashi::PlayerState *l_player : l_client->players()) {
+            m_player_state_observer.unregisterPlayer(l_player);
+        }
     }
     m_clients_ids.insert(f_user_id, nullptr);
     m_available_ids.push(f_user_id);

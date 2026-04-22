@@ -2,6 +2,7 @@
 #define CORE_CLIENT_SESSION_H
 
 #include "akashi_core_export.h"
+#include "core/player_state.h"
 #include "core/transport.h"
 #include "proto/client_profile.h"
 #include "proto/packet_codec.h"
@@ -40,6 +41,21 @@ class AKASHI_CORE_EXPORT ClientSession : public QObject
     // Adopts a new wire for this session, replacing and deleting the old one,
     // and replays whatever was held while no wire was open.
     void bindTransport(ITransport *f_transport);
+
+    // Adds another playable character, refusing beyond f_limit per session.
+    // The limit is the same multiclient_limit that caps connections per IP:
+    // one cap on how many simultaneous presences a person gets, however
+    // they are distributed.
+    PlayerState *spawnPlayer(int f_id, int f_limit);
+
+    // The characters this person plays. The constructor spawns the first one
+    // (reusing the session id, so one-character clients are wire-identical);
+    // only a richer protocol will ever spawn more. Owned as children.
+    QList<PlayerState *> players;
+
+    // The character the classic positional wire addresses - that wire is
+    // strictly one-character, so for legacy clients this is the only entry.
+    PlayerState *active_player = nullptr;
 
     // Transport and identity.
     ITransport *transport = nullptr;

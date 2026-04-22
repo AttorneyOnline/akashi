@@ -1,52 +1,11 @@
 // AI-generated: written by Claude.
+#include "fake_transport.h"
 #include "core/client_session.h"
-#include "core/transport.h"
+#include "core/player_state.h"
 #include "proto/packet.h"
 
 #include <QSignalSpy>
 #include <QTest>
-
-// A scriptable in-memory transport, standing in for a real socket.
-class FakeTransport : public akashi::ITransport
-{
-    Q_OBJECT
-
-  public:
-    explicit FakeTransport(bool f_open = true, QObject *parent = nullptr) :
-        akashi::ITransport(parent),
-        m_open(f_open)
-    {
-    }
-
-    QHostAddress peerAddress() const override { return QHostAddress::LocalHost; }
-    bool isOpen() const override { return m_open; }
-    Capabilities capabilities() const override { return NoCapabilities; }
-    QStringList connectTimeFeatures() const override { return connect_features; }
-
-    void write(const akashi::Packet &f_packet) override
-    {
-        if (m_open) {
-            written.append(f_packet);
-        }
-    }
-
-    void close() override
-    {
-        if (!m_open) {
-            return;
-        }
-        m_open = false;
-        Q_EMIT clientDisconnected();
-    }
-
-    QList<akashi::Packet> written;
-
-    // What the fake claims the client announced while connecting.
-    QStringList connect_features;
-
-  private:
-    bool m_open;
-};
 
 class tst_ClientSession : public QObject
 {
@@ -59,6 +18,7 @@ class tst_ClientSession : public QObject
     void bufferIsBoundedAndRecordsOverflow();
     void rebindReplacesAndDeletesOldTransport();
     void forwardsTransportSignals();
+    void spawnsOnePlayerAndEnforcesTheCap();
 };
 
 void tst_ClientSession::writesThroughOpenTransport()
@@ -149,6 +109,25 @@ void tst_ClientSession::forwardsTransportSignals()
 
     QCOMPARE(l_packets.size(), 1);
     QCOMPARE(l_closed.size(), 1);
+}
+
+void tst_ClientSession::spawnsOnePlayerAndEnforcesTheCap()
+{
+    FakeTransport *l_transport = new FakeTransport(true);
+    akashi::ClientSession l_session(4, l_transport);
+
+    // The default character exists, reuses the session id, and is active.
+    QCOMPARE(l_session.players.size(), 1);
+    QCOMPARE(l_session.active_player, l_session.players.first());
+    QCOMPARE(l_session.active_player->id(), 4);
+    QCOMPARE(l_session.active_player->session(), &l_session);
+
+    // The cap counts existing characters: full at 1, room at 2.
+    QCOMPARE(l_session.spawnPlayer(9, 1), nullptr);
+    akashi::PlayerState *l_second = l_session.spawnPlayer(9, 2);
+    QVERIFY(l_second);
+    QCOMPARE(l_second->id(), 9);
+    QCOMPARE(l_session.players.size(), 2);
 }
 
 QTEST_MAIN(tst_ClientSession)

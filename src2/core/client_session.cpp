@@ -13,8 +13,20 @@ ClientSession::ClientSession(int f_id, ITransport *f_transport, QObject *parent)
 {
     bindTransport(f_transport);
 
+    active_player = spawnPlayer(f_id, 1);
+
     afk_timer = new QTimer(this);
     afk_timer->setSingleShot(true);
+}
+
+PlayerState *ClientSession::spawnPlayer(int f_id, int f_limit)
+{
+    if (players.size() >= f_limit) {
+        return nullptr;
+    }
+    PlayerState *l_player = new PlayerState(f_id, this);
+    players.append(l_player);
+    return l_player;
 }
 
 void ClientSession::write(const Packet &f_packet)
