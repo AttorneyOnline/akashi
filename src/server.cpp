@@ -167,10 +167,25 @@ void Server::clientConnected()
 
     // A connection that died while queued emitted its signals before anyone
     // listened; without this check it would linger as a phantom client
-    // forever, holding a player slot with no wire left to tear it down.
+    // forever, holding a player slot with no connection left to tear it down.
     if (!l_socket->isOpen()) {
         l_socket->deleteLater();
         return;
+    }
+
+    // When the server is full, a client waiting on a reconnect gives up its
+    // place first: a person actually arriving beats one who may come back.
+    if (m_available_ids.empty()) {
+        AOClient *l_waiting_client = nullptr;
+        for (AOClient *i_client : qAsConst(m_clients)) {
+            if (i_client->isWaitingForReconnect()) {
+                l_waiting_client = i_client;
+                break;
+            }
+        }
+        if (l_waiting_client) {
+            removeClient(l_waiting_client);
+        }
     }
 
     // Too many players. Reject connection!
@@ -236,15 +251,20 @@ void Server::clientConnected()
     }
 
     m_clients.append(client);
-    connect(client, &AOClient::disconnected, this, [this, client] {
-        if (client->isJoined()) {
-            decreasePlayerCount();
+    connect(client, &AOClient::disconnected, this, [this, client](akashi::DisconnectKind f_kind) {
+        // A lost connection may be a network problem the person comes right
+        // back from: keep the client and its characters for the grace
+        // period. A clean close, a client that never joined, or no grace
+        // configured means removal right away.
+        const int l_grace_seconds = ConfigManager::reconnectGrace();
+        if (f_kind == akashi::DisconnectKind::Lost && l_grace_seconds > 0 && client->isJoined()) {
+            client->waitForReconnect(l_grace_seconds);
+            return;
         }
-        m_clients.removeAll(client);
-        // Withdraw the client's presence while it is alive, then delete it -
-        // the destructor never does the real teardown.
-        client->leave();
-        client->deleteLater();
+        removeClient(client);
+    });
+    connect(client, &AOClient::reconnectTimedOut, this, [this, client] {
+        removeClient(client);
     });
 
     // This is the infamous workaround for
@@ -581,6 +601,18 @@ void Server::markIDFree(const int &f_user_id)
     }
     m_clients_ids.insert(f_user_id, nullptr);
     m_available_ids.push(f_user_id);
+}
+
+void Server::removeClient(AOClient *f_client)
+{
+    if (f_client->isJoined()) {
+        decreasePlayerCount();
+    }
+    m_clients.removeAll(f_client);
+    // Withdraw the client's presence while it is alive, then delete it - the
+    // destructor never does the real teardown.
+    f_client->leave();
+    f_client->deleteLater();
 }
 
 void Server::hookupAOClient(AOClient *client)

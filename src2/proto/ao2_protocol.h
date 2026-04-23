@@ -1,7 +1,7 @@
 #ifndef AO2_PROTOCOL_H
 #define AO2_PROTOCOL_H
 
-// Named packet headers of the AO2 wire protocol, filled in as code moves over.
+// Named packet headers of the AO2 network protocol, filled in as code moves over.
 namespace ao2 {
 
 // Client to server, in handshake order.

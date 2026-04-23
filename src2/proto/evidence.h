@@ -7,7 +7,7 @@
 
 namespace akashi {
 
-// One piece of evidence as the wire sees it. The LE list packs all three
+// One piece of evidence as the network protocol sees it. The LE list packs all three
 // parts into one packet field, sub-divided by a literal &.
 class AKASHI_CORE_EXPORT Evidence
 {

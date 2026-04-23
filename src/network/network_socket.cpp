@@ -21,7 +21,7 @@
 
 // Ping cadence and how many may go unanswered before the peer counts as dead.
 // Both Qt clients and browsers answer pings in their network stack, so a
-// missed pong means a dead wire or a frozen client, not a busy one.
+// missed pong means a dead connection or a frozen client, not a busy one.
 static const int PING_INTERVAL_MS = 30000;
 static const int MAX_UNANSWERED_PINGS = 2;
 
@@ -34,7 +34,7 @@ NetworkSocket::NetworkSocket(QWebSocket *f_socket, QObject *parent) :
     m_client_socket = f_socket;
     m_client_socket->setParent(this);
     connect(m_client_socket, &QWebSocket::textMessageReceived, this, &NetworkSocket::handleMessage);
-    connect(m_client_socket, &QWebSocket::disconnected, this, &NetworkSocket::reportDisconnect);
+    connect(m_client_socket, &QWebSocket::disconnected, this, &NetworkSocket::onSocketDisconnected);
     connect(m_client_socket, &QWebSocket::pong, this, [this](quint64, const QByteArray &) {
         m_unanswered_pings = 0;
     });
@@ -119,35 +119,44 @@ void NetworkSocket::closeWithCode(QWebSocketProtocol::CloseCode f_code)
     m_closing = true;
 
     // A peer that never answers the close exchange must not hold the slot
-    // open, so the wire is dropped once the grace period runs out.
+    // open, so the connection is dropped once the grace period runs out. We chose
+    // to close, so this still ends the connection cleanly.
     QTimer::singleShot(CLOSE_GRACE_MS, this, [this] {
         if (!m_disconnect_reported) {
-            abortConnection();
+            abortConnection(akashi::DisconnectKind::Clean);
         }
     });
     m_client_socket->close(f_code);
 }
 
-void NetworkSocket::abortConnection()
+void NetworkSocket::abortConnection(akashi::DisconnectKind f_kind)
 {
     m_client_socket->abort();
-    reportDisconnect();
+    reportDisconnect(f_kind);
 }
 
-void NetworkSocket::reportDisconnect()
+void NetworkSocket::onSocketDisconnected()
+{
+    // No close frame means the connection just died; a proper close exchange - or a
+    // close we started ourselves - is somebody finishing the connection.
+    bool l_lost = !m_closing && m_client_socket->closeCode() == QWebSocketProtocol::CloseCodeAbnormalDisconnection;
+    reportDisconnect(l_lost ? akashi::DisconnectKind::Lost : akashi::DisconnectKind::Clean);
+}
+
+void NetworkSocket::reportDisconnect(akashi::DisconnectKind f_kind)
 {
     if (m_disconnect_reported) {
         return;
     }
     m_disconnect_reported = true;
     m_liveness_timer->stop();
-    Q_EMIT clientDisconnected();
+    Q_EMIT clientDisconnected(f_kind);
 }
 
 void NetworkSocket::checkLiveness()
 {
     if (m_unanswered_pings >= MAX_UNANSWERED_PINGS) {
-        abortConnection();
+        abortConnection(akashi::DisconnectKind::Lost);
         return;
     }
     ++m_unanswered_pings;

@@ -35,7 +35,17 @@ class FakeTransport : public akashi::ITransport
             return;
         }
         m_open = false;
-        Q_EMIT clientDisconnected();
+        Q_EMIT clientDisconnected(akashi::DisconnectKind::Clean);
+    }
+
+    // Simulates the connection dropping without a proper close.
+    void loseConnection()
+    {
+        if (!m_open) {
+            return;
+        }
+        m_open = false;
+        Q_EMIT clientDisconnected(akashi::DisconnectKind::Lost);
     }
 
     QList<akashi::Packet> written;

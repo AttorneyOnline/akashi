@@ -585,6 +585,12 @@ class AKASHI_CORE_EXPORT Server : public QObject
     CommandExtensionCollection *command_extension_collection;
 
     /**
+     * @brief Takes a client out of the server: player count, roster, its
+     * presence in areas, and finally the object itself.
+     */
+    void removeClient(AOClient *f_client);
+
+    /**
      * @brief Connects new AOClient to logger and disconnect handling.
      **/
     void hookupAOClient(AOClient *client);

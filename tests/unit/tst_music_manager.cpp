@@ -29,7 +29,7 @@ class MusicListManager : public QObject
 
     void addCustomCategory();
 
-    void customMusicNamesAreInertOnTheWire();
+    void customMusicNamesAreInertInPackets();
 
     void sanitiseCustomList();
 
@@ -186,7 +186,7 @@ void MusicListManager::addCustomCategory()
     }
 }
 
-void MusicListManager::customMusicNamesAreInertOnTheWire()
+void MusicListManager::customMusicNamesAreInertInPackets()
 {
     m_music_manager->registerArea(0);
 
@@ -198,13 +198,13 @@ void MusicListManager::customMusicNamesAreInertOnTheWire()
     // harmless by escaping when the list is serialised, never by rejection.
     QCOMPARE(m_music_manager->addCustomSong("x#%ZZ#-1", "x#%ZZ#-1", 0, 0), true);
 
-    // On the wire every delimiter inside a name is escaped, so no name can
+    // In a serialized packet every delimiter inside a name is escaped, so no name can
     // break its field and form a packet of its own.
-    const QString l_wire = akashi::Packet("FM", m_music_manager->musiclist(0)).serialize();
-    QVERIFY(l_wire.contains("Track <num>1.opus"));
-    QVERIFY(l_wire.contains("100<percent> Cooler.opus"));
-    QVERIFY(l_wire.contains("x<num><percent>ZZ<num>-1.opus"));
-    QVERIFY(!l_wire.contains("x#%ZZ"));
+    const QString l_serialized = akashi::Packet("FM", m_music_manager->musiclist(0)).serialize();
+    QVERIFY(l_serialized.contains("Track <num>1.opus"));
+    QVERIFY(l_serialized.contains("100<percent> Cooler.opus"));
+    QVERIFY(l_serialized.contains("x<num><percent>ZZ<num>-1.opus"));
+    QVERIFY(!l_serialized.contains("x#%ZZ"));
 }
 
 void MusicListManager::sanitiseCustomList()

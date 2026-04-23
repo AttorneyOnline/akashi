@@ -9,6 +9,17 @@
 
 namespace akashi {
 
+// How a connection ended. A clean end was chosen by somebody - the client
+// quit or the server closed it - and the session ends with it. A lost
+// connection dropped without a proper close (network problem, crash,
+// timeout), which is the case where the session may stay alive for a while
+// awaiting the person's return.
+enum class DisconnectKind
+{
+    Clean,
+    Lost,
+};
+
 // A client connection's transport, abstracted from the concrete protocol.
 // Today the only implementation is WebSocket; native WSS, a legacy-TCP plugin,
 // or a plugin's own framing are all first-class through this interface.
@@ -70,12 +81,12 @@ class AKASHI_CORE_EXPORT ITransport : public QObject
     virtual QStringList connectTimeFeatures() const { return {}; }
 
   Q_SIGNALS:
-    // One packet parsed off the wire, including null packets from unreadable
+    // One packet parsed from incoming data, including null packets from unreadable
     // data so the receiver can still rate-limit them.
     void packetReceived(const Packet &f_packet);
 
     // The connection has closed. Emitted exactly once per connection.
-    void clientDisconnected();
+    void clientDisconnected(DisconnectKind f_kind);
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(ITransport::Capabilities)

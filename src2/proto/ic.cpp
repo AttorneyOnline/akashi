@@ -20,7 +20,7 @@ QRegularExpressionMatch testimonyJumpCommand(const QString &f_message)
     return l_jump.match(f_message);
 }
 
-// Splits the wire's pair field, like "4^1", into id and tag.
+// Splits the protocol's pair field, like "4^1", into id and tag.
 void readPairField(const QString &f_field, ICMessage &f_message)
 {
     const QStringList l_parts = f_field.split("^");

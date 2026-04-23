@@ -18,7 +18,7 @@ class tst_Packet : public QObject
     void parse();
     void parseRejectsBrokenInput_data();
     void parseRejectsBrokenInput();
-    void serializeMatchesTheWireFormat();
+    void serializeMatchesTheProtocolFormat();
     void serializeDoesNotChangeThePacket();
     void evidenceKeepsItsSeparator();
     void evidenceFieldSurvivesSpecialCharacters();
@@ -68,7 +68,7 @@ void tst_Packet::parseRejectsBrokenInput()
     QCOMPARE(Packet::parse(raw).isNull(), true);
 }
 
-void tst_Packet::serializeMatchesTheWireFormat()
+void tst_Packet::serializeMatchesTheProtocolFormat()
 {
     QCOMPARE(Packet("DONE").serialize(), "DONE##%");
     QCOMPARE(Packet("HP", {"1", "10"}).serialize(), "HP#1#10#%");

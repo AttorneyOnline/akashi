@@ -13,12 +13,14 @@ class tst_ClientSession : public QObject
 
   private Q_SLOTS:
     void writesThroughOpenTransport();
-    void buffersWhileWireIsDown();
+    void buffersWhileConnectionIsDown();
     void rebindReplaysPendingInOrder();
     void bufferIsBoundedAndRecordsOverflow();
     void rebindReplacesAndDeletesOldTransport();
     void forwardsTransportSignals();
-    void spawnsOnePlayerAndEnforcesTheCap();
+    void addsOnePlayerAndEnforcesTheCap();
+    void reportsTimeoutWhenNobodyReconnects();
+    void bindingANewTransportCancelsTheWait();
 };
 
 void tst_ClientSession::writesThroughOpenTransport()
@@ -32,7 +34,7 @@ void tst_ClientSession::writesThroughOpenTransport()
     QCOMPARE(l_session.pending_packets.size(), 0);
 }
 
-void tst_ClientSession::buffersWhileWireIsDown()
+void tst_ClientSession::buffersWhileConnectionIsDown()
 {
     FakeTransport *l_transport = new FakeTransport(true);
     akashi::ClientSession l_session(1, l_transport);
@@ -88,11 +90,11 @@ void tst_ClientSession::rebindReplacesAndDeletesOldTransport()
 
     QCOMPARE(l_session.transport, l_replacement);
     QCOMPARE(l_replacement->parent(), &l_session);
-    // The old wire is deleted through the event loop.
+    // The old transport is deleted through the event loop.
     QTRY_COMPARE(l_destroyed.size(), 1);
 
     // Signals of a replaced transport no longer reach the session.
-    l_session.write(akashi::Packet("CT", {"server", "current wire only"}));
+    l_session.write(akashi::Packet("CT", {"server", "current transport only"}));
     QCOMPARE(l_replacement->written.size(), 1);
 }
 
@@ -111,7 +113,7 @@ void tst_ClientSession::forwardsTransportSignals()
     QCOMPARE(l_closed.size(), 1);
 }
 
-void tst_ClientSession::spawnsOnePlayerAndEnforcesTheCap()
+void tst_ClientSession::addsOnePlayerAndEnforcesTheCap()
 {
     FakeTransport *l_transport = new FakeTransport(true);
     akashi::ClientSession l_session(4, l_transport);
@@ -123,11 +125,45 @@ void tst_ClientSession::spawnsOnePlayerAndEnforcesTheCap()
     QCOMPARE(l_session.active_player->session(), &l_session);
 
     // The cap counts existing characters: full at 1, room at 2.
-    QCOMPARE(l_session.spawnPlayer(9, 1), nullptr);
-    akashi::PlayerState *l_second = l_session.spawnPlayer(9, 2);
+    QCOMPARE(l_session.addPlayer(9, 1), nullptr);
+    akashi::PlayerState *l_second = l_session.addPlayer(9, 2);
     QVERIFY(l_second);
     QCOMPARE(l_second->id(), 9);
     QCOMPARE(l_session.players.size(), 2);
+}
+
+void tst_ClientSession::reportsTimeoutWhenNobodyReconnects()
+{
+    FakeTransport *l_transport = new FakeTransport(true);
+    akashi::ClientSession l_session(1, l_transport);
+    QSignalSpy l_timed_out(&l_session, &akashi::ClientSession::reconnectTimedOut);
+
+    l_transport->loseConnection();
+    l_session.waitForReconnect(0);
+
+    QVERIFY(l_session.isWaitingForReconnect());
+    QVERIFY(l_timed_out.wait(1000));
+}
+
+void tst_ClientSession::bindingANewTransportCancelsTheWait()
+{
+    FakeTransport *l_transport = new FakeTransport(true);
+    akashi::ClientSession l_session(1, l_transport);
+    QSignalSpy l_timed_out(&l_session, &akashi::ClientSession::reconnectTimedOut);
+
+    l_transport->loseConnection();
+    l_session.write(akashi::Packet("CT", {"server", "while you were away"}));
+    l_session.waitForReconnect(60);
+
+    FakeTransport *l_replacement = new FakeTransport(true);
+    l_session.bindTransport(l_replacement);
+
+    // The person is back: the wait ends, no timeout fires, and the packets
+    // held while the connection was down arrive on the new one.
+    QVERIFY(!l_session.isWaitingForReconnect());
+    QVERIFY(!l_session.reconnect_timer->isActive());
+    QCOMPARE(l_timed_out.size(), 0);
+    QCOMPARE(l_replacement->written.size(), 1);
 }
 
 QTEST_MAIN(tst_ClientSession)

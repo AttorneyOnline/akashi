@@ -56,7 +56,7 @@ class AKASHI_CORE_EXPORT IPacketContext
   public:
     virtual ~IPacketContext() = default;
 
-    // The wire.
+    // The network.
     virtual void sendPacket(const Packet &f_packet) = 0;
     virtual void sendServerMessage(const QString &f_message) = 0;
     virtual void closeConnection() = 0;

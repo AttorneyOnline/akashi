@@ -15,7 +15,7 @@ class AKASHI_CORE_EXPORT Packet
     Packet() = default;
     explicit Packet(const QString &f_header, const QStringList &f_fields = {});
 
-    // Reads a raw wire string like "HI#1234#". Unusable input gives a null packet.
+    // Reads a raw protocol string like "HI#1234#". Unusable input gives a null packet.
     static Packet parse(const QString &f_raw);
 
     bool isNull() const;
@@ -25,7 +25,7 @@ class AKASHI_CORE_EXPORT Packet
     int fieldCount() const;
     void setField(int f_index, const QString &f_value);
 
-    // The escaped wire form, ending with the packet terminator.
+    // The escaped protocol form, ending with the packet terminator.
     QString serialize() const;
 
     // AO2 escape codes. Evidence packets keep & as their own field separator.

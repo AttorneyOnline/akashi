@@ -10,7 +10,7 @@ namespace akashi {
 
 class ClientSession;
 
-// One playable character within a connection. A legacy (positional-wire)
+// One playable character within a connection. A legacy-protocol
 // session always owns exactly one of these; a richer protocol may own
 // several, letting one person voice multiple characters at once. Everything
 // here is per-character - the connection, identity, auth, sanctions and
@@ -25,8 +25,8 @@ class AKASHI_CORE_EXPORT PlayerState : public QObject
 
   public:
     // The id is the player-list key. The session's first character reuses the
-    // session id, which keeps the wire identical for one-character clients;
-    // extra characters get their own ids when the multi-character wire lands.
+    // session id, which keeps the network traffic identical for one-character clients;
+    // extra characters get their own ids when multi-character support lands.
     PlayerState(int f_id, ClientSession *f_session);
 
     int id() const { return m_id; }

@@ -14,7 +14,7 @@
 
 namespace akashi {
 
-// Translates one packet type between the wire and its Message, for one dialect.
+// Translates one packet type between the network protocol and its Message, for one dialect.
 class AKASHI_CORE_EXPORT Codec
 {
   public:

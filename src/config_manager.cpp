@@ -460,6 +460,11 @@ int ConfigManager::multiClientLimit()
     return l_limit;
 }
 
+int ConfigManager::reconnectGrace()
+{
+    return m_server_settings->reconnect_grace();
+}
+
 int ConfigManager::maxCharacters()
 {
     int l_max = m_server_settings->maximum_characters();

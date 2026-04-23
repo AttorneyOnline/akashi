@@ -220,6 +220,11 @@ class AKASHI_CORE_EXPORT ConfigManager
     static int multiClientLimit();
 
     /**
+     * @brief Returns how many seconds a client that lost its connection keeps its place for a reconnect.
+     */
+    static int reconnectGrace();
+
+    /**
      * @brief Returns the maximum number of characters a message can contain..
      */
     static int maxCharacters();

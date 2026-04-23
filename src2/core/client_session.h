@@ -30,39 +30,52 @@ class AKASHI_CORE_EXPORT ClientSession : public QObject
 
   public:
     // Takes ownership of the transport. The session outlives any one socket:
-    // its signals are the stable seam the server wires against, so a
+    // its signals are the stable surface the server connects to, so a
     // reconnect can bind a fresh transport to the same session.
     ClientSession(int f_id, ITransport *f_transport, QObject *parent = nullptr);
 
-    // Sends a packet, or holds it while the wire is down so a returning
-    // client gets it replayed. All outbound traffic goes through here.
+    // Sends a packet, or holds it while the connection is down so a returning
+    // client gets it replayed. All outgoing packets go through here.
     void write(const Packet &f_packet);
 
-    // Adopts a new wire for this session, replacing and deleting the old one,
-    // and replays whatever was held while no wire was open.
+    // Adopts a new connection for this session, replacing and deleting the
+    // old one, and sends whatever was held while no connection was open.
     void bindTransport(ITransport *f_transport);
+
+    // Keeps the session alive after its connection was lost: the characters
+    // stay visible and outgoing packets are held, until either a new
+    // transport binds (the person came back) or the timer runs out and
+    // reconnectTimedOut() tells the server to delete the session.
+    void waitForReconnect(int f_grace_seconds);
+
+    // Stops waiting, either because the person is back or because the server
+    // needs the slot. bindTransport calls this when a new connection binds.
+    void cancelReconnectWait();
+
+    bool isWaitingForReconnect() const { return waiting_for_reconnect; }
 
     // Adds another playable character, refusing beyond f_limit per session.
     // The limit is the same multiclient_limit that caps connections per IP:
     // one cap on how many simultaneous presences a person gets, however
     // they are distributed.
-    PlayerState *spawnPlayer(int f_id, int f_limit);
+    PlayerState *addPlayer(int f_id, int f_limit);
 
-    // The characters this person plays. The constructor spawns the first one
-    // (reusing the session id, so one-character clients are wire-identical);
-    // only a richer protocol will ever spawn more. Owned as children.
+    // The characters this person plays. The constructor adds the first one
+    // (reusing the session id, so nothing changes for one-character clients);
+    // only a richer protocol will ever add more. Owned as children.
     QList<PlayerState *> players;
 
-    // The character the classic positional wire addresses - that wire is
+    // The character the classic protocol addresses - that protocol is
     // strictly one-character, so for legacy clients this is the only entry.
     PlayerState *active_player = nullptr;
 
     // Transport and identity.
     ITransport *transport = nullptr;
 
-    // Outbound packets held while the wire is down, replayed on rebind.
-    // Bounded: when full the oldest is dropped and the overflow is recorded,
-    // so a future resume can tell the replay is incomplete and force a resync.
+    // Outgoing packets held while the connection is down, sent once a new
+    // one binds. Bounded: when full the oldest is dropped and the overflow
+    // is recorded, so a future session-resume feature can tell the held
+    // sequence is incomplete and send fresh state instead.
     QQueue<Packet> pending_packets;
     bool pending_overflowed = false;
     int id = 0;
@@ -91,6 +104,10 @@ class AKASHI_CORE_EXPORT ClientSession : public QObject
     // Idle tracking.
     bool afk = false;
     QTimer *afk_timer = nullptr;
+
+    // Set while the session survives a lost connection, bounded by the timer.
+    bool waiting_for_reconnect = false;
+    QTimer *reconnect_timer = nullptr;
 
     // Rate limiter.
     qint64 rate_limit_tick = 0;
@@ -126,7 +143,11 @@ class AKASHI_CORE_EXPORT ClientSession : public QObject
   Q_SIGNALS:
     // Forwarded from the owned transport, so receivers never touch the socket.
     void packetReceived(const Packet &f_packet);
-    void transportClosed();
+    void transportClosed(DisconnectKind f_kind);
+
+    // The reconnect wait ran out with nobody coming back; the server
+    // deletes the session on this.
+    void reconnectTimedOut();
 };
 
 // The ids of the built-in sanctions. Plugins register their own alongside.

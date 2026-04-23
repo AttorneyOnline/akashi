@@ -38,6 +38,7 @@ class MusicManager;
 class Server;
 
 namespace akashi {
+enum class DisconnectKind;
 class ClientSession;
 class ITransport;
 class PlayerState;
@@ -147,6 +148,15 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
      * exactly one. Each is its own entry in the player list.
      */
     QList<akashi::PlayerState *> players() const;
+
+    /**
+     * @brief Keeps the client in the server for f_seconds after a lost
+     * connection, in case the person comes right back. reconnectTimedOut()
+     * fires if they do not.
+     */
+    void waitForReconnect(int f_seconds);
+
+    bool isWaitingForReconnect() const;
 
     QString name() const;
     void setName(const QString &f_name);
@@ -539,9 +549,15 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     void joined();
 
     /**
-     * @brief The client's transport has closed; the server tears the client down on this.
+     * @brief The client's connection has closed; the server decides on this
+     * whether to tear the client down or wait for a reconnect.
      */
-    void disconnected();
+    void disconnected(akashi::DisconnectKind f_kind);
+
+    /**
+     * @brief The reconnect wait ran out; the server tears the client down on this.
+     */
+    void reconnectTimedOut();
 
   private:
     /**
@@ -562,8 +578,8 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     bool m_left = false;
 
     /**
-     * @brief The session's active character - the one the classic positional
-     * wire addresses.
+     * @brief The session's active character - the one the classic
+     * protocol addresses.
      */
     akashi::PlayerState *player() const;
 

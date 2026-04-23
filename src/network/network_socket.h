@@ -35,7 +35,7 @@ class QTimer;
 // It enforces the ITransport lifecycle contract itself: the peer is pinged and
 // aborted when it stops answering (catches half-open TCP and frozen clients),
 // a close() that the peer never completes is aborted after a grace period, and
-// clientDisconnected() is emitted exactly once whichever way the wire dies.
+// clientDisconnected() is emitted exactly once whichever way the connection ends.
 class AKASHI_CORE_EXPORT NetworkSocket : public akashi::ITransport
 {
     Q_OBJECT
@@ -72,9 +72,9 @@ class AKASHI_CORE_EXPORT NetworkSocket : public akashi::ITransport
     void handleMessage(QString f_data);
 
     /**
-     * @brief Forwards the wire-level disconnect as exactly one clientDisconnected().
+     * @brief Classifies how the WebSocket ended and reports it.
      */
-    void reportDisconnect();
+    void onSocketDisconnected();
 
     /**
      * @brief Pings the peer; aborts a peer that stopped answering.
@@ -83,6 +83,11 @@ class AKASHI_CORE_EXPORT NetworkSocket : public akashi::ITransport
 
   private:
     /**
+     * @brief Forwards the socket-level disconnect as exactly one clientDisconnected().
+     */
+    void reportDisconnect(akashi::DisconnectKind f_kind);
+
+    /**
      * @brief Starts the WebSocket close exchange, aborting if the peer never finishes it.
      */
     void closeWithCode(QWebSocketProtocol::CloseCode f_code);
@@ -90,7 +95,7 @@ class AKASHI_CORE_EXPORT NetworkSocket : public akashi::ITransport
     /**
      * @brief Drops the connection immediately and reports the disconnect.
      */
-    void abortConnection();
+    void abortConnection(akashi::DisconnectKind f_kind);
 
     QWebSocket *m_client_socket;
 

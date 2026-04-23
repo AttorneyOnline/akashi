@@ -581,6 +581,16 @@ QList<akashi::PlayerState *> AOClient::players() const
     return m_session->players;
 }
 
+void AOClient::waitForReconnect(int f_seconds)
+{
+    m_session->waitForReconnect(f_seconds);
+}
+
+bool AOClient::isWaitingForReconnect() const
+{
+    return m_session->isWaitingForReconnect();
+}
+
 QString AOClient::name() const
 {
     return player()->oocName();
@@ -653,6 +663,7 @@ AOClient::AOClient(Server *p_server, akashi::ITransport *socket, QObject *parent
     m_session = new akashi::ClientSession(user_id, socket, this);
     connect(m_session, &akashi::ClientSession::packetReceived, this, &AOClient::handlePacket);
     connect(m_session, &akashi::ClientSession::transportClosed, this, &AOClient::disconnected);
+    connect(m_session, &akashi::ClientSession::reconnectTimedOut, this, &AOClient::reconnectTimedOut);
     connect(m_session->afk_timer, &QTimer::timeout, this, &AOClient::onAfkTimeout);
 
     QTimer::singleShot(IDENTIFICATION_TIMEOUT_MS, this, [this] {

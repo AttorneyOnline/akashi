@@ -9,7 +9,7 @@
 namespace akashi {
 
 // MS: one in-character message carrying the full flat data model.
-// Numbers hold what the wire coerced them to; free-form fields
+// Numbers hold what the protocol coerced them to; free-form fields
 // stay untouched strings so every byte survives the round trip.
 class AKASHI_CORE_EXPORT ICMessage : public Message
 {

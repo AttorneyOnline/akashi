@@ -21,7 +21,7 @@ class tst_PlayerStateObserver : public QObject
     void multiCharacterSessionHearsBroadcastsOnce();
 };
 
-// One person with one character, watching through a fake wire.
+// One person with one character, watching through a fake transport.
 struct Person
 {
     FakeTransport *transport;
@@ -34,7 +34,7 @@ struct Person
     }
     ~Person() { delete session; }
     akashi::PlayerState *player() const { return session->active_player; }
-    QStringList wire() const
+    QStringList received() const
     {
         QStringList l_lines;
         for (const akashi::Packet &l_packet : transport->written) {
@@ -66,7 +66,7 @@ void tst_PlayerStateObserver::registerSendsRosterAndAnnouncement()
     observer.registerPlayer(alice.player());
 
     // The first arrival gets the roster: their own entry and its four fields.
-    QCOMPARE(alice.wire(), QStringList({"PR#0#0#%",
+    QCOMPARE(alice.received(), QStringList({"PR#0#0#%",
                                         "PU#0#0#alice#%",
                                         "PU#0#1##%",
                                         "PU#0#2##%",
@@ -76,9 +76,9 @@ void tst_PlayerStateObserver::registerSendsRosterAndAnnouncement()
     observer.registerPlayer(bob.player());
 
     // Everyone already watching hears the newcomer...
-    QCOMPARE(alice.wire(), QStringList({"PR#1#0#%"}));
+    QCOMPARE(alice.received(), QStringList({"PR#1#0#%"}));
     // ...and the newcomer gets the whole roster, themselves included.
-    QCOMPARE(bob.wire(), QStringList({"PR#0#0#%",
+    QCOMPARE(bob.received(), QStringList({"PR#0#0#%",
                                       "PU#0#0#alice#%",
                                       "PU#0#1##%",
                                       "PU#0#2##%",
@@ -105,8 +105,8 @@ void tst_PlayerStateObserver::changesReachEveryone()
     bob.player()->setAreaId(2);
 
     const QStringList l_expected = {"PU#1#1#Phoenix#%", "PU#1#3#2#%"};
-    QCOMPARE(alice.wire(), l_expected);
-    QCOMPARE(bob.wire(), l_expected);
+    QCOMPARE(alice.received(), l_expected);
+    QCOMPARE(bob.received(), l_expected);
 }
 
 void tst_PlayerStateObserver::unregisterAnnouncesRemovalOnce()
@@ -122,18 +122,18 @@ void tst_PlayerStateObserver::unregisterAnnouncesRemovalOnce()
     observer.unregisterPlayer(alice.player());
     observer.unregisterPlayer(alice.player()); // a second unregister is ignored
 
-    QCOMPARE(bob.wire(), QStringList({"PR#0#1#%"}));
+    QCOMPARE(bob.received(), QStringList({"PR#0#1#%"}));
     // The leaver hears nothing, and their later changes stay silent.
     alice.player()->setOocName("still here?");
     QVERIFY(alice.transport->written.isEmpty());
-    QCOMPARE(bob.wire(), QStringList({"PR#0#1#%"}));
+    QCOMPARE(bob.received(), QStringList({"PR#0#1#%"}));
 }
 
 void tst_PlayerStateObserver::multiCharacterSessionHearsBroadcastsOnce()
 {
     PlayerStateObserver observer;
     Person alice(0);
-    akashi::PlayerState *l_second = alice.session->spawnPlayer(7, 2);
+    akashi::PlayerState *l_second = alice.session->addPlayer(7, 2);
     QVERIFY(l_second);
 
     observer.registerPlayer(alice.player());
@@ -144,7 +144,7 @@ void tst_PlayerStateObserver::multiCharacterSessionHearsBroadcastsOnce()
     observer.registerPlayer(bob.player());
 
     // Two characters, one person: the announcement arrives exactly once.
-    QCOMPARE(alice.wire(), QStringList({"PR#1#0#%"}));
+    QCOMPARE(alice.received(), QStringList({"PR#1#0#%"}));
 }
 
 }
