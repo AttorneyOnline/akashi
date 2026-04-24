@@ -30,6 +30,7 @@ class AKASHI_CORE_EXPORT ServerSettings : public akashi::Settings
     akashi::Setting<int> maximum_statements{this, "Options/maximum_statements", 10, "The maximum number of statements the testimony recorder stores.", akashi::atLeast(0)};
     akashi::Setting<int> multiclient_limit{this, "Options/multiclient_limit", 15, "The maximum number of connections from the same IP address.", akashi::atLeast(1)};
     akashi::Setting<int> reconnect_grace{this, "Options/reconnect_grace", 0, "How many seconds a client that lost its connection keeps its place for a reconnect. 0 removes it immediately; while a client waits, its character stays taken.", akashi::atLeast(0)};
+    akashi::Setting<QString> id_assignment{this, "Options/id_assignment", "last_freed", "How player IDs are handed out: last_freed gives a new arrival the most recently freed ID, lowest always the lowest free one.", akashi::oneOf({"last_freed", "lowest"})};
     akashi::Setting<int> maximum_characters{this, "Options/maximum_characters", 256, "The maximum length of chat messages.", akashi::atLeast(1)};
     akashi::Setting<int> message_floodguard{this, "Options/message_floodguard", 250, "The minimum time between messages in an area, in milliseconds.", akashi::atLeast(0)};
     akashi::Setting<int> global_message_floodguard{this, "Options/global_message_floodguard", 0, "The minimum time between messages in the whole server, in milliseconds.", akashi::atLeast(0)};

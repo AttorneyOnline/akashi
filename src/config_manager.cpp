@@ -465,6 +465,11 @@ int ConfigManager::reconnectGrace()
     return m_server_settings->reconnect_grace();
 }
 
+QString ConfigManager::idAssignment()
+{
+    return m_server_settings->id_assignment();
+}
+
 int ConfigManager::maxCharacters()
 {
     int l_max = m_server_settings->maximum_characters();

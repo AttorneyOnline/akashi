@@ -17,11 +17,13 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "player_directory.h"
 
+#include <algorithm>
+
 void PlayerDirectory::setCapacity(int f_capacity)
 {
     clear();
     for (int i = f_capacity - 1; i >= 0; i--) {
-        m_free_ids.push(i);
+        m_free_ids.append(i);
     }
 }
 
@@ -30,17 +32,21 @@ bool PlayerDirectory::isFull() const
     return m_free_ids.isEmpty();
 }
 
-int PlayerDirectory::takeId()
+int PlayerDirectory::takeId(IdAssignment f_assignment)
 {
     if (m_free_ids.isEmpty()) {
         return -1;
     }
-    return m_free_ids.pop();
+    if (f_assignment == IdAssignment::Lowest) {
+        const auto l_lowest = std::min_element(m_free_ids.cbegin(), m_free_ids.cend());
+        return m_free_ids.takeAt(l_lowest - m_free_ids.cbegin());
+    }
+    return m_free_ids.takeLast();
 }
 
 void PlayerDirectory::returnId(int f_id)
 {
-    m_free_ids.push(f_id);
+    m_free_ids.append(f_id);
 }
 
 void PlayerDirectory::addClient(int f_id, AOClient *f_client)
@@ -57,7 +63,7 @@ void PlayerDirectory::removeClient(int f_id)
         return;
     }
     m_clients.removeAll(l_client);
-    m_free_ids.push(f_id);
+    m_free_ids.append(f_id);
 }
 
 AOClient *PlayerDirectory::clientById(int f_id) const

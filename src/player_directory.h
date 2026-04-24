@@ -21,7 +21,6 @@
 #include "akashi_core_export.h"
 
 #include <QHash>
-#include <QStack>
 #include <QVector>
 
 class AOClient;
@@ -35,15 +34,23 @@ class AOClient;
 class AKASHI_CORE_EXPORT PlayerDirectory
 {
   public:
+    // How a free ID is picked for a new arrival. LastFreed hands out the
+    // most recently freed ID; Lowest always picks the lowest free number.
+    // Both give 0, 1, 2, ... on a fresh server.
+    enum class IdAssignment
+    {
+        LastFreed,
+        Lowest,
+    };
+
     // Prepares f_capacity connection slots, with IDs 0 to f_capacity - 1.
     void setCapacity(int f_capacity);
 
     // True when no free ID is left.
     bool isFull() const;
 
-    // Takes a free ID out of the pool, or -1 when full. The most recently
-    // returned ID is handed out first, lowest IDs first on a fresh server.
-    int takeId();
+    // Takes a free ID out of the pool, or -1 when full.
+    int takeId(IdAssignment f_assignment = IdAssignment::LastFreed);
 
     // Gives an unused ID back, for a connection rejected before it was added.
     void returnId(int f_id);
@@ -70,7 +77,7 @@ class AKASHI_CORE_EXPORT PlayerDirectory
   private:
     QVector<AOClient *> m_clients;
     QHash<int, AOClient *> m_clients_by_id;
-    QStack<int> m_free_ids;
+    QVector<int> m_free_ids; // most recently freed at the back
 };
 
 #endif

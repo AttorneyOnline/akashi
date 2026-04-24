@@ -15,6 +15,7 @@ class tst_PlayerDirectory : public QObject
   private Q_SLOTS:
     void handsOutLowestIdsFirst();
     void reusesAReturnedIdFirst();
+    void lowestModePicksTheLowestFreeId();
     void refusesWhenFull();
     void looksUpClientsNullSafely();
     void removingAClientFreesItsId();
@@ -50,6 +51,25 @@ void tst_PlayerDirectory::reusesAReturnedIdFirst()
 
     QCOMPARE(l_directory.takeId(), 0);
     QCOMPARE(l_directory.takeId(), 2);
+}
+
+void tst_PlayerDirectory::lowestModePicksTheLowestFreeId()
+{
+    PlayerDirectory l_directory;
+    l_directory.setCapacity(4);
+    l_directory.takeId();
+    l_directory.takeId();
+    l_directory.takeId();
+
+    // 1 and 0 come back in that order; last_freed would now hand out 0
+    // first, lowest ignores recency and picks the lowest number.
+    l_directory.returnId(1);
+    l_directory.returnId(0);
+
+    QCOMPARE(l_directory.takeId(PlayerDirectory::IdAssignment::Lowest), 0);
+    QCOMPARE(l_directory.takeId(PlayerDirectory::IdAssignment::Lowest), 1);
+    QCOMPARE(l_directory.takeId(PlayerDirectory::IdAssignment::Lowest), 3);
+    QVERIFY(l_directory.isFull());
 }
 
 void tst_PlayerDirectory::refusesWhenFull()

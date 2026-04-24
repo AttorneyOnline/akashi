@@ -195,7 +195,12 @@ void Server::clientConnected()
         return;
     }
 
-    int user_id = m_player_directory.takeId();
+    // Server owners pick the ID style: hand a new arrival the most recently
+    // freed ID, or always the lowest free number.
+    const PlayerDirectory::IdAssignment l_assignment = ConfigManager::idAssignment() == "lowest"
+                                                           ? PlayerDirectory::IdAssignment::Lowest
+                                                           : PlayerDirectory::IdAssignment::LastFreed;
+    int user_id = m_player_directory.takeId(l_assignment);
     AOClient *client = new AOClient(this, l_socket, nullptr, user_id, music_manager);
 
     int multiclient_count = 1;

@@ -225,6 +225,11 @@ class AKASHI_CORE_EXPORT ConfigManager
     static int reconnectGrace();
 
     /**
+     * @brief Returns how player IDs are handed out: "last_freed" or "lowest".
+     */
+    static QString idAssignment();
+
+    /**
      * @brief Returns the maximum number of characters a message can contain..
      */
     static int maxCharacters();
