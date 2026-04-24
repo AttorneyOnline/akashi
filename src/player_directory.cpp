@@ -18,6 +18,7 @@
 #include "player_directory.h"
 
 #include <algorithm>
+#include <functional>
 
 void PlayerDirectory::setCapacity(int f_capacity)
 {
@@ -32,16 +33,30 @@ bool PlayerDirectory::isFull() const
     return m_free_ids.isEmpty();
 }
 
-int PlayerDirectory::takeId(IdAssignment f_assignment)
+void PlayerDirectory::setIdAssignment(IdAssignment f_assignment)
+{
+    m_take_free_id = f_assignment == IdAssignment::Lowest
+                         ? &PlayerDirectory::takeLowestId
+                         : &PlayerDirectory::takeLastFreedId;
+}
+
+int PlayerDirectory::takeId()
 {
     if (m_free_ids.isEmpty()) {
         return -1;
     }
-    if (f_assignment == IdAssignment::Lowest) {
-        const auto l_lowest = std::min_element(m_free_ids.cbegin(), m_free_ids.cend());
-        return m_free_ids.takeAt(l_lowest - m_free_ids.cbegin());
-    }
+    return std::invoke(m_take_free_id, this);
+}
+
+int PlayerDirectory::takeLastFreedId()
+{
     return m_free_ids.takeLast();
+}
+
+int PlayerDirectory::takeLowestId()
+{
+    const auto l_lowest = std::min_element(m_free_ids.cbegin(), m_free_ids.cend());
+    return m_free_ids.takeAt(l_lowest - m_free_ids.cbegin());
 }
 
 void PlayerDirectory::returnId(int f_id)

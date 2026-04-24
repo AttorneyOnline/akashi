@@ -579,6 +579,12 @@ class AKASHI_CORE_EXPORT Server : public QObject
     void removeClient(AOClient *f_client);
 
     /**
+     * @brief Hands the configured ID assignment style to the player
+     * directory; called at startup and whenever the settings reload.
+     */
+    void applyIdAssignment();
+
+    /**
      * @brief Connects new AOClient to logger and disconnect handling.
      **/
     void hookupAOClient(AOClient *client);

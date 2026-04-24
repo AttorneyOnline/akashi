@@ -43,6 +43,10 @@ class AKASHI_CORE_EXPORT PlayerDirectory
         Lowest,
     };
 
+    // Picks the assignment style once - when the server starts or the
+    // setting changes - so takeId never re-decides it.
+    void setIdAssignment(IdAssignment f_assignment);
+
     // Prepares f_capacity connection slots, with IDs 0 to f_capacity - 1.
     void setCapacity(int f_capacity);
 
@@ -50,7 +54,7 @@ class AKASHI_CORE_EXPORT PlayerDirectory
     bool isFull() const;
 
     // Takes a free ID out of the pool, or -1 when full.
-    int takeId(IdAssignment f_assignment = IdAssignment::LastFreed);
+    int takeId();
 
     // Gives an unused ID back, for a connection rejected before it was added.
     void returnId(int f_id);
@@ -75,9 +79,15 @@ class AKASHI_CORE_EXPORT PlayerDirectory
     void clear();
 
   private:
+    int takeLastFreedId();
+    int takeLowestId();
+
     QVector<AOClient *> m_clients;
     QHash<int, AOClient *> m_clients_by_id;
     QVector<int> m_free_ids; // most recently freed at the back
+
+    // The selected pick function; setIdAssignment replaces it.
+    int (PlayerDirectory::*m_take_free_id)() = &PlayerDirectory::takeLastFreedId;
 };
 
 #endif

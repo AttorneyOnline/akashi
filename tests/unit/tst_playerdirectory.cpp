@@ -66,10 +66,17 @@ void tst_PlayerDirectory::lowestModePicksTheLowestFreeId()
     l_directory.returnId(1);
     l_directory.returnId(0);
 
-    QCOMPARE(l_directory.takeId(PlayerDirectory::IdAssignment::Lowest), 0);
-    QCOMPARE(l_directory.takeId(PlayerDirectory::IdAssignment::Lowest), 1);
-    QCOMPARE(l_directory.takeId(PlayerDirectory::IdAssignment::Lowest), 3);
+    l_directory.setIdAssignment(PlayerDirectory::IdAssignment::Lowest);
+    QCOMPARE(l_directory.takeId(), 0);
+    QCOMPARE(l_directory.takeId(), 1);
+    QCOMPARE(l_directory.takeId(), 3);
     QVERIFY(l_directory.isFull());
+
+    // Switching back keeps working with the same pool.
+    l_directory.returnId(2);
+    l_directory.returnId(0);
+    l_directory.setIdAssignment(PlayerDirectory::IdAssignment::LastFreed);
+    QCOMPARE(l_directory.takeId(), 0);
 }
 
 void tst_PlayerDirectory::refusesWhenFull()

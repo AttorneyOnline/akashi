@@ -147,8 +147,16 @@ ExitCode Server::start()
     connect(m_message_floodguard_timer, &QTimer::timeout, this, &Server::allowMessage);
 
     m_player_directory.setCapacity(ConfigManager::maxPlayers());
+    applyIdAssignment();
 
     return ExitCode::Ok;
+}
+
+void Server::applyIdAssignment()
+{
+    m_player_directory.setIdAssignment(ConfigManager::idAssignment() == "lowest"
+                                           ? PlayerDirectory::IdAssignment::Lowest
+                                           : PlayerDirectory::IdAssignment::LastFreed);
 }
 
 QVector<AOClient *> Server::clients()
@@ -195,12 +203,7 @@ void Server::clientConnected()
         return;
     }
 
-    // Server owners pick the ID style: hand a new arrival the most recently
-    // freed ID, or always the lowest free number.
-    const PlayerDirectory::IdAssignment l_assignment = ConfigManager::idAssignment() == "lowest"
-                                                           ? PlayerDirectory::IdAssignment::Lowest
-                                                           : PlayerDirectory::IdAssignment::LastFreed;
-    int user_id = m_player_directory.takeId(l_assignment);
+    int user_id = m_player_directory.takeId();
     AOClient *client = new AOClient(this, l_socket, nullptr, user_id, music_manager);
 
     int multiclient_count = 1;
@@ -349,6 +352,7 @@ void Server::reloadSettings()
     handleDiscordIntegration();
     logger->loadLogtext();
     music_manager->reloadRequest();
+    applyIdAssignment();
     m_ipban_list = ConfigManager::iprangeBans();
     m_banned_asns = ConfigManager::bannedAsns();
     if (QFile::exists("storage/GeoLite2-ASN.mmdb")) {
