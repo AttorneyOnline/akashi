@@ -198,7 +198,6 @@ void AOClient::leave()
         }
         arup(ARUPType::CM, true);
     }
-    Q_EMIT clientSuccessfullyDisconnected(clientId());
 }
 
 void AOClient::handlePacket(const akashi::Packet &packet)

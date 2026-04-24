@@ -53,6 +53,8 @@ set(AKASHI_SOURCES
   src/music_manager.cpp
   src/music_manager.h
   src/packets.cpp
+  src/player_directory.cpp
+  src/player_directory.h
   src/playerstateobserver.cpp
   src/playerstateobserver.h
   src/server.cpp

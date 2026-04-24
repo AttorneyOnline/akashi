@@ -22,6 +22,7 @@
 #include "core/exit_code.h"
 #include "core/mmdb_reader.h"
 #include "medieval_parser.h"
+#include "player_directory.h"
 #include "playerstateobserver.h"
 #include "proto/packet.h"
 
@@ -389,11 +390,6 @@ class AKASHI_CORE_EXPORT Server : public QObject
      */
     void handleDiscordIntegration();
 
-    /**
-     * @brief Marks a userID as free and ads it back to the available client id queue.
-     */
-    void markIDFree(const int &f_user_id);
-
   Q_SIGNALS:
 
     /**
@@ -478,21 +474,13 @@ class AKASHI_CORE_EXPORT Server : public QObject
     int m_port;
 
     /**
-     * @brief The collection of all currently connected clients.
+     * @brief Every connected client and the ID pool, kept together so they
+     * can never disagree. When no ID is free the server rejects new
+     * connection attempts.
      */
-    QVector<AOClient *> m_clients;
+    PlayerDirectory m_player_directory;
 
-    /**
-     * @brief Collection of all clients with their userID as key.
-     */
-    QHash<int, AOClient *> m_clients_ids;
     PlayerStateObserver m_player_state_observer;
-
-    /**
-     * @brief Stack of all available IDs for clients. When this is empty the server
-     * rejects any new connection attempt.
-     */
-    QStack<int> m_available_ids;
 
     /**
      * @brief The overall player count in the server.

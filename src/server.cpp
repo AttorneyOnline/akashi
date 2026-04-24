@@ -146,18 +146,14 @@ ExitCode Server::start()
     m_message_floodguard_timer->setSingleShot(true);
     connect(m_message_floodguard_timer, &QTimer::timeout, this, &Server::allowMessage);
 
-    // Prepare player IDs and reference hash.
-    for (int i = ConfigManager::maxPlayers() - 1; i >= 0; i--) {
-        m_available_ids.push(i);
-        m_clients_ids.insert(i, nullptr);
-    }
+    m_player_directory.setCapacity(ConfigManager::maxPlayers());
 
     return ExitCode::Ok;
 }
 
 QVector<AOClient *> Server::clients()
 {
-    return m_clients;
+    return m_player_directory.clients();
 }
 
 void Server::clientConnected()
@@ -175,9 +171,10 @@ void Server::clientConnected()
 
     // When the server is full, a client waiting on a reconnect gives up its
     // place first: a person actually arriving beats one who may come back.
-    if (m_available_ids.empty()) {
+    if (m_player_directory.isFull()) {
         AOClient *l_waiting_client = nullptr;
-        for (AOClient *i_client : qAsConst(m_clients)) {
+        const QVector<AOClient *> l_current_clients = m_player_directory.clients();
+        for (AOClient *i_client : l_current_clients) {
             if (i_client->isWaitingForReconnect()) {
                 l_waiting_client = i_client;
                 break;
@@ -190,7 +187,7 @@ void Server::clientConnected()
 
     // Too many players. Reject connection!
     // This also enforces the maximum playercount.
-    if (m_available_ids.empty()) {
+    if (m_player_directory.isFull()) {
         akashi::Packet disconnect_reason("BD", {"Maximum playercount has been reached."});
         l_socket->write(disconnect_reason);
         connect(l_socket, &akashi::ITransport::clientDisconnected, l_socket, &QObject::deleteLater);
@@ -198,16 +195,16 @@ void Server::clientConnected()
         return;
     }
 
-    int user_id = m_available_ids.pop();
+    int user_id = m_player_directory.takeId();
     AOClient *client = new AOClient(this, l_socket, nullptr, user_id, music_manager);
-    m_clients_ids.insert(user_id, client);
 
     int multiclient_count = 1;
     bool is_at_multiclient_limit = false;
     client->calculateIpid();
     auto ban = db_manager->isIPBanned(client->ipid());
     bool is_banned = ban.first;
-    for (AOClient *joined_client : qAsConst(m_clients)) {
+    const QVector<AOClient *> l_connected_clients = m_player_directory.clients();
+    for (AOClient *joined_client : l_connected_clients) {
         if (client->remoteIp().isEqual(joined_client->remoteIp()))
             multiclient_count++;
     }
@@ -227,7 +224,7 @@ void Server::clientConnected()
         socket->sendTextMessage(ban_reason.serialize());
     }
     if (is_banned || is_at_multiclient_limit) {
-        markIDFree(user_id);
+        m_player_directory.returnId(user_id);
         // The client is deleted once the transport reports the close, so the
         // rejection message still flushes; the transport bounds the wait.
         connect(l_socket, &akashi::ITransport::clientDisconnected, client, &QObject::deleteLater);
@@ -244,13 +241,13 @@ void Server::clientConnected()
         QString l_reason = "Your IP has been banned by a moderator.";
         akashi::Packet l_ban_reason("BD", {l_reason});
         l_socket->write(l_ban_reason);
-        markIDFree(user_id);
+        m_player_directory.returnId(user_id);
         connect(l_socket, &akashi::ITransport::clientDisconnected, client, &QObject::deleteLater);
         l_socket->close();
         return;
     }
 
-    m_clients.append(client);
+    m_player_directory.addClient(user_id, client);
     connect(client, &AOClient::disconnected, this, [this, client](akashi::DisconnectKind f_kind) {
         // A lost connection may be a network problem the person comes right
         // back from: keep the client and its characters for the grace
@@ -286,7 +283,8 @@ void Server::updateCharsTaken(AreaData *area)
 
     akashi::Packet response_cc("CharsCheck", chars_taken);
 
-    for (AOClient *l_client : qAsConst(m_clients)) {
+    const QVector<AOClient *> l_client_list = m_player_directory.clients();
+    for (AOClient *l_client : l_client_list) {
         if (l_client->areaId() == area->index()) {
             if (!l_client->isCharCursed())
                 l_client->sendPacket(response_cc);
@@ -368,14 +366,16 @@ void Server::broadcast(const akashi::Packet &packet, int area_index)
 
 void Server::broadcast(const akashi::Packet &packet)
 {
-    for (AOClient *l_client : qAsConst(m_clients)) {
+    const QVector<AOClient *> l_client_list = m_player_directory.clients();
+    for (AOClient *l_client : l_client_list) {
         l_client->sendPacket(packet);
     }
 }
 
 void Server::broadcast(const akashi::Packet &packet, TARGET_TYPE target)
 {
-    for (AOClient *l_client : qAsConst(m_clients)) {
+    const QVector<AOClient *> l_client_list = m_player_directory.clients();
+    for (AOClient *l_client : l_client_list) {
         switch (target) {
         case TARGET_TYPE::MODCHAT:
             if (l_client->canPerform(ACLRole::MODCHAT)) {
@@ -397,7 +397,9 @@ void Server::broadcast(const akashi::Packet &packet, const akashi::Packet &other
 {
     switch (target) {
     case TARGET_TYPE::AUTHENTICATED:
-        for (AOClient *l_client : qAsConst(m_clients)) {
+    {
+        const QVector<AOClient *> l_client_list = m_player_directory.clients();
+        for (AOClient *l_client : l_client_list) {
             if (l_client->isGlobalEnabled()) {
                 if (l_client->isAuthenticated()) {
                     l_client->sendPacket(other_packet);
@@ -407,6 +409,7 @@ void Server::broadcast(const akashi::Packet &packet, const akashi::Packet &other
                 }
             }
         }
+    }
     default:
         // Unimplemented, so not handled.
         break;
@@ -425,7 +428,8 @@ void Server::unicast(const akashi::Packet &f_packet, int f_client_id)
 QList<AOClient *> Server::clientsByIpid(QString ipid)
 {
     QList<AOClient *> return_clients;
-    for (AOClient *l_client : qAsConst(m_clients)) {
+    const QVector<AOClient *> l_client_list = m_player_directory.clients();
+    for (AOClient *l_client : l_client_list) {
         if (l_client->ipid() == ipid)
             return_clients.append(l_client);
     }
@@ -435,7 +439,8 @@ QList<AOClient *> Server::clientsByIpid(QString ipid)
 QList<AOClient *> Server::clientsByHwid(QString f_hwid)
 {
     QList<AOClient *> return_clients;
-    for (AOClient *l_client : qAsConst(m_clients)) {
+    const QVector<AOClient *> l_client_list = m_player_directory.clients();
+    for (AOClient *l_client : l_client_list) {
         if (l_client->hwid() == f_hwid)
             return_clients.append(l_client);
     }
@@ -444,7 +449,7 @@ QList<AOClient *> Server::clientsByHwid(QString f_hwid)
 
 AOClient *Server::clientById(int id)
 {
-    return m_clients_ids.value(id);
+    return m_player_directory.clientById(id);
 }
 
 int Server::playerCount()
@@ -591,27 +596,21 @@ void Server::handleDiscordIntegration()
     return;
 }
 
-void Server::markIDFree(const int &f_user_id)
-{
-    AOClient *l_client = m_clients_ids[f_user_id];
-    if (l_client && l_client->isJoined()) {
-        for (akashi::PlayerState *l_player : l_client->players()) {
-            m_player_state_observer.unregisterPlayer(l_player);
-        }
-    }
-    m_clients_ids.insert(f_user_id, nullptr);
-    m_available_ids.push(f_user_id);
-}
-
 void Server::removeClient(AOClient *f_client)
 {
-    if (f_client->isJoined()) {
+    const bool l_was_joined = f_client->isJoined();
+    if (l_was_joined) {
         decreasePlayerCount();
     }
-    m_clients.removeAll(f_client);
+    m_player_directory.removeClient(f_client->clientId());
     // Withdraw the client's presence while it is alive, then delete it - the
     // destructor never does the real teardown.
     f_client->leave();
+    if (l_was_joined) {
+        for (akashi::PlayerState *l_player : f_client->players()) {
+            m_player_state_observer.unregisterPlayer(l_player);
+        }
+    }
     f_client->deleteLater();
 }
 
@@ -626,7 +625,6 @@ void Server::hookupAOClient(AOClient *client)
     connect(client, &AOClient::logBan, logger, &ULogger::logBan);
     connect(client, &AOClient::logKick, logger, &ULogger::logKick);
     connect(client, &AOClient::logModcall, logger, &ULogger::logModcall);
-    connect(client, &AOClient::clientSuccessfullyDisconnected, this, &Server::markIDFree);
 }
 
 void Server::increasePlayerCount()
@@ -659,8 +657,8 @@ Server::~Server()
     // Empty the roster first so no teardown broadcast writes to a neighbour
     // mid-destruction, then delete synchronously - a deleteLater posted here
     // never runs, because the event loop is already gone at this point.
-    const QVector<AOClient *> l_clients = m_clients;
-    m_clients.clear();
+    const QVector<AOClient *> l_clients = m_player_directory.clients();
+    m_player_directory.clear();
     qDeleteAll(l_clients);
 
     delete server;

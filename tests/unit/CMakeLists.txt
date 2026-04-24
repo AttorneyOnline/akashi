@@ -25,6 +25,7 @@ set(UNIT_TESTS
     networkservice
     service
     music_manager
+    playerdirectory
     playerstateobserver
     ulogger
 )

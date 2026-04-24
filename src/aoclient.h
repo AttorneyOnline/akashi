@@ -2094,11 +2094,6 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
      *        when modcall logging is used.
      */
     void logModcall(const QString &f_area_name, const QString &f_ipid, const QString &f_ooc_name, const QString &f_id, const QString &f_char_name);
-
-    /**
-     * @brief Signals the server that the client has disconnected and marks its userID as free again.
-     */
-    void clientSuccessfullyDisconnected(const int &f_user_id);
 };
 
 #endif // AOCLIENT_H
