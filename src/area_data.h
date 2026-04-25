@@ -29,6 +29,7 @@
 #include <QTimer>
 
 namespace akashi {
+class Area;
 class Packet;
 }
 
@@ -52,6 +53,12 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
      * @param p_index The index of the area in the area list.
      */
     AreaData(QString p_name, int p_index, MusicManager *p_music_manager);
+
+    /**
+     * @brief The world-model core this class delegates to; the area-update
+     * broadcaster subscribes to its change signals.
+     */
+    akashi::Area *area() const;
 
     /**
      * @brief The data for evidence in the area.
@@ -1044,19 +1051,16 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
 
   private:
     /**
+     * @brief The core state of the area - identity, place on the map,
+     * membership, characters, access and status - lives in the world
+     * model; this class delegates to it until the remaining pieces move.
+     */
+    akashi::Area *m_area;
+
+    /**
      * @brief The list of timers available in the area.
      */
     QList<QTimer *> m_timers;
-
-    /**
-     * @brief The user-facing and internal name of the area.
-     */
-    QString m_name;
-
-    /**
-     * @brief The index of the area in the server's area list.
-     */
-    int m_index;
 
     /**
      * @brief The display name of the area.
@@ -1069,11 +1073,6 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
     MusicManager *m_music_manager;
 
     /**
-     * @brief A list of the character IDs of all characters taken.
-     */
-    QList<int> m_charactersTaken;
-
-    /**
      * @brief A list of Evidence currently available in the area's court record.
      *
      * @details This contains *all* evidence, not just the ones a given side can see.
@@ -1081,37 +1080,6 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
      * @see HIDDEN_CM
      */
     QList<Evidence> m_evidence;
-
-    /**
-     * @brief The amount of clients inside the area.
-     */
-    int m_playerCount;
-
-    /**
-     * @brief The status of the area.
-     *
-     * @see Status
-     */
-    Status m_status;
-
-    /**
-     * @brief The IDs of all the owners (or Case Makers / CMs) of the area.
-     */
-    QList<int> m_owners;
-
-    /**
-     * @brief The list of clients invited to the area.
-     *
-     * @see LOCKED and SPECTATABLE for the benefits of being invited.
-     */
-    QList<int> m_invited;
-
-    /**
-     * @brief The status of the area's accessibility to clients.
-     *
-     * @see LockStatus
-     */
-    LockStatus m_locked;
 
     /**
      * @brief The background of the area.
@@ -1260,11 +1228,6 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
      * @brief Whether or not the area message is sent upon area join.
      */
     bool m_send_area_message;
-
-    /**
-     * @brief Collection of joined IDs to this area.
-     */
-    QVector<int> m_joined_ids;
 
     // Jukebox specific members
     /**

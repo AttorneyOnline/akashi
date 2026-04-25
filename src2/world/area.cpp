@@ -32,13 +32,13 @@ bool Area::takeCharacter(int f_char_id)
     if (m_characters_taken.contains(f_char_id)) {
         return false;
     }
-    m_characters_taken.insert(f_char_id);
+    m_characters_taken.append(f_char_id);
     return true;
 }
 
 void Area::releaseCharacter(int f_char_id)
 {
-    m_characters_taken.remove(f_char_id);
+    m_characters_taken.removeAll(f_char_id);
 }
 
 void Area::addOwner(int f_player_id)

@@ -18,6 +18,8 @@
 
 #include "area_data.h"
 
+#include "world/area.h"
+
 #include "config_manager.h"
 #include "music_manager.h"
 #include "proto/packet.h"
@@ -27,11 +29,7 @@
 #include <algorithm>
 
 AreaData::AreaData(QString p_name, int p_index, MusicManager *p_music_manager = nullptr) :
-    m_index(p_index),
     m_music_manager(p_music_manager),
-    m_playerCount(0),
-    m_status(IDLE),
-    m_locked(FREE),
     m_document("No document."),
     m_area_message("No area message set."),
     m_defHP(10),
@@ -46,11 +44,15 @@ AreaData::AreaData(QString p_name, int p_index, MusicManager *p_music_manager = 
 {
     QStringList name_split = p_name.split(":");
     name_split.removeFirst();
-    m_name = name_split.join(":");
-    if (m_name.isEmpty()) {
-        m_name = "Unnamed Area";
+    QString l_name = name_split.join(":");
+    if (l_name.isEmpty()) {
+        l_name = "Unnamed Area";
     }
-    m_display_name = "[" + QString::number(m_index) + "] " + m_name;
+    // The core state lives in the world model; this class delegates to it
+    // until the remaining pieces move over. Until floor layouts load from
+    // config, every area sits on the one default floor at its index.
+    m_area = new akashi::Area(p_index, l_name, 0, p_index, this);
+    m_display_name = "[" + QString::number(p_index) + "] " + l_name;
     QSettings *areas_ini = ConfigManager::areaData();
     areas_ini->beginGroup(p_name);
     m_background = areas_ini->value("background", "gs4").toString();
@@ -85,6 +87,14 @@ AreaData::AreaData(QString p_name, int p_index, MusicManager *p_music_manager = 
     connect(m_message_floodguard_timer, &QTimer::timeout, this, &AreaData::allowMessage);
 }
 
+static akashi::Area::Status toCoreStatus(AreaData::Status f_status);
+static AreaData::Status fromCoreStatus(akashi::Area::Status f_status);
+
+akashi::Area *AreaData::area() const
+{
+    return m_area;
+}
+
 const QMap<QString, AreaData::Status> AreaData::map_statuses = {
     {"idle", AreaData::Status::IDLE},
     {"rp", AreaData::Status::RP},
@@ -95,25 +105,34 @@ const QMap<QString, AreaData::Status> AreaData::map_statuses = {
     {"gaming", AreaData::Status::GAMING},
 };
 
+// The old API and the world model order their lock values differently.
+static AreaData::LockStatus fromCoreLock(akashi::Area::LockState f_state)
+{
+    switch (f_state) {
+    case akashi::Area::LockState::Locked:
+        return AreaData::LockStatus::LOCKED;
+    case akashi::Area::LockState::Spectatable:
+        return AreaData::LockStatus::SPECTATABLE;
+    default:
+        return AreaData::LockStatus::FREE;
+    }
+}
+
 void AreaData::removeClient(int f_charId, int f_userId)
 {
-    --m_playerCount;
-
     if (f_charId != -1) {
-        m_charactersTaken.removeAll(f_charId);
+        m_area->releaseCharacter(f_charId);
     }
-    m_joined_ids.removeAll(f_userId);
+    m_area->removePlayer(f_userId);
 }
 
 void AreaData::addClient(int f_charId, int f_userId)
 {
-    ++m_playerCount;
-
     if (f_charId != -1) {
-        m_charactersTaken.append(f_charId);
+        m_area->takeCharacter(f_charId);
     }
-    m_joined_ids.append(f_userId);
-    Q_EMIT userJoinedArea(m_index, f_userId);
+    m_area->addPlayer(f_userId);
+    Q_EMIT userJoinedArea(m_area->id(), f_userId);
     // Send out ambience as well. Use channel 1 for that
     Q_EMIT sendAreaPacketClient(akashi::Packet("MC", {m_currentAmbience, QString::number(-1), ConfigManager::serverNickname(), QString::number(1), QString::number(1)}), f_userId);
     // The name will never be shown as we are using a spectator ID. Still nice for people who network sniff.
@@ -123,22 +142,22 @@ void AreaData::addClient(int f_charId, int f_userId)
 
 QList<int> AreaData::owners() const
 {
-    return m_owners;
+    return m_area->owners();
 }
 
 void AreaData::addOwner(int f_clientId)
 {
-    m_owners.append(f_clientId);
-    m_invited.append(f_clientId);
+    m_area->addOwner(f_clientId);
+    m_area->invite(f_clientId);
 }
 
 bool AreaData::removeOwner(int f_clientId)
 {
-    m_owners.removeAll(f_clientId);
-    m_invited.removeAll(f_clientId);
+    m_area->removeOwner(f_clientId);
+    m_area->uninvite(f_clientId);
 
-    if (m_owners.isEmpty() && m_locked != AreaData::FREE) {
-        m_locked = AreaData::FREE;
+    if (!m_area->hasOwners() && m_area->lockState() != akashi::Area::LockState::Free) {
+        m_area->setLockState(akashi::Area::LockState::Free);
         return true;
     }
 
@@ -162,7 +181,7 @@ bool AreaData::isProtected() const
 
 AreaData::LockStatus AreaData::lockStatus() const
 {
-    return m_locked;
+    return fromCoreLock(m_area->lockState());
 }
 
 bool AreaData::isJukeboxEnabled() const
@@ -182,42 +201,32 @@ bool AreaData::isPlayEnabled() const
 
 void AreaData::lock()
 {
-    m_locked = LockStatus::LOCKED;
+    m_area->setLockState(akashi::Area::LockState::Locked);
 }
 
 void AreaData::unlock()
 {
-    m_locked = LockStatus::FREE;
+    m_area->setLockState(akashi::Area::LockState::Free);
 }
 
 void AreaData::spectatable()
 {
-    m_locked = LockStatus::SPECTATABLE;
+    m_area->setLockState(akashi::Area::LockState::Spectatable);
 }
 
 bool AreaData::invite(int f_clientId)
 {
-    if (m_invited.contains(f_clientId)) {
-        return false;
-    }
-
-    m_invited.append(f_clientId);
-    return true;
+    return m_area->invite(f_clientId);
 }
 
 bool AreaData::uninvite(int f_clientId)
 {
-    if (!m_invited.contains(f_clientId)) {
-        return false;
-    }
-
-    m_invited.removeAll(f_clientId);
-    return true;
+    return m_area->uninvite(f_clientId);
 }
 
 int AreaData::playerCount() const
 {
-    return m_playerCount;
+    return m_area->playerCount();
 }
 
 QList<QTimer *> AreaData::timers() const
@@ -227,12 +236,12 @@ QList<QTimer *> AreaData::timers() const
 
 QString AreaData::name() const
 {
-    return m_name;
+    return m_area->name();
 }
 
 int AreaData::index() const
 {
-    return m_index;
+    return m_area->id();
 }
 
 QString AreaData::displayName() const
@@ -242,25 +251,25 @@ QString AreaData::displayName() const
 
 QList<int> AreaData::charactersTaken() const
 {
-    return m_charactersTaken;
+    return m_area->charactersTaken();
 }
 
 bool AreaData::changeCharacter(int f_from, int f_to)
 {
-    if (m_charactersTaken.contains(f_to)) {
+    if (m_area->charactersTaken().contains(f_to)) {
         return false;
     }
 
     if (f_to != -1) {
         if (f_from != -1) {
-            m_charactersTaken.removeAll(f_from);
+            m_area->releaseCharacter(f_from);
         }
-        m_charactersTaken.append(f_to);
+        m_area->takeCharacter(f_to);
         return true;
     }
 
-    if (f_to == -1 && f_from != -1) {
-        m_charactersTaken.removeAll(f_from);
+    if (f_from != -1) {
+        m_area->releaseCharacter(f_from);
     }
 
     return false;
@@ -318,13 +327,50 @@ void AreaData::setEvidenceOwnerToAll(int f_eviId)
 
 AreaData::Status AreaData::status() const
 {
-    return m_status;
+    return fromCoreStatus(m_area->status());
+}
+
+// The old API's status values and the world model's translate one-to-one.
+static akashi::Area::Status toCoreStatus(AreaData::Status f_status)
+{
+    switch (f_status) {
+    case AreaData::RP:
+        return akashi::Area::Status::Rp;
+    case AreaData::CASING:
+        return akashi::Area::Status::Casing;
+    case AreaData::LOOKING_FOR_PLAYERS:
+        return akashi::Area::Status::LookingForPlayers;
+    case AreaData::RECESS:
+        return akashi::Area::Status::Recess;
+    case AreaData::GAMING:
+        return akashi::Area::Status::Gaming;
+    default:
+        return akashi::Area::Status::Idle;
+    }
+}
+
+static AreaData::Status fromCoreStatus(akashi::Area::Status f_status)
+{
+    switch (f_status) {
+    case akashi::Area::Status::Rp:
+        return AreaData::RP;
+    case akashi::Area::Status::Casing:
+        return AreaData::CASING;
+    case akashi::Area::Status::LookingForPlayers:
+        return AreaData::LOOKING_FOR_PLAYERS;
+    case akashi::Area::Status::Recess:
+        return AreaData::RECESS;
+    case akashi::Area::Status::Gaming:
+        return AreaData::GAMING;
+    default:
+        return AreaData::IDLE;
+    }
 }
 
 bool AreaData::changeStatus(const QString &f_newStatus_r)
 {
     if (AreaData::map_statuses.contains(f_newStatus_r)) {
-        m_status = AreaData::map_statuses[f_newStatus_r];
+        m_area->setStatus(toCoreStatus(AreaData::map_statuses[f_newStatus_r]));
         return true;
     }
 
@@ -333,7 +379,7 @@ bool AreaData::changeStatus(const QString &f_newStatus_r)
 
 QList<int> AreaData::invited() const
 {
-    return m_invited;
+    return m_area->invited();
 }
 
 bool AreaData::isMusicAllowed() const
@@ -720,7 +766,7 @@ QString AreaData::addJukeboxSong(QString f_song)
 
 QVector<int> AreaData::joinedIDs() const
 {
-    return m_joined_ids;
+    return m_area->players();
 }
 
 void AreaData::switchJukeboxSong()
@@ -729,7 +775,7 @@ void AreaData::switchJukeboxSong()
     if (m_jukebox_queue.size() == 1) {
         l_song_name = m_jukebox_queue[0];
         QPair<QString, float> l_song = m_music_manager->songInformation(l_song_name, index());
-        Q_EMIT sendAreaPacket(akashi::Packet("MC", {l_song.first, "-1"}), m_index);
+        Q_EMIT sendAreaPacket(akashi::Packet("MC", {l_song.first, "-1"}), m_area->id());
         m_jukebox_timer->start(l_song.second * 1000);
     }
     else {
@@ -737,7 +783,7 @@ void AreaData::switchJukeboxSong()
         l_song_name = m_jukebox_queue[l_random_index];
 
         QPair<QString, float> l_song = m_music_manager->songInformation(l_song_name, index());
-        Q_EMIT sendAreaPacket(akashi::Packet("MC", {l_song.first, "-1"}), m_index);
+        Q_EMIT sendAreaPacket(akashi::Packet("MC", {l_song.first, "-1"}), m_area->id());
         m_jukebox_timer->start(l_song.second * 1000);
 
         m_jukebox_queue.remove(l_random_index);

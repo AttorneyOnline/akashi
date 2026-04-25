@@ -64,10 +64,10 @@ class AKASHI_CORE_EXPORT Area : public QObject
     void addPlayer(int f_player_id);
     void removePlayer(int f_player_id);
 
-    // The characters in use here. Whether taking one is allowed is decided
-    // by the floor's character policy, checked at the world level - this
-    // only tracks this area's own use.
-    QList<int> charactersTaken() const { return m_characters_taken.values(); }
+    // The characters in use here, in the order they were taken. Whether
+    // taking one is allowed is decided by the floor's character policy,
+    // checked at the world level - this only tracks this area's own use.
+    QList<int> charactersTaken() const { return m_characters_taken; }
     bool takeCharacter(int f_char_id);
     void releaseCharacter(int f_char_id);
 
@@ -101,7 +101,7 @@ class AKASHI_CORE_EXPORT Area : public QObject
     int m_x;
     QSet<int> m_visible_areas;
     QVector<int> m_players;
-    QSet<int> m_characters_taken;
+    QList<int> m_characters_taken;
     QList<int> m_owners;
     QList<int> m_invited;
     LockState m_lock_state = LockState::Free;
