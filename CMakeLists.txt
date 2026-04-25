@@ -84,6 +84,11 @@ set(AKASHI_SOURCES
   src2/core/settings.cpp
   src2/core/server_context.cpp
   src2/core/server_context.h
+  src2/world/area.cpp
+  src2/world/area.h
+  src2/world/area_rules.cpp
+  src2/world/area_rules.h
+  src2/world/floor.h
   src2/include/akashi/config_entry.h
   src2/include/akashi/config_store.h
   src2/include/akashi/database_service.h

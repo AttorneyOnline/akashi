@@ -1,0 +1,36 @@
+#ifndef WORLD_FLOOR_H
+#define WORLD_FLOOR_H
+
+#include <QString>
+#include <QVector>
+
+namespace akashi {
+
+// One floor (hub) of the map: a named group of areas with floor-wide rules
+// of play. Floors are the y axis of the map grid; the areas on a floor sit
+// at x positions in the order of area_ids. A server without a map layout
+// has exactly one floor holding every area - today's flat world.
+class Floor
+{
+  public:
+    // Who may take a character within this floor. UniquePerArea is today's
+    // behavior: taken characters are tracked per area. UniqueOnFloor makes
+    // a character claimable once across ALL the floor's areas; Shared lets
+    // any number of people play the same character. The floor-wide checks
+    // need every area's state, so they run at the world level.
+    enum class CharacterPolicy
+    {
+        UniquePerArea,
+        UniqueOnFloor,
+        Shared,
+    };
+
+    int id = 0;
+    QString name;
+    CharacterPolicy character_policy = CharacterPolicy::UniquePerArea;
+    QVector<int> area_ids; // the floor's areas, in x order
+};
+
+} // namespace akashi
+
+#endif // WORLD_FLOOR_H
