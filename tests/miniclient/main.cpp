@@ -227,6 +227,37 @@ class MiniClient : public QObject
             break;
         case Step::CaseAlert:
             if (l_header == "CASEA" && l_content.value(0).contains("=== Case Announcement ===")) {
+                step(Step::AreaOwnership, "ARUP CM update");
+                send(AOPacket("CT", {"miniclient", "/cm"}));
+            }
+            break;
+        case Step::AreaOwnership:
+            // Becoming CM must show up in the CM area update as "[id] char".
+            if (l_header == "ARUP" && l_content.value(0) == "2" && l_content.join(",").contains("[" + QString::number(m_client_id) + "]")) {
+                step(Step::AreaStatus, "ARUP status update");
+                send(AOPacket("CT", {"miniclient", "/status casing"}));
+            }
+            break;
+        case Step::AreaStatus:
+            if (l_header == "ARUP" && l_content.value(0) == "1" && l_content.contains("CASING")) {
+                step(Step::AreaLock, "ARUP lock update");
+                send(AOPacket("CT", {"miniclient", "/area_lock"}));
+            }
+            break;
+        case Step::AreaLock:
+            if (l_header == "ARUP" && l_content.value(0) == "3" && l_content.contains("LOCKED")) {
+                step(Step::AreaUnlock, "ARUP unlock update");
+                send(AOPacket("CT", {"miniclient", "/area_unlock"}));
+            }
+            break;
+        case Step::AreaUnlock:
+            if (l_header == "ARUP" && l_content.value(0) == "3" && !l_content.join(",").contains("LOCKED")) {
+                step(Step::AreaUncm, "ARUP CM cleared");
+                send(AOPacket("CT", {"miniclient", "/uncm"}));
+            }
+            break;
+        case Step::AreaUncm:
+            if (l_header == "ARUP" && l_content.value(0) == "2" && !l_content.join(",").contains("[" + QString::number(m_client_id) + "]")) {
                 step(Step::SelfKick, "KK");
                 send(AOPacket("MA", {QString::number(m_client_id), "0", "kicked by the playtest"}));
             }
@@ -268,6 +299,11 @@ class MiniClient : public QObject
         JudgePenalty,
         Modcall,
         CaseAlert,
+        AreaOwnership,
+        AreaStatus,
+        AreaLock,
+        AreaUnlock,
+        AreaUncm,
         SelfKick,
     };
 
