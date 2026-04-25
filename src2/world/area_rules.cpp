@@ -14,6 +14,25 @@ void AreaRuleRegistry::registerFloorRule(const QString &f_id, AreaEvent f_event,
     m_floor_rules.append({f_id, f_event, f_floor_id, f_function, f_owner_id});
 }
 
+// A plugin's rule object rides inside a plain function; the capture keeps
+// it alive until the rule is unregistered.
+static AreaRuleFunction wrapRule(std::shared_ptr<AreaRule> f_rule)
+{
+    return [f_rule](const AreaEventDetails &f_details) {
+        return f_rule->onEvent(f_details);
+    };
+}
+
+void AreaRuleRegistry::registerAreaRule(const QString &f_id, AreaEvent f_event, int f_area_id, std::shared_ptr<AreaRule> f_rule, const QString &f_owner_id)
+{
+    registerAreaRule(f_id, f_event, f_area_id, wrapRule(f_rule), f_owner_id);
+}
+
+void AreaRuleRegistry::registerFloorRule(const QString &f_id, AreaEvent f_event, int f_floor_id, std::shared_ptr<AreaRule> f_rule, const QString &f_owner_id)
+{
+    registerFloorRule(f_id, f_event, f_floor_id, wrapRule(f_rule), f_owner_id);
+}
+
 void AreaRuleRegistry::unregisterAll(const QString &f_owner_id)
 {
     for (QVector<Rule> *l_rules : {&m_floor_rules, &m_area_rules}) {

@@ -1,41 +1,16 @@
 #ifndef WORLD_AREA_RULES_H
 #define WORLD_AREA_RULES_H
 
+#include "akashi/area_rule.h"
 #include "akashi_core_export.h"
 
 #include <QString>
 #include <QVector>
 
 #include <functional>
+#include <memory>
 
 namespace akashi {
-
-// The moments a rule can watch.
-enum class AreaEvent
-{
-    PlayerJoined,
-    PlayerLeft,
-    MessageSent,
-    EvidencePresented,
-};
-
-// What a rule gets to look at when its event happens.
-struct AreaEventDetails
-{
-    int player_id = -1;
-    int area_id = -1;
-    int floor_id = -1;
-    QString text; // the message or evidence name, when the event carries one
-};
-
-// What a rule decides about the event itself: let it happen, or block it
-// with a reason the player gets to see. A rule's real work may be the
-// actions it performs while running - the verdict only gates the event.
-struct RuleVerdict
-{
-    bool allowed = true;
-    QString reason;
-};
 
 using AreaRuleFunction = std::function<RuleVerdict(const AreaEventDetails &)>;
 
@@ -47,13 +22,21 @@ using AreaRuleFunction = std::function<RuleVerdict(const AreaEventDetails &)>;
 // floors, and floors own their areas - a rule added to a floor applies in
 // every area under it, while per-area rules are the highest granularity:
 // an area rule with the same name overwrites the floor's version there.
-// Core, plugins and config files register rules alike (owner-tracked, so a
-// plugin unload removes its rules).
+//
+// Core and config files attach plain functions; plugins ship AreaRule
+// objects (the stable contract in akashi/area_rule.h) and register them
+// under their owner id, so a plugin unload removes and releases its rules.
 class AKASHI_CORE_EXPORT AreaRuleRegistry
 {
   public:
     void registerAreaRule(const QString &f_id, AreaEvent f_event, int f_area_id, AreaRuleFunction f_function, const QString &f_owner_id);
     void registerFloorRule(const QString &f_id, AreaEvent f_event, int f_floor_id, AreaRuleFunction f_function, const QString &f_owner_id);
+
+    // The plugin path: the registry shares ownership of the rule object
+    // until it is unregistered.
+    void registerAreaRule(const QString &f_id, AreaEvent f_event, int f_area_id, std::shared_ptr<AreaRule> f_rule, const QString &f_owner_id);
+    void registerFloorRule(const QString &f_id, AreaEvent f_event, int f_floor_id, std::shared_ptr<AreaRule> f_rule, const QString &f_owner_id);
+
     void unregisterAll(const QString &f_owner_id);
 
     // Runs every rule attached to this event - the area's own first, then

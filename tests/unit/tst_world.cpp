@@ -23,6 +23,7 @@ class tst_World : public QObject
     void firstBlockingRuleWins();
     void areaRulesOverwriteFloorRulesOfTheSameName();
     void rulesActOnTheWorldAndAllOfThemRun();
+    void pluginRuleObjectsRegisterAndReleaseOnUnload();
     void unregisteringAnOwnerRemovesItsRules();
 };
 
@@ -190,6 +191,39 @@ void tst_World::rulesActOnTheWorldAndAllOfThemRun()
     QCOMPARE(l_verdict.reason, QString("Silence in the hallway."));
     QCOMPARE(l_vault.lockState(), akashi::Area::LockState::Free);
     QVERIFY(l_second_ran);
+}
+
+// A rule the way a plugin would ship it: a subclass of the SDK contract.
+class CursedDoorRule : public akashi::AreaRule
+{
+  public:
+    akashi::RuleVerdict onEvent(const akashi::AreaEventDetails &f_details) override
+    {
+        if (f_details.text == "Cursed Key") {
+            return {};
+        }
+        return {false, "The door only opens for the Cursed Key."};
+    }
+};
+
+void tst_World::pluginRuleObjectsRegisterAndReleaseOnUnload()
+{
+    akashi::AreaRuleRegistry l_rules;
+    std::shared_ptr<akashi::AreaRule> l_rule = std::make_shared<CursedDoorRule>();
+    std::weak_ptr<akashi::AreaRule> l_alive = l_rule;
+
+    l_rules.registerAreaRule("cursed-door", akashi::AreaEvent::EvidencePresented, 0, l_rule, "plugin-doors");
+    l_rule.reset();
+
+    // The registry keeps the plugin's object alive and runs it like any rule.
+    QVERIFY(!l_alive.expired());
+    QVERIFY(!l_rules.check(akashi::AreaEvent::EvidencePresented, {4, 0, 0, "Rusty Crowbar"}).allowed);
+    QVERIFY(l_rules.check(akashi::AreaEvent::EvidencePresented, {4, 0, 0, "Cursed Key"}).allowed);
+
+    // Unloading the plugin unregisters and releases the object.
+    l_rules.unregisterAll("plugin-doors");
+    QCOMPARE(l_rules.ruleCount(), 0);
+    QVERIFY(l_alive.expired());
 }
 
 void tst_World::unregisteringAnOwnerRemovesItsRules()
