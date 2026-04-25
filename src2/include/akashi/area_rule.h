@@ -27,6 +27,18 @@ enum class AreaEvent
     EvidencePresented,
 };
 
+// When a rule runs relative to the change its event describes. A Before
+// rule runs while the change is still only a request: a block means it
+// never happens and the client is never told, so nothing flickers between
+// applied and reverted. An After rule runs once the change is real - its
+// work is its actions, and its verdict is ignored. When a Before rule
+// blocks, the After rules never run: there is no change to react to.
+enum class RulePhase
+{
+    Before,
+    After,
+};
+
 // What a rule gets to look at when its event happens.
 struct AreaEventDetails
 {

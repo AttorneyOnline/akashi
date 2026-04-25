@@ -4,14 +4,14 @@
 
 namespace akashi {
 
-void AreaRuleRegistry::registerAreaRule(const QString &f_id, AreaEvent f_event, int f_area_id, AreaRuleFunction f_function, const QString &f_owner_id)
+void AreaRuleRegistry::registerAreaRule(const QString &f_id, AreaEvent f_event, RulePhase f_phase, int f_area_id, AreaRuleFunction f_function, const QString &f_owner_id)
 {
-    m_area_rules.append({f_id, f_event, f_area_id, f_function, f_owner_id});
+    m_area_rules.append({f_id, f_event, f_phase, f_area_id, f_function, f_owner_id});
 }
 
-void AreaRuleRegistry::registerFloorRule(const QString &f_id, AreaEvent f_event, int f_floor_id, AreaRuleFunction f_function, const QString &f_owner_id)
+void AreaRuleRegistry::registerFloorRule(const QString &f_id, AreaEvent f_event, RulePhase f_phase, int f_floor_id, AreaRuleFunction f_function, const QString &f_owner_id)
 {
-    m_floor_rules.append({f_id, f_event, f_floor_id, f_function, f_owner_id});
+    m_floor_rules.append({f_id, f_event, f_phase, f_floor_id, f_function, f_owner_id});
 }
 
 // A plugin's rule object rides inside a plain function; the capture keeps
@@ -23,14 +23,14 @@ static AreaRuleFunction wrapRule(std::shared_ptr<AreaRule> f_rule)
     };
 }
 
-void AreaRuleRegistry::registerAreaRule(const QString &f_id, AreaEvent f_event, int f_area_id, std::shared_ptr<AreaRule> f_rule, const QString &f_owner_id)
+void AreaRuleRegistry::registerAreaRule(const QString &f_id, AreaEvent f_event, RulePhase f_phase, int f_area_id, std::shared_ptr<AreaRule> f_rule, const QString &f_owner_id)
 {
-    registerAreaRule(f_id, f_event, f_area_id, wrapRule(f_rule), f_owner_id);
+    registerAreaRule(f_id, f_event, f_phase, f_area_id, wrapRule(f_rule), f_owner_id);
 }
 
-void AreaRuleRegistry::registerFloorRule(const QString &f_id, AreaEvent f_event, int f_floor_id, std::shared_ptr<AreaRule> f_rule, const QString &f_owner_id)
+void AreaRuleRegistry::registerFloorRule(const QString &f_id, AreaEvent f_event, RulePhase f_phase, int f_floor_id, std::shared_ptr<AreaRule> f_rule, const QString &f_owner_id)
 {
-    registerFloorRule(f_id, f_event, f_floor_id, wrapRule(f_rule), f_owner_id);
+    registerFloorRule(f_id, f_event, f_phase, f_floor_id, wrapRule(f_rule), f_owner_id);
 }
 
 void AreaRuleRegistry::unregisterAll(const QString &f_owner_id)
@@ -44,7 +44,7 @@ void AreaRuleRegistry::unregisterAll(const QString &f_owner_id)
     }
 }
 
-RuleVerdict AreaRuleRegistry::check(AreaEvent f_event, const AreaEventDetails &f_details) const
+RuleVerdict AreaRuleRegistry::check(AreaEvent f_event, RulePhase f_phase, const AreaEventDetails &f_details) const
 {
     RuleVerdict l_result;
 
@@ -54,7 +54,7 @@ RuleVerdict AreaRuleRegistry::check(AreaEvent f_event, const AreaEventDetails &f
     // block is what the event reports.
     QSet<QString> l_overwritten;
     for (const Rule &l_rule : m_area_rules) {
-        if (l_rule.event != f_event || l_rule.attached_to != f_details.area_id) {
+        if (l_rule.event != f_event || l_rule.phase != f_phase || l_rule.attached_to != f_details.area_id) {
             continue;
         }
         l_overwritten.insert(l_rule.id);
@@ -66,7 +66,7 @@ RuleVerdict AreaRuleRegistry::check(AreaEvent f_event, const AreaEventDetails &f
 
     // The floor owns its areas, so its remaining rules apply in all of them.
     for (const Rule &l_rule : m_floor_rules) {
-        if (l_rule.event != f_event || l_rule.attached_to != f_details.floor_id || l_overwritten.contains(l_rule.id)) {
+        if (l_rule.event != f_event || l_rule.phase != f_phase || l_rule.attached_to != f_details.floor_id || l_overwritten.contains(l_rule.id)) {
             continue;
         }
         const RuleVerdict l_verdict = l_rule.function(f_details);

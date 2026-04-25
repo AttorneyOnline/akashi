@@ -29,20 +29,21 @@ using AreaRuleFunction = std::function<RuleVerdict(const AreaEventDetails &)>;
 class AKASHI_CORE_EXPORT AreaRuleRegistry
 {
   public:
-    void registerAreaRule(const QString &f_id, AreaEvent f_event, int f_area_id, AreaRuleFunction f_function, const QString &f_owner_id);
-    void registerFloorRule(const QString &f_id, AreaEvent f_event, int f_floor_id, AreaRuleFunction f_function, const QString &f_owner_id);
+    void registerAreaRule(const QString &f_id, AreaEvent f_event, RulePhase f_phase, int f_area_id, AreaRuleFunction f_function, const QString &f_owner_id);
+    void registerFloorRule(const QString &f_id, AreaEvent f_event, RulePhase f_phase, int f_floor_id, AreaRuleFunction f_function, const QString &f_owner_id);
 
     // The plugin path: the registry shares ownership of the rule object
     // until it is unregistered.
-    void registerAreaRule(const QString &f_id, AreaEvent f_event, int f_area_id, std::shared_ptr<AreaRule> f_rule, const QString &f_owner_id);
-    void registerFloorRule(const QString &f_id, AreaEvent f_event, int f_floor_id, std::shared_ptr<AreaRule> f_rule, const QString &f_owner_id);
+    void registerAreaRule(const QString &f_id, AreaEvent f_event, RulePhase f_phase, int f_area_id, std::shared_ptr<AreaRule> f_rule, const QString &f_owner_id);
+    void registerFloorRule(const QString &f_id, AreaEvent f_event, RulePhase f_phase, int f_floor_id, std::shared_ptr<AreaRule> f_rule, const QString &f_owner_id);
 
     void unregisterAll(const QString &f_owner_id);
 
-    // Runs every rule attached to this event - the area's own first, then
-    // the floor rules the area has not overwritten. All of them execute;
-    // the first block decides the event's fate.
-    RuleVerdict check(AreaEvent f_event, const AreaEventDetails &f_details) const;
+    // Runs every rule of one phase attached to this event - the area's own
+    // first, then the floor rules the area has not overwritten. All of them
+    // execute; the first block decides. The world checks Before ahead of
+    // applying a change and only runs After once the change is real.
+    RuleVerdict check(AreaEvent f_event, RulePhase f_phase, const AreaEventDetails &f_details) const;
 
     int ruleCount() const { return m_floor_rules.size() + m_area_rules.size(); }
 
@@ -51,6 +52,7 @@ class AKASHI_CORE_EXPORT AreaRuleRegistry
     {
         QString id;
         AreaEvent event;
+        RulePhase phase;
         int attached_to; // the area or floor the rule watches
         AreaRuleFunction function;
         QString owner_id;
