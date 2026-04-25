@@ -51,7 +51,7 @@ QStringList AOClient::buildAreaList(int area_idx)
     default:
         break;
     }
-    entries.append("[" + QString::number(area->playerCount()) + " users][" + QVariant::fromValue(area->status()).toString().replace("_", "-") + "]");
+    entries.append("[" + QString::number(area->playerCount()) + " users][" + area->statusLine() + "]");
     const QVector<AOClient *> l_clients = m_server->clients();
     for (AOClient *l_client : l_clients) {
         if (l_client->areaId() == area_idx && l_client->isJoined()) {

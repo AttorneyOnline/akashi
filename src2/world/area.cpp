@@ -81,10 +81,11 @@ void Area::setLockState(LockState f_state)
     }
 }
 
-void Area::setStatus(Status f_status)
+void Area::setStatus(const QString &f_status)
 {
-    if (f_status != m_status) {
-        m_status = f_status;
+    const QString l_status = f_status.left(30);
+    if (l_status != m_status) {
+        m_status = l_status;
         Q_EMIT statusChanged(m_status);
     }
 }

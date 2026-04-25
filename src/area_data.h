@@ -507,6 +507,13 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
     Status status() const;
 
     /**
+     * @brief The status line the area list shows. The well-known statuses
+     * spell themselves as before (IDLE, CASING, ...); a custom line set on
+     * the world model passes through as-is, capped at 30 characters.
+     */
+    QString statusLine() const;
+
+    /**
      * @brief Changes the area of the status to a new one.
      *
      * @param f_newStatus_r A string that a client would enter as an argument for the `/status` command.

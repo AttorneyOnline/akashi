@@ -24,17 +24,6 @@ class AKASHI_CORE_EXPORT Area : public QObject
     Q_OBJECT
 
   public:
-    enum class Status
-    {
-        Idle,
-        Rp,
-        Casing,
-        LookingForPlayers,
-        Recess,
-        Gaming,
-    };
-    Q_ENUM(Status)
-
     enum class LockState
     {
         Free,
@@ -83,14 +72,17 @@ class AKASHI_CORE_EXPORT Area : public QObject
     LockState lockState() const { return m_lock_state; }
     void setLockState(LockState f_state);
 
-    Status status() const { return m_status; }
-    void setStatus(Status f_status);
+    // The status line the area list shows. The protocol never limited it to
+    // fixed values - the well-known ones (IDLE, CASING, ...) are convention -
+    // so any text works; anything past 30 characters is cut off.
+    QString status() const { return m_status; }
+    void setStatus(const QString &f_status);
 
   Q_SIGNALS:
     // One signal per area-update type the protocol knows; the broadcaster
     // subscribes to exactly these four.
     void playerCountChanged(int f_count);
-    void statusChanged(Status f_status);
+    void statusChanged(const QString &f_status);
     void ownersChanged();
     void lockStateChanged(LockState f_state);
 
@@ -105,7 +97,7 @@ class AKASHI_CORE_EXPORT Area : public QObject
     QList<int> m_owners;
     QList<int> m_invited;
     LockState m_lock_state = LockState::Free;
-    Status m_status = Status::Idle;
+    QString m_status = QStringLiteral("IDLE");
 };
 
 } // namespace akashi

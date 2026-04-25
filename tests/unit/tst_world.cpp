@@ -35,8 +35,8 @@ void tst_World::areaReportsRealChangesOnly()
     QSignalSpy l_lock(&l_area, &akashi::Area::lockStateChanged);
     QSignalSpy l_count(&l_area, &akashi::Area::playerCountChanged);
 
-    l_area.setStatus(akashi::Area::Status::Casing);
-    l_area.setStatus(akashi::Area::Status::Casing); // no change, no signal
+    l_area.setStatus("CASING");
+    l_area.setStatus("CASING"); // no change, no signal
     l_area.setLockState(akashi::Area::LockState::Spectatable);
     l_area.addPlayer(4);
     l_area.addPlayer(4); // already present, no signal
@@ -45,6 +45,13 @@ void tst_World::areaReportsRealChangesOnly()
     QCOMPARE(l_lock.size(), 1);
     QCOMPARE(l_count.size(), 1);
     QCOMPARE(l_count[0][0].toInt(), 1);
+
+    // The protocol never limited the status to fixed values: any line
+    // works, cut off at 30 characters.
+    const QString l_custom = "Chapter 3 - The Cursed Courtroom Returns";
+    l_area.setStatus(l_custom);
+    QCOMPARE(l_area.status(), l_custom.left(30));
+    QCOMPARE(l_area.status().size(), 30);
 }
 
 void tst_World::areaTracksPlayersAndCharacters()

@@ -24,6 +24,7 @@
 #include "music_manager.h"
 #include "proto/packet.h"
 
+#include <QMetaEnum>
 #include <QRegularExpression>
 
 #include <algorithm>
@@ -87,8 +88,8 @@ AreaData::AreaData(QString p_name, int p_index, MusicManager *p_music_manager = 
     connect(m_message_floodguard_timer, &QTimer::timeout, this, &AreaData::allowMessage);
 }
 
-static akashi::Area::Status toCoreStatus(AreaData::Status f_status);
-static AreaData::Status fromCoreStatus(akashi::Area::Status f_status);
+static QString toWireStatus(AreaData::Status f_status);
+static AreaData::Status fromWireStatus(const QString &f_status);
 
 akashi::Area *AreaData::area() const
 {
@@ -327,50 +328,34 @@ void AreaData::setEvidenceOwnerToAll(int f_eviId)
 
 AreaData::Status AreaData::status() const
 {
-    return fromCoreStatus(m_area->status());
+    return fromWireStatus(m_area->status());
 }
 
-// The old API's status values and the world model's translate one-to-one.
-static akashi::Area::Status toCoreStatus(AreaData::Status f_status)
+QString AreaData::statusLine() const
 {
-    switch (f_status) {
-    case AreaData::RP:
-        return akashi::Area::Status::Rp;
-    case AreaData::CASING:
-        return akashi::Area::Status::Casing;
-    case AreaData::LOOKING_FOR_PLAYERS:
-        return akashi::Area::Status::LookingForPlayers;
-    case AreaData::RECESS:
-        return akashi::Area::Status::Recess;
-    case AreaData::GAMING:
-        return akashi::Area::Status::Gaming;
-    default:
-        return akashi::Area::Status::Idle;
-    }
+    return m_area->status();
 }
 
-static AreaData::Status fromCoreStatus(akashi::Area::Status f_status)
+// The world model stores the status as the line the area list shows; the
+// well-known statuses of the old enum map onto their exact old spellings.
+static QString toWireStatus(AreaData::Status f_status)
 {
-    switch (f_status) {
-    case akashi::Area::Status::Rp:
-        return AreaData::RP;
-    case akashi::Area::Status::Casing:
-        return AreaData::CASING;
-    case akashi::Area::Status::LookingForPlayers:
-        return AreaData::LOOKING_FOR_PLAYERS;
-    case akashi::Area::Status::Recess:
-        return AreaData::RECESS;
-    case akashi::Area::Status::Gaming:
-        return AreaData::GAMING;
-    default:
-        return AreaData::IDLE;
-    }
+    return QVariant::fromValue(f_status).toString().replace("_", "-");
+}
+
+static AreaData::Status fromWireStatus(const QString &f_status)
+{
+    const QMetaEnum l_statuses = QMetaEnum::fromType<AreaData::Status>();
+    bool l_known = false;
+    const int l_value = l_statuses.keyToValue(QString(f_status).replace("-", "_").toUtf8(), &l_known);
+    // A custom status line has no old enum value; it reads as IDLE there.
+    return l_known ? static_cast<AreaData::Status>(l_value) : AreaData::IDLE;
 }
 
 bool AreaData::changeStatus(const QString &f_newStatus_r)
 {
     if (AreaData::map_statuses.contains(f_newStatus_r)) {
-        m_area->setStatus(toCoreStatus(AreaData::map_statuses[f_newStatus_r]));
+        m_area->setStatus(toWireStatus(AreaData::map_statuses[f_newStatus_r]));
         return true;
     }
 
