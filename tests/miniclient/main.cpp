@@ -369,12 +369,331 @@ class MiniClient : public QObject
     bool m_done = false;
 };
 
+// One scripted participant in a multi-client scene. It joins the way the
+// desktop client does (the same choreography as the single-client run),
+// then the scene drives it by sending packets and reads what it saw.
+class DanceClient : public QObject
+{
+    Q_OBJECT
+
+  public:
+    DanceClient(const QString &f_name, const QString &f_character, const QString &f_address, int f_port, QObject *parent = nullptr) :
+        QObject(parent),
+        m_name(f_name),
+        m_character(f_character)
+    {
+        m_connection = new WebSocketConnection(this);
+        m_pacer = new QTimer(this);
+        connect(m_pacer, &QTimer::timeout, this, [this] {
+            if (m_outbox.isEmpty()) {
+                m_pacer->stop();
+                return;
+            }
+            AOPacket l_packet = m_outbox.takeFirst();
+            say("C: " + l_packet.toString().left(120));
+            m_connection->sendPacket(l_packet);
+        });
+        connect(m_connection, &WebSocketConnection::receivedPacket, this, &DanceClient::handlePacket);
+        connect(m_connection, &WebSocketConnection::errorOccurred, this, [this](QString error) { Q_EMIT failed(m_name + " connection error: " + error); });
+        m_connection->connectToServer(f_address, f_port);
+    }
+
+    void send(AOPacket f_packet)
+    {
+        m_outbox.append(f_packet);
+        if (!m_pacer->isActive()) {
+            m_pacer->start(150);
+        }
+    }
+
+    void sendOoc(const QString &f_message) { send(AOPacket("CT", {m_name, f_message})); }
+
+    int charId() const { return m_char_id; }
+    QString character() const { return m_character; }
+    QStringList evidenceNames() const { return m_evidence_names; }
+
+  Q_SIGNALS:
+    void ready();
+    void oocReceived(const QString &f_message);
+    void icReceived(const QStringList &f_fields);
+    void evidenceChanged(const QStringList &f_names);
+    void loggedIn();
+    void failed(const QString &f_reason);
+
+  private Q_SLOTS:
+    void handlePacket(AOPacket f_packet)
+    {
+        const QString l_header = f_packet.header();
+        const QStringList l_content = f_packet.content();
+
+        // The join choreography, mirroring the single-client run.
+        if (l_header == "decryptor") {
+            send(AOPacket("HI", {m_name + "-hdid"}));
+        }
+        else if (l_header == "ID" && m_client_id < 0) {
+            m_client_id = l_content.value(0).toInt();
+            send(AOPacket("ID", {"AO2", "2.11.0"}));
+            send(AOPacket("askchaa"));
+        }
+        else if (l_header == "SI") {
+            send(AOPacket("RC"));
+        }
+        else if (l_header == "SC") {
+            m_characters = l_content;
+            send(AOPacket("RM"));
+        }
+        else if (l_header == "SM") {
+            send(AOPacket("RD"));
+        }
+        else if (l_header == "DONE" && m_char_id < 0) {
+            // An empty character wish means "anyone but Phoenix", so the
+            // scene works with whatever roster the server runs.
+            if (m_character.isEmpty()) {
+                for (const QString &l_candidate : m_characters) {
+                    if (l_candidate != "Phoenix" && !l_candidate.isEmpty()) {
+                        m_character = l_candidate;
+                        break;
+                    }
+                }
+            }
+            m_char_id = m_characters.indexOf(m_character);
+            if (m_char_id < 0) {
+                Q_EMIT failed(m_name + ": the server has no " + m_character);
+                return;
+            }
+            send(AOPacket("CC", {QString::number(m_client_id), QString::number(m_char_id), m_name + "-hdid"}));
+        }
+        else if (l_header == "PV") {
+            Q_EMIT ready();
+        }
+        else if (l_header == "LE") {
+            // The list arrives whole, one name&description&image entry per
+            // field, exactly how the desktop client reads it.
+            m_evidence_names.clear();
+            for (const QString &l_field : l_content) {
+                m_evidence_names.append(l_field.split("&").value(0));
+            }
+            say("sees evidence: [" + m_evidence_names.join(", ") + "]");
+            Q_EMIT evidenceChanged(m_evidence_names);
+        }
+        else if (l_header == "CT") {
+            Q_EMIT oocReceived(l_content.value(1));
+        }
+        else if (l_header == "MS") {
+            Q_EMIT icReceived(l_content);
+        }
+        else if (l_header == "AUTH" && l_content.value(0) == "1") {
+            Q_EMIT loggedIn();
+        }
+    }
+
+  private:
+    void say(const QString &f_text)
+    {
+        std::cout << m_name.toStdString() << " " << f_text.toStdString() << std::endl;
+    }
+
+    QString m_name;
+    QString m_character;
+    WebSocketConnection *m_connection;
+    QTimer *m_pacer;
+    QList<AOPacket> m_outbox;
+    QStringList m_characters;
+    QStringList m_evidence_names;
+    int m_client_id = -1;
+    int m_char_id = -1;
+};
+
+// The hidden-evidence numbering scene, played by two clients against a live
+// server. In hidden mode each side numbers a different subset of the court
+// record, and the desktop client presents "position + 1" in its own list
+// while every receiver looks the number up in THEIRS - so the server must
+// renumber per viewer, the tsu3 legacy this proves end to end:
+//   1. the moderator turns on hidden mode and files a prosecution secret,
+//      a defense secret and a public item, in that order;
+//   2. the defense must see two items, never the prosecution's secret;
+//   3. the defense presents ITS number 1 (the defense secret) - the
+//      defense's own echo must carry 1, the moderator's copy number 2,
+//      because the moderator also sees the prosecution secret above it;
+//   4. the moderator deletes ITS number 1 (the prosecution secret) - both
+//      must end up seeing exactly the defense secret and the public item.
+class EvidenceDance : public QObject
+{
+    Q_OBJECT
+
+  public:
+    EvidenceDance(const QString &f_address, int f_port, const QString &f_modpass, QObject *parent = nullptr) :
+        QObject(parent),
+        m_address(f_address),
+        m_port(f_port),
+        m_modpass(f_modpass)
+    {
+        m_watchdog = new QTimer(this);
+        m_watchdog->setSingleShot(true);
+        connect(m_watchdog, &QTimer::timeout, this, [this] { fail("timed out waiting for: " + m_waiting_for); });
+
+        phase(Phase::CmLogin, "the moderator to join and log in");
+        m_cm = new DanceClient("cm", "Phoenix", m_address, m_port, this);
+        wireClient(m_cm);
+
+        connect(m_cm, &DanceClient::ready, this, [this] { m_cm->sendOoc("/login"); });
+        connect(m_cm, &DanceClient::oocReceived, this, [this](const QString &f_message) {
+            if (f_message.contains("Entering login prompt")) {
+                m_cm->sendOoc(m_modpass);
+            }
+            else if (f_message.contains("Changed evidence mod.") && m_phase == Phase::CmLogin) {
+                phase(Phase::DefJoin, "the defense to join");
+                m_def = new DanceClient("def", "", m_address, m_port, this);
+                wireClient(m_def);
+                connect(m_def, &DanceClient::ready, this, [this] {
+                    phase(Phase::DefPos, "the defense's list after /pos def");
+                    m_def->sendOoc("/pos def");
+                });
+                connect(m_def, &DanceClient::evidenceChanged, this, &EvidenceDance::onListsChanged);
+                connect(m_def, &DanceClient::icReceived, this, [this](const QStringList &f_fields) { onIc("def", f_fields); });
+            }
+        });
+        connect(m_cm, &DanceClient::loggedIn, this, [this] { m_cm->sendOoc("/evidence_mod hiddencm"); });
+        connect(m_cm, &DanceClient::evidenceChanged, this, &EvidenceDance::onListsChanged);
+        connect(m_cm, &DanceClient::icReceived, this, [this](const QStringList &f_fields) { onIc("cm", f_fields); });
+    }
+
+  private:
+    enum class Phase
+    {
+        CmLogin,
+        DefJoin,
+        DefPos,
+        Adding,
+        Presenting,
+        Deleting,
+    };
+
+    void wireClient(DanceClient *f_client)
+    {
+        connect(f_client, &DanceClient::failed, this, [this](const QString &f_reason) { fail(f_reason); });
+    }
+
+    void onListsChanged()
+    {
+        const QStringList l_cm_list = m_cm->evidenceNames();
+        const QStringList l_def_list = m_def ? m_def->evidenceNames() : QStringList();
+
+        // The prosecution's secret must never reach the defense's list.
+        if (l_def_list.contains("ProSecret")) {
+            fail("a hidden item leaked into the defense's list");
+            return;
+        }
+
+        switch (m_phase) {
+        case Phase::DefPos:
+            // The /pos command answers with a fresh, still empty list.
+            phase(Phase::Adding, "both lists after the moderator files three items");
+            m_cm->send(AOPacket("PE", {"ProSecret", "<owner=pro>A prosecution secret.", "pro.png"}));
+            m_cm->send(AOPacket("PE", {"DefSecret", "<owner=def>A defense secret.", "def.png"}));
+            m_cm->send(AOPacket("PE", {"Public", "Everyone sees this.", "pub.png"}));
+            break;
+        case Phase::Adding:
+            if (l_cm_list == QStringList{"ProSecret", "DefSecret", "Public"} && l_def_list == QStringList{"DefSecret", "Public"}) {
+                say("each side numbers its own list: the moderator sees three items, the defense two");
+                phase(Phase::Presenting, "the presented item to reach both sides with their own numbers");
+                // The desktop client presents its 0-based list position + 1.
+                m_def->send(AOPacket("MS", {"chat", "-", m_def->character(), "normal", "Take this!", "def", "1", "0", QString::number(m_def->charId()), "0", "0", "1", "0", "0", "0"}));
+            }
+            break;
+        case Phase::Deleting:
+            if (!m_done && l_cm_list == QStringList{"DefSecret", "Public"} && l_def_list == QStringList{"DefSecret", "Public"}) {
+                m_done = true;
+                say("the moderator deleted ITS number 1 and the right item vanished for everyone");
+                say("the whole dance played out: filtering, per-viewer numbers, reveal and deletion all line up");
+                m_watchdog->stop();
+                QTimer::singleShot(500, qApp, [] { qApp->exit(0); });
+            }
+            break;
+        default:
+            break;
+        }
+    }
+
+    void onIc(const QString &f_who, const QStringList &f_fields)
+    {
+        if (m_phase != Phase::Presenting || f_fields.value(4) != "Take this!") {
+            return;
+        }
+
+        // Each viewer must receive the number that names the item in THEIR
+        // list: 1 for the defense, 2 for the moderator, same item.
+        const QString l_number = f_fields.value(11);
+        if (f_who == "def" && l_number != "1") {
+            fail("the defense got evidence number " + l_number + ", expected its own 1");
+            return;
+        }
+        if (f_who == "cm" && l_number != "2") {
+            fail("the moderator got evidence number " + l_number + ", expected 2 in its fuller list");
+            return;
+        }
+        if (f_who == "def") {
+            m_def_saw_present = true;
+        }
+        else {
+            m_cm_saw_present = true;
+        }
+
+        if (m_def_saw_present && m_cm_saw_present) {
+            say("the same presentation arrived as number 1 for the defense and number 2 for the moderator");
+            phase(Phase::Deleting, "both lists after the moderator deletes its number 1");
+            // The desktop client deletes by 0-based position in its list.
+            m_cm->send(AOPacket("DE", {"0"}));
+        }
+    }
+
+    void phase(Phase f_phase, const QString &f_waiting_for)
+    {
+        m_phase = f_phase;
+        m_waiting_for = f_waiting_for;
+        say("--- waiting for " + f_waiting_for + " ---");
+        m_watchdog->start(15000);
+    }
+
+    void say(const QString &f_text)
+    {
+        std::cout << f_text.toStdString() << std::endl;
+    }
+
+    void fail(const QString &f_reason)
+    {
+        say("FAILED: " + f_reason);
+        qApp->exit(1);
+    }
+
+    QString m_address;
+    int m_port;
+    QString m_modpass;
+    QTimer *m_watchdog;
+    QString m_waiting_for;
+    DanceClient *m_cm = nullptr;
+    DanceClient *m_def = nullptr;
+    Phase m_phase = Phase::CmLogin;
+    bool m_def_saw_present = false;
+    bool m_cm_saw_present = false;
+    bool m_done = false;
+};
+
 int main(int argc, char *argv[])
 {
     QCoreApplication app(argc, argv);
     const QString l_address = app.arguments().value(1, "127.0.0.1");
     const int l_port = app.arguments().value(2, "27016").toInt();
     const QString l_modpass = app.arguments().value(3, "changeme");
+    const QString l_mode = app.arguments().value(4, "classic");
+    if (l_mode == "evidence") {
+        EvidenceDance l_dance(l_address, l_port, l_modpass);
+        return app.exec();
+    }
+    if (l_mode != "classic") {
+        std::cout << "unknown mode: " << l_mode.toStdString() << " (use classic or evidence)" << std::endl;
+        return 1;
+    }
     MiniClient l_client(l_address, l_port, l_modpass);
     return app.exec();
 }
