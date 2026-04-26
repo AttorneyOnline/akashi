@@ -29,8 +29,8 @@ void AOClient::cmdCM(int argc, QStringList argv)
 {
     QString l_sender_name = name();
     AreaData *l_area = server->getAreaById(areaId());
-    if (l_area->isProtected()) {
-        sendServerMessage("This area is protected, you may not become CM.");
+    if (l_area->isProtected() && !checkPermission(ACLRole::SUPER)) {
+        sendServerMessage("This area is protected, you may not become CM in this area.");
         return;
     }
     else if (l_area->owners().isEmpty()) { // no one owns this area, and it's not protected
@@ -39,7 +39,7 @@ void AOClient::cmdCM(int argc, QStringList argv)
         arup(ARUPType::CM, true);
     }
     else if (!l_area->owners().contains(clientId())) { // there is already a CM, and it isn't us
-        sendServerMessage("You cannot become a CM in this area.");
+        sendServerMessage("You cannot become a CM in this area when someone else is. You must be CM'ed by an existing one.");
     }
     else if (argc == 1) { // we are CM, and we want to make ID argv[0] also CM
         bool ok;
@@ -79,6 +79,25 @@ void AOClient::cmdUnCM(int argc, QStringList argv)
         sendServerMessage("You are no longer CM in this area.");
     }
     else if (checkPermission(ACLRole::UNCM) && argc >= 1) {
+
+        // Remove all owners except yourself
+        if (argv[0] == "all") {
+            QList<int> owners = l_area->owners();
+            for (int uid : owners) {
+                if (uid != clientId()) {
+                    l_area->removeOwner(uid);
+                    AOClient *l_target = server->getClientByID(uid);
+                    if (l_target != nullptr) {
+                        l_target->sendServerMessage("You have been unCMed.");
+                    }
+                }
+            }
+            sendServerMessage("All CMs except yourself have been unCMed.");
+            arup(ARUPType::LOCKED, true);
+            arup(ARUPType::CM, true);
+            return;
+        }
+
         bool conv_ok = false;
         l_uid = argv[0].toInt(&conv_ok);
         if (!conv_ok) {
@@ -98,7 +117,7 @@ void AOClient::cmdUnCM(int argc, QStringList argv)
         l_target->sendServerMessage("You have been unCMed by a moderator.");
     }
     else {
-        sendServerMessage("You do not have permission to unCM others.");
+        sendServerMessage("You do not have permission to unCM others. Only yourself.");
         return;
     }
 
