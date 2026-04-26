@@ -14,6 +14,7 @@
 #include "websocketconnection.h"
 
 #include <QCoreApplication>
+#include <QSet>
 #include <QTimer>
 
 #include <iostream>
@@ -377,10 +378,11 @@ class DanceClient : public QObject
     Q_OBJECT
 
   public:
-    DanceClient(const QString &f_name, const QString &f_character, const QString &f_address, int f_port, QObject *parent = nullptr) :
+    DanceClient(const QString &f_name, const QString &f_character, const QString &f_address, int f_port, int f_pick_offset = 0, QObject *parent = nullptr) :
         QObject(parent),
         m_name(f_name),
-        m_character(f_character)
+        m_character(f_character),
+        m_pick_offset(f_pick_offset)
     {
         m_connection = new WebSocketConnection(this);
         m_pacer = new QTimer(this);
@@ -447,10 +449,12 @@ class DanceClient : public QObject
         }
         else if (l_header == "DONE" && m_char_id < 0) {
             // An empty character wish means "anyone but Phoenix", so the
-            // scene works with whatever roster the server runs.
+            // scene works with whatever roster the server runs; the offset
+            // lets several wishers pick different characters.
             if (m_character.isEmpty()) {
+                int l_skip = m_pick_offset;
                 for (const QString &l_candidate : m_characters) {
-                    if (l_candidate != "Phoenix" && !l_candidate.isEmpty()) {
+                    if (l_candidate != "Phoenix" && !l_candidate.isEmpty() && l_skip-- == 0) {
                         m_character = l_candidate;
                         break;
                     }
@@ -502,21 +506,26 @@ class DanceClient : public QObject
     QStringList m_evidence_names;
     int m_client_id = -1;
     int m_char_id = -1;
+    int m_pick_offset = 0;
 };
 
-// The hidden-evidence numbering scene, played by two clients against a live
-// server. In hidden mode each side numbers a different subset of the court
-// record, and the desktop client presents "position + 1" in its own list
-// while every receiver looks the number up in THEIRS - so the server must
-// renumber per viewer, the tsu3 legacy this proves end to end:
+// The hidden-evidence numbering scene, played by three clients against a
+// live server. In hidden mode each side numbers a different subset of the
+// court record, and the desktop client presents "position + 1" in its own
+// list while every receiver looks the number up in THEIRS - so the server
+// must renumber per viewer, the tsu3 legacy this proves end to end:
 //   1. the moderator turns on hidden mode and files a prosecution secret,
 //      a defense secret and a public item, in that order;
-//   2. the defense must see two items, never the prosecution's secret;
-//   3. the defense presents ITS number 1 (the defense secret) - the
-//      defense's own echo must carry 1, the moderator's copy number 2,
-//      because the moderator also sees the prosecution secret above it;
-//   4. the moderator deletes ITS number 1 (the prosecution secret) - both
-//      must end up seeing exactly the defense secret and the public item.
+//   2. the defense must see two items and the prosecution two OTHER items -
+//      neither side's secret may ever leak to the other side beforehand;
+//   3. the defense presents ITS number 1 (the defense secret) - presenting
+//      reveals a hidden item, so the number each viewer receives must name
+//      the SAME item in their own list: 1 for the defense, 2 for the
+//      moderator, and 2 for the prosecution, whose list just gained the
+//      revealed secret;
+//   4. the moderator deletes ITS number 1 (the prosecution secret) - all
+//      three must end up seeing exactly the defense secret and the public
+//      item.
 class EvidenceDance : public QObject
 {
     Q_OBJECT
@@ -533,7 +542,7 @@ class EvidenceDance : public QObject
         connect(m_watchdog, &QTimer::timeout, this, [this] { fail("timed out waiting for: " + m_waiting_for); });
 
         phase(Phase::CmLogin, "the moderator to join and log in");
-        m_cm = new DanceClient("cm", "Phoenix", m_address, m_port, this);
+        m_cm = new DanceClient("cm", "Phoenix", m_address, m_port, 0, this);
         wireClient(m_cm);
 
         connect(m_cm, &DanceClient::ready, this, [this] { m_cm->sendOoc("/login"); });
@@ -543,18 +552,18 @@ class EvidenceDance : public QObject
             }
             else if (f_message.contains("Changed evidence mod.") && m_phase == Phase::CmLogin) {
                 phase(Phase::DefJoin, "the defense to join");
-                m_def = new DanceClient("def", "", m_address, m_port, this);
+                m_def = new DanceClient("def", "", m_address, m_port, 0, this);
                 wireClient(m_def);
                 connect(m_def, &DanceClient::ready, this, [this] {
                     phase(Phase::DefPos, "the defense's list after /pos def");
                     m_def->sendOoc("/pos def");
                 });
-                connect(m_def, &DanceClient::evidenceChanged, this, &EvidenceDance::onListsChanged);
+                connect(m_def, &DanceClient::evidenceChanged, this, [this] { onListsChanged("def"); });
                 connect(m_def, &DanceClient::icReceived, this, [this](const QStringList &f_fields) { onIc("def", f_fields); });
             }
         });
         connect(m_cm, &DanceClient::loggedIn, this, [this] { m_cm->sendOoc("/evidence_mod hiddencm"); });
-        connect(m_cm, &DanceClient::evidenceChanged, this, &EvidenceDance::onListsChanged);
+        connect(m_cm, &DanceClient::evidenceChanged, this, [this] { onListsChanged("cm"); });
         connect(m_cm, &DanceClient::icReceived, this, [this](const QStringList &f_fields) { onIc("cm", f_fields); });
     }
 
@@ -564,6 +573,8 @@ class EvidenceDance : public QObject
         CmLogin,
         DefJoin,
         DefPos,
+        ProJoin,
+        ProPos,
         Adding,
         Presenting,
         Deleting,
@@ -574,38 +585,60 @@ class EvidenceDance : public QObject
         connect(f_client, &DanceClient::failed, this, [this](const QString &f_reason) { fail(f_reason); });
     }
 
-    void onListsChanged()
+    void onListsChanged(const QString &f_who)
     {
         const QStringList l_cm_list = m_cm->evidenceNames();
         const QStringList l_def_list = m_def ? m_def->evidenceNames() : QStringList();
+        const QStringList l_pro_list = m_pro ? m_pro->evidenceNames() : QStringList();
 
-        // The prosecution's secret must never reach the defense's list.
+        // The prosecution's secret must never reach the defense's list, and
+        // the defense's secret stays hidden from the prosecution until the
+        // moment it is presented.
         if (l_def_list.contains("ProSecret")) {
             fail("a hidden item leaked into the defense's list");
+            return;
+        }
+        if (l_pro_list.contains("DefSecret") && m_phase != Phase::Presenting && m_phase != Phase::Deleting) {
+            fail("the defense's secret leaked to the prosecution before it was presented");
             return;
         }
 
         switch (m_phase) {
         case Phase::DefPos:
-            // The /pos command answers with a fresh, still empty list.
-            phase(Phase::Adding, "both lists after the moderator files three items");
-            m_cm->send(AOPacket("PE", {"ProSecret", "<owner=pro>A prosecution secret.", "pro.png"}));
-            m_cm->send(AOPacket("PE", {"DefSecret", "<owner=def>A defense secret.", "def.png"}));
-            m_cm->send(AOPacket("PE", {"Public", "Everyone sees this.", "pub.png"}));
+            if (f_who == "def") {
+                // The /pos command answers with a fresh, still empty list.
+                phase(Phase::ProJoin, "the prosecution to join");
+                m_pro = new DanceClient("pro", "", m_address, m_port, 1, this);
+                wireClient(m_pro);
+                connect(m_pro, &DanceClient::ready, this, [this] {
+                    phase(Phase::ProPos, "the prosecution's list after /pos pro");
+                    m_pro->sendOoc("/pos pro");
+                });
+                connect(m_pro, &DanceClient::evidenceChanged, this, [this] { onListsChanged("pro"); });
+                connect(m_pro, &DanceClient::icReceived, this, [this](const QStringList &f_fields) { onIc("pro", f_fields); });
+            }
+            break;
+        case Phase::ProPos:
+            if (f_who == "pro") {
+                phase(Phase::Adding, "every list after the moderator files three items");
+                m_cm->send(AOPacket("PE", {"ProSecret", "<owner=pro>A prosecution secret.", "pro.png"}));
+                m_cm->send(AOPacket("PE", {"DefSecret", "<owner=def>A defense secret.", "def.png"}));
+                m_cm->send(AOPacket("PE", {"Public", "Everyone sees this.", "pub.png"}));
+            }
             break;
         case Phase::Adding:
-            if (l_cm_list == QStringList{"ProSecret", "DefSecret", "Public"} && l_def_list == QStringList{"DefSecret", "Public"}) {
-                say("each side numbers its own list: the moderator sees three items, the defense two");
-                phase(Phase::Presenting, "the presented item to reach both sides with their own numbers");
+            if (l_cm_list == QStringList{"ProSecret", "DefSecret", "Public"} && l_def_list == QStringList{"DefSecret", "Public"} && l_pro_list == QStringList{"ProSecret", "Public"}) {
+                say("each side numbers its own list: three items for the moderator, two each for the sides");
+                phase(Phase::Presenting, "the presented item to reach every viewer under their own number");
                 // The desktop client presents its 0-based list position + 1.
                 m_def->send(AOPacket("MS", {"chat", "-", m_def->character(), "normal", "Take this!", "def", "1", "0", QString::number(m_def->charId()), "0", "0", "1", "0", "0", "0"}));
             }
             break;
         case Phase::Deleting:
-            if (!m_done && l_cm_list == QStringList{"DefSecret", "Public"} && l_def_list == QStringList{"DefSecret", "Public"}) {
+            if (!m_done && l_cm_list == QStringList{"DefSecret", "Public"} && l_def_list == QStringList{"DefSecret", "Public"} && l_pro_list == QStringList{"DefSecret", "Public"}) {
                 m_done = true;
                 say("the moderator deleted ITS number 1 and the right item vanished for everyone");
-                say("the whole dance played out: filtering, per-viewer numbers, reveal and deletion all line up");
+                say("the whole dance played out: filtering, per-viewer numbers, the reveal and deletion all line up");
                 m_watchdog->stop();
                 QTimer::singleShot(500, qApp, [] { qApp->exit(0); });
             }
@@ -621,27 +654,31 @@ class EvidenceDance : public QObject
             return;
         }
 
-        // Each viewer must receive the number that names the item in THEIR
-        // list: 1 for the defense, 2 for the moderator, same item.
+        // Every viewer's number must name the SAME item in their own list -
+        // that is what "both sides see the presented evidence" means on a
+        // protocol whose numbers are per-viewer list positions.
         const QString l_number = f_fields.value(11);
-        if (f_who == "def" && l_number != "1") {
-            fail("the defense got evidence number " + l_number + ", expected its own 1");
+        DanceClient *l_viewer = f_who == "def" ? m_def : (f_who == "cm" ? m_cm : m_pro);
+        if (l_viewer->evidenceNames().value(l_number.toInt() - 1) != "DefSecret") {
+            fail(f_who + "'s number " + l_number + " does not name the presented item in their list");
             return;
         }
-        if (f_who == "cm" && l_number != "2") {
-            fail("the moderator got evidence number " + l_number + ", expected 2 in its fuller list");
+        const QString l_expected = f_who == "def" ? "1" : "2";
+        if (l_number != l_expected) {
+            fail(f_who + " got evidence number " + l_number + ", expected " + l_expected);
             return;
         }
-        if (f_who == "def") {
-            m_def_saw_present = true;
-        }
-        else {
-            m_cm_saw_present = true;
-        }
+        m_saw_present.insert(f_who);
 
-        if (m_def_saw_present && m_cm_saw_present) {
-            say("the same presentation arrived as number 1 for the defense and number 2 for the moderator");
-            phase(Phase::Deleting, "both lists after the moderator deletes its number 1");
+        if (m_saw_present.size() == 3) {
+            // The reveal is what lets the prosecution resolve the number at
+            // all: its list must have gained the presented secret.
+            if (m_pro->evidenceNames() != QStringList{"ProSecret", "DefSecret", "Public"}) {
+                fail("presenting did not reveal the item to the prosecution");
+                return;
+            }
+            say("one presentation, three viewers: numbers 1, 2 and 2 all name the defense secret");
+            phase(Phase::Deleting, "every list after the moderator deletes its number 1");
             // The desktop client deletes by 0-based position in its list.
             m_cm->send(AOPacket("DE", {"0"}));
         }
@@ -673,9 +710,9 @@ class EvidenceDance : public QObject
     QString m_waiting_for;
     DanceClient *m_cm = nullptr;
     DanceClient *m_def = nullptr;
+    DanceClient *m_pro = nullptr;
     Phase m_phase = Phase::CmLogin;
-    bool m_def_saw_present = false;
-    bool m_cm_saw_present = false;
+    QSet<QString> m_saw_present;
     bool m_done = false;
 };
 
