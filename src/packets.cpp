@@ -41,20 +41,11 @@ void AOClient::updateEvidenceList(AreaData *area)
 {
     QStringList l_evidence_list;
 
-    const QList<AreaData::Evidence> l_area_evidence = area->evidence();
-    for (const AreaData::Evidence &evidence : l_area_evidence) {
-        if (!canPerform(ACLRole::CM) && area->eviMod() == AreaData::EvidenceMod::HIDDEN_CM) {
-            QRegularExpression l_regex("<owner=(.*?)>");
-            QRegularExpressionMatch l_match = l_regex.match(evidence.description);
-            if (l_match.hasMatch()) {
-                QStringList owners = l_match.captured(1).split(",");
-                if (!owners.contains("all", Qt::CaseSensitivity::CaseInsensitive) && !owners.contains(player()->pos, Qt::CaseSensitivity::CaseInsensitive)) {
-                    continue;
-                }
-            }
-            // no match = show it to all
-        }
-        l_evidence_list.append(akashi::Evidence{evidence.name, evidence.description, evidence.image}.toLeField());
+    // The store applies the hidden-items rules; the same filter also drives
+    // the visible-index translation, so the two can never disagree.
+    const QList<akashi::Evidence> l_visible = area->visibleEvidence(canPerform(ACLRole::CM), player()->pos);
+    for (const akashi::Evidence &l_item : l_visible) {
+        l_evidence_list.append(l_item.toLeField());
     }
 
     sendPacket(akashi::Packet("LE", l_evidence_list));

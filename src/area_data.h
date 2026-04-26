@@ -20,6 +20,7 @@
 
 #include "akashi_core_export.h"
 #include "world/area_settings.h"
+#include "world/evidence_store.h"
 
 #include <QDebug>
 #include <QElapsedTimer>
@@ -62,14 +63,10 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
     akashi::Area *area() const;
 
     /**
-     * @brief The data for evidence in the area.
+     * @brief One piece of evidence; the world model's item type, aliased so
+     * existing code keeps compiling while the item system evolves there.
      */
-    struct Evidence
-    {
-        QString name;        //!< The name of the evidence, shown when hovered over clientside.
-        QString description; //!< The longer description of the evidence, when the user opens the evidence window.
-        QString image;       //!< A path originating from `base/evidence/` that points to an image file.
-    };
+    using Evidence = akashi::Evidence;
 
     /**
      * @brief The status of an area.
@@ -491,6 +488,11 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
     int evidenceIndexByVisibleIndex(int f_visibleIndex, const QString &f_clientPos, bool f_isCM) const;
 
     /**
+     * @brief The evidence as one viewer sees it, respecting the hidden mode.
+     */
+    QList<akashi::Evidence> visibleEvidence(bool f_can_see_hidden, const QString &f_side) const;
+
+    /**
      * @brief Gets the visible index by real evidence index for a specific client position.
      *
      * @param f_evidenceIndex The real index (0-based) in the evidence array.
@@ -763,7 +765,7 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
      *
      * @return See short description.
      *
-     * @see #m_eviMod
+     * @see EvidenceStore::Access
      */
     EvidenceMod eviMod() const;
 
@@ -1081,13 +1083,9 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
     MusicManager *m_music_manager;
 
     /**
-     * @brief A list of Evidence currently available in the area's court record.
-     *
-     * @details This contains *all* evidence, not just the ones a given side can see.
-     *
-     * @see HIDDEN_CM
+     * @brief The area's court record: the items people can present here.
      */
-    QList<Evidence> m_evidence;
+    akashi::EvidenceStore m_evidence_store;
 
     /**
      * @brief The owner-tunable settings of the area, seeded from the areas
@@ -1144,13 +1142,6 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
      * @brief A pointer to a Logger, used to send requests to log data.
      */
     Logger *m_logger;
-
-    /**
-     * @brief The evidence mod of the area.
-     *
-     * @see EvidenceMod
-     */
-    EvidenceMod m_eviMod;
 
     /**
      * @brief The list of notecards in the area.

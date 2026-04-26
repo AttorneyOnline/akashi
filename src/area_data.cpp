@@ -29,6 +29,9 @@
 
 #include <algorithm>
 
+static akashi::EvidenceStore::Access toStoreAccess(AreaData::EvidenceMod f_mod);
+static AreaData::EvidenceMod fromStoreAccess(akashi::EvidenceStore::Access f_access);
+
 AreaData::AreaData(QString p_name, int p_index, MusicManager *p_music_manager = nullptr) :
     m_music_manager(p_music_manager),
     m_document("No document."),
@@ -56,7 +59,7 @@ AreaData::AreaData(QString p_name, int p_index, MusicManager *p_music_manager = 
     m_settings.protected_area = areas_ini->value("protected_area", "false").toBool();
     m_settings.iniswap_allowed = areas_ini->value("iniswap_allowed", "true").toBool();
     m_settings.background_locked = areas_ini->value("bg_locked", "false").toBool();
-    m_eviMod = QVariant(areas_ini->value("evidence_mod", "FFA").toString().toUpper()).value<EvidenceMod>();
+    m_evidence_store.setAccess(toStoreAccess(QVariant(areas_ini->value("evidence_mod", "FFA").toString().toUpper()).value<EvidenceMod>()));
     m_settings.blankposting_allowed = areas_ini->value("blankposting_allowed", "true").toBool();
     m_settings.area_message = areas_ini->value("area_message").toString();
     m_settings.send_area_message_on_join = areas_ini->value("send_area_message_on_join", false).toBool();
@@ -86,6 +89,36 @@ AreaData::AreaData(QString p_name, int p_index, MusicManager *p_music_manager = 
 
 static QString toWireStatus(AreaData::Status f_status);
 static AreaData::Status fromWireStatus(const QString &f_status);
+
+// The old evidence mod values and the store's access values translate
+// one-to-one.
+static akashi::EvidenceStore::Access toStoreAccess(AreaData::EvidenceMod f_mod)
+{
+    switch (f_mod) {
+    case AreaData::EvidenceMod::MOD:
+        return akashi::EvidenceStore::Access::Mod;
+    case AreaData::EvidenceMod::CM:
+        return akashi::EvidenceStore::Access::Cm;
+    case AreaData::EvidenceMod::HIDDEN_CM:
+        return akashi::EvidenceStore::Access::HiddenCm;
+    default:
+        return akashi::EvidenceStore::Access::FreeForAll;
+    }
+}
+
+static AreaData::EvidenceMod fromStoreAccess(akashi::EvidenceStore::Access f_access)
+{
+    switch (f_access) {
+    case akashi::EvidenceStore::Access::Mod:
+        return AreaData::EvidenceMod::MOD;
+    case akashi::EvidenceStore::Access::Cm:
+        return AreaData::EvidenceMod::CM;
+    case akashi::EvidenceStore::Access::HiddenCm:
+        return AreaData::EvidenceMod::HIDDEN_CM;
+    default:
+        return AreaData::EvidenceMod::FFA;
+    }
+}
 
 akashi::Area *AreaData::area() const
 {
@@ -274,52 +307,32 @@ bool AreaData::changeCharacter(int f_from, int f_to)
 
 QList<AreaData::Evidence> AreaData::evidence() const
 {
-    return m_evidence;
+    return m_evidence_store.items();
 }
 
 void AreaData::swapEvidence(int f_eviId1, int f_eviId2)
 {
-    m_evidence.swapItemsAt(f_eviId1, f_eviId2);
+    m_evidence_store.swap(f_eviId1, f_eviId2);
 }
 
 void AreaData::appendEvidence(const AreaData::Evidence &f_evi_r)
 {
-    m_evidence.append(f_evi_r);
+    m_evidence_store.append(f_evi_r);
 }
 
 void AreaData::deleteEvidence(int f_eviId)
 {
-    m_evidence.removeAt(f_eviId);
+    m_evidence_store.remove(f_eviId);
 }
 
 void AreaData::replaceEvidence(int f_eviId, const AreaData::Evidence &f_newEvi_r)
 {
-    m_evidence.replace(f_eviId, f_newEvi_r);
+    m_evidence_store.replace(f_eviId, f_newEvi_r);
 }
 
 void AreaData::setEvidenceOwnerToAll(int f_eviId)
 {
-    if (f_eviId < 0 || f_eviId >= m_evidence.size()) {
-        return;
-    }
-
-    Evidence &evidence = m_evidence[f_eviId];
-    QString description = evidence.description;
-
-    // Search for owner tag in description
-    static const QRegularExpression ownerRegex("<owner=(.*?)>");
-    QRegularExpressionMatch match = ownerRegex.match(description);
-
-    if (match.hasMatch()) {
-        // Replace existing owner tag with <owner=all>
-        description.replace(ownerRegex, "<owner=all>");
-    }
-    else {
-        // If no owner tag exists, add <owner=all> at the beginning
-        description = "<owner=all>\n" + description;
-    }
-
-    evidence.description = description;
+    m_evidence_store.revealToAll(f_eviId);
 }
 
 AreaData::Status AreaData::status() const
@@ -402,7 +415,7 @@ void AreaData::toggleMusic()
 
 void AreaData::setEviMod(const EvidenceMod &f_eviMod_r)
 {
-    m_eviMod = f_eviMod_r;
+    m_evidence_store.setAccess(toStoreAccess(f_eviMod_r));
 }
 
 void AreaData::setTestimonyRecording(const TestimonyRecording &f_testimonyRecording_r)
@@ -513,7 +526,7 @@ AreaData::TestimonyRecording AreaData::testimonyRecording() const
 
 AreaData::EvidenceMod AreaData::eviMod() const
 {
-    return m_eviMod;
+    return fromStoreAccess(m_evidence_store.access());
 }
 
 bool AreaData::addNotecard(const QString &f_owner_r, const QString &f_notecard_r)
@@ -781,68 +794,15 @@ void AreaData::allowMessage()
 
 int AreaData::evidenceIndexByVisibleIndex(int f_visibleIndex, const QString &f_clientPos, bool f_isCM) const
 {
-    if (f_visibleIndex <= 0) {
-        return -1;
-    }
-
-    int visibleCount = 0;
-    for (int i = 0; i < m_evidence.size(); ++i) {
-        const Evidence &evidence = m_evidence[i];
-
-        // Apply the same filtering logic as in updateEvidenceList
-        if (!f_isCM && m_eviMod == EvidenceMod::HIDDEN_CM) {
-            static const QRegularExpression ownerRegex("<owner=(.*?)>");
-            QRegularExpressionMatch match = ownerRegex.match(evidence.description);
-            if (match.hasMatch()) {
-                QStringList owners = match.captured(1).split(",");
-                if (!owners.contains("all", Qt::CaseSensitivity::CaseInsensitive) &&
-                    !owners.contains(f_clientPos, Qt::CaseSensitivity::CaseInsensitive)) {
-                    continue; // This evidence is not visible to the client
-                }
-            }
-            // no match = show it to all
-        }
-
-        // This evidence is visible, increment counter
-        ++visibleCount;
-        if (visibleCount == f_visibleIndex) {
-            return i; // Return the real index
-        }
-    }
-
-    return -1; // Not found
+    return m_evidence_store.itemIndexByVisibleIndex(f_visibleIndex, f_isCM, f_clientPos);
 }
 
 int AreaData::visibleIndexByEvidenceIndex(int f_evidenceIndex, const QString &f_clientPos, bool f_isCM) const
 {
-    if (f_evidenceIndex < 0 || f_evidenceIndex >= m_evidence.size()) {
-        return 0; // Invalid index or not visible
-    }
+    return m_evidence_store.visibleIndexByItemIndex(f_evidenceIndex, f_isCM, f_clientPos);
+}
 
-    int visibleCount = 0;
-    for (int i = 0; i < m_evidence.size(); ++i) {
-        const Evidence &evidence = m_evidence[i];
-
-        // Apply the same filtering logic as in updateEvidenceList
-        if (!f_isCM && m_eviMod == EvidenceMod::HIDDEN_CM) {
-            static const QRegularExpression ownerRegex("<owner=(.*?)>");
-            QRegularExpressionMatch match = ownerRegex.match(evidence.description);
-            if (match.hasMatch()) {
-                QStringList owners = match.captured(1).split(",");
-                if (!owners.contains("all", Qt::CaseSensitivity::CaseInsensitive) &&
-                    !owners.contains(f_clientPos, Qt::CaseSensitivity::CaseInsensitive)) {
-                    continue; // This evidence is not visible to the client
-                }
-            }
-            // no match = show it to all
-        }
-
-        // This evidence is visible, increment counter
-        ++visibleCount;
-        if (i == f_evidenceIndex) {
-            return visibleCount; // Return the visible index (1-based)
-        }
-    }
-
-    return 0; // Evidence not visible to this client
+QList<akashi::Evidence> AreaData::visibleEvidence(bool f_can_see_hidden, const QString &f_side) const
+{
+    return m_evidence_store.visibleItems(f_can_see_hidden, f_side);
 }

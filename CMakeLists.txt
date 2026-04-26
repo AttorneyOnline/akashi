@@ -89,6 +89,8 @@ set(AKASHI_SOURCES
   src2/world/area_settings.h
   src2/world/area_rules.cpp
   src2/world/area_rules.h
+  src2/world/evidence_store.cpp
+  src2/world/evidence_store.h
   src2/world/floor.h
   src2/include/akashi/area_rule.h
   src2/include/akashi/config_entry.h
