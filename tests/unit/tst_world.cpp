@@ -1,6 +1,7 @@
 // AI-generated: written by Claude.
 #include "world/area.h"
 #include "world/area_rules.h"
+#include "world/evidence_store.h"
 #include "world/floor.h"
 
 #include <QSignalSpy>
@@ -22,6 +23,7 @@ class tst_World : public QObject
     void rulesApplyToTheirScopeOnly();
     void firstBlockingRuleWins();
     void areaRulesOverwriteFloorRulesOfTheSameName();
+    void evidenceStoreNumbersItemsPerViewer();
     void beforeRulesGateWithoutTouchingAfterRules();
     void afterRulesActOnTheWorld();
     void pluginRuleObjectsRegisterAndReleaseOnUnload();
@@ -161,6 +163,44 @@ void tst_World::areaRulesOverwriteFloorRulesOfTheSameName()
 
     QVERIFY(l_rules.check(akashi::AreaEvent::EvidencePresented, akashi::RulePhase::Before, {4, 2, 0, "Knife"}).allowed);
     QVERIFY(!l_rules.check(akashi::AreaEvent::EvidencePresented, akashi::RulePhase::Before, {4, 3, 0, "Knife"}).allowed);
+}
+
+void tst_World::evidenceStoreNumbersItemsPerViewer()
+{
+    akashi::EvidenceStore l_store;
+    l_store.setAccess(akashi::EvidenceStore::Access::HiddenCm);
+    l_store.append({"Sword", "<owner=def>\nA sword.", "sword.png"});
+    l_store.append({"Photo", "Everyone sees this.", "photo.png"});
+    l_store.append({"Contract", "<owner=pro>\nSigned.", "contract.png"});
+    l_store.append({"Key", "<owner=all>\nRevealed.", "key.png"});
+
+    // A case manager sees the whole record; each side numbers its own list.
+    QCOMPARE(l_store.visibleItems(true, "wit").size(), 4);
+    QCOMPARE(l_store.visibleItems(false, "def").size(), 3); // Sword, Photo, Key
+    QCOMPARE(l_store.visibleItems(false, "pro").size(), 3); // Photo, Contract, Key
+
+    // The defense's #2 is the Photo (record index 1), their #3 the Key (3);
+    // the prosecution's #2 is the Contract (2). Same numbers, different items.
+    QCOMPARE(l_store.itemIndexByVisibleIndex(2, false, "def"), 1);
+    QCOMPARE(l_store.itemIndexByVisibleIndex(3, false, "def"), 3);
+    QCOMPARE(l_store.itemIndexByVisibleIndex(2, false, "pro"), 2);
+
+    // And back: the Contract is the prosecution's #2 and nothing to the defense.
+    QCOMPARE(l_store.visibleIndexByItemIndex(2, false, "pro"), 2);
+    QCOMPARE(l_store.visibleIndexByItemIndex(2, false, "def"), 0);
+
+    // The translation round-trips for every position a viewer can name.
+    for (int l_position = 1; l_position <= 3; l_position++) {
+        const int l_real = l_store.itemIndexByVisibleIndex(l_position, false, "def");
+        QCOMPARE(l_store.visibleIndexByItemIndex(l_real, false, "def"), l_position);
+    }
+
+    // A number past the viewer's list is refused, never mismapped.
+    QCOMPARE(l_store.itemIndexByVisibleIndex(4, false, "def"), -1);
+
+    // Outside hidden mode every viewer numbers the full record.
+    l_store.setAccess(akashi::EvidenceStore::Access::FreeForAll);
+    QCOMPARE(l_store.itemIndexByVisibleIndex(3, false, "def"), 2);
 }
 
 void tst_World::beforeRulesGateWithoutTouchingAfterRules()

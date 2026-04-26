@@ -885,16 +885,26 @@ int AOClient::evidenceCount() const
 
 void AOClient::deleteEvidence(int f_index)
 {
-    m_server->areaById(areaId())->deleteEvidence(f_index);
+    AreaData *l_area = m_server->areaById(areaId());
+    // The client counts the list it was shown, which in hidden mode is not
+    // the whole record - every incoming evidence number must be translated
+    // through this viewer's own list, the way tsu3 calculated the positions
+    // by hand. A protocol update replaces this with stable item ids.
+    const int l_real_index = l_area->evidenceIndexByVisibleIndex(f_index + 1, player()->pos, canPerform(ACLRole::CM));
+    l_area->deleteEvidence(l_real_index);
 }
 
 void AOClient::replaceEvidence(int f_index, const QString &f_name, const QString &f_description, const QString &f_image)
 {
+    AreaData *l_area = m_server->areaById(areaId());
+    // Same viewer translation as deleteEvidence; an unknown number maps to
+    // -1 and the store refuses it, so a stale list cannot hit the wrong item.
+    const int l_real_index = l_area->evidenceIndexByVisibleIndex(f_index + 1, player()->pos, canPerform(ACLRole::CM));
     AreaData::Evidence l_evidence;
     l_evidence.name = f_name;
     l_evidence.description = f_description;
     l_evidence.image = f_image;
-    m_server->areaById(areaId())->replaceEvidence(f_index, l_evidence);
+    l_area->replaceEvidence(l_real_index, l_evidence);
 }
 
 void AOClient::setCasingPreferences(const QList<bool> &f_preferences)
