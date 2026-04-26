@@ -32,16 +32,12 @@
 AreaData::AreaData(QString p_name, int p_index, MusicManager *p_music_manager = nullptr) :
     m_music_manager(p_music_manager),
     m_document("No document."),
-    m_area_message("No area message set."),
     m_defHP(10),
     m_proHP(10),
     m_currentMusic("~stop.mp3"),
     m_statement(0),
     m_judgelog(),
-    m_lastICMessage(),
-    m_send_area_message(false),
-    m_can_send_wtce(true),
-    m_can_use_shouts(true)
+    m_lastICMessage()
 {
     QStringList name_split = p_name.split(":");
     name_split.removeFirst();
@@ -56,22 +52,22 @@ AreaData::AreaData(QString p_name, int p_index, MusicManager *p_music_manager = 
     m_display_name = "[" + QString::number(p_index) + "] " + l_name;
     QSettings *areas_ini = ConfigManager::areaData();
     areas_ini->beginGroup(p_name);
-    m_background = areas_ini->value("background", "gs4").toString();
-    m_isProtected = areas_ini->value("protected_area", "false").toBool();
-    m_iniswapAllowed = areas_ini->value("iniswap_allowed", "true").toBool();
-    m_bgLocked = areas_ini->value("bg_locked", "false").toBool();
+    m_settings.background = areas_ini->value("background", "gs4").toString();
+    m_settings.protected_area = areas_ini->value("protected_area", "false").toBool();
+    m_settings.iniswap_allowed = areas_ini->value("iniswap_allowed", "true").toBool();
+    m_settings.background_locked = areas_ini->value("bg_locked", "false").toBool();
     m_eviMod = QVariant(areas_ini->value("evidence_mod", "FFA").toString().toUpper()).value<EvidenceMod>();
-    m_blankpostingAllowed = areas_ini->value("blankposting_allowed", "true").toBool();
-    m_area_message = areas_ini->value("area_message").toString();
-    m_send_area_message = areas_ini->value("send_area_message_on_join", false).toBool();
-    m_forceImmediate = areas_ini->value("force_immediate", "false").toBool();
-    m_toggleMusic = areas_ini->value("toggle_music", "true").toBool();
-    m_shownameAllowed = areas_ini->value("shownames_allowed", "true").toBool();
-    m_ignoreBgList = areas_ini->value("ignore_bglist", "false").toBool();
-    m_jukebox = areas_ini->value("jukebox_enabled", "false").toBool();
-    m_playcmd = areas_ini->value("playcmd_enabled", "false").toBool();
-    m_can_send_wtce = areas_ini->value("wtce_enabled", "true").toBool();
-    m_can_use_shouts = areas_ini->value("shouts_enabled", "true").toBool();
+    m_settings.blankposting_allowed = areas_ini->value("blankposting_allowed", "true").toBool();
+    m_settings.area_message = areas_ini->value("area_message").toString();
+    m_settings.send_area_message_on_join = areas_ini->value("send_area_message_on_join", false).toBool();
+    m_settings.force_immediate = areas_ini->value("force_immediate", "false").toBool();
+    m_settings.music_allowed = areas_ini->value("toggle_music", "true").toBool();
+    m_settings.shownames_allowed = areas_ini->value("shownames_allowed", "true").toBool();
+    m_settings.ignore_background_list = areas_ini->value("ignore_bglist", "false").toBool();
+    m_settings.jukebox_enabled = areas_ini->value("jukebox_enabled", "false").toBool();
+    m_settings.play_command_enabled = areas_ini->value("playcmd_enabled", "false").toBool();
+    m_settings.wtce_allowed = areas_ini->value("wtce_enabled", "true").toBool();
+    m_settings.shouts_allowed = areas_ini->value("shouts_enabled", "true").toBool();
     areas_ini->endGroup();
     QTimer *timer1 = new QTimer();
     m_timers.append(timer1);
@@ -167,17 +163,17 @@ bool AreaData::removeOwner(int f_clientId)
 
 bool AreaData::isBlankpostingAllowed() const
 {
-    return m_blankpostingAllowed;
+    return m_settings.blankposting_allowed;
 }
 
 void AreaData::toggleBlankposting()
 {
-    m_blankpostingAllowed = !m_blankpostingAllowed;
+    m_settings.blankposting_allowed = !m_settings.blankposting_allowed;
 }
 
 bool AreaData::isProtected() const
 {
-    return m_isProtected;
+    return m_settings.protected_area;
 }
 
 AreaData::LockStatus AreaData::lockStatus() const
@@ -187,7 +183,7 @@ AreaData::LockStatus AreaData::lockStatus() const
 
 bool AreaData::isJukeboxEnabled() const
 {
-    return m_jukebox;
+    return m_settings.jukebox_enabled;
 }
 
 int AreaData::jukeboxQueueSize() const
@@ -197,7 +193,7 @@ int AreaData::jukeboxQueueSize() const
 
 bool AreaData::isPlayEnabled() const
 {
-    return m_playcmd;
+    return m_settings.play_command_enabled;
 }
 
 void AreaData::lock()
@@ -369,7 +365,7 @@ QList<int> AreaData::invited() const
 
 bool AreaData::isMusicAllowed() const
 {
-    return m_toggleMusic;
+    return m_settings.music_allowed;
 }
 
 bool AreaData::isMessageAllowed() const
@@ -379,17 +375,17 @@ bool AreaData::isMessageAllowed() const
 
 bool AreaData::isWtceAllowed() const
 {
-    return m_can_send_wtce;
+    return m_settings.wtce_allowed;
 }
 
 bool AreaData::isShoutAllowed() const
 {
-    return m_can_use_shouts;
+    return m_settings.shouts_allowed;
 }
 
 bool AreaData::isMedievalMode() const
 {
-    return m_medieval_mode;
+    return m_settings.medieval_mode;
 }
 
 void AreaData::startMessageFloodguard(int f_duration)
@@ -401,7 +397,7 @@ void AreaData::startMessageFloodguard(int f_duration)
 
 void AreaData::toggleMusic()
 {
-    m_toggleMusic = !m_toggleMusic;
+    m_settings.music_allowed = !m_settings.music_allowed;
 }
 
 void AreaData::setEviMod(const EvidenceMod &f_eviMod_r)
@@ -429,12 +425,12 @@ void AreaData::clearTestimony()
 
 bool AreaData::forceImmediate() const
 {
-    return m_forceImmediate;
+    return m_settings.force_immediate;
 }
 
 void AreaData::toggleImmediate()
 {
-    m_forceImmediate = !m_forceImmediate;
+    m_settings.force_immediate = !m_settings.force_immediate;
 }
 
 const QStringList &AreaData::lastICMessage() const
@@ -615,17 +611,17 @@ void AreaData::changeDoc(const QString &f_newDoc_r)
 
 QString AreaData::areaMessage() const
 {
-    return m_area_message.isEmpty() ? "No area message set." : m_area_message;
+    return m_settings.area_message.isEmpty() ? "No area message set." : m_settings.area_message;
 }
 
 bool AreaData::sendAreaMessageOnJoin() const
 {
-    return m_send_area_message;
+    return m_settings.send_area_message_on_join;
 }
 
 void AreaData::changeAreaMessage(const QString &f_newMessage_r)
 {
-    m_area_message = f_newMessage_r;
+    m_settings.area_message = f_newMessage_r;
 }
 
 void AreaData::clearAreaMessage()
@@ -635,37 +631,37 @@ void AreaData::clearAreaMessage()
 
 bool AreaData::isBgLocked() const
 {
-    return m_bgLocked;
+    return m_settings.background_locked;
 }
 
 void AreaData::toggleBgLock()
 {
-    m_bgLocked = !m_bgLocked;
+    m_settings.background_locked = !m_settings.background_locked;
 }
 
 bool AreaData::isIniswapAllowed() const
 {
-    return m_iniswapAllowed;
+    return m_settings.iniswap_allowed;
 }
 
 void AreaData::toggleIniswap()
 {
-    m_iniswapAllowed = !m_iniswapAllowed;
+    m_settings.iniswap_allowed = !m_settings.iniswap_allowed;
 }
 
 bool AreaData::isShownameAllowed() const
 {
-    return m_shownameAllowed;
+    return m_settings.shownames_allowed;
 }
 
 QString AreaData::background() const
 {
-    return m_background;
+    return m_settings.background;
 }
 
 void AreaData::setBackground(const QString f_background)
 {
-    m_background = f_background;
+    m_settings.background = f_background;
     QSettings *ambience_data = ConfigManager::ambience();
     QString new_ambience = ambience_data->value(f_background + "/ambience").toString();
     if (new_ambience != "") {
@@ -688,23 +684,23 @@ void AreaData::setSide(const QString f_side)
 
 bool AreaData::ignoreBgList()
 {
-    return m_ignoreBgList;
+    return m_settings.ignore_background_list;
 }
 
 void AreaData::toggleIgnoreBgList()
 {
-    m_ignoreBgList = !m_ignoreBgList;
+    m_settings.ignore_background_list = !m_settings.ignore_background_list;
 }
 
 void AreaData::toggleAreaMessageJoin()
 {
-    m_send_area_message = !m_send_area_message;
+    m_settings.send_area_message_on_join = !m_settings.send_area_message_on_join;
 }
 
 void AreaData::toggleJukebox()
 {
-    m_jukebox = !m_jukebox;
-    if (!m_jukebox) {
+    m_settings.jukebox_enabled = !m_settings.jukebox_enabled;
+    if (!m_settings.jukebox_enabled) {
         m_jukebox_queue.clear();
         m_jukebox_timer->stop();
     }
@@ -712,17 +708,17 @@ void AreaData::toggleJukebox()
 
 void AreaData::toggleWtceAllowed()
 {
-    m_can_send_wtce = !m_can_send_wtce;
+    m_settings.wtce_allowed = !m_settings.wtce_allowed;
 }
 
 void AreaData::toggleShoutAllowed()
 {
-    m_can_use_shouts = !m_can_use_shouts;
+    m_settings.shouts_allowed = !m_settings.shouts_allowed;
 }
 
 void AreaData::toggleMedievalMode()
 {
-    m_medieval_mode = !m_medieval_mode;
+    m_settings.medieval_mode = !m_settings.medieval_mode;
 }
 
 QString AreaData::addJukeboxSong(QString f_song)

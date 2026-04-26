@@ -19,6 +19,7 @@
 #define AREA_DATA_H
 
 #include "akashi_core_export.h"
+#include "world/area_settings.h"
 
 #include <QDebug>
 #include <QElapsedTimer>
@@ -647,7 +648,7 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
      *
      * @return See short description.
      *
-     * @see #m_area_message
+     * @see AreaSettings::area_message
      */
     QString areaMessage() const;
 
@@ -1089,38 +1090,12 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
     QList<Evidence> m_evidence;
 
     /**
-     * @brief The background of the area.
-     *
-     * @details Represents a directory's name in `base/background/` clientside.
+     * @brief The owner-tunable settings of the area, seeded from the areas
+     * config file and toggled by commands.
      */
-    QString m_background;
+    akashi::AreaSettings m_settings;
+
     QString m_side;
-
-    /**
-     * @brief If true, nobody may become the CM of this area.
-     */
-    bool m_isProtected;
-
-    /**
-     * @brief If true, clients are allowed to put on "shownames", custom names
-     * in place of their character's normally displayed name.
-     */
-    bool m_shownameAllowed;
-
-    /**
-     * @brief If true, clients are allowed to use the cursed art of iniswapping in the area.
-     */
-    bool m_iniswapAllowed;
-
-    /**
-     * @brief If true, clients are allowed to send empty IC messages
-     */
-    bool m_blankpostingAllowed;
-
-    /**
-     * @brief If true, the background of the area cannot be changed except by a moderator.
-     */
-    bool m_bgLocked;
 
     /**
      * @brief The hyperlink to the document of the area.
@@ -1129,14 +1104,6 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
      * rules. #document can also be something like "None" if there is no case or roleplay being run.
      */
     QString m_document;
-
-    /**
-     * @brief The message of the area.
-     *
-     * @details The area message has multiple purposes. It can be used to provide general information for
-     * RP or guidance for players joining the area. Unlike document it can be sent on area join. Like a MOTD, but for the area.
-     */
-    QString m_area_message;
 
     /**
      * @brief The Confidence Gauge's value for the Defence side.
@@ -1216,26 +1183,6 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
      */
     QStringList m_lastICMessage;
 
-    /**
-     * @brief Whether or not to force immediate text processing in this area.
-     */
-    bool m_forceImmediate;
-
-    /**
-     * @brief Whether or not music is allowed in this area. If false, only CMs can change the music.
-     */
-    bool m_toggleMusic;
-
-    /**
-     * @brief Whether or not to ignore the server defined background list. If true, any background can be set in an area.
-     */
-    bool m_ignoreBgList;
-
-    /**
-     * @brief Whether or not the area message is sent upon area join.
-     */
-    bool m_send_area_message;
-
     // Jukebox specific members
     /**
      * @brief Stores the songs added to the jukebox to be played.
@@ -1254,16 +1201,6 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
     QTimer *m_jukebox_timer;
 
     /**
-     * @brief Wether or not the jukebox is enabled in this area.
-     */
-    bool m_jukebox;
-
-    /**
-     * @brief Whether or not /play can be used without CM.
-     */
-    bool m_playcmd;
-
-    /**
      * @brief Timer until the next IC message can be sent.
      */
     QTimer *m_message_floodguard_timer;
@@ -1272,21 +1209,6 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
      * @brief If false, IC messages will be rejected.
      */
     bool m_can_send_ic_messages = true;
-
-    /**
-     * @brief If false, WTCE will be rejected.
-     */
-    bool m_can_send_wtce = true;
-
-    /**
-     * @brief If false, shouts are stripped from all messages in the area.
-     */
-    bool m_can_use_shouts = true;
-
-    /**
-     * @brief If true, all clients in the area are subject to Medieval Mode.
-     */
-    bool m_medieval_mode = false;
 
   private Q_SLOTS:
     /**

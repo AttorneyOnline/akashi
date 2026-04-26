@@ -86,6 +86,7 @@ set(AKASHI_SOURCES
   src2/core/server_context.h
   src2/world/area.cpp
   src2/world/area.h
+  src2/world/area_settings.h
   src2/world/area_rules.cpp
   src2/world/area_rules.h
   src2/world/floor.h
