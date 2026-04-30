@@ -21,6 +21,7 @@
 #include "akashi_core_export.h"
 #include "world/area_settings.h"
 #include "world/evidence_store.h"
+#include "world/testimony_recorder.h"
 
 #include <QDebug>
 #include <QElapsedTimer>
@@ -156,63 +157,6 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
      * CMs can also hide evidence from various sides by putting `<owner=XXX>` into the evidence's description,
      * where `XXX` is either a position, of a list of positions separated by `,`.
      */
-
-    /**
-     * @brief The five "states" the testimony recording system can have in an area.
-     */
-    enum TestimonyRecording
-    {
-        STOPPED,
-        RECORDING,
-        UPDATE,
-        ADD,
-        PLAYBACK,
-    };
-
-    /**
-     * @var TestimonyRecording STOPPED
-     * The testimony recorder is inactive and no ic-messages can be played back.
-     * If messages are inside the buffer when its stopped, the messages will remain until the recorder is set to RECORDING
-     */
-
-    /**
-     * @var TestimonyRecording RECORDING
-     * The testimony recorder is active and any ic-message send is recorded for playback.
-     * It does not differentiate between positions, so any message is recorded. Further improvement?
-     * When the recorder is started, it will clear the buffer and will make the first message the title.
-     * To prevent accidental recording by not disabling the recorder, a configurable buffer size can be set in the config.
-     */
-
-    /**
-     * @var TestimonyRecording UPDATE
-     * The testimony recorder is active and replaces the current message at the index with the next ic-message
-     * Once the IC-Message is send the recorder will default back into playback mode to prevent accidental overwriting of messages.
-     */
-
-    /**
-     * @var TestimonyRecording ADD
-     * The testimony recorder is active and inserts the next message after the currently displayed ic-message
-     * This will increase the size by 1.
-     */
-
-    /**
-     * @var TestimonyRecording PLAYBACK
-     * The testimony recorder is inactive and ic-messages in the buffer will be played back.
-     */
-
-    /// Exposes the metadata of the TestimonyRecording enum.
-    Q_ENUM(TestimonyRecording);
-
-    /**
-     * @brief Determines how the testimony progressed after advancement was called in a direction
-     * (Either to next or previous statement).
-     */
-    enum class TestimonyProgress
-    {
-        OK,              //!< The expected statement was selected.
-        LOOPED,          //!< The "next" statement would have been beyond the testimony's limits, so the first one was selected.
-        STAYED_AT_FIRST, //!< The "previous" statement would have been before the first, so the selection stayed at the first.
-    };
 
     /**
      * @brief Determines a side. Self-explanatory.
@@ -795,91 +739,9 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
     QStringList notecards();
 
     /**
-     * @brief Returns the state of the testimony recording process in the area.
-     *
-     * @return See short description.
+     * @brief The area's testimony: recording state, statements and playback position.
      */
-    TestimonyRecording testimonyRecording() const;
-
-    /**
-     * @brief Sets the state of the testimony recording process in the area.
-     *
-     * @param f_testimonyRecording_r The new state for testimony recording.
-     */
-    void setTestimonyRecording(const TestimonyRecording &f_testimonyRecording_r);
-
-    /**
-     * @brief Sets the testimony to the first moment, and the state to TestimonyRecording::PLAYBACK.
-     */
-    void restartTestimony();
-
-    /**
-     * @brief Clears the testimony, sets the state to TestimonyRecording::STOPPED, and the statement
-     * index to -1.
-     */
-    void clearTestimony();
-
-    /**
-     * @brief Returns the contents of the testimony.
-     *
-     * @return A const reference to the testimony.
-     *
-     * @note Unlike most other getters, this one returns a reference, as it is expected to be used frequently.
-     */
-    const QVector<QStringList> &testimony() const;
-
-    /**
-     * @brief Returns the index of the currently examined statement in the testimony.
-     *
-     * @return See short description.
-     */
-    int statement() const;
-
-    /**
-     * @brief Adds a new statement to the end of the testimony, and increases the statement index by one.
-     *
-     * @param f_newStatement_r The IC message packet to append to the testimony vector.
-     */
-    void recordStatement(const QStringList &f_newStatement_r);
-
-    /**
-     * @brief Adds a statement into the testimony to a given position.
-     *
-     * @param f_position The index to insert the statement to.
-     * @param f_newStatement_r The IC message packet to insert.
-     */
-    void addStatement(int f_position, const QStringList &f_newStatement_r);
-
-    /**
-     * @brief Replaces an already existing statement in the testimony in a given position with a new one.
-     *
-     * @param f_position The index of the statement to replace.
-     * @param f_newStatement_r The IC message packet to insert in the old one's stead.
-     */
-    void replaceStatement(int f_position, const QStringList &f_newStatement_r);
-
-    /**
-     * @brief Removes a statement from the testimony at a given position, and moves the statement index one backward.
-     *
-     * @param f_position The index to remove the statement from.
-     */
-    void removeStatement(int f_position);
-
-    /**
-     * @brief Jumps the testimony playback to the given index.
-     *
-     * @details When advancing forward, if the playback would go past the last statement,
-     * it instead returns the first statement.
-     * When advancing backward, if the playback would go before the first statement, it
-     * instead returns the first statement.
-     *
-     * @param f_position The index to jump to.
-     *
-     * @return A pair of values:
-     * * First, a `QStringList` that is the packet of the statement that was advanced to.
-     * * Then, a `TestimonyProgress` value that describes how the advancement happened.
-     */
-    QPair<QStringList, AreaData::TestimonyProgress> jumpToStatement(int f_position);
+    akashi::TestimonyRecorder *testimonyRecorder();
 
     /**
      * @brief Returns a copy of the judgelog in the area.
@@ -1155,12 +1017,9 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
     QMap<QString, QString> m_notecards;
 
     /**
-     * @brief The state of the testimony recording / playback in the area.
+     * @brief The area's testimony.
      */
-    TestimonyRecording m_testimonyRecording;
-
-    QVector<QStringList> m_testimony; //!< Vector of all statements saved. Index 0 is always the title of the testimony.
-    int m_statement;                  //!< Keeps track of the currently played statement.
+    akashi::TestimonyRecorder m_testimony_recorder;
 
     /**
      * @brief The judgelog of an area.

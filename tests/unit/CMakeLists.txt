@@ -26,6 +26,7 @@ set(UNIT_TESTS
     service
     music_manager
     playerdirectory
+    testimony
     world
     playerstateobserver
     ulogger

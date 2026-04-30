@@ -61,7 +61,6 @@ set(AKASHI_SOURCES
   src/server.h
   src/serverpublisher.cpp
   src/serverpublisher.h
-  src/testimony_recorder.cpp
   src/typedefs.h
   src2/core/config_entry.cpp
   src2/core/config_store.cpp
@@ -92,6 +91,8 @@ set(AKASHI_SOURCES
   src2/world/evidence_store.cpp
   src2/world/evidence_store.h
   src2/world/floor.h
+  src2/world/testimony_recorder.cpp
+  src2/world/testimony_recorder.h
   src2/include/akashi/area_rule.h
   src2/include/akashi/config_entry.h
   src2/include/akashi/config_store.h

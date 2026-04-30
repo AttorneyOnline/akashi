@@ -9,11 +9,15 @@
 // the session by kicking itself through the MA packet. Exits 0 when
 // every step got the expected answer, 1 on a timeout or failure.
 //
-// Usage: ao2_miniclient [address] [port] [modpass] [classic]
+// The "evidence" and "testimony" modes instead play multi-client scenes:
+// the hidden-evidence numbering dance and the testimony record/playback/
+// save/load round trip.
+// Usage: ao2_miniclient [address] [port] [modpass] [classic|evidence|testimony]
 #include "aopacket.h"
 #include "websocketconnection.h"
 
 #include <QCoreApplication>
+#include <QDateTime>
 #include <QSet>
 #include <QTimer>
 
@@ -418,6 +422,7 @@ class DanceClient : public QObject
     void ready();
     void oocReceived(const QString &f_message);
     void icReceived(const QStringList &f_fields);
+    void rtReceived(const QString &f_kind);
     void evidenceChanged(const QStringList &f_names);
     void loggedIn();
     void failed(const QString &f_reason);
@@ -485,6 +490,9 @@ class DanceClient : public QObject
         }
         else if (l_header == "MS") {
             Q_EMIT icReceived(l_content);
+        }
+        else if (l_header == "RT") {
+            Q_EMIT rtReceived(l_content.value(0));
         }
         else if (l_header == "AUTH" && l_content.value(0) == "1") {
             Q_EMIT loggedIn();
@@ -716,6 +724,367 @@ class EvidenceDance : public QObject
     bool m_done = false;
 };
 
+// The testimony scene, played by two clients against a live server: a
+// leader records a testimony, plays it back, edits it and takes it through
+// a save/load round trip; a witness proves what the room really sees.
+// The load-bearing assertions:
+//   1. a LIVE recorded message reaches the room with the speaker's own
+//      char id, but every REPLAYED statement arrives with char id -1 -
+//      a replayed id would read as some current player's own message and
+//      wipe that player's input panel mid-typing;
+//   2. navigation (>, <, =, >n) replays the right statements, loops past
+//      the end and stays at the first;
+//   3. /update and /add change the right spots, and a statement holding
+//      the protocol's own separator characters (# and %) survives the
+//      save file round trip, because /loadtestimony parses every line
+//      through the same IC message parsing a live packet gets.
+class TestimonyDance : public QObject
+{
+    Q_OBJECT
+
+  public:
+    TestimonyDance(const QString &f_address, int f_port, const QString &f_modpass, QObject *parent = nullptr) :
+        QObject(parent),
+        m_address(f_address),
+        m_port(f_port),
+        m_modpass(f_modpass)
+    {
+        m_save_name = "minitest-" + QString::number(QDateTime::currentMSecsSinceEpoch());
+        m_watchdog = new QTimer(this);
+        m_watchdog->setSingleShot(true);
+        connect(m_watchdog, &QTimer::timeout, this, [this] { fail("timed out waiting for: " + m_waiting_for); });
+
+        phase(Phase::LeaderLogin, "the leader to join and log in");
+        m_leader = new DanceClient("leader", "Phoenix", m_address, m_port, 0, this);
+        connect(m_leader, &DanceClient::failed, this, [this](const QString &f_reason) { fail(f_reason); });
+        connect(m_leader, &DanceClient::ready, this, [this] { m_leader->sendOoc("/login"); });
+        connect(m_leader, &DanceClient::oocReceived, this, &TestimonyDance::onLeaderOoc);
+        connect(m_leader, &DanceClient::loggedIn, this, [this] {
+            phase(Phase::WitnessJoin, "the witness to join");
+            m_witness = new DanceClient("witness", "", m_address, m_port, 0, this);
+            connect(m_witness, &DanceClient::failed, this, [this](const QString &f_reason) { fail(f_reason); });
+            connect(m_witness, &DanceClient::ready, this, [this] {
+                phase(Phase::Testify, "the recording to start");
+                m_leader->sendOoc("/testify");
+            });
+            connect(m_witness, &DanceClient::oocReceived, this, &TestimonyDance::onWitnessOoc);
+            connect(m_witness, &DanceClient::icReceived, this, &TestimonyDance::onWitnessIc);
+            connect(m_witness, &DanceClient::rtReceived, this, [this](const QString &f_kind) { m_last_rt = f_kind; });
+        });
+    }
+
+  private:
+    enum class Phase
+    {
+        LeaderLogin,
+        WitnessJoin,
+        Testify,
+        RecordTitle,
+        RecordFirst,
+        RecordSecond,
+        Examine,
+        NextOne,
+        NextTwo,
+        LoopAround,
+        StayAtFirst,
+        JumpTwo,
+        UpdatePrompt,
+        UpdateSend,
+        AddPrompt,
+        AddSend,
+        ListAll,
+        Save,
+        DeleteCurrent,
+        ListAfterDelete,
+        Load,
+        ListAfterLoad,
+        ExamineLoaded,
+        NavigateLoaded,
+    };
+
+    AOPacket icMessage(const QString &f_text) const
+    {
+        return AOPacket("MS", {"chat", "-", m_leader->character(), "normal", f_text, "def", "1", "0", QString::number(m_leader->charId()), "0", "0", "0", "0", "0", "0"});
+    }
+
+    // IC messages chain quickly here, so each waits out the area's message
+    // floodguard first or the server drops it without a word.
+    void sendIcSoon(const QString &f_text)
+    {
+        QTimer::singleShot(400, this, [this, f_text] { m_leader->send(icMessage(f_text)); });
+    }
+
+    void onLeaderOoc(const QString &f_message)
+    {
+        if (f_message.contains("Entering login prompt")) {
+            m_leader->sendOoc(m_modpass);
+            return;
+        }
+
+        switch (m_phase) {
+        case Phase::Testify:
+            if (f_message.contains("already in progress")) {
+                // A previous run left the area recording; stop it and retry.
+                m_leader->sendOoc("/pause");
+                m_leader->sendOoc("/testify");
+            }
+            else if (f_message.contains("Started testimony recording")) {
+                phase(Phase::RecordTitle, "the room to hear the title");
+                sendIcSoon("The Turnabout");
+            }
+            break;
+        case Phase::UpdatePrompt:
+            if (f_message.contains("will replace the currently selected testimony line")) {
+                phase(Phase::UpdateSend, "the replacement statement to reach the room");
+                sendIcSoon("Second statement, revised");
+            }
+            break;
+        case Phase::UpdateSend:
+            if (f_message.contains("Updated current statement")) {
+                m_update_confirmed = true;
+                finishUpdateWhenBothArrived();
+            }
+            break;
+        case Phase::AddPrompt:
+            if (f_message.contains("will be inserted into the testimony")) {
+                phase(Phase::AddSend, "the inserted statement to reach the room");
+                sendIcSoon("Exhibit #1 at 100%");
+            }
+            break;
+        case Phase::ListAll:
+            if (f_message.contains("[1]First statement")) {
+                if (!f_message.contains("[2]Second statement, revised") || !f_message.contains("[3]Exhibit #1 at 100%")) {
+                    fail("the testimony listing is wrong: " + f_message);
+                    return;
+                }
+                say("the listing shows the update and the insert in their spots");
+                phase(Phase::Save, "the testimony to save");
+                m_leader->sendOoc("/savetestimony " + m_save_name);
+            }
+            break;
+        case Phase::Save:
+            if (f_message.contains("Testimony saved")) {
+                phase(Phase::DeleteCurrent, "the current statement to be deleted");
+                m_leader->sendOoc("/delete");
+            }
+            break;
+        case Phase::DeleteCurrent:
+            if (f_message.contains("has been deleted from the testimony")) {
+                if (!f_message.contains("id 2")) {
+                    fail("the wrong statement was deleted: " + f_message);
+                    return;
+                }
+                phase(Phase::ListAfterDelete, "the listing without the deleted statement");
+                m_leader->sendOoc("/testimony");
+            }
+            break;
+        case Phase::ListAfterDelete:
+            if (f_message.contains("[1]First statement")) {
+                if (f_message.contains("revised") || !f_message.contains("[2]Exhibit #1 at 100%")) {
+                    fail("the deletion did not remove the right statement: " + f_message);
+                    return;
+                }
+                phase(Phase::Load, "the saved testimony to load back");
+                m_leader->sendOoc("/loadtestimony " + m_save_name);
+            }
+            break;
+        case Phase::Load:
+            if (f_message.contains("Testimony loaded successfully")) {
+                phase(Phase::ListAfterLoad, "the listing of the loaded testimony");
+                m_leader->sendOoc("/testimony");
+            }
+            break;
+        case Phase::ListAfterLoad:
+            if (f_message.contains("[1]First statement")) {
+                if (!f_message.contains("[2]Second statement, revised") || !f_message.contains("[3]Exhibit #1 at 100%")) {
+                    fail("the saved testimony did not survive the round trip: " + f_message);
+                    return;
+                }
+                say("the save file round-tripped, separator characters and all");
+                phase(Phase::ExamineLoaded, "the loaded title to replay to the room");
+                m_leader->sendOoc("/examine");
+            }
+            break;
+        default:
+            break;
+        }
+    }
+
+    void onWitnessOoc(const QString &f_message)
+    {
+        if (m_phase == Phase::LoopAround && f_message.contains("Looping to first statement")) {
+            m_saw_loop_notice = true;
+        }
+    }
+
+    void onWitnessIc(const QStringList &f_fields)
+    {
+        const QString l_text = f_fields.value(4);
+        const QString l_char_id = f_fields.value(8);
+        const QString l_leader_id = QString::number(m_leader->charId());
+
+        switch (m_phase) {
+        case Phase::RecordTitle:
+            if (l_text == "~~-- The Turnabout --") {
+                // A live message during recording still belongs to its speaker.
+                if (l_char_id != l_leader_id || f_fields.value(14) != "3" || m_last_rt != "testimony1") {
+                    fail("the title broadcast is wrong: char id " + l_char_id + ", color " + f_fields.value(14) + ", after RT " + m_last_rt);
+                    return;
+                }
+                phase(Phase::RecordFirst, "the first statement to reach the room");
+                sendIcSoon("First statement");
+            }
+            break;
+        case Phase::RecordFirst:
+            if (l_text == "First statement") {
+                phase(Phase::RecordSecond, "the second statement to reach the room");
+                sendIcSoon("Second statement");
+            }
+            break;
+        case Phase::RecordSecond:
+            if (l_text == "Second statement") {
+                phase(Phase::Examine, "the examination to start with the title");
+                m_leader->sendOoc("/pause");
+                m_leader->sendOoc("/examine");
+            }
+            break;
+        case Phase::Examine:
+            if (l_text == "~~-- The Turnabout --") {
+                // Replayed statements belong to nobody; the recorded id
+                // would read as some current player's own message.
+                if (l_char_id != "-1" || m_last_rt != "testimony2") {
+                    fail("the replayed title is wrong: char id " + l_char_id + ", after RT " + m_last_rt);
+                    return;
+                }
+                phase(Phase::NextOne, "playback to advance to the first statement");
+                sendIcSoon(">");
+            }
+            break;
+        case Phase::NextOne:
+            if (l_text == "First statement") {
+                if (l_char_id != "-1") {
+                    fail("a replayed statement kept char id " + l_char_id);
+                    return;
+                }
+                phase(Phase::NextTwo, "playback to advance to the second statement");
+                sendIcSoon(">");
+            }
+            break;
+        case Phase::NextTwo:
+            if (l_text == "Second statement") {
+                phase(Phase::LoopAround, "playback to loop back to the first statement");
+                sendIcSoon(">");
+            }
+            break;
+        case Phase::LoopAround:
+            if (l_text == "First statement") {
+                if (!m_saw_loop_notice) {
+                    fail("playback looped without announcing it");
+                    return;
+                }
+                phase(Phase::StayAtFirst, "playback to stay at the first statement");
+                sendIcSoon("<");
+            }
+            break;
+        case Phase::StayAtFirst:
+            if (l_text == "First statement") {
+                phase(Phase::JumpTwo, "playback to jump to statement two");
+                sendIcSoon(">2");
+            }
+            break;
+        case Phase::JumpTwo:
+            if (l_text == "Second statement") {
+                phase(Phase::UpdatePrompt, "the update prompt");
+                m_leader->sendOoc("/update");
+            }
+            break;
+        case Phase::UpdateSend:
+            if (l_text == "Second statement, revised") {
+                if (l_char_id != l_leader_id) {
+                    fail("the live replacement lost its speaker: char id " + l_char_id);
+                    return;
+                }
+                m_update_echoed = true;
+                finishUpdateWhenBothArrived();
+            }
+            break;
+        case Phase::AddSend:
+            if (l_text == "Exhibit #1 at 100%") {
+                say("the separator characters arrived intact in the room");
+                phase(Phase::ListAll, "the full testimony listing");
+                m_leader->sendOoc("/testimony");
+            }
+            break;
+        case Phase::ExamineLoaded:
+            if (l_text == "~~-- The Turnabout --") {
+                if (l_char_id != "-1") {
+                    fail("the loaded title replayed with char id " + l_char_id);
+                    return;
+                }
+                phase(Phase::NavigateLoaded, "the loaded testimony to play back");
+                sendIcSoon(">");
+            }
+            break;
+        case Phase::NavigateLoaded:
+            if (l_text == "First statement") {
+                if (l_char_id != "-1") {
+                    fail("a loaded statement replayed with char id " + l_char_id);
+                    return;
+                }
+                say("record, playback, edits and the save/load round trip all line up");
+                m_watchdog->stop();
+                QTimer::singleShot(500, qApp, [] { qApp->exit(0); });
+            }
+            break;
+        default:
+            break;
+        }
+    }
+
+    // The update confirmation reaches only the leader while the broadcast
+    // reaches the witness, on two sockets with no order between them.
+    void finishUpdateWhenBothArrived()
+    {
+        if (m_update_confirmed && m_update_echoed) {
+            phase(Phase::AddPrompt, "the insert prompt");
+            m_leader->sendOoc("/add");
+        }
+    }
+
+    void phase(Phase f_phase, const QString &f_waiting_for)
+    {
+        m_phase = f_phase;
+        m_waiting_for = f_waiting_for;
+        say("--- waiting for " + f_waiting_for + " ---");
+        m_watchdog->start(15000);
+    }
+
+    void say(const QString &f_text)
+    {
+        std::cout << f_text.toStdString() << std::endl;
+    }
+
+    void fail(const QString &f_reason)
+    {
+        say("FAILED: " + f_reason);
+        qApp->exit(1);
+    }
+
+    QString m_address;
+    int m_port;
+    QString m_modpass;
+    QString m_save_name;
+    QTimer *m_watchdog;
+    QString m_waiting_for;
+    DanceClient *m_leader = nullptr;
+    DanceClient *m_witness = nullptr;
+    Phase m_phase = Phase::LeaderLogin;
+    QString m_last_rt;
+    bool m_saw_loop_notice = false;
+    bool m_update_confirmed = false;
+    bool m_update_echoed = false;
+};
+
 int main(int argc, char *argv[])
 {
     QCoreApplication app(argc, argv);
@@ -727,8 +1096,12 @@ int main(int argc, char *argv[])
         EvidenceDance l_dance(l_address, l_port, l_modpass);
         return app.exec();
     }
+    if (l_mode == "testimony") {
+        TestimonyDance l_dance(l_address, l_port, l_modpass);
+        return app.exec();
+    }
     if (l_mode != "classic") {
-        std::cout << "unknown mode: " << l_mode.toStdString() << " (use classic or evidence)" << std::endl;
+        std::cout << "unknown mode: " << l_mode.toStdString() << " (use classic, evidence or testimony)" << std::endl;
         return 1;
     }
     MiniClient l_client(l_address, l_port, l_modpass);

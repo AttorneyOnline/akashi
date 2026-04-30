@@ -18,11 +18,10 @@
 
 #include "area_data.h"
 
-#include "world/area.h"
-
 #include "config_manager.h"
 #include "music_manager.h"
 #include "proto/packet.h"
+#include "world/area.h"
 
 #include <QMetaEnum>
 #include <QRegularExpression>
@@ -38,7 +37,6 @@ AreaData::AreaData(QString p_name, int p_index, MusicManager *p_music_manager = 
     m_defHP(10),
     m_proHP(10),
     m_currentMusic("~stop.mp3"),
-    m_statement(0),
     m_judgelog(),
     m_lastICMessage()
 {
@@ -418,22 +416,9 @@ void AreaData::setEviMod(const EvidenceMod &f_eviMod_r)
     m_evidence_store.setAccess(toStoreAccess(f_eviMod_r));
 }
 
-void AreaData::setTestimonyRecording(const TestimonyRecording &f_testimonyRecording_r)
+akashi::TestimonyRecorder *AreaData::testimonyRecorder()
 {
-    m_testimonyRecording = f_testimonyRecording_r;
-}
-
-void AreaData::restartTestimony()
-{
-    m_testimonyRecording = TestimonyRecording::PLAYBACK;
-    m_statement = 0;
-}
-
-void AreaData::clearTestimony()
-{
-    m_testimonyRecording = AreaData::TestimonyRecording::STOPPED;
-    m_statement = -1;
-    m_testimony.clear();
+    return &m_testimony_recorder;
 }
 
 bool AreaData::forceImmediate() const
@@ -468,60 +453,6 @@ void AreaData::appendJudgelog(const QString &f_newLog_r)
     }
 
     m_judgelog.append(f_newLog_r);
-}
-
-int AreaData::statement() const
-{
-    return m_statement;
-}
-
-void AreaData::recordStatement(const QStringList &f_newStatement_r)
-{
-    ++m_statement;
-    m_testimony.append(f_newStatement_r);
-}
-
-void AreaData::addStatement(int f_position, const QStringList &f_newStatement_r)
-{
-    m_testimony.insert(f_position, f_newStatement_r);
-}
-
-void AreaData::replaceStatement(int f_position, const QStringList &f_newStatement_r)
-{
-    m_testimony.replace(f_position, f_newStatement_r);
-}
-
-void AreaData::removeStatement(int f_position)
-{
-    m_testimony.remove(f_position);
-    --m_statement;
-}
-
-QPair<QStringList, AreaData::TestimonyProgress> AreaData::jumpToStatement(int f_position)
-{
-    m_statement = f_position;
-
-    if (m_statement > m_testimony.size() - 1) {
-        m_statement = 1;
-        return {m_testimony.at(m_statement), TestimonyProgress::LOOPED};
-    }
-    if (m_statement <= 1) {
-        m_statement = 1;
-        return {m_testimony.at(m_statement), TestimonyProgress::STAYED_AT_FIRST};
-    }
-    else {
-        return {m_testimony.at(m_statement), TestimonyProgress::OK};
-    }
-}
-
-const QVector<QStringList> &AreaData::testimony() const
-{
-    return m_testimony;
-}
-
-AreaData::TestimonyRecording AreaData::testimonyRecording() const
-{
-    return m_testimonyRecording;
 }
 
 AreaData::EvidenceMod AreaData::eviMod() const

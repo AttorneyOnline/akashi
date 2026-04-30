@@ -1998,20 +1998,6 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     QString reprimand(bool f_positive = false);
 
     /**
-     * @brief Clears QVector of the current area.
-     *
-     * @details It clears both its content and trims it back to size 0
-     *
-     */
-    void clearTestimony();
-
-    /**
-     * @brief Called when area enum is set to PLAYBACK. Sends the IC-Message stored at the current statement.
-     * @return IC-Message stored in the QVector.
-     */
-    QStringList playTestimony();
-
-    /**
      * @brief Checks if a password meets the server's password requirements.
      *
      * @param username The chosen username.

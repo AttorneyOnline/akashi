@@ -34,8 +34,6 @@ class Area : public QObject
     void changeHP();
 
     void changeCharacter();
-
-    void testimony();
 };
 
 void Area::initTestCase()
@@ -176,51 +174,6 @@ void Area::changeCharacter()
         QCOMPARE(m_area->playerCount(), 1);
         QCOMPARE(m_area->charactersTaken().size(), 1);
         QCOMPARE(m_area->charactersTaken().at(0), 8);
-    }
-}
-
-void Area::testimony()
-{
-    QVector<QStringList> l_testimony = {
-        {"A"},
-        {"B"},
-        {"C"},
-        {"D"},
-        {"E"},
-    };
-
-    {
-        // Add all statements, and check that they're added.
-        for (const auto &l_statement : l_testimony) {
-            m_area->recordStatement(l_statement);
-
-            QCOMPARE(l_statement, m_area->testimony().at(m_area->statement() - 1));
-        }
-    }
-    {
-        // Restart testimony, advance two times.
-        m_area->jumpToStatement(1);
-
-        for (int i = 1; i < l_testimony.size() - 1; i++) {
-            const auto &l_results = m_area->jumpToStatement(m_area->statement() + 1);
-
-            QCOMPARE(l_results.first, l_testimony.at(i + 1));
-            QCOMPARE(l_results.second, AreaData::TestimonyProgress::OK);
-        }
-    }
-    {
-        // Next advancement loops the testimony.
-        const auto &l_results = m_area->jumpToStatement(m_area->statement() + 1);
-
-        QCOMPARE(l_results.first, l_testimony.at(1));
-        QCOMPARE(l_results.second, AreaData::TestimonyProgress::LOOPED);
-    }
-    {
-        // Going back makes the testimony stay at the first statement.
-        const auto &l_results = m_area->jumpToStatement(m_area->statement() - 1);
-
-        QCOMPARE(l_results.first, l_testimony.at(1));
-        QCOMPARE(l_results.second, AreaData::TestimonyProgress::STAYED_AT_FIRST);
     }
 }
 

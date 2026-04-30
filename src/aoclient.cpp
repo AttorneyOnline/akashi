@@ -1273,92 +1273,144 @@ akashi::PairInfo AOClient::resolvePair(int f_pair_id)
 QStringList AOClient::applyTestimony(const QStringList &f_fields)
 {
     QStringList l_args = f_fields;
-    AreaData *area = m_server->areaById(areaId());
+    akashi::TestimonyRecorder *l_recorder = m_server->areaById(areaId())->testimonyRecorder();
+    using State = akashi::TestimonyRecorder::State;
 
     QString client_name = name();
     if (client_name == "") {
         client_name = character(); // fallback in case of empty ooc name
     }
 
-    if ((area->testimonyRecording() == AreaData::TestimonyRecording::RECORDING || area->testimonyRecording() == AreaData::TestimonyRecording::ADD) && !l_args[4].isEmpty()) {
+    const State l_state = l_recorder->state();
+    if ((l_state == State::Recording || l_state == State::Add) && !l_args[4].isEmpty()) {
         // -1 indicates title
-        if (area->statement() == -1) {
+        if (l_recorder->statementIndex() == -1) {
             l_args[4] = "~~-- " + l_args[4] + " --";
             l_args[14] = "3";
             m_server->broadcast(akashi::Packet("RT", {"testimony1", "0"}), areaId());
         }
         addStatement(l_args);
     }
-    else if (area->testimonyRecording() == AreaData::TestimonyRecording::UPDATE) {
+    else if (l_state == State::Update) {
         l_args = updateStatement(l_args);
     }
-    else if (area->testimonyRecording() == AreaData::TestimonyRecording::PLAYBACK) {
-        AreaData::TestimonyProgress l_progress;
+    else if (l_state == State::Playback) {
+        std::optional<QPair<akashi::Statement, akashi::TestimonyRecorder::Playback>> l_jump;
+        bool l_navigating = false;
+
+        const QRegularExpression jump("(?<arrow>>|<)(?<int>\\d+)");
+        const QRegularExpressionMatch match = jump.match(l_args[4]);
 
         if (l_args[4] == ">") {
-            auto l_statement = area->jumpToStatement(area->statement() + 1);
-            l_args = l_statement.first;
-            l_progress = l_statement.second;
-            player()->pos = l_args[5];
-
-            sendServerMessageArea(client_name + " moved to the next statement.");
-
-            if (l_progress == AreaData::TestimonyProgress::LOOPED) {
-                sendServerMessageArea("Last statement reached. Looping to first statement.");
+            l_navigating = true;
+            l_jump = l_recorder->jumpTo(l_recorder->statementIndex() + 1);
+            if (l_jump) {
+                sendServerMessageArea(client_name + " moved to the next statement.");
+                if (l_jump->second == akashi::TestimonyRecorder::Playback::Looped) {
+                    sendServerMessageArea("Last statement reached. Looping to first statement.");
+                }
             }
         }
-        if (l_args[4] == "<") {
-            auto l_statement = area->jumpToStatement(area->statement() - 1);
-            l_args = l_statement.first;
-            l_progress = l_statement.second;
-            player()->pos = l_args[5];
-
-            sendServerMessageArea(client_name + " moved to the previous statement.");
-
-            if (l_progress == AreaData::TestimonyProgress::STAYED_AT_FIRST) {
-                sendServerMessage("First statement reached.");
+        else if (l_args[4] == "<") {
+            l_navigating = true;
+            l_jump = l_recorder->jumpTo(l_recorder->statementIndex() - 1);
+            if (l_jump) {
+                sendServerMessageArea(client_name + " moved to the previous statement.");
+                if (l_jump->second == akashi::TestimonyRecorder::Playback::StayedAtFirst) {
+                    sendServerMessage("First statement reached.");
+                }
             }
         }
-        if (l_args[4] == "=") {
-            auto l_statement = area->jumpToStatement(area->statement());
-            l_args = l_statement.first;
-            l_progress = l_statement.second;
-            player()->pos = l_args[5];
-
-            sendServerMessageArea(client_name + " repeated the current statement.");
+        else if (l_args[4] == "=") {
+            l_navigating = true;
+            l_jump = l_recorder->jumpTo(l_recorder->statementIndex());
+            if (l_jump) {
+                sendServerMessageArea(client_name + " repeated the current statement.");
+            }
+        }
+        else if (match.hasMatch()) {
+            l_navigating = true;
+            const int jump_idx = match.captured("int").toInt();
+            l_jump = l_recorder->jumpTo(jump_idx);
+            if (l_jump) {
+                sendServerMessageArea(client_name + " jumped to statement number " + QString::number(jump_idx) + ".");
+                if (l_jump->second == akashi::TestimonyRecorder::Playback::Looped) {
+                    sendServerMessageArea("Last statement reached. Looping to first statement.");
+                }
+                else if (l_jump->second == akashi::TestimonyRecorder::Playback::StayedAtFirst) {
+                    sendServerMessage("First statement reached.");
+                }
+            }
         }
 
-        QRegularExpression jump("(?<arrow>>|<)(?<int>\\d+)");
-        QRegularExpressionMatch match = jump.match(decodeMessage(l_args[4]));
-        if (match.hasMatch()) {
-            int jump_idx = match.captured("int").toInt();
-            auto l_statement = area->jumpToStatement(jump_idx);
-            l_args = l_statement.first;
-            l_progress = l_statement.second;
-            player()->pos = l_args[5];
-
-            sendServerMessageArea(client_name + " jumped to statement number " + QString::number(jump_idx) + ".");
-
-            switch (l_progress) {
-            case AreaData::TestimonyProgress::LOOPED:
-            {
-                sendServerMessageArea("Last statement reached. Looping to first statement.");
-                break;
-            }
-            case AreaData::TestimonyProgress::STAYED_AT_FIRST:
-            {
-                sendServerMessage("First statement reached.");
-                Q_FALLTHROUGH();
-            }
-            case AreaData::TestimonyProgress::OK:
-            default:
-                // No need to handle.
-                break;
-            }
+        if (l_jump) {
+            // Replayed statements belong to nobody, so no client mistakes
+            // them for its own message and clears the player's input panel.
+            l_args = l_jump->first.playbackFields();
+            player()->pos = l_jump->first.side();
+        }
+        else if (l_navigating) {
+            // The old code crashed here: playback with nothing recorded.
+            sendServerMessage("There is no testimony to play back.");
         }
     }
 
     return l_args;
+}
+
+void AOClient::addStatement(QStringList packet)
+{
+    if (checkTestimonySymbols(packet[4])) {
+        return;
+    }
+    akashi::TestimonyRecorder *l_recorder = m_server->areaById(areaId())->testimonyRecorder();
+    using State = akashi::TestimonyRecorder::State;
+    akashi::Statement l_statement(packet);
+
+    if (l_recorder->state() == State::Recording) {
+        if (l_recorder->statementIndex() <= ConfigManager::maxStatements()) {
+            l_statement.setTextColor(l_recorder->statementIndex() == -1 ? "3" : "1");
+            l_recorder->record(l_statement);
+        }
+        else {
+            sendServerMessage("Unable to add more statements. The maximum amount of statements has been reached.");
+        }
+    }
+    else if (l_recorder->state() == State::Add) {
+        // Behind the current statement; never before the title, which the
+        // old code got wrong and displaced the title with.
+        l_statement.setTextColor("1");
+        l_recorder->insert(qMax(l_recorder->statementIndex(), 0) + 1, l_statement);
+        l_recorder->setState(State::Playback);
+    }
+}
+
+QStringList AOClient::updateStatement(QStringList packet)
+{
+    if (checkTestimonySymbols(packet[4])) {
+        return packet;
+    }
+    akashi::TestimonyRecorder *l_recorder = m_server->areaById(areaId())->testimonyRecorder();
+    l_recorder->setState(akashi::TestimonyRecorder::State::Playback);
+    const int l_index = l_recorder->statementIndex();
+    if (l_index <= 0 || !l_recorder->statementAt(l_index)) {
+        sendServerMessage("Unable to update an empty statement. Please use /addtestimony.");
+        return packet;
+    }
+    akashi::Statement l_statement(packet);
+    l_statement.setTextColor("1");
+    l_recorder->replace(l_index, l_statement);
+    sendServerMessage("Updated current statement.");
+    return l_statement.icFields();
+}
+
+bool AOClient::checkTestimonySymbols(const QString &message)
+{
+    if (message.contains('>') || message.contains('<')) {
+        sendServerMessage("Unable to add statements containing '>' or '<'.");
+        return true;
+    }
+    return false;
 }
 
 void AOClient::broadcastIc(const QStringList &f_fields, int f_evidence_index)

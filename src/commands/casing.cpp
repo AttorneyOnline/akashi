@@ -112,13 +112,13 @@ void AOClient::cmdTestify(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData *l_area = m_server->areaById(areaId());
-    if (l_area->testimonyRecording() == AreaData::TestimonyRecording::RECORDING) {
+    akashi::TestimonyRecorder *l_recorder = m_server->areaById(areaId())->testimonyRecorder();
+    if (l_recorder->state() == akashi::TestimonyRecorder::State::Recording) {
         sendServerMessage("Testimony recording is already in progress. Please stop it with /pause before starting a new one.");
     }
     else {
-        clearTestimony();
-        l_area->setTestimonyRecording(AreaData::TestimonyRecording::RECORDING);
+        l_recorder->clear();
+        l_recorder->setState(akashi::TestimonyRecorder::State::Recording);
         sendServerMessage("Started testimony recording. The next IC message will be a title. Use /pause to stop recording.");
     }
 }
@@ -128,15 +128,16 @@ void AOClient::cmdExamine(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData *l_area = m_server->areaById(areaId());
-    if (l_area->testimony().size() - 1 > 0) {
-        if (l_area->testimonyRecording() == AreaData::TestimonyRecording::PLAYBACK) {
+    akashi::TestimonyRecorder *l_recorder = m_server->areaById(areaId())->testimonyRecorder();
+    if (l_recorder->statementCount() - 1 > 0) {
+        if (l_recorder->state() == akashi::TestimonyRecorder::State::Playback) {
             sendServerMessage("An examination is already running. Use /testimony to view the testimony.");
         }
         else {
-            l_area->restartTestimony();
+            l_recorder->restart();
             m_server->broadcast(akashi::Packet("RT", {"testimony2", "0"}), areaId());
-            m_server->broadcast(akashi::Packet("MS", {l_area->testimony()[0]}), areaId());
+            // The title replays like any statement: owned by nobody.
+            m_server->broadcast(akashi::Packet("MS", l_recorder->statementAt(0)->playbackFields()), areaId());
             return;
         }
     }
@@ -150,17 +151,15 @@ void AOClient::cmdTestimony(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData *l_area = m_server->areaById(areaId());
-    if (l_area->testimony().size() - 1 < 1) {
+    akashi::TestimonyRecorder *l_recorder = m_server->areaById(areaId())->testimonyRecorder();
+    if (l_recorder->statementCount() - 1 < 1) {
         sendServerMessage("Unable to display empty testimony.");
         return;
     }
 
     QString l_ooc_message;
-    for (int i = 1; i <= l_area->testimony().size() - 1; i++) {
-        QStringList l_packet = l_area->testimony().at(i);
-        QString l_ic_message = l_packet[4];
-        l_ooc_message.append("[" + QString::number(i) + "]" + l_ic_message + "\n");
+    for (int i = 1; i < l_recorder->statementCount(); i++) {
+        l_ooc_message.append("[" + QString::number(i) + "]" + l_recorder->statementAt(i)->message() + "\n");
     }
     sendServerMessage(l_ooc_message);
 }
@@ -170,13 +169,13 @@ void AOClient::cmdDeleteStatement(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData *l_area = m_server->areaById(areaId());
-    int l_c_statement = l_area->statement();
-    if (l_area->testimony().size() - 1 == 0) {
+    akashi::TestimonyRecorder *l_recorder = m_server->areaById(areaId())->testimonyRecorder();
+    const int l_c_statement = l_recorder->statementIndex();
+    if (l_recorder->statementCount() - 1 == 0) {
         sendServerMessage("Unable to delete statement. No statements saved in this area.");
     }
-    if (l_c_statement > 0 && l_area->testimony().size() > 2) {
-        l_area->removeStatement(l_c_statement);
+    if (l_c_statement > 0 && l_recorder->statementCount() > 2) {
+        l_recorder->remove(l_c_statement);
         sendServerMessage("The statement with id " + QString::number(l_c_statement) + " has been deleted from the testimony.");
     }
 }
@@ -186,7 +185,7 @@ void AOClient::cmdUpdateStatement(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    m_server->areaById(areaId())->setTestimonyRecording(AreaData::TestimonyRecording::UPDATE);
+    m_server->areaById(areaId())->testimonyRecorder()->setState(akashi::TestimonyRecorder::State::Update);
     sendServerMessage("The next IC-Message will replace the currently selected testimony line.");
 }
 
@@ -195,8 +194,7 @@ void AOClient::cmdPauseTestimony(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    AreaData *l_area = m_server->areaById(areaId());
-    l_area->setTestimonyRecording(AreaData::TestimonyRecording::STOPPED);
+    m_server->areaById(areaId())->testimonyRecorder()->setState(akashi::TestimonyRecorder::State::Stopped);
     m_server->broadcast(akashi::Packet("RT", {"testimony1", "1"}), areaId());
     sendServerMessage("Testimony has been stopped. Use /examine to begin cross-examination.");
 }
@@ -206,8 +204,9 @@ void AOClient::cmdAddStatement(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    if (m_server->areaById(areaId())->statement() < ConfigManager::maxStatements()) {
-        m_server->areaById(areaId())->setTestimonyRecording(AreaData::TestimonyRecording::ADD);
+    akashi::TestimonyRecorder *l_recorder = m_server->areaById(areaId())->testimonyRecorder();
+    if (l_recorder->statementIndex() < ConfigManager::maxStatements()) {
+        l_recorder->setState(akashi::TestimonyRecorder::State::Add);
         sendServerMessage("The next IC-Message will be inserted into the testimony.");
     }
     else
@@ -226,8 +225,8 @@ void AOClient::cmdSaveTestimony(int argc, QStringList argv)
         l_permission_found = true;
 
     if (l_permission_found) {
-        AreaData *l_area = m_server->areaById(areaId());
-        if (l_area->testimony().size() - 1 <= 0) {
+        akashi::TestimonyRecorder *l_recorder = m_server->areaById(areaId())->testimonyRecorder();
+        if (l_recorder->statementCount() - 1 <= 0) {
             sendServerMessage("Can't save an empty testimony.");
             return;
         }
@@ -252,8 +251,8 @@ void AOClient::cmdSaveTestimony(int argc, QStringList argv)
 
         QTextStream l_out(&l_file);
         if (l_file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
-            for (int i = 0; i <= l_area->testimony().size() - 1; i++) {
-                l_out << l_area->testimony().at(i).join("#") << "\n";
+            for (int i = 0; i < l_recorder->statementCount(); i++) {
+                l_out << l_recorder->statementAt(i)->toSavedLine() << "\n";
             }
             sendServerMessage("Testimony saved. To load it use /loadtestimony " + *l_testimony_name);
             setTestimonySaving(false);
@@ -269,7 +268,6 @@ void AOClient::cmdLoadTestimony(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
 
-    AreaData *l_area = m_server->areaById(areaId());
     QDir l_dir_testimony("storage/testimony");
     if (!l_dir_testimony.exists()) {
         sendServerMessage("Unable to load testimonies. Testimony storage not found.");
@@ -293,21 +291,31 @@ void AOClient::cmdLoadTestimony(int argc, QStringList argv)
         return;
     }
 
-    clearTestimony();
-    int l_testimony_lines = 0;
+    akashi::TestimonyRecorder *l_recorder = m_server->areaById(areaId())->testimonyRecorder();
+    l_recorder->clear();
+    int l_line_number = 0;
     QTextStream l_in(&l_file);
     while (!l_in.atEnd()) {
-        if (l_testimony_lines <= ConfigManager::maxStatements()) {
-            QString line = l_in.readLine();
-            QStringList packet = line.split("#");
-            l_area->addStatement(l_area->testimony().size(), packet);
-            l_testimony_lines = l_testimony_lines + 1;
+        const QString l_line = l_in.readLine();
+        ++l_line_number;
+        if (l_line.isEmpty()) {
+            continue;
         }
-        else {
+        if (l_recorder->statementCount() > ConfigManager::maxStatements()) {
             sendServerMessage("Testimony too large to be loaded.");
-            clearTestimony();
+            l_recorder->clear();
             return;
         }
+        // The file is not trusted: every line goes through the same IC
+        // message parsing a live client packet does, and a line that does
+        // not parse rejects the whole file instead of loading skewed.
+        const std::optional<akashi::Statement> l_statement = akashi::Statement::fromSavedLine(l_line);
+        if (!l_statement) {
+            sendServerMessage("Unable to load testimony. Line " + QString::number(l_line_number) + " is not a statement.");
+            l_recorder->clear();
+            return;
+        }
+        l_recorder->insert(l_recorder->statementCount(), *l_statement);
     }
     sendServerMessage("Testimony loaded successfully. Use /examine to start playback.");
 }
