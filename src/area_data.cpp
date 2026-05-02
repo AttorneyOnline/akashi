@@ -20,8 +20,8 @@
 
 #include "config_manager.h"
 #include "music_manager.h"
-#include "proto/packet.h"
 #include "world/area.h"
+#include "world/jukebox.h"
 
 #include <QMetaEnum>
 #include <QRegularExpression>
@@ -78,9 +78,11 @@ AreaData::AreaData(QString p_name, int p_index, MusicManager *p_music_manager = 
     m_timers.append(timer3);
     QTimer *timer4 = new QTimer();
     m_timers.append(timer4);
-    m_jukebox_timer = new QTimer();
-    connect(m_jukebox_timer, &QTimer::timeout,
-            this, &AreaData::switchJukeboxSong);
+    m_jukebox = new akashi::Jukebox(this);
+    connect(m_jukebox, &akashi::Jukebox::songStarted, this, [this](const akashi::JukeboxSong &f_song) {
+        setCurrentMusic(f_song.name);
+        setMusicPlayedBy("Jukebox");
+    });
     m_message_floodguard_timer = new QTimer(this);
     connect(m_message_floodguard_timer, &QTimer::timeout, this, &AreaData::allowMessage);
 }
@@ -152,6 +154,8 @@ void AreaData::removeClient(int f_charId, int f_userId)
         m_area->releaseCharacter(f_charId);
     }
     m_area->removePlayer(f_userId);
+    // A leaving player takes their jukebox influence with them.
+    m_jukebox->playerLeft(f_userId);
 }
 
 void AreaData::addClient(int f_charId, int f_userId)
@@ -160,12 +164,10 @@ void AreaData::addClient(int f_charId, int f_userId)
         m_area->takeCharacter(f_charId);
     }
     m_area->addPlayer(f_userId);
+    // The messenger layer reacts by catching the joiner up on the area's
+    // music list, ambience and playing song - the world model itself
+    // never touches the wire.
     Q_EMIT userJoinedArea(m_area->id(), f_userId);
-    // Send out ambience as well. Use channel 1 for that
-    Q_EMIT sendAreaPacketClient(akashi::Packet("MC", {m_currentAmbience, QString::number(-1), ConfigManager::serverNickname(), QString::number(1), QString::number(1)}), f_userId);
-    // The name will never be shown as we are using a spectator ID. Still nice for people who network sniff.
-    // We auto-loop this so you'll never sit in silence unless wanted.
-    Q_EMIT sendAreaPacketClient(akashi::Packet("MC", {m_currentMusic, QString::number(-1), ConfigManager::serverNickname(), QString::number(1)}), f_userId);
 }
 
 QList<int> AreaData::owners() const
@@ -215,11 +217,6 @@ AreaData::LockStatus AreaData::lockStatus() const
 bool AreaData::isJukeboxEnabled() const
 {
     return m_settings.jukebox_enabled;
-}
-
-int AreaData::jukeboxQueueSize() const
-{
-    return m_jukebox_queue.size();
 }
 
 bool AreaData::isPlayEnabled() const
@@ -644,10 +641,17 @@ void AreaData::toggleAreaMessageJoin()
 void AreaData::toggleJukebox()
 {
     m_settings.jukebox_enabled = !m_settings.jukebox_enabled;
-    if (!m_settings.jukebox_enabled) {
-        m_jukebox_queue.clear();
-        m_jukebox_timer->stop();
+    if (m_settings.jukebox_enabled) {
+        m_jukebox->start();
     }
+    else {
+        m_jukebox->stop();
+    }
+}
+
+akashi::Jukebox *AreaData::jukebox() const
+{
+    return m_jukebox;
 }
 
 void AreaData::toggleWtceAllowed()
@@ -665,57 +669,9 @@ void AreaData::toggleMedievalMode()
     m_settings.medieval_mode = !m_settings.medieval_mode;
 }
 
-QString AreaData::addJukeboxSong(QString f_song)
-{
-    if (!m_jukebox_queue.contains(f_song)) {
-        // Retrieve song information.
-        QPair<QString, float> l_song = m_music_manager->songInformation(f_song, index());
-
-        if (l_song.second > 0) {
-            if (m_jukebox_queue.size() == 0) {
-
-                Q_EMIT sendAreaPacket(akashi::Packet("MC", {l_song.first, QString::number(-1)}), index());
-                m_jukebox_timer->start(l_song.second * 1000);
-                setCurrentMusic(f_song);
-                setMusicPlayedBy("Jukebox");
-            }
-            m_jukebox_queue.append(f_song);
-            return "Song added to Jukebox.";
-        }
-        else {
-            return "Unable to add song. Duration shorter than 1.";
-        }
-    }
-    return "Unable to add song. Song already in Jukebox.";
-}
-
 QVector<int> AreaData::joinedIDs() const
 {
     return m_area->players();
-}
-
-void AreaData::switchJukeboxSong()
-{
-    QString l_song_name;
-    if (m_jukebox_queue.size() == 1) {
-        l_song_name = m_jukebox_queue[0];
-        QPair<QString, float> l_song = m_music_manager->songInformation(l_song_name, index());
-        Q_EMIT sendAreaPacket(akashi::Packet("MC", {l_song.first, "-1"}), m_area->id());
-        m_jukebox_timer->start(l_song.second * 1000);
-    }
-    else {
-        int l_random_index = QRandomGenerator::system()->bounded(m_jukebox_queue.size());
-        l_song_name = m_jukebox_queue[l_random_index];
-
-        QPair<QString, float> l_song = m_music_manager->songInformation(l_song_name, index());
-        Q_EMIT sendAreaPacket(akashi::Packet("MC", {l_song.first, "-1"}), m_area->id());
-        m_jukebox_timer->start(l_song.second * 1000);
-
-        m_jukebox_queue.remove(l_random_index);
-        m_jukebox_queue.squeeze();
-    }
-    setCurrentMusic(l_song_name);
-    setMusicPlayedBy("Jukebox");
 }
 
 void AreaData::allowMessage()

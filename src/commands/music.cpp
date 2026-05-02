@@ -22,6 +22,7 @@
 #include "music_manager.h"
 #include "proto/packet.h"
 #include "server.h"
+#include "world/jukebox.h"
 
 // This file is for commands under the music category in aoclient.h
 // Be sure to register the command in the header before adding it here!
@@ -258,8 +259,7 @@ void AOClient::cmdJukeboxSkip(int argc, QStringList argv)
     AreaData *l_area = m_server->areaById(areaId());
 
     if (l_area->isJukeboxEnabled()) {
-        if (l_area->jukeboxQueueSize() >= 1) {
-            l_area->switchJukeboxSong();
+        if (l_area->jukebox()->skip()) {
             sendServerMessageArea(l_name + " has forced a skip. Playing the next available song.");
             return;
         }

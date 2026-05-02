@@ -25,6 +25,7 @@ set(UNIT_TESTS
     networkservice
     service
     music_manager
+    jukebox
     playerdirectory
     testimony
     world

@@ -423,6 +423,7 @@ class DanceClient : public QObject
     void oocReceived(const QString &f_message);
     void icReceived(const QStringList &f_fields);
     void rtReceived(const QString &f_kind);
+    void mcReceived(const QStringList &f_fields);
     void evidenceChanged(const QStringList &f_names);
     void loggedIn();
     void failed(const QString &f_reason);
@@ -493,6 +494,9 @@ class DanceClient : public QObject
         }
         else if (l_header == "RT") {
             Q_EMIT rtReceived(l_content.value(0));
+        }
+        else if (l_header == "MC") {
+            Q_EMIT mcReceived(l_content);
         }
         else if (l_header == "AUTH" && l_content.value(0) == "1") {
             Q_EMIT loggedIn();
@@ -1085,6 +1089,202 @@ class TestimonyDance : public QObject
     bool m_update_echoed = false;
 };
 
+// The jukebox scene, played by two clients: a moderator sets up two short
+// custom songs and turns the jukebox on, a witness proves what the room
+// hears. The load-bearing assertions:
+//   1. the first request starts playback right away, broadcast as an MC
+//      with char id -1 (the jukebox, not any player, owns the music);
+//   2. after the two-second song ends the jukebox moves on BY ITSELF -
+//      the timer-driven pick reaches the room with no player acting;
+//   3. /jukebox_skip forces the next pick immediately;
+//   4. with the jukebox off, the same request is a normal music change
+//      again, carrying the requesting player's own char id.
+class JukeboxDance : public QObject
+{
+    Q_OBJECT
+
+  public:
+    JukeboxDance(const QString &f_address, int f_port, const QString &f_modpass, QObject *parent = nullptr) :
+        QObject(parent),
+        m_address(f_address),
+        m_port(f_port),
+        m_modpass(f_modpass)
+    {
+        m_watchdog = new QTimer(this);
+        m_watchdog->setSingleShot(true);
+        connect(m_watchdog, &QTimer::timeout, this, [this] { fail("timed out waiting for: " + m_waiting_for); });
+
+        phase(Phase::LeaderLogin, "the leader to join and log in");
+        m_leader = new DanceClient("leader", "Phoenix", m_address, m_port, 0, this);
+        connect(m_leader, &DanceClient::failed, this, [this](const QString &f_reason) { fail(f_reason); });
+        connect(m_leader, &DanceClient::ready, this, [this] { m_leader->sendOoc("/login"); });
+        connect(m_leader, &DanceClient::oocReceived, this, &JukeboxDance::onLeaderOoc);
+        connect(m_leader, &DanceClient::loggedIn, this, [this] {
+            phase(Phase::WitnessJoin, "the witness to join");
+            m_witness = new DanceClient("witness", "", m_address, m_port, 0, this);
+            connect(m_witness, &DanceClient::failed, this, [this](const QString &f_reason) { fail(f_reason); });
+            connect(m_witness, &DanceClient::ready, this, [this] {
+                phase(Phase::ClearCustoms, "leftover custom songs to clear");
+                m_leader->sendOoc("/clearcustommusic");
+            });
+            connect(m_witness, &DanceClient::mcReceived, this, &JukeboxDance::onWitnessMc);
+        });
+    }
+
+  private:
+    enum class Phase
+    {
+        LeaderLogin,
+        WitnessJoin,
+        ClearCustoms,
+        AddFirstSong,
+        AddSecondSong,
+        EnableJukebox,
+        FirstRequest,
+        SecondRequest,
+        AutoSwitch,
+        Skip,
+        DisableJukebox,
+        PlainMusicChange,
+    };
+
+    void requestSong(const QString &f_song)
+    {
+        m_leader->send(AOPacket("MC", {f_song, QString::number(m_leader->charId()), "", "0"}));
+    }
+
+    void onLeaderOoc(const QString &f_message)
+    {
+        if (f_message.contains("Entering login prompt")) {
+            m_leader->sendOoc(m_modpass);
+            return;
+        }
+
+        switch (m_phase) {
+        case Phase::ClearCustoms:
+            if (f_message.contains("Custom songs have been cleared")) {
+                phase(Phase::AddFirstSong, "the first custom song");
+                m_leader->sendOoc("/addmusic jukeboxtest-a,jukeboxtest-a,2");
+            }
+            break;
+        case Phase::AddFirstSong:
+            if (f_message.contains("addition of the song has succeeded")) {
+                phase(Phase::AddSecondSong, "the second custom song");
+                m_leader->sendOoc("/addmusic jukeboxtest-b,jukeboxtest-b,2");
+            }
+            else if (f_message.contains("addition of the song has failed")) {
+                fail("could not add the custom song");
+            }
+            break;
+        case Phase::AddSecondSong:
+            if (f_message.contains("addition of the song has succeeded")) {
+                phase(Phase::EnableJukebox, "the jukebox to switch on");
+                m_leader->sendOoc("/togglejukebox");
+            }
+            break;
+        case Phase::EnableJukebox:
+            if (f_message.contains("jukebox in this area has been disabled")) {
+                // A previous run left it on; the toggle also cleared it.
+                m_leader->sendOoc("/togglejukebox");
+            }
+            else if (f_message.contains("jukebox in this area has been enabled")) {
+                phase(Phase::FirstRequest, "the first request to start playback");
+                requestSong("jukeboxtest-a.opus");
+            }
+            break;
+        case Phase::SecondRequest:
+            if (f_message.contains("Song added to Jukebox")) {
+                phase(Phase::AutoSwitch, "the jukebox to move on by itself after the song ends");
+            }
+            break;
+        case Phase::DisableJukebox:
+            if (f_message.contains("jukebox in this area has been disabled")) {
+                phase(Phase::PlainMusicChange, "the request to be a normal music change again");
+                requestSong("jukeboxtest-a.opus");
+            }
+            break;
+        default:
+            break;
+        }
+    }
+
+    void onWitnessMc(const QStringList &f_fields)
+    {
+        const QString l_song = f_fields.value(0);
+        if (!l_song.startsWith("jukeboxtest-")) {
+            // Join-time catch-up music and other rooms' noise.
+            return;
+        }
+
+        switch (m_phase) {
+        case Phase::FirstRequest:
+            if (l_song == "jukeboxtest-a.opus") {
+                if (f_fields.value(1) != "-1") {
+                    fail("the jukebox broadcast carries char id " + f_fields.value(1) + " instead of -1");
+                    return;
+                }
+                phase(Phase::SecondRequest, "the second song to queue up");
+                requestSong("jukeboxtest-b.opus");
+            }
+            break;
+        case Phase::AutoSwitch:
+            if (f_fields.value(1) == "-1") {
+                say("the two-second song ended and the jukebox moved on by itself");
+                phase(Phase::Skip, "the skip to force the next pick");
+                m_leader->sendOoc("/jukebox_skip");
+            }
+            break;
+        case Phase::Skip:
+            if (f_fields.value(1) == "-1") {
+                phase(Phase::DisableJukebox, "the jukebox to switch off");
+                m_leader->sendOoc("/togglejukebox");
+            }
+            break;
+        case Phase::PlainMusicChange:
+            if (l_song == "jukeboxtest-a.opus") {
+                if (f_fields.value(1) != QString::number(m_leader->charId())) {
+                    fail("the plain music change lost its player: char id " + f_fields.value(1));
+                    return;
+                }
+                say("request, playback, self-switching, skip and the plain path all line up");
+                m_watchdog->stop();
+                QTimer::singleShot(500, qApp, [] { qApp->exit(0); });
+            }
+            break;
+        default:
+            break;
+        }
+    }
+
+    void phase(Phase f_phase, const QString &f_waiting_for)
+    {
+        m_phase = f_phase;
+        m_waiting_for = f_waiting_for;
+        say("--- waiting for " + f_waiting_for + " ---");
+        m_watchdog->start(15000);
+    }
+
+    void say(const QString &f_text)
+    {
+        std::cout << f_text.toStdString() << std::endl;
+    }
+
+    void fail(const QString &f_reason)
+    {
+        say("FAILED: " + f_reason);
+        qApp->exit(1);
+    }
+
+    QString m_address;
+    int m_port;
+    QString m_modpass;
+    QTimer *m_watchdog;
+    QString m_waiting_for;
+    DanceClient *m_leader = nullptr;
+    DanceClient *m_witness = nullptr;
+    Phase m_phase = Phase::LeaderLogin;
+};
+
 int main(int argc, char *argv[])
 {
     QCoreApplication app(argc, argv);
@@ -1100,8 +1300,12 @@ int main(int argc, char *argv[])
         TestimonyDance l_dance(l_address, l_port, l_modpass);
         return app.exec();
     }
+    if (l_mode == "jukebox") {
+        JukeboxDance l_dance(l_address, l_port, l_modpass);
+        return app.exec();
+    }
     if (l_mode != "classic") {
-        std::cout << "unknown mode: " << l_mode.toStdString() << " (use classic, evidence or testimony)" << std::endl;
+        std::cout << "unknown mode: " << l_mode.toStdString() << " (use classic, evidence, testimony or jukebox)" << std::endl;
         return 1;
     }
     MiniClient l_client(l_address, l_port, l_modpass);

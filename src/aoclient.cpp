@@ -28,6 +28,7 @@
 #include "proto/ic.h"
 #include "proto/packet.h"
 #include "server.h"
+#include "world/jukebox.h"
 
 #include <QQueue>
 
@@ -1481,7 +1482,8 @@ bool AOClient::isJukeboxEnabled() const
 
 QString AOClient::queueJukeboxSong(const QString &f_song)
 {
-    return m_server->areaById(areaId())->addJukeboxSong(f_song);
+    const QPair<QString, int> l_song = m_music_manager->songInformation(f_song, areaId());
+    return m_server->areaById(areaId())->jukebox()->request(clientId(), {f_song, l_song.first, l_song.second});
 }
 
 QString AOClient::resolveSongAlias(const QString &f_song)

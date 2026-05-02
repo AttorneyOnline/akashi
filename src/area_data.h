@@ -33,7 +33,7 @@
 
 namespace akashi {
 class Area;
-class Packet;
+class Jukebox;
 }
 
 class ConfigManager;
@@ -276,11 +276,10 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
     bool isJukeboxEnabled() const;
 
     /**
-     * @brief Returns the amount of songs pending in the Jukebox queue.
-     *
-     * @return Remaining entries of the queue as int.
+     * @brief The area's jukebox. It never touches the wire itself; the
+     * server layer broadcasts what its songStarted signal hands out.
      */
-    int jukeboxQueueSize() const;
+    akashi::Jukebox *jukebox() const;
 
     /**
      * @brief Returns whether /play is allowed without CM in this area
@@ -842,11 +841,6 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
     void toggleMedievalMode();
 
     /**
-     * @brief Adds a song to the Jukebox's queue.
-     */
-    QString addJukeboxSong(QString f_song);
-
-    /**
      * @brief Returns a constant that includes all currently joined userids.
      */
     QVector<int> joinedIDs() const;
@@ -886,28 +880,7 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
      */
     void startMessageFloodguard(int f_duration);
 
-  public Q_SLOTS:
-
-    /**
-     * @brief Plays a random song from the jukebox. Plays the same if only one is left.
-     */
-    void switchJukeboxSong();
-
   Q_SIGNALS:
-
-    /**
-     * @brief Sends a packet to every client inside the area.
-     */
-    void sendAreaPacket(const akashi::Packet &f_packet, int f_area_index);
-
-    /**
-     * @brief sendAreaPacketClient Sends a packet to the specified client.
-     *
-     * @param f_packet The packe to be send.
-     *
-     * @param f_user_id The user ID of the client.
-     */
-    void sendAreaPacketClient(const akashi::Packet &f_packet, int f_user_id);
 
     /**
      * @brief userJoinedArea Signals that a new client has joined an area.
@@ -1033,22 +1006,11 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
      */
     QStringList m_lastICMessage;
 
-    // Jukebox specific members
     /**
-     * @brief Stores the songs added to the jukebox to be played.
-     *
-     * @details This contains the names of each song, noteworthy is that none of the songs are able to be entered twice.
-     *
+     * @brief The area's jukebox. Decisions live in its policy; packets
+     * live in the server layer listening to it.
      */
-    QVector<QString> m_jukebox_queue;
-
-    /**
-     * @brief Triggers the playing of the next song once the last song has fully played.
-     *
-     * @details While this may be considered bad design, I do not care.
-     *          It triggers a direct broadcast of the MC packet in the area.
-     */
-    QTimer *m_jukebox_timer;
+    akashi::Jukebox *m_jukebox;
 
     /**
      * @brief Timer until the next IC message can be sent.

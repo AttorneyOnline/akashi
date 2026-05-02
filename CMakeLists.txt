@@ -91,6 +91,8 @@ set(AKASHI_SOURCES
   src2/world/evidence_store.cpp
   src2/world/evidence_store.h
   src2/world/floor.h
+  src2/world/jukebox.cpp
+  src2/world/jukebox.h
   src2/world/testimony_recorder.cpp
   src2/world/testimony_recorder.h
   src2/include/akashi/area_rule.h
@@ -98,6 +100,7 @@ set(AKASHI_SOURCES
   src2/include/akashi/config_store.h
   src2/include/akashi/database_service.h
   src2/include/akashi/filesystem_service.h
+  src2/include/akashi/jukebox_policy.h
   src2/include/akashi/network_service.h
   src2/include/akashi/service.h
   src2/include/akashi/service_registry.h

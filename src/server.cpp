@@ -34,6 +34,7 @@
 #include "proto/packet.h"
 #include "proto/packet_service.h"
 #include "serverpublisher.h"
+#include "world/jukebox.h"
 
 Server::Server(int p_ws_port, akashi::DatabaseService *f_database, akashi::ServiceRegistry *f_services, QObject *parent) :
     QObject(parent),
@@ -125,9 +126,20 @@ ExitCode Server::start()
         QString area_name = QString::number(i) + ":" + m_area_names[i];
         AreaData *l_area = new AreaData(area_name, i, music_manager);
         m_areas.insert(i, l_area);
-        connect(l_area, &AreaData::sendAreaPacket, this, QOverload<const akashi::Packet &, int>::of(&Server::broadcast));
-        connect(l_area, &AreaData::sendAreaPacketClient, this, &Server::unicast);
+        // The world model never builds packets; this is where its music
+        // events become wire traffic. The joiner hears the music list (from
+        // the music manager, connected first), then the area's ambience on
+        // its own channel, then the playing song - the same order the area
+        // used to send them itself.
         connect(l_area, &AreaData::userJoinedArea, music_manager, &MusicManager::userJoinedArea);
+        connect(l_area, &AreaData::userJoinedArea, this, [this, l_area](int f_area_index, int f_user_id) {
+            Q_UNUSED(f_area_index)
+            unicast(akashi::Packet("MC", {l_area->currentAmbience(), QString::number(-1), ConfigManager::serverNickname(), QString::number(1), QString::number(1)}), f_user_id);
+            unicast(akashi::Packet("MC", {l_area->currentMusic(), QString::number(-1), ConfigManager::serverNickname(), QString::number(1)}), f_user_id);
+        });
+        connect(l_area->jukebox(), &akashi::Jukebox::songStarted, this, [this, i](const akashi::JukeboxSong &f_song) {
+            broadcast(akashi::Packet("MC", {f_song.real_name, QString::number(-1)}), i);
+        });
         music_manager->registerArea(i);
     }
 
