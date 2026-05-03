@@ -23,7 +23,6 @@
 #include "core/client_session.h"
 #include "db_manager.h"
 #include "medieval_parser.h"
-#include "music_manager.h"
 #include "playerstateobserver.h"
 #include "proto/ic.h"
 #include "proto/packet.h"
@@ -655,9 +654,8 @@ void AOClient::onAfkTimeout()
 // dead or hostile connection squatting a player slot.
 static const int IDENTIFICATION_TIMEOUT_MS = 60000;
 
-AOClient::AOClient(Server *p_server, akashi::ITransport *socket, QObject *parent, int user_id, MusicManager *p_manager) :
+AOClient::AOClient(Server *p_server, akashi::ITransport *socket, QObject *parent, int user_id) :
     QObject(parent),
-    m_music_manager(p_manager),
     m_server(p_server)
 {
     m_session = new akashi::ClientSession(user_id, socket, this);
@@ -1462,7 +1460,7 @@ void AOClient::broadcastIc(const QStringList &f_fields, int f_evidence_index)
 
 bool AOClient::hasSong(const QString &f_name) const
 {
-    return m_server->musicList().contains(f_name) || m_music_manager->isCustom(areaId(), f_name);
+    return m_server->areaById(areaId())->jukebox()->hasSong(f_name);
 }
 
 bool AOClient::isDjBlocked() const
@@ -1482,13 +1480,13 @@ bool AOClient::isJukeboxEnabled() const
 
 QString AOClient::queueJukeboxSong(const QString &f_song)
 {
-    const QPair<QString, int> l_song = m_music_manager->songInformation(f_song, areaId());
-    return m_server->areaById(areaId())->jukebox()->request(clientId(), {f_song, l_song.first, l_song.second});
+    return m_server->areaById(areaId())->jukebox()->queueSong(clientId(), f_song);
 }
 
 QString AOClient::resolveSongAlias(const QString &f_song)
 {
-    return m_music_manager->songInformation(f_song, areaId()).first;
+    const auto l_info = m_server->areaById(areaId())->jukebox()->songInfo(f_song);
+    return l_info ? l_info->real_name : f_song;
 }
 
 void AOClient::recordMusicChange(const QString &f_song)

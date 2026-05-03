@@ -8,9 +8,13 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-find_package(Qt6 6.4 REQUIRED COMPONENTS Core Network WebSockets Sql Test)
+option(BUILD_TESTING "Build tests and the miniclient" OFF)
 
-enable_testing()
+set(_qt_components Core Network WebSockets Sql)
+if(BUILD_TESTING)
+  list(APPEND _qt_components Test)
+endif()
+find_package(Qt6 6.4 REQUIRED COMPONENTS ${_qt_components})
 
 qt_standard_project_setup()
 
@@ -50,8 +54,6 @@ set(AKASHI_SOURCES
   src/discord.h
   src/medieval_parser.cpp
   src/medieval_parser.h
-  src/music_manager.cpp
-  src/music_manager.h
   src/packets.cpp
   src/player_directory.cpp
   src/player_directory.h
@@ -214,4 +216,7 @@ install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/akashiConfigVersion.cmake
     DESTINATION lib/cmake/akashi)
 
-add_subdirectory(tests)
+if(BUILD_TESTING)
+  enable_testing()
+  add_subdirectory(tests)
+endif()

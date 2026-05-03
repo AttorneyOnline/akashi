@@ -19,7 +19,6 @@
 #include "area_data.h"
 
 #include "config_manager.h"
-#include "music_manager.h"
 #include "world/area.h"
 #include "world/jukebox.h"
 
@@ -31,12 +30,10 @@
 static akashi::EvidenceStore::Access toStoreAccess(AreaData::EvidenceMod f_mod);
 static AreaData::EvidenceMod fromStoreAccess(akashi::EvidenceStore::Access f_access);
 
-AreaData::AreaData(QString p_name, int p_index, MusicManager *p_music_manager = nullptr) :
-    m_music_manager(p_music_manager),
+AreaData::AreaData(QString p_name, int p_index) :
     m_document("No document."),
     m_defHP(10),
     m_proHP(10),
-    m_currentMusic("~stop.mp3"),
     m_judgelog(),
     m_lastICMessage()
 {
@@ -80,8 +77,7 @@ AreaData::AreaData(QString p_name, int p_index, MusicManager *p_music_manager = 
     m_timers.append(timer4);
     m_jukebox = new akashi::Jukebox(this);
     connect(m_jukebox, &akashi::Jukebox::songStarted, this, [this](const akashi::JukeboxSong &f_song) {
-        setCurrentMusic(f_song.name);
-        setMusicPlayedBy("Jukebox");
+        m_jukebox->changeMusic(f_song.name, QStringLiteral("Jukebox"));
     });
     m_message_floodguard_timer = new QTimer(this);
     connect(m_message_floodguard_timer, &QTimer::timeout, this, &AreaData::allowMessage);
@@ -486,38 +482,37 @@ QStringList AreaData::notecards()
 
 QString AreaData::musicPlayerBy() const
 {
-    return m_musicPlayedBy;
+    return m_jukebox->musicPlayedBy();
 }
 
 void AreaData::setMusicPlayedBy(const QString &f_music_player)
 {
-    m_musicPlayedBy = f_music_player;
+    m_jukebox->changeMusic(m_jukebox->currentSong(), f_music_player);
 }
 
 void AreaData::changeMusic(const QString &f_source_r, const QString &f_newSong_r)
 {
-    m_currentMusic = f_newSong_r;
-    m_musicPlayedBy = f_source_r;
+    m_jukebox->changeMusic(f_newSong_r, f_source_r);
 }
 
 void AreaData::changeAmbience(const QString &f_newSong_r)
 {
-    m_currentAmbience = f_newSong_r;
+    m_jukebox->changeAmbience(f_newSong_r);
 }
 
 QString AreaData::currentMusic() const
 {
-    return m_currentMusic;
+    return m_jukebox->currentSong();
 }
 
 QString AreaData::currentAmbience() const
 {
-    return m_currentAmbience;
+    return m_jukebox->currentAmbience();
 }
 
 void AreaData::setCurrentMusic(QString f_current_song)
 {
-    m_currentMusic = f_current_song;
+    m_jukebox->changeMusic(f_current_song, m_jukebox->musicPlayedBy());
 }
 
 int AreaData::proHP() const
@@ -605,12 +600,7 @@ void AreaData::setBackground(const QString f_background)
     m_settings.background = f_background;
     QSettings *ambience_data = ConfigManager::ambience();
     QString new_ambience = ambience_data->value(f_background + "/ambience").toString();
-    if (new_ambience != "") {
-        changeAmbience(new_ambience);
-    }
-    else {
-        changeAmbience(""); // DON'T use ~stop.mp3 it overrides some code we don't want overridden
-    }
+    m_jukebox->changeAmbience(new_ambience.isEmpty() ? QString() : new_ambience);
 }
 
 QString AreaData::side() const

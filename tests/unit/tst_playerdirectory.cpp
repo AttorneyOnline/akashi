@@ -27,7 +27,7 @@ class tst_PlayerDirectory : public QObject
 
 AOClient *tst_PlayerDirectory::makeClient(int f_id)
 {
-    return new AOClient(nullptr, new FakeTransport(true), nullptr, f_id, nullptr);
+    return new AOClient(nullptr, new FakeTransport(true), nullptr, f_id);
 }
 
 void tst_PlayerDirectory::handsOutLowestIdsFirst()

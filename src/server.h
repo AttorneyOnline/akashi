@@ -25,6 +25,7 @@
 #include "player_directory.h"
 #include "playerstateobserver.h"
 #include "proto/packet.h"
+#include "world/floor.h"
 
 #include <QCoreApplication>
 #include <QDebug>
@@ -54,7 +55,6 @@ class CommandExtensionCollection;
 class ConfigManager;
 class DBManager;
 class Discord;
-class MusicManager;
 class ULogger;
 
 /**
@@ -463,10 +463,6 @@ class AKASHI_CORE_EXPORT Server : public QObject
      */
     ULogger *logger;
 
-    /**
-     * @brief Handles all musiclists.
-     */
-    MusicManager *music_manager;
 
     /**
      * @brief The port through which the server will accept WebSocket connections.
@@ -505,13 +501,11 @@ class AKASHI_CORE_EXPORT Server : public QObject
      */
     QStringList m_area_names;
 
+
     /**
-     * @brief The available songs on the server.
-     *
-     * @details Does **not** include the area names, the actual music list packet should be constructed from
-     * #area_names and this combined.
+     * @brief The default floor holding the music catalog from music.json.
      */
-    QStringList m_music_list;
+    akashi::Floor m_default_floor;
 
     /**
      * @brief The backgrounds on the server that may be used in areas.

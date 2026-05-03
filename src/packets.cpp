@@ -20,7 +20,6 @@
 #include "config_manager.h"
 #include "core/client_session.h"
 #include "db_manager.h"
-#include "music_manager.h"
 #include "proto/evidence.h"
 #include "proto/packet.h"
 #include "proto/text_utils.h"

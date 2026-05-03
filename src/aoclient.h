@@ -34,7 +34,6 @@
 
 class AreaData;
 class DBManager;
-class MusicManager;
 class Server;
 
 namespace akashi {
@@ -92,7 +91,7 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
      * @param user_id The user ID of the client.
      * @param parent Qt-based parent, passed along to inherited constructor from QObject.
      */
-    AOClient(Server *p_server, akashi::ITransport *socket, QObject *parent = nullptr, int user_id = 0, MusicManager *p_manager = nullptr);
+    AOClient(Server *p_server, akashi::ITransport *socket, QObject *parent = nullptr, int user_id = 0);
 
     /**
      * @brief Destructor for the AOClient instance.
@@ -560,10 +559,6 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     void reconnectTimedOut();
 
   private:
-    /**
-     * @brief Pointer to the server's music manager instance.
-     */
-    MusicManager *m_music_manager;
 
     /**
      * @brief The connection and the person behind it - owns the transport,

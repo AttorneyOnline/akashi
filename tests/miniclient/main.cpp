@@ -1164,20 +1164,20 @@ class JukeboxDance : public QObject
         case Phase::ClearCustoms:
             if (f_message.contains("Custom songs have been cleared")) {
                 phase(Phase::AddFirstSong, "the first custom song");
-                m_leader->sendOoc("/addmusic jukeboxtest-a,jukeboxtest-a,2");
+                m_leader->sendOoc("/addmusic jukeboxtest-a.opus,jukeboxtest-a.opus,2");
             }
             break;
         case Phase::AddFirstSong:
-            if (f_message.contains("addition of the song has succeeded")) {
+            if (f_message.contains("Song added successfully")) {
                 phase(Phase::AddSecondSong, "the second custom song");
-                m_leader->sendOoc("/addmusic jukeboxtest-b,jukeboxtest-b,2");
+                m_leader->sendOoc("/addmusic jukeboxtest-b.opus,jukeboxtest-b.opus,2");
             }
-            else if (f_message.contains("addition of the song has failed")) {
+            else if (f_message.contains("not from an approved source") || f_message.contains("cannot be empty")) {
                 fail("could not add the custom song");
             }
             break;
         case Phase::AddSecondSong:
-            if (f_message.contains("addition of the song has succeeded")) {
+            if (f_message.contains("Song added successfully")) {
                 phase(Phase::EnableJukebox, "the jukebox to switch on");
                 m_leader->sendOoc("/togglejukebox");
             }

@@ -24,7 +24,6 @@ set(UNIT_TESTS
     medieval_parser
     networkservice
     service
-    music_manager
     jukebox
     playerdirectory
     testimony

@@ -25,6 +25,8 @@ enum class AreaEvent
     PlayerLeft,
     MessageSent,
     EvidencePresented,
+    MusicRequested,
+    AmbienceRequested,
 };
 
 // When a rule runs relative to the change its event describes. A Before

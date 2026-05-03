@@ -43,7 +43,7 @@ void Area::initTestCase()
 
 void Area::init()
 {
-    m_area = new AreaData("Test Area", 0, nullptr);
+    m_area = new AreaData("Test Area", 0);
 }
 
 void Area::cleanup()

@@ -28,7 +28,7 @@
 #include "db_manager.h"
 #include "discord.h"
 #include "logger/u_logger.h"
-#include "music_manager.h"
+#include "world/floor.h"
 #include "network/network_socket.h"
 #include "proto/handshake.h"
 #include "proto/packet.h"
@@ -110,37 +110,37 @@ ExitCode Server::start()
     // Get backgrounds from config file
     m_backgrounds = ConfigManager::backgrounds();
 
-    // Build our music manager.
-
-    MusicList l_musiclist = ConfigManager::musiclist();
-    music_manager = new MusicManager(ConfigManager::cdnList(), l_musiclist, ConfigManager::ordered_songs(), this);
-    connect(music_manager, &MusicManager::sendFMPacket, this, &Server::unicast);
-    connect(music_manager, &MusicManager::sendAreaFMPacket, this, QOverload<const akashi::Packet &, int>::of(&Server::broadcast));
-
-    // Get musiclist from config file
-    m_music_list = music_manager->rootMusiclist();
+    // Seed the default floor's music catalog from music.json.
+    const MusicList l_musiclist = ConfigManager::musiclist();
+    m_default_floor.music_ordered = ConfigManager::ordered_songs();
+    m_default_floor.approved_cdns = ConfigManager::cdnList();
+    for (auto it = l_musiclist.constBegin(); it != l_musiclist.constEnd(); ++it) {
+        m_default_floor.music_songs.insert(it.key(), {it.key(), it.value().first, it.value().second});
+    }
 
     // Assembles the area list
     m_area_names = ConfigManager::sanitizedAreaNames();
     for (int i = 0; i < m_area_names.length(); i++) {
         QString area_name = QString::number(i) + ":" + m_area_names[i];
-        AreaData *l_area = new AreaData(area_name, i, music_manager);
+        AreaData *l_area = new AreaData(area_name, i);
         m_areas.insert(i, l_area);
-        // The world model never builds packets; this is where its music
-        // events become wire traffic. The joiner hears the music list (from
-        // the music manager, connected first), then the area's ambience on
-        // its own channel, then the playing song - the same order the area
-        // used to send them itself.
-        connect(l_area, &AreaData::userJoinedArea, music_manager, &MusicManager::userJoinedArea);
+        l_area->jukebox()->setFloorCatalog(&m_default_floor);
+
+        connect(l_area->jukebox(), &akashi::Jukebox::musicListChanged, this, [this, i, l_area]() {
+            broadcast(akashi::Packet("FM", l_area->jukebox()->resolvedList()), i);
+        });
+        connect(l_area->jukebox(), &akashi::Jukebox::ambienceChanged, this, [this, i](const QString &f_song) {
+            broadcast(akashi::Packet("MC", {f_song, QString::number(-1), ConfigManager::serverNickname(), QString::number(1), QString::number(1)}), i);
+        });
         connect(l_area, &AreaData::userJoinedArea, this, [this, l_area](int f_area_index, int f_user_id) {
             Q_UNUSED(f_area_index)
+            unicast(akashi::Packet("FM", l_area->jukebox()->resolvedList()), f_user_id);
             unicast(akashi::Packet("MC", {l_area->currentAmbience(), QString::number(-1), ConfigManager::serverNickname(), QString::number(1), QString::number(1)}), f_user_id);
             unicast(akashi::Packet("MC", {l_area->currentMusic(), QString::number(-1), ConfigManager::serverNickname(), QString::number(1)}), f_user_id);
         });
         connect(l_area->jukebox(), &akashi::Jukebox::songStarted, this, [this, i](const akashi::JukeboxSong &f_song) {
             broadcast(akashi::Packet("MC", {f_song.real_name, QString::number(-1)}), i);
         });
-        music_manager->registerArea(i);
     }
 
     // Loads the command help information. This is not stored inside the server.
@@ -216,7 +216,7 @@ void Server::clientConnected()
     }
 
     int user_id = m_player_directory.takeId();
-    AOClient *client = new AOClient(this, l_socket, nullptr, user_id, music_manager);
+    AOClient *client = new AOClient(this, l_socket, nullptr, user_id);
 
     int multiclient_count = 1;
     bool is_at_multiclient_limit = false;
@@ -363,7 +363,19 @@ void Server::reloadSettings()
     Q_EMIT updateHTTPConfiguration();
     handleDiscordIntegration();
     logger->loadLogtext();
-    music_manager->reloadRequest();
+
+    // Reseed the default floor's catalog from the reloaded music.json.
+    const MusicList l_musiclist = ConfigManager::musiclist();
+    m_default_floor.music_ordered = ConfigManager::ordered_songs();
+    m_default_floor.approved_cdns = ConfigManager::cdnList();
+    m_default_floor.music_songs.clear();
+    for (auto it = l_musiclist.constBegin(); it != l_musiclist.constEnd(); ++it) {
+        m_default_floor.music_songs.insert(it.key(), {it.key(), it.value().first, it.value().second});
+    }
+    for (AreaData *l_area : qAsConst(m_areas)) {
+        l_area->jukebox()->setFloorCatalog(&m_default_floor);
+    }
+
     applyIdAssignment();
     m_ipban_list = ConfigManager::iprangeBans();
     m_banned_asns = ConfigManager::bannedAsns();
@@ -554,7 +566,7 @@ QString Server::areaName(int f_area_id)
 
 QStringList Server::musicList()
 {
-    return m_music_list;
+    return m_default_floor.music_ordered;
 }
 
 QStringList Server::backgrounds()

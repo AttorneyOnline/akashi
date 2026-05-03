@@ -38,7 +38,6 @@ class Jukebox;
 
 class ConfigManager;
 class Logger;
-class MusicManager;
 
 /**
  * @brief Represents an area on the server, a distinct "room" for people to chat in.
@@ -55,7 +54,7 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
      * and `YYYYYY` is the actual name of the area.
      * @param p_index The index of the area in the area list.
      */
-    AreaData(QString p_name, int p_index, MusicManager *p_music_manager);
+    AreaData(QString p_name, int p_index);
 
     /**
      * @brief The world-model core this class delegates to; the area-update
@@ -912,10 +911,6 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
      */
     QString m_display_name;
 
-    /**
-     * @brief Pointer to the global music manager.
-     */
-    MusicManager *m_music_manager;
 
     /**
      * @brief The area's court record: the items people can present here.
@@ -952,26 +947,6 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
      */
     int m_proHP;
 
-    /**
-     * @brief The title of the music currently being played in the area.
-     *
-     * @details Title is a path to the music file, with the starting point on
-     * `base/sounds/music/` clientside, with file extension.
-     */
-    QString m_currentMusic;
-
-    /**
-     * @brief See m_currentMusic, but for ambience.
-     *
-     * @details Title is a path to the music file, with the starting point on
-     * `base/sounds/music/` clientside, with file extension.
-     */
-    QString m_currentAmbience;
-
-    /**
-     * @brief The name of the client (or client's character) that started the currently playing music.
-     */
-    QString m_musicPlayedBy;
 
     /**
      * @brief A pointer to a Logger, used to send requests to log data.

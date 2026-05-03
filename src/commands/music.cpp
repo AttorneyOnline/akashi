@@ -19,7 +19,6 @@
 #include "area_data.h"
 #include "config_manager.h"
 #include "core/client_session.h"
-#include "music_manager.h"
 #include "proto/packet.h"
 #include "server.h"
 #include "world/jukebox.h"
@@ -39,13 +38,13 @@ void AOClient::cmdPlay(int argc, QStringList argv)
         m_session->transport->close();
         return;
     }
-    if ((l_song.startsWith("http://", Qt::CaseInsensitive) || l_song.startsWith("https://", Qt::CaseInsensitive)) && !m_music_manager->validateSong(l_song, ConfigManager::cdnList())) {
+    if (l_song.contains('/') && !akashi::Jukebox::validateSong(l_song, ConfigManager::cdnList())) {
         sendServerMessage("The song you tried to play is not from an approved CDN.");
         return;
     }
     AreaData *l_area = m_server->areaById(areaId());
     const ACLRole l_role = m_server->aclRolesHandler()->roleById(m_session->acl_role_id);
-    if (!l_area->owners().contains(clientId()) && !l_area->isPlayEnabled() && !l_role.canPerform(ACLRole::CM)) { // Make sure we have permission to play music
+    if (!l_area->owners().contains(clientId()) && !l_area->isPlayEnabled() && !l_role.canPerform(ACLRole::CM)) {
         sendServerMessage("Free music play is disabled in this area.");
         return;
     }
@@ -73,7 +72,7 @@ void AOClient::cmdPlayAmbience(int argc, QStringList argv)
         return;
     }
     QString l_song = argv.join(" ");
-    if ((l_song.startsWith("http://", Qt::CaseInsensitive) || l_song.startsWith("https://", Qt::CaseInsensitive)) && !m_music_manager->validateSong(l_song, ConfigManager::cdnList())) {
+    if (l_song.contains('/') && !akashi::Jukebox::validateSong(l_song, ConfigManager::cdnList())) {
         sendServerMessage("The song you tried to play is not from an approved CDN.");
         return;
     }
@@ -174,57 +173,40 @@ void AOClient::cmdAddMusic(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
 
-    // This needs some explanation.
-    // Akashi has no concept of argument count,so any space is interpreted as a new element
-    // in the QStringList. This works fine until someone enters something with a space.
-    // Since we can't preencode those elements, we join all as a string and use a delimiter
-    // that does not exist in file and URL paths. I decided on the ol' reliable ','.
     QString l_argv_string = argv.join(" ");
     QStringList l_argv = l_argv_string.split(",");
-
-    bool l_success = false;
-    if (l_argv.size() == 1) {
-        QString l_song_name = l_argv.value(0);
-        l_success = m_music_manager->addCustomSong(l_song_name, l_song_name, 0, areaId());
-    }
-
-    if (l_argv.size() == 2) {
-        QString l_song_name = l_argv.value(0);
-        QString l_true_name = l_argv.value(1);
-        l_success = m_music_manager->addCustomSong(l_song_name, l_true_name, 0, areaId());
-    }
-
-    if (l_argv.size() == 3) {
-        QString l_song_name = l_argv.value(0);
-        QString l_true_name = l_argv.value(1);
-        bool ok;
-        int l_song_duration = l_argv.value(2).toInt(&ok);
-        if (!ok)
-            l_song_duration = 0;
-        l_success = m_music_manager->addCustomSong(l_song_name, l_true_name, l_song_duration, areaId());
-    }
 
     if (l_argv.size() >= 4) {
         sendServerMessage("Too many arguments. Addition of song has failed.");
         return;
     }
 
-    QString l_message = l_success ? "succeeded." : "failed.";
-    sendServerMessage("The addition of the song has " + l_message);
+    QString l_song_name = l_argv.value(0).trimmed();
+    QString l_true_name = l_argv.size() >= 2 ? l_argv.value(1).trimmed() : l_song_name;
+    int l_song_duration = 0;
+    if (l_argv.size() >= 3) {
+        bool ok;
+        l_song_duration = l_argv.value(2).trimmed().toInt(&ok);
+        if (!ok)
+            l_song_duration = 0;
+    }
+
+    akashi::Jukebox *l_jukebox = m_server->areaById(areaId())->jukebox();
+    sendServerMessage(l_jukebox->addSong({l_song_name, l_true_name, l_song_duration}));
 }
 
 void AOClient::cmdAddMusicCategory(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
-    bool l_success = m_music_manager->addCustomCategory(argv.join(" "), areaId());
-    QString l_message = l_success ? "succeeded." : "failed.";
-    sendServerMessage("The addition of the category has " + l_message);
+    akashi::Jukebox *l_jukebox = m_server->areaById(areaId())->jukebox();
+    sendServerMessage(l_jukebox->addCategory(argv.join(" ")));
 }
 
 void AOClient::cmdRemoveCustomMusic(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
-    bool l_success = m_music_manager->removeCustomMusic(argv.join(" "), areaId());
+    akashi::Jukebox *l_jukebox = m_server->areaById(areaId())->jukebox();
+    bool l_success = l_jukebox->removeSong(argv.join(" "));
     QString l_message = l_success ? "succeeded." : "failed.";
     sendServerMessage("The removal of the entry has " + l_message);
 }
@@ -233,16 +215,16 @@ void AOClient::cmdToggleCustomMusic(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
     Q_UNUSED(argv);
-    bool l_status = m_music_manager->toggleCustomMusicEnabled(areaId());
-    QString l_message = (l_status) ? "enabled." : "disabled.";
-    sendServerMessage("Global musiclist has been " + l_message);
+    akashi::Jukebox *l_jukebox = m_server->areaById(areaId())->jukebox();
+    l_jukebox->resetToFloor();
+    sendServerMessage("Custom music list has been reset to the floor defaults.");
 }
 
 void AOClient::cmdClearCustomMusic(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
     Q_UNUSED(argv);
-    m_music_manager->clearCustomMusicList(areaId());
+    m_server->areaById(areaId())->jukebox()->resetToFloor();
     sendServerMessage("Custom songs have been cleared.");
 }
 

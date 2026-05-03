@@ -1,7 +1,11 @@
 #ifndef WORLD_FLOOR_H
 #define WORLD_FLOOR_H
 
+#include "akashi/jukebox_policy.h"
+
+#include <QMap>
 #include <QString>
+#include <QStringList>
 #include <QVector>
 
 namespace akashi {
@@ -29,6 +33,15 @@ class Floor
     QString name;
     CharacterPolicy character_policy = CharacterPolicy::UniquePerArea;
     QVector<int> area_ids; // the floor's areas, in x order
+
+    // The floor's music catalog. Seeded from music.json at startup, then
+    // floor config can add, remove or replace entries. Every area on this
+    // floor inherits this list as its baseline; area customs layer on top.
+    QStringList music_ordered;
+    QMap<QString, JukeboxSong> music_songs;
+
+    // CDN domains approved for URL-based custom songs.
+    QStringList approved_cdns;
 };
 
 } // namespace akashi
