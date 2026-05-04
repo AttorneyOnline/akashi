@@ -28,6 +28,7 @@ set(UNIT_TESTS
     playerdirectory
     testimony
     world
+    arup_broadcaster
     playerstateobserver
     ulogger
 )

@@ -88,6 +88,8 @@ set(AKASHI_SOURCES
   src2/world/area.cpp
   src2/world/area.h
   src2/world/area_settings.h
+  src2/world/arup_broadcaster.cpp
+  src2/world/arup_broadcaster.h
   src2/world/area_rules.cpp
   src2/world/area_rules.h
   src2/world/evidence_store.cpp

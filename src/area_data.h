@@ -892,6 +892,7 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
      * @param f_user_id The user ID of the client.
      */
     void userJoinedArea(int f_area_index, int f_user_id);
+    void userLeftArea(int f_area_index, int f_user_id);
 
   private:
     /**

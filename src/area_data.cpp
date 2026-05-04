@@ -150,8 +150,8 @@ void AreaData::removeClient(int f_charId, int f_userId)
         m_area->releaseCharacter(f_charId);
     }
     m_area->removePlayer(f_userId);
-    // A leaving player takes their jukebox influence with them.
     m_jukebox->playerLeft(f_userId);
+    Q_EMIT userLeftArea(m_area->id(), f_userId);
 }
 
 void AreaData::addClient(int f_charId, int f_userId)
