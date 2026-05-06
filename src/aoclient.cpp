@@ -21,20 +21,22 @@
 #include "command_extension.h"
 #include "config_manager.h"
 #include "core/client_session.h"
+#include "core/command_context.h"
+#include "core/command_registry.h"
+#include "core/permission_registry.h"
 #include "db_manager.h"
 #include "medieval_parser.h"
 #include "playerstateobserver.h"
 #include "proto/ic.h"
 #include "proto/packet.h"
 #include "server.h"
+#include "world/arup_broadcaster.h"
 #include "world/jukebox.h"
 
 #include <QQueue>
 
 const QMap<QString, AOClient::CommandInfo> AOClient::COMMANDS{
     {"login", {{ACLRole::NONE}, 0, &AOClient::cmdLogin}},
-    {"getarea", {{ACLRole::NONE}, 0, &AOClient::cmdGetArea}},
-    {"getareas", {{ACLRole::NONE}, 0, &AOClient::cmdGetAreas}},
     {"ban", {{ACLRole::BAN}, 3, &AOClient::cmdBan}},
     {"kick", {{ACLRole::KICK}, 2, &AOClient::cmdKick}},
     {"changeauth", {{ACLRole::SUPER}, 0, &AOClient::cmdChangeAuth}},
@@ -67,7 +69,6 @@ const QMap<QString, AOClient::CommandInfo> AOClient::COMMANDS{
     {"area_spectate", {{ACLRole::CM}, 0, &AOClient::cmdSpectatable}},
     {"area_unlock", {{ACLRole::CM}, 0, &AOClient::cmdUnLock}},
     {"timer", {{ACLRole::CM}, 0, &AOClient::cmdTimer}},
-    {"area", {{ACLRole::NONE}, 1, &AOClient::cmdArea}},
     {"play", {{ACLRole::NONE}, 1, &AOClient::cmdPlay}},
     {"area_kick", {{ACLRole::CM}, 1, &AOClient::cmdAreaKick}},
     {"randomchar", {{ACLRole::NONE}, 0, &AOClient::cmdRandomChar}},
@@ -176,13 +177,10 @@ void AOClient::leave()
     // (banned) connection must not broadcast ARUPs to the whole server.
     if (m_session->joined) {
         m_server->areaById(areaId())->removeClient(m_server->characterId(character()), clientId());
-        arup(ARUPType::PLAYER_COUNT, true);
 
         if (character() != "") {
             m_server->updateCharsTaken(m_server->areaById(areaId()));
         }
-
-        bool l_updateLocks = false;
 
         const QVector<AreaData *> l_areas = m_server->areas();
         for (AreaData *l_area : l_areas) {
@@ -190,13 +188,8 @@ void AOClient::leave()
                 l_area->uninvite(m_session->id);
             }
 
-            l_updateLocks = l_updateLocks || l_area->removeOwner(clientId());
+            l_area->removeOwner(clientId());
         }
-
-        if (l_updateLocks) {
-            arup(ARUPType::LOCKED, true);
-        }
-        arup(ARUPType::CM, true);
     }
 }
 
@@ -307,7 +300,6 @@ void AOClient::changeArea(int new_area)
     }
     m_server->areaById(new_area)->addClient(player()->char_id, clientId());
     setAreaId(new_area);
-    arup(ARUPType::PLAYER_COUNT, true);
     sendEvidenceList(m_server->areaById(new_area));
     sendPacket("HP", {"1", QString::number(m_server->areaById(new_area)->defHP())});
     sendPacket("HP", {"2", QString::number(m_server->areaById(new_area)->proHP())});
@@ -377,10 +369,45 @@ void AOClient::changePosition(QString new_pos)
 void AOClient::handleCommand(QString command, int argc, QStringList argv)
 {
     command = command.toLower();
+
+    // New registry path: if the command is registered, run through the new dispatch.
+    akashi::CommandRegistry *l_registry = m_server->commandRegistry();
+    if (l_registry && l_registry->contains(command)) {
+        if (auto l_spec = l_registry->spec(command)) {
+            // Permission check: any-of the listed permissions must pass.
+            if (!l_spec->permissions.isEmpty()) {
+                bool l_has_permission = false;
+                for (const QString &l_perm : l_spec->permissions) {
+                    if (canPerform(l_perm)) {
+                        l_has_permission = true;
+                        break;
+                    }
+                }
+                if (!l_has_permission) {
+                    sendServerMessage("You do not have permission to use that command.");
+                    return;
+                }
+            }
+
+            if (argc < l_spec->min_args) {
+                sendServerMessage("Invalid command syntax.");
+                if (!l_spec->usage.isEmpty()) {
+                    sendServerMessage("The expected syntax for this command is: \n" + l_spec->usage);
+                }
+                return;
+            }
+
+            akashi::CommandContext l_context(this, m_server, argv);
+            akashi::CommandHandler l_handler = l_registry->handler(command);
+            l_handler(l_context);
+            return;
+        }
+    }
+
+    // Legacy path: static COMMANDS map with member-function-pointers.
     QString l_target_command = command;
     QVector<ACLRole::Permission> l_permissions;
 
-    // check for aliases
     const QList<CommandExtension> l_extensions = m_server->commandExtensionCollection()->extensions();
     for (const CommandExtension &i_extension : l_extensions) {
         if (i_extension.checkCommandNameAndAlias(command)) {
@@ -413,69 +440,7 @@ void AOClient::handleCommand(QString command, int argc, QStringList argv)
         return;
     }
 
-    (this->*(l_command.action))(argc, argv);
-}
-
-void AOClient::arup(ARUPType type, bool broadcast)
-{
-    QStringList l_arup_data;
-    l_arup_data.append(QString::number(type));
-    const QVector<AreaData *> l_areas = m_server->areas();
-    for (AreaData *l_area : l_areas) {
-        switch (type) {
-        case ARUPType::PLAYER_COUNT:
-        {
-            l_arup_data.append(QString::number(l_area->playerCount()));
-            break;
-        }
-        case ARUPType::STATUS:
-        {
-            QString l_area_status = l_area->statusLine();
-            l_arup_data.append(l_area_status);
-            break;
-        }
-        case ARUPType::CM:
-        {
-            if (l_area->owners().isEmpty()) {
-                l_arup_data.append("FREE");
-            }
-            else {
-                QStringList l_area_owners;
-                const QList<int> l_owner_ids = l_area->owners();
-                for (int l_owner_id : l_owner_ids) {
-                    AOClient *l_owner = m_server->clientById(l_owner_id);
-                    l_area_owners.append("[" + QString::number(l_owner->clientId()) + "] " + l_owner->character());
-                }
-                l_arup_data.append(l_area_owners.join(", "));
-            }
-            break;
-        }
-        case ARUPType::LOCKED:
-        {
-            QString l_lock_status = QVariant::fromValue(l_area->lockStatus()).toString();
-            l_arup_data.append(l_lock_status);
-            break;
-        }
-        default:
-        {
-            return;
-        }
-        }
-    }
-    if (broadcast) {
-        m_server->broadcast(akashi::Packet("ARUP", l_arup_data));
-    }
-    else {
-        sendPacket("ARUP", l_arup_data);
-    }
-}
-
-void AOClient::fullArup()
-{
-    arup(ARUPType::PLAYER_COUNT, false);
-    arup(ARUPType::STATUS, false);
-    arup(ARUPType::CM, false);
-    arup(ARUPType::LOCKED, false);
+    std::invoke(l_command.action, this, argc, argv);
 }
 
 void AOClient::sendPacket(const akashi::Packet &packet)
@@ -811,12 +776,12 @@ void AOClient::sendEvidenceList()
 
 void AOClient::sendFullArup()
 {
-    fullArup();
+    m_server->arupBroadcaster()->sendFullArup(clientId());
 }
 
 void AOClient::broadcastPlayerCount()
 {
-    arup(ARUPType::PLAYER_COUNT, true);
+    m_server->arupBroadcaster()->broadcastNow(akashi::ArupBroadcaster::Type::PlayerCount);
 }
 
 bool AOClient::selectCharacter(int f_char_id)
@@ -1581,7 +1546,16 @@ void AOClient::setCharacterPassword(const QString &f_password)
 
 bool AOClient::canPerform(const QString &f_permission) const
 {
-    return canPerform(ACLRole::PERMISSION_CAPTIONS.key(f_permission, ACLRole::NONE));
+    akashi::PermissionQuery l_query;
+    l_query.permission = f_permission;
+    l_query.client_id = clientId();
+    l_query.area_id = areaId();
+    l_query.is_authenticated = isAuthenticated();
+    l_query.auth_type = ConfigManager::authType() == DataTypes::AuthType::SIMPLE
+                            ? QStringLiteral("simple")
+                            : QStringLiteral("advanced");
+    l_query.acl_role_id = m_session->acl_role_id;
+    return m_server->permissionRegistry()->resolve(l_query);
 }
 
 QString AOClient::areaName() const

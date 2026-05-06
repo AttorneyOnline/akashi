@@ -9,11 +9,6 @@ const QString ACLRolesHandler::NONE_ID = "NONE";
 
 const QString ACLRolesHandler::SUPER_ID = "SUPER";
 
-const QHash<QString, ACLRole> ACLRolesHandler::readonly_roles{
-    {ACLRolesHandler::NONE_ID, ACLRole(ACLRole::NONE)},
-    {ACLRolesHandler::SUPER_ID, ACLRole(ACLRole::SUPER)},
-};
-
 const QHash<ACLRole::Permission, QString> ACLRole::PERMISSION_CAPTIONS{
     {
         ACLRole::Permission::NONE,
@@ -97,11 +92,22 @@ const QHash<ACLRole::Permission, QString> ACLRole::PERMISSION_CAPTIONS{
     },
 };
 
+const QHash<QString, ACLRole> ACLRolesHandler::readonly_roles{
+    {ACLRolesHandler::NONE_ID, ACLRole(ACLRole::NONE)},
+    {ACLRolesHandler::SUPER_ID, ACLRole(ACLRole::SUPER)},
+};
+
 ACLRole::ACLRole() {}
 
 ACLRole::ACLRole(ACLRole::Permissions f_permissions) :
     m_permissions(f_permissions)
 {
+    const QList<Permission> l_all = PERMISSION_CAPTIONS.keys();
+    for (const Permission l_perm : l_all) {
+        if (l_perm != NONE && f_permissions.testFlag(l_perm)) {
+            m_string_permissions.insert(PERMISSION_CAPTIONS.value(l_perm));
+        }
+    }
 }
 
 ACLRole::~ACLRole() {}
@@ -113,20 +119,54 @@ ACLRole::Permissions ACLRole::permissions() const
 
 bool ACLRole::canPerform(Permission f_permission) const
 {
-    if (f_permission == ACLRole::NONE) {
+    return canPerform(PERMISSION_CAPTIONS.value(f_permission));
+}
+
+bool ACLRole::canPerform(const QString &f_permission) const
+{
+    if (f_permission.isEmpty() || f_permission == QLatin1String("none")) {
         return true;
     }
-    return m_permissions.testFlag(f_permission);
+    if (m_string_permissions.contains(QStringLiteral("super"))) {
+        return true;
+    }
+    return m_string_permissions.contains(f_permission);
 }
 
 void ACLRole::setPermissions(ACLRole::Permissions f_permissions)
 {
     m_permissions = f_permissions;
+    m_string_permissions.clear();
+    const QList<Permission> l_all = PERMISSION_CAPTIONS.keys();
+    for (const Permission l_perm : l_all) {
+        if (l_perm != NONE && f_permissions.testFlag(l_perm)) {
+            m_string_permissions.insert(PERMISSION_CAPTIONS.value(l_perm));
+        }
+    }
 }
 
 void ACLRole::setPermission(Permission f_permission, bool f_mode)
 {
     m_permissions.setFlag(f_permission, f_mode);
+    const QString l_name = PERMISSION_CAPTIONS.value(f_permission);
+    if (!l_name.isEmpty()) {
+        setPermission(l_name, f_mode);
+    }
+}
+
+void ACLRole::setPermission(const QString &f_permission, bool f_mode)
+{
+    if (f_mode) {
+        m_string_permissions.insert(f_permission);
+    }
+    else {
+        m_string_permissions.remove(f_permission);
+    }
+}
+
+const QSet<QString> &ACLRole::stringPermissions() const
+{
+    return m_string_permissions;
 }
 
 ACLRolesHandler::ACLRolesHandler(QObject *parent) :
@@ -205,9 +245,11 @@ bool ACLRolesHandler::loadFile(QString f_file_name)
         ACLRole l_role;
         const QList<ACLRole::Permission> l_permissions = ACLRole::PERMISSION_CAPTIONS.keys();
         for (const ACLRole::Permission &i_permission : l_permissions) {
-            const QVariant l_value = l_settings.value(ACLRole::PERMISSION_CAPTIONS.value(i_permission));
+            const QString l_caption = ACLRole::PERMISSION_CAPTIONS.value(i_permission);
+            const QVariant l_value = l_settings.value(l_caption);
             if (l_value.isValid()) {
-                l_role.setPermission(i_permission, l_value.toBool());
+                bool l_enabled = l_value.toBool();
+                l_role.setPermission(i_permission, l_enabled);
             }
         }
         m_roles.insert(l_upper_group, std::move(l_role));

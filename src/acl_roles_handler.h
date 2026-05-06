@@ -6,6 +6,8 @@
 #include <QFlags>
 #include <QHash>
 #include <QObject>
+#include <QSet>
+#include <QString>
 
 class AKASHI_CORE_EXPORT ACLRole
 {
@@ -81,27 +83,19 @@ class AKASHI_CORE_EXPORT ACLRole
      */
     bool canPerform(ACLRole::Permission f_permission) const;
 
-    /**
-     * @brief Sets the permission if f_mode is true or unsets if f_mode is false.
-     *
-     * @param f_permission The permission flag to set.
-     *
-     * @param f_mode If true, will set the flag, unsets otherwise.
-     */
+    bool canPerform(const QString &f_permission) const;
+
     void setPermission(ACLRole::Permission f_permission, bool f_mode);
 
-    /**
-     * @brief Sets the permission flags to the given permission flags.
-     *
-     * @param f_permissions The permission flags to set to.
-     */
+    void setPermission(const QString &f_permission, bool f_mode);
+
     void setPermissions(ACLRole::Permissions f_permissions);
 
+    const QSet<QString> &stringPermissions() const;
+
   private:
-    /**
-     * @brief The permission flags of the role.
-     */
     ACLRole::Permissions m_permissions;
+    QSet<QString> m_string_permissions;
 };
 Q_DECLARE_METATYPE(ACLRole::Permission)
 

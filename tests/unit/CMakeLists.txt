@@ -31,6 +31,7 @@ set(UNIT_TESTS
     arup_broadcaster
     playerstateobserver
     ulogger
+    command_registry
 )
 
 foreach(name ${UNIT_TESTS})

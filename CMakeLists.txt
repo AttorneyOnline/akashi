@@ -76,6 +76,13 @@ set(AKASHI_SOURCES
   src2/core/json_settings.h
   src2/core/client_session.cpp
   src2/core/client_session.h
+  src2/core/command_context.cpp
+  src2/core/command_context.h
+  src2/core/command_registry.cpp
+  src2/core/command_registry.h
+  src2/core/command_spec.h
+  src2/core/permission_registry.cpp
+  src2/core/permission_registry.h
   src2/core/mmdb_reader.cpp
   src2/core/mmdb_reader.h
   src2/core/player_state.cpp
@@ -85,6 +92,8 @@ set(AKASHI_SOURCES
   src2/core/settings.cpp
   src2/core/server_context.cpp
   src2/core/server_context.h
+  src2/commands/area_commands.cpp
+  src2/commands/area_commands.h
   src2/world/area.cpp
   src2/world/area.h
   src2/world/area_settings.h

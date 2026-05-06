@@ -24,7 +24,10 @@
 #include "aoclient.h"
 #include "area_data.h"
 #include "command_extension.h"
+#include "commands/area_commands.h"
 #include "config_manager.h"
+#include "core/command_registry.h"
+#include "core/permission_registry.h"
 #include "db_manager.h"
 #include "discord.h"
 #include "logger/u_logger.h"
@@ -34,6 +37,7 @@
 #include "proto/packet.h"
 #include "proto/packet_service.h"
 #include "serverpublisher.h"
+#include "world/arup_broadcaster.h"
 #include "world/jukebox.h"
 
 Server::Server(int p_ws_port, akashi::DatabaseService *f_database, akashi::ServiceRegistry *f_services, QObject *parent) :
@@ -57,6 +61,9 @@ Server::Server(int p_ws_port, akashi::DatabaseService *f_database, akashi::Servi
     command_extension_collection = new CommandExtensionCollection;
     command_extension_collection->setCommandNameWhitelist(AOClient::COMMANDS.keys());
     command_extension_collection->loadFile(ConfigManager::path("command_extensions.json"));
+
+    m_permission_registry = new akashi::PermissionRegistry;
+    m_command_registry = new akashi::CommandRegistry;
 
     // We create it, even if its not used later on.
     discord = new Discord(this);
@@ -143,6 +150,22 @@ ExitCode Server::start()
         });
     }
 
+    m_arup_broadcaster = new akashi::ArupBroadcaster(this);
+    for (int i = 0; i < m_areas.size(); ++i) {
+        m_arup_broadcaster->addArea(m_areas[i]->area());
+    }
+    m_arup_broadcaster->setOwnerFormatter([this](int owner_id) -> QString {
+        AOClient *owner = clientById(owner_id);
+        if (!owner) {
+            return {};
+        }
+        return QStringLiteral("[") + QString::number(owner->clientId()) + QStringLiteral("] ") + owner->character();
+    });
+    connect(m_arup_broadcaster, &akashi::ArupBroadcaster::arupBroadcast, this, [this](const akashi::Packet &packet) {
+        broadcast(packet);
+    });
+    connect(m_arup_broadcaster, &akashi::ArupBroadcaster::arupUnicast, this, &Server::unicast);
+
     // Loads the command help information. This is not stored inside the server.
     ConfigManager::loadCommandHelp();
 
@@ -160,6 +183,73 @@ ExitCode Server::start()
 
     m_player_directory.setCapacity(ConfigManager::maxPlayers());
     applyIdAssignment();
+
+    // Register built-in permissions.
+    const auto l_register_perm = [this](const QString &f_id, const QString &f_display, const QString &f_category) {
+        m_permission_registry->registerPermission({f_id, f_display, {}, f_category}, QStringLiteral("core"));
+    };
+    l_register_perm(akashi::permission::kick, QStringLiteral("Kick"), QStringLiteral("moderation"));
+    l_register_perm(akashi::permission::ban, QStringLiteral("Ban"), QStringLiteral("moderation"));
+    l_register_perm(akashi::permission::lock_background, QStringLiteral("Lock Background"), QStringLiteral("area"));
+    l_register_perm(akashi::permission::modify_users, QStringLiteral("Modify Users"), QStringLiteral("administration"));
+    l_register_perm(akashi::permission::gamemaster, QStringLiteral("Case Manager"), QStringLiteral("area"));
+    l_register_perm(akashi::permission::global_timer, QStringLiteral("Global Timer"), QStringLiteral("area"));
+    l_register_perm(akashi::permission::modify_evidence, QStringLiteral("Modify Evidence"), QStringLiteral("area"));
+    l_register_perm(akashi::permission::motd, QStringLiteral("MOTD"), QStringLiteral("administration"));
+    l_register_perm(akashi::permission::announcer, QStringLiteral("Announcer"), QStringLiteral("moderation"));
+    l_register_perm(akashi::permission::chat_moderator, QStringLiteral("Chat Moderator"), QStringLiteral("moderation"));
+    l_register_perm(akashi::permission::mute, QStringLiteral("Mute"), QStringLiteral("moderation"));
+    l_register_perm(akashi::permission::remove_gamemaster, QStringLiteral("Remove CM"), QStringLiteral("moderation"));
+    l_register_perm(akashi::permission::save_testimony, QStringLiteral("Save Testimony"), QStringLiteral("area"));
+    l_register_perm(akashi::permission::force_charselect, QStringLiteral("Force Charselect"), QStringLiteral("moderation"));
+    l_register_perm(akashi::permission::bypass_locks, QStringLiteral("Bypass Locks"), QStringLiteral("moderation"));
+    l_register_perm(akashi::permission::ignore_background_list, QStringLiteral("Ignore BG List"), QStringLiteral("area"));
+    l_register_perm(akashi::permission::send_notice, QStringLiteral("Send Notice"), QStringLiteral("moderation"));
+    l_register_perm(akashi::permission::jukebox, QStringLiteral("Jukebox"), QStringLiteral("area"));
+    l_register_perm(akashi::permission::super, QStringLiteral("Super"), QStringLiteral("administration"));
+
+    // Register the built-in permission resolver chain.
+    m_permission_registry->registerResolver(QStringLiteral("none_check"), 0,
+        [](const akashi::PermissionQuery &q) -> akashi::PermissionVerdict {
+            if (q.permission.isEmpty() || q.permission == akashi::permission::none) {
+                return akashi::PermissionVerdict::Granted;
+            }
+            return akashi::PermissionVerdict::NoOpinion;
+        }, QStringLiteral("core"));
+
+    m_permission_registry->registerResolver(QStringLiteral("area_owner"), 100,
+        [this](const akashi::PermissionQuery &q) -> akashi::PermissionVerdict {
+            if (q.permission == akashi::permission::gamemaster) {
+                AreaData *l_area = areaById(q.area_id);
+                if (l_area && l_area->owners().contains(q.client_id)) {
+                    return akashi::PermissionVerdict::Granted;
+                }
+            }
+            return akashi::PermissionVerdict::NoOpinion;
+        }, QStringLiteral("core"));
+
+    m_permission_registry->registerResolver(QStringLiteral("authentication"), 200,
+        [](const akashi::PermissionQuery &q) -> akashi::PermissionVerdict {
+            if (!q.is_authenticated) {
+                return akashi::PermissionVerdict::Denied;
+            }
+            if (q.auth_type == QStringLiteral("simple")) {
+                return akashi::PermissionVerdict::Granted;
+            }
+            return akashi::PermissionVerdict::NoOpinion;
+        }, QStringLiteral("core"));
+
+    m_permission_registry->registerResolver(QStringLiteral("role_check"), 300,
+        [this](const akashi::PermissionQuery &q) -> akashi::PermissionVerdict {
+            const ACLRole l_role = acl_roles_handler->roleById(q.acl_role_id);
+            if (l_role.canPerform(q.permission)) {
+                return akashi::PermissionVerdict::Granted;
+            }
+            return akashi::PermissionVerdict::Denied;
+        }, QStringLiteral("core"));
+
+    // Register proof-of-concept commands.
+    akashi::commands::registerAreaCommands(*m_command_registry);
 
     return ExitCode::Ok;
 }
@@ -354,6 +444,21 @@ QHostAddress Server::parseToIPv4(QHostAddress f_remote_ip)
 PlayerStateObserver *Server::playerStateObserver()
 {
     return &m_player_state_observer;
+}
+
+akashi::ArupBroadcaster *Server::arupBroadcaster()
+{
+    return m_arup_broadcaster;
+}
+
+akashi::CommandRegistry *Server::commandRegistry()
+{
+    return m_command_registry;
+}
+
+akashi::PermissionRegistry *Server::permissionRegistry()
+{
+    return m_permission_registry;
 }
 
 void Server::reloadSettings()
@@ -699,4 +804,6 @@ Server::~Server()
     delete acl_roles_handler;
     delete db_manager;
     delete m_filesystem;
+    delete m_command_registry;
+    delete m_permission_registry;
 }

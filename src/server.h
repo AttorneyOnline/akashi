@@ -41,9 +41,12 @@
 #include <memory>
 
 namespace akashi {
+class ArupBroadcaster;
+class CommandRegistry;
 class DatabaseService;
 class FileSystemService;
 class PacketService;
+class PermissionRegistry;
 class ServiceRegistry;
 }
 
@@ -369,6 +372,12 @@ class AKASHI_CORE_EXPORT Server : public QObject
      */
     PlayerStateObserver *playerStateObserver();
 
+    akashi::ArupBroadcaster *arupBroadcaster();
+
+    akashi::CommandRegistry *commandRegistry();
+
+    akashi::PermissionRegistry *permissionRegistry();
+
   public Q_SLOTS:
     /**
      * @brief Convenience class to call a reload of available configuraiton elements.
@@ -475,6 +484,10 @@ class AKASHI_CORE_EXPORT Server : public QObject
      * connection attempts.
      */
     PlayerDirectory m_player_directory;
+
+    akashi::ArupBroadcaster *m_arup_broadcaster = nullptr;
+    akashi::CommandRegistry *m_command_registry = nullptr;
+    akashi::PermissionRegistry *m_permission_registry = nullptr;
 
     PlayerStateObserver m_player_state_observer;
 

@@ -184,17 +184,6 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     void setWtceBlocked(bool f_wtce_blocked);
 
     /**
-     * @brief The type of area update, used for area update (ARUP) packets.
-     */
-    enum ARUPType
-    {
-        PLAYER_COUNT, //!< The packet contains player count updates.
-        STATUS,       //!< The packet contains area status updates.
-        CM,           //!< The packet contains updates about who's the CM of what area.
-        LOCKED        //!< The packet contains updates about what areas are locked.
-    };
-
-    /**
      * @brief Checks if the client's ACL role has permission for the given permission.
      *
      * @param f_permission The permission flags.
@@ -217,20 +206,6 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
      */
     void setSpectator(bool f_spectator);
 
-    /**
-     * @brief Sends or announces an ARUP update.
-     *
-     * @param type The type of ARUP to send.
-     * @param broadcast If true, the update is sent out to all clients on the server. If false, it is only sent to this client.
-     *
-     * @see AOClient::ARUPType
-     */
-    void arup(ARUPType type, bool broadcast);
-
-    /**
-     * @brief Sends all four types of ARUP to the client.
-     */
-    void fullArup();
     /**
      * @brief Sends an out-of-character message originating from the server to the client.
      *
@@ -811,33 +786,6 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
      * @see AreaData::FREE
      */
     void cmdUnLock(int argc, QStringList argv);
-
-    /**
-     * @brief Lists all clients in all areas.
-     *
-     * @details No arguments.
-     *
-     * @iscommand
-     */
-    void cmdGetAreas(int argc, QStringList argv);
-
-    /**
-     * @brief Lists all clients in the area the caller is in.
-     *
-     * @details No arguments.
-     *
-     * @iscommand
-     */
-    void cmdGetArea(int argc, QStringList argv);
-
-    /**
-     * @brief Moves the caller to the area with the given ID.
-     *
-     * @details Takes an **area ID** as an argument.
-     *
-     * @iscommand
-     */
-    void cmdArea(int argc, QStringList argv);
 
     /**
      * @brief Kicks a client from the area, moving them back to the default area.

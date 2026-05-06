@@ -36,7 +36,6 @@ void AOClient::cmdCM(int argc, QStringList argv)
     else if (l_area->owners().isEmpty()) { // no one owns this area, and it's not protected
         l_area->addOwner(clientId());
         sendServerMessageArea(l_sender_name + " is now CM in this area.");
-        arup(ARUPType::CM, true);
     }
     else if (!l_area->owners().contains(clientId())) { // there is already a CM, and it isn't us
         sendServerMessage("You cannot become a CM in this area when someone else is. You must be CM'ed by an existing one.");
@@ -58,7 +57,6 @@ void AOClient::cmdCM(int argc, QStringList argv)
         }
         l_area->addOwner(l_owner_candidate->clientId());
         sendServerMessageArea(l_owner_candidate->name() + " is now CM in this area.");
-        arup(ARUPType::CM, true);
     }
     else {
         sendServerMessage("You are already a CM in this area.");
@@ -93,8 +91,6 @@ void AOClient::cmdUnCM(int argc, QStringList argv)
                 }
             }
             sendServerMessage("All CMs except yourself have been unCMed.");
-            arup(ARUPType::LOCKED, true);
-            arup(ARUPType::CM, true);
             return;
         }
 
@@ -121,11 +117,7 @@ void AOClient::cmdUnCM(int argc, QStringList argv)
         return;
     }
 
-    if (l_area->removeOwner(l_uid)) {
-        arup(ARUPType::LOCKED, true);
-    }
-
-    arup(ARUPType::CM, true);
+    l_area->removeOwner(l_uid);
 }
 
 void AOClient::cmdInvite(int argc, QStringList argv)
@@ -200,7 +192,6 @@ void AOClient::cmdLock(int argc, QStringList argv)
             area->invite(l_client->clientId());
         }
     }
-    arup(ARUPType::LOCKED, true);
 }
 
 void AOClient::cmdSpectatable(int argc, QStringList argv)
@@ -221,7 +212,6 @@ void AOClient::cmdSpectatable(int argc, QStringList argv)
             l_area->invite(l_client->clientId());
         }
     }
-    arup(ARUPType::LOCKED, true);
 }
 
 void AOClient::cmdUnLock(int argc, QStringList argv)
@@ -236,45 +226,6 @@ void AOClient::cmdUnLock(int argc, QStringList argv)
     }
     sendServerMessageArea("This area is now unlocked.");
     l_area->unlock();
-    arup(ARUPType::LOCKED, true);
-}
-
-void AOClient::cmdGetAreas(int argc, QStringList argv)
-{
-    Q_UNUSED(argc);
-    Q_UNUSED(argv);
-
-    QStringList l_entries;
-    l_entries.append("\n== Currently Online: " + QString::number(m_server->playerCount()) + " ==");
-    for (int i = 0; i < m_server->areaCount(); i++) {
-        if (m_server->areaById(i)->playerCount() > 0) {
-            QStringList l_cur_area_lines = buildAreaList(i);
-            l_entries.append(l_cur_area_lines);
-        }
-    }
-    sendServerMessage(l_entries.join("\n"));
-}
-
-void AOClient::cmdGetArea(int argc, QStringList argv)
-{
-    Q_UNUSED(argc);
-    Q_UNUSED(argv);
-
-    QStringList l_entries = buildAreaList(areaId());
-    sendServerMessage(l_entries.join("\n"));
-}
-
-void AOClient::cmdArea(int argc, QStringList argv)
-{
-    Q_UNUSED(argc);
-
-    bool ok;
-    int l_new_area = argv[0].toInt(&ok);
-    if (!ok || l_new_area >= m_server->areaCount() || l_new_area < 0) {
-        sendServerMessage("That does not look like a valid area ID.");
-        return;
-    }
-    changeArea(l_new_area);
 }
 
 void AOClient::cmdAreaKick(int argc, QStringList argv)
@@ -430,7 +381,6 @@ void AOClient::cmdStatus(int argc, QStringList argv)
     QString l_arg = argv[0].toLower();
 
     if (l_area->changeStatus(l_arg)) {
-        arup(ARUPType::STATUS, true);
         m_server->broadcast(akashi::Packet("CT", {ConfigManager::serverNickname(), character() + " changed status to " + l_arg.toUpper(), "1"}), areaId());
     }
     else {
