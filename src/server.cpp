@@ -25,6 +25,12 @@
 #include "area_data.h"
 #include "command_extension.h"
 #include "commands/area_commands.h"
+#include "commands/authentication_commands.h"
+#include "commands/casing_commands.h"
+#include "commands/messaging_commands.h"
+#include "commands/moderation_commands.h"
+#include "commands/music_commands.h"
+#include "commands/roleplay_commands.h"
 #include "config_manager.h"
 #include "core/command_registry.h"
 #include "core/permission_registry.h"
@@ -248,8 +254,13 @@ ExitCode Server::start()
             return akashi::PermissionVerdict::Denied;
         }, QStringLiteral("core"));
 
-    // Register proof-of-concept commands.
     akashi::commands::registerAreaCommands(*m_command_registry);
+    akashi::commands::registerAuthenticationCommands(*m_command_registry);
+    akashi::commands::registerModerationCommands(*m_command_registry);
+    akashi::commands::registerCasingCommands(*m_command_registry);
+    akashi::commands::registerMusicCommands(*m_command_registry);
+    akashi::commands::registerRoleplayCommands(*m_command_registry);
+    akashi::commands::registerMessagingCommands(*m_command_registry);
 
     return ExitCode::Ok;
 }

@@ -414,6 +414,7 @@ class DanceClient : public QObject
 
     void sendOoc(const QString &f_message) { send(AOPacket("CT", {m_name, f_message})); }
 
+    int clientId() const { return m_client_id; }
     int charId() const { return m_char_id; }
     QString character() const { return m_character; }
     QStringList evidenceNames() const { return m_evidence_names; }
@@ -1285,6 +1286,213 @@ class JukeboxDance : public QObject
     Phase m_phase = Phase::LeaderLogin;
 };
 
+// The commands scene, played by two clients: a moderator exercises every
+// converted command file (moderation, casing, music, roleplay, messaging)
+// against a target player. Each command is sent in turn and its expected
+// OOC response is matched before moving on.
+class CommandsDance : public QObject
+{
+    Q_OBJECT
+
+  public:
+    CommandsDance(const QString &f_address, int f_port, const QString &f_modpass, QObject *parent = nullptr) :
+        QObject(parent),
+        m_address(f_address),
+        m_port(f_port),
+        m_modpass(f_modpass)
+    {
+        m_watchdog = new QTimer(this);
+        m_watchdog->setSingleShot(true);
+        connect(m_watchdog, &QTimer::timeout, this, [this] { fail("timed out waiting for: " + m_waiting_for); });
+
+        setPhase(Phase::LeaderLogin, "the leader to join and log in");
+        m_leader = new DanceClient("leader", "Phoenix", m_address, m_port, 0, this);
+        connect(m_leader, &DanceClient::failed, this, [this](const QString &f_reason) { fail(f_reason); });
+        connect(m_leader, &DanceClient::ready, this, [this] { m_leader->sendOoc("/login"); });
+        connect(m_leader, &DanceClient::oocReceived, this, &CommandsDance::onLeaderOoc);
+        connect(m_leader, &DanceClient::loggedIn, this, [this] {
+            setPhase(Phase::TargetJoin, "the target to join");
+            m_target = new DanceClient("target", "", m_address, m_port, 0, this);
+            connect(m_target, &DanceClient::failed, this, [this](const QString &f_reason) { fail(f_reason); });
+            connect(m_target, &DanceClient::ready, this, [this] {
+                buildQueue();
+                runNext();
+            });
+        });
+    }
+
+  private:
+    struct CommandTest {
+        QString command;
+        QString expected;
+    };
+
+    enum class Phase
+    {
+        LeaderLogin,
+        TargetJoin,
+        Testing,
+    };
+
+    void buildQueue()
+    {
+        QString l_tid = QString::number(m_target->clientId());
+
+        m_queue = {
+            // -- moderation_commands.cpp (27 commands) --
+            {"/about", "akashi"},
+            {"/motd", "MOTD"},
+            {"/mods", "OOC name"},
+            {"/commands", "Allowed commands"},
+            {"/help about", "server version"},
+            {"/help all", "==Help=="},
+            {"/set_motd miniclient test", "MOTD has been changed"},
+            {"/bans", "Last 5 bans"},
+            {"/baninfo 1", "Ban Info"},
+            {"/mute " + l_tid, "Muted player"},
+            {"/unmute " + l_tid, "Unmuted player"},
+            {"/ooc_mute " + l_tid, "OOC muted player"},
+            {"/ooc_unmute " + l_tid, "OOC unmuted player"},
+            {"/block_wtce " + l_tid, "Revoked player"},
+            {"/unblock_wtce " + l_tid, "Restored player"},
+            {"/allow_blankposting", "blankposting"},
+            {"/allow_blankposting", "blankposting"},
+            {"/force_noint_pres", "immediate text processing"},
+            {"/force_noint_pres", "immediate text processing"},
+            {"/allow_iniswap", "Iniswapping"},
+            {"/allow_iniswap", "Iniswapping"},
+            {"/permitsaving " + l_tid, "Testimony saving has been enabled"},
+            {"/reload", "Reloaded configurations"},
+            {"/notice test notice", "notice"},
+            {"/noticeg global test", "notice"},
+
+            // -- casing_commands.cpp (13 commands) --
+            {"/doc test document", "changed the document"},
+            {"/doc", "Document: test document"},
+            {"/cleardoc", "cleared the document"},
+            {"/evidence_mod ffa", "Changed evidence mod"},
+            {"/evidence_mod cm", "Changed evidence mod"},
+            {"/testify", "Started testimony recording"},
+            {"/pause", "Testimony has been stopped"},
+            {"/testimony", "Unable to display empty testimony"},
+            {"/examine", "Unable to start replay"},
+
+            // -- music_commands.cpp (13 commands) --
+            {"/currentmusic", "no music playing"},
+            {"/block_dj " + l_tid, "DJ blocked"},
+            {"/unblock_dj " + l_tid, "DJ permissions restored"},
+            {"/togglemusic", "Music in this area"},
+            {"/togglemusic", "Music in this area"},
+            {"/addmusic test-song.opus,test-song.opus,2", "Song added"},
+            {"/addmusiccategory == Test ==", "Category added"},
+            {"/removecustommusic test-song.opus", "removal of the entry has succeeded"},
+            {"/clearcustommusic", "Custom songs have been cleared"},
+            {"/togglecustommusic", "reset to the floor"},
+
+            // -- roleplay_commands.cpp (10 commands) --
+            {"/coinflip", "flipped a coin"},
+            {"/roll", "rolled"},
+            {"/rollp", "rolled"},
+            {"/notecard my test card", "wrote a note card"},
+            {"/notecard_reveal", "Note cards have been revealed"},
+            {"/notecard_clear", "erased their note card"},
+            {"/timer", "Currently active timers"},
+
+            // -- messaging_commands.cpp (30 commands) --
+            {"/afk", "You are now AFK"},
+            {"/firstperson", "First person mode"},
+            {"/toggleglobal", "Global chat set to"},
+            {"/toggleglobal", "Global chat set to"},
+            {"/mutepm", "PM's are now"},
+            {"/mutepm", "PM's are now"},
+            {"/toggleadverts", "Advertisements turned"},
+            {"/toggleadverts", "Advertisements turned"},
+            {"/gimp " + l_tid, "Gimped player"},
+            {"/ungimp " + l_tid, "Ungimped player"},
+            {"/disemvowel " + l_tid, "Disemvoweled player"},
+            {"/undisemvowel " + l_tid, "Undisemvoweled player"},
+            {"/shake " + l_tid, "Shook player"},
+            {"/unshake " + l_tid, "Unshook player"},
+            {"/medieval " + l_tid, "It is done, sire"},
+            {"/unmedieval " + l_tid, "Un-medieval"},
+            {"/charcurse " + l_tid + " Phoenix", "Charcursed player"},
+            {"/uncharcurse " + l_tid, "Uncharcursed player"},
+            {"/force_charselect " + l_tid, "forced into character select"},
+            {"/pm " + l_tid + " hello", "PM sent"},
+            {"/m mod message test", "mod message test"},
+            {"/gm global mod test", "global mod test"},
+            {"/lm local mod test", "local mod test"},
+            {"/g test global", "test global"},
+            {"/announce test announcement", "Announcement"},
+            {"/forcepos def " + l_tid, "Forced"},
+        };
+    }
+
+    void runNext()
+    {
+        if (m_queue_index >= m_queue.size()) {
+            m_watchdog->stop();
+            say("all " + QString::number(m_queue.size()) + " commands answered correctly");
+            QTimer::singleShot(500, qApp, [] { qApp->exit(0); });
+            return;
+        }
+        const CommandTest &l_test = m_queue[m_queue_index];
+        setPhase(Phase::Testing, l_test.command + " -> " + l_test.expected);
+        m_leader->sendOoc(l_test.command);
+    }
+
+    void onLeaderOoc(const QString &f_message)
+    {
+        if (m_phase == Phase::LeaderLogin) {
+            if (f_message.contains("Entering login prompt")) {
+                m_leader->sendOoc(m_modpass);
+            }
+            return;
+        }
+
+        if (m_phase != Phase::Testing || m_queue_index >= m_queue.size()) {
+            return;
+        }
+
+        const CommandTest &l_test = m_queue[m_queue_index];
+        if (f_message.contains(l_test.expected, Qt::CaseInsensitive)) {
+            say("OK: " + l_test.command);
+            m_queue_index++;
+            QTimer::singleShot(200, this, &CommandsDance::runNext);
+        }
+    }
+
+    void setPhase(Phase f_phase, const QString &f_waiting_for)
+    {
+        m_phase = f_phase;
+        m_waiting_for = f_waiting_for;
+        say("--- waiting for " + f_waiting_for + " ---");
+        m_watchdog->start(7000);
+    }
+
+    void say(const QString &f_text)
+    {
+        std::cout << f_text.toStdString() << std::endl;
+    }
+
+    void fail(const QString &f_reason)
+    {
+        say("FAILED: " + f_reason);
+        qApp->exit(1);
+    }
+
+    QString m_address;
+    int m_port;
+    QString m_modpass;
+    QTimer *m_watchdog;
+    QString m_waiting_for;
+    DanceClient *m_leader = nullptr;
+    DanceClient *m_target = nullptr;
+    Phase m_phase = Phase::LeaderLogin;
+    QList<CommandTest> m_queue;
+    int m_queue_index = 0;
+};
+
 int main(int argc, char *argv[])
 {
     QCoreApplication app(argc, argv);
@@ -1304,8 +1512,12 @@ int main(int argc, char *argv[])
         JukeboxDance l_dance(l_address, l_port, l_modpass);
         return app.exec();
     }
+    if (l_mode == "commands") {
+        CommandsDance l_dance(l_address, l_port, l_modpass);
+        return app.exec();
+    }
     if (l_mode != "classic") {
-        std::cout << "unknown mode: " << l_mode.toStdString() << " (use classic, evidence, testimony or jukebox)" << std::endl;
+        std::cout << "unknown mode: " << l_mode.toStdString() << " (use classic, evidence, testimony, jukebox or commands)" << std::endl;
         return 1;
     }
     MiniClient l_client(l_address, l_port, l_modpass);

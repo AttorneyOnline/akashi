@@ -94,6 +94,18 @@ set(AKASHI_SOURCES
   src2/core/server_context.h
   src2/commands/area_commands.cpp
   src2/commands/area_commands.h
+  src2/commands/authentication_commands.cpp
+  src2/commands/authentication_commands.h
+  src2/commands/moderation_commands.cpp
+  src2/commands/moderation_commands.h
+  src2/commands/casing_commands.cpp
+  src2/commands/casing_commands.h
+  src2/commands/music_commands.cpp
+  src2/commands/music_commands.h
+  src2/commands/roleplay_commands.cpp
+  src2/commands/roleplay_commands.h
+  src2/commands/messaging_commands.cpp
+  src2/commands/messaging_commands.h
   src2/world/area.cpp
   src2/world/area.h
   src2/world/area_settings.h

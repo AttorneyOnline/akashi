@@ -103,6 +103,10 @@ namespace sanction {
     inline const QString ooc_muted = QStringLiteral("ooc_muted");
     inline const QString dj_blocked = QStringLiteral("dj_blocked");
     inline const QString wtce_blocked = QStringLiteral("wtce_blocked");
+    inline const QString gimped = QStringLiteral("gimped");
+    inline const QString disemvoweled = QStringLiteral("disemvoweled");
+    inline const QString shaken = QStringLiteral("shaken");
+    inline const QString medieval = QStringLiteral("medieval");
 } // namespace sanction
 
 } // namespace akashi

@@ -1,10 +1,15 @@
 #include "commands/area_commands.h"
 
-#include "area_data.h"
+#include "akashi/permissions.h"
 #include "aoclient.h"
+#include "area_data.h"
+#include "config_manager.h"
 #include "core/command_context.h"
 #include "core/command_registry.h"
+#include "proto/packet.h"
 #include "server.h"
+
+#include <QRegularExpression>
 
 namespace akashi::commands {
 
@@ -87,6 +92,435 @@ static void handleArea(CommandContext &f_context)
     }
 }
 
+static void handleCM(CommandContext &f_context)
+{
+    QString l_sender_name = f_context.name();
+    AreaData *l_area = f_context.server()->areaById(f_context.areaId());
+    if (l_area->isProtected() && !f_context.canPerform(akashi::permission::super)) {
+        f_context.reply("This area is protected, you may not become CM in this area.");
+        return;
+    }
+    else if (l_area->owners().isEmpty()) {
+        l_area->addOwner(f_context.clientId());
+        f_context.replyToArea(l_sender_name + " is now CM in this area.");
+    }
+    else if (!l_area->owners().contains(f_context.clientId())) {
+        f_context.reply("You cannot become a CM in this area when someone else is. You must be CM'ed by an existing one.");
+    }
+    else if (f_context.argc() == 1) {
+        bool ok;
+        AOClient *l_owner_candidate = f_context.server()->clientById(f_context.argument(0).toInt(&ok));
+        if (!ok) {
+            f_context.reply("That doesn't look like a valid ID.");
+            return;
+        }
+        if (l_owner_candidate == nullptr) {
+            f_context.reply("Unable to find client with ID " + f_context.argument(0) + ".");
+            return;
+        }
+        if (l_area->owners().contains(l_owner_candidate->clientId())) {
+            f_context.reply("User is already a CM in this area.");
+            return;
+        }
+        l_area->addOwner(l_owner_candidate->clientId());
+        f_context.replyToArea(l_owner_candidate->name() + " is now CM in this area.");
+    }
+    else {
+        f_context.reply("You are already a CM in this area.");
+    }
+}
+
+static void handleUnCM(CommandContext &f_context)
+{
+    AreaData *l_area = f_context.server()->areaById(f_context.areaId());
+    int l_uid;
+
+    if (l_area->owners().isEmpty()) {
+        f_context.reply("There are no CMs in this area.");
+        return;
+    }
+    else if (f_context.argc() == 0) {
+        l_uid = f_context.clientId();
+        f_context.reply("You are no longer CM in this area.");
+    }
+    else if (f_context.canPerform(akashi::permission::remove_gamemaster) && f_context.argc() >= 1) {
+        if (f_context.argument(0) == "all") {
+            QList<int> owners = l_area->owners();
+            for (int uid : owners) {
+                if (uid != f_context.clientId()) {
+                    l_area->removeOwner(uid);
+                    AOClient *l_target = f_context.server()->clientById(uid);
+                    if (l_target != nullptr) {
+                        l_target->sendServerMessage("You have been unCMed.");
+                    }
+                }
+            }
+            f_context.reply("All CMs except yourself have been unCMed.");
+            return;
+        }
+
+        bool conv_ok = false;
+        l_uid = f_context.argument(0).toInt(&conv_ok);
+        if (!conv_ok) {
+            f_context.reply("Invalid user ID.");
+            return;
+        }
+        if (!l_area->owners().contains(l_uid)) {
+            f_context.reply("That user is not CMed.");
+            return;
+        }
+        AOClient *l_target = f_context.server()->clientById(l_uid);
+        if (l_target == nullptr) {
+            f_context.reply("No client with that ID found.");
+            return;
+        }
+        f_context.reply(l_target->name() + " was successfully unCMed.");
+        l_target->sendServerMessage("You have been unCMed by a moderator.");
+    }
+    else {
+        f_context.reply("You do not have permission to unCM others. Only yourself.");
+        return;
+    }
+
+    l_area->removeOwner(l_uid);
+}
+
+static void handleInvite(CommandContext &f_context)
+{
+    AreaData *l_area = f_context.server()->areaById(f_context.areaId());
+    bool ok;
+    int l_invited_id = f_context.argument(0).toInt(&ok);
+    if (!ok) {
+        f_context.reply("That does not look like a valid ID.");
+        return;
+    }
+
+    AOClient *target_client = f_context.server()->clientById(l_invited_id);
+    if (target_client == nullptr) {
+        f_context.reply("No client with that ID found.");
+        return;
+    }
+    else if (!l_area->invite(l_invited_id)) {
+        f_context.reply("That ID is already on the invite list.");
+        return;
+    }
+    f_context.reply("You invited ID " + f_context.argument(0));
+    target_client->sendServerMessage("You were invited and given access to " + l_area->name());
+}
+
+static void handleUnInvite(CommandContext &f_context)
+{
+    AreaData *l_area = f_context.server()->areaById(f_context.areaId());
+    bool ok;
+    int l_uninvited_id = f_context.argument(0).toInt(&ok);
+    if (!ok) {
+        f_context.reply("That does not look like a valid ID.");
+        return;
+    }
+
+    AOClient *target_client = f_context.server()->clientById(l_uninvited_id);
+    if (target_client == nullptr) {
+        f_context.reply("No client with that ID found.");
+        return;
+    }
+    else if (l_area->owners().contains(l_uninvited_id)) {
+        f_context.reply("You cannot uninvite a CM!");
+        return;
+    }
+    else if (!l_area->uninvite(l_uninvited_id)) {
+        f_context.reply("That ID is not on the invite list.");
+        return;
+    }
+    f_context.reply("You uninvited ID " + f_context.argument(0));
+    target_client->sendServerMessage("You were uninvited from " + l_area->name());
+}
+
+static void handleLock(CommandContext &f_context)
+{
+    AreaData *l_area = f_context.server()->areaById(f_context.areaId());
+    if (l_area->lockStatus() == AreaData::LockStatus::LOCKED) {
+        f_context.reply("This area is already locked.");
+        return;
+    }
+    f_context.replyToArea("This area is now locked.");
+    l_area->lock();
+    const QVector<AOClient *> l_clients = f_context.server()->clients();
+    for (AOClient *l_client : l_clients) {
+        if (l_client->areaId() == f_context.areaId() && l_client->isJoined()) {
+            l_area->invite(l_client->clientId());
+        }
+    }
+}
+
+static void handleSpectatable(CommandContext &f_context)
+{
+    AreaData *l_area = f_context.server()->areaById(f_context.areaId());
+    if (l_area->lockStatus() == AreaData::LockStatus::SPECTATABLE) {
+        f_context.reply("This area is already in spectate mode.");
+        return;
+    }
+    f_context.replyToArea("This area is now spectatable.");
+    l_area->spectatable();
+    const QVector<AOClient *> l_clients = f_context.server()->clients();
+    for (AOClient *l_client : l_clients) {
+        if (l_client->areaId() == f_context.areaId() && l_client->isJoined()) {
+            l_area->invite(l_client->clientId());
+        }
+    }
+}
+
+static void handleUnLock(CommandContext &f_context)
+{
+    AreaData *l_area = f_context.server()->areaById(f_context.areaId());
+    if (l_area->lockStatus() == AreaData::LockStatus::FREE) {
+        f_context.reply("This area is not locked.");
+        return;
+    }
+    f_context.replyToArea("This area is now unlocked.");
+    l_area->unlock();
+}
+
+static void handleAreaKick(CommandContext &f_context)
+{
+    AreaData *l_area = f_context.server()->areaById(f_context.areaId());
+
+    int target_area_id = 0;
+
+    if (f_context.argc() >= 2) {
+        if (!f_context.canPerform(akashi::permission::kick)) {
+            f_context.reply("You do not have permission to kick to specific areas. Just the first area as CM. (/areakick [ID]).");
+            return;
+        }
+
+        bool ok;
+        target_area_id = f_context.argument(1).toInt(&ok);
+        if (!ok || target_area_id < 0 || target_area_id >= f_context.server()->areaCount()) {
+            f_context.reply("That does not look like a valid area ID.");
+            return;
+        }
+    }
+
+    AreaData *target_area = f_context.server()->areaById(target_area_id);
+
+    if (f_context.argument(0) == "all") {
+        const QVector<AOClient *> l_clients = f_context.server()->clients();
+        for (AOClient *l_client : l_clients) {
+            if (l_client->areaId() == f_context.areaId() && l_client->clientId() != f_context.clientId()) {
+                if (!f_context.server()->areaById(f_context.areaId())->owners().contains(l_client->clientId())) {
+                    l_client->changeArea(target_area_id);
+                    l_area->uninvite(l_client->clientId());
+                    l_client->sendServerMessage("You have been kicked to area " + target_area->displayName() + ".");
+                }
+            }
+        }
+        f_context.reply("All clients kicked to area " + target_area->displayName() + ".");
+        return;
+    }
+
+    bool ok;
+    int l_idx = f_context.argument(0).toInt(&ok);
+    if (!ok) {
+        f_context.reply("That does not look like a valid ID.");
+        return;
+    }
+    if (f_context.server()->areaById(f_context.areaId())->owners().contains(l_idx)) {
+        f_context.reply("You cannot kick another CM!");
+        return;
+    }
+    AOClient *l_client_to_kick = f_context.server()->clientById(l_idx);
+    if (l_client_to_kick == nullptr) {
+        f_context.reply("No client with that ID found.");
+        return;
+    }
+    else if (l_client_to_kick->areaId() != f_context.areaId()) {
+        f_context.reply("That client is not in this area.");
+        return;
+    }
+    l_client_to_kick->changeArea(target_area_id);
+    l_area->uninvite(l_client_to_kick->clientId());
+    l_client_to_kick->sendServerMessage("You have been kicked to area " + target_area->displayName() + ".");
+    f_context.reply("Client " + f_context.argument(0) + " kicked to area " + target_area->displayName() + ".");
+}
+
+static void handleSetBackground(CommandContext &f_context)
+{
+    QString l_background = f_context.arguments().join(" ");
+    AreaData *l_area = f_context.server()->areaById(f_context.areaId());
+    if (f_context.isAuthenticated() || !l_area->isBgLocked()) {
+        if (l_area->lockStatus() == AreaData::LockStatus::SPECTATABLE && !l_area->invited().contains(f_context.clientId()) && !f_context.canPerform(akashi::permission::bypass_locks)) {
+            f_context.reply("Spectators are blocked from changing the background.");
+            return;
+        }
+        if (f_context.server()->backgrounds().contains(l_background, Qt::CaseInsensitive) || l_area->ignoreBgList() == true) {
+            l_area->setBackground(l_background);
+            f_context.server()->broadcast(akashi::Packet("BN", {l_background, l_area->side()}), f_context.areaId());
+            QString ambience_name = ConfigManager::ambience()->value(l_background + "/ambience").toString();
+            if (ambience_name != "") {
+                f_context.server()->broadcast(akashi::Packet("MC", {ambience_name, "-1", f_context.characterName(), "1", "1"}), f_context.areaId());
+            }
+            else {
+                f_context.server()->broadcast(akashi::Packet("MC", {"~stop.mp3", "-1", f_context.characterName(), "1", "1"}), f_context.areaId());
+            }
+            f_context.replyToArea(f_context.character() + " changed the background to " + l_background);
+        }
+        else {
+            f_context.reply("Invalid background name.");
+        }
+    }
+    else {
+        f_context.reply("This area's background is locked.");
+    }
+}
+
+static void handleSetSide(CommandContext &f_context)
+{
+    AreaData *l_area = f_context.server()->areaById(f_context.areaId());
+    if (l_area->isBgLocked()) {
+        f_context.reply("This area's background is locked.");
+        return;
+    }
+
+    QString l_side = f_context.arguments().join(" ");
+    l_area->setSide(l_side);
+    f_context.server()->broadcast(akashi::Packet("BN", {l_area->background(), l_side}), f_context.areaId());
+    if (l_side.isEmpty()) {
+        f_context.replyToArea(f_context.character() + " unlocked the background side");
+    }
+    else {
+        f_context.replyToArea(f_context.character() + " locked the background side to " + l_side);
+    }
+}
+
+static void handleBgLock(CommandContext &f_context)
+{
+    AreaData *l_area = f_context.server()->areaById(f_context.areaId());
+
+    if (l_area->isBgLocked() == false) {
+        l_area->toggleBgLock();
+    };
+
+    f_context.server()->broadcast(akashi::Packet("CT", {ConfigManager::serverNickname(), f_context.character() + " locked the background.", "1"}), f_context.areaId());
+}
+
+static void handleBgUnlock(CommandContext &f_context)
+{
+    AreaData *l_area = f_context.server()->areaById(f_context.areaId());
+
+    if (l_area->isBgLocked() == true) {
+        l_area->toggleBgLock();
+    };
+
+    f_context.server()->broadcast(akashi::Packet("CT", {ConfigManager::serverNickname(), f_context.character() + " unlocked the background.", "1"}), f_context.areaId());
+}
+
+static void handleStatus(CommandContext &f_context)
+{
+    AreaData *l_area = f_context.server()->areaById(f_context.areaId());
+    QString l_arg = f_context.argument(0).toLower();
+
+    if (l_area->changeStatus(l_arg)) {
+        f_context.server()->broadcast(akashi::Packet("CT", {ConfigManager::serverNickname(), f_context.character() + " changed status to " + l_arg.toUpper(), "1"}), f_context.areaId());
+    }
+    else {
+        const QStringList keys = AreaData::map_statuses.keys();
+        f_context.reply("That does not look like a valid status. Valid statuses are " + keys.join(", "));
+    }
+}
+
+static void handleJudgeLog(CommandContext &f_context)
+{
+    AreaData *l_area = f_context.server()->areaById(f_context.areaId());
+    if (l_area->judgelog().isEmpty()) {
+        f_context.reply("There have been no judge actions in this area.");
+        return;
+    }
+    QString l_message = l_area->judgelog().join("\n");
+    if (f_context.canPerform(akashi::permission::kick) || f_context.canPerform(akashi::permission::ban)) {
+        f_context.reply(l_message);
+    }
+    else {
+        QString filteredmessage = l_message.remove(QRegularExpression("[(].*[)]"));
+        f_context.reply(filteredmessage);
+    }
+}
+
+static void handleIgnoreBgList(CommandContext &f_context)
+{
+    AreaData *l_area = f_context.server()->areaById(f_context.areaId());
+    l_area->toggleIgnoreBgList();
+    QString l_state = l_area->ignoreBgList() ? "ignored." : "enforced.";
+    f_context.reply("BG list in this area is now " + l_state);
+}
+
+static void handleAreaMessage(CommandContext &f_context)
+{
+    AreaData *l_area = f_context.server()->areaById(f_context.areaId());
+    if (f_context.argc() == 0) {
+        f_context.reply(l_area->areaMessage());
+        return;
+    }
+
+    l_area->changeAreaMessage(f_context.arguments().join(" "));
+    f_context.reply("Updated this area's message.");
+}
+
+static void handleToggleAreaMessageOnJoin(CommandContext &f_context)
+{
+    AreaData *l_area = f_context.server()->areaById(f_context.areaId());
+    l_area->toggleAreaMessageJoin();
+    QString l_state = l_area->sendAreaMessageOnJoin() ? "enabled." : "disabled.";
+    f_context.reply("Sending message on area join is now " + l_state);
+}
+
+static void handleClearAreaMessage(CommandContext &f_context)
+{
+    AreaData *l_area = f_context.server()->areaById(f_context.areaId());
+    l_area->clearAreaMessage();
+    if (l_area->sendAreaMessageOnJoin()) {
+        handleToggleAreaMessageOnJoin(f_context);
+    }
+}
+
+static void handleToggleWtce(CommandContext &f_context)
+{
+    AreaData *l_area = f_context.server()->areaById(f_context.areaId());
+    l_area->toggleWtceAllowed();
+    QString l_state = l_area->isWtceAllowed() ? "enabled." : "disabled.";
+    f_context.reply("Using testimony animations is now " + l_state);
+}
+
+static void handleToggleShouts(CommandContext &f_context)
+{
+    AreaData *l_area = f_context.server()->areaById(f_context.areaId());
+    l_area->toggleShoutAllowed();
+    QString l_state = l_area->isShoutAllowed() ? "enabled." : "disabled.";
+    f_context.reply("Using shouts is now " + l_state);
+}
+
+static void handleWebfiles(CommandContext &f_context)
+{
+    const QVector<AOClient *> l_clients = f_context.server()->clients();
+    QStringList l_weblinks;
+    for (AOClient *l_client : l_clients) {
+        if (l_client->iniswap().isEmpty() || l_client->areaId() != f_context.areaId()) {
+            continue;
+        }
+
+        if (l_client->character().toLower() != l_client->iniswap().toLower()) {
+            l_weblinks.append("https://attorneyonline.github.io/webDownloader/index.html?char=" + l_client->iniswap());
+        }
+    }
+    f_context.reply("Character files:\n" + l_weblinks.join("\n"));
+}
+
+static void handleMedievalMode(CommandContext &f_context)
+{
+    AreaData *l_area = f_context.server()->areaById(f_context.areaId());
+    l_area->toggleMedievalMode();
+    QString l_state = l_area->isMedievalMode() ? "enabled." : "disabled.";
+    f_context.replyToArea("Hear ye, hear ye! Medieval Mode is now " + l_state);
+}
+
 void registerAreaCommands(CommandRegistry &f_registry)
 {
     f_registry.registerCommand(
@@ -106,6 +540,138 @@ void registerAreaCommands(CommandRegistry &f_registry)
          QStringLiteral("/area <id>"),
          QStringLiteral("Moves you to the area with the given ID.")},
         handleArea, QStringLiteral("core"));
+
+    f_registry.registerCommand(
+        {QStringLiteral("cm"), {}, {}, 0,
+         QStringLiteral("/cm [id]"),
+         QStringLiteral("Claims CM or adds another client as CM.")},
+        handleCM, QStringLiteral("core"));
+
+    f_registry.registerCommand(
+        {QStringLiteral("uncm"), {}, {QStringLiteral("gamemaster")}, 0,
+         QStringLiteral("/uncm [id|all]"),
+         QStringLiteral("Removes CM status from yourself or another client.")},
+        handleUnCM, QStringLiteral("core"));
+
+    f_registry.registerCommand(
+        {QStringLiteral("invite"), {}, {QStringLiteral("gamemaster")}, 1,
+         QStringLiteral("/invite <id>"),
+         QStringLiteral("Invites a client to the area.")},
+        handleInvite, QStringLiteral("core"));
+
+    f_registry.registerCommand(
+        {QStringLiteral("uninvite"), {}, {QStringLiteral("gamemaster")}, 1,
+         QStringLiteral("/uninvite <id>"),
+         QStringLiteral("Removes a client from the area invite list.")},
+        handleUnInvite, QStringLiteral("core"));
+
+    f_registry.registerCommand(
+        {QStringLiteral("area_lock"), {}, {QStringLiteral("gamemaster")}, 0,
+         QStringLiteral("/area_lock"),
+         QStringLiteral("Locks the area so only invited clients may enter.")},
+        handleLock, QStringLiteral("core"));
+
+    f_registry.registerCommand(
+        {QStringLiteral("area_spectate"), {}, {QStringLiteral("gamemaster")}, 0,
+         QStringLiteral("/area_spectate"),
+         QStringLiteral("Sets the area to spectate-only mode.")},
+        handleSpectatable, QStringLiteral("core"));
+
+    f_registry.registerCommand(
+        {QStringLiteral("area_unlock"), {}, {QStringLiteral("gamemaster")}, 0,
+         QStringLiteral("/area_unlock"),
+         QStringLiteral("Unlocks the area.")},
+        handleUnLock, QStringLiteral("core"));
+
+    f_registry.registerCommand(
+        {QStringLiteral("area_kick"), {}, {QStringLiteral("gamemaster")}, 1,
+         QStringLiteral("/area_kick <id|all> [area]"),
+         QStringLiteral("Kicks a client or all non-CMs from the area.")},
+        handleAreaKick, QStringLiteral("core"));
+
+    f_registry.registerCommand(
+        {QStringLiteral("background"), {}, {}, 1,
+         QStringLiteral("/background <name>"),
+         QStringLiteral("Changes the background of the area.")},
+        handleSetBackground, QStringLiteral("core"));
+
+    f_registry.registerCommand(
+        {QStringLiteral("side"), {}, {QStringLiteral("gamemaster")}, 0,
+         QStringLiteral("/side [name]"),
+         QStringLiteral("Locks or unlocks the background side.")},
+        handleSetSide, QStringLiteral("core"));
+
+    f_registry.registerCommand(
+        {QStringLiteral("lock_background"), {}, {QStringLiteral("gamemaster")}, 0,
+         QStringLiteral("/lock_background"),
+         QStringLiteral("Locks the background in the area.")},
+        handleBgLock, QStringLiteral("core"));
+
+    f_registry.registerCommand(
+        {QStringLiteral("unlock_background"), {}, {QStringLiteral("gamemaster")}, 0,
+         QStringLiteral("/unlock_background"),
+         QStringLiteral("Unlocks the background in the area.")},
+        handleBgUnlock, QStringLiteral("core"));
+
+    f_registry.registerCommand(
+        {QStringLiteral("status"), {}, {}, 1,
+         QStringLiteral("/status <status>"),
+         QStringLiteral("Changes the status of the area.")},
+        handleStatus, QStringLiteral("core"));
+
+    f_registry.registerCommand(
+        {QStringLiteral("judgelog"), {}, {QStringLiteral("gamemaster")}, 0,
+         QStringLiteral("/judgelog"),
+         QStringLiteral("Displays the judge log for the area.")},
+        handleJudgeLog, QStringLiteral("core"));
+
+    f_registry.registerCommand(
+        {QStringLiteral("ignore_bglist"), {}, {QStringLiteral("ignore_background_list")}, 0,
+         QStringLiteral("/ignore_bglist"),
+         QStringLiteral("Toggles whether the background list is enforced.")},
+        handleIgnoreBgList, QStringLiteral("core"));
+
+    f_registry.registerCommand(
+        {QStringLiteral("areamessage"), {}, {QStringLiteral("gamemaster")}, 0,
+         QStringLiteral("/areamessage [message]"),
+         QStringLiteral("Views or sets the area message.")},
+        handleAreaMessage, QStringLiteral("core"));
+
+    f_registry.registerCommand(
+        {QStringLiteral("togglemessage"), {}, {QStringLiteral("gamemaster")}, 0,
+         QStringLiteral("/togglemessage"),
+         QStringLiteral("Toggles sending the area message on join.")},
+        handleToggleAreaMessageOnJoin, QStringLiteral("core"));
+
+    f_registry.registerCommand(
+        {QStringLiteral("clearmessage"), {}, {QStringLiteral("gamemaster")}, 0,
+         QStringLiteral("/clearmessage"),
+         QStringLiteral("Clears the area message.")},
+        handleClearAreaMessage, QStringLiteral("core"));
+
+    f_registry.registerCommand(
+        {QStringLiteral("toggle_wtce"), {}, {QStringLiteral("gamemaster")}, 0,
+         QStringLiteral("/toggle_wtce"),
+         QStringLiteral("Toggles testimony animations in the area.")},
+        handleToggleWtce, QStringLiteral("core"));
+
+    f_registry.registerCommand(
+        {QStringLiteral("toggle_shouts"), {}, {QStringLiteral("gamemaster")}, 0,
+         QStringLiteral("/toggle_shouts"),
+         QStringLiteral("Toggles shouts in the area.")},
+        handleToggleShouts, QStringLiteral("core"));
+
+    f_registry.registerCommand(
+        {QStringLiteral("webfiles"), {}, {}, 0,
+         QStringLiteral("/webfiles"),
+         QStringLiteral("Lists download links for iniswapped characters.")},
+        handleWebfiles, QStringLiteral("core"));
+
+    f_registry.registerCommand(
+        {QStringLiteral("medievalmode"), {}, {QStringLiteral("mute")}, 0,
+         QStringLiteral("/medievalmode"),
+         QStringLiteral("Toggles medieval mode in the area.")},
+        handleMedievalMode, QStringLiteral("core"));
 }
 
 } // namespace akashi::commands
