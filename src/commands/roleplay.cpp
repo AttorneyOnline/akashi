@@ -54,6 +54,10 @@ void AOClient::cmdRoll(int argc, QStringList argv)
             if (argv[0].contains('+')) {
                 bool l_mod_ok;
                 QStringList l_modifier = l_arguments[1].split('+');
+                if (l_modifier.size() < 2) {
+                    sendServerMessage("Invalid dice notation.");
+                    return;
+                }
                 int modifier = l_modifier[1].toInt(&l_mod_ok);
                 l_sides = l_modifier[0].toInt(&l_sides_ok);
 
@@ -66,6 +70,10 @@ void AOClient::cmdRoll(int argc, QStringList argv)
             else if (argv[0].contains('-')) {
                 bool l_mod_ok;
                 QStringList l_modifier = l_arguments[1].split('-');
+                if (l_modifier.size() < 2) {
+                    sendServerMessage("Invalid dice notation.");
+                    return;
+                }
                 int modifier = l_modifier[1].toInt(&l_mod_ok);
                 l_sides = l_modifier[0].toInt(&l_sides_ok);
 
@@ -128,6 +136,10 @@ void AOClient::cmdRollP(int argc, QStringList argv)
             if (argv[0].contains('+')) {
                 bool l_mod_ok;
                 QStringList l_modifier = l_arguments[1].split('+');
+                if (l_modifier.size() < 2) {
+                    sendServerMessage("Invalid dice notation.");
+                    return;
+                }
                 int modifier = l_modifier[1].toInt(&l_mod_ok);
                 l_sides = l_modifier[0].toInt(&l_sides_ok);
 
@@ -140,6 +152,10 @@ void AOClient::cmdRollP(int argc, QStringList argv)
             else if (argv[0].contains('-')) {
                 bool l_mod_ok;
                 QStringList l_modifier = l_arguments[1].split('-');
+                if (l_modifier.size() < 2) {
+                    sendServerMessage("Invalid dice notation.");
+                    return;
+                }
                 int modifier = l_modifier[1].toInt(&l_mod_ok);
                 l_sides = l_modifier[0].toInt(&l_sides_ok);
 
