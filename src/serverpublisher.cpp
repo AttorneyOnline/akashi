@@ -92,6 +92,10 @@ void ServerPublisher::finished(QNetworkReply *f_reply)
 
         if (error.error != QJsonParseError::NoError || !document.isObject()) {
             qWarning() << "Received malformed response from masterserver. Error:" << error.errorString();
+            qWarning() << "HTTP status code:" << status;
+            qWarning() << "Parse error offset:" << error.offset;
+            qWarning() << "Response body size:" << data.size() << "bytes";
+            qWarning().noquote() << "Raw response body:" << QString::fromUtf8(data);
             return;
         }
 
