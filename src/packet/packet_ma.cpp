@@ -1,6 +1,6 @@
 #include "packet_ma.h"
 
-#include "config_manager.h"
+#include "core/server_settings.h"
 #include "db_manager.h"
 #include "server.h"
 
@@ -52,7 +52,7 @@ void PacketMA::handlePacket(AreaData *area, AOClient &client) const
     }
 
     QString moderator_name;
-    if (ConfigManager::authType() == DataTypes::AuthType::ADVANCED) {
+    if (client.server()->authType() == DataTypes::AuthType::ADVANCED) {
         moderator_name = client.m_moderator_name;
     }
     else {
@@ -103,7 +103,7 @@ void PacketMA::handlePacket(AreaData *area, AOClient &client) const
         client.sendServerMessage("Banned " + QString::number(clients.size()) + " client(s) with ipid " + target->m_ipid + " for reason: " + reason);
 
         int ban_id = client.server()->databaseManager()->banId(ban.ip);
-        if (ConfigManager::discordBanWebhookEnabled()) {
+        if (client.server()->discordSettings()->webhook_ban_enabled()) {
             Q_EMIT client.server()->banWebhookRequest(ban.ipid, ban.moderator, timestamp, ban.reason, ban_id);
         }
     }

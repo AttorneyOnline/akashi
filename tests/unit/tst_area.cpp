@@ -1,8 +1,8 @@
 // AI-generated: written by Claude.
 #include "akashi/config_store.h"
 #include "area_data.h"
-#include "config_manager.h"
 
+#include <QSettings>
 #include <QtTest>
 
 Q_DECLARE_METATYPE(AreaData::Side);
@@ -16,6 +16,9 @@ class Area : public QObject
 
   public:
     AreaData *m_area;
+    akashi::ConfigStore *m_store = nullptr;
+    QSettings *m_areas_ini = nullptr;
+    QSettings *m_ambience_ini = nullptr;
 
   private Q_SLOTS:
     void initTestCase();
@@ -38,12 +41,14 @@ class Area : public QObject
 
 void Area::initTestCase()
 {
-    QVERIFY(ConfigManager::setStore(new akashi::ConfigStore("config", this)));
+    m_store = new akashi::ConfigStore("config", this);
+    m_areas_ini = m_store->settings("areas");
+    m_ambience_ini = m_store->settings("ambience");
 }
 
 void Area::init()
 {
-    m_area = new AreaData("Test Area", 0);
+    m_area = new AreaData("Test Area", 0, m_areas_ini, m_ambience_ini);
 }
 
 void Area::cleanup()

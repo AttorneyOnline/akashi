@@ -1,6 +1,5 @@
 #include "packet/packet_cc.h"
 #include "akashiutils.h"
-#include "config_manager.h"
 #include "server.h"
 
 #include <QDebug>

@@ -1,9 +1,9 @@
 #include "commands/area_commands.h"
 
+#include "akashi/config_store.h"
 #include "akashi/permissions.h"
 #include "aoclient.h"
 #include "area_data.h"
-#include "config_manager.h"
 #include "core/command_context.h"
 #include "core/command_registry.h"
 #include "proto/packet.h"
@@ -354,7 +354,7 @@ static void handleSetBackground(CommandContext &f_context)
         if (f_context.server()->backgrounds().contains(l_background, Qt::CaseInsensitive) || l_area->ignoreBgList() == true) {
             l_area->setBackground(l_background);
             f_context.server()->broadcast(akashi::Packet("BN", {l_background, l_area->side()}), f_context.areaId());
-            QString ambience_name = ConfigManager::ambience()->value(l_background + "/ambience").toString();
+            QString ambience_name = f_context.server()->configStore()->settings("ambience")->value(l_background + "/ambience").toString();
             if (ambience_name != "") {
                 f_context.server()->broadcast(akashi::Packet("MC", {ambience_name, "-1", f_context.characterName(), "1", "1"}), f_context.areaId());
             }
@@ -399,7 +399,7 @@ static void handleBgLock(CommandContext &f_context)
         l_area->toggleBgLock();
     };
 
-    f_context.server()->broadcast(akashi::Packet("CT", {ConfigManager::serverNickname(), f_context.character() + " locked the background.", "1"}), f_context.areaId());
+    f_context.server()->broadcast(akashi::Packet("CT", {f_context.server()->serverNickname(), f_context.character() + " locked the background.", "1"}), f_context.areaId());
 }
 
 static void handleBgUnlock(CommandContext &f_context)
@@ -410,7 +410,7 @@ static void handleBgUnlock(CommandContext &f_context)
         l_area->toggleBgLock();
     };
 
-    f_context.server()->broadcast(akashi::Packet("CT", {ConfigManager::serverNickname(), f_context.character() + " unlocked the background.", "1"}), f_context.areaId());
+    f_context.server()->broadcast(akashi::Packet("CT", {f_context.server()->serverNickname(), f_context.character() + " unlocked the background.", "1"}), f_context.areaId());
 }
 
 static void handleStatus(CommandContext &f_context)
@@ -419,7 +419,7 @@ static void handleStatus(CommandContext &f_context)
     QString l_arg = f_context.argument(0).toLower();
 
     if (l_area->changeStatus(l_arg)) {
-        f_context.server()->broadcast(akashi::Packet("CT", {ConfigManager::serverNickname(), f_context.character() + " changed status to " + l_arg.toUpper(), "1"}), f_context.areaId());
+        f_context.server()->broadcast(akashi::Packet("CT", {f_context.server()->serverNickname(), f_context.character() + " changed status to " + l_arg.toUpper(), "1"}), f_context.areaId());
     }
     else {
         const QStringList keys = AreaData::map_statuses.keys();
@@ -524,13 +524,13 @@ static void handleMedievalMode(CommandContext &f_context)
 void registerAreaCommands(CommandRegistry &f_registry)
 {
     f_registry.registerCommand(
-        {QStringLiteral("getarea"), {}, {}, 0,
+        {QStringLiteral("getarea"), {QStringLiteral("ga")}, {}, 0,
          QStringLiteral("/getarea"),
          QStringLiteral("Lists all clients in the area you are in.")},
         handleGetArea, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("getareas"), {}, {}, 0,
+        {QStringLiteral("getareas"), {QStringLiteral("gas")}, {}, 0,
          QStringLiteral("/getareas"),
          QStringLiteral("Lists all clients in all areas.")},
         handleGetAreas, QStringLiteral("core"));
@@ -566,31 +566,31 @@ void registerAreaCommands(CommandRegistry &f_registry)
         handleUnInvite, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("area_lock"), {}, {QStringLiteral("gamemaster")}, 0,
+        {QStringLiteral("area_lock"), {QStringLiteral("lock_area"), QStringLiteral("lock")}, {QStringLiteral("gamemaster")}, 0,
          QStringLiteral("/area_lock"),
          QStringLiteral("Locks the area so only invited clients may enter.")},
         handleLock, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("area_spectate"), {}, {QStringLiteral("gamemaster")}, 0,
+        {QStringLiteral("area_spectate"), {QStringLiteral("spectatable")}, {QStringLiteral("gamemaster")}, 0,
          QStringLiteral("/area_spectate"),
          QStringLiteral("Sets the area to spectate-only mode.")},
         handleSpectatable, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("area_unlock"), {}, {QStringLiteral("gamemaster")}, 0,
+        {QStringLiteral("area_unlock"), {QStringLiteral("unlock_area"), QStringLiteral("unlock")}, {QStringLiteral("gamemaster")}, 0,
          QStringLiteral("/area_unlock"),
          QStringLiteral("Unlocks the area.")},
         handleUnLock, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("area_kick"), {}, {QStringLiteral("gamemaster")}, 1,
+        {QStringLiteral("area_kick"), {QStringLiteral("kick_area"), QStringLiteral("areakick")}, {QStringLiteral("gamemaster")}, 1,
          QStringLiteral("/area_kick <id|all> [area]"),
          QStringLiteral("Kicks a client or all non-CMs from the area.")},
         handleAreaKick, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("background"), {}, {}, 1,
+        {QStringLiteral("background"), {QStringLiteral("bg")}, {}, 1,
          QStringLiteral("/background <name>"),
          QStringLiteral("Changes the background of the area.")},
         handleSetBackground, QStringLiteral("core"));
@@ -602,13 +602,13 @@ void registerAreaCommands(CommandRegistry &f_registry)
         handleSetSide, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("lock_background"), {}, {QStringLiteral("gamemaster")}, 0,
+        {QStringLiteral("lock_background"), {QStringLiteral("lock_bg"), QStringLiteral("lockbg"), QStringLiteral("bglock")}, {QStringLiteral("gamemaster")}, 0,
          QStringLiteral("/lock_background"),
          QStringLiteral("Locks the background in the area.")},
         handleBgLock, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("unlock_background"), {}, {QStringLiteral("gamemaster")}, 0,
+        {QStringLiteral("unlock_background"), {QStringLiteral("unlock_bg"), QStringLiteral("unlockbg"), QStringLiteral("bgunlock")}, {QStringLiteral("gamemaster")}, 0,
          QStringLiteral("/unlock_background"),
          QStringLiteral("Unlocks the background in the area.")},
         handleBgUnlock, QStringLiteral("core"));
@@ -626,7 +626,7 @@ void registerAreaCommands(CommandRegistry &f_registry)
         handleJudgeLog, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("ignore_bglist"), {}, {QStringLiteral("ignore_background_list")}, 0,
+        {QStringLiteral("ignore_bglist"), {QStringLiteral("ignorebglist")}, {QStringLiteral("ignore_background_list")}, 0,
          QStringLiteral("/ignore_bglist"),
          QStringLiteral("Toggles whether the background list is enforced.")},
         handleIgnoreBgList, QStringLiteral("core"));
@@ -650,13 +650,13 @@ void registerAreaCommands(CommandRegistry &f_registry)
         handleClearAreaMessage, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("toggle_wtce"), {}, {QStringLiteral("gamemaster")}, 0,
+        {QStringLiteral("toggle_wtce"), {QStringLiteral("togglewtce")}, {QStringLiteral("gamemaster")}, 0,
          QStringLiteral("/toggle_wtce"),
          QStringLiteral("Toggles testimony animations in the area.")},
         handleToggleWtce, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("toggle_shouts"), {}, {QStringLiteral("gamemaster")}, 0,
+        {QStringLiteral("toggle_shouts"), {QStringLiteral("toggleshouts")}, {QStringLiteral("gamemaster")}, 0,
          QStringLiteral("/toggle_shouts"),
          QStringLiteral("Toggles shouts in the area.")},
         handleToggleShouts, QStringLiteral("core"));
@@ -668,7 +668,7 @@ void registerAreaCommands(CommandRegistry &f_registry)
         handleWebfiles, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("medievalmode"), {}, {QStringLiteral("mute")}, 0,
+        {QStringLiteral("medievalmode"), {QStringLiteral("medieval_mode")}, {QStringLiteral("mute")}, 0,
          QStringLiteral("/medievalmode"),
          QStringLiteral("Toggles medieval mode in the area.")},
         handleMedievalMode, QStringLiteral("core"));

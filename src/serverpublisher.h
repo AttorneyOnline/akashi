@@ -22,6 +22,7 @@
 class QNetworkAccessManager;
 class QNetworkReply;
 class QTimer;
+class ServerSettings;
 
 /**
  * @brief Represents the ServerPublisher of the server. Sends current server information to the serverlist.
@@ -31,7 +32,7 @@ class ServerPublisher : public QObject
     Q_OBJECT
 
   public:
-    explicit ServerPublisher(int port, int *player_count, QObject *parent = nullptr);
+    explicit ServerPublisher(int port, int *player_count, ServerSettings *f_settings, QObject *parent = nullptr);
     virtual ~ServerPublisher() {};
 
   public Q_SLOTS:
@@ -66,4 +67,6 @@ class ServerPublisher : public QObject
      * @brief The WS port of the server.
      */
     int m_port;
+
+    ServerSettings *m_settings;
 };

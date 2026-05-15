@@ -19,7 +19,6 @@
 #define U_LOGGER_H
 
 #include "akashi_core_export.h"
-#include "config_manager.h"
 #include "logger/writer_full.h"
 #include "logger/writer_modcall.h"
 
@@ -27,6 +26,8 @@
 #include <QMap>
 #include <QObject>
 #include <QQueue>
+
+class Server;
 
 /**
  * @brief The Universal Logger class to provide a common place to handle, store and write logs to file.
@@ -40,7 +41,7 @@ class AKASHI_CORE_EXPORT ULogger : public QObject
      * @brief Constructor for the universal logger. Determines which writer is initially created.
      * @param Pointer to the Server.
      */
-    ULogger(QObject *parent = nullptr);
+    explicit ULogger(Server *f_server, QObject *parent = nullptr);
 
     /**
      * @brief Deconstructor of the universal logger. Deletes its writer before deconstruction.
@@ -121,6 +122,8 @@ class AKASHI_CORE_EXPORT ULogger : public QObject
      *
      * @details This QMap uses the area name as the index key to access its respective buffer.
      */
+    Server *m_server;
+
     QMap<QString, QQueue<QString>> m_bufferMap;
 
     /**
@@ -135,7 +138,7 @@ class AKASHI_CORE_EXPORT ULogger : public QObject
 
     /**
      * @brief Table that contains template strings for text-based logger format.
-     * @details To keep ConfigManager cleaner the logstrings are loaded from an inifile by name.
+     * @details The logstrings are loaded from an inifile by name.
      *          This has the problem of lacking defaults that work for all when the file is missing.
      *          This QMap contains all default values and overwrites them on logger construction.
      */

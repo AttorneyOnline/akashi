@@ -18,7 +18,6 @@
 
 #include "area_data.h"
 
-#include "config_manager.h"
 #include "world/area.h"
 #include "world/jukebox.h"
 
@@ -30,12 +29,13 @@
 static akashi::EvidenceStore::Access toStoreAccess(AreaData::EvidenceMod f_mod);
 static AreaData::EvidenceMod fromStoreAccess(akashi::EvidenceStore::Access f_access);
 
-AreaData::AreaData(QString p_name, int p_index) :
+AreaData::AreaData(QString p_name, int p_index, QSettings *f_areas_ini, QSettings *f_ambience_ini) :
     m_document("No document."),
     m_defHP(10),
     m_proHP(10),
     m_judgelog(),
-    m_lastICMessage()
+    m_lastICMessage(),
+    m_ambience_ini(f_ambience_ini)
 {
     QStringList name_split = p_name.split(":");
     name_split.removeFirst();
@@ -43,12 +43,9 @@ AreaData::AreaData(QString p_name, int p_index) :
     if (l_name.isEmpty()) {
         l_name = "Unnamed Area";
     }
-    // The core state lives in the world model; this class delegates to it
-    // until the remaining pieces move over. Until floor layouts load from
-    // config, every area sits on the one default floor at its index.
     m_area = new akashi::Area(p_index, l_name, 0, p_index, this);
     m_display_name = "[" + QString::number(p_index) + "] " + l_name;
-    QSettings *areas_ini = ConfigManager::areaData();
+    QSettings *areas_ini = f_areas_ini;
     areas_ini->beginGroup(p_name);
     m_settings.background = areas_ini->value("background", "gs4").toString();
     m_settings.protected_area = areas_ini->value("protected_area", "false").toBool();
@@ -598,8 +595,7 @@ QString AreaData::background() const
 void AreaData::setBackground(const QString f_background)
 {
     m_settings.background = f_background;
-    QSettings *ambience_data = ConfigManager::ambience();
-    QString new_ambience = ambience_data->value(f_background + "/ambience").toString();
+    QString new_ambience = m_ambience_ini->value(f_background + "/ambience").toString();
     m_jukebox->changeAmbience(new_ambience.isEmpty() ? QString() : new_ambience);
 }
 

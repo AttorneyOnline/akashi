@@ -42,10 +42,8 @@ set(AKASHI_SOURCES
   src/aoclient.h
   src/area_data.cpp
   src/area_data.h
-  src/command_extension.cpp
-  src/command_extension.h
-  src/config_manager.cpp
-  src/config_manager.h
+  src2/core/config_loading.cpp
+  src2/core/config_loading.h
   src/crypto_helper.h
   src/data_types.h
   src/db_manager.cpp
@@ -123,6 +121,7 @@ set(AKASHI_SOURCES
   src2/include/akashi/area_rule.h
   src2/include/akashi/config_entry.h
   src2/include/akashi/config_store.h
+  src2/include/akashi/setting_notifier.h
   src2/include/akashi/database_service.h
   src2/include/akashi/filesystem_service.h
   src2/include/akashi/jukebox_policy.h

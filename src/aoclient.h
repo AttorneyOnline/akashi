@@ -53,37 +53,6 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
 
   public:
     /**
-     * @brief Describes a command's details.
-     */
-    struct CommandInfo
-    {
-        QVector<ACLRole::Permission> acl_permissions; //!< The permissions necessary to be able to run the command. @see ACLRole::Permission.
-        int minArgs;                                  //!< The minimum mandatory arguments needed for the command to function.
-        void (AOClient::*action)(int, QStringList);
-    };
-
-    /**
-     * @property CommandInfo::action
-     *
-     * @brief A function reference that contains what the command actually does.
-     *
-     * @param int When called, this parameter will be filled with the argument count. @anchor commandArgc
-     * @param QStringList When called, this parameter will be filled the list of arguments. @anchor commandArgv
-     */
-
-    /**
-     * @brief The list of commands available on the server.
-     *
-     * @details Generally called with the format of `/command parameters` in the out-of-character chat.
-     * @showinitializer
-     *
-     * @tparam QString The name of the command, without the leading slash.
-     * @tparam CommandInfo The details of the command.
-     * See @ref CommandInfo "the type's documentation" for more details.
-     */
-    static const QMap<QString, CommandInfo> COMMANDS;
-
-    /**
      * @brief Creates an instance of the AOClient class.
      *
      * @param p_server A pointer to the Server instance where the client is joining to.
@@ -359,6 +328,19 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     void finishJoin() override;
     void logConnectionAttempt() override;
     std::optional<akashi::BanRecord> hardwareBan() const override;
+    QString serverNickname() const override;
+    int maxMessageLength() const override;
+    QStringList wordFilters() const override;
+    bool webaoEnabled() const override;
+    int maxPlayerCount() const override;
+    QString serverDescription() const override;
+    QUrl assetUrl() const override;
+    QString motd() const override;
+    DataTypes::AuthType packetAuthType() const override;
+    int messageFloodguardMs() const override;
+    int globalMessageFloodguardMs() const override;
+    bool isDiscordBanEnabled() const override;
+    bool isDiscordModcallEnabled() const override;
     int playerCount() const override;
     QStringList characters() const override;
     QStringList areaNames() const override;
@@ -571,8 +553,6 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
      * @brief Marks the client active again; any packet except the keepalive counts.
      */
     void resetAfk(const QString &f_header);
-
-    void cmdDefault(int argc, QStringList argv);
 
     bool checkTestimonySymbols(const QString &message);
 

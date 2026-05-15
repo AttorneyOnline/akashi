@@ -21,6 +21,7 @@
 #include "akashi_core_export.h"
 #include "core/exit_code.h"
 #include "core/mmdb_reader.h"
+#include "data_types.h"
 #include "medieval_parser.h"
 #include "player_directory.h"
 #include "playerstateobserver.h"
@@ -35,6 +36,7 @@
 #include <QStack>
 #include <QString>
 #include <QTimer>
+#include <QUrl>
 #include <QWebSocket>
 #include <QWebSocketServer>
 
@@ -43,6 +45,7 @@
 namespace akashi {
 class ArupBroadcaster;
 class CommandRegistry;
+class ConfigStore;
 class DatabaseService;
 class FileSystemService;
 class PacketService;
@@ -51,11 +54,11 @@ class ServiceRegistry;
 }
 
 class ACLRolesHandler;
+class DiscordSettings;
 class ServerPublisher;
+class ServerSettings;
 class AOClient;
 class AreaData;
-class CommandExtensionCollection;
-class ConfigManager;
 class DBManager;
 class Discord;
 class ULogger;
@@ -74,7 +77,7 @@ class AKASHI_CORE_EXPORT Server : public QObject
      * @param p_ws_port The port to listen for connections on.
      * @param parent Qt-based parent, passed along to inherited constructor from QObject.
      */
-    Server(int p_ws_port, akashi::DatabaseService *f_database, akashi::ServiceRegistry *f_services, QObject *parent = nullptr);
+    Server(int p_ws_port, akashi::ConfigStore *f_config_store, akashi::DatabaseService *f_database, akashi::ServiceRegistry *f_services, QObject *parent = nullptr);
 
     /**
      * @brief Destructor for the Server class.
@@ -336,10 +339,6 @@ class AKASHI_CORE_EXPORT Server : public QObject
      */
     ACLRolesHandler *aclRolesHandler();
 
-    /**
-     * @brief Returns a pointer to a command extension collection.
-     */
-    CommandExtensionCollection *commandExtensionCollection();
 
     /**
      * @brief The server-wide global timer.
@@ -377,6 +376,28 @@ class AKASHI_CORE_EXPORT Server : public QObject
     akashi::CommandRegistry *commandRegistry();
 
     akashi::PermissionRegistry *permissionRegistry();
+
+    akashi::ConfigStore *configStore();
+    ServerSettings *serverSettings();
+    DiscordSettings *discordSettings();
+
+    QString configPath(const QString &f_file) const;
+    QString serverNickname() const;
+    QUrl assetUrl() const;
+    DataTypes::AuthType authType() const;
+    DataTypes::LogType loggingType() const;
+
+    void setMotd(const QString &f_motd);
+    void setAuthType(DataTypes::AuthType f_auth);
+
+    QStringList gimpList() const;
+    QStringList filterList() const;
+    QStringList cdnList() const;
+    QStringList praiseList() const;
+    QStringList reprimandsList() const;
+    QStringList magic8BallAnswers() const;
+    QStringList diceFaces(const QString &f_name) const;
+    QString logText(const QString &f_logtype) const;
 
   public Q_SLOTS:
     /**
@@ -473,9 +494,25 @@ class AKASHI_CORE_EXPORT Server : public QObject
     ULogger *logger;
 
 
-    /**
-     * @brief The port through which the server will accept WebSocket connections.
-     */
+    akashi::ConfigStore *m_config_store = nullptr;
+    ServerSettings *m_server_settings = nullptr;
+    DiscordSettings *m_discord_settings = nullptr;
+    QSettings *m_areas_ini = nullptr;
+    QSettings *m_logtext_ini = nullptr;
+    QSettings *m_ambience_ini = nullptr;
+
+    struct TextData
+    {
+        QHash<QString, QStringList> dice_faces;
+        QStringList magic_8ball;
+        QStringList praises;
+        QStringList reprimands;
+        QStringList gimps;
+        QStringList filters;
+        QStringList cdns;
+    };
+    TextData m_text_data;
+
     int m_port;
 
     /**
@@ -574,10 +611,6 @@ class AKASHI_CORE_EXPORT Server : public QObject
      */
     ACLRolesHandler *acl_roles_handler;
 
-    /**
-     * @see CommandExtensionCollection
-     */
-    CommandExtensionCollection *command_extension_collection;
 
     /**
      * @brief Takes a client out of the server: player count, roster, its

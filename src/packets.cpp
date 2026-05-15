@@ -17,8 +17,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "aoclient.h"
 #include "area_data.h"
-#include "config_manager.h"
 #include "core/client_session.h"
+#include "core/server_settings.h"
 #include "db_manager.h"
 #include "proto/evidence.h"
 #include "proto/packet.h"
@@ -92,9 +92,9 @@ QString AOClient::decodeMessage(QString incoming_message)
 
 void AOClient::loginAttempt(QString message)
 {
-    switch (ConfigManager::authType()) {
+    switch (m_server->authType()) {
     case DataTypes::AuthType::SIMPLE:
-        if (message == ConfigManager::modpass()) {
+        if (message == m_server->serverSettings()->modpass()) {
             sendPacket("AUTH", {"1"});
             if (m_session->profile.version.release <= 2 && m_session->profile.version.major <= 9 && m_session->profile.version.minor <= 0)
                 sendServerMessage("Logged in as a moderator.");

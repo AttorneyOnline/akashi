@@ -1,6 +1,5 @@
 #include "proto/chat.h"
 
-#include "config_manager.h"
 #include "proto/ao2_protocol.h"
 #include "proto/chat_messages.h"
 #include "proto/packet_codec.h"
@@ -90,7 +89,7 @@ class OocHandler : public PacketHandler
         l_name.replace(l_forbidden, "");
         f_context.setOocName(l_name);
         // Impersonation and empty name protection.
-        if (f_context.oocName().trimmed().replace("​", "").isEmpty() || f_context.oocName() == ConfigManager::serverNickname()) {
+        if (f_context.oocName().trimmed().replace("​", "").isEmpty() || f_context.oocName() == f_context.serverNickname()) {
             return;
         }
 
@@ -106,11 +105,11 @@ class OocHandler : public PacketHandler
         }
 
         QString l_message = stripZalgo(l_ooc.message);
-        if (l_message.length() == 0 || l_message.length() > ConfigManager::maxCharacters()) {
+        if (l_message.length() == 0 || l_message.length() > f_context.maxMessageLength()) {
             return;
         }
 
-        const QStringList l_filters = ConfigManager::filterList();
+        const QStringList l_filters = f_context.wordFilters();
         for (const QString &l_filter : l_filters) {
             QRegularExpression l_pattern(l_filter, QRegularExpression::CaseInsensitiveOption);
             l_message.replace(l_pattern, "❌");

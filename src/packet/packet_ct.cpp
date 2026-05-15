@@ -1,6 +1,6 @@
 #include "packet/packet_ct.h"
 
-#include "config_manager.h"
+#include "core/server_settings.h"
 #include "packet/packet_factory.h"
 #include "server.h"
 
@@ -29,7 +29,7 @@ void PacketCT::handlePacket(AreaData *area, AOClient &client) const
     }
 
     client.setName(client.dezalgo(m_content[0]).replace(QRegularExpression("\\[|\\]|\\{|\\}|\\#|\\$|\\%|\\&"), "")); // no fucky wucky shit here
-    if (client.name().trimmed().replace("​", "").isEmpty() || client.name() == ConfigManager::serverNickname())    // impersonation & empty name protection
+    if (client.name().trimmed().replace("​", "").isEmpty() || client.name() == client.server()->serverNickname())    // impersonation & empty name protection
         return;
 
     if (client.name().length() > 30) {
@@ -44,10 +44,10 @@ void PacketCT::handlePacket(AreaData *area, AOClient &client) const
 
     QString l_message = client.dezalgo(m_content[1]);
 
-    if (l_message.length() == 0 || l_message.length() > ConfigManager::maxCharacters())
+    if (l_message.length() == 0 || l_message.length() > client.server()->serverSettings()->maximum_characters())
         return;
 
-    const QStringList l_filters = ConfigManager::filterList();
+    const QStringList l_filters = client.server()->filterList();
     for (const QString &regex : l_filters) {
         QRegularExpression re(regex, QRegularExpression::CaseInsensitiveOption);
         l_message.replace(re, "❌");

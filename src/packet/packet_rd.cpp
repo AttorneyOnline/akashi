@@ -1,5 +1,5 @@
 #include "packet/packet_rd.h"
-#include "config_manager.h"
+#include "core/server_settings.h"
 #include "server.h"
 
 #include <QDebug>
@@ -40,7 +40,7 @@ void PacketRD::handlePacket(AreaData *area, AOClient &client) const
     client.sendPacket("DONE");
     client.sendPacket("BN", {area->background(), area->side()});
 
-    client.sendServerMessage("=== MOTD ===\r\n" + ConfigManager::motd() + "\r\n=============");
+    client.sendServerMessage("=== MOTD ===\r\n" + client.server()->serverSettings()->motd() + "\r\n=============");
 
     client.fullArup(); // Give client all the area data
     if (client.server()->timer->isActive()) {

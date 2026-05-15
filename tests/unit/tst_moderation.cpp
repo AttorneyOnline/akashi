@@ -1,6 +1,4 @@
 // AI-generated: written by Claude.
-#include "akashi/config_store.h"
-#include "config_manager.h"
 #include "fake_packet_context.h"
 #include "proto/moderation.h"
 #include "proto/packet_codec.h"
@@ -34,7 +32,6 @@ class tst_Moderation : public QObject
 
 void tst_Moderation::initTestCase()
 {
-    QVERIFY(ConfigManager::setStore(new akashi::ConfigStore("config", this)));
     registerModerationPackets(m_handlers, m_codecs);
 }
 

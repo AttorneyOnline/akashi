@@ -1,7 +1,5 @@
 #include "medieval_parser.h"
 
-#include "config_manager.h"
-
 #include <QFile>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -30,9 +28,15 @@ inline bool MedievalParser::containsCaseInsensitive(const QVector<QString> &vect
 #endif
 }
 
-MedievalParser::MedievalParser()
+MedievalParser::MedievalParser(const QString &f_config_path)
 {
-    parseDataFile();
+    QFile l_datafile_json(f_config_path);
+    if (!l_datafile_json.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        qWarning() << "Unable to open the Medieval Mode data file.";
+        datafile_valid = false;
+        return;
+    }
+    parseData(l_datafile_json.readAll());
 }
 
 MedievalParser::MedievalParser(const QByteArray &f_json_data)
@@ -54,17 +58,6 @@ QString MedievalParser::degrootify(QString message)
     }
 
     return modifySpeech(final_text, do_pends, false);
-}
-
-void MedievalParser::parseDataFile()
-{
-    QFile l_datafile_json(ConfigManager::path("text/autorp.json"));
-    if (!l_datafile_json.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        qWarning() << "Unable to open the Medieval Mode data file.";
-        datafile_valid = false;
-        return;
-    }
-    parseData(l_datafile_json.readAll());
 }
 
 void MedievalParser::parseData(const QByteArray &f_json)

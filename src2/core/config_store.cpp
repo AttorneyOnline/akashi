@@ -1,5 +1,6 @@
 #include "akashi/config_store.h"
 
+#include "akashi/setting_notifier.h"
 #include "core/json_settings.h"
 
 #include <QCoreApplication>
@@ -133,11 +134,25 @@ void ConfigStore::reload()
         for (auto l_value_iterator = l_new_values.begin(); l_value_iterator != l_new_values.end(); ++l_value_iterator) {
             if (l_old_values.value(l_value_iterator.key()) != l_value_iterator.value()) {
                 Q_EMIT valueChanged(l_name, l_value_iterator.key(), l_old_values.value(l_value_iterator.key()), l_value_iterator.value());
+                if (SettingNotifier *l_notifier = m_notifiers.value({l_name, l_value_iterator.key()})) {
+                    Q_EMIT l_notifier->changed();
+                }
             }
         }
     }
 
     Q_EMIT configReloaded();
+}
+
+SettingNotifier *ConfigStore::notifier(const QString &f_name, const QString &f_key)
+{
+    const auto l_pair = qMakePair(f_name, f_key);
+    SettingNotifier *l_notifier = m_notifiers.value(l_pair);
+    if (!l_notifier) {
+        l_notifier = new SettingNotifier(this);
+        m_notifiers.insert(l_pair, l_notifier);
+    }
+    return l_notifier;
 }
 
 QString ConfigStore::resolveRootPath()

@@ -17,10 +17,11 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "discord.h"
 
-#include "config_manager.h"
+#include "core/server_settings.h"
 
-Discord::Discord(QObject *parent) :
-    QObject(parent)
+Discord::Discord(DiscordSettings *f_settings, QObject *parent) :
+    QObject(parent),
+    m_settings(f_settings)
 {
     m_nam = new QNetworkAccessManager();
     connect(m_nam, &QNetworkAccessManager::finished,
@@ -29,11 +30,11 @@ Discord::Discord(QObject *parent) :
 
 void Discord::onModcallWebhookRequested(const QString &f_name, const QString &f_area, const QString &f_id, const QString &f_reason, const QQueue<QString> &f_buffer)
 {
-    m_request.setUrl(QUrl(ConfigManager::discordModcallWebhookUrl()));
+    m_request.setUrl(QUrl(m_settings->webhook_modcall_url()));
     QJsonDocument l_json = constructModcallJson(f_name, f_area, f_id, f_reason);
     postJsonWebhook(l_json);
 
-    if (ConfigManager::discordModcallWebhookSendFile()) {
+    if (m_settings->webhook_modcall_sendfile()) {
         QHttpMultiPart *l_multipart = constructLogMultipart(f_buffer);
         postMultipartWebhook(*l_multipart);
     }
@@ -41,7 +42,7 @@ void Discord::onModcallWebhookRequested(const QString &f_name, const QString &f_
 
 void Discord::onBanWebhookRequested(const QString &f_ipid, const QString &f_moderator, const QString &f_duration, const QString &f_reason, const int &f_banID)
 {
-    m_request.setUrl(QUrl(ConfigManager::discordBanWebhookUrl()));
+    m_request.setUrl(QUrl(m_settings->webhook_ban_url()));
     QJsonDocument l_json = constructBanJson(f_ipid, f_moderator, f_duration, f_reason, f_banID);
     postJsonWebhook(l_json);
 }
@@ -51,13 +52,13 @@ QJsonDocument Discord::constructModcallJson(const QString &f_name, const QString
     QJsonObject l_json;
     QJsonArray l_array;
     QJsonObject l_object{
-        {"color", ConfigManager::discordWebhookColor()},
+        {"color", m_settings->webhook_color()},
         {"title", "[" + f_id + "]" + f_name + " filed a modcall in " + f_area},
         {"description", f_reason}};
     l_array.append(l_object);
 
-    if (!ConfigManager::discordModcallWebhookContent().isEmpty())
-        l_json["content"] = ConfigManager::discordModcallWebhookContent();
+    if (!m_settings->webhook_modcall_content().isEmpty())
+        l_json["content"] = m_settings->webhook_modcall_content();
     l_json["embeds"] = l_array;
 
     return QJsonDocument(l_json);
@@ -68,7 +69,7 @@ QJsonDocument Discord::constructBanJson(const QString &f_ipid, const QString &f_
     QJsonObject l_json;
     QJsonArray l_array;
     QJsonObject l_object{
-        {"color", ConfigManager::discordWebhookColor()},
+        {"color", m_settings->webhook_color()},
         {"title", "Ban issued by " + f_moderator},
         {"description", "Client IPID : " + f_ipid + "\nBan ID: " + QString::number(f_banID) + "\nBan reason : " + f_reason + "\nBanned until : " + f_duration}};
     l_array.append(l_object);

@@ -6,9 +6,12 @@
 
 #include <QHash>
 #include <QObject>
+#include <QPair>
 #include <QSettings>
 
 namespace akashi {
+
+class SettingNotifier;
 
 // Owns the configuration files. Plugins get their own file through declarePlugin().
 class AKASHI_CORE_EXPORT ConfigStore : public QObject
@@ -55,6 +58,11 @@ class AKASHI_CORE_EXPORT ConfigStore : public QObject
     // Reloads every open file from disk and rechecks the declared values.
     void reload();
 
+    // Returns a notifier for the given (file, key) pair, creating one if needed.
+    // The notifier is owned by the store; its changed() signal fires on reload
+    // when the value on disk differs from the previous value.
+    SettingNotifier *notifier(const QString &f_name, const QString &f_key);
+
     // Picks the config folder from --config-root, AKASHI_CONFIG_ROOT or the default config/.
     static QString resolveRootPath();
 
@@ -72,6 +80,7 @@ class AKASHI_CORE_EXPORT ConfigStore : public QObject
     QHash<QString, QSettings *> m_open_settings;
     QHash<QString, QList<ConfigEntry>> m_entries;
     QHash<QString, QHash<QString, QVariant>> m_values;
+    QHash<QPair<QString, QString>, SettingNotifier *> m_notifiers;
 };
 
 } // namespace akashi

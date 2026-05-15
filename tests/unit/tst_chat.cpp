@@ -1,6 +1,4 @@
 // AI-generated: written by Claude.
-#include "akashi/config_store.h"
-#include "config_manager.h"
 #include "fake_packet_context.h"
 #include "proto/chat.h"
 #include "proto/packet_codec.h"
@@ -42,7 +40,6 @@ class tst_Chat : public QObject
 
 void tst_Chat::initTestCase()
 {
-    QVERIFY(ConfigManager::setStore(new akashi::ConfigStore("config", this)));
     registerChatPackets(m_handlers, m_codecs);
 }
 
@@ -82,7 +79,7 @@ void tst_Chat::oocRefusesMutedEmptyAndImpersonation()
     QVERIFY(l_nameless.ooc_broadcasts.isEmpty());
 
     FakeContext l_impersonator;
-    run(Packet("CT", {ConfigManager::serverNickname(), "hello"}), l_impersonator);
+    run(Packet("CT", {l_impersonator.serverNickname(), "hello"}), l_impersonator);
     QVERIFY(l_impersonator.ooc_broadcasts.isEmpty());
 
     FakeContext l_longname;

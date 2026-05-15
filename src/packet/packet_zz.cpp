@@ -1,5 +1,4 @@
 #include "packet/packet_zz.h"
-#include "config_manager.h"
 #include "packet/packet_factory.h"
 #include "server.h"
 
@@ -47,7 +46,7 @@ void PacketZZ::handlePacket(AreaData *area, AOClient &client) const
     }
     Q_EMIT client.logModcall(client.server()->areaById(client.areaId())->name(), client.m_ipid, client.name(), QString::number(client.clientId()), (client.character() + " " + client.characterName()));
 
-    if (ConfigManager::discordModcallWebhookEnabled()) {
+    if (client.server()->discordSettings()->webhook_modcall_enabled()) {
         QString l_name = client.name();
         if (client.name().isEmpty())
             l_name = client.character();

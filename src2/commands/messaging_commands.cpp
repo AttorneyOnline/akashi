@@ -3,7 +3,6 @@
 #include "akashi/permissions.h"
 #include "aoclient.h"
 #include "area_data.h"
-#include "config_manager.h"
 #include "core/command_context.h"
 #include "core/command_registry.h"
 #include "core/command_spec.h"
@@ -12,12 +11,12 @@
 
 namespace akashi::commands {
 
-static QString reprimand(bool f_positive = false)
+static QString reprimand(Server *f_server, bool f_positive = false)
 {
     if (f_positive)
-        return ConfigManager::praiseList().at(CommandContext::genRand(0, ConfigManager::praiseList().size() - 1));
+        return f_server->praiseList().at(CommandContext::genRand(0, f_server->praiseList().size() - 1));
     else
-        return ConfigManager::reprimandsList().at(CommandContext::genRand(0, ConfigManager::reprimandsList().size() - 1));
+        return f_server->reprimandsList().at(CommandContext::genRand(0, f_server->reprimandsList().size() - 1));
 }
 
 static void handlePos(CommandContext &f_context)
@@ -75,7 +74,7 @@ static void handleNeed(CommandContext &f_context)
 {
     QString l_sender_area = f_context.areaName();
     QString l_sender_message = f_context.arguments().join(" ");
-    f_context.server()->broadcast(akashi::Packet("CT", {ConfigManager::serverNickname(), "=== Advert ===\n[" + l_sender_area + "] needs " + l_sender_message + "."}), Server::TARGET_TYPE::ADVERT);
+    f_context.server()->broadcast(akashi::Packet("CT", {f_context.server()->serverNickname(), "=== Advert ===\n[" + l_sender_area + "] needs " + l_sender_message + "."}), Server::TARGET_TYPE::ADVERT);
 }
 
 static void handleSwitch(CommandContext &f_context)
@@ -176,7 +175,7 @@ static void handleGimp(CommandContext &f_context)
             f_context.reply("That player is already gimped!");
         else {
             f_context.reply("Gimped player.");
-            l_target->reply("You have been gimped! " + reprimand());
+            l_target->reply("You have been gimped! " + reprimand(f_context.server()));
         }
         l_target->setSanction(sanction::gimped, true);
     }
@@ -189,7 +188,7 @@ static void handleUngimp(CommandContext &f_context)
             f_context.reply("That player is not gimped!");
         else {
             f_context.reply("Ungimped player.");
-            l_target->reply("A moderator has ungimped you! " + reprimand(true));
+            l_target->reply("A moderator has ungimped you! " + reprimand(f_context.server(), true));
         }
         l_target->setSanction(sanction::gimped, false);
     }
@@ -202,7 +201,7 @@ static void handleDisemvowel(CommandContext &f_context)
             f_context.reply("That player is already disemvoweled!");
         else {
             f_context.reply("Disemvoweled player.");
-            l_target->reply("You have been disemvoweled! " + reprimand());
+            l_target->reply("You have been disemvoweled! " + reprimand(f_context.server()));
         }
         l_target->setSanction(sanction::disemvoweled, true);
     }
@@ -215,7 +214,7 @@ static void handleUnDisemvowel(CommandContext &f_context)
             f_context.reply("That player is not disemvoweled!");
         else {
             f_context.reply("Undisemvoweled player.");
-            l_target->reply("A moderator has undisemvoweled you! " + reprimand(true));
+            l_target->reply("A moderator has undisemvoweled you! " + reprimand(f_context.server(), true));
         }
         l_target->setSanction(sanction::disemvoweled, false);
     }
@@ -228,7 +227,7 @@ static void handleShake(CommandContext &f_context)
             f_context.reply("That player is already shaken!");
         else {
             f_context.reply("Shook player.");
-            l_target->reply("A moderator has shaken your words! " + reprimand());
+            l_target->reply("A moderator has shaken your words! " + reprimand(f_context.server()));
         }
         l_target->setSanction(sanction::shaken, true);
     }
@@ -241,7 +240,7 @@ static void handleUnShake(CommandContext &f_context)
             f_context.reply("That player is not shaken!");
         else {
             f_context.reply("Unshook player.");
-            l_target->reply("A moderator has unshook you! " + reprimand(true));
+            l_target->reply("A moderator has unshook you! " + reprimand(f_context.server(), true));
         }
         l_target->setSanction(sanction::shaken, false);
     }
@@ -462,7 +461,7 @@ void registerMessagingCommands(CommandRegistry &f_registry)
     f_registry.registerCommand({"charcurse", {}, {permission::mute}, 1}, handleCharCurse, "core");
     f_registry.registerCommand({"uncharcurse", {}, {permission::mute}, 1}, handleUnCharCurse, "core");
     f_registry.registerCommand({"charselect", {}, {}, 0}, handleCharSelect, "core");
-    f_registry.registerCommand({"force_charselect", {}, {permission::force_charselect}, 1}, handleForceCharSelect, "core");
+    f_registry.registerCommand({"force_charselect", {"forcecharselect"}, {permission::force_charselect}, 1}, handleForceCharSelect, "core");
     f_registry.registerCommand({"a", {}, {}, 2}, handleA, "core");
     f_registry.registerCommand({"s", {}, {}, 0}, handleS, "core");
     f_registry.registerCommand({"firstperson", {}, {}, 0}, handleFirstPerson, "core");

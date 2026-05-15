@@ -1,6 +1,6 @@
 #include "packet/packet_id.h"
 
-#include "config_manager.h"
+#include "core/server_settings.h"
 #include "server.h"
 
 #include <QDebug>
@@ -30,7 +30,7 @@ void PacketID::handlePacket(AreaData *area, AOClient &client) const
         return;
     }
 
-    if (!ConfigManager::webaoEnabled() && m_content[0] == "webAO") {
+    if (!client.server()->serverSettings()->webao_enable() && m_content[0] == "webAO") {
         client.sendPacket("BD", {"WebAO is disabled on this server."});
         client.m_socket->close();
         return;
@@ -50,7 +50,7 @@ void PacketID::handlePacket(AreaData *area, AOClient &client) const
         return;
     }
 
-    client.sendPacket("PN", {QString::number(client.server()->playerCount()), QString::number(ConfigManager::maxPlayers()), ConfigManager::serverDescription()});
+    client.sendPacket("PN", {QString::number(client.server()->playerCount()), QString::number(client.server()->serverSettings()->max_players()), client.server()->serverSettings()->server_description()});
 
     QStringList l_feature_list = {
         "noencryption", "yellowtext", "prezoom",
@@ -61,8 +61,8 @@ void PacketID::handlePacket(AreaData *area, AOClient &client) const
         "y_offset", "expanded_desk_mods", "auth_packet", "custom_blips"};
     client.sendPacket("FL", l_feature_list);
 
-    if (ConfigManager::assetUrl().isValid()) {
-        QByteArray l_asset_url = ConfigManager::assetUrl().toEncoded(QUrl::EncodeSpaces);
+    if (client.server()->assetUrl().isValid()) {
+        QByteArray l_asset_url = client.server()->assetUrl().toEncoded(QUrl::EncodeSpaces);
         client.sendPacket("ASS", {l_asset_url});
     }
 }

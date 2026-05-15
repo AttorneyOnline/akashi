@@ -1,6 +1,5 @@
 #include "proto/handshake.h"
 
-#include "config_manager.h"
 #include "proto/ao2_protocol.h"
 #include "proto/handshake_messages.h"
 #include "proto/packet_codec.h"
@@ -111,7 +110,7 @@ class IdentifyHandler : public PacketHandler
             return;
         }
 
-        if (!ConfigManager::webaoEnabled() && l_identify.arch == "webAO") {
+        if (!f_context.webaoEnabled() && l_identify.arch == "webAO") {
             f_context.sendPacket(Packet(ao2::HEADER_BD, {"WebAO is disabled on this server."}));
             f_context.closeConnection();
             return;
@@ -130,12 +129,12 @@ class IdentifyHandler : public PacketHandler
         l_profile.version = l_identify.version;
         f_context.identify(l_profile);
 
-        f_context.sendPacket(Packet(ao2::HEADER_PN, {QString::number(f_context.playerCount()), QString::number(ConfigManager::maxPlayers()), ConfigManager::serverDescription()}));
+        f_context.sendPacket(Packet(ao2::HEADER_PN, {QString::number(f_context.playerCount()), QString::number(f_context.maxPlayerCount()), f_context.serverDescription()}));
 
         f_context.sendPacket(Packet(ao2::HEADER_FL, serverFeatures()));
 
-        if (ConfigManager::assetUrl().isValid()) {
-            const QByteArray l_asset_url = ConfigManager::assetUrl().toEncoded(QUrl::EncodeSpaces);
+        if (f_context.assetUrl().isValid()) {
+            const QByteArray l_asset_url = f_context.assetUrl().toEncoded(QUrl::EncodeSpaces);
             f_context.sendPacket(Packet(ao2::HEADER_ASS, {QString::fromUtf8(l_asset_url)}));
         }
     }
@@ -201,7 +200,7 @@ class JoinHandler : public PacketHandler
         f_context.sendPacket(Packet(ao2::HEADER_DONE));
         f_context.sendPacket(Packet(ao2::HEADER_BN, {l_area.background, l_area.side}));
 
-        f_context.sendServerMessage("=== MOTD ===\r\n" + ConfigManager::motd() + "\r\n=============");
+        f_context.sendServerMessage("=== MOTD ===\r\n" + f_context.motd() + "\r\n=============");
 
         // Give the client all the area data.
         f_context.sendFullArup();

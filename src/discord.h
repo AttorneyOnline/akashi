@@ -21,7 +21,7 @@
 #include <QCoreApplication>
 #include <QtNetwork>
 
-class ConfigManager;
+class DiscordSettings;
 
 /**
  * @brief A class for handling all Discord webhook requests.
@@ -39,7 +39,7 @@ class Discord : public QObject
      * @param f_webhook_sendfile Whether or not to send a file containing area logs with the webhook POST request.
      * @param parent Qt-based parent, passed along to inherited constructor from QObject.
      */
-    Discord(QObject *parent = nullptr);
+    explicit Discord(DiscordSettings *f_settings, QObject *parent = nullptr);
 
     /**
      * @brief Deconstructor for the Discord class.
@@ -84,6 +84,8 @@ class Discord : public QObject
      * @brief The QNetworkAccessManager for webhooks.
      */
     QNetworkAccessManager *m_nam;
+
+    DiscordSettings *m_settings;
 
     /**
      * @brief The QNetworkRequest for webhooks.

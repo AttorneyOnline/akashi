@@ -36,7 +36,6 @@ class Area;
 class Jukebox;
 }
 
-class ConfigManager;
 class Logger;
 
 /**
@@ -54,7 +53,7 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
      * and `YYYYYY` is the actual name of the area.
      * @param p_index The index of the area in the area list.
      */
-    AreaData(QString p_name, int p_index);
+    AreaData(QString p_name, int p_index, QSettings *f_areas_ini, QSettings *f_ambience_ini);
 
     /**
      * @brief The world-model core this class delegates to; the area-update
@@ -901,6 +900,8 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
      * model; this class delegates to it until the remaining pieces move.
      */
     akashi::Area *m_area;
+
+    QSettings *m_ambience_ini;
 
     /**
      * @brief The list of timers available in the area.

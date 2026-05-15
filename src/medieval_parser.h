@@ -22,15 +22,13 @@ enum MatchResult
 class AKASHI_CORE_EXPORT MedievalParser
 {
   public:
-    MedievalParser();
+    explicit MedievalParser(const QString &f_config_path);
 
-    // Parses inline data instead of the config file, for tests.
     explicit MedievalParser(const QByteArray &f_json_data);
 
     QString degrootify(QString message);
 
   private:
-    void parseDataFile();
     void parseData(const QByteArray &f_json);
 
     struct WordReplacement

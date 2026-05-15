@@ -17,9 +17,13 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "serverpublisher.h"
 
-#include "config_manager.h"
+#include "core/server_settings.h"
+
 #include "qnamespace.h"
 
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QTimer>
@@ -28,12 +32,13 @@ const int HTTP_OK = 200;
 const int WS_REVERSE_PROXY = 80;
 const int TIMEOUT = 1000 * 60 * 4;
 
-ServerPublisher::ServerPublisher(int port, int *player_count, QObject *parent) :
+ServerPublisher::ServerPublisher(int port, int *player_count, ServerSettings *f_settings, QObject *parent) :
     QObject(parent),
     m_manager{new QNetworkAccessManager(this)},
     timeout_timer(new QTimer(this)),
     m_players(player_count),
-    m_port{port}
+    m_port{port},
+    m_settings(f_settings)
 {
     connect(m_manager, &QNetworkAccessManager::finished, this, &ServerPublisher::finished);
     connect(timeout_timer, &QTimer::timeout, this, &ServerPublisher::publishServer);
@@ -46,27 +51,27 @@ ServerPublisher::ServerPublisher(int port, int *player_count, QObject *parent) :
 
 void ServerPublisher::publishServer()
 {
-    if (!ConfigManager::publishServerEnabled()) {
+    if (!m_settings->advertise()) {
         return;
     }
 
-    QUrl serverlist(ConfigManager::serverlistURL());
+    QUrl serverlist(m_settings->ms_ip());
     if (serverlist.isValid()) {
         QNetworkRequest request(serverlist);
         request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
         QJsonObject serverinfo;
-        if (!ConfigManager::serverDomainName().trimmed().isEmpty()) {
-            serverinfo["ip"] = ConfigManager::serverDomainName();
+        if (!m_settings->hostname().trimmed().isEmpty()) {
+            serverinfo["ip"] = m_settings->hostname();
         }
-        if (ConfigManager::securePort() != -1) {
-            serverinfo["wss_port"] = ConfigManager::securePort();
+        if (m_settings->secure_port() != -1) {
+            serverinfo["wss_port"] = m_settings->secure_port();
         }
         serverinfo["port"] = 27106;
-        serverinfo["ws_port"] = ConfigManager::advertiseWSProxy() ? WS_REVERSE_PROXY : m_port;
+        serverinfo["ws_port"] = m_settings->cloudflare_enabled() ? WS_REVERSE_PROXY : m_port;
         serverinfo["players"] = *m_players;
-        serverinfo["name"] = ConfigManager::serverName();
-        serverinfo["description"] = ConfigManager::serverDescription();
+        serverinfo["name"] = m_settings->server_name();
+        serverinfo["description"] = m_settings->server_description();
 
         m_manager->post(request, QJsonDocument(serverinfo).toJson());
     }

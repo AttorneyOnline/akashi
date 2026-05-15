@@ -17,10 +17,17 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "logger/u_logger.h"
 
-ULogger::ULogger(QObject *parent) :
-    QObject(parent)
+#include "core/server_settings.h"
+#include "server.h"
+
+ULogger::ULogger(Server *f_server, QObject *parent) :
+    QObject(parent),
+    m_server(f_server)
 {
-    switch (ConfigManager::loggingType()) {
+    if (!m_server) {
+        return;
+    }
+    switch (m_server->loggingType()) {
     case DataTypes::LogType::MODCALL:
         writerModcall = new WriterModcall;
         break;
@@ -34,7 +41,10 @@ ULogger::ULogger(QObject *parent) :
 
 ULogger::~ULogger()
 {
-    switch (ConfigManager::loggingType()) {
+    if (!m_server) {
+        return;
+    }
+    switch (m_server->loggingType()) {
     case DataTypes::LogType::MODCALL:
         writerModcall->deleteLater();
         break;
@@ -129,7 +139,7 @@ void ULogger::logModcall(const QString &f_area_name, const QString &f_ipid, cons
                              .arg(l_time, f_area_name, f_ipid, f_id, f_char_name, f_ooc_name);
     updateAreaBuffer(f_area_name, l_logEvent);
 
-    if (ConfigManager::loggingType() == DataTypes::LogType::MODCALL) {
+    if (m_server && m_server->loggingType() == DataTypes::LogType::MODCALL) {
         writerModcall->flush(f_area_name, buffer(f_area_name));
     }
 }
@@ -144,9 +154,11 @@ void ULogger::logConnectionAttempt(const QString &f_ip_address, const QString &f
 
 void ULogger::loadLogtext()
 {
-    // All of this to prevent one single clazy warning from appearing.
+    if (!m_server) {
+        return;
+    }
     for (auto iterator = m_logtext.keyBegin(), end = m_logtext.keyEnd(); iterator != end; ++iterator) {
-        QString l_tempstring = ConfigManager::LogText(iterator.operator*());
+        QString l_tempstring = m_server->logText(iterator.operator*());
         if (!l_tempstring.isEmpty()) {
             m_logtext[iterator.operator*()] = l_tempstring;
         }
@@ -157,7 +169,8 @@ void ULogger::updateAreaBuffer(const QString &f_area_name, const QString &f_log_
 {
     QQueue<QString> l_buffer = m_bufferMap.value(f_area_name);
 
-    if (l_buffer.length() <= ConfigManager::logBuffer()) {
+    const int l_max = m_server ? m_server->serverSettings()->logbuffer() : 500;
+    if (l_buffer.length() <= l_max) {
         l_buffer.enqueue(f_log_entry);
     }
     else {
@@ -166,10 +179,10 @@ void ULogger::updateAreaBuffer(const QString &f_area_name, const QString &f_log_
     }
     m_bufferMap.insert(f_area_name, l_buffer);
 
-    if (ConfigManager::loggingType() == DataTypes::LogType::FULL) {
+    if (m_server && m_server->loggingType() == DataTypes::LogType::FULL) {
         writerFull->flush(f_log_entry);
     }
-    if (ConfigManager::loggingType() == DataTypes::LogType::FULLAREA) {
+    if (m_server && m_server->loggingType() == DataTypes::LogType::FULLAREA) {
         writerFull->flush(f_log_entry, f_area_name);
     }
 }

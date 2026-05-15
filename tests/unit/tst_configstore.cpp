@@ -1,6 +1,9 @@
 // AI-generated: written by Claude.
 #include "akashi/config_store.h"
+#include "akashi/setting_notifier.h"
+#include "akashi/settings.h"
 
+#include <QFileInfo>
 #include <QSignalSpy>
 #include <QTemporaryDir>
 #include <QTest>
@@ -23,6 +26,9 @@ class tst_ConfigStore : public QObject
     void unknownKeyWarns();
     void reloadSignalsChangedValues();
     void pluginDeclarationsWork();
+    void notifierFiresOnReload();
+    void notifierSilentWhenUnchanged();
+    void settingNotifierIntegration();
 };
 
 static void writeFile(const QString &f_path, const QByteArray &f_content)
@@ -30,6 +36,22 @@ static void writeFile(const QString &f_path, const QByteArray &f_content)
     QFile l_file(f_path);
     QVERIFY(l_file.open(QIODevice::WriteOnly));
     l_file.write(f_content);
+}
+
+// QSettings::sync() skips re-reading when the filesystem timestamp has not
+// changed. On NTFS the write timestamp can stay the same for two writes
+// that land within the same coalescing window. This helper rewrites the
+// file until the mtime actually advances.
+static void writeFileAndWaitForMtime(const QString &f_path, const QByteArray &f_content)
+{
+    const QDateTime l_before = QFileInfo(f_path).lastModified();
+    for (int i = 0; i < 200; i++) {
+        writeFile(f_path, f_content);
+        if (QFileInfo(f_path).lastModified() > l_before)
+            return;
+        QTest::qWait(10);
+    }
+    QVERIFY2(false, "mtime did not advance");
 }
 
 void tst_ConfigStore::defaultsFillMissingValues()
@@ -96,12 +118,14 @@ void tst_ConfigStore::unknownKeyWarns()
 void tst_ConfigStore::reloadSignalsChangedValues()
 {
     QTemporaryDir l_dir;
-    writeFile(l_dir.path() + "/config.json", R"({"Options": {"motd": "old"}})");
+    const QString l_path = l_dir.path() + "/config.json";
+    writeFile(l_path, R"({"Options": {"motd": "old"}})");
 
     ConfigStore l_store(l_dir.path());
     QVERIFY(l_store.declare("config", {{"Options/motd", QString("none"), "The message of the day."}}));
 
-    writeFile(l_dir.path() + "/config.json", R"({"Options": {"motd": "new"}})");
+    writeFileAndWaitForMtime(l_path, R"({"Options": {"motd": "new"}})");
+
     QSignalSpy l_spy(&l_store, &ConfigStore::valueChanged);
     l_store.reload();
 
@@ -116,6 +140,69 @@ void tst_ConfigStore::pluginDeclarationsWork()
     ConfigStore l_store(l_dir.path());
     QVERIFY(l_store.declarePlugin("myplugin", {{"greeting", QString("hello"), "The greeting."}}));
     QCOMPARE(l_store.get<QString>("plugins/myplugin", "greeting"), "hello");
+}
+
+void tst_ConfigStore::notifierFiresOnReload()
+{
+    QTemporaryDir l_dir;
+    const QString l_path = l_dir.path() + "/config.json";
+    writeFile(l_path, R"({"Options": {"motd": "old"}})");
+
+    ConfigStore l_store(l_dir.path());
+    QVERIFY(l_store.declare("config", {{"Options/motd", QString("none"), "The message of the day."}}));
+
+    SettingNotifier *l_notifier = l_store.notifier("config", "Options/motd");
+    QVERIFY(l_notifier);
+    QSignalSpy l_spy(l_notifier, &SettingNotifier::changed);
+
+    writeFileAndWaitForMtime(l_path, R"({"Options": {"motd": "new"}})");
+    l_store.reload();
+
+    QCOMPARE(l_spy.count(), 1);
+    QCOMPARE(l_store.get<QString>("config", "Options/motd"), "new");
+}
+
+void tst_ConfigStore::notifierSilentWhenUnchanged()
+{
+    QTemporaryDir l_dir;
+    const QString l_path = l_dir.path() + "/config.json";
+    writeFile(l_path, R"({"Options": {"motd": "same"}})");
+
+    ConfigStore l_store(l_dir.path());
+    QVERIFY(l_store.declare("config", {{"Options/motd", QString("none"), "The message of the day."}}));
+
+    SettingNotifier *l_notifier = l_store.notifier("config", "Options/motd");
+    QSignalSpy l_spy(l_notifier, &SettingNotifier::changed);
+
+    // Rewrite with the same value — notifier must stay silent.
+    writeFileAndWaitForMtime(l_path, R"({"Options": {"motd": "same"}})");
+    l_store.reload();
+
+    QCOMPARE(l_spy.count(), 0);
+}
+
+void tst_ConfigStore::settingNotifierIntegration()
+{
+    QTemporaryDir l_dir;
+    const QString l_path = l_dir.path() + "/config.json";
+    writeFile(l_path, R"({"Options": {"motd": "hello"}})");
+
+    ConfigStore l_store(l_dir.path());
+    Settings l_settings(&l_store, "config");
+    Setting<QString> l_motd(&l_settings, "Options/motd", QString("default"), "The message of the day.");
+    QVERIFY(l_settings.declare());
+
+    QCOMPARE(l_motd(), "hello");
+
+    SettingNotifier *l_notifier = l_motd.notifier();
+    QVERIFY(l_notifier);
+    QSignalSpy l_spy(l_notifier, &SettingNotifier::changed);
+
+    writeFileAndWaitForMtime(l_path, R"({"Options": {"motd": "world"}})");
+    l_store.reload();
+
+    QCOMPARE(l_spy.count(), 1);
+    QCOMPARE(l_motd(), "world");
 }
 
 }

@@ -1,5 +1,5 @@
 #include "packet/packet_ms.h"
-#include "config_manager.h"
+#include "core/server_settings.h"
 #include "packet/packet_factory.h"
 #include "server.h"
 
@@ -80,8 +80,8 @@ void PacketMS::handlePacket(AreaData *area, AOClient &client) const
     Q_EMIT client.logIC(client.server()->areaById(client.areaId())->name(), client.m_ipid, client.name(), QString::number(client.clientId()), (client.character() + " " + client.characterName()), client.m_last_message);
     area->updateLastICMessage(validated_packet.fields());
 
-    area->startMessageFloodguard(ConfigManager::messageFloodguard());
-    client.server()->startMessageFloodguard(ConfigManager::globalMessageFloodguard());
+    area->startMessageFloodguard(client.server()->serverSettings()->message_floodguard());
+    client.server()->startMessageFloodguard(client.server()->serverSettings()->global_message_floodguard());
 }
 
 akashi::Packet PacketMS::validateIcPacket(AOClient &client) const
@@ -159,7 +159,7 @@ akashi::Packet PacketMS::validateIcPacket(AOClient &client) const
     l_args.append(client.m_emote);
 
     // message text
-    if (l_incoming_args[4].toString().size() > ConfigManager::maxCharacters())
+    if (l_incoming_args[4].toString().size() > client.server()->serverSettings()->maximum_characters())
         return l_invalid;
 
     // Doublepost prevention. Has to ignore blankposts and testimony commands.
@@ -178,14 +178,14 @@ akashi::Packet PacketMS::validateIcPacket(AOClient &client) const
 
     client.m_last_message = l_incoming_msg;
 
-    const QStringList l_filters = ConfigManager::filterList();
+    const QStringList l_filters = client.server()->filterList();
     for (const QString &regex : l_filters) {
         QRegularExpression re(regex, QRegularExpression::CaseInsensitiveOption);
         l_incoming_msg.replace(re, "❌");
     }
 
     if (client.m_is_gimped) {
-        QString l_gimp_message = ConfigManager::gimpList().at((client.genRand(1, ConfigManager::gimpList().size() - 1)));
+        QString l_gimp_message = client.server()->gimpList().at((client.genRand(1, client.server()->gimpList().size() - 1)));
         l_incoming_msg = l_gimp_message;
     }
 

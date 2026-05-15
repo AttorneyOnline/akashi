@@ -18,9 +18,8 @@
 #include "aoclient.h"
 
 #include "area_data.h"
-#include "command_extension.h"
-#include "config_manager.h"
 #include "core/client_session.h"
+#include "core/server_settings.h"
 #include "core/command_context.h"
 #include "core/command_registry.h"
 #include "core/permission_registry.h"
@@ -35,7 +34,6 @@
 
 #include <QQueue>
 
-const QMap<QString, AOClient::CommandInfo> AOClient::COMMANDS{};
 
 void AOClient::leave()
 {
@@ -79,8 +77,8 @@ void AOClient::handlePacket(const akashi::Packet &packet)
     }
 
     ++m_session->packet_count;
-    int hard_limit = ConfigManager::packetRateLimitHard();
-    int soft_limit = ConfigManager::packetRateLimitSoft();
+    int hard_limit = m_server->serverSettings()->packet_rate_limit_hard();
+    int soft_limit = m_server->serverSettings()->packet_rate_limit_soft();
 
     if (hard_limit > 0 && m_session->packet_count >= hard_limit) {
         sendPacket("BD", {"You have been disconnected for sending messages too quickly."});
@@ -145,7 +143,7 @@ void AOClient::resetAfk(const QString &f_header)
         if (characterName().endsWith(" [AFK]")) {
             setCharacterName(characterName().remove(" [AFK]"));
         }
-        m_session->afk_timer->start(ConfigManager::afkTimeout() * 1000);
+        m_session->afk_timer->start(m_server->serverSettings()->afk_timeout() * 1000);
     }
 }
 
@@ -277,43 +275,7 @@ void AOClient::handleCommand(QString command, int argc, QStringList argv)
         }
     }
 
-    // Legacy path: static COMMANDS map with member-function-pointers.
-    QString l_target_command = command;
-    QVector<ACLRole::Permission> l_permissions;
-
-    const QList<CommandExtension> l_extensions = m_server->commandExtensionCollection()->extensions();
-    for (const CommandExtension &i_extension : l_extensions) {
-        if (i_extension.checkCommandNameAndAlias(command)) {
-            l_target_command = i_extension.commandName();
-            l_permissions = i_extension.permissions();
-            break;
-        }
-    }
-
-    CommandInfo l_command = COMMANDS.value(l_target_command, {{ACLRole::NONE}, -1, &AOClient::cmdDefault});
-    if (l_permissions.isEmpty()) {
-        l_permissions.append(l_command.acl_permissions);
-    }
-
-    bool l_has_permissions = false;
-    for (const ACLRole::Permission i_permission : qAsConst(l_permissions)) {
-        if (canPerform(i_permission)) {
-            l_has_permissions = true;
-            break;
-        }
-    }
-    if (!l_has_permissions) {
-        sendServerMessage("You do not have permission to use that command.");
-        return;
-    }
-
-    if (argc < l_command.minArgs) {
-        sendServerMessage("Invalid command syntax.");
-        sendServerMessage("The expected syntax for this command is: \n" + ConfigManager::commandHelp(command).usage);
-        return;
-    }
-
-    std::invoke(l_command.action, this, argc, argv);
+    sendServerMessage("Invalid command.");
 }
 
 void AOClient::sendPacket(const akashi::Packet &packet)
@@ -348,17 +310,17 @@ void AOClient::calculateIpid()
 
 void AOClient::sendServerMessage(const QString &message)
 {
-    sendPacket("CT", {ConfigManager::serverNickname(), message, "1"});
+    sendPacket("CT", {m_server->serverNickname(), message, "1"});
 }
 
 void AOClient::sendServerMessageArea(QString message)
 {
-    m_server->broadcast(akashi::Packet("CT", {ConfigManager::serverNickname(), message, "1"}), areaId());
+    m_server->broadcast(akashi::Packet("CT", {m_server->serverNickname(), message, "1"}), areaId());
 }
 
 void AOClient::sendServerBroadcast(QString message)
 {
-    m_server->broadcast(akashi::Packet("CT", {ConfigManager::serverNickname(), message, "1"}));
+    m_server->broadcast(akashi::Packet("CT", {m_server->serverNickname(), message, "1"}));
 }
 
 bool AOClient::canPerform(ACLRole::Permission f_permission) const
@@ -375,7 +337,7 @@ bool AOClient::canPerform(ACLRole::Permission f_permission) const
         return false;
     }
 
-    if (ConfigManager::authType() == DataTypes::AuthType::SIMPLE) {
+    if (m_server->authType() == DataTypes::AuthType::SIMPLE) {
         return true;
     }
 
@@ -595,6 +557,20 @@ std::optional<akashi::BanRecord> AOClient::hardwareBan() const
     }
     return l_record;
 }
+
+QString AOClient::serverNickname() const { return m_server->serverNickname(); }
+int AOClient::maxMessageLength() const { return m_server->serverSettings()->maximum_characters(); }
+QStringList AOClient::wordFilters() const { return m_server->filterList(); }
+bool AOClient::webaoEnabled() const { return m_server->serverSettings()->webao_enable(); }
+int AOClient::maxPlayerCount() const { return m_server->serverSettings()->max_players(); }
+QString AOClient::serverDescription() const { return m_server->serverSettings()->server_description(); }
+QUrl AOClient::assetUrl() const { return m_server->assetUrl(); }
+QString AOClient::motd() const { return m_server->serverSettings()->motd(); }
+DataTypes::AuthType AOClient::packetAuthType() const { return m_server->authType(); }
+int AOClient::messageFloodguardMs() const { return m_server->serverSettings()->message_floodguard(); }
+int AOClient::globalMessageFloodguardMs() const { return m_server->serverSettings()->global_message_floodguard(); }
+bool AOClient::isDiscordBanEnabled() const { return m_server->discordSettings()->webhook_ban_enabled(); }
+bool AOClient::isDiscordModcallEnabled() const { return m_server->discordSettings()->webhook_modcall_enabled(); }
 
 int AOClient::playerCount() const
 {
@@ -870,7 +846,7 @@ void AOClient::updatePosition(const QString &f_position)
 
 QString AOClient::gimpText()
 {
-    return ConfigManager::gimpList().at(genRand(1, ConfigManager::gimpList().size() - 1));
+    return m_server->gimpList().at(genRand(1, m_server->gimpList().size() - 1));
 }
 
 QString AOClient::medievalText(const QString &f_text)
@@ -1220,7 +1196,7 @@ void AOClient::addStatement(QStringList packet)
     akashi::Statement l_statement(packet);
 
     if (l_recorder->state() == State::Recording) {
-        if (l_recorder->statementIndex() <= ConfigManager::maxStatements()) {
+        if (l_recorder->statementIndex() <= m_server->serverSettings()->maximum_statements()) {
             l_statement.setTextColor(l_recorder->statementIndex() == -1 ? "3" : "1");
             l_recorder->record(l_statement);
         }
@@ -1307,8 +1283,8 @@ void AOClient::broadcastIc(const QStringList &f_fields, int f_evidence_index)
     Q_EMIT logIC(l_area->name(), m_session->ipid, name(), QString::number(clientId()), (character() + " " + characterName()), player()->last_message);
     l_area->updateLastICMessage(l_fields);
 
-    l_area->startMessageFloodguard(ConfigManager::messageFloodguard());
-    m_server->startMessageFloodguard(ConfigManager::globalMessageFloodguard());
+    l_area->startMessageFloodguard(m_server->serverSettings()->message_floodguard());
+    m_server->startMessageFloodguard(m_server->serverSettings()->global_message_floodguard());
 }
 
 bool AOClient::hasSong(const QString &f_name) const
@@ -1439,7 +1415,7 @@ bool AOClient::canPerform(const QString &f_permission) const
     l_query.client_id = clientId();
     l_query.area_id = areaId();
     l_query.is_authenticated = isAuthenticated();
-    l_query.auth_type = ConfigManager::authType() == DataTypes::AuthType::SIMPLE
+    l_query.auth_type = m_server->authType() == DataTypes::AuthType::SIMPLE
                             ? QStringLiteral("simple")
                             : QStringLiteral("advanced");
     l_query.acl_role_id = m_session->acl_role_id;
@@ -1477,6 +1453,9 @@ void AOClient::recordModcall()
 
 void AOClient::requestModcallWebhook(const QString &f_reason)
 {
+    if (!m_server->discordSettings()->webhook_modcall_enabled()) {
+        return;
+    }
     QString l_name = name();
     if (l_name.isEmpty()) {
         l_name = character();
@@ -1492,7 +1471,7 @@ void AOClient::kickPlayer(int f_client_id, const QString &f_reason)
         return;
     }
     QString l_moderator_name = "Moderator";
-    if (ConfigManager::authType() == DataTypes::AuthType::ADVANCED) {
+    if (m_server->authType() == DataTypes::AuthType::ADVANCED) {
         l_moderator_name = m_session->moderator_name;
     }
 
@@ -1513,7 +1492,7 @@ void AOClient::banPlayer(int f_client_id, int f_duration, const QString &f_reaso
         return;
     }
     QString l_moderator_name = "Moderator";
-    if (ConfigManager::authType() == DataTypes::AuthType::ADVANCED) {
+    if (m_server->authType() == DataTypes::AuthType::ADVANCED) {
         l_moderator_name = m_session->moderator_name;
     }
 
@@ -1546,7 +1525,7 @@ void AOClient::banPlayer(int f_client_id, int f_duration, const QString &f_reaso
     sendServerMessage("Banned " + QString::number(l_clients.size()) + " client(s) with ipid " + l_target->ipid() + " for reason: " + f_reason);
 
     const int l_ban_id = m_server->databaseManager()->banId(l_ban.ip);
-    if (ConfigManager::discordBanWebhookEnabled()) {
+    if (m_server->discordSettings()->webhook_ban_enabled()) {
         Q_EMIT m_server->banWebhookRequest(l_ban.ipid, l_ban.moderator, l_timestamp, l_ban.reason, l_ban_id);
     }
 }

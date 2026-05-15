@@ -1,6 +1,4 @@
 // AI-generated: written by Claude.
-#include "akashi/config_store.h"
-#include "config_manager.h"
 #include "u_logger.h"
 
 #include <QTest>
@@ -21,26 +19,25 @@ class tst_ULogger : public QObject
 
 void tst_ULogger::initTestCase()
 {
-    QVERIFY(ConfigManager::setStore(new akashi::ConfigStore("config", this)));
 }
 
 void tst_ULogger::kickEntryContainsReason()
 {
-    ULogger logger;
+    ULogger logger(nullptr);
     logger.logKick("Moderator", "1234", "spamming");
     QVERIFY(logger.buffer("SERVER").last().contains("spamming"));
 }
 
 void tst_ULogger::banEntryContainsReason()
 {
-    ULogger logger;
+    ULogger logger(nullptr);
     logger.logBan("Moderator", "1234", "5 hours", "spamming");
     QVERIFY(logger.buffer("SERVER").last().contains("spamming"));
 }
 
 void tst_ULogger::adduserEntryUsesTemplate()
 {
-    ULogger logger;
+    ULogger logger(nullptr);
     logger.logCMD("Phoenix", "1234", "Nick", "adduser", {"newmod"}, "Basement");
     QVERIFY(logger.buffer("Basement").last().contains("USERADD"));
 }

@@ -1,6 +1,5 @@
 #include "proto/ic.h"
 
-#include "config_manager.h"
 #include "proto/ao2_protocol.h"
 #include "proto/packet_registry.h"
 #include "proto/text_utils.h"
@@ -169,7 +168,7 @@ class IcHandler : public PacketHandler
         f_context.setEmote(l_ic.emote);
 
         // Message text.
-        if (l_ic.message_text.size() > ConfigManager::maxCharacters()) {
+        if (l_ic.message_text.size() > f_context.maxMessageLength()) {
             return;
         }
         QString l_text = stripZalgo(l_ic.message_text.trimmed());
@@ -189,7 +188,7 @@ class IcHandler : public PacketHandler
         // registered (text -> verdict) function and the per-client bool getters
         // below collapse into isFilterActive(id), so plugins can add their own
         // manglers with no core field. See the roadmap PR 9.5 / decision log.
-        const QStringList l_filters = ConfigManager::filterList();
+        const QStringList l_filters = f_context.wordFilters();
         for (const QString &l_filter : l_filters) {
             QRegularExpression l_pattern(l_filter, QRegularExpression::CaseInsensitiveOption);
             l_text.replace(l_pattern, "❌");

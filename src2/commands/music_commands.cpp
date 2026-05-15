@@ -3,7 +3,6 @@
 #include "akashi/permissions.h"
 #include "aoclient.h"
 #include "area_data.h"
-#include "config_manager.h"
 #include "core/command_context.h"
 #include "core/command_registry.h"
 #include "core/command_spec.h"
@@ -13,12 +12,12 @@
 
 namespace akashi::commands {
 
-static QString reprimand(bool f_positive = false)
+static QString reprimand(Server *f_server, bool f_positive = false)
 {
     if (f_positive)
-        return ConfigManager::praiseList().at(CommandContext::genRand(0, ConfigManager::praiseList().size() - 1));
+        return f_server->praiseList().at(CommandContext::genRand(0, f_server->praiseList().size() - 1));
     else
-        return ConfigManager::reprimandsList().at(CommandContext::genRand(0, ConfigManager::reprimandsList().size() - 1));
+        return f_server->reprimandsList().at(CommandContext::genRand(0, f_server->reprimandsList().size() - 1));
 }
 
 static void handlePlay(CommandContext &f_context)
@@ -33,7 +32,7 @@ static void handlePlay(CommandContext &f_context)
         l_self->closeSocket();
         return;
     }
-    if (l_song.contains('/') && !akashi::Jukebox::validateSong(l_song, ConfigManager::cdnList())) {
+    if (l_song.contains('/') && !akashi::Jukebox::validateSong(l_song, f_context.server()->cdnList())) {
         f_context.reply("The song you tried to play is not from an approved CDN.");
         return;
     }
@@ -65,7 +64,7 @@ static void handlePlayAmbience(CommandContext &f_context)
         return;
     }
     QString l_song = f_context.arguments().join(" ");
-    if (l_song.contains('/') && !akashi::Jukebox::validateSong(l_song, ConfigManager::cdnList())) {
+    if (l_song.contains('/') && !akashi::Jukebox::validateSong(l_song, f_context.server()->cdnList())) {
         f_context.reply("The song you tried to play is not from an approved CDN.");
         return;
     }
@@ -90,7 +89,7 @@ static void handleBlockDj(CommandContext &f_context)
             f_context.reply("That player is already DJ blocked!");
         else {
             f_context.reply("DJ blocked player.");
-            l_target->reply("You were blocked from changing the music by a moderator. " + reprimand());
+            l_target->reply("You were blocked from changing the music by a moderator. " + reprimand(f_context.server()));
         }
         l_target->setSanction(akashi::sanction::dj_blocked, true);
     }
@@ -103,7 +102,7 @@ static void handleUnblockDj(CommandContext &f_context)
             f_context.reply("That player is not DJ blocked!");
         else {
             f_context.reply("DJ permissions restored to player.");
-            l_target->reply("A moderator restored your music permissions. " + reprimand(true));
+            l_target->reply("A moderator restored your music permissions. " + reprimand(f_context.server(), true));
         }
         l_target->setSanction(akashi::sanction::dj_blocked, false);
     }
@@ -205,7 +204,7 @@ void registerMusicCommands(CommandRegistry &f_registry)
         handlePlay, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("play_ambience"), {}, {}, 1,
+        {QStringLiteral("play_ambience"), {QStringLiteral("playambience"), QStringLiteral("playa")}, {}, 1,
          QStringLiteral("/play_ambience <song>"),
          QStringLiteral("Plays ambient music in the area.")},
         handlePlayAmbience, QStringLiteral("core"));
@@ -217,13 +216,13 @@ void registerMusicCommands(CommandRegistry &f_registry)
         handleCurrentMusic, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("block_dj"), {}, {QStringLiteral("mute")}, 1,
+        {QStringLiteral("block_dj"), {QStringLiteral("blockdj")}, {QStringLiteral("mute")}, 1,
          QStringLiteral("/block_dj <id>"),
          QStringLiteral("Blocks a client from changing music.")},
         handleBlockDj, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("unblock_dj"), {}, {QStringLiteral("mute")}, 1,
+        {QStringLiteral("unblock_dj"), {QStringLiteral("unblockdj")}, {QStringLiteral("mute")}, 1,
          QStringLiteral("/unblock_dj <id>"),
          QStringLiteral("Restores a client's music permissions.")},
         handleUnblockDj, QStringLiteral("core"));
@@ -271,7 +270,7 @@ void registerMusicCommands(CommandRegistry &f_registry)
         handleClearCustomMusic, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("jukebox_skip"), {}, {QStringLiteral("gamemaster")}, 0,
+        {QStringLiteral("jukebox_skip"), {QStringLiteral("jukeboxskip")}, {QStringLiteral("gamemaster")}, 0,
          QStringLiteral("/jukebox_skip"),
          QStringLiteral("Skips the current jukebox song.")},
         handleJukeboxSkip, QStringLiteral("core"));

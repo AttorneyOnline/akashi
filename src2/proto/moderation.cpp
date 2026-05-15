@@ -1,6 +1,5 @@
 #include "proto/moderation.h"
 
-#include "config_manager.h"
 #include "proto/ao2_protocol.h"
 #include "proto/moderation_messages.h"
 #include "proto/packet_codec.h"
@@ -61,7 +60,7 @@ class ModcallHandler : public PacketHandler
         f_context.broadcastModerators(Packet(ao2::HEADER_ZZ, {l_notice}));
         f_context.recordModcall();
 
-        if (ConfigManager::discordModcallWebhookEnabled()) {
+        if (f_context.isDiscordModcallEnabled()) {
             f_context.requestModcallWebhook(l_webhook_reason);
         }
     }

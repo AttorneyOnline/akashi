@@ -5,10 +5,10 @@
 #include "akashiutils.h"
 #include "aoclient.h"
 #include "area_data.h"
-#include "config_manager.h"
 #include "core/command_context.h"
 #include "core/command_registry.h"
 #include "core/command_spec.h"
+#include "core/server_settings.h"
 #include "proto/packet.h"
 #include "server.h"
 
@@ -164,7 +164,7 @@ static void handlePauseTestimony(CommandContext &f_context)
 static void handleAddStatement(CommandContext &f_context)
 {
     akashi::TestimonyRecorder *l_recorder = f_context.server()->areaById(f_context.areaId())->testimonyRecorder();
-    if (l_recorder->statementIndex() < ConfigManager::maxStatements()) {
+    if (l_recorder->statementIndex() < f_context.server()->serverSettings()->maximum_statements()) {
         l_recorder->setState(akashi::TestimonyRecorder::State::Add);
         f_context.reply("The next IC-Message will be inserted into the testimony.");
     }
@@ -258,7 +258,7 @@ static void handleLoadTestimony(CommandContext &f_context)
         if (l_line.isEmpty()) {
             continue;
         }
-        if (l_recorder->statementCount() > ConfigManager::maxStatements()) {
+        if (l_recorder->statementCount() > f_context.server()->serverSettings()->maximum_statements()) {
             f_context.reply("Testimony too large to be loaded.");
             l_recorder->clear();
             return;
@@ -331,7 +331,7 @@ void registerCasingCommands(CommandRegistry &f_registry)
         handleUpdateStatement, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("pause"), {}, {QStringLiteral("gamemaster")}, 0,
+        {QStringLiteral("pause"), {QStringLiteral("end")}, {QStringLiteral("gamemaster")}, 0,
          QStringLiteral("/pause"),
          QStringLiteral("Pauses testimony recording or playback.")},
         handlePauseTestimony, QStringLiteral("core"));

@@ -1,8 +1,8 @@
 #include "commands/authentication_commands.h"
 
 #include "acl_roles_handler.h"
-#include "config_manager.h"
 #include "core/command_context.h"
+#include "core/server_settings.h"
 #include "core/command_registry.h"
 #include "core/permission_registry.h"
 #include "crypto_helper.h"
@@ -25,40 +25,40 @@ static QString decodeMessage(const QString &f_message)
         .replace("<and>", "&");
 }
 
-static bool checkPasswordRequirements(const QString &f_username, const QString &f_password)
+static bool checkPasswordRequirements(ServerSettings *f_settings, const QString &f_username, const QString &f_password)
 {
     QString l_decoded_password = decodeMessage(f_password);
-    if (!ConfigManager::passwordRequirements())
+    if (!f_settings->password_requirements())
         return true;
 
-    if (ConfigManager::passwordMinLength() > l_decoded_password.length())
+    if (f_settings->pass_min_length() > l_decoded_password.length())
         return false;
 
-    if (ConfigManager::passwordMaxLength() < l_decoded_password.length() && ConfigManager::passwordMaxLength() != 0)
+    if (f_settings->pass_max_length() < l_decoded_password.length() && f_settings->pass_max_length() != 0)
         return false;
 
-    if (ConfigManager::passwordRequireMixCase()) {
+    if (f_settings->pass_required_mix_case()) {
         if (l_decoded_password.toLower() == l_decoded_password)
             return false;
         if (l_decoded_password.toUpper() == l_decoded_password)
             return false;
     }
 
-    if (ConfigManager::passwordRequireNumbers()) {
+    if (f_settings->pass_required_numbers()) {
         QRegularExpression l_regex(QStringLiteral("[0123456789]"));
         QRegularExpressionMatch l_match = l_regex.match(l_decoded_password);
         if (!l_match.hasMatch())
             return false;
     }
 
-    if (ConfigManager::passwordRequireSpecialCharacters()) {
+    if (f_settings->pass_required_special()) {
         QRegularExpression l_regex(QStringLiteral("[~!@#$%^&*_\\-+=`|\\\\(){}\\[\\]:;\"'<>,.?/]"));
         QRegularExpressionMatch l_match = l_regex.match(l_decoded_password);
         if (!l_match.hasMatch())
             return false;
     }
 
-    if (!ConfigManager::passwordCanContainUsername()) {
+    if (!f_settings->pass_can_contain_username()) {
         if (l_decoded_password.contains(f_username))
             return false;
     }
@@ -73,9 +73,9 @@ static void handleLogin(CommandContext &f_context)
         return;
     }
 
-    switch (ConfigManager::authType()) {
+    switch (f_context.server()->authType()) {
     case DataTypes::AuthType::SIMPLE:
-        if (ConfigManager::modpass().isEmpty()) {
+        if (f_context.server()->serverSettings()->modpass().isEmpty()) {
             f_context.reply("No modpass is set. Please set a modpass before logging in.");
             return;
         }
@@ -91,7 +91,7 @@ static void handleLogin(CommandContext &f_context)
 
 static void handleChangeAuth(CommandContext &f_context)
 {
-    if (ConfigManager::authType() == DataTypes::AuthType::SIMPLE) {
+    if (f_context.server()->authType() == DataTypes::AuthType::SIMPLE) {
         s_change_auth_started.insert(f_context.clientId());
         f_context.reply("WARNING!\nThis command will change how logging in as a moderator works.\n"
                         "Only proceed if you know what you are doing\n"
@@ -106,14 +106,14 @@ static void handleSetRootPass(CommandContext &f_context)
 
     s_change_auth_started.remove(f_context.clientId());
 
-    if (!checkPasswordRequirements(QStringLiteral("root"), f_context.argument(0))) {
+    if (!checkPasswordRequirements(f_context.server()->serverSettings(), QStringLiteral("root"), f_context.argument(0))) {
         f_context.reply("Password does not meet server requirements.");
         return;
     }
 
     f_context.reply("Changing auth type and setting root password.\nLogin again with /login root [password]");
     f_context.setAuthenticated(false);
-    ConfigManager::setAuthType(DataTypes::AuthType::ADVANCED);
+    f_context.server()->setAuthType(DataTypes::AuthType::ADVANCED);
 
     QByteArray l_salt = CryptoHelper::randbytes(16);
     f_context.server()->databaseManager()->createUser(QStringLiteral("root"), l_salt, f_context.argument(0), ACLRolesHandler::SUPER_ID);
@@ -121,7 +121,7 @@ static void handleSetRootPass(CommandContext &f_context)
 
 static void handleAddUser(CommandContext &f_context)
 {
-    if (!checkPasswordRequirements(f_context.argument(0), f_context.argument(1))) {
+    if (!checkPasswordRequirements(f_context.server()->serverSettings(), f_context.argument(0), f_context.argument(1))) {
         f_context.reply("Password does not meet server requirements.");
         return;
     }
@@ -263,7 +263,7 @@ static void handleChangePassword(CommandContext &f_context)
         return;
     }
 
-    if (!checkPasswordRequirements(l_username, l_password)) {
+    if (!checkPasswordRequirements(f_context.server()->serverSettings(), l_username, l_password)) {
         f_context.reply("Password does not meet server requirements.");
         return;
     }

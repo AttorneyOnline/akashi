@@ -23,7 +23,6 @@
 #include "akashi/service_registry.h"
 #include "aoclient.h"
 #include "area_data.h"
-#include "command_extension.h"
 #include "commands/area_commands.h"
 #include "commands/authentication_commands.h"
 #include "commands/casing_commands.h"
@@ -31,9 +30,11 @@
 #include "commands/moderation_commands.h"
 #include "commands/music_commands.h"
 #include "commands/roleplay_commands.h"
-#include "config_manager.h"
+#include "akashi/config_store.h"
 #include "core/command_registry.h"
+#include "core/config_loading.h"
 #include "core/permission_registry.h"
+#include "core/server_settings.h"
 #include "db_manager.h"
 #include "discord.h"
 #include "logger/u_logger.h"
@@ -46,11 +47,47 @@
 #include "world/arup_broadcaster.h"
 #include "world/jukebox.h"
 
-Server::Server(int p_ws_port, akashi::DatabaseService *f_database, akashi::ServiceRegistry *f_services, QObject *parent) :
+Server::Server(int p_ws_port, akashi::ConfigStore *f_config_store, akashi::DatabaseService *f_database, akashi::ServiceRegistry *f_services, QObject *parent) :
     QObject(parent),
+    m_config_store(f_config_store),
     m_port(p_ws_port),
     m_player_count(0)
 {
+    m_server_settings = new ServerSettings(f_config_store);
+    m_discord_settings = new DiscordSettings(f_config_store);
+    m_areas_ini = f_config_store->settings("areas");
+    m_logtext_ini = f_config_store->settings("text/logtext");
+    m_ambience_ini = f_config_store->settings("ambience");
+
+    m_text_data.magic_8ball = akashi::config::loadTextFile(configPath("text/8ball.txt"));
+    m_text_data.praises = akashi::config::loadTextFile(configPath("text/praise.txt"));
+    m_text_data.reprimands = akashi::config::loadTextFile(configPath("text/reprimands.txt"));
+    m_text_data.gimps = akashi::config::loadTextFile(configPath("text/gimp.txt"));
+    m_text_data.filters = akashi::config::loadTextFile(configPath("text/filter.txt"));
+    m_text_data.cdns = akashi::config::loadTextFile(configPath("text/cdns.txt"));
+    if (m_text_data.cdns.isEmpty())
+        m_text_data.cdns = QStringList{"cdn.discord.com"};
+
+    QSettings &l_dice_ini = *f_config_store->settings("dice");
+    const QStringList l_dices = l_dice_ini.childGroups();
+    for (const QString &dice : l_dices) {
+        l_dice_ini.beginGroup(dice);
+        int max = l_dice_ini.value("max").toInt();
+        QStringList faces;
+        for (int i = 1; i <= max; ++i) {
+            QString key = QString::number(i);
+            if (l_dice_ini.contains(key)) {
+                faces.append(l_dice_ini.value(key).toString());
+            }
+            else {
+                qCritical() << "dice.ini max mismatch!";
+                break;
+            }
+        }
+        m_text_data.dice_faces[dice] = faces;
+        l_dice_ini.endGroup();
+    }
+
     timer = new QTimer(this);
 
     m_services = f_services;
@@ -59,28 +96,24 @@ Server::Server(int p_ws_port, akashi::DatabaseService *f_database, akashi::Servi
     }
     m_filesystem = new akashi::FileSystemService();
     db_manager = new DBManager(f_database->database());
-    medieval_parser = new MedievalParser;
+    medieval_parser = new MedievalParser(configPath("text/autorp.json"));
 
     acl_roles_handler = new ACLRolesHandler(this);
-    acl_roles_handler->loadFile(ConfigManager::path("acl_roles.json"));
-
-    command_extension_collection = new CommandExtensionCollection;
-    command_extension_collection->setCommandNameWhitelist(AOClient::COMMANDS.keys());
-    command_extension_collection->loadFile(ConfigManager::path("command_extensions.json"));
+    acl_roles_handler->loadFile(configPath("acl_roles.json"));
 
     m_permission_registry = new akashi::PermissionRegistry;
     m_command_registry = new akashi::CommandRegistry;
 
     // We create it, even if its not used later on.
-    discord = new Discord(this);
+    discord = new Discord(m_discord_settings, this);
 
-    logger = new ULogger(this);
+    logger = new ULogger(this, this);
     connect(this, &Server::logConnectionAttempt, logger, &ULogger::logConnectionAttempt);
 }
 
 ExitCode Server::start()
 {
-    QString bind_ip = ConfigManager::bindIP();
+    QString bind_ip = m_server_settings->bind_ip();
     QHostAddress bind_addr;
     if (bind_ip == "all")
         bind_addr = QHostAddress::Any;
@@ -115,27 +148,30 @@ ExitCode Server::start()
     handleDiscordIntegration();
 
     // Construct modern advertiser if enabled in config
-    server_publisher = new ServerPublisher(server->serverPort(), &m_player_count, this);
+    server_publisher = new ServerPublisher(server->serverPort(), &m_player_count, m_server_settings, this);
 
-    // Get characters from config file
-    m_characters = ConfigManager::charlist();
-
-    // Get backgrounds from config file
-    m_backgrounds = ConfigManager::backgrounds();
+    m_characters = akashi::config::loadTextFile(configPath("characters.txt"));
+    m_backgrounds = akashi::config::loadTextFile(configPath("backgrounds.txt"));
 
     // Seed the default floor's music catalog from music.json.
-    const MusicList l_musiclist = ConfigManager::musiclist();
-    m_default_floor.music_ordered = ConfigManager::ordered_songs();
-    m_default_floor.approved_cdns = ConfigManager::cdnList();
-    for (auto it = l_musiclist.constBegin(); it != l_musiclist.constEnd(); ++it) {
+    auto l_music = akashi::config::loadMusicList(configPath("music.json"));
+    m_default_floor.music_ordered = l_music.ordered;
+    m_default_floor.approved_cdns = m_text_data.cdns;
+    for (auto it = l_music.songs.constBegin(); it != l_music.songs.constEnd(); ++it) {
         m_default_floor.music_songs.insert(it.key(), {it.key(), it.value().first, it.value().second});
     }
 
     // Assembles the area list
-    m_area_names = ConfigManager::sanitizedAreaNames();
+    QStringList l_raw_names = m_areas_ini->childGroups();
+    std::sort(l_raw_names.begin(), l_raw_names.end(), [](const QString &a, const QString &b) { return a.split(":")[0].toInt() < b.split(":")[0].toInt(); });
+    for (const QString &l_raw : qAsConst(l_raw_names)) {
+        QStringList l_parts = l_raw.split(":");
+        l_parts.removeFirst();
+        m_area_names.append(l_parts.join(":"));
+    }
     for (int i = 0; i < m_area_names.length(); i++) {
         QString area_name = QString::number(i) + ":" + m_area_names[i];
-        AreaData *l_area = new AreaData(area_name, i);
+        AreaData *l_area = new AreaData(area_name, i, m_areas_ini, m_ambience_ini);
         m_areas.insert(i, l_area);
         l_area->jukebox()->setFloorCatalog(&m_default_floor);
 
@@ -143,13 +179,13 @@ ExitCode Server::start()
             broadcast(akashi::Packet("FM", l_area->jukebox()->resolvedList()), i);
         });
         connect(l_area->jukebox(), &akashi::Jukebox::ambienceChanged, this, [this, i](const QString &f_song) {
-            broadcast(akashi::Packet("MC", {f_song, QString::number(-1), ConfigManager::serverNickname(), QString::number(1), QString::number(1)}), i);
+            broadcast(akashi::Packet("MC", {f_song, QString::number(-1), serverNickname(), QString::number(1), QString::number(1)}), i);
         });
         connect(l_area, &AreaData::userJoinedArea, this, [this, l_area](int f_area_index, int f_user_id) {
             Q_UNUSED(f_area_index)
             unicast(akashi::Packet("FM", l_area->jukebox()->resolvedList()), f_user_id);
-            unicast(akashi::Packet("MC", {l_area->currentAmbience(), QString::number(-1), ConfigManager::serverNickname(), QString::number(1), QString::number(1)}), f_user_id);
-            unicast(akashi::Packet("MC", {l_area->currentMusic(), QString::number(-1), ConfigManager::serverNickname(), QString::number(1)}), f_user_id);
+            unicast(akashi::Packet("MC", {l_area->currentAmbience(), QString::number(-1), serverNickname(), QString::number(1), QString::number(1)}), f_user_id);
+            unicast(akashi::Packet("MC", {l_area->currentMusic(), QString::number(-1), serverNickname(), QString::number(1)}), f_user_id);
         });
         connect(l_area->jukebox(), &akashi::Jukebox::songStarted, this, [this, i](const akashi::JukeboxSong &f_song) {
             broadcast(akashi::Packet("MC", {f_song.real_name, QString::number(-1)}), i);
@@ -172,12 +208,8 @@ ExitCode Server::start()
     });
     connect(m_arup_broadcaster, &akashi::ArupBroadcaster::arupUnicast, this, &Server::unicast);
 
-    // Loads the command help information. This is not stored inside the server.
-    ConfigManager::loadCommandHelp();
-
-    // Get IP bans
-    m_ipban_list = ConfigManager::iprangeBans();
-    m_banned_asns = ConfigManager::bannedAsns();
+    m_ipban_list = akashi::config::loadIpRangeBans(configPath("ipbans.json"));
+    m_banned_asns = akashi::config::loadBannedAsns(configPath("ipbans.json"));
     if (QFile::exists("storage/GeoLite2-ASN.mmdb")) {
         m_asn_reader.open("storage/GeoLite2-ASN.mmdb");
     }
@@ -187,7 +219,7 @@ ExitCode Server::start()
     m_message_floodguard_timer->setSingleShot(true);
     connect(m_message_floodguard_timer, &QTimer::timeout, this, &Server::allowMessage);
 
-    m_player_directory.setCapacity(ConfigManager::maxPlayers());
+    m_player_directory.setCapacity(m_server_settings->max_players());
     applyIdAssignment();
 
     // Register built-in permissions.
@@ -267,7 +299,7 @@ ExitCode Server::start()
 
 void Server::applyIdAssignment()
 {
-    m_player_directory.setIdAssignment(ConfigManager::idAssignment() == "lowest"
+    m_player_directory.setIdAssignment(m_server_settings->id_assignment() == "lowest"
                                            ? PlayerDirectory::IdAssignment::Lowest
                                            : PlayerDirectory::IdAssignment::LastFreed);
 }
@@ -330,7 +362,7 @@ void Server::clientConnected()
             multiclient_count++;
     }
 
-    if (multiclient_count > ConfigManager::multiClientLimit() && !client->remoteIp().isLoopback())
+    if (multiclient_count > m_server_settings->multiclient_limit() && !client->remoteIp().isLoopback())
         is_at_multiclient_limit = true;
 
     if (is_banned) {
@@ -374,7 +406,7 @@ void Server::clientConnected()
         // back from: keep the client and its characters for the grace
         // period. A clean close, a client that never joined, or no grace
         // configured means removal right away.
-        const int l_grace_seconds = ConfigManager::reconnectGrace();
+        const int l_grace_seconds = m_server_settings->reconnect_grace();
         if (f_kind == akashi::DisconnectKind::Lost && l_grace_seconds > 0 && client->isJoined()) {
             client->waitForReconnect(l_grace_seconds);
             return;
@@ -474,18 +506,26 @@ akashi::PermissionRegistry *Server::permissionRegistry()
 
 void Server::reloadSettings()
 {
-    ConfigManager::reloadSettings();
-    Q_EMIT reloadRequest(ConfigManager::serverNickname(), ConfigManager::serverDescription());
+    m_config_store->reload();
+    m_text_data.gimps = akashi::config::loadTextFile(configPath("text/gimp.txt"));
+    m_text_data.filters = akashi::config::loadTextFile(configPath("text/filter.txt"));
+    m_text_data.cdns = akashi::config::loadTextFile(configPath("text/cdns.txt"));
+    if (m_text_data.cdns.isEmpty())
+        m_text_data.cdns = QStringList{"cdn.discord.com"};
+    m_text_data.praises = akashi::config::loadTextFile(configPath("text/praise.txt"));
+    m_text_data.reprimands = akashi::config::loadTextFile(configPath("text/reprimands.txt"));
+    m_text_data.magic_8ball = akashi::config::loadTextFile(configPath("text/8ball.txt"));
+
+    Q_EMIT reloadRequest(serverNickname(), m_server_settings->server_description());
     Q_EMIT updateHTTPConfiguration();
     handleDiscordIntegration();
     logger->loadLogtext();
 
-    // Reseed the default floor's catalog from the reloaded music.json.
-    const MusicList l_musiclist = ConfigManager::musiclist();
-    m_default_floor.music_ordered = ConfigManager::ordered_songs();
-    m_default_floor.approved_cdns = ConfigManager::cdnList();
+    auto l_music = akashi::config::loadMusicList(configPath("music.json"));
+    m_default_floor.music_ordered = l_music.ordered;
+    m_default_floor.approved_cdns = m_text_data.cdns;
     m_default_floor.music_songs.clear();
-    for (auto it = l_musiclist.constBegin(); it != l_musiclist.constEnd(); ++it) {
+    for (auto it = l_music.songs.constBegin(); it != l_music.songs.constEnd(); ++it) {
         m_default_floor.music_songs.insert(it.key(), {it.key(), it.value().first, it.value().second});
     }
     for (AreaData *l_area : qAsConst(m_areas)) {
@@ -493,13 +533,12 @@ void Server::reloadSettings()
     }
 
     applyIdAssignment();
-    m_ipban_list = ConfigManager::iprangeBans();
-    m_banned_asns = ConfigManager::bannedAsns();
+    m_ipban_list = akashi::config::loadIpRangeBans(configPath("ipbans.json"));
+    m_banned_asns = akashi::config::loadBannedAsns(configPath("ipbans.json"));
     if (QFile::exists("storage/GeoLite2-ASN.mmdb")) {
         m_asn_reader.open("storage/GeoLite2-ASN.mmdb");
     }
-    acl_roles_handler->loadFile(ConfigManager::path("acl_roles.json"));
-    command_extension_collection->loadFile(ConfigManager::path("command_extensions.json"));
+    acl_roles_handler->loadFile(configPath("acl_roles.json"));
 }
 
 void Server::broadcast(const akashi::Packet &packet, int area_index)
@@ -720,11 +759,6 @@ ACLRolesHandler *Server::aclRolesHandler()
     return acl_roles_handler;
 }
 
-CommandExtensionCollection *Server::commandExtensionCollection()
-{
-    return command_extension_collection;
-}
-
 void Server::allowMessage()
 {
     m_can_send_ic_messages = true;
@@ -735,11 +769,11 @@ void Server::handleDiscordIntegration()
     // Prevent double connecting by preemtively disconnecting them.
     disconnect(this, nullptr, discord, nullptr);
 
-    if (ConfigManager::discordWebhookEnabled()) {
-        if (ConfigManager::discordModcallWebhookEnabled())
+    if (m_discord_settings->webhook_enabled()) {
+        if (m_discord_settings->webhook_modcall_enabled())
             connect(this, &Server::modcallWebhookRequest, discord, &Discord::onModcallWebhookRequested);
 
-        if (ConfigManager::discordBanWebhookEnabled())
+        if (m_discord_settings->webhook_ban_enabled())
             connect(this, &Server::banWebhookRequest, discord, &Discord::onBanWebhookRequested);
     }
     return;
@@ -801,6 +835,70 @@ bool Server::isIPBanned(QHostAddress f_remote_IP)
     return l_asn != 0 && m_banned_asns.contains(l_asn);
 }
 
+akashi::ConfigStore *Server::configStore() { return m_config_store; }
+ServerSettings *Server::serverSettings() { return m_server_settings; }
+DiscordSettings *Server::discordSettings() { return m_discord_settings; }
+
+QString Server::configPath(const QString &f_file) const
+{
+    return m_config_store ? m_config_store->filePath(f_file) : "config/" + f_file;
+}
+
+QString Server::serverNickname() const
+{
+    QString l_tag = m_server_settings->server_nickname();
+    return l_tag.isEmpty() ? m_server_settings->server_name() : l_tag;
+}
+
+QUrl Server::assetUrl() const
+{
+    QByteArray l_url = m_server_settings->asset_url().toUtf8();
+    if (QUrl(l_url).isValid()) {
+        return QUrl(l_url);
+    }
+    qWarning("asset_url is not a valid url!");
+    return QUrl(nullptr);
+}
+
+DataTypes::AuthType Server::authType() const
+{
+    QString l_auth = m_server_settings->auth().toUpper();
+    return toDataType<DataTypes::AuthType>(l_auth);
+}
+
+DataTypes::LogType Server::loggingType() const
+{
+    QString l_log = m_server_settings->logging().toUpper();
+    return toDataType<DataTypes::LogType>(l_log);
+}
+
+void Server::setMotd(const QString &f_motd)
+{
+    m_server_settings->motd.set(f_motd);
+}
+
+void Server::setAuthType(DataTypes::AuthType f_auth)
+{
+    m_server_settings->auth.set(fromDataType<DataTypes::AuthType>(f_auth).toLower());
+}
+
+QStringList Server::gimpList() const { return m_text_data.gimps; }
+QStringList Server::filterList() const { return m_text_data.filters; }
+QStringList Server::cdnList() const { return m_text_data.cdns; }
+QStringList Server::praiseList() const { return m_text_data.praises; }
+QStringList Server::reprimandsList() const { return m_text_data.reprimands; }
+QStringList Server::magic8BallAnswers() const { return m_text_data.magic_8ball; }
+
+QStringList Server::diceFaces(const QString &f_name) const
+{
+    return m_text_data.dice_faces.value(f_name);
+}
+
+QString Server::logText(const QString &f_logtype) const
+{
+    return m_logtext_ini->value("LogConfiguration/" + f_logtype, "").toString();
+}
+
 Server::~Server()
 {
     // Empty the roster first so no teardown broadcast writes to a neighbour
@@ -817,4 +915,6 @@ Server::~Server()
     delete m_filesystem;
     delete m_command_registry;
     delete m_permission_registry;
+    delete m_server_settings;
+    delete m_discord_settings;
 }

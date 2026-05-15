@@ -2,12 +2,14 @@
 #define PROTO_PACKET_CONTEXT_H
 
 #include "akashi_core_export.h"
+#include "data_types.h"
 #include "proto/client_profile.h"
 #include "proto/packet.h"
 
 #include <QDateTime>
 #include <QString>
 #include <QStringList>
+#include <QUrl>
 
 #include <optional>
 
@@ -187,6 +189,21 @@ class AKASHI_CORE_EXPORT IPacketContext
 
     // The password a client wants to unlock a protected character with.
     virtual void setCharacterPassword(const QString &f_password) = 0;
+
+    // Configuration values proto handlers need.
+    virtual QString serverNickname() const = 0;
+    virtual int maxMessageLength() const = 0;
+    virtual QStringList wordFilters() const = 0;
+    virtual bool webaoEnabled() const = 0;
+    virtual int maxPlayerCount() const = 0;
+    virtual QString serverDescription() const = 0;
+    virtual QUrl assetUrl() const = 0;
+    virtual QString motd() const = 0;
+    virtual DataTypes::AuthType packetAuthType() const = 0;
+    virtual int messageFloodguardMs() const = 0;
+    virtual int globalMessageFloodguardMs() const = 0;
+    virtual bool isDiscordBanEnabled() const = 0;
+    virtual bool isDiscordModcallEnabled() const = 0;
 
     // Moderation.
     virtual bool isAuthenticated() const = 0;

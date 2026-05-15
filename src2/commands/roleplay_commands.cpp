@@ -3,10 +3,10 @@
 #include "akashi/permissions.h"
 #include "aoclient.h"
 #include "area_data.h"
-#include "config_manager.h"
 #include "core/command_context.h"
 #include "core/command_registry.h"
 #include "core/command_spec.h"
+#include "core/server_settings.h"
 #include "proto/packet.h"
 #include "server.h"
 
@@ -16,7 +16,7 @@ namespace akashi::commands {
 
 static void diceThrower(CommandContext &f_context, int f_sides, int f_dice, bool f_private, int f_modifier = 0)
 {
-    if (f_sides < 0 || f_dice < 0 || f_sides > ConfigManager::diceMaxValue() || f_dice > ConfigManager::diceMaxDice()) {
+    if (f_sides < 0 || f_dice < 0 || f_sides > f_context.server()->serverSettings()->max_value() || f_dice > f_context.server()->serverSettings()->max_dice()) {
         f_context.reply("Dice or side number out of bounds.");
         return;
     }
@@ -121,10 +121,10 @@ static void handleRoll(CommandContext &f_context)
             }
         }
         else
-            l_sides = qBound(1, l_arg.toInt(), ConfigManager::diceMaxValue());
+            l_sides = qBound(1, l_arg.toInt(), f_context.server()->serverSettings()->max_value());
     }
     if (f_context.argc() == 2)
-        l_dice = qBound(1, f_context.argument(1).toInt(), ConfigManager::diceMaxDice());
+        l_dice = qBound(1, f_context.argument(1).toInt(), f_context.server()->serverSettings()->max_dice());
     diceThrower(f_context, l_sides, l_dice, false);
 }
 
@@ -132,12 +132,12 @@ static void handleRollA(CommandContext &f_context)
 {
     QString l_dice_name = f_context.arguments().join(" ");
 
-    if (ConfigManager::diceFaces(l_dice_name).isEmpty()) {
+    if (f_context.server()->diceFaces(l_dice_name).isEmpty()) {
         qWarning() << "Unknown dice.";
         f_context.reply("Unknown dice.");
     }
     else {
-        QString l_response = ConfigManager::diceFaces(l_dice_name).at(CommandContext::genRand(0, ConfigManager::diceFaces(l_dice_name).size() - 1));
+        QString l_response = f_context.server()->diceFaces(l_dice_name).at(CommandContext::genRand(0, f_context.server()->diceFaces(l_dice_name).size() - 1));
         QString l_sender_name = f_context.name();
         f_context.replyToArea(l_sender_name + " rolled from the \"" + l_dice_name + "\" set and got: " + l_response);
     }
@@ -200,10 +200,10 @@ static void handleRollP(CommandContext &f_context)
             }
         }
         else
-            l_sides = qBound(1, l_arg.toInt(), ConfigManager::diceMaxValue());
+            l_sides = qBound(1, l_arg.toInt(), f_context.server()->serverSettings()->max_value());
     }
     if (f_context.argc() == 2)
-        l_dice = qBound(1, f_context.argument(1).toInt(), ConfigManager::diceMaxDice());
+        l_dice = qBound(1, f_context.argument(1).toInt(), f_context.server()->serverSettings()->max_dice());
     diceThrower(f_context, l_sides, l_dice, true);
 }
 
@@ -317,12 +317,12 @@ static void handleNotecardReveal(CommandContext &f_context)
 
 static void handle8Ball(CommandContext &f_context)
 {
-    if (ConfigManager::magic8BallAnswers().isEmpty()) {
+    if (f_context.server()->magic8BallAnswers().isEmpty()) {
         qWarning() << "8ball.txt is empty!";
         f_context.reply("8ball.txt is empty.");
     }
     else {
-        QString l_response = ConfigManager::magic8BallAnswers().at(CommandContext::genRand(1, ConfigManager::magic8BallAnswers().size() - 1));
+        QString l_response = f_context.server()->magic8BallAnswers().at(CommandContext::genRand(1, f_context.server()->magic8BallAnswers().size() - 1));
         QString l_sender_name = f_context.name();
         QString l_sender_message = f_context.arguments().join(" ");
         f_context.replyToArea(l_sender_name + " asked the magic 8-ball, \"" + l_sender_message + "\" and the answer is: " + l_response);
@@ -343,13 +343,13 @@ static void handleSubtheme(CommandContext &f_context)
 void registerRoleplayCommands(CommandRegistry &f_registry)
 {
     f_registry.registerCommand({"coinflip", {}, {}, 0}, handleFlip, "core");
-    f_registry.registerCommand({"roll", {}, {}, 0}, handleRoll, "core");
+    f_registry.registerCommand({"roll", {"r"}, {}, 0}, handleRoll, "core");
     f_registry.registerCommand({"rolla", {}, {}, 0}, handleRollA, "core");
     f_registry.registerCommand({"rollp", {}, {}, 0}, handleRollP, "core");
     f_registry.registerCommand({"timer", {}, {permission::gamemaster}, 0}, handleTimer, "core");
     f_registry.registerCommand({"notecard", {}, {}, 1}, handleNotecard, "core");
-    f_registry.registerCommand({"notecard_clear", {}, {}, 0}, handleNotecardClear, "core");
-    f_registry.registerCommand({"notecard_reveal", {}, {permission::gamemaster}, 0}, handleNotecardReveal, "core");
+    f_registry.registerCommand({"notecard_clear", {"clear_notecard", "notecardclear"}, {}, 0}, handleNotecardClear, "core");
+    f_registry.registerCommand({"notecard_reveal", {"reveal_notecard", "notecardreveal"}, {permission::gamemaster}, 0}, handleNotecardReveal, "core");
     f_registry.registerCommand({"8ball", {}, {}, 1}, handle8Ball, "core");
     f_registry.registerCommand({"subtheme", {}, {permission::gamemaster}, 1}, handleSubtheme, "core");
 }

@@ -1,6 +1,4 @@
 // AI-generated: written by Claude.
-#include "akashi/config_store.h"
-#include "config_manager.h"
 #include "fake_packet_context.h"
 #include "proto/ic.h"
 #include "proto/packet_registry.h"
@@ -46,7 +44,6 @@ class tst_Ic : public QObject
 
 void tst_Ic::initTestCase()
 {
-    QVERIFY(ConfigManager::setStore(new akashi::ConfigStore("config", this)));
     registerIcPackets(m_handlers, m_codecs);
 }
 

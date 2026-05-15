@@ -2,6 +2,7 @@
 #define AKASHI_SETTINGS_H
 
 #include "akashi/config_store.h"
+#include "akashi/setting_notifier.h"
 
 namespace akashi {
 
@@ -50,6 +51,13 @@ class Setting
     QString key() const
     {
         return m_key;
+    }
+
+    // Returns a notifier whose changed() signal fires when this setting
+    // is modified on disk and reloaded. Owned by the ConfigStore.
+    SettingNotifier *notifier()
+    {
+        return m_owner->store()->notifier(m_owner->file(), m_key);
     }
 
   private:

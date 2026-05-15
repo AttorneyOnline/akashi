@@ -391,6 +391,34 @@ class FakeContext : public akashi::IPacketContext
         bans.append(QString::number(f_client_id) + "|" + QString::number(f_duration) + "|" + f_reason);
         calls.append("banPlayer");
     }
+
+    QString server_nickname = "Server";
+    int max_message_length = 256;
+    QStringList word_filters;
+    bool webao_enabled = true;
+    int max_player_count = 100;
+    QString server_description = "A test server.";
+    QUrl asset_url = QUrl("http://attorneyoffline.de/base/");
+    QString server_motd = "MOTD is not set.";
+    DataTypes::AuthType packet_auth_type = DataTypes::AuthType::SIMPLE;
+    int message_floodguard_ms = 250;
+    int global_message_floodguard_ms = 0;
+    bool discord_ban_enabled = false;
+    bool discord_modcall_enabled = false;
+
+    QString serverNickname() const override { return server_nickname; }
+    int maxMessageLength() const override { return max_message_length; }
+    QStringList wordFilters() const override { return word_filters; }
+    bool webaoEnabled() const override { return webao_enabled; }
+    int maxPlayerCount() const override { return max_player_count; }
+    QString serverDescription() const override { return server_description; }
+    QUrl assetUrl() const override { return asset_url; }
+    QString motd() const override { return server_motd; }
+    DataTypes::AuthType packetAuthType() const override { return packet_auth_type; }
+    int messageFloodguardMs() const override { return message_floodguard_ms; }
+    int globalMessageFloodguardMs() const override { return global_message_floodguard_ms; }
+    bool isDiscordBanEnabled() const override { return discord_ban_enabled; }
+    bool isDiscordModcallEnabled() const override { return discord_modcall_enabled; }
 };
 
 #endif // TESTS_FAKE_PACKET_CONTEXT_H

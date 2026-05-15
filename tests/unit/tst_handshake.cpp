@@ -1,6 +1,4 @@
 // AI-generated: written by Claude.
-#include "akashi/config_store.h"
-#include "config_manager.h"
 #include "fake_packet_context.h"
 #include "proto/handshake.h"
 #include "proto/packet_codec.h"
@@ -43,7 +41,6 @@ class tst_Handshake : public QObject
 
 void tst_Handshake::initTestCase()
 {
-    QVERIFY(ConfigManager::setStore(new akashi::ConfigStore("config", this)));
     registerHandshakePackets(m_handlers, m_codecs);
 }
 

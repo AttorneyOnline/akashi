@@ -3,8 +3,7 @@ set(UNIT_TESTS
     acl_roles_handler
     akashi_utils
     area
-    command_extension
-    config_manager
+    config_loading
     configstore
     databaseservice
     dbmanager
