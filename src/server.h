@@ -423,25 +423,11 @@ class AKASHI_CORE_EXPORT Server : public QObject
   Q_SIGNALS:
 
     /**
-     * @brief Sends the server name and description, emitted by /reload.
-     *
-     * @param p_name The server name.
-     * @param p_desc The server description.
-     */
-    void reloadRequest(QString p_name, QString p_desc);
-
-    /**
      * @brief This signal is emitted whenever the current player count has changed.
      *
      * @param f_current_player The player count at the time the signal was emitted.
      */
     void playerCountUpdated(int f_current_players);
-
-    /**
-     * @brief Triggers a partial update of the modern advertiser as some information, such as ports
-     * can't be updated while the server is running.
-     */
-    void updateHTTPConfiguration();
 
     /**
      * @brief Sends a modcall webhook request, emitted by AOClient::pktModcall.
@@ -623,6 +609,9 @@ class AKASHI_CORE_EXPORT Server : public QObject
      * directory; called at startup and whenever the settings reload.
      */
     void applyIdAssignment();
+    void reloadTextData();
+    void reloadMusicFloor();
+    void reloadBanLists();
 
     /**
      * @brief Connects new AOClient to logger and disconnect handling.

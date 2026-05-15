@@ -31,6 +31,7 @@
 #include "commands/music_commands.h"
 #include "commands/roleplay_commands.h"
 #include "akashi/config_store.h"
+#include "akashi/setting_notifier.h"
 #include "core/command_registry.h"
 #include "core/config_loading.h"
 #include "core/permission_registry.h"
@@ -144,8 +145,10 @@ ExitCode Server::start()
             this, &Server::clientConnected);
     qInfo() << "Server listening on" << server->serverPort();
 
-    // Checks if any Discord webhooks are enabled.
     handleDiscordIntegration();
+    connect(m_discord_settings->webhook_enabled.notifier(), &akashi::SettingNotifier::changed, this, &Server::handleDiscordIntegration);
+    connect(m_discord_settings->webhook_modcall_enabled.notifier(), &akashi::SettingNotifier::changed, this, &Server::handleDiscordIntegration);
+    connect(m_discord_settings->webhook_ban_enabled.notifier(), &akashi::SettingNotifier::changed, this, &Server::handleDiscordIntegration);
 
     // Construct modern advertiser if enabled in config
     server_publisher = new ServerPublisher(server->serverPort(), &m_player_count, m_server_settings, this);
@@ -214,6 +217,15 @@ ExitCode Server::start()
         m_asn_reader.open("storage/GeoLite2-ASN.mmdb");
     }
 
+    // Text data must reload before the music floor (cdns feed into it).
+    connect(m_config_store, &akashi::ConfigStore::configReloaded, this, &Server::reloadTextData);
+    connect(m_config_store, &akashi::ConfigStore::configReloaded, this, &Server::reloadMusicFloor);
+    connect(m_config_store, &akashi::ConfigStore::configReloaded, this, &Server::reloadBanLists);
+    connect(m_config_store, &akashi::ConfigStore::configReloaded, logger, &ULogger::loadLogtext);
+    connect(m_config_store, &akashi::ConfigStore::configReloaded, this, [this]() {
+        acl_roles_handler->loadFile(configPath("acl_roles.json"));
+    });
+
     // Rate-Limiter for IC-Chat
     m_message_floodguard_timer = new QTimer(this);
     m_message_floodguard_timer->setSingleShot(true);
@@ -221,6 +233,7 @@ ExitCode Server::start()
 
     m_player_directory.setCapacity(m_server_settings->max_players());
     applyIdAssignment();
+    connect(m_server_settings->id_assignment.notifier(), &akashi::SettingNotifier::changed, this, &Server::applyIdAssignment);
 
     // Register built-in permissions.
     const auto l_register_perm = [this](const QString &f_id, const QString &f_display, const QString &f_category) {
@@ -507,6 +520,10 @@ akashi::PermissionRegistry *Server::permissionRegistry()
 void Server::reloadSettings()
 {
     m_config_store->reload();
+}
+
+void Server::reloadTextData()
+{
     m_text_data.gimps = akashi::config::loadTextFile(configPath("text/gimp.txt"));
     m_text_data.filters = akashi::config::loadTextFile(configPath("text/filter.txt"));
     m_text_data.cdns = akashi::config::loadTextFile(configPath("text/cdns.txt"));
@@ -515,12 +532,10 @@ void Server::reloadSettings()
     m_text_data.praises = akashi::config::loadTextFile(configPath("text/praise.txt"));
     m_text_data.reprimands = akashi::config::loadTextFile(configPath("text/reprimands.txt"));
     m_text_data.magic_8ball = akashi::config::loadTextFile(configPath("text/8ball.txt"));
+}
 
-    Q_EMIT reloadRequest(serverNickname(), m_server_settings->server_description());
-    Q_EMIT updateHTTPConfiguration();
-    handleDiscordIntegration();
-    logger->loadLogtext();
-
+void Server::reloadMusicFloor()
+{
     auto l_music = akashi::config::loadMusicList(configPath("music.json"));
     m_default_floor.music_ordered = l_music.ordered;
     m_default_floor.approved_cdns = m_text_data.cdns;
@@ -531,14 +546,15 @@ void Server::reloadSettings()
     for (AreaData *l_area : qAsConst(m_areas)) {
         l_area->jukebox()->setFloorCatalog(&m_default_floor);
     }
+}
 
-    applyIdAssignment();
+void Server::reloadBanLists()
+{
     m_ipban_list = akashi::config::loadIpRangeBans(configPath("ipbans.json"));
     m_banned_asns = akashi::config::loadBannedAsns(configPath("ipbans.json"));
     if (QFile::exists("storage/GeoLite2-ASN.mmdb")) {
         m_asn_reader.open("storage/GeoLite2-ASN.mmdb");
     }
-    acl_roles_handler->loadFile(configPath("acl_roles.json"));
 }
 
 void Server::broadcast(const akashi::Packet &packet, int area_index)
