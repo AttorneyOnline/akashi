@@ -29,6 +29,8 @@ class AKASHI_CORE_EXPORT CommandRegistry
     QStringList commandNames() const;
     bool contains(const QString &f_command_name) const;
 
+    void applyExtensions(const QString &f_path);
+
   private:
     struct Entry
     {

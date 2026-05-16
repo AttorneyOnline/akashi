@@ -5,6 +5,7 @@
 #include "core/permission_registry.h"
 #include "acl_roles_handler.h"
 
+#include <QTemporaryDir>
 #include <QTest>
 
 namespace tests {
@@ -38,6 +39,13 @@ class tst_CommandRegistry : public QObject
     void aclRoleStringCanPerform();
     void aclRoleSuperWildcard();
     void aclRoleEmptyIsNone();
+
+    void applyExtensionsAddsAliases();
+    void applyExtensionsOverridesPermissions();
+    void applyExtensionsSkipsUnknownCommand();
+    void applyExtensionsSkipsCollidingAlias();
+    void applyExtensionsMissingFileIsNoop();
+    void applyExtensionsSilentlySkipsSameCommandAlias();
 };
 
 void tst_CommandRegistry::registerAndLookup()
@@ -312,6 +320,122 @@ void tst_CommandRegistry::aclRoleEmptyIsNone()
     QVERIFY(l_role.canPerform(QStringLiteral("none")));
     QVERIFY(l_role.canPerform(QStringLiteral("")));
     QVERIFY(!l_role.canPerform(QStringLiteral("kick")));
+}
+
+void tst_CommandRegistry::applyExtensionsAddsAliases()
+{
+    akashi::CommandRegistry l_registry;
+    l_registry.registerCommand({QStringLiteral("roll"), {}, {}, 0, {}, {}}, [](akashi::CommandContext &) {});
+
+    QTemporaryDir l_dir;
+    QVERIFY(l_dir.isValid());
+    const QString l_path = l_dir.filePath(QStringLiteral("ext.json"));
+    QFile l_file(l_path);
+    QVERIFY(l_file.open(QIODevice::WriteOnly));
+    l_file.write(R"({"roll": {"aliases": "r dice"}})");
+    l_file.close();
+
+    l_registry.applyExtensions(l_path);
+
+    QVERIFY(l_registry.contains("r"));
+    QVERIFY(l_registry.contains("dice"));
+    auto l_spec = l_registry.spec("r");
+    QVERIFY(l_spec.has_value());
+    QCOMPARE(l_spec->name, QStringLiteral("roll"));
+}
+
+void tst_CommandRegistry::applyExtensionsOverridesPermissions()
+{
+    akashi::CommandRegistry l_registry;
+    l_registry.registerCommand({QStringLiteral("kick"), {}, {QStringLiteral("moderation.kick")}, 0, {}, {}}, [](akashi::CommandContext &) {});
+
+    QTemporaryDir l_dir;
+    QVERIFY(l_dir.isValid());
+    const QString l_path = l_dir.filePath(QStringLiteral("ext.json"));
+    QFile l_file(l_path);
+    QVERIFY(l_file.open(QIODevice::WriteOnly));
+    l_file.write(R"({"kick": {"permissions": "admin.kick super"}})");
+    l_file.close();
+
+    l_registry.applyExtensions(l_path);
+
+    auto l_spec = l_registry.spec("kick");
+    QVERIFY(l_spec.has_value());
+    QCOMPARE(l_spec->permissions, QStringList({QStringLiteral("admin.kick"), QStringLiteral("super")}));
+}
+
+void tst_CommandRegistry::applyExtensionsSkipsUnknownCommand()
+{
+    akashi::CommandRegistry l_registry;
+    l_registry.registerCommand({QStringLiteral("kick"), {}, {}, 0, {}, {}}, [](akashi::CommandContext &) {});
+
+    QTemporaryDir l_dir;
+    QVERIFY(l_dir.isValid());
+    const QString l_path = l_dir.filePath(QStringLiteral("ext.json"));
+    QFile l_file(l_path);
+    QVERIFY(l_file.open(QIODevice::WriteOnly));
+    l_file.write(R"({"nonexistent": {"aliases": "nx"}})");
+    l_file.close();
+
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression("unknown command"));
+    l_registry.applyExtensions(l_path);
+
+    QVERIFY(!l_registry.contains("nx"));
+}
+
+void tst_CommandRegistry::applyExtensionsSkipsCollidingAlias()
+{
+    akashi::CommandRegistry l_registry;
+    l_registry.registerCommand({QStringLiteral("kick"), {QStringLiteral("k")}, {}, 0, {}, {}}, [](akashi::CommandContext &) {});
+    l_registry.registerCommand({QStringLiteral("ban"), {}, {}, 0, {}, {}}, [](akashi::CommandContext &) {});
+
+    QTemporaryDir l_dir;
+    QVERIFY(l_dir.isValid());
+    const QString l_path = l_dir.filePath(QStringLiteral("ext.json"));
+    QFile l_file(l_path);
+    QVERIFY(l_file.open(QIODevice::WriteOnly));
+    l_file.write(R"({"ban": {"aliases": "k fresh"}})");
+    l_file.close();
+
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression("collides"));
+    l_registry.applyExtensions(l_path);
+
+    QVERIFY(l_registry.contains("fresh"));
+    QCOMPARE(l_registry.spec("fresh")->name, QStringLiteral("ban"));
+    auto l_k_spec = l_registry.spec("k");
+    QVERIFY(l_k_spec.has_value());
+    QCOMPARE(l_k_spec->name, QStringLiteral("kick"));
+}
+
+void tst_CommandRegistry::applyExtensionsMissingFileIsNoop()
+{
+    akashi::CommandRegistry l_registry;
+    l_registry.registerCommand({QStringLiteral("test"), {}, {}, 0, {}, {}}, [](akashi::CommandContext &) {});
+
+    l_registry.applyExtensions(QStringLiteral("/nonexistent/path/ext.json"));
+
+    QVERIFY(l_registry.contains("test"));
+}
+
+void tst_CommandRegistry::applyExtensionsSilentlySkipsSameCommandAlias()
+{
+    akashi::CommandRegistry l_registry;
+    l_registry.registerCommand({QStringLiteral("roll"), {QStringLiteral("r")}, {}, 0, {}, {}}, [](akashi::CommandContext &) {});
+
+    QTemporaryDir l_dir;
+    QVERIFY(l_dir.isValid());
+    const QString l_path = l_dir.filePath(QStringLiteral("ext.json"));
+    QFile l_file(l_path);
+    QVERIFY(l_file.open(QIODevice::WriteOnly));
+    l_file.write(R"({"roll": {"aliases": "r dice"}})");
+    l_file.close();
+
+    l_registry.applyExtensions(l_path);
+
+    QVERIFY(l_registry.contains("r"));
+    QVERIFY(l_registry.contains("dice"));
+    QCOMPARE(l_registry.spec("r")->name, QStringLiteral("roll"));
+    QCOMPARE(l_registry.spec("dice")->name, QStringLiteral("roll"));
 }
 
 } // namespace unittests

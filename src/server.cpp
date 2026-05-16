@@ -306,6 +306,7 @@ ExitCode Server::start()
     akashi::commands::registerMusicCommands(*m_command_registry);
     akashi::commands::registerRoleplayCommands(*m_command_registry);
     akashi::commands::registerMessagingCommands(*m_command_registry);
+    m_command_registry->applyExtensions(configPath("command_extensions.json"));
 
     return ExitCode::Ok;
 }
