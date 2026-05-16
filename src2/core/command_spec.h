@@ -14,6 +14,7 @@ struct CommandSpec
     int min_args = 0;
     QString usage;
     QString description;
+    int sensitive_args_from = -1;
 };
 
 } // namespace akashi

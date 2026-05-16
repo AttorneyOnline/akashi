@@ -14,7 +14,8 @@ class tst_ULogger : public QObject
     void initTestCase();
     void kickEntryContainsReason();
     void banEntryContainsReason();
-    void adduserEntryUsesTemplate();
+    void cmdEntryContainsArgs();
+    void redactedArgsShowStars();
 };
 
 void tst_ULogger::initTestCase()
@@ -35,11 +36,23 @@ void tst_ULogger::banEntryContainsReason()
     QVERIFY(logger.buffer("SERVER").last().contains("spamming"));
 }
 
-void tst_ULogger::adduserEntryUsesTemplate()
+void tst_ULogger::cmdEntryContainsArgs()
 {
     ULogger logger(nullptr);
-    logger.logCMD("Phoenix", "1234", "Nick", "adduser", {"newmod"}, "Basement");
-    QVERIFY(logger.buffer("Basement").last().contains("USERADD"));
+    logger.logCMD("Phoenix", "1234", "Nick", "adduser", {"newmod", "***"}, "Basement");
+    QString l_entry = logger.buffer("Basement").last();
+    QVERIFY(l_entry.contains("adduser"));
+    QVERIFY(l_entry.contains("newmod"));
+}
+
+void tst_ULogger::redactedArgsShowStars()
+{
+    ULogger logger(nullptr);
+    logger.logCMD("Phoenix", "1234", "Nick", "changepass", {"***"}, "Basement");
+    QString l_entry = logger.buffer("Basement").last();
+    QVERIFY(l_entry.contains("changepass"));
+    QVERIFY(l_entry.contains("***"));
+    QVERIFY(!l_entry.contains("secret"));
 }
 
 }

@@ -291,13 +291,15 @@ void registerAuthenticationCommands(CommandRegistry &f_registry)
     f_registry.registerCommand(
         {QStringLiteral("rootpass"), {}, {QStringLiteral("super")}, 1,
          QStringLiteral("/rootpass <password>"),
-         QStringLiteral("Sets the root password after /changeauth.")},
+         QStringLiteral("Sets the root password after /changeauth."),
+         0},
         handleSetRootPass, QStringLiteral("core"));
 
     f_registry.registerCommand(
         {QStringLiteral("adduser"), {}, {QStringLiteral("modify_users")}, 2,
          QStringLiteral("/adduser <username> <password>"),
-         QStringLiteral("Creates a new user with the given credentials.")},
+         QStringLiteral("Creates a new user with the given credentials."),
+         1},
         handleAddUser, QStringLiteral("core"));
 
     f_registry.registerCommand(
@@ -339,7 +341,8 @@ void registerAuthenticationCommands(CommandRegistry &f_registry)
     f_registry.registerCommand(
         {QStringLiteral("changepass"), {}, {}, 1,
          QStringLiteral("/changepass <password> [username]"),
-         QStringLiteral("Changes your password, or another user's password if you have super permissions.")},
+         QStringLiteral("Changes your password, or another user's password if you have super permissions."),
+         0},
         handleChangePassword, QStringLiteral("core"));
 }
 

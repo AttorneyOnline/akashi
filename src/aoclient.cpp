@@ -671,8 +671,15 @@ void AOClient::attemptLogin(const QString &f_message)
 
 void AOClient::runCommand(const QString &f_command, const QStringList &f_arguments)
 {
+    QStringList l_logged_args = f_arguments;
+    if (auto l_spec = m_server->commandRegistry()->spec(f_command); l_spec && l_spec->sensitive_args_from >= 0) {
+        for (int i = l_spec->sensitive_args_from; i < l_logged_args.size(); ++i) {
+            l_logged_args[i] = QStringLiteral("***");
+        }
+    }
+    Q_EMIT logCMD((character() + " " + characterName()), m_session->ipid, name(), f_command, l_logged_args, m_server->areaById(areaId())->name());
+
     handleCommand(f_command, f_arguments.size(), f_arguments);
-    Q_EMIT logCMD((character() + " " + characterName()), m_session->ipid, name(), f_command, f_arguments, m_server->areaById(areaId())->name());
 }
 
 void AOClient::broadcastOoc(const QString &f_message)

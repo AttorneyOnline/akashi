@@ -94,25 +94,8 @@ void ULogger::logCMD(const QString &f_char_name, const QString &f_ipid, const QS
                      const QStringList &f_args, const QString &f_area_name)
 {
     QString l_time = QDateTime::currentDateTime().toString("ddd MMMM d yyyy | hh:mm:ss");
-    QString l_logEntry;
-    // Some commands contain sensitive data, like passwords
-    // These must be filtered out
-    if (f_command == "login") {
-        l_logEntry = QString(m_logtext.value("cmdlogin") + "\n")
-                         .arg(l_time, f_area_name, f_char_name, f_ooc_name, f_ipid);
-    }
-    else if (f_command == "rootpass") {
-        l_logEntry = QString(m_logtext.value("cmdrootpass") + "\n")
-                         .arg(l_time, f_area_name, f_char_name, f_ooc_name, f_ipid);
-    }
-    else if (f_command == "adduser" && !f_args.isEmpty()) {
-        l_logEntry = QString(m_logtext.value("cmdadduser") + "\n")
-                         .arg(l_time, f_area_name, f_char_name, f_ooc_name, f_args.at(0), f_ipid);
-    }
-    else {
-        l_logEntry = QString(m_logtext.value("cmd") + "\n")
-                         .arg(l_time, f_area_name, f_char_name, f_ooc_name, f_command, f_args.join(" "), f_ipid);
-    }
+    QString l_logEntry = QString(m_logtext.value("cmd") + "\n")
+                             .arg(l_time, f_area_name, f_char_name, f_ooc_name, f_command, f_args.join(" "), f_ipid);
     updateAreaBuffer(f_area_name, l_logEntry);
 }
 

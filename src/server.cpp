@@ -817,14 +817,14 @@ void Server::removeClient(AOClient *f_client)
 void Server::hookupAOClient(AOClient *client)
 {
     connect(client, &AOClient::joined, this, &Server::increasePlayerCount);
-    connect(client, &AOClient::logIC, logger, &ULogger::logIC);
-    connect(client, &AOClient::logMusic, logger, &ULogger::logMusic);
-    connect(client, &AOClient::logOOC, logger, &ULogger::logOOC);
-    connect(client, &AOClient::logLogin, logger, &ULogger::logLogin);
-    connect(client, &AOClient::logCMD, logger, &ULogger::logCMD);
-    connect(client, &AOClient::logBan, logger, &ULogger::logBan);
-    connect(client, &AOClient::logKick, logger, &ULogger::logKick);
-    connect(client, &AOClient::logModcall, logger, &ULogger::logModcall);
+    connect(client, &AOClient::logIC, logger, &ULogger::logIC, Qt::DirectConnection);
+    connect(client, &AOClient::logMusic, logger, &ULogger::logMusic, Qt::DirectConnection);
+    connect(client, &AOClient::logOOC, logger, &ULogger::logOOC, Qt::DirectConnection);
+    connect(client, &AOClient::logLogin, logger, &ULogger::logLogin, Qt::DirectConnection);
+    connect(client, &AOClient::logCMD, logger, &ULogger::logCMD, Qt::DirectConnection);
+    connect(client, &AOClient::logBan, logger, &ULogger::logBan, Qt::DirectConnection);
+    connect(client, &AOClient::logKick, logger, &ULogger::logKick, Qt::DirectConnection);
+    connect(client, &AOClient::logModcall, logger, &ULogger::logModcall, Qt::DirectConnection);
 }
 
 void Server::increasePlayerCount()

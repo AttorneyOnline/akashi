@@ -1345,6 +1345,8 @@ class CommandsDance : public QObject
             {"/mods", "OOC name"},
             {"/commands", "Allowed commands"},
             {"/help about", "server version"},
+            {"/help ga", "getarea"},
+            {"/help blockdj", "block_dj"},
             {"/help all", "==Help=="},
             {"/set_motd miniclient test", "MOTD has been changed"},
             {"/bans", "Last 5 bans"},
