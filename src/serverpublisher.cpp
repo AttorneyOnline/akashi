@@ -82,6 +82,7 @@ void ServerPublisher::finished(QNetworkReply *f_reply)
     if (reply->error() != QNetworkReply::NoError) {
         qWarning() << "Unable to connect to serverlist due to the following error:" << reply->errorString();
         qWarning() << "Remote URL:" << remote_url;
+        return;
     }
 
     QByteArray data = reply->isReadable() ? reply->readAll() : QByteArray();
