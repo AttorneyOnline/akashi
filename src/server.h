@@ -336,6 +336,11 @@ class Server : public QObject
      */
     QHostAddress parseToIPv4(QHostAddress f_remote_ip);
 
+    /**
+     * @brief Returns a raw-pointer of the curr
+     */
+    PlayerStateObserver *getPlayerStateObserver();
+
   public slots:
     /**
      * @brief Convenience class to call a reload of available configuraiton elements.
