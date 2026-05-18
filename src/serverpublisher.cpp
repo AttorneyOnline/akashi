@@ -82,6 +82,7 @@ void ServerPublisher::finished(QNetworkReply *f_reply)
     if (reply->error() != QNetworkReply::NoError) {
         qWarning() << "Unable to connect to serverlist due to the following error:" << reply->errorString();
         qWarning() << "Remote URL:" << remote_url;
+        return;
     }
 
     QByteArray data = reply->isReadable() ? reply->readAll() : QByteArray();
@@ -92,6 +93,10 @@ void ServerPublisher::finished(QNetworkReply *f_reply)
 
         if (error.error != QJsonParseError::NoError || !document.isObject()) {
             qWarning() << "Received malformed response from masterserver. Error:" << error.errorString();
+            qWarning() << "HTTP status code:" << status;
+            qWarning() << "Parse error offset:" << error.offset;
+            qWarning() << "Response body size:" << data.size() << "bytes";
+            qWarning().noquote() << "Raw response body:" << QString::fromUtf8(data);
             return;
         }
 
