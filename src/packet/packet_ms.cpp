@@ -335,6 +335,8 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
         QString l_other_flip = "0";
         for (int l_client_id : area->joinedIDs()) {
             AOClient *l_client = client.getServer()->getClientByID(l_client_id);
+            if (l_client == nullptr)
+                continue;
             if (l_client->m_pairing_with == client.m_char_id && l_other_charid != client.m_char_id && l_client->m_char_id == client.m_pairing_with && l_client->m_pos == client.m_pos) {
                 l_other_name = l_client->m_current_iniswap;
                 l_other_emote = l_client->m_emote;
