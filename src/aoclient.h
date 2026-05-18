@@ -1345,15 +1345,6 @@ class AOClient : public QObject
     void cmdNoticeGlobal(int argc, QStringList argv);
 
     /**
-     * @brief Removes all CMs from the current area.
-     *
-     * @details This command is a bandaid fix to the issue that clients may end up ghosting when improperly disconnected from the server.
-     *
-     * @iscommand
-     */
-    void cmdClearCM(int argc, QStringList argv);
-
-    /**
      * @brief Removes all multiclient instances of a client on the server, excluding the one using the command.
      *
      * @details This command gracefully removes all multiclients from the server, disconnecting them and freeing their used character.
@@ -1981,27 +1972,27 @@ class AOClient : public QObject
     /**
      * @brief Adds a song to the custom list.
      */
-    void cmdAddSong(int argc, QStringList argv);
+    void cmdAddMusic(int argc, QStringList argv);
 
     /**
      * @brief Adds a category to the areas custom music list.
      */
-    void cmdAddCategory(int argc, QStringList argv);
+    void cmdAddMusicCategory(int argc, QStringList argv);
 
     /**
      * @brief Removes any matching song or category from the custom area.
      */
-    void cmdRemoveCategorySong(int argc, QStringList argv);
+    void cmdRemoveCustomMusic(int argc, QStringList argv);
 
     /**
      * @brief Toggles the prepending behaviour of the servers root musiclist.
      */
-    void cmdToggleRootlist(int argc, QStringList argv);
+    void cmdToggleCustomMusic(int argc, QStringList argv);
 
     /**
      * @brief Clears the entire custom list of this area.
      */
-    void cmdClearCustom(int argc, QStringList argv);
+    void cmdClearCustomMusic(int argc, QStringList argv);
 
     /**
      * @brief Skips the current song in the Jukebox and plays the next available one.

@@ -618,19 +618,6 @@ void AOClient::cmdNoticeGlobal(int argc, QStringList argv)
     sendNotice(argv.join(" "), true);
 }
 
-void AOClient::cmdClearCM(int argc, QStringList argv)
-{
-    Q_UNUSED(argc);
-    Q_UNUSED(argv);
-
-    AreaData *l_area = server->getAreaById(areaId());
-    foreach (int l_client_id, l_area->owners()) {
-        l_area->removeOwner(l_client_id);
-    }
-    arup(ARUPType::CM, true);
-    sendServerMessage("Removed all CMs from this area.");
-}
-
 void AOClient::cmdKickOther(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
