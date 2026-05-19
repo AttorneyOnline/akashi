@@ -38,8 +38,7 @@ void AOClient::cmdPlay(int argc, QStringList argv)
         m_socket->close();
         return;
     }
-    if ((l_song.startsWith("http://", Qt::CaseInsensitive) || l_song.startsWith("https://", Qt::CaseInsensitive))
-        && !m_music_manager->validateSong(l_song, ConfigManager::cdnList())) {
+    if ((l_song.startsWith("http://", Qt::CaseInsensitive) || l_song.startsWith("https://", Qt::CaseInsensitive)) && !m_music_manager->validateSong(l_song, ConfigManager::cdnList())) {
         sendServerMessage("The song you tried to play is not from an approved CDN.");
         return;
     }
@@ -47,11 +46,6 @@ void AOClient::cmdPlay(int argc, QStringList argv)
     const ACLRole l_role = server->getACLRolesHandler()->getRoleById(m_acl_role_id);
     if (!l_area->owners().contains(clientId()) && !l_area->isPlayEnabled() && !l_role.checkPermission(ACLRole::CM)) { // Make sure we have permission to play music
         sendServerMessage("Free music play is disabled in this area.");
-        return;
-    }
-    if ((l_song.startsWith("http://", Qt::CaseInsensitive) || l_song.startsWith("https://", Qt::CaseInsensitive))
-        && !m_music_manager->validateSong(l_song, ConfigManager::cdnList())) {
-        sendServerMessage("The song you tried to play is not from an approved CDN.");
         return;
     }
     if (characterName().isEmpty()) {
@@ -78,8 +72,7 @@ void AOClient::cmdPlayAmbience(int argc, QStringList argv)
         return;
     }
     QString l_song = argv.join(" ");
-    if ((l_song.startsWith("http://", Qt::CaseInsensitive) || l_song.startsWith("https://", Qt::CaseInsensitive))
-        && !m_music_manager->validateSong(l_song, ConfigManager::cdnList())) {
+    if ((l_song.startsWith("http://", Qt::CaseInsensitive) || l_song.startsWith("https://", Qt::CaseInsensitive)) && !m_music_manager->validateSong(l_song, ConfigManager::cdnList())) {
         sendServerMessage("The song you tried to play is not from an approved CDN.");
         return;
     }
