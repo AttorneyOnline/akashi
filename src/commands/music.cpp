@@ -166,7 +166,7 @@ void AOClient::cmdToggleJukebox(int argc, QStringList argv)
     sendServerMessageArea("The jukebox in this area has been " + l_state);
 }
 
-void AOClient::cmdAddSong(int argc, QStringList argv)
+void AOClient::cmdAddMusic(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
 
@@ -209,7 +209,7 @@ void AOClient::cmdAddSong(int argc, QStringList argv)
     sendServerMessage("The addition of the song has " + l_message);
 }
 
-void AOClient::cmdAddCategory(int argc, QStringList argv)
+void AOClient::cmdAddMusicCategory(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
     bool l_success = m_music_manager->addCustomCategory(argv.join(" "), areaId());
@@ -217,28 +217,28 @@ void AOClient::cmdAddCategory(int argc, QStringList argv)
     sendServerMessage("The addition of the category has " + l_message);
 }
 
-void AOClient::cmdRemoveCategorySong(int argc, QStringList argv)
+void AOClient::cmdRemoveCustomMusic(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
-    bool l_success = m_music_manager->removeCategorySong(argv.join(" "), areaId());
+    bool l_success = m_music_manager->removeCustomMusic(argv.join(" "), areaId());
     QString l_message = l_success ? "succeeded." : "failed.";
     sendServerMessage("The removal of the entry has " + l_message);
 }
 
-void AOClient::cmdToggleRootlist(int argc, QStringList argv)
+void AOClient::cmdToggleCustomMusic(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
     Q_UNUSED(argv);
-    bool l_status = m_music_manager->toggleRootEnabled(areaId());
+    bool l_status = m_music_manager->toggleCustomMusicEnabled(areaId());
     QString l_message = (l_status) ? "enabled." : "disabled.";
     sendServerMessage("Global musiclist has been " + l_message);
 }
 
-void AOClient::cmdClearCustom(int argc, QStringList argv)
+void AOClient::cmdClearCustomMusic(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
     Q_UNUSED(argv);
-    m_music_manager->clearCustomList(areaId());
+    m_music_manager->clearCustomMusicList(areaId());
     sendServerMessage("Custom songs have been cleared.");
 }
 

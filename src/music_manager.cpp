@@ -152,7 +152,7 @@ bool MusicManager::addCustomCategory(QString f_category_name, int f_area_id)
     return true;
 }
 
-bool MusicManager::removeCategorySong(QString f_songcategory_name, int f_area_id)
+bool MusicManager::removeCustomMusic(QString f_songcategory_name, int f_area_id)
 {
     if (!m_root_list.contains(f_songcategory_name)) {
         MusicList l_custom_list = m_custom_lists->value(f_area_id);
@@ -172,17 +172,17 @@ bool MusicManager::removeCategorySong(QString f_songcategory_name, int f_area_id
     return false;
 }
 
-bool MusicManager::toggleRootEnabled(int f_area_id)
+bool MusicManager::toggleCustomMusicEnabled(int f_area_id)
 {
     m_global_enabled.insert(f_area_id, !m_global_enabled.value(f_area_id));
     if (m_global_enabled.value(f_area_id)) {
-        sanitiseCustomList(f_area_id);
+        sanitiseCustomMusicList(f_area_id);
     }
     emit sendAreaFMPacket(PacketFactory::createPacket("FM", musiclist(f_area_id)), f_area_id);
     return m_global_enabled.value(f_area_id);
 }
 
-void MusicManager::sanitiseCustomList(int f_area_id)
+void MusicManager::sanitiseCustomMusicList(int f_area_id)
 {
     MusicList l_sanitised_list;
     QStringList l_sanitised_ordered = m_customs_ordered.value(f_area_id);
@@ -201,12 +201,14 @@ void MusicManager::sanitiseCustomList(int f_area_id)
     m_customs_ordered.insert(f_area_id, l_sanitised_ordered);
 }
 
-void MusicManager::clearCustomList(int f_area_id)
+void MusicManager::clearCustomMusicList(int f_area_id)
 {
     m_custom_lists->remove(f_area_id);
     m_custom_lists->insert(f_area_id, {});
     m_customs_ordered.remove(f_area_id);
     m_customs_ordered.insert(f_area_id, {});
+
+    emit sendAreaFMPacket(PacketFactory::createPacket("FM", musiclist(f_area_id)), f_area_id);
 }
 
 QPair<QString, int> MusicManager::songInformation(QString f_song_name, int f_area_id)

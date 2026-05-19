@@ -109,7 +109,7 @@ class MusicManager : public QObject
      *
      * @return True on success, false on failure.
      */
-    bool removeCategorySong(QString f_songcategory_name, int f_area_id);
+    bool removeCustomMusic(QString f_songcategory_name, int f_area_id);
 
     /**
      * @brief Toggles wether the root list is included for this area.
@@ -117,20 +117,20 @@ class MusicManager : public QObject
      *
      * @return Current state of the music list.
      */
-    bool toggleRootEnabled(int f_area_id);
+    bool toggleCustomMusicEnabled(int f_area_id);
 
     /**
      * @brief Removes conflicting songnames from the custom list.
      *
      * @param f_area_id Id of the area this is invoked in.
      */
-    void sanitiseCustomList(int f_area_id);
+    void sanitiseCustomMusicList(int f_area_id);
 
     /**
      * @brief Removes all entries from the custom list.
      * @param f_area_id Id of the area custom list.
      */
-    void clearCustomList(int f_area_id);
+    void clearCustomMusicList(int f_area_id);
 
     /**
      * @brief Returns song information necessary for the operation of the jukebox.
