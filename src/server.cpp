@@ -153,7 +153,6 @@ void Server::clientConnected()
     int user_id = m_available_ids.pop();
     AOClient *client = new AOClient(this, l_socket, l_socket, user_id, music_manager);
     m_clients_ids.insert(user_id, client);
-    m_player_state_observer.registerClient(client);
 
     int multiclient_count = 1;
     bool is_at_multiclient_limit = false;
@@ -275,6 +274,11 @@ QHostAddress Server::parseToIPv4(QHostAddress f_remote_ip)
         l_remote_ip = l_temp_remote_ip;
     }
     return l_remote_ip;
+}
+
+PlayerStateObserver *Server::getPlayerStateObserver()
+{
+    return &m_player_state_observer;
 }
 
 void Server::reloadSettings()
