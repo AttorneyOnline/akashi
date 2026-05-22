@@ -77,6 +77,7 @@ void ServerPublisher::publishServer()
 void ServerPublisher::finished(QNetworkReply *f_reply)
 {
     QNetworkReply *reply(f_reply);
+    reply->deleteLater();
     QString remote_url = reply->url().toString();
 
     if (reply->error() != QNetworkReply::NoError) {
