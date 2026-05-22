@@ -17,8 +17,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "aoclient.h"
 
+#include "akashi/log_event.h"
 #include "area_data.h"
 #include "core/client_session.h"
+#include "core/log_service.h"
 #include "core/server_settings.h"
 #include "core/command_context.h"
 #include "core/command_registry.h"
@@ -34,6 +36,7 @@
 
 #include <QQueue>
 
+namespace log_type = akashi::log_type;
 
 void AOClient::leave()
 {
@@ -538,7 +541,10 @@ void AOClient::finishJoin()
 
 void AOClient::logConnectionAttempt()
 {
-    Q_EMIT m_server->logConnectionAttempt(m_session->remote_ip.toString(), m_session->ipid, m_session->hwid);
+    m_server->logService()->log({.type = log_type::Connect,
+        .ipid = m_session->ipid,
+        .target_ipid = m_session->remote_ip.toString(),
+        .hwid = m_session->hwid});
 }
 
 std::optional<akashi::BanRecord> AOClient::hardwareBan() const
@@ -677,7 +683,13 @@ void AOClient::runCommand(const QString &f_command, const QStringList &f_argumen
             l_logged_args[i] = QStringLiteral("***");
         }
     }
-    Q_EMIT logCMD((character() + " " + characterName()), m_session->ipid, name(), f_command, l_logged_args, m_server->areaById(areaId())->name());
+    m_server->logService()->log({.type = log_type::CMD,
+        .area = m_server->areaById(areaId())->name(),
+        .char_name = character() + " " + characterName(),
+        .ooc_name = name(),
+        .ipid = m_session->ipid,
+        .message = f_command,
+        .args = l_logged_args.join(QStringLiteral(" "))});
 
     handleCommand(f_command, f_arguments.size(), f_arguments);
 }
@@ -685,7 +697,13 @@ void AOClient::runCommand(const QString &f_command, const QStringList &f_argumen
 void AOClient::broadcastOoc(const QString &f_message)
 {
     m_server->broadcast(akashi::Packet("CT", {name(), f_message, "0"}), areaId());
-    Q_EMIT logOOC(m_server->areaById(areaId())->name(), m_session->ipid, name(), QString::number(clientId()), (character() + " " + characterName()), f_message);
+    m_server->logService()->log({.type = log_type::OOC,
+        .area = m_server->areaById(areaId())->name(),
+        .char_name = character() + " " + characterName(),
+        .ooc_name = name(),
+        .ipid = m_session->ipid,
+        .client_id = QString::number(clientId()),
+        .message = f_message});
 }
 
 bool AOClient::canModifyEvidence()
@@ -1287,7 +1305,13 @@ void AOClient::broadcastIc(const QStringList &f_fields, int f_evidence_index)
         }
     }
 
-    Q_EMIT logIC(l_area->name(), m_session->ipid, name(), QString::number(clientId()), (character() + " " + characterName()), player()->last_message);
+    m_server->logService()->log({.type = log_type::IC,
+        .area = l_area->name(),
+        .char_name = character() + " " + characterName(),
+        .ooc_name = name(),
+        .ipid = m_session->ipid,
+        .client_id = QString::number(clientId()),
+        .message = player()->last_message});
     l_area->updateLastICMessage(l_fields);
 
     l_area->startMessageFloodguard(m_server->serverSettings()->message_floodguard());
@@ -1328,7 +1352,12 @@ QString AOClient::resolveSongAlias(const QString &f_song)
 void AOClient::recordMusicChange(const QString &f_song)
 {
     AreaData *l_area = m_server->areaById(areaId());
-    Q_EMIT logMusic((character() + " " + characterName()), name(), m_session->ipid, l_area->name(), f_song);
+    m_server->logService()->log({.type = log_type::Music,
+        .area = l_area->name(),
+        .char_name = character() + " " + characterName(),
+        .ooc_name = name(),
+        .ipid = m_session->ipid,
+        .message = f_song});
 
     // An empty showname would show as "played by ." in /currentmusic.
     if (characterName().isEmpty()) {
@@ -1455,7 +1484,14 @@ void AOClient::broadcastModerators(const akashi::Packet &f_packet)
 
 void AOClient::recordModcall()
 {
-    Q_EMIT logModcall(m_server->areaById(areaId())->name(), m_session->ipid, name(), QString::number(clientId()), (character() + " " + characterName()));
+    const QString l_area_name = m_server->areaById(areaId())->name();
+    m_server->logService()->log({.type = log_type::Modcall,
+        .area = l_area_name,
+        .char_name = character() + " " + characterName(),
+        .ooc_name = name(),
+        .ipid = m_session->ipid,
+        .client_id = QString::number(clientId())});
+    m_server->flushModcallLog(l_area_name);
 }
 
 void AOClient::requestModcallWebhook(const QString &f_reason)
@@ -1488,7 +1524,10 @@ void AOClient::kickPlayer(int f_client_id, const QString &f_reason)
         l_client->closeSocket();
     }
 
-    Q_EMIT logKick(l_moderator_name, l_target->ipid(), f_reason);
+    m_server->logService()->log({.type = log_type::Kick,
+        .message = f_reason,
+        .moderator = l_moderator_name,
+        .target_ipid = l_target->ipid()});
     sendServerMessage("Kicked " + QString::number(l_clients.size()) + " client(s) with ipid " + l_target->ipid() + " for reason: " + f_reason);
 }
 
@@ -1528,7 +1567,11 @@ void AOClient::banPlayer(int f_client_id, int f_duration, const QString &f_reaso
         l_client->closeSocket();
     }
 
-    Q_EMIT logBan(l_moderator_name, l_target->ipid(), l_timestamp, f_reason);
+    m_server->logService()->log({.type = log_type::Ban,
+        .message = f_reason,
+        .moderator = l_moderator_name,
+        .target_ipid = l_target->ipid(),
+        .duration = l_timestamp});
     sendServerMessage("Banned " + QString::number(l_clients.size()) + " client(s) with ipid " + l_target->ipid() + " for reason: " + f_reason);
 
     const int l_ban_id = m_server->databaseManager()->banId(l_ban.ip);

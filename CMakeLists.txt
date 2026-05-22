@@ -27,12 +27,12 @@ set(AKASHI_SOURCES
   src/commands/moderation.cpp
   src/commands/music.cpp
   src/commands/roleplay.cpp
-  src/logger/u_logger.cpp
-  src/logger/u_logger.h
-  src/logger/writer_full.cpp
-  src/logger/writer_full.h
-  src/logger/writer_modcall.cpp
-  src/logger/writer_modcall.h
+  src2/core/log_service.cpp
+  src2/core/log_service.h
+  src2/core/writer_text.cpp
+  src2/core/writer_text.h
+  src2/include/akashi/log_event.h
+  src2/include/akashi/log_writer.h
   src/network/network_socket.cpp
   src/network/network_socket.h
   src/acl_roles_handler.cpp
@@ -168,7 +168,6 @@ include(GenerateExportHeader)
 generate_export_header(akashi_core BASE_NAME AKASHI_CORE)
 target_include_directories(akashi_core PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>"
-    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/logger>"
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/network>"
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/packet>"
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src2>"

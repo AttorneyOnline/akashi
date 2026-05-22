@@ -29,7 +29,7 @@ set(UNIT_TESTS
     world
     arup_broadcaster
     playerstateobserver
-    ulogger
+    log_service
     command_registry
 )
 

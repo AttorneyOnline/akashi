@@ -16,8 +16,10 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
 #include "aoclient.h"
+#include "akashi/log_event.h"
 #include "area_data.h"
 #include "core/client_session.h"
+#include "core/log_service.h"
 #include "core/server_settings.h"
 #include "db_manager.h"
 #include "proto/evidence.h"
@@ -26,6 +28,8 @@
 #include "server.h"
 
 #include <QQueue>
+
+namespace log_type = akashi::log_type;
 
 void AOClient::sendEvidenceList(AreaData *area) const
 {
@@ -105,8 +109,13 @@ void AOClient::loginAttempt(QString message)
             sendPacket("AUTH", {"0"}); // Client: "Login unsuccessful."
             sendServerMessage("Incorrect password.");
         }
-        Q_EMIT logLogin((character() + " " + characterName()), name(), "Moderator",
-                        m_session->ipid, m_server->areaById(areaId())->name(), m_session->authenticated);
+        m_server->logService()->log({.type = log_type::Login,
+            .area = m_server->areaById(areaId())->name(),
+            .char_name = character() + " " + characterName(),
+            .ooc_name = name(),
+            .ipid = m_session->ipid,
+            .moderator = QStringLiteral("Moderator"),
+            .success = m_session->authenticated});
         break;
     case DataTypes::AuthType::ADVANCED:
         QStringList l_login = message.split(" ");
@@ -131,8 +140,13 @@ void AOClient::loginAttempt(QString message)
             sendPacket("AUTH", {"0"});
             sendServerMessage("Incorrect password.");
         }
-        Q_EMIT logLogin((character() + " " + characterName()), name(), username, m_session->ipid,
-                        m_server->areaById(areaId())->name(), m_session->authenticated);
+        m_server->logService()->log({.type = log_type::Login,
+            .area = m_server->areaById(areaId())->name(),
+            .char_name = character() + " " + characterName(),
+            .ooc_name = name(),
+            .ipid = m_session->ipid,
+            .moderator = username,
+            .success = m_session->authenticated});
         break;
     }
     sendServerMessage("Exiting login prompt.");

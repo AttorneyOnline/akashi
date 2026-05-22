@@ -1,11 +1,13 @@
 #include "commands/moderation_commands.h"
 
+#include "akashi/log_event.h"
 #include "akashi/permissions.h"
 #include "aoclient.h"
 #include "area_data.h"
 #include "core/command_context.h"
 #include "core/command_registry.h"
 #include "core/command_spec.h"
+#include "core/log_service.h"
 #include "core/server_settings.h"
 #include "db_manager.h"
 #include "server.h"
@@ -13,6 +15,8 @@
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QRegularExpression>
+
+namespace log_type = akashi::log_type;
 
 namespace akashi::commands {
 
@@ -141,8 +145,11 @@ static void handleBan(CommandContext &f_context)
         l_client->closeSocket();
         l_kick_counter++;
 
-        AOClient *l_self = f_context.server()->clientById(f_context.clientId());
-        Q_EMIT l_self->logBan(l_ban.moderator, l_ban.ipid, l_ban_duration, l_ban.reason);
+        f_context.server()->logService()->log({.type = log_type::Ban,
+            .message = l_ban.reason,
+            .moderator = l_ban.moderator,
+            .target_ipid = l_ban.ipid,
+            .duration = l_ban_duration});
         if (f_context.server()->discordSettings()->webhook_ban_enabled())
             Q_EMIT f_context.server()->banWebhookRequest(l_ban.ipid, l_ban.moderator, l_ban_duration, l_ban.reason, l_ban_id);
     }
@@ -176,13 +183,13 @@ static void handleKick(CommandContext &f_context)
     }
 
     if (l_kick_counter > 0) {
-        AOClient *l_self = f_context.server()->clientById(f_context.clientId());
-        if (f_context.server()->authType() == DataTypes::AuthType::ADVANCED) {
-            Q_EMIT l_self->logKick(f_context.moderatorName(), l_target_ipid, l_reason);
-        }
-        else {
-            Q_EMIT l_self->logKick("Moderator", l_target_ipid, l_reason);
-        }
+        QString l_moderator = f_context.server()->authType() == DataTypes::AuthType::ADVANCED
+                                  ? f_context.moderatorName()
+                                  : QStringLiteral("Moderator");
+        f_context.server()->logService()->log({.type = log_type::Kick,
+            .message = l_reason,
+            .moderator = l_moderator,
+            .target_ipid = l_target_ipid});
         f_context.reply("Kicked " + QString::number(l_kick_counter) + " client(s) with ipid " + l_target_ipid + " for reason: " + l_reason);
     }
     else

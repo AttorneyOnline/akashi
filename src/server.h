@@ -48,7 +48,9 @@ class CommandRegistry;
 class ConfigStore;
 class DatabaseService;
 class FileSystemService;
+class LogService;
 class PacketService;
+class WriterText;
 class PermissionRegistry;
 class ServiceRegistry;
 }
@@ -61,7 +63,6 @@ class AOClient;
 class AreaData;
 class DBManager;
 class Discord;
-class ULogger;
 
 /**
  * @brief The class that represents the actual server as it is.
@@ -276,6 +277,8 @@ class AKASHI_CORE_EXPORT Server : public QObject
      * @brief Getter for an area specific buffer from the logger.
      */
     QQueue<QString> areaBuffer(const QString &f_areaName);
+    akashi::LogService *logService();
+    void flushModcallLog(const QString &f_area_name);
 
     /**
      * @brief The names of the areas on the server.
@@ -385,7 +388,7 @@ class AKASHI_CORE_EXPORT Server : public QObject
     QString serverNickname() const;
     QUrl assetUrl() const;
     DataTypes::AuthType authType() const;
-    DataTypes::LogType loggingType() const;
+    QString loggingMode() const;
 
     void setMotd(const QString &f_motd);
     void setAuthType(DataTypes::AuthType f_auth);
@@ -397,7 +400,6 @@ class AKASHI_CORE_EXPORT Server : public QObject
     QStringList reprimandsList() const;
     QStringList magic8BallAnswers() const;
     QStringList diceFaces(const QString &f_name) const;
-    QString logText(const QString &f_logtype) const;
 
   public Q_SLOTS:
     /**
@@ -450,14 +452,6 @@ class AKASHI_CORE_EXPORT Server : public QObject
      */
     void banWebhookRequest(const QString &f_ipid, const QString &f_moderator, const QString &f_duration, const QString &f_reason, const int &f_banID);
 
-    /**
-     * @brief Signal connected to universal logger. Logs a client connection attempt.
-     * @param f_ip_address The IP Address of the incoming connection.
-     * @param f_ipid The IPID of the incoming connection.
-     * @param f_hdid The HDID of the incoming connection.
-     */
-    void logConnectionAttempt(const QString &f_ip_address, const QString &f_ipid, const QString &f_hwid);
-
   private:
     /**
      * @brief Listens for incoming websocket connections.
@@ -474,17 +468,14 @@ class AKASHI_CORE_EXPORT Server : public QObject
      */
     ServerPublisher *server_publisher;
 
-    /**
-     * @brief Handles the universal log framework.
-     */
-    ULogger *logger;
+    akashi::LogService *m_log_service = nullptr;
+    std::shared_ptr<akashi::WriterText> m_text_writer;
 
 
     akashi::ConfigStore *m_config_store = nullptr;
     ServerSettings *m_server_settings = nullptr;
     DiscordSettings *m_discord_settings = nullptr;
     QSettings *m_areas_ini = nullptr;
-    QSettings *m_logtext_ini = nullptr;
     QSettings *m_ambience_ini = nullptr;
 
     struct TextData
@@ -613,10 +604,6 @@ class AKASHI_CORE_EXPORT Server : public QObject
     void reloadMusicFloor();
     void reloadBanLists();
 
-    /**
-     * @brief Connects new AOClient to logger and disconnect handling.
-     **/
-    void hookupAOClient(AOClient *client);
 
   private Q_SLOTS:
     /**

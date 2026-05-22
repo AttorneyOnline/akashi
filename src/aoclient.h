@@ -556,51 +556,6 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
 
     bool checkTestimonySymbols(const QString &message);
 
-  Q_SIGNALS:
-
-    /**
-     * @brief Signal connected to universal logger. Sends IC chat usage to the logger.
-     */
-    void logIC(const QString &f_areaName, const QString &f_ipid, const QString &f_oocName, const QString &f_id, const QString &f_charName, const QString &f_message);
-
-    /**
-     * @brief Signal connected to universal logger. Sends music usage to the logger.
-     */
-    void logMusic(const QString &f_charName, const QString &f_oocName, const QString &f_ipid,
-                  const QString &f_areaName, const QString &f_track);
-
-    /**
-     * @brief Signal connected to universal logger. Sends OOC chat usage to the logger.
-     */
-    void logOOC(const QString &f_areaName, const QString &f_ipid, const QString &f_oocName, const QString &f_id, const QString &f_charName, const QString &f_message);
-
-    /**
-     * @brief Signal connected to universal logger. Sends login attempt to the logger.
-     */
-    void logLogin(const QString &f_charName, const QString &f_oocName, const QString &f_moderatorName,
-                  const QString &f_ipid, const QString &f_areaName, const bool &f_success);
-
-    /**
-     * @brief Signal connected to universal logger. Sends command usage to the logger.
-     */
-    void logCMD(const QString &f_charName, const QString &f_ipid, const QString &f_oocName, const QString f_command,
-                const QStringList f_args, const QString f_areaName);
-
-    /**
-     * @brief Signal connected to universal logger. Sends player kick information to the logger.
-     */
-    void logKick(const QString &f_moderator, const QString &f_targetIPID, const QString &f_reason);
-
-    /**
-     * @brief Signal connected to universal logger. Sends ban information to the logger.
-     */
-    void logBan(const QString &f_moderator, const QString &f_targetIPID, const QString &f_duration, const QString &f_reason);
-
-    /**
-     * @brief Signal connected to universal logger. Sends modcall information to the logger, triggering a write of the buffer
-     *        when modcall logging is used.
-     */
-    void logModcall(const QString &f_area_name, const QString &f_ipid, const QString &f_ooc_name, const QString &f_id, const QString &f_char_name);
 };
 
 #endif // AOCLIENT_H

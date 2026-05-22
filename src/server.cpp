@@ -38,7 +38,8 @@
 #include "core/server_settings.h"
 #include "db_manager.h"
 #include "discord.h"
-#include "logger/u_logger.h"
+#include "core/log_service.h"
+#include "core/writer_text.h"
 #include "world/floor.h"
 #include "network/network_socket.h"
 #include "proto/handshake.h"
@@ -57,7 +58,6 @@ Server::Server(int p_ws_port, akashi::ConfigStore *f_config_store, akashi::Datab
     m_server_settings = new ServerSettings(f_config_store);
     m_discord_settings = new DiscordSettings(f_config_store);
     m_areas_ini = f_config_store->settings("areas");
-    m_logtext_ini = f_config_store->settings("text/logtext");
     m_ambience_ini = f_config_store->settings("ambience");
 
     m_text_data.magic_8ball = akashi::config::loadTextFile(configPath("text/8ball.txt"));
@@ -108,8 +108,18 @@ Server::Server(int p_ws_port, akashi::ConfigStore *f_config_store, akashi::Datab
     // We create it, even if its not used later on.
     discord = new Discord(m_discord_settings, this);
 
-    logger = new ULogger(this, this);
-    connect(this, &Server::logConnectionAttempt, logger, &ULogger::logConnectionAttempt);
+    m_log_service = new akashi::LogService(f_config_store, m_server_settings->logbuffer(), this);
+
+    const QString l_log_mode = m_server_settings->logging().toLower();
+    akashi::WriterText::Mode l_writer_mode = akashi::WriterText::Mode::Modcall;
+    if (l_log_mode == QStringLiteral("full")) {
+        l_writer_mode = akashi::WriterText::Mode::Full;
+    }
+    else if (l_log_mode == QStringLiteral("fullarea")) {
+        l_writer_mode = akashi::WriterText::Mode::FullArea;
+    }
+    m_text_writer = std::make_shared<akashi::WriterText>(l_writer_mode, m_log_service);
+    m_log_service->registerWriter(m_text_writer, QStringLiteral("core"));
 }
 
 ExitCode Server::start()
@@ -221,7 +231,7 @@ ExitCode Server::start()
     connect(m_config_store, &akashi::ConfigStore::configReloaded, this, &Server::reloadTextData);
     connect(m_config_store, &akashi::ConfigStore::configReloaded, this, &Server::reloadMusicFloor);
     connect(m_config_store, &akashi::ConfigStore::configReloaded, this, &Server::reloadBanLists);
-    connect(m_config_store, &akashi::ConfigStore::configReloaded, logger, &ULogger::loadLogtext);
+    connect(m_config_store, &akashi::ConfigStore::configReloaded, m_log_service, &akashi::LogService::reloadTemplates);
     connect(m_config_store, &akashi::ConfigStore::configReloaded, this, [this]() {
         acl_roles_handler->loadFile(configPath("acl_roles.json"));
     });
@@ -436,7 +446,7 @@ void Server::clientConnected()
     // completely in any client 2.4.3 or newer
     akashi::Packet decryptor("decryptor", {"NOENCRYPT"});
     client->sendPacket(decryptor);
-    hookupAOClient(client);
+    connect(client, &AOClient::joined, this, &Server::increasePlayerCount);
 }
 
 void Server::updateCharsTaken(AreaData *area)
@@ -717,7 +727,24 @@ AreaData *Server::areaById(int f_area_id)
 
 QQueue<QString> Server::areaBuffer(const QString &f_areaName)
 {
-    return logger->buffer(f_areaName);
+    QQueue<QString> l_result;
+    const auto l_events = m_log_service->recentEvents(f_areaName, 0);
+    for (const auto &l_event : l_events) {
+        l_result.enqueue(m_log_service->formatEvent(l_event) + QStringLiteral("\n"));
+    }
+    return l_result;
+}
+
+akashi::LogService *Server::logService()
+{
+    return m_log_service;
+}
+
+void Server::flushModcallLog(const QString &f_area_name)
+{
+    if (loggingMode() == QStringLiteral("modcall") && m_text_writer) {
+        m_text_writer->flushBuffer(f_area_name, m_log_service->recentEvents(f_area_name, 0));
+    }
 }
 
 QStringList Server::areaNames()
@@ -814,19 +841,6 @@ void Server::removeClient(AOClient *f_client)
     f_client->deleteLater();
 }
 
-void Server::hookupAOClient(AOClient *client)
-{
-    connect(client, &AOClient::joined, this, &Server::increasePlayerCount);
-    connect(client, &AOClient::logIC, logger, &ULogger::logIC, Qt::DirectConnection);
-    connect(client, &AOClient::logMusic, logger, &ULogger::logMusic, Qt::DirectConnection);
-    connect(client, &AOClient::logOOC, logger, &ULogger::logOOC, Qt::DirectConnection);
-    connect(client, &AOClient::logLogin, logger, &ULogger::logLogin, Qt::DirectConnection);
-    connect(client, &AOClient::logCMD, logger, &ULogger::logCMD, Qt::DirectConnection);
-    connect(client, &AOClient::logBan, logger, &ULogger::logBan, Qt::DirectConnection);
-    connect(client, &AOClient::logKick, logger, &ULogger::logKick, Qt::DirectConnection);
-    connect(client, &AOClient::logModcall, logger, &ULogger::logModcall, Qt::DirectConnection);
-}
-
 void Server::increasePlayerCount()
 {
     m_player_count++;
@@ -883,10 +897,9 @@ DataTypes::AuthType Server::authType() const
     return toDataType<DataTypes::AuthType>(l_auth);
 }
 
-DataTypes::LogType Server::loggingType() const
+QString Server::loggingMode() const
 {
-    QString l_log = m_server_settings->logging().toUpper();
-    return toDataType<DataTypes::LogType>(l_log);
+    return m_server_settings->logging().toLower();
 }
 
 void Server::setMotd(const QString &f_motd)
@@ -909,11 +922,6 @@ QStringList Server::magic8BallAnswers() const { return m_text_data.magic_8ball; 
 QStringList Server::diceFaces(const QString &f_name) const
 {
     return m_text_data.dice_faces.value(f_name);
-}
-
-QString Server::logText(const QString &f_logtype) const
-{
-    return m_logtext_ini->value("LogConfiguration/" + f_logtype, "").toString();
 }
 
 Server::~Server()
