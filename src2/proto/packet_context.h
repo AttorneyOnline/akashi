@@ -202,9 +202,6 @@ class AKASHI_CORE_EXPORT IPacketContext
     virtual DataTypes::AuthType packetAuthType() const = 0;
     virtual int messageFloodguardMs() const = 0;
     virtual int globalMessageFloodguardMs() const = 0;
-    virtual bool isDiscordBanEnabled() const = 0;
-    virtual bool isDiscordModcallEnabled() const = 0;
-
     // Moderation.
     virtual bool isAuthenticated() const = 0;
     virtual bool canPerform(const QString &f_permission) const = 0;
@@ -212,8 +209,7 @@ class AKASHI_CORE_EXPORT IPacketContext
     // The OOC name of another connected player; empty-but-present names stay.
     virtual std::optional<QString> playerName(int f_client_id) const = 0;
     virtual void broadcastModerators(const Packet &f_packet) = 0;
-    virtual void recordModcall() = 0;
-    virtual void requestModcallWebhook(const QString &f_reason) = 0;
+    virtual void recordModcall(const QString &f_reason) = 0;
     virtual void kickPlayer(int f_client_id, const QString &f_reason) = 0;
     virtual void banPlayer(int f_client_id, int f_duration, const QString &f_reason) = 0;
 };

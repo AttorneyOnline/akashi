@@ -107,8 +107,14 @@ Server::Server(int p_ws_port, akashi::ConfigStore *f_config_store, akashi::Datab
     m_command_registry = new akashi::CommandRegistry;
     m_event_bus = new akashi::EventBus;
 
-    // We create it, even if its not used later on.
-    discord = new Discord(m_discord_settings, this);
+    discord = new Discord(m_discord_settings, m_event_bus,
+        [this](const QString &area) -> QString {
+            const auto l_events = m_log_service->recentEvents(area, 0);
+            QString l_text;
+            for (const auto &e : l_events)
+                l_text.append(m_log_service->formatEvent(e) + QStringLiteral("\n"));
+            return l_text;
+        }, this);
 
     m_log_service = new akashi::LogService(f_config_store, m_server_settings->logbuffer(), this);
 
@@ -161,11 +167,6 @@ ExitCode Server::start()
     connect(server, &QWebSocketServer::newConnection,
             this, &Server::clientConnected);
     qInfo() << "Server listening on" << server->serverPort();
-
-    handleDiscordIntegration();
-    connect(m_discord_settings->webhook_enabled.notifier(), &akashi::SettingNotifier::changed, this, &Server::handleDiscordIntegration);
-    connect(m_discord_settings->webhook_modcall_enabled.notifier(), &akashi::SettingNotifier::changed, this, &Server::handleDiscordIntegration);
-    connect(m_discord_settings->webhook_ban_enabled.notifier(), &akashi::SettingNotifier::changed, this, &Server::handleDiscordIntegration);
 
     // Construct modern advertiser if enabled in config
     server_publisher = new ServerPublisher(server->serverPort(), &m_player_count, m_server_settings, this);
@@ -732,15 +733,6 @@ AreaData *Server::areaById(int f_area_id)
     return l_area;
 }
 
-QQueue<QString> Server::areaBuffer(const QString &f_areaName)
-{
-    QQueue<QString> l_result;
-    const auto l_events = m_log_service->recentEvents(f_areaName, 0);
-    for (const auto &l_event : l_events) {
-        l_result.enqueue(m_log_service->formatEvent(l_event) + QStringLiteral("\n"));
-    }
-    return l_result;
-}
 
 akashi::LogService *Server::logService()
 {
@@ -820,20 +812,6 @@ void Server::allowMessage()
     m_can_send_ic_messages = true;
 }
 
-void Server::handleDiscordIntegration()
-{
-    // Prevent double connecting by preemtively disconnecting them.
-    disconnect(this, nullptr, discord, nullptr);
-
-    if (m_discord_settings->webhook_enabled()) {
-        if (m_discord_settings->webhook_modcall_enabled())
-            connect(this, &Server::modcallWebhookRequest, discord, &Discord::onModcallWebhookRequested);
-
-        if (m_discord_settings->webhook_ban_enabled())
-            connect(this, &Server::banWebhookRequest, discord, &Discord::onBanWebhookRequested);
-    }
-    return;
-}
 
 void Server::removeClient(AOClient *f_client)
 {
@@ -880,7 +858,7 @@ bool Server::isIPBanned(QHostAddress f_remote_IP)
 
 akashi::ConfigStore *Server::configStore() { return m_config_store; }
 ServerSettings *Server::serverSettings() { return m_server_settings; }
-DiscordSettings *Server::discordSettings() { return m_discord_settings; }
+
 
 QString Server::configPath(const QString &f_file) const
 {

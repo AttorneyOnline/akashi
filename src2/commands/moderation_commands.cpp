@@ -1,5 +1,6 @@
 #include "commands/moderation_commands.h"
 
+#include "akashi/event.h"
 #include "akashi/log_event.h"
 #include "akashi/permissions.h"
 #include "aoclient.h"
@@ -7,6 +8,7 @@
 #include "core/command_context.h"
 #include "core/command_registry.h"
 #include "core/command_spec.h"
+#include "core/event_bus.h"
 #include "core/log_service.h"
 #include "core/server_settings.h"
 #include "db_manager.h"
@@ -150,8 +152,13 @@ static void handleBan(CommandContext &f_context)
             .moderator = l_ban.moderator,
             .target_ipid = l_ban.ipid,
             .duration = l_ban_duration});
-        if (f_context.server()->discordSettings()->webhook_ban_enabled())
-            Q_EMIT f_context.server()->banWebhookRequest(l_ban.ipid, l_ban.moderator, l_ban_duration, l_ban.reason, l_ban_id);
+        akashi::BanIssuedEvent l_ban_event{
+            .ban_id = l_ban_id,
+            .moderator = l_ban.moderator,
+            .target_ipid = l_ban.ipid,
+            .duration = l_ban_duration,
+            .reason = l_ban.reason};
+        f_context.server()->eventBus()->notify(l_ban_event);
     }
 
     if (l_kick_counter > 1)

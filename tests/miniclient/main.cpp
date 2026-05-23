@@ -263,15 +263,15 @@ class MiniClient : public QObject
             break;
         case Step::AreaUncm:
             if (l_header == "ARUP" && l_content.value(0) == "2" && !l_content.join(",").contains("[" + QString::number(m_client_id) + "]")) {
-                step(Step::SelfKick, "KK");
-                send(AOPacket("MA", {QString::number(m_client_id), "0", "kicked by the playtest"}));
+                step(Step::SelfBan, "KB");
+                send(AOPacket("MA", {QString::number(m_client_id), "1", "banned by the playtest"}));
             }
             break;
-        case Step::SelfKick:
-            if (l_header == "KK") {
+        case Step::SelfBan:
+            if (l_header == "KB") {
                 m_done = true;
                 m_watchdog->stop();
-                say("every step answered, kicked ourselves goodbye");
+                say("every step answered, banned ourselves goodbye (both webhooks should have fired)");
                 QTimer::singleShot(500, qApp, [] { qApp->exit(0); });
             }
             break;
@@ -309,7 +309,7 @@ class MiniClient : public QObject
         AreaLock,
         AreaUnlock,
         AreaUncm,
-        SelfKick,
+        SelfBan,
     };
 
     void send(AOPacket f_packet)

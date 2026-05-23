@@ -97,12 +97,14 @@ struct ModcallEvent : Event
     int area_id = -1;
     QString area_name;
     QString char_name;
+    QString ooc_name;
     QString ipid;
     QString reason;
 };
 
 struct BanIssuedEvent : Event
 {
+    int ban_id = -1;
     QString moderator;
     QString target_ipid;
     QString duration;

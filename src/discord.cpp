@@ -17,33 +17,65 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "discord.h"
 
+#include "akashi/event.h"
+#include "core/event_bus.h"
 #include "core/server_settings.h"
 
-Discord::Discord(DiscordSettings *f_settings, QObject *parent) :
+Discord::Discord(DiscordSettings *f_settings, akashi::EventBus *f_event_bus,
+                 AreaBufferFn f_area_buffer, QObject *parent) :
     QObject(parent),
-    m_settings(f_settings)
+    m_settings(f_settings),
+    m_area_buffer(std::move(f_area_buffer))
 {
     m_nam = new QNetworkAccessManager();
     connect(m_nam, &QNetworkAccessManager::finished,
             this, &Discord::onReplyFinished);
+
+    f_event_bus->subscribe<akashi::ModcallEvent>(
+        akashi::EventPhase::After, 0,
+        [this](akashi::ModcallEvent &e) { onModcall(e); },
+        QStringLiteral("discord"));
+
+    f_event_bus->subscribe<akashi::BanIssuedEvent>(
+        akashi::EventPhase::After, 0,
+        [this](akashi::BanIssuedEvent &e) { onBan(e); },
+        QStringLiteral("discord"));
 }
 
-void Discord::onModcallWebhookRequested(const QString &f_name, const QString &f_area, const QString &f_id, const QString &f_reason, const QQueue<QString> &f_buffer)
+void Discord::onModcall(akashi::ModcallEvent &f_event)
 {
+    if (!m_settings->webhook_enabled() || !m_settings->webhook_modcall_enabled()) {
+        return;
+    }
+
+    QString l_name = f_event.ooc_name;
+    if (l_name.isEmpty()) {
+        l_name = f_event.char_name;
+    }
+
     m_request.setUrl(QUrl(m_settings->webhook_modcall_url()));
-    QJsonDocument l_json = constructModcallJson(f_name, f_area, f_id, f_reason);
+    QJsonDocument l_json = constructModcallJson(l_name, f_event.area_name,
+                                                 QString::number(f_event.client_id), f_event.reason);
     postJsonWebhook(l_json);
 
-    if (m_settings->webhook_modcall_sendfile()) {
-        QHttpMultiPart *l_multipart = constructLogMultipart(f_buffer);
-        postMultipartWebhook(*l_multipart);
+    if (m_settings->webhook_modcall_sendfile() && m_area_buffer) {
+        const QString l_log_text = m_area_buffer(f_event.area_name);
+        if (!l_log_text.isEmpty()) {
+            QHttpMultiPart *l_multipart = constructLogMultipart(l_log_text);
+            postMultipartWebhook(*l_multipart);
+        }
     }
 }
 
-void Discord::onBanWebhookRequested(const QString &f_ipid, const QString &f_moderator, const QString &f_duration, const QString &f_reason, const int &f_banID)
+void Discord::onBan(akashi::BanIssuedEvent &f_event)
 {
+    if (!m_settings->webhook_enabled() || !m_settings->webhook_ban_enabled()) {
+        return;
+    }
+
     m_request.setUrl(QUrl(m_settings->webhook_ban_url()));
-    QJsonDocument l_json = constructBanJson(f_ipid, f_moderator, f_duration, f_reason, f_banID);
+    QJsonDocument l_json = constructBanJson(f_event.target_ipid, f_event.moderator,
+                                             f_event.duration, f_event.reason, f_event.ban_id);
     postJsonWebhook(l_json);
 }
 
@@ -64,31 +96,27 @@ QJsonDocument Discord::constructModcallJson(const QString &f_name, const QString
     return QJsonDocument(l_json);
 }
 
-QJsonDocument Discord::constructBanJson(const QString &f_ipid, const QString &f_moderator, const QString &f_duration, const QString &f_reason, const int &f_banID)
+QJsonDocument Discord::constructBanJson(const QString &f_ipid, const QString &f_moderator, const QString &f_duration, const QString &f_reason, int f_ban_id)
 {
     QJsonObject l_json;
     QJsonArray l_array;
     QJsonObject l_object{
         {"color", m_settings->webhook_color()},
         {"title", "Ban issued by " + f_moderator},
-        {"description", "Client IPID : " + f_ipid + "\nBan ID: " + QString::number(f_banID) + "\nBan reason : " + f_reason + "\nBanned until : " + f_duration}};
+        {"description", "Client IPID : " + f_ipid + "\nBan ID: " + QString::number(f_ban_id) + "\nBan reason : " + f_reason + "\nBanned until : " + f_duration}};
     l_array.append(l_object);
     l_json["embeds"] = l_array;
 
     return QJsonDocument(l_json);
 }
 
-QHttpMultiPart *Discord::constructLogMultipart(const QQueue<QString> &f_buffer) const
+QHttpMultiPart *Discord::constructLogMultipart(const QString &f_log_text) const
 {
     QHttpMultiPart *l_multipart = new QHttpMultiPart();
     QHttpPart l_logdata;
     l_logdata.setHeader(QNetworkRequest::ContentDispositionHeader, "form-data; name=\"file\"; filename=\"log.txt\"");
     l_logdata.setHeader(QNetworkRequest::ContentTypeHeader, "text/plain; charset=utf-8");
-    QString l_log;
-    for (const QString &log_entry : f_buffer) {
-        l_log.append(log_entry);
-    }
-    l_logdata.setBody(l_log.toUtf8());
+    l_logdata.setBody(f_log_text.toUtf8());
     l_multipart->append(l_logdata);
     return l_multipart;
 }

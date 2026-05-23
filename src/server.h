@@ -277,7 +277,7 @@ class AKASHI_CORE_EXPORT Server : public QObject
     /**
      * @brief Getter for an area specific buffer from the logger.
      */
-    QQueue<QString> areaBuffer(const QString &f_areaName);
+
     akashi::LogService *logService();
     akashi::EventBus *eventBus();
     void flushModcallLog(const QString &f_area_name);
@@ -384,8 +384,6 @@ class AKASHI_CORE_EXPORT Server : public QObject
 
     akashi::ConfigStore *configStore();
     ServerSettings *serverSettings();
-    DiscordSettings *discordSettings();
-
     QString configPath(const QString &f_file) const;
     QString serverNickname() const;
     QUrl assetUrl() const;
@@ -417,13 +415,6 @@ class AKASHI_CORE_EXPORT Server : public QObject
      */
     void clientConnected();
 
-    /**
-     * @brief Method to construct and reconstruct Discord Webhook Integration.
-     *
-     * @details Constructs or rebuilds Discord Object during server startup and configuration reload.
-     */
-    void handleDiscordIntegration();
-
   Q_SIGNALS:
 
     /**
@@ -432,27 +423,6 @@ class AKASHI_CORE_EXPORT Server : public QObject
      * @param f_current_player The player count at the time the signal was emitted.
      */
     void playerCountUpdated(int f_current_players);
-
-    /**
-     * @brief Sends a modcall webhook request, emitted by AOClient::pktModcall.
-     *
-     * @param f_name The character or OOC name of the client who sent the modcall.
-     * @param f_area The name of the area the modcall was sent from.
-     * @param f_reason The reason the client specified for the modcall.
-     * @param f_id The client id of the client who sent the modcall.
-     * @param f_buffer The area's log buffer.
-     */
-    void modcallWebhookRequest(const QString &f_name, const QString &f_area, const QString &f_id, const QString &f_reason, const QQueue<QString> &f_buffer);
-
-    /**
-     * @brief Sends a ban webhook request, emitted by AOClient::cmdBan
-     * @param f_ipid The IPID of the banned client.
-     * @param f_moderator The moderator who issued the ban.
-     * @param f_duration The duration of the ban in a human readable format.
-     * @param f_reason The reason for the ban.
-     * @param f_banID The ID of the issued ban.
-     */
-    void banWebhookRequest(const QString &f_ipid, const QString &f_moderator, const QString &f_duration, const QString &f_reason, const int &f_banID);
 
   private:
     /**

@@ -58,11 +58,7 @@ class ModcallHandler : public PacketHandler
         l_notice.append("Reason: " + l_modcall.reason);
 
         f_context.broadcastModerators(Packet(ao2::HEADER_ZZ, {l_notice}));
-        f_context.recordModcall();
-
-        if (f_context.isDiscordModcallEnabled()) {
-            f_context.requestModcallWebhook(l_webhook_reason);
-        }
+        f_context.recordModcall(l_webhook_reason);
     }
 };
 

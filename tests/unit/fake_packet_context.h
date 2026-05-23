@@ -372,12 +372,10 @@ class FakeContext : public akashi::IPacketContext
         calls.append("broadcastModerators");
     }
 
-    void recordModcall() override { calls.append("recordModcall"); }
-
-    void requestModcallWebhook(const QString &f_reason) override
+    void recordModcall(const QString &f_reason) override
     {
         webhook_reason = f_reason;
-        calls.append("requestModcallWebhook");
+        calls.append("recordModcall");
     }
 
     void kickPlayer(int f_client_id, const QString &f_reason) override
@@ -403,9 +401,6 @@ class FakeContext : public akashi::IPacketContext
     DataTypes::AuthType packet_auth_type = DataTypes::AuthType::SIMPLE;
     int message_floodguard_ms = 250;
     int global_message_floodguard_ms = 0;
-    bool discord_ban_enabled = false;
-    bool discord_modcall_enabled = false;
-
     QString serverNickname() const override { return server_nickname; }
     int maxMessageLength() const override { return max_message_length; }
     QStringList wordFilters() const override { return word_filters; }
@@ -417,8 +412,6 @@ class FakeContext : public akashi::IPacketContext
     DataTypes::AuthType packetAuthType() const override { return packet_auth_type; }
     int messageFloodguardMs() const override { return message_floodguard_ms; }
     int globalMessageFloodguardMs() const override { return global_message_floodguard_ms; }
-    bool isDiscordBanEnabled() const override { return discord_ban_enabled; }
-    bool isDiscordModcallEnabled() const override { return discord_modcall_enabled; }
 };
 
 #endif // TESTS_FAKE_PACKET_CONTEXT_H

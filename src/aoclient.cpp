@@ -17,9 +17,11 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "aoclient.h"
 
+#include "akashi/event.h"
 #include "akashi/log_event.h"
 #include "area_data.h"
 #include "core/client_session.h"
+#include "core/event_bus.h"
 #include "core/log_service.h"
 #include "core/server_settings.h"
 #include "core/command_context.h"
@@ -575,8 +577,7 @@ QString AOClient::motd() const { return m_server->serverSettings()->motd(); }
 DataTypes::AuthType AOClient::packetAuthType() const { return m_server->authType(); }
 int AOClient::messageFloodguardMs() const { return m_server->serverSettings()->message_floodguard(); }
 int AOClient::globalMessageFloodguardMs() const { return m_server->serverSettings()->global_message_floodguard(); }
-bool AOClient::isDiscordBanEnabled() const { return m_server->discordSettings()->webhook_ban_enabled(); }
-bool AOClient::isDiscordModcallEnabled() const { return m_server->discordSettings()->webhook_modcall_enabled(); }
+
 
 int AOClient::playerCount() const
 {
@@ -1482,7 +1483,7 @@ void AOClient::broadcastModerators(const akashi::Packet &f_packet)
     }
 }
 
-void AOClient::recordModcall()
+void AOClient::recordModcall(const QString &f_reason)
 {
     const QString l_area_name = m_server->areaById(areaId())->name();
     m_server->logService()->log({.type = log_type::Modcall,
@@ -1492,19 +1493,16 @@ void AOClient::recordModcall()
         .ipid = m_session->ipid,
         .client_id = QString::number(clientId())});
     m_server->flushModcallLog(l_area_name);
-}
 
-void AOClient::requestModcallWebhook(const QString &f_reason)
-{
-    if (!m_server->discordSettings()->webhook_modcall_enabled()) {
-        return;
-    }
-    QString l_name = name();
-    if (l_name.isEmpty()) {
-        l_name = character();
-    }
-    const QString l_area_name = m_server->areaById(areaId())->name();
-    Q_EMIT m_server->modcallWebhookRequest(l_name, l_area_name, QString::number(clientId()), f_reason, m_server->areaBuffer(l_area_name));
+    akashi::ModcallEvent l_event{
+        .client_id = clientId(),
+        .area_id = areaId(),
+        .area_name = l_area_name,
+        .char_name = character(),
+        .ooc_name = name(),
+        .ipid = m_session->ipid,
+        .reason = f_reason};
+    m_server->eventBus()->notify(l_event);
 }
 
 void AOClient::kickPlayer(int f_client_id, const QString &f_reason)
@@ -1575,7 +1573,11 @@ void AOClient::banPlayer(int f_client_id, int f_duration, const QString &f_reaso
     sendServerMessage("Banned " + QString::number(l_clients.size()) + " client(s) with ipid " + l_target->ipid() + " for reason: " + f_reason);
 
     const int l_ban_id = m_server->databaseManager()->banId(l_ban.ip);
-    if (m_server->discordSettings()->webhook_ban_enabled()) {
-        Q_EMIT m_server->banWebhookRequest(l_ban.ipid, l_ban.moderator, l_timestamp, l_ban.reason, l_ban_id);
-    }
+    akashi::BanIssuedEvent l_event{
+        .ban_id = l_ban_id,
+        .moderator = l_ban.moderator,
+        .target_ipid = l_ban.ipid,
+        .duration = l_timestamp,
+        .reason = l_ban.reason};
+    m_server->eventBus()->notify(l_event);
 }

@@ -339,8 +339,6 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     DataTypes::AuthType packetAuthType() const override;
     int messageFloodguardMs() const override;
     int globalMessageFloodguardMs() const override;
-    bool isDiscordBanEnabled() const override;
-    bool isDiscordModcallEnabled() const override;
     int playerCount() const override;
     QStringList characters() const override;
     QStringList areaNames() const override;
@@ -460,8 +458,7 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     QString areaName() const override;
     std::optional<QString> playerName(int f_client_id) const override;
     void broadcastModerators(const akashi::Packet &f_packet) override;
-    void recordModcall() override;
-    void requestModcallWebhook(const QString &f_reason) override;
+    void recordModcall(const QString &f_reason) override;
     void kickPlayer(int f_client_id, const QString &f_reason) override;
     void banPlayer(int f_client_id, int f_duration, const QString &f_reason) override;
 
