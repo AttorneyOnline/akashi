@@ -27,10 +27,13 @@ set(AKASHI_SOURCES
   src/commands/moderation.cpp
   src/commands/music.cpp
   src/commands/roleplay.cpp
+  src2/core/event_bus.cpp
+  src2/core/event_bus.h
   src2/core/log_service.cpp
   src2/core/log_service.h
   src2/core/writer_text.cpp
   src2/core/writer_text.h
+  src2/include/akashi/event.h
   src2/include/akashi/log_event.h
   src2/include/akashi/log_writer.h
   src/network/network_socket.cpp

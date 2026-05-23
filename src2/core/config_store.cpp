@@ -52,6 +52,16 @@ ConfigStore::ConfigStore(const QString &f_root, QObject *parent) :
     m_root(f_root)
 {}
 
+QString ConfigStore::serviceId() const
+{
+    return QStringLiteral("akashi.config");
+}
+
+ServiceVersion ConfigStore::serviceVersion() const
+{
+    return {1, 0, 0};
+}
+
 QString ConfigStore::rootPath() const
 {
     return m_root;

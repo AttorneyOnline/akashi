@@ -7,6 +7,16 @@
 
 namespace akashi {
 
+QString CommandRegistry::serviceId() const
+{
+    return QStringLiteral("akashi.commands");
+}
+
+ServiceVersion CommandRegistry::serviceVersion() const
+{
+    return {1, 0, 0};
+}
+
 bool CommandRegistry::registerCommand(const CommandSpec &f_spec, CommandHandler f_handler,
                                       const QString &f_owner_id)
 {

@@ -31,6 +31,7 @@ set(UNIT_TESTS
     playerstateobserver
     log_service
     command_registry
+    event_bus
 )
 
 foreach(name ${UNIT_TESTS})

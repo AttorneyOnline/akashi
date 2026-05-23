@@ -1,6 +1,7 @@
 #ifndef CORE_PERMISSION_REGISTRY_H
 #define CORE_PERMISSION_REGISTRY_H
 
+#include "akashi/service.h"
 #include "akashi_core_export.h"
 
 #include <QHash>
@@ -40,9 +41,12 @@ enum class PermissionVerdict
 
 using PermissionResolver = std::function<PermissionVerdict(const PermissionQuery &)>;
 
-class AKASHI_CORE_EXPORT PermissionRegistry
+class AKASHI_CORE_EXPORT PermissionRegistry : public IService
 {
   public:
+    QString serviceId() const override;
+    ServiceVersion serviceVersion() const override;
+
     bool registerPermission(const PermissionInfo &f_info, const QString &f_owner_id = {});
     void unregisterAllPermissions(const QString &f_owner_id);
     bool isRegistered(const QString &f_permission_id) const;

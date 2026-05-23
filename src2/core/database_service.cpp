@@ -16,6 +16,16 @@ DatabaseService::DatabaseService(const QString &f_data_root, QObject *parent) :
     m_data_root(f_data_root)
 {}
 
+QString DatabaseService::serviceId() const
+{
+    return QStringLiteral("akashi.database");
+}
+
+ServiceVersion DatabaseService::serviceVersion() const
+{
+    return {1, 0, 0};
+}
+
 DatabaseService::~DatabaseService()
 {
     for (const QString &l_name : std::as_const(m_connection_names)) {

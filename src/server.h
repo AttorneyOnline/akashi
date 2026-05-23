@@ -47,6 +47,7 @@ class ArupBroadcaster;
 class CommandRegistry;
 class ConfigStore;
 class DatabaseService;
+class EventBus;
 class FileSystemService;
 class LogService;
 class PacketService;
@@ -278,6 +279,7 @@ class AKASHI_CORE_EXPORT Server : public QObject
      */
     QQueue<QString> areaBuffer(const QString &f_areaName);
     akashi::LogService *logService();
+    akashi::EventBus *eventBus();
     void flushModcallLog(const QString &f_area_name);
 
     /**
@@ -469,6 +471,7 @@ class AKASHI_CORE_EXPORT Server : public QObject
     ServerPublisher *server_publisher;
 
     akashi::LogService *m_log_service = nullptr;
+    akashi::EventBus *m_event_bus = nullptr;
     std::shared_ptr<akashi::WriterText> m_text_writer;
 
 

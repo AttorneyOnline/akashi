@@ -110,6 +110,8 @@ ExitCode ServerContext::start()
 
     m_services = new akashi::ServiceRegistry(this);
     m_services->registerService(std::make_shared<akashi::NetworkService>());
+    m_services->registerService(std::shared_ptr<akashi::ConfigStore>(m_config_store, [](auto *) {}));
+    m_services->registerService(std::shared_ptr<akashi::DatabaseService>(m_database_service, [](auto *) {}));
 
     auto l_packets = std::make_shared<akashi::PacketService>();
     akashi::registerHandshakePackets(l_packets->handlers(), l_packets->codecs());

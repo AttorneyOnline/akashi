@@ -1,6 +1,7 @@
 #ifndef CORE_COMMAND_REGISTRY_H
 #define CORE_COMMAND_REGISTRY_H
 
+#include "akashi/service.h"
 #include "akashi_core_export.h"
 #include "core/command_spec.h"
 
@@ -17,9 +18,12 @@ class CommandContext;
 
 using CommandHandler = std::function<void(CommandContext &)>;
 
-class AKASHI_CORE_EXPORT CommandRegistry
+class AKASHI_CORE_EXPORT CommandRegistry : public IService
 {
   public:
+    QString serviceId() const override;
+    ServiceVersion serviceVersion() const override;
+
     bool registerCommand(const CommandSpec &f_spec, CommandHandler f_handler,
                          const QString &f_owner_id = {});
     void unregisterAll(const QString &f_owner_id);

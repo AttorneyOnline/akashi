@@ -4,6 +4,16 @@
 
 namespace akashi {
 
+QString PermissionRegistry::serviceId() const
+{
+    return QStringLiteral("akashi.permissions");
+}
+
+ServiceVersion PermissionRegistry::serviceVersion() const
+{
+    return {1, 0, 0};
+}
+
 bool PermissionRegistry::registerPermission(const PermissionInfo &f_info, const QString &f_owner_id)
 {
     if (m_permissions.contains(f_info.id)) {

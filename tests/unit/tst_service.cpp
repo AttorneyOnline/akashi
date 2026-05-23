@@ -1,5 +1,10 @@
 // AI-generated: written by Claude.
+#include "akashi/config_store.h"
+#include "akashi/database_service.h"
 #include "akashi/service_registry.h"
+#include "core/command_registry.h"
+#include "core/log_service.h"
+#include "core/permission_registry.h"
 
 #include <QSignalSpy>
 #include <QTest>
@@ -37,6 +42,8 @@ class tst_Service : public QObject
     void versionRangeFiltersFind();
     void unregisterByOwner();
     void signalsFireOnChange();
+    void nonOwningRegistration();
+    void coreServiceIds();
 };
 
 void tst_Service::versionSatisfies_data()
@@ -119,6 +126,38 @@ void tst_Service::signalsFireOnChange()
 
     QCOMPARE(l_registered.count(), 1);
     QCOMPARE(l_unregistered.count(), 1);
+}
+
+void tst_Service::nonOwningRegistration()
+{
+    ServiceRegistry l_registry;
+    auto l_owned = std::make_unique<FakeMusicService>();
+    l_registry.registerService(std::shared_ptr<FakeMusicService>(l_owned.get(), [](auto *) {}));
+
+    auto l_resolved = l_registry.resolve<FakeMusicService>("akashi.music");
+    QVERIFY(l_resolved != nullptr);
+    QCOMPARE(l_resolved->trackCount(), 42);
+    QCOMPARE(l_resolved.get(), l_owned.get());
+
+    l_registry.unregisterService("akashi.music");
+}
+
+void tst_Service::coreServiceIds()
+{
+    ConfigStore l_config(QStringLiteral("."));
+    QCOMPARE(l_config.serviceId(), QStringLiteral("akashi.config"));
+
+    DatabaseService l_database;
+    QCOMPARE(l_database.serviceId(), QStringLiteral("akashi.database"));
+
+    CommandRegistry l_commands;
+    QCOMPARE(l_commands.serviceId(), QStringLiteral("akashi.commands"));
+
+    PermissionRegistry l_permissions;
+    QCOMPARE(l_permissions.serviceId(), QStringLiteral("akashi.permissions"));
+
+    LogService l_log(nullptr);
+    QCOMPARE(l_log.serviceId(), QStringLiteral("akashi.log"));
 }
 
 }

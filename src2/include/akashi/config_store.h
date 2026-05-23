@@ -2,6 +2,7 @@
 #define AKASHI_CONFIG_STORE_H
 
 #include "akashi/config_entry.h"
+#include "akashi/service.h"
 #include "akashi_core_export.h"
 
 #include <QHash>
@@ -14,12 +15,15 @@ namespace akashi {
 class SettingNotifier;
 
 // Owns the configuration files. Plugins get their own file through declarePlugin().
-class AKASHI_CORE_EXPORT ConfigStore : public QObject
+class AKASHI_CORE_EXPORT ConfigStore : public QObject, public IService
 {
     Q_OBJECT
 
   public:
     explicit ConfigStore(const QString &f_root = resolveRootPath(), QObject *parent = nullptr);
+
+    QString serviceId() const override;
+    ServiceVersion serviceVersion() const override;
 
     // The folder all config files live in.
     QString rootPath() const;

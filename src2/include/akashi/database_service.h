@@ -1,6 +1,7 @@
 #ifndef AKASHI_DATABASE_SERVICE_H
 #define AKASHI_DATABASE_SERVICE_H
 
+#include "akashi/service.h"
 #include "akashi_core_export.h"
 
 #include <QDateTime>
@@ -14,13 +15,16 @@ class QTimer;
 namespace akashi {
 
 // Owns the database connections. Plugins get their own file through pluginDatabase().
-class AKASHI_CORE_EXPORT DatabaseService : public QObject
+class AKASHI_CORE_EXPORT DatabaseService : public QObject, public IService
 {
     Q_OBJECT
 
   public:
     explicit DatabaseService(const QString &f_data_root = QStringLiteral("data"), QObject *parent = nullptr);
     ~DatabaseService();
+
+    QString serviceId() const override;
+    ServiceVersion serviceVersion() const override;
 
     // Opens the server database, copying a database from the legacy location first if needed.
     bool open(const QString &f_legacy_path = QString());

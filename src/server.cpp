@@ -21,6 +21,7 @@
 #include "akashi/database_service.h"
 #include "akashi/filesystem_service.h"
 #include "akashi/service_registry.h"
+#include "core/event_bus.h"
 #include "aoclient.h"
 #include "area_data.h"
 #include "commands/area_commands.h"
@@ -104,6 +105,7 @@ Server::Server(int p_ws_port, akashi::ConfigStore *f_config_store, akashi::Datab
 
     m_permission_registry = new akashi::PermissionRegistry;
     m_command_registry = new akashi::CommandRegistry;
+    m_event_bus = new akashi::EventBus;
 
     // We create it, even if its not used later on.
     discord = new Discord(m_discord_settings, this);
@@ -120,6 +122,11 @@ Server::Server(int p_ws_port, akashi::ConfigStore *f_config_store, akashi::Datab
     }
     m_text_writer = std::make_shared<akashi::WriterText>(l_writer_mode, m_log_service);
     m_log_service->registerWriter(m_text_writer, QStringLiteral("core"));
+
+    m_services->registerService(std::shared_ptr<akashi::CommandRegistry>(m_command_registry, [](auto *) {}));
+    m_services->registerService(std::shared_ptr<akashi::PermissionRegistry>(m_permission_registry, [](auto *) {}));
+    m_services->registerService(std::shared_ptr<akashi::LogService>(m_log_service, [](auto *) {}));
+    m_services->registerService(std::shared_ptr<akashi::EventBus>(m_event_bus, [](auto *) {}));
 }
 
 ExitCode Server::start()
@@ -740,6 +747,11 @@ akashi::LogService *Server::logService()
     return m_log_service;
 }
 
+akashi::EventBus *Server::eventBus()
+{
+    return m_event_bus;
+}
+
 void Server::flushModcallLog(const QString &f_area_name)
 {
     if (loggingMode() == QStringLiteral("modcall") && m_text_writer) {
@@ -940,6 +952,7 @@ Server::~Server()
     delete m_filesystem;
     delete m_command_registry;
     delete m_permission_registry;
+    delete m_event_bus;
     delete m_server_settings;
     delete m_discord_settings;
 }
