@@ -51,6 +51,7 @@ class EventBus;
 class FileSystemService;
 class LogService;
 class PacketService;
+class TextFilterRegistry;
 class WriterText;
 class PermissionRegistry;
 class ServiceRegistry;
@@ -382,6 +383,8 @@ class AKASHI_CORE_EXPORT Server : public QObject
 
     akashi::PermissionRegistry *permissionRegistry();
 
+    akashi::TextFilterRegistry *textFilterRegistry();
+
     akashi::ConfigStore *configStore();
     ServerSettings *serverSettings();
     QString configPath(const QString &f_file) const;
@@ -475,6 +478,7 @@ class AKASHI_CORE_EXPORT Server : public QObject
     akashi::ArupBroadcaster *m_arup_broadcaster = nullptr;
     akashi::CommandRegistry *m_command_registry = nullptr;
     akashi::PermissionRegistry *m_permission_registry = nullptr;
+    akashi::TextFilterRegistry *m_text_filter_registry = nullptr;
 
     PlayerStateObserver m_player_state_observer;
 

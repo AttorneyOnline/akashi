@@ -653,7 +653,7 @@ bool AOClient::selectCharacter(int f_char_id)
 
 bool AOClient::canUseOocChat() const
 {
-    return !m_session->hasSanction(akashi::Sanction::OocMute);
+    return !m_session->hasSanction(akashi::Sanction::OocMuted);
 }
 
 QString AOClient::oocName() const
@@ -753,37 +753,17 @@ void AOClient::setCasingPreferences(const QList<bool> &f_preferences)
 
 bool AOClient::canUseIcChat() const
 {
-    return !m_session->hasSanction(akashi::Sanction::Mute);
+    return !m_session->hasSanction(akashi::Sanction::Muted);
 }
 
-bool AOClient::isMuted() const
+bool AOClient::hasSanction(const QString &f_id) const
 {
-    return m_session->hasSanction(akashi::Sanction::Mute);
+    return m_session->hasSanction(f_id);
 }
 
-void AOClient::setMuted(bool f_muted)
+void AOClient::setSanction(const QString &f_id, bool f_active)
 {
-    m_session->setSanction(akashi::Sanction::Mute, f_muted);
-}
-
-bool AOClient::isOocMuted() const
-{
-    return m_session->hasSanction(akashi::Sanction::OocMute);
-}
-
-void AOClient::setOocMuted(bool f_ooc_muted)
-{
-    m_session->setSanction(akashi::Sanction::OocMute, f_ooc_muted);
-}
-
-void AOClient::setDjBlocked(bool f_dj_blocked)
-{
-    m_session->setSanction(akashi::Sanction::DjBlock, f_dj_blocked);
-}
-
-void AOClient::setWtceBlocked(bool f_wtce_blocked)
-{
-    m_session->setSanction(akashi::Sanction::WtceBlock, f_wtce_blocked);
+    m_session->setSanction(f_id, f_active);
 }
 
 int AOClient::characterId() const
@@ -870,60 +850,17 @@ void AOClient::updatePosition(const QString &f_position)
     }
 }
 
-QString AOClient::gimpText()
+QSet<QString> AOClient::activeFilterIds() const
 {
-    return m_server->gimpList().at(genRand(1, m_server->gimpList().size() - 1));
+    QSet<QString> l_ids = m_session->sanctions;
+    if (m_server->areaById(areaId())->isMedievalMode())
+        l_ids.insert(akashi::Sanction::Medieval);
+    return l_ids;
 }
 
-QString AOClient::medievalText(const QString &f_text)
+akashi::TextFilterRegistry *AOClient::filterRegistry() const
 {
-    QString l_text = f_text;
-    return m_server->medievalParser()->degrootify(l_text);
-}
-
-bool AOClient::isGimped() const
-{
-    return m_session->hasSanction(akashi::Sanction::Gimp);
-}
-
-bool AOClient::isMedieval() const
-{
-    return player()->medieval;
-}
-
-bool AOClient::isMedievalArea() const
-{
-    return m_server->areaById(areaId())->isMedievalMode();
-}
-
-bool AOClient::isShaken() const
-{
-    return m_session->hasSanction(akashi::Sanction::Shake);
-}
-
-bool AOClient::isDisemvoweled() const
-{
-    return m_session->hasSanction(akashi::Sanction::Disemvowel);
-}
-
-void AOClient::setGimped(bool f_gimped)
-{
-    m_session->setSanction(akashi::Sanction::Gimp, f_gimped);
-}
-
-void AOClient::setMedieval(bool f_medieval)
-{
-    player()->medieval = f_medieval;
-}
-
-void AOClient::setShaken(bool f_shaken)
-{
-    m_session->setSanction(akashi::Sanction::Shake, f_shaken);
-}
-
-void AOClient::setDisemvoweled(bool f_disemvoweled)
-{
-    m_session->setSanction(akashi::Sanction::Disemvowel, f_disemvoweled);
+    return m_server->textFilterRegistry();
 }
 
 bool AOClient::isAfk() const
@@ -1326,7 +1263,7 @@ bool AOClient::hasSong(const QString &f_name) const
 
 bool AOClient::isDjBlocked() const
 {
-    return m_session->hasSanction(akashi::Sanction::DjBlock);
+    return m_session->hasSanction(akashi::Sanction::DjBlocked);
 }
 
 bool AOClient::isMusicAllowed() const
@@ -1370,7 +1307,7 @@ void AOClient::recordMusicChange(const QString &f_song)
 
 bool AOClient::isWtceBlocked() const
 {
-    return m_session->hasSanction(akashi::Sanction::WtceBlock);
+    return m_session->hasSanction(akashi::Sanction::WtceBlocked);
 }
 
 bool AOClient::isWtceAllowed() const

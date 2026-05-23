@@ -1,12 +1,11 @@
 #include "proto/ic.h"
 
+#include "core/text_filter_registry.h"
 #include "proto/ao2_protocol.h"
 #include "proto/packet_registry.h"
 #include "proto/text_utils.h"
 
 #include <QRegularExpression>
-
-#include <random>
 
 namespace akashi {
 
@@ -183,33 +182,10 @@ class IcHandler : public PacketHandler
         }
         f_context.setLastIcMessage(l_text);
 
-        // The text filter chain, in a load-bearing order. M9 replaces this
-        // whole block with a TextFilterRegistry walk: each effect becomes a
-        // registered (text -> verdict) function and the per-client bool getters
-        // below collapse into isFilterActive(id), so plugins can add their own
-        // manglers with no core field. See the roadmap PR 9.5 / decision log.
-        const QStringList l_filters = f_context.wordFilters();
-        for (const QString &l_filter : l_filters) {
-            QRegularExpression l_pattern(l_filter, QRegularExpression::CaseInsensitiveOption);
-            l_text.replace(l_pattern, "❌");
-        }
-        if (f_context.isGimped()) {
-            l_text = f_context.gimpText();
-        }
-        if (f_context.isMedieval() || f_context.isMedievalArea()) {
-            l_text = f_context.medievalText(l_text);
-        }
-        if (f_context.isShaken()) {
-            QStringList l_words = l_text.split(" ");
-            std::random_device l_rng;
-            std::mt19937 l_urng(l_rng());
-            std::shuffle(l_words.begin(), l_words.end(), l_urng);
-            l_text = l_words.join(" ");
-        }
-        if (f_context.isDisemvoweled()) {
-            l_text = l_text.remove(QRegularExpression("[AEIOUaeiou]"));
-        }
-        l_ic.message_text = l_text;
+        auto l_filtered = f_context.filterRegistry()->apply(l_text, f_context.activeFilterIds());
+        if (!l_filtered)
+            return;
+        l_ic.message_text = *l_filtered;
 
         // Side; the area's own side wins when it has one.
         const QString l_requested_side = l_ic.side;

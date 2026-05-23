@@ -41,6 +41,7 @@ enum class DisconnectKind;
 class ClientSession;
 class ITransport;
 class PlayerState;
+class TextFilterRegistry;
 struct PacketSpec;
 }
 
@@ -138,19 +139,8 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     int areaId() const;
     void setAreaId(const int f_area_id);
 
-    // Timed moderation sanctions, toggled by the moderation commands and
-    // read by the chat/music/judge packet handlers. Per-session today; a
-    // persistent sanction store backs these in M6. The isDjBlocked() and
-    // isWtceBlocked() getters live with the packet-context overrides below.
-    bool isMuted() const;
-    void setMuted(bool f_muted);
-
-    bool isOocMuted() const;
-    void setOocMuted(bool f_ooc_muted);
-
-    void setDjBlocked(bool f_dj_blocked);
-
-    void setWtceBlocked(bool f_wtce_blocked);
+    bool hasSanction(const QString &f_id) const;
+    void setSanction(const QString &f_id, bool f_active);
 
     /**
      * @brief Checks if the client's ACL role has permission for the given permission.
@@ -380,17 +370,8 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     QString lastIcMessage() const override;
     void setLastIcMessage(const QString &f_message) override;
     void updatePosition(const QString &f_position) override;
-    QString gimpText() override;
-    QString medievalText(const QString &f_text) override;
-    bool isGimped() const override;
-    bool isMedieval() const override;
-    bool isMedievalArea() const override;
-    bool isShaken() const override;
-    bool isDisemvoweled() const override;
-    void setGimped(bool f_gimped);
-    void setMedieval(bool f_medieval);
-    void setShaken(bool f_shaken);
-    void setDisemvoweled(bool f_disemvoweled);
+    QSet<QString> activeFilterIds() const override;
+    akashi::TextFilterRegistry *filterRegistry() const override;
 
     bool isAfk() const;
     void setAfk(bool f_afk);

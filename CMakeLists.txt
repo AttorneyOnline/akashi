@@ -84,6 +84,8 @@ set(AKASHI_SOURCES
   src2/core/command_spec.h
   src2/core/permission_registry.cpp
   src2/core/permission_registry.h
+  src2/core/text_filter_registry.cpp
+  src2/core/text_filter_registry.h
   src2/core/mmdb_reader.cpp
   src2/core/mmdb_reader.h
   src2/core/player_state.cpp
@@ -130,6 +132,7 @@ set(AKASHI_SOURCES
   src2/include/akashi/jukebox_policy.h
   src2/include/akashi/network_service.h
   src2/include/akashi/service.h
+  src2/include/akashi/text_filter.h
   src2/include/akashi/service_registry.h
   src2/include/akashi/settings.h
   src2/proto/ao2_protocol.h

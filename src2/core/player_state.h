@@ -64,9 +64,6 @@ class AKASHI_CORE_EXPORT PlayerState : public QObject
     // The character's last IC line, for doublepost detection.
     QString last_message;
 
-    // A per-character medieval-speak curse (the area can also force it).
-    bool medieval = false;
-
   Q_SIGNALS:
     void nameChanged(const QString &f_name);
     void characterChanged(const QString &f_character);

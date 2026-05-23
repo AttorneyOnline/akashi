@@ -24,7 +24,7 @@ static void handlePlay(CommandContext &f_context)
 {
     QString l_song = f_context.arguments().join(" ");
     AOClient *l_self = f_context.server()->clientById(f_context.clientId());
-    if (l_self->isDjBlocked()) {
+    if (l_self->hasSanction(akashi::sanction::dj_blocked)) {
         f_context.reply("You are blocked from changing the music.");
         return;
     }
@@ -54,7 +54,7 @@ static void handlePlay(CommandContext &f_context)
 static void handlePlayAmbience(CommandContext &f_context)
 {
     AOClient *l_self = f_context.server()->clientById(f_context.clientId());
-    if (l_self->isDjBlocked()) {
+    if (l_self->hasSanction(akashi::sanction::dj_blocked)) {
         f_context.reply("You are blocked from changing the ambience.");
         return;
     }

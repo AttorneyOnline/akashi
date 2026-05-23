@@ -2,6 +2,7 @@
 #ifndef TESTS_FAKE_PACKET_CONTEXT_H
 #define TESTS_FAKE_PACKET_CONTEXT_H
 
+#include "core/text_filter_registry.h"
 #include "proto/packet_context.h"
 
 #include <QHash>
@@ -171,11 +172,8 @@ class FakeContext : public akashi::IPacketContext
     QString flipping;
     QString last_ic_message;
     QString position;
-    bool gimped = false;
-    bool medieval = false;
-    bool medieval_area = false;
-    bool shaken = false;
-    bool disemvoweled = false;
+    QSet<QString> active_filter_ids;
+    akashi::TextFilterRegistry *text_filter_registry = nullptr;
     bool ic_message_allowed = true;
     bool area_act_allowed = true;
     bool iniswap_allowed = true;
@@ -216,13 +214,8 @@ class FakeContext : public akashi::IPacketContext
         calls.append("updatePosition");
     }
 
-    QString gimpText() override { return "I am a heinous criminal."; }
-    QString medievalText(const QString &f_text) override { return "Ye olde " + f_text; }
-    bool isGimped() const override { return gimped; }
-    bool isMedieval() const override { return medieval; }
-    bool isMedievalArea() const override { return medieval_area; }
-    bool isShaken() const override { return shaken; }
-    bool isDisemvoweled() const override { return disemvoweled; }
+    QSet<QString> activeFilterIds() const override { return active_filter_ids; }
+    akashi::TextFilterRegistry *filterRegistry() const override { return text_filter_registry; }
     bool isIcMessageAllowed() const override { return ic_message_allowed; }
     bool canActInArea() override { return area_act_allowed; }
     bool isIniswapAllowed() const override { return iniswap_allowed; }

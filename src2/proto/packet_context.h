@@ -7,6 +7,7 @@
 #include "proto/packet.h"
 
 #include <QDateTime>
+#include <QSet>
 #include <QString>
 #include <QStringList>
 #include <QUrl>
@@ -14,6 +15,8 @@
 #include <optional>
 
 namespace akashi {
+
+class TextFilterRegistry;
 
 // A ban entry as a handler needs it to tell the client.
 struct BanRecord
@@ -129,14 +132,8 @@ class AKASHI_CORE_EXPORT IPacketContext
     virtual QString lastIcMessage() const = 0;
     virtual void setLastIcMessage(const QString &f_message) = 0;
     virtual void updatePosition(const QString &f_position) = 0;
-    virtual QString gimpText() = 0;
-    virtual QString medievalText(const QString &f_text) = 0;
-    virtual bool isGimped() const = 0;
-    // The client's own medieval curse; the whole area can also be medieval.
-    virtual bool isMedieval() const = 0;
-    virtual bool isMedievalArea() const = 0;
-    virtual bool isShaken() const = 0;
-    virtual bool isDisemvoweled() const = 0;
+    virtual QSet<QString> activeFilterIds() const = 0;
+    virtual TextFilterRegistry *filterRegistry() const = 0;
 
     // In-character chat: the area's rules and state.
     virtual bool isIcMessageAllowed() const = 0;

@@ -47,8 +47,12 @@
 #include "proto/packet.h"
 #include "proto/packet_service.h"
 #include "serverpublisher.h"
+#include "core/text_filter_registry.h"
 #include "world/arup_broadcaster.h"
 #include "world/jukebox.h"
+
+#include <QRandomGenerator>
+#include <QRegularExpression>
 
 Server::Server(int p_ws_port, akashi::ConfigStore *f_config_store, akashi::DatabaseService *f_database, akashi::ServiceRegistry *f_services, QObject *parent) :
     QObject(parent),
@@ -106,6 +110,39 @@ Server::Server(int p_ws_port, akashi::ConfigStore *f_config_store, akashi::Datab
     m_permission_registry = new akashi::PermissionRegistry;
     m_command_registry = new akashi::CommandRegistry;
     m_event_bus = new akashi::EventBus;
+    m_text_filter_registry = new akashi::TextFilterRegistry;
+
+    m_text_filter_registry->registerFilter(QStringLiteral("word-filter"), 100,
+        [this](const QString &f_text) -> std::optional<QString> {
+            QString l_result = f_text;
+            for (const QString &l_pattern : filterList())
+                l_result.replace(QRegularExpression(l_pattern, QRegularExpression::CaseInsensitiveOption),
+                                 QStringLiteral("❌"));
+            return l_result;
+        }, true, QStringLiteral("core"));
+
+    m_text_filter_registry->registerFilter(QStringLiteral("gimped"), 200,
+        [this](const QString &) -> std::optional<QString> {
+            const auto &l_list = gimpList();
+            return l_list.at(QRandomGenerator::global()->bounded(l_list.size()));
+        }, false, QStringLiteral("core"));
+
+    m_text_filter_registry->registerFilter(QStringLiteral("medieval"), 300,
+        [this](const QString &f_text) -> std::optional<QString> {
+            return medievalParser()->degrootify(f_text);
+        }, false, QStringLiteral("core"));
+
+    m_text_filter_registry->registerFilter(QStringLiteral("shaken"), 400,
+        [](const QString &f_text) -> std::optional<QString> {
+            QStringList l_words = f_text.split(QStringLiteral(" "));
+            std::shuffle(l_words.begin(), l_words.end(), *QRandomGenerator::global());
+            return l_words.join(QStringLiteral(" "));
+        }, false, QStringLiteral("core"));
+
+    m_text_filter_registry->registerFilter(QStringLiteral("disemvoweled"), 500,
+        [](const QString &f_text) -> std::optional<QString> {
+            return QString(f_text).remove(QRegularExpression(QStringLiteral("[AEIOUaeiou]")));
+        }, false, QStringLiteral("core"));
 
     discord = new Discord(m_discord_settings, m_event_bus,
         [this](const QString &area) -> QString {
@@ -133,6 +170,7 @@ Server::Server(int p_ws_port, akashi::ConfigStore *f_config_store, akashi::Datab
     m_services->registerService(std::shared_ptr<akashi::PermissionRegistry>(m_permission_registry, [](auto *) {}));
     m_services->registerService(std::shared_ptr<akashi::LogService>(m_log_service, [](auto *) {}));
     m_services->registerService(std::shared_ptr<akashi::EventBus>(m_event_bus, [](auto *) {}));
+    m_services->registerService(std::shared_ptr<akashi::TextFilterRegistry>(m_text_filter_registry, [](auto *) {}));
 }
 
 ExitCode Server::start()
@@ -534,6 +572,11 @@ akashi::CommandRegistry *Server::commandRegistry()
 akashi::PermissionRegistry *Server::permissionRegistry()
 {
     return m_permission_registry;
+}
+
+akashi::TextFilterRegistry *Server::textFilterRegistry()
+{
+    return m_text_filter_registry;
 }
 
 void Server::reloadSettings()

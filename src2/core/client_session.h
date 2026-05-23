@@ -152,13 +152,14 @@ class AKASHI_CORE_EXPORT ClientSession : public QObject
 
 // The ids of the built-in sanctions. Plugins register their own alongside.
 namespace Sanction {
-inline const QString Mute = QStringLiteral("mute");
-inline const QString OocMute = QStringLiteral("ooc_mute");
-inline const QString DjBlock = QStringLiteral("dj_block");
-inline const QString WtceBlock = QStringLiteral("wtce_block");
-inline const QString Gimp = QStringLiteral("gimp");
-inline const QString Shake = QStringLiteral("shake");
-inline const QString Disemvowel = QStringLiteral("disemvowel");
+inline const QString Muted = QStringLiteral("muted");
+inline const QString OocMuted = QStringLiteral("ooc_muted");
+inline const QString DjBlocked = QStringLiteral("dj_blocked");
+inline const QString WtceBlocked = QStringLiteral("wtce_blocked");
+inline const QString Gimped = QStringLiteral("gimped");
+inline const QString Shaken = QStringLiteral("shaken");
+inline const QString Disemvoweled = QStringLiteral("disemvoweled");
+inline const QString Medieval = QStringLiteral("medieval");
 inline const QString CharCurse = QStringLiteral("charcurse");
 } // namespace Sanction
 

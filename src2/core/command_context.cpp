@@ -27,27 +27,12 @@ void TargetPlayer::reply(const QString &f_message)
 
 bool TargetPlayer::hasSanction(const QString &f_sanction_id) const
 {
-    if (f_sanction_id == sanction::muted) return m_client->isMuted();
-    if (f_sanction_id == sanction::ooc_muted) return m_client->isOocMuted();
-    if (f_sanction_id == sanction::dj_blocked) return m_client->isDjBlocked();
-    if (f_sanction_id == sanction::wtce_blocked) return m_client->isWtceBlocked();
-    if (f_sanction_id == sanction::gimped) return m_client->isGimped();
-    if (f_sanction_id == sanction::disemvoweled) return m_client->isDisemvoweled();
-    if (f_sanction_id == sanction::shaken) return m_client->isShaken();
-    if (f_sanction_id == sanction::medieval) return m_client->isMedieval();
-    return false;
+    return m_client->hasSanction(f_sanction_id);
 }
 
 void TargetPlayer::setSanction(const QString &f_sanction_id, bool f_active)
 {
-    if (f_sanction_id == sanction::muted) m_client->setMuted(f_active);
-    else if (f_sanction_id == sanction::ooc_muted) m_client->setOocMuted(f_active);
-    else if (f_sanction_id == sanction::dj_blocked) m_client->setDjBlocked(f_active);
-    else if (f_sanction_id == sanction::wtce_blocked) m_client->setWtceBlocked(f_active);
-    else if (f_sanction_id == sanction::gimped) m_client->setGimped(f_active);
-    else if (f_sanction_id == sanction::disemvoweled) m_client->setDisemvoweled(f_active);
-    else if (f_sanction_id == sanction::shaken) m_client->setShaken(f_active);
-    else if (f_sanction_id == sanction::medieval) m_client->setMedieval(f_active);
+    m_client->setSanction(f_sanction_id, f_active);
 }
 
 void TargetPlayer::changeArea(int f_area_id)
