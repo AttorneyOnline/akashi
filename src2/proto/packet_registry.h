@@ -10,6 +10,8 @@
 #include <memory>
 #include <optional>
 
+class QThread;
+
 namespace akashi {
 
 // Holds the handler for each packet header. One instance per server,
@@ -17,6 +19,8 @@ namespace akashi {
 class AKASHI_CORE_EXPORT PacketRegistry
 {
   public:
+    PacketRegistry();
+
     // Registers a handler for the spec's header. Fails if the header is taken.
     bool registerHandler(const PacketSpec &f_spec, std::shared_ptr<PacketHandler> f_handler,
                          const QString &f_owner_id = QString());
@@ -36,6 +40,7 @@ class AKASHI_CORE_EXPORT PacketRegistry
     };
 
     QHash<QString, Entry> m_entries;
+    QThread *m_owner_thread;
 };
 
 } // namespace akashi

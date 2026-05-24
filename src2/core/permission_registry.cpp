@@ -1,8 +1,14 @@
 #include "core/permission_registry.h"
 
+#include "core/thread_assert.h"
+
 #include <algorithm>
 
 namespace akashi {
+
+PermissionRegistry::PermissionRegistry() :
+    m_owner_thread(QThread::currentThread())
+{}
 
 QString PermissionRegistry::serviceId() const
 {
@@ -16,6 +22,7 @@ ServiceVersion PermissionRegistry::serviceVersion() const
 
 bool PermissionRegistry::registerPermission(const PermissionInfo &f_info, const QString &f_owner_id)
 {
+    AKASHI_ASSERT_OWNER_THREAD();
     if (m_permissions.contains(f_info.id)) {
         return false;
     }
@@ -25,6 +32,7 @@ bool PermissionRegistry::registerPermission(const PermissionInfo &f_info, const 
 
 void PermissionRegistry::unregisterAllPermissions(const QString &f_owner_id)
 {
+    AKASHI_ASSERT_OWNER_THREAD();
     auto it = m_permissions.begin();
     while (it != m_permissions.end()) {
         if (it->owner_id == f_owner_id) {
@@ -38,11 +46,13 @@ void PermissionRegistry::unregisterAllPermissions(const QString &f_owner_id)
 
 bool PermissionRegistry::isRegistered(const QString &f_permission_id) const
 {
+    AKASHI_ASSERT_OWNER_THREAD();
     return m_permissions.contains(f_permission_id);
 }
 
 QList<PermissionInfo> PermissionRegistry::permissions() const
 {
+    AKASHI_ASSERT_OWNER_THREAD();
     QList<PermissionInfo> l_result;
     l_result.reserve(m_permissions.size());
     for (const auto &l_entry : m_permissions) {
@@ -53,6 +63,7 @@ QList<PermissionInfo> PermissionRegistry::permissions() const
 
 QList<PermissionInfo> PermissionRegistry::permissionsByCategory(const QString &f_category) const
 {
+    AKASHI_ASSERT_OWNER_THREAD();
     QList<PermissionInfo> l_result;
     for (const auto &l_entry : m_permissions) {
         if (l_entry.info.category == f_category) {
@@ -64,6 +75,7 @@ QList<PermissionInfo> PermissionRegistry::permissionsByCategory(const QString &f
 
 std::optional<PermissionInfo> PermissionRegistry::permissionById(const QString &f_permission_id) const
 {
+    AKASHI_ASSERT_OWNER_THREAD();
     if (auto it = m_permissions.constFind(f_permission_id); it != m_permissions.constEnd()) {
         return it->info;
     }
@@ -73,6 +85,7 @@ std::optional<PermissionInfo> PermissionRegistry::permissionById(const QString &
 bool PermissionRegistry::registerResolver(const QString &f_resolver_id, int f_priority,
                                           PermissionResolver f_resolver, const QString &f_owner_id)
 {
+    AKASHI_ASSERT_OWNER_THREAD();
     for (const auto &l_entry : m_resolvers) {
         if (l_entry.resolver_id == f_resolver_id) {
             return false;
@@ -89,6 +102,7 @@ bool PermissionRegistry::registerResolver(const QString &f_resolver_id, int f_pr
 
 void PermissionRegistry::unregisterAllResolvers(const QString &f_owner_id)
 {
+    AKASHI_ASSERT_OWNER_THREAD();
     m_resolvers.removeIf([&f_owner_id](const ResolverEntry &e) {
         return e.owner_id == f_owner_id;
     });
@@ -96,6 +110,7 @@ void PermissionRegistry::unregisterAllResolvers(const QString &f_owner_id)
 
 bool PermissionRegistry::resolve(const PermissionQuery &f_query) const
 {
+    AKASHI_ASSERT_OWNER_THREAD();
     for (const auto &l_entry : m_resolvers) {
         PermissionVerdict l_verdict = l_entry.resolver(f_query);
         if (l_verdict == PermissionVerdict::Granted) {

@@ -36,8 +36,11 @@ class AKASHI_CORE_EXPORT ConfigStore : public QObject, public IService
     // Returns false if a declared setting has an unusable value.
     bool declare(const QString &f_name, const QList<ConfigEntry> &f_entries);
 
-    // Declares the settings of a plugin, stored as plugins/<id>.json.
-    bool declarePlugin(const QString &f_plugin_id, const QList<ConfigEntry> &f_entries);
+    // Declares the settings of a plugin. The format name selects the file
+    // extension and parser (default "json"). Other formats like "toml" must
+    // be registered first by an integration plugin.
+    bool declarePlugin(const QString &f_plugin_id, const QList<ConfigEntry> &f_entries,
+                       const QString &f_format = QStringLiteral("json"));
 
     // The checked value of a declared setting, with the default filled in.
     QVariant value(const QString &f_name, const QString &f_key) const;
@@ -52,8 +55,20 @@ class AKASHI_CORE_EXPORT ConfigStore : public QObject, public IService
         return value(f_name, f_key).value<T>();
     }
 
+    // Registers a named config format backed by a QSettings::Format handle.
+    // JSON is pre-registered as "json". An integration plugin (e.g. toml-support)
+    // calls this to make its format available to other plugins.
+    void registerFormat(const QString &f_name, QSettings::Format f_format,
+                        const QString &f_owner = {});
+
+    void unregisterFormat(const QString &f_name);
+
+    // Records that a file should use the given format. Called internally by
+    // declarePlugin; exposed for plugins that use the Settings wrapper class.
+    void registerFileFormat(const QString &f_name, const QString &f_format);
+
     // Raw settings for files with free-form keys, like areas.json. Owned by the store.
-    // A leftover <name>.ini is converted to <name>.json once, if the JSON file does not exist yet.
+    // A leftover <name>.ini is converted to the file's format once if the target does not exist yet.
     QSettings *settings(const QString &f_name);
 
     // Markdown reference for a declared file, generated from the declarations.
@@ -76,15 +91,24 @@ class AKASHI_CORE_EXPORT ConfigStore : public QObject, public IService
     void valueChanged(const QString &f_name, const QString &f_key, const QVariant &f_old, const QVariant &f_new);
 
   private:
-    void migrateIniFile(const QString &f_name);
+    void migrateIniFile(const QString &f_name, const QString &f_extension);
     bool loadDeclaredValues(const QString &f_name);
     const ConfigEntry *findEntry(const QString &f_name, const QString &f_key) const;
+    QString formatExtension(const QString &f_name) const;
 
     QString m_root;
     QHash<QString, QSettings *> m_open_settings;
     QHash<QString, QList<ConfigEntry>> m_entries;
     QHash<QString, QHash<QString, QVariant>> m_values;
     QHash<QPair<QString, QString>, SettingNotifier *> m_notifiers;
+
+    struct FormatEntry
+    {
+        QSettings::Format format;
+        QString owner;
+    };
+    QHash<QString, FormatEntry> m_formats;
+    QHash<QString, QString> m_file_formats;
 };
 
 } // namespace akashi

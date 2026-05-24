@@ -52,6 +52,7 @@ class FileSystemService;
 class LogService;
 class PacketService;
 class TextFilterRegistry;
+class WriterSql;
 class WriterText;
 class PermissionRegistry;
 class ServiceRegistry;
@@ -446,6 +447,7 @@ class AKASHI_CORE_EXPORT Server : public QObject
     akashi::LogService *m_log_service = nullptr;
     akashi::EventBus *m_event_bus = nullptr;
     std::shared_ptr<akashi::WriterText> m_text_writer;
+    std::shared_ptr<akashi::WriterSql> m_sql_writer;
 
 
     akashi::ConfigStore *m_config_store = nullptr;

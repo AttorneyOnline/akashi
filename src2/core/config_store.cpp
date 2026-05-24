@@ -50,7 +50,10 @@ static bool convertValue(const QVariant &f_raw, int f_type_id, QVariant &f_out)
 ConfigStore::ConfigStore(const QString &f_root, QObject *parent) :
     QObject(parent),
     m_root(f_root)
-{}
+{
+    m_formats.insert(QStringLiteral("json"),
+                     {JsonSettings::format(), QStringLiteral("core")});
+}
 
 QString ConfigStore::serviceId() const
 {
@@ -79,10 +82,13 @@ bool ConfigStore::declare(const QString &f_name, const QList<ConfigEntry> &f_ent
     return loadDeclaredValues(f_name);
 }
 
-bool ConfigStore::declarePlugin(const QString &f_plugin_id, const QList<ConfigEntry> &f_entries)
+bool ConfigStore::declarePlugin(const QString &f_plugin_id, const QList<ConfigEntry> &f_entries,
+                                const QString &f_format)
 {
     QDir(m_root).mkpath("plugins");
-    return declare("plugins/" + f_plugin_id, f_entries);
+    const QString l_name = "plugins/" + f_plugin_id;
+    m_file_formats.insert(l_name, f_format);
+    return declare(l_name, f_entries);
 }
 
 QVariant ConfigStore::value(const QString &f_name, const QString &f_key) const
@@ -103,6 +109,22 @@ void ConfigStore::setValue(const QString &f_name, const QString &f_key, const QV
     }
 }
 
+void ConfigStore::registerFormat(const QString &f_name, QSettings::Format f_format,
+                                 const QString &f_owner)
+{
+    m_formats.insert(f_name, {f_format, f_owner});
+}
+
+void ConfigStore::unregisterFormat(const QString &f_name)
+{
+    m_formats.remove(f_name);
+}
+
+void ConfigStore::registerFileFormat(const QString &f_name, const QString &f_format)
+{
+    m_file_formats.insert(f_name, f_format);
+}
+
 QSettings *ConfigStore::settings(const QString &f_name)
 {
     QSettings *l_settings = m_open_settings.value(f_name);
@@ -110,10 +132,25 @@ QSettings *ConfigStore::settings(const QString &f_name)
         return l_settings;
     }
 
-    migrateIniFile(f_name);
-    l_settings = new QSettings(filePath(f_name + ".json"), JsonSettings::format(), this);
+    QString l_ext = formatExtension(f_name);
+    auto l_it = m_formats.constFind(l_ext);
+    if (l_it == m_formats.constEnd()) {
+        qCritical() << "ConfigStore: unknown format" << l_ext
+                     << "for" << f_name << "- falling back to JSON";
+        l_ext = QStringLiteral("json");
+        l_it = m_formats.constFind(l_ext);
+    }
+
+    migrateIniFile(f_name, l_ext);
+    l_settings = new QSettings(filePath(f_name + "." + l_ext),
+                               l_it->format, this);
     m_open_settings.insert(f_name, l_settings);
     return l_settings;
+}
+
+QString ConfigStore::formatExtension(const QString &f_name) const
+{
+    return m_file_formats.value(f_name, QStringLiteral("json"));
 }
 
 QString ConfigStore::documentation(const QString &f_name) const
@@ -181,20 +218,24 @@ QString ConfigStore::resolveRootPath()
     return QStringLiteral("config");
 }
 
-void ConfigStore::migrateIniFile(const QString &f_name)
+void ConfigStore::migrateIniFile(const QString &f_name, const QString &f_extension)
 {
-    const QString l_json_path = filePath(f_name + ".json");
+    const QString l_target_path = filePath(f_name + "." + f_extension);
     const QString l_ini_path = filePath(f_name + ".ini");
-    if (QFileInfo::exists(l_json_path) || !QFileInfo::exists(l_ini_path)) {
+    if (QFileInfo::exists(l_target_path) || !QFileInfo::exists(l_ini_path)) {
+        return;
+    }
+
+    auto l_it = m_formats.constFind(f_extension);
+    if (l_it == m_formats.constEnd()) {
         return;
     }
 
     QSettings l_ini(l_ini_path, QSettings::IniFormat);
-    QSettings l_json(l_json_path, JsonSettings::format());
+    QSettings l_target(l_target_path, l_it->format);
     const QStringList l_keys = l_ini.allKeys();
     for (const QString &l_key : l_keys) {
         QVariant l_value = l_ini.value(l_key);
-        // Declared settings are written with their real type.
         const ConfigEntry *l_entry = findEntry(f_name, l_key);
         if (l_entry) {
             QVariant l_typed;
@@ -202,10 +243,10 @@ void ConfigStore::migrateIniFile(const QString &f_name)
                 l_value = l_typed;
             }
         }
-        l_json.setValue(l_key, l_value);
+        l_target.setValue(l_key, l_value);
     }
-    l_json.sync();
-    qInfo() << "Converted" << l_ini_path << "to" << l_json_path;
+    l_target.sync();
+    qInfo() << "Converted" << l_ini_path << "to" << l_target_path;
 }
 
 bool ConfigStore::loadDeclaredValues(const QString &f_name)
@@ -213,11 +254,14 @@ bool ConfigStore::loadDeclaredValues(const QString &f_name)
     QSettings *l_settings = settings(f_name);
     const QList<ConfigEntry> l_entries = m_entries.value(f_name);
 
+    const QString l_ext = formatExtension(f_name);
+    const QString l_file_label = filePath(f_name + "." + l_ext);
+
     // Unknown keys are reported so typos do not go unnoticed.
     const QStringList l_file_keys = l_settings->allKeys();
     for (const QString &l_key : l_file_keys) {
         if (!findEntry(f_name, l_key)) {
-            qWarning() << filePath(f_name + ".json") << "has an unknown setting" << l_key;
+            qWarning() << l_file_label << "has an unknown setting" << l_key;
         }
     }
 
@@ -232,12 +276,12 @@ bool ConfigStore::loadDeclaredValues(const QString &f_name)
 
         QVariant l_value;
         if (!convertValue(l_raw, l_entry.typeId(), l_value)) {
-            qCritical() << filePath(f_name + ".json") << l_entry.key() << "must be of type" << QMetaType(l_entry.typeId()).name() << "- got" << l_raw.toString();
+            qCritical() << l_file_label << l_entry.key() << "must be of type" << QMetaType(l_entry.typeId()).name() << "- got" << l_raw.toString();
             l_valid = false;
             continue;
         }
         if (!l_entry.checkValue(l_value)) {
-            qCritical() << filePath(f_name + ".json") << l_entry.key() << "has an invalid value" << l_raw.toString();
+            qCritical() << l_file_label << l_entry.key() << "has an invalid value" << l_raw.toString();
             l_valid = false;
             continue;
         }

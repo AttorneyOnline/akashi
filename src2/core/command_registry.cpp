@@ -1,11 +1,17 @@
 #include "core/command_registry.h"
 
+#include "core/thread_assert.h"
+
 #include <QDebug>
 #include <QFile>
 #include <QJsonDocument>
 #include <QJsonObject>
 
 namespace akashi {
+
+CommandRegistry::CommandRegistry() :
+    m_owner_thread(QThread::currentThread())
+{}
 
 QString CommandRegistry::serviceId() const
 {
@@ -20,6 +26,7 @@ ServiceVersion CommandRegistry::serviceVersion() const
 bool CommandRegistry::registerCommand(const CommandSpec &f_spec, CommandHandler f_handler,
                                       const QString &f_owner_id)
 {
+    AKASHI_ASSERT_OWNER_THREAD();
     const QString l_key = f_spec.name.toLower();
     if (m_entries.contains(l_key) || m_aliases.contains(l_key)) {
         return false;
@@ -41,6 +48,7 @@ bool CommandRegistry::registerCommand(const CommandSpec &f_spec, CommandHandler 
 
 void CommandRegistry::unregisterAll(const QString &f_owner_id)
 {
+    AKASHI_ASSERT_OWNER_THREAD();
     auto it = m_entries.begin();
     while (it != m_entries.end()) {
         if (it->owner_id == f_owner_id) {
@@ -66,6 +74,7 @@ QString CommandRegistry::resolve(const QString &f_name) const
 
 std::optional<CommandSpec> CommandRegistry::spec(const QString &f_command_name) const
 {
+    AKASHI_ASSERT_OWNER_THREAD();
     const QString l_key = resolve(f_command_name);
     if (auto it = m_entries.constFind(l_key); it != m_entries.constEnd()) {
         return it->spec;
@@ -75,6 +84,7 @@ std::optional<CommandSpec> CommandRegistry::spec(const QString &f_command_name) 
 
 CommandHandler CommandRegistry::handler(const QString &f_command_name) const
 {
+    AKASHI_ASSERT_OWNER_THREAD();
     const QString l_key = resolve(f_command_name);
     if (auto it = m_entries.constFind(l_key); it != m_entries.constEnd()) {
         return it->handler;
@@ -84,16 +94,19 @@ CommandHandler CommandRegistry::handler(const QString &f_command_name) const
 
 QStringList CommandRegistry::commandNames() const
 {
+    AKASHI_ASSERT_OWNER_THREAD();
     return m_entries.keys();
 }
 
 bool CommandRegistry::contains(const QString &f_command_name) const
 {
+    AKASHI_ASSERT_OWNER_THREAD();
     return !resolve(f_command_name).isEmpty();
 }
 
 void CommandRegistry::applyExtensions(const QString &f_path)
 {
+    AKASHI_ASSERT_OWNER_THREAD();
     QFile l_file(f_path);
     if (!l_file.open(QIODevice::ReadOnly)) {
         return;

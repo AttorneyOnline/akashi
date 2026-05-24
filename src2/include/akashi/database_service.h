@@ -52,6 +52,9 @@ class AKASHI_CORE_EXPORT DatabaseService : public QObject, public IService
     // How long until the clock next shows the given time.
     static qint64 msecsToNextOccurrence(const QTime &f_time, const QDateTime &f_now);
 
+  Q_SIGNALS:
+    void maintenanceTriggered();
+
   private:
     static void applyPragmas(QSqlDatabase &f_database);
     void onMaintenanceDue();

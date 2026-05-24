@@ -5,6 +5,7 @@
 #include "akashi/network_service.h"
 #include "akashi/service_registry.h"
 #include "core/config_loading.h"
+#include "core/log_service.h"
 #include "core/server_settings.h"
 #include "proto/area_music.h"
 #include "proto/chat.h"
@@ -12,6 +13,7 @@
 #include "proto/ic.h"
 #include "proto/moderation.h"
 #include "proto/packet_service.h"
+#include "core/thread_assert.h"
 #include "server.h"
 
 #include <QDebug>
@@ -85,6 +87,7 @@ static int resolveServerPort(akashi::ConfigStore *f_store, ServerSettings *f_set
 
 ExitCode ServerContext::start()
 {
+    AKASHI_ASSERT_THREAD_AFFINITY();
     setStage(Stage::Configuring);
     m_config_store = new akashi::ConfigStore(akashi::ConfigStore::resolveRootPath(), this);
 
@@ -143,6 +146,8 @@ ExitCode ServerContext::start()
         m_server->serverSettings()->maintenance_time(),
         m_server->serverSettings()->maintenance_vacuum(),
         l_busy_check);
+    connect(m_database_service, &akashi::DatabaseService::maintenanceTriggered,
+            m_server->logService(), &akashi::LogService::runWriterMaintenance);
     setStage(Stage::ContentLoaded);
     setStage(Stage::PluginsLoaded);
     setStage(Stage::Listening);
@@ -152,6 +157,7 @@ ExitCode ServerContext::start()
 
 void ServerContext::shutdown()
 {
+    AKASHI_ASSERT_THREAD_AFFINITY();
     if (!m_server) {
         return;
     }
@@ -163,21 +169,25 @@ void ServerContext::shutdown()
 
 Server *ServerContext::server() const
 {
+    AKASHI_ASSERT_THREAD_AFFINITY();
     return m_server;
 }
 
 akashi::ConfigStore *ServerContext::configStore() const
 {
+    AKASHI_ASSERT_THREAD_AFFINITY();
     return m_config_store;
 }
 
 akashi::ServiceRegistry *ServerContext::services() const
 {
+    AKASHI_ASSERT_THREAD_AFFINITY();
     return m_services;
 }
 
 ServerContext::Stage ServerContext::stage() const
 {
+    AKASHI_ASSERT_THREAD_AFFINITY();
     return m_stage;
 }
 

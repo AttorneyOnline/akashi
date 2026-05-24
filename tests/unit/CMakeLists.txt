@@ -33,6 +33,7 @@ set(UNIT_TESTS
     command_registry
     event_bus
     text_filter
+    writer_sql
 )
 
 foreach(name ${UNIT_TESTS})

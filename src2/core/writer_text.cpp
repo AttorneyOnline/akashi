@@ -6,13 +6,15 @@
 #include <QDateTime>
 #include <QDir>
 #include <QFile>
+#include <QRegularExpression>
 #include <QTextStream>
 
 namespace akashi {
 
-WriterText::WriterText(Mode f_mode, LogService *f_log_service) :
+WriterText::WriterText(Mode f_mode, LogService *f_log_service, int f_archive_after_days) :
     m_mode(f_mode),
-    m_log_service(f_log_service)
+    m_log_service(f_log_service),
+    m_archive_after_days(f_archive_after_days)
 {
 }
 
@@ -63,6 +65,59 @@ void WriterText::writeToFile(const QString &f_path, const QString &f_text)
     }
     QTextStream l_stream(&l_file);
     l_stream << f_text;
+}
+
+void WriterText::maintenance()
+{
+    archiveOldLogs();
+}
+
+void WriterText::archiveOldLogs()
+{
+    QDir l_logs_dir(QStringLiteral("logs"));
+    if (!l_logs_dir.exists()) {
+        return;
+    }
+
+    const QDate l_cutoff = QDate::currentDate().addDays(-m_archive_after_days);
+    const QStringList l_files = l_logs_dir.entryList({QStringLiteral("*.log")}, QDir::Files);
+    if (l_files.isEmpty()) {
+        return;
+    }
+
+    const QRegularExpression l_date_pattern(QStringLiteral("(\\d{4}-\\d{2}-\\d{2})\\.log$"));
+    QStringList l_to_archive;
+    for (const QString &l_file : l_files) {
+        QRegularExpressionMatch l_match = l_date_pattern.match(l_file);
+        if (!l_match.hasMatch()) {
+            continue;
+        }
+        QDate l_date = QDate::fromString(l_match.captured(1), QStringLiteral("yyyy-MM-dd"));
+        if (l_date.isValid() && l_date < l_cutoff) {
+            l_to_archive.append(l_file);
+        }
+    }
+
+    if (l_to_archive.isEmpty()) {
+        return;
+    }
+
+    QDir l_archive_dir(QStringLiteral("logs/archive"));
+    if (!l_archive_dir.exists()) {
+        l_archive_dir.mkpath(QStringLiteral("."));
+    }
+
+    int l_moved = 0;
+    for (const QString &l_file : l_to_archive) {
+        const QString l_src = l_logs_dir.filePath(l_file);
+        const QString l_dst = l_archive_dir.filePath(l_file);
+        if (QFile::rename(l_src, l_dst)) {
+            ++l_moved;
+        }
+    }
+    if (l_moved > 0) {
+        qInfo() << "WriterText: archived" << l_moved << "log files older than" << m_archive_after_days << "days";
+    }
 }
 
 void WriterText::ensureDir(const QString &f_path)

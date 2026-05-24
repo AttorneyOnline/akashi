@@ -12,6 +12,8 @@
 #include <functional>
 #include <optional>
 
+class QThread;
+
 namespace akashi {
 
 class CommandContext;
@@ -21,6 +23,8 @@ using CommandHandler = std::function<void(CommandContext &)>;
 class AKASHI_CORE_EXPORT CommandRegistry : public IService
 {
   public:
+    CommandRegistry();
+
     QString serviceId() const override;
     ServiceVersion serviceVersion() const override;
 
@@ -47,6 +51,7 @@ class AKASHI_CORE_EXPORT CommandRegistry : public IService
 
     QHash<QString, Entry> m_entries;
     QHash<QString, QString> m_aliases;
+    QThread *m_owner_thread;
 };
 
 } // namespace akashi

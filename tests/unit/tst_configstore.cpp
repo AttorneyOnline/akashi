@@ -29,6 +29,12 @@ class tst_ConfigStore : public QObject
     void notifierFiresOnReload();
     void notifierSilentWhenUnchanged();
     void settingNotifierIntegration();
+    void customFormatPlugin();
+    void unknownFormatFallsBackToJson();
+    void twoPluginsDifferentFormats();
+    void registerFileFormatWithSettingsWrapper();
+    void unregisterFormatRemovesEntry();
+    void pluginJsonReadFromFile();
 };
 
 static void writeFile(const QString &f_path, const QByteArray &f_content)
@@ -203,6 +209,117 @@ void tst_ConfigStore::settingNotifierIntegration()
 
     QCOMPARE(l_spy.count(), 1);
     QCOMPARE(l_motd(), "world");
+}
+
+static bool readIniLike(QIODevice &device, QSettings::SettingsMap &map)
+{
+    while (!device.atEnd()) {
+        QString l_line = QString::fromUtf8(device.readLine()).trimmed();
+        if (l_line.isEmpty() || l_line.startsWith('#'))
+            continue;
+        int l_eq = l_line.indexOf('=');
+        if (l_eq < 0)
+            continue;
+        map.insert(l_line.left(l_eq).trimmed(), l_line.mid(l_eq + 1).trimmed());
+    }
+    return true;
+}
+
+static bool writeIniLike(QIODevice &device, const QSettings::SettingsMap &map)
+{
+    for (auto it = map.begin(); it != map.end(); ++it) {
+        device.write((it.key() + " = " + it.value().toString() + "\n").toUtf8());
+    }
+    return true;
+}
+
+static QSettings::Format testCustomFormat()
+{
+    static const QSettings::Format fmt =
+        QSettings::registerFormat("custom", readIniLike, writeIniLike);
+    return fmt;
+}
+
+void tst_ConfigStore::customFormatPlugin()
+{
+    QTemporaryDir l_dir;
+    QDir(l_dir.path()).mkpath("plugins");
+    writeFile(l_dir.path() + "/plugins/myplugin.custom", "greeting = hi\n");
+
+    ConfigStore l_store(l_dir.path());
+    l_store.registerFormat(QStringLiteral("custom"), testCustomFormat(), QStringLiteral("test"));
+    QVERIFY(l_store.declarePlugin("myplugin", {{"greeting", QString("hello"), "The greeting."}}, "custom"));
+    QCOMPARE(l_store.get<QString>("plugins/myplugin", "greeting"), "hi");
+}
+
+void tst_ConfigStore::unknownFormatFallsBackToJson()
+{
+    QTemporaryDir l_dir;
+    QDir(l_dir.path()).mkpath("plugins");
+    writeFile(l_dir.path() + "/plugins/fallback.json", R"({"greeting": "from json"})");
+
+    ConfigStore l_store(l_dir.path());
+    QTest::ignoreMessage(QtCriticalMsg, QRegularExpression("unknown format.*nope"));
+    QVERIFY(l_store.declarePlugin("fallback", {{"greeting", QString("default"), "The greeting."}}, "nope"));
+    QCOMPARE(l_store.get<QString>("plugins/fallback", "greeting"), "from json");
+}
+
+void tst_ConfigStore::twoPluginsDifferentFormats()
+{
+    QTemporaryDir l_dir;
+    QDir(l_dir.path()).mkpath("plugins");
+    writeFile(l_dir.path() + "/plugins/alpha.json", R"({"name": "json-alpha"})");
+    writeFile(l_dir.path() + "/plugins/beta.custom", "name = custom-beta\n");
+
+    ConfigStore l_store(l_dir.path());
+    l_store.registerFormat(QStringLiteral("custom"), testCustomFormat(), QStringLiteral("test"));
+
+    QVERIFY(l_store.declarePlugin("alpha", {{"name", QString("?"), "Name."}}, "json"));
+    QVERIFY(l_store.declarePlugin("beta", {{"name", QString("?"), "Name."}}, "custom"));
+    QCOMPARE(l_store.get<QString>("plugins/alpha", "name"), "json-alpha");
+    QCOMPARE(l_store.get<QString>("plugins/beta", "name"), "custom-beta");
+}
+
+void tst_ConfigStore::registerFileFormatWithSettingsWrapper()
+{
+    QTemporaryDir l_dir;
+    QDir(l_dir.path()).mkpath("plugins");
+    writeFile(l_dir.path() + "/plugins/wrapped.custom", "color = red\n");
+
+    ConfigStore l_store(l_dir.path());
+    l_store.registerFormat(QStringLiteral("custom"), testCustomFormat(), QStringLiteral("test"));
+    l_store.registerFileFormat(QStringLiteral("plugins/wrapped"), QStringLiteral("custom"));
+
+    Settings l_settings(&l_store, "plugins/wrapped");
+    Setting<QString> l_color(&l_settings, "color", QString("blue"), "The color.");
+    QVERIFY(l_settings.declare());
+    QCOMPARE(l_color(), "red");
+}
+
+void tst_ConfigStore::unregisterFormatRemovesEntry()
+{
+    QTemporaryDir l_dir;
+    QDir(l_dir.path()).mkpath("plugins");
+    ConfigStore l_store(l_dir.path());
+    l_store.registerFormat(QStringLiteral("custom"), testCustomFormat(), QStringLiteral("test"));
+    l_store.unregisterFormat(QStringLiteral("custom"));
+
+    writeFile(l_dir.path() + "/plugins/gone.json", R"({"val": "ok"})");
+    QTest::ignoreMessage(QtCriticalMsg, QRegularExpression("unknown format.*custom"));
+    QVERIFY(l_store.declarePlugin("gone", {{"val", QString("x"), "Val."}}, "custom"));
+    QCOMPARE(l_store.get<QString>("plugins/gone", "val"), "ok");
+}
+
+void tst_ConfigStore::pluginJsonReadFromFile()
+{
+    QTemporaryDir l_dir;
+    QDir(l_dir.path()).mkpath("plugins");
+    writeFile(l_dir.path() + "/plugins/testread.json", R"({"greeting": "from file"})");
+    QVERIFY(QFileInfo::exists(l_dir.path() + "/plugins/testread.json"));
+
+    ConfigStore l_store(l_dir.path());
+    QVERIFY(l_store.declarePlugin("testread", {{"greeting", QString("default"), "The greeting."}}));
+    QCOMPARE(l_store.get<QString>("plugins/testread", "greeting"), "from file");
 }
 
 }

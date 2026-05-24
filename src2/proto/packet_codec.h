@@ -12,6 +12,8 @@
 #include <functional>
 #include <memory>
 
+class QThread;
+
 namespace akashi {
 
 // Translates one packet type between the network protocol and its Message, for one dialect.
@@ -65,6 +67,8 @@ class AKASHI_CORE_EXPORT ResolvedCodecs
 class AKASHI_CORE_EXPORT PacketCodecRegistry
 {
   public:
+    PacketCodecRegistry();
+
     // Higher priority wins; ties are broken by the later registration.
     void registerCodec(const QString &f_header, CodecRule f_rule, int f_priority,
                        std::shared_ptr<Codec> f_codec, const QString &f_owner_id = QString());
@@ -89,6 +93,7 @@ class AKASHI_CORE_EXPORT PacketCodecRegistry
 
     QHash<QString, QList<Entry>> m_entries;
     int m_counter = 0;
+    QThread *m_owner_thread;
 };
 
 } // namespace akashi

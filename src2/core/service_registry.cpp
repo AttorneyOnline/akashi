@@ -1,11 +1,14 @@
 #include "akashi/service_registry.h"
 
+#include "core/thread_assert.h"
+
 #include <QDebug>
 
 namespace akashi {
 
 bool ServiceRegistry::registerService(std::shared_ptr<IService> f_service, const QString &f_owner_id)
 {
+    AKASHI_ASSERT_THREAD_AFFINITY();
     if (!f_service) {
         return false;
     }
@@ -21,6 +24,7 @@ bool ServiceRegistry::registerService(std::shared_ptr<IService> f_service, const
 
 void ServiceRegistry::unregisterService(const QString &f_service_id)
 {
+    AKASHI_ASSERT_THREAD_AFFINITY();
     if (!m_services.contains(f_service_id)) {
         return;
     }
@@ -31,6 +35,7 @@ void ServiceRegistry::unregisterService(const QString &f_service_id)
 
 void ServiceRegistry::unregisterServicesOwnedBy(const QString &f_owner_id)
 {
+    AKASHI_ASSERT_THREAD_AFFINITY();
     // Collected first so the map is not changed while iterating it.
     QStringList l_owned;
     for (auto l_iterator = m_services.constBegin(); l_iterator != m_services.constEnd(); ++l_iterator) {
@@ -45,6 +50,7 @@ void ServiceRegistry::unregisterServicesOwnedBy(const QString &f_owner_id)
 
 std::shared_ptr<IService> ServiceRegistry::find(const QString &f_service_id, const QString &f_version_range) const
 {
+    AKASHI_ASSERT_THREAD_AFFINITY();
     const auto l_iterator = m_services.constFind(f_service_id);
     if (l_iterator == m_services.constEnd()) {
         return nullptr;
@@ -57,6 +63,7 @@ std::shared_ptr<IService> ServiceRegistry::find(const QString &f_service_id, con
 
 bool ServiceRegistry::isAvailable(const QString &f_service_id, const QString &f_version_range) const
 {
+    AKASHI_ASSERT_THREAD_AFFINITY();
     return find(f_service_id, f_version_range) != nullptr;
 }
 

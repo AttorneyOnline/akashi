@@ -1,6 +1,7 @@
 #include "core/log_service.h"
 
 #include "akashi/config_store.h"
+#include "core/thread_assert.h"
 
 #include <QDateTime>
 #include <QDebug>
@@ -82,6 +83,7 @@ void LogService::log(LogEvent f_event)
 
 QList<LogEvent> LogService::recentEvents(const QString &f_area, int f_count) const
 {
+    AKASHI_ASSERT_THREAD_AFFINITY();
     auto l_it = m_buffers.constFind(f_area);
     if (l_it == m_buffers.constEnd()) {
         return {};
@@ -95,6 +97,7 @@ QList<LogEvent> LogService::recentEvents(const QString &f_area, int f_count) con
 
 QString LogService::formatEvent(const LogEvent &f_event) const
 {
+    AKASHI_ASSERT_THREAD_AFFINITY();
     auto l_it = m_templates.constFind(f_event.type);
     if (l_it == m_templates.constEnd()) {
         return {};
@@ -104,25 +107,36 @@ QString LogService::formatEvent(const LogEvent &f_event) const
 
 void LogService::registerWriter(std::shared_ptr<ILogWriter> f_writer, const QString &f_owner_id)
 {
+    AKASHI_ASSERT_THREAD_AFFINITY();
     QMutexLocker l_lock(&m_mutex);
     m_writers.append({std::move(f_writer), f_owner_id});
 }
 
 void LogService::unregisterAll(const QString &f_owner_id)
 {
+    AKASHI_ASSERT_THREAD_AFFINITY();
     QMutexLocker l_lock(&m_mutex);
     m_writers.removeIf([&](const WriterEntry &e) { return e.owner == f_owner_id; });
 }
 
 void LogService::registerTemplate(const QString &f_type, const QString &f_tmpl)
 {
+    AKASHI_ASSERT_THREAD_AFFINITY();
     m_templates.insert(f_type, f_tmpl);
 }
 
 void LogService::reloadTemplates()
 {
+    AKASHI_ASSERT_THREAD_AFFINITY();
     m_templates = DEFAULT_TEMPLATES;
     loadTemplates();
+}
+
+void LogService::runWriterMaintenance()
+{
+    AKASHI_ASSERT_THREAD_AFFINITY();
+    m_run_maintenance.store(true);
+    m_condition.wakeOne();
 }
 
 void LogService::stopWorker()
@@ -153,6 +167,15 @@ void LogService::workerLoop()
         for (const auto &l_event : l_batch) {
             for (const auto &l_entry : l_writers) {
                 l_entry.writer->write(l_event);
+            }
+        }
+        for (const auto &l_entry : l_writers) {
+            l_entry.writer->flush();
+        }
+
+        if (m_run_maintenance.exchange(false)) {
+            for (const auto &l_entry : l_writers) {
+                l_entry.writer->maintenance();
             }
         }
     }

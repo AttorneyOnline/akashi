@@ -12,6 +12,8 @@
 #include <functional>
 #include <optional>
 
+class QThread;
+
 namespace akashi {
 
 struct PermissionInfo
@@ -44,6 +46,8 @@ using PermissionResolver = std::function<PermissionVerdict(const PermissionQuery
 class AKASHI_CORE_EXPORT PermissionRegistry : public IService
 {
   public:
+    PermissionRegistry();
+
     QString serviceId() const override;
     ServiceVersion serviceVersion() const override;
 
@@ -77,6 +81,7 @@ class AKASHI_CORE_EXPORT PermissionRegistry : public IService
 
     QHash<QString, PermissionEntry> m_permissions;
     QList<ResolverEntry> m_resolvers;
+    QThread *m_owner_thread;
 };
 
 namespace permission {

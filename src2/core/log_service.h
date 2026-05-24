@@ -46,6 +46,7 @@ class AKASHI_CORE_EXPORT LogService : public QObject, public IService
 
   public Q_SLOTS:
     void reloadTemplates();
+    void runWriterMaintenance();
 
   private:
     void stopWorker();
@@ -74,6 +75,7 @@ class AKASHI_CORE_EXPORT LogService : public QObject, public IService
 
     QThread *m_worker = nullptr;
     std::atomic<bool> m_stop{false};
+    std::atomic<bool> m_run_maintenance{false};
 };
 
 } // namespace akashi

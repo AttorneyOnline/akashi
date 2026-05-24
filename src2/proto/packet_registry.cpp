@@ -1,10 +1,17 @@
 #include "proto/packet_registry.h"
 
+#include "core/thread_assert.h"
+
 namespace akashi {
+
+PacketRegistry::PacketRegistry() :
+    m_owner_thread(QThread::currentThread())
+{}
 
 bool PacketRegistry::registerHandler(const PacketSpec &f_spec, std::shared_ptr<PacketHandler> f_handler,
                                      const QString &f_owner_id)
 {
+    AKASHI_ASSERT_OWNER_THREAD();
     if (f_spec.header.isEmpty() || !f_handler || m_entries.contains(f_spec.header)) {
         return false;
     }
@@ -14,6 +21,7 @@ bool PacketRegistry::registerHandler(const PacketSpec &f_spec, std::shared_ptr<P
 
 void PacketRegistry::unregisterAll(const QString &f_owner_id)
 {
+    AKASHI_ASSERT_OWNER_THREAD();
     for (auto l_iterator = m_entries.begin(); l_iterator != m_entries.end();) {
         if (l_iterator.value().owner == f_owner_id) {
             l_iterator = m_entries.erase(l_iterator);
@@ -26,6 +34,7 @@ void PacketRegistry::unregisterAll(const QString &f_owner_id)
 
 std::optional<PacketSpec> PacketRegistry::spec(const QString &f_header) const
 {
+    AKASHI_ASSERT_OWNER_THREAD();
     const auto l_iterator = m_entries.constFind(f_header);
     if (l_iterator == m_entries.constEnd()) {
         return std::nullopt;
@@ -35,6 +44,7 @@ std::optional<PacketSpec> PacketRegistry::spec(const QString &f_header) const
 
 std::shared_ptr<PacketHandler> PacketRegistry::handler(const QString &f_header) const
 {
+    AKASHI_ASSERT_OWNER_THREAD();
     const auto l_iterator = m_entries.constFind(f_header);
     if (l_iterator == m_entries.constEnd()) {
         return nullptr;

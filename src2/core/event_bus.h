@@ -13,11 +13,15 @@
 
 #include <functional>
 
+class QThread;
+
 namespace akashi {
 
 class AKASHI_CORE_EXPORT EventBus : public IService
 {
   public:
+    EventBus();
+
     QString serviceId() const override;
     ServiceVersion serviceVersion() const override;
 
@@ -76,6 +80,7 @@ class AKASHI_CORE_EXPORT EventBus : public IService
     int m_next_handle = 1;
     QList<Entry> m_entries;
     QHash<QString, QList<CustomEntry>> m_custom;
+    QThread *m_owner_thread;
 };
 
 } // namespace akashi

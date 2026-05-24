@@ -1,5 +1,7 @@
 #include "proto/packet_codec.h"
 
+#include "core/thread_assert.h"
+
 namespace akashi {
 
 Packet Codec::encode(const Message &f_message) const
@@ -75,14 +77,20 @@ std::shared_ptr<Codec> ResolvedCodecs::codecFor(const QString &f_header) const
     return m_codecs.value(f_header, m_default);
 }
 
+PacketCodecRegistry::PacketCodecRegistry() :
+    m_owner_thread(QThread::currentThread())
+{}
+
 void PacketCodecRegistry::registerCodec(const QString &f_header, CodecRule f_rule, int f_priority,
                                         std::shared_ptr<Codec> f_codec, const QString &f_owner_id)
 {
+    AKASHI_ASSERT_OWNER_THREAD();
     m_entries[f_header].append(Entry{f_rule, f_priority, m_counter++, f_codec, f_owner_id});
 }
 
 void PacketCodecRegistry::unregisterAll(const QString &f_owner_id)
 {
+    AKASHI_ASSERT_OWNER_THREAD();
     for (auto l_iterator = m_entries.begin(); l_iterator != m_entries.end(); ++l_iterator) {
         QList<Entry> &l_entries = l_iterator.value();
         l_entries.erase(std::remove_if(l_entries.begin(), l_entries.end(),
@@ -121,6 +129,7 @@ std::shared_ptr<Codec> PacketCodecRegistry::best(const QString &f_header, const 
 
 ResolvedCodecs PacketCodecRegistry::resolve(const ClientProfile &f_profile) const
 {
+    AKASHI_ASSERT_OWNER_THREAD();
     ResolvedCodecs l_resolved;
     l_resolved.setDefault(best(QStringLiteral("*"), f_profile));
     for (auto l_iterator = m_entries.constBegin(); l_iterator != m_entries.constEnd(); ++l_iterator) {

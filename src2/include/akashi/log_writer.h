@@ -13,6 +13,8 @@ class ILogWriter
     virtual ~ILogWriter() = default;
     virtual QString writerId() const = 0;
     virtual void write(const LogEvent &event) = 0;
+    virtual void flush() {}
+    virtual void maintenance() {}
 };
 
 } // namespace akashi

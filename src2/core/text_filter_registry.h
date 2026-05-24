@@ -9,11 +9,15 @@
 #include <QSet>
 #include <QString>
 
+class QThread;
+
 namespace akashi {
 
 class AKASHI_CORE_EXPORT TextFilterRegistry : public IService
 {
   public:
+    TextFilterRegistry();
+
     QString serviceId() const override;
     ServiceVersion serviceVersion() const override;
 
@@ -39,6 +43,7 @@ class AKASHI_CORE_EXPORT TextFilterRegistry : public IService
 
     QList<Entry> m_entries;
     int m_counter = 0;
+    QThread *m_owner_thread;
 };
 
 } // namespace akashi

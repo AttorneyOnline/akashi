@@ -31,6 +31,8 @@ set(AKASHI_SOURCES
   src2/core/event_bus.h
   src2/core/log_service.cpp
   src2/core/log_service.h
+  src2/core/writer_sql.cpp
+  src2/core/writer_sql.h
   src2/core/writer_text.cpp
   src2/core/writer_text.h
   src2/include/akashi/event.h

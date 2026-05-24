@@ -149,6 +149,7 @@ void DatabaseService::onMaintenanceDue()
     }
 
     runMaintenance();
+    Q_EMIT maintenanceTriggered();
     m_maintenance_timer->start(msecsToNextOccurrence(m_maintenance_time, QDateTime::currentDateTime()));
 }
 

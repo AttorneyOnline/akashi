@@ -40,6 +40,7 @@
 #include "db_manager.h"
 #include "discord.h"
 #include "core/log_service.h"
+#include "core/writer_sql.h"
 #include "core/writer_text.h"
 #include "world/floor.h"
 #include "network/network_socket.h"
@@ -165,6 +166,9 @@ Server::Server(int p_ws_port, akashi::ConfigStore *f_config_store, akashi::Datab
     }
     m_text_writer = std::make_shared<akashi::WriterText>(l_writer_mode, m_log_service);
     m_log_service->registerWriter(m_text_writer, QStringLiteral("core"));
+
+    m_sql_writer = std::make_shared<akashi::WriterSql>(QStringLiteral("data/logs/events.db"));
+    m_log_service->registerWriter(m_sql_writer, QStringLiteral("core"));
 
     m_services->registerService(std::shared_ptr<akashi::CommandRegistry>(m_command_registry, [](auto *) {}));
     m_services->registerService(std::shared_ptr<akashi::PermissionRegistry>(m_permission_registry, [](auto *) {}));
