@@ -1,5 +1,4 @@
-#ifndef CORE_THREAD_ASSERT_H
-#define CORE_THREAD_ASSERT_H
+#pragma once
 
 #include <QThread>
 
@@ -12,4 +11,3 @@
 #define AKASHI_ASSERT_OWNER_THREAD() \
     Q_ASSERT(QThread::currentThread() == m_owner_thread)
 
-#endif // CORE_THREAD_ASSERT_H

@@ -1,5 +1,4 @@
-#ifndef AKASHI_JUKEBOX_POLICY_H
-#define AKASHI_JUKEBOX_POLICY_H
+#pragma once
 
 #include <QString>
 
@@ -51,4 +50,3 @@ class JukeboxPolicy
 
 } // namespace akashi
 
-#endif // AKASHI_JUKEBOX_POLICY_H

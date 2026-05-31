@@ -1,5 +1,4 @@
-#ifndef PROTO_PACKET_CONTEXT_H
-#define PROTO_PACKET_CONTEXT_H
+#pragma once
 
 #include "akashi_core_export.h"
 #include "data_types.h"
@@ -213,4 +212,3 @@ class AKASHI_CORE_EXPORT IPacketContext
 
 } // namespace akashi
 
-#endif // PROTO_PACKET_CONTEXT_H

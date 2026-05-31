@@ -1,5 +1,4 @@
-#ifndef CORE_TRANSPORT_H
-#define CORE_TRANSPORT_H
+#pragma once
 
 #include "akashi_core_export.h"
 #include "proto/packet.h"
@@ -93,4 +92,3 @@ Q_DECLARE_OPERATORS_FOR_FLAGS(ITransport::Capabilities)
 
 } // namespace akashi
 
-#endif // CORE_TRANSPORT_H

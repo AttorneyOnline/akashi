@@ -1,5 +1,4 @@
-#ifndef WORLD_JUKEBOX_H
-#define WORLD_JUKEBOX_H
+#pragma once
 
 #include "akashi/jukebox_policy.h"
 #include "akashi_core_export.h"
@@ -114,4 +113,3 @@ class AKASHI_CORE_EXPORT Jukebox : public QObject
 
 } // namespace akashi
 
-#endif // WORLD_JUKEBOX_H

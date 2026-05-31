@@ -1,5 +1,4 @@
-#ifndef PROTO_AREA_MUSIC_MESSAGES_H
-#define PROTO_AREA_MUSIC_MESSAGES_H
+#pragma once
 
 #include "akashi_core_export.h"
 #include "proto/message.h"
@@ -53,4 +52,3 @@ class AKASHI_CORE_EXPORT PenaltyMessage : public Message
 
 } // namespace akashi
 
-#endif // PROTO_AREA_MUSIC_MESSAGES_H

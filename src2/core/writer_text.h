@@ -1,5 +1,4 @@
-#ifndef WRITER_TEXT_H
-#define WRITER_TEXT_H
+#pragma once
 
 #include "akashi/log_writer.h"
 
@@ -42,4 +41,3 @@ class WriterText : public ILogWriter
 
 } // namespace akashi
 
-#endif // WRITER_TEXT_H

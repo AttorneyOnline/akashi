@@ -1,5 +1,4 @@
-#ifndef CORE_EVENT_BUS_H
-#define CORE_EVENT_BUS_H
+#pragma once
 
 #include "akashi/event.h"
 #include "akashi/service.h"
@@ -85,4 +84,3 @@ class AKASHI_CORE_EXPORT EventBus : public IService
 
 } // namespace akashi
 
-#endif // CORE_EVENT_BUS_H

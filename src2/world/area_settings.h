@@ -1,5 +1,4 @@
-#ifndef WORLD_AREA_SETTINGS_H
-#define WORLD_AREA_SETTINGS_H
+#pragma once
 
 #include <QString>
 
@@ -31,4 +30,3 @@ struct AreaSettings
 
 } // namespace akashi
 
-#endif // WORLD_AREA_SETTINGS_H

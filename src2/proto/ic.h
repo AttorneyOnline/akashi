@@ -1,5 +1,4 @@
-#ifndef PROTO_IC_H
-#define PROTO_IC_H
+#pragma once
 
 #include "akashi_core_export.h"
 #include "proto/ic_message.h"
@@ -27,4 +26,3 @@ AKASHI_CORE_EXPORT ICMessage icMessageFromOutgoingFields(const QStringList &f_fi
 
 } // namespace akashi
 
-#endif // PROTO_IC_H

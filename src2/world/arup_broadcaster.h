@@ -1,5 +1,4 @@
-#ifndef WORLD_ARUP_BROADCASTER_H
-#define WORLD_ARUP_BROADCASTER_H
+#pragma once
 
 #include "akashi_core_export.h"
 #include "world/area.h"
@@ -76,4 +75,3 @@ class AKASHI_CORE_EXPORT ArupBroadcaster : public QObject
 
 } // namespace akashi
 
-#endif // WORLD_ARUP_BROADCASTER_H

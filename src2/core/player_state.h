@@ -1,5 +1,4 @@
-#ifndef CORE_PLAYER_STATE_H
-#define CORE_PLAYER_STATE_H
+#pragma once
 
 #include "akashi_core_export.h"
 
@@ -81,4 +80,3 @@ class AKASHI_CORE_EXPORT PlayerState : public QObject
 
 } // namespace akashi
 
-#endif // CORE_PLAYER_STATE_H

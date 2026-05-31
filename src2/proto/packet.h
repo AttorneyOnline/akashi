@@ -1,5 +1,4 @@
-#ifndef PROTO_PACKET_H
-#define PROTO_PACKET_H
+#pragma once
 
 #include "akashi_core_export.h"
 
@@ -39,4 +38,3 @@ class AKASHI_CORE_EXPORT Packet
 
 } // namespace akashi
 
-#endif // PROTO_PACKET_H

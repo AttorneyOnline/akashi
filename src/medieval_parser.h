@@ -1,5 +1,3 @@
-#ifndef MEDIEVAL_PARSER_H
-#define MEDIEVAL_PARSER_H
 #pragma once
 
 #include "akashi_core_export.h"
@@ -72,4 +70,3 @@ class AKASHI_CORE_EXPORT MedievalParser
     bool containsCaseInsensitive(const QVector<QString> &vector, const QString &str);
 };
 
-#endif // MEDIEVAL_PARSER_H

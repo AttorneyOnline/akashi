@@ -15,8 +15,7 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
-#ifndef AREA_DATA_H
-#define AREA_DATA_H
+#pragma once
 
 #include "akashi_core_export.h"
 #include "world/area_settings.h"
@@ -1006,4 +1005,3 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
     void allowMessage();
 };
 
-#endif // AREA_DATA_H

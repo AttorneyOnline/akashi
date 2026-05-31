@@ -1,5 +1,4 @@
-#ifndef AKASHI_SETTING_NOTIFIER_H
-#define AKASHI_SETTING_NOTIFIER_H
+#pragma once
 
 #include "akashi_core_export.h"
 
@@ -24,4 +23,3 @@ class AKASHI_CORE_EXPORT SettingNotifier : public QObject
 
 } // namespace akashi
 
-#endif // AKASHI_SETTING_NOTIFIER_H

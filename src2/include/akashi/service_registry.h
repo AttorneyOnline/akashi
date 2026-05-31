@@ -1,5 +1,4 @@
-#ifndef AKASHI_SERVICE_REGISTRY_H
-#define AKASHI_SERVICE_REGISTRY_H
+#pragma once
 
 #include "akashi/service.h"
 #include "akashi_core_export.h"
@@ -59,4 +58,3 @@ class AKASHI_CORE_EXPORT ServiceRegistry : public QObject
 
 } // namespace akashi
 
-#endif // AKASHI_SERVICE_REGISTRY_H

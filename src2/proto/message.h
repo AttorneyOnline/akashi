@@ -1,5 +1,4 @@
-#ifndef PROTO_MESSAGE_H
-#define PROTO_MESSAGE_H
+#pragma once
 
 #include "akashi_core_export.h"
 
@@ -15,4 +14,3 @@ class AKASHI_CORE_EXPORT Message
 
 } // namespace akashi
 
-#endif // PROTO_MESSAGE_H

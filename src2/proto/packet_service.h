@@ -1,5 +1,4 @@
-#ifndef PROTO_PACKET_SERVICE_H
-#define PROTO_PACKET_SERVICE_H
+#pragma once
 
 #include "akashi/service.h"
 #include "akashi_core_export.h"
@@ -26,4 +25,3 @@ class AKASHI_CORE_EXPORT PacketService : public IService
 
 } // namespace akashi
 
-#endif // PROTO_PACKET_SERVICE_H

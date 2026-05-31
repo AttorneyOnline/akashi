@@ -1,5 +1,4 @@
-#ifndef WORLD_EVIDENCE_STORE_H
-#define WORLD_EVIDENCE_STORE_H
+#pragma once
 
 #include "akashi_core_export.h"
 #include "proto/evidence.h"
@@ -63,4 +62,3 @@ class AKASHI_CORE_EXPORT EvidenceStore
 
 } // namespace akashi
 
-#endif // WORLD_EVIDENCE_STORE_H

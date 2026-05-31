@@ -15,8 +15,7 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
-#ifndef AKASHI_UTILS_H
-#define AKASHI_UTILS_H
+#pragma once
 
 #include <QRegularExpression>
 #include <QVariant>
@@ -69,4 +68,3 @@ class AkashiUtils
     };
 };
 
-#endif // AKASHI_UTILS_H

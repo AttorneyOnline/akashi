@@ -1,5 +1,4 @@
-#ifndef AKASHI_SERVICE_H
-#define AKASHI_SERVICE_H
+#pragma once
 
 #include "akashi_core_export.h"
 
@@ -35,4 +34,3 @@ class AKASHI_CORE_EXPORT IService
 
 } // namespace akashi
 
-#endif // AKASHI_SERVICE_H

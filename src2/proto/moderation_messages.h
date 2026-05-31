@@ -1,5 +1,4 @@
-#ifndef PROTO_MODERATION_MESSAGES_H
-#define PROTO_MODERATION_MESSAGES_H
+#pragma once
 
 #include "akashi_core_export.h"
 #include "proto/message.h"
@@ -28,4 +27,3 @@ class AKASHI_CORE_EXPORT ModActionMessage : public Message
 
 } // namespace akashi
 
-#endif // PROTO_MODERATION_MESSAGES_H

@@ -1,5 +1,4 @@
-#ifndef PROTO_HANDSHAKE_MESSAGES_H
-#define PROTO_HANDSHAKE_MESSAGES_H
+#pragma once
 
 #include "akashi_core_export.h"
 #include "proto/client_profile.h"
@@ -43,4 +42,3 @@ class AKASHI_CORE_EXPORT CharacterPasswordMessage : public Message
 
 } // namespace akashi
 
-#endif // PROTO_HANDSHAKE_MESSAGES_H

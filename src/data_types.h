@@ -15,8 +15,7 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
-#ifndef DATA_TYPES_H
-#define DATA_TYPES_H
+#pragma once
 
 #include <QDebug>
 #include <QVariant>
@@ -63,4 +62,3 @@ QString fromDataType(const T &f_t)
     return QVariant::fromValue(f_t).toString();
 }
 
-#endif // DATA_TYPES_H

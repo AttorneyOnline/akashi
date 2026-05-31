@@ -1,5 +1,4 @@
-#ifndef AKASHI_NETWORK_SERVICE_H
-#define AKASHI_NETWORK_SERVICE_H
+#pragma once
 
 #include "akashi/service.h"
 #include "akashi_core_export.h"
@@ -30,4 +29,3 @@ class AKASHI_CORE_EXPORT NetworkService : public IService
 
 } // namespace akashi
 
-#endif // AKASHI_NETWORK_SERVICE_H

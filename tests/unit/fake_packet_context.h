@@ -1,6 +1,5 @@
 // AI-generated: written by Claude.
-#ifndef TESTS_FAKE_PACKET_CONTEXT_H
-#define TESTS_FAKE_PACKET_CONTEXT_H
+#pragma once
 
 #include "core/text_filter_registry.h"
 #include "proto/packet_context.h"
@@ -407,4 +406,3 @@ class FakeContext : public akashi::IPacketContext
     int globalMessageFloodguardMs() const override { return global_message_floodguard_ms; }
 };
 
-#endif // TESTS_FAKE_PACKET_CONTEXT_H

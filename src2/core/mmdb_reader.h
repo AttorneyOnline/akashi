@@ -1,5 +1,4 @@
-#ifndef MMDB_READER_H
-#define MMDB_READER_H
+#pragma once
 
 #include "akashi_core_export.h"
 
@@ -34,4 +33,3 @@ class AKASHI_CORE_EXPORT MmdbReader
 
 } // namespace akashi
 
-#endif // MMDB_READER_H

@@ -1,5 +1,4 @@
-#ifndef AKASHI_CONFIG_ENTRY_H
-#define AKASHI_CONFIG_ENTRY_H
+#pragma once
 
 #include "akashi_core_export.h"
 
@@ -47,4 +46,3 @@ AKASHI_CORE_EXPORT ConfigEntry::Check emptyOrTime();
 
 } // namespace akashi
 
-#endif // AKASHI_CONFIG_ENTRY_H

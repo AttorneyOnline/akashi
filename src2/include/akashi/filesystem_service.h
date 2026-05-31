@@ -1,6 +1,6 @@
-#ifndef AKASHI_FILESYSTEM_SERVICE_H
-#define AKASHI_FILESYSTEM_SERVICE_H
+#pragma once
 
+#include "akashi/service.h"
 #include "akashi_core_export.h"
 
 #include <QDir>
@@ -10,26 +10,30 @@
 
 namespace akashi {
 
-// Resolves file paths inside a fixed boundary so a path can never escape it.
-class AKASHI_CORE_EXPORT FileSystemService
+class AKASHI_CORE_EXPORT FileSystemService : public IService
 {
   public:
     enum class Scope
     {
-        // User-driven file operations, confined to the storage folder.
         Storage,
-        // Application file operations, confined to the application folder.
         System,
     };
 
     explicit FileSystemService(const QString &f_app_root = QDir::currentPath());
 
-    // The boundary folder of a scope.
-    QString root(Scope f_scope) const;
+    QString serviceId() const override;
+    ServiceVersion serviceVersion() const override;
 
-    // The absolute path for a relative path within the scope's boundary.
-    // Returns nullopt if the path would escape the boundary.
+    QString root(Scope f_scope) const;
     std::optional<QString> resolve(Scope f_scope, const QString &f_relative_path) const;
+
+    QString configRoot() const;
+    QString dataRoot() const;
+    QString storageRoot() const;
+    QString pluginsRoot() const;
+
+    QString pluginDataDir(const QString &f_plugin_id);
+    std::optional<QString> pluginResolve(const QString &f_plugin_id, const QString &f_relative_path) const;
 
   private:
     QString m_app_root;
@@ -38,4 +42,3 @@ class AKASHI_CORE_EXPORT FileSystemService
 
 } // namespace akashi
 
-#endif // AKASHI_FILESYSTEM_SERVICE_H

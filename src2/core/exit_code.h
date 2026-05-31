@@ -1,5 +1,4 @@
-#ifndef EXIT_CODE_H
-#define EXIT_CODE_H
+#pragma once
 
 // Process exit codes for the server. Zero means a clean run.
 enum class ExitCode : int
@@ -15,4 +14,3 @@ enum class ExitCode : int
     DatabaseError = 4,
 };
 
-#endif // EXIT_CODE_H

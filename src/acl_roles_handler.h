@@ -1,5 +1,4 @@
-#ifndef ACL_ROLES_HANDLER_H
-#define ACL_ROLES_HANDLER_H
+#pragma once
 
 #include "akashi_core_export.h"
 
@@ -216,4 +215,3 @@ class AKASHI_CORE_EXPORT ACLRolesHandler : public QObject
     QHash<QString, ACLRole> m_roles;
 };
 
-#endif // ACL_ROLES_HANDLER_H

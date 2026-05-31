@@ -1,5 +1,4 @@
-#ifndef COMMANDS_CASING_COMMANDS_H
-#define COMMANDS_CASING_COMMANDS_H
+#pragma once
 
 namespace akashi {
 class CommandRegistry;
@@ -11,4 +10,3 @@ void registerCasingCommands(akashi::CommandRegistry &f_registry);
 
 } // namespace akashi::commands
 
-#endif // COMMANDS_CASING_COMMANDS_H

@@ -1,5 +1,4 @@
-#ifndef SERVER_SETTINGS_H
-#define SERVER_SETTINGS_H
+#pragma once
 
 #include "akashi/settings.h"
 
@@ -44,6 +43,8 @@ class AKASHI_CORE_EXPORT ServerSettings : public akashi::Settings
     akashi::Setting<bool> cloudflare_enabled{this, "Advertiser/cloudflare_enabled", false, "Whether the advertised WebAO port is rewritten to 80 for Cloudflare tunnels."};
     akashi::Setting<int> max_value{this, "Dice/max_value", 100, "The maximum number of sides dice can have.", akashi::atLeast(1)};
     akashi::Setting<int> max_dice{this, "Dice/max_dice", 100, "The maximum number of dice rolled at once.", akashi::atLeast(1)};
+    akashi::Setting<int> max_login_attempts{this, "Options/max_login_attempts", 5, "The maximum number of failed login attempts before lockout.", akashi::inRange(1, 100)};
+    akashi::Setting<int> login_lockout_seconds{this, "Options/login_lockout_seconds", 60, "How long a lockout lasts after too many failed login attempts, in seconds.", akashi::inRange(5, 3600)};
     akashi::Setting<bool> password_requirements{this, "Password/password_requirements", true, "Whether password requirements are enforced under advanced authorization."};
     akashi::Setting<int> pass_min_length{this, "Password/pass_min_length", 8, "The minimum password length.", akashi::atLeast(0)};
     akashi::Setting<int> pass_max_length{this, "Password/pass_max_length", 0, "The maximum password length, or 0 for unlimited.", akashi::atLeast(0)};
@@ -73,4 +74,3 @@ class AKASHI_CORE_EXPORT DiscordSettings : public akashi::Settings
     akashi::Setting<QString> webhook_color{this, "Discord/webhook_color", "13312842", "The color of webhook messages."};
 };
 
-#endif // SERVER_SETTINGS_H

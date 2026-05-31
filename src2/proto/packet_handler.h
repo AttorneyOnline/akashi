@@ -1,5 +1,4 @@
-#ifndef PROTO_PACKET_HANDLER_H
-#define PROTO_PACKET_HANDLER_H
+#pragma once
 
 #include "akashi_core_export.h"
 #include "proto/message.h"
@@ -29,4 +28,3 @@ class AKASHI_CORE_EXPORT PacketHandler
 
 } // namespace akashi
 
-#endif // PROTO_PACKET_HANDLER_H

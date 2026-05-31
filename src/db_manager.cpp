@@ -253,6 +253,17 @@ bool DBManager::authenticate(QString username, QString password)
     return l_matches;
 }
 
+std::optional<DBManager::Credentials> DBManager::fetchCredentials(const QString &f_username)
+{
+    QSqlQuery l_query(db);
+    l_query.prepare("SELECT SALT, PASSWORD, ACL FROM users WHERE USERNAME = ?");
+    l_query.addBindValue(f_username);
+    l_query.exec();
+    if (!l_query.first())
+        return std::nullopt;
+    return Credentials{l_query.value(0).toString(), l_query.value(1).toString(), l_query.value(2).toString()};
+}
+
 bool DBManager::updateACL(QString f_username, QString f_acl)
 {
     QSqlQuery l_username_exists(db);

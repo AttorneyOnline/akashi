@@ -1,5 +1,4 @@
-#ifndef AKASHI_TEXT_FILTER_H
-#define AKASHI_TEXT_FILTER_H
+#pragma once
 
 #include <QString>
 
@@ -12,4 +11,3 @@ using TextFilterFn = std::function<std::optional<QString>(const QString &text)>;
 
 } // namespace akashi
 
-#endif // AKASHI_TEXT_FILTER_H

@@ -1,5 +1,4 @@
-#ifndef AKASHI_CONFIG_STORE_H
-#define AKASHI_CONFIG_STORE_H
+#pragma once
 
 #include "akashi/config_entry.h"
 #include "akashi/service.h"
@@ -113,4 +112,3 @@ class AKASHI_CORE_EXPORT ConfigStore : public QObject, public IService
 
 } // namespace akashi
 
-#endif // AKASHI_CONFIG_STORE_H

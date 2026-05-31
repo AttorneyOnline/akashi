@@ -1,5 +1,4 @@
-#ifndef PROTO_PACKET_REGISTRY_H
-#define PROTO_PACKET_REGISTRY_H
+#pragma once
 
 #include "akashi_core_export.h"
 #include "proto/packet_handler.h"
@@ -45,4 +44,3 @@ class AKASHI_CORE_EXPORT PacketRegistry
 
 } // namespace akashi
 
-#endif // PROTO_PACKET_REGISTRY_H

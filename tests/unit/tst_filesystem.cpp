@@ -2,6 +2,7 @@
 #include "akashi/filesystem_service.h"
 
 #include <QTest>
+#include <QTemporaryDir>
 
 namespace tests {
 namespace unittests {
@@ -20,6 +21,11 @@ class tst_FileSystem : public QObject
     void systemRejectsEscapeAboveRoot();
     void absolutePathsAreRejected();
     void lexicalParentInsideBoundaryIsFine();
+    void serviceIdAndVersion();
+    void commonFolderAccessors();
+    void pluginDataDirCreatesDirectory();
+    void pluginResolveConfinesPaths();
+    void pluginResolveRejectsEscape();
 };
 
 void tst_FileSystem::storageResolvesInsideStorage()
@@ -33,7 +39,6 @@ void tst_FileSystem::storageResolvesInsideStorage()
 void tst_FileSystem::storageRejectsEscape()
 {
     FileSystemService l_fs("/app");
-    // A user path may not climb out of storage into the rest of the application.
     QVERIFY(!l_fs.resolve(Scope::Storage, "../config/config.json").has_value());
     QVERIFY(!l_fs.resolve(Scope::Storage, "../../etc/passwd").has_value());
 }
@@ -41,7 +46,6 @@ void tst_FileSystem::storageRejectsEscape()
 void tst_FileSystem::systemReachesTheWholeApplication()
 {
     FileSystemService l_fs("/app");
-    // System scope may reach any application folder, including storage.
     const auto l_config = l_fs.resolve(Scope::System, "config/config.json");
     QVERIFY(l_config.has_value());
     QCOMPARE(*l_config, QString("/app/config/config.json"));
@@ -53,7 +57,6 @@ void tst_FileSystem::systemReachesTheWholeApplication()
 void tst_FileSystem::systemRejectsEscapeAboveRoot()
 {
     FileSystemService l_fs("/app");
-    // Even system scope may not climb above the application root.
     QVERIFY(!l_fs.resolve(Scope::System, "../secrets").has_value());
     QVERIFY(!l_fs.resolve(Scope::System, "../../etc/passwd").has_value());
 }
@@ -67,10 +70,52 @@ void tst_FileSystem::absolutePathsAreRejected()
 void tst_FileSystem::lexicalParentInsideBoundaryIsFine()
 {
     FileSystemService l_fs("/app");
-    // A .. that stays within the boundary is allowed.
     const auto l_result = l_fs.resolve(Scope::Storage, "a/../b.txt");
     QVERIFY(l_result.has_value());
     QCOMPARE(*l_result, QString("/app/storage/b.txt"));
+}
+
+void tst_FileSystem::serviceIdAndVersion()
+{
+    FileSystemService l_fs("/app");
+    QCOMPARE(l_fs.serviceId(), QStringLiteral("akashi.filesystem"));
+    QCOMPARE(l_fs.serviceVersion().major, 1);
+}
+
+void tst_FileSystem::commonFolderAccessors()
+{
+    FileSystemService l_fs("/app");
+    QCOMPARE(l_fs.configRoot(), QString("/app/config"));
+    QCOMPARE(l_fs.dataRoot(), QString("/app/data"));
+    QCOMPARE(l_fs.storageRoot(), QString("/app/storage"));
+    QCOMPARE(l_fs.pluginsRoot(), QString("/app/data/plugins"));
+}
+
+void tst_FileSystem::pluginDataDirCreatesDirectory()
+{
+    QTemporaryDir l_tmp;
+    QVERIFY(l_tmp.isValid());
+    FileSystemService l_fs(l_tmp.path());
+
+    const QString l_dir = l_fs.pluginDataDir("my-plugin");
+    QVERIFY(QDir(l_dir).exists());
+    QVERIFY(l_dir.endsWith("/data/plugins/my-plugin"));
+}
+
+void tst_FileSystem::pluginResolveConfinesPaths()
+{
+    FileSystemService l_fs("/app");
+    const auto l_result = l_fs.pluginResolve("my-plugin", "logs/events.db");
+    QVERIFY(l_result.has_value());
+    QCOMPARE(*l_result, QString("/app/data/plugins/my-plugin/logs/events.db"));
+}
+
+void tst_FileSystem::pluginResolveRejectsEscape()
+{
+    FileSystemService l_fs("/app");
+    QVERIFY(!l_fs.pluginResolve("my-plugin", "../other-plugin/data.db").has_value());
+    QVERIFY(!l_fs.pluginResolve("my-plugin", "../../config/secret.json").has_value());
+    QVERIFY(!l_fs.pluginResolve("my-plugin", "/etc/passwd").has_value());
 }
 
 }

@@ -1,5 +1,4 @@
-#ifndef AKASHI_AREA_RULE_H
-#define AKASHI_AREA_RULE_H
+#pragma once
 
 #include <QString>
 
@@ -72,4 +71,3 @@ class AreaRule
 
 } // namespace akashi
 
-#endif // AKASHI_AREA_RULE_H

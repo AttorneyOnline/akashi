@@ -15,8 +15,7 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
-#ifndef AOCLIENT_H
-#define AOCLIENT_H
+#pragma once
 
 #include "acl_roles_handler.h"
 #include "akashi_core_export.h"
@@ -536,4 +535,3 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
 
 };
 
-#endif // AOCLIENT_H

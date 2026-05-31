@@ -1,6 +1,6 @@
 // AI-generated: written by Claude.
 #include "akashi/log_event.h"
-#include "core/writer_sql.h"
+#include "writer_sql.h"
 
 #include <QDir>
 #include <QSqlDatabase>

@@ -10,7 +10,7 @@ set(CMAKE_AUTOUIC ON)
 
 option(BUILD_TESTING "Build tests and the miniclient" OFF)
 
-set(_qt_components Core Network WebSockets Sql)
+set(_qt_components Core Concurrent Network WebSockets Sql)
 if(BUILD_TESTING)
   list(APPEND _qt_components Test)
 endif()
@@ -31,8 +31,6 @@ set(AKASHI_SOURCES
   src2/core/event_bus.h
   src2/core/log_service.cpp
   src2/core/log_service.h
-  src2/core/writer_sql.cpp
-  src2/core/writer_sql.h
   src2/core/writer_text.cpp
   src2/core/writer_text.h
   src2/include/akashi/event.h
@@ -86,6 +84,10 @@ set(AKASHI_SOURCES
   src2/core/command_spec.h
   src2/core/permission_registry.cpp
   src2/core/permission_registry.h
+  src2/core/auth_throttle.cpp
+  src2/core/auth_throttle.h
+  src2/core/plugin_manager.cpp
+  src2/core/plugin_manager.h
   src2/core/text_filter_registry.cpp
   src2/core/text_filter_registry.h
   src2/core/mmdb_reader.cpp
@@ -107,6 +109,8 @@ set(AKASHI_SOURCES
   src2/commands/casing_commands.h
   src2/commands/music_commands.cpp
   src2/commands/music_commands.h
+  src2/commands/plugin_commands.cpp
+  src2/commands/plugin_commands.h
   src2/commands/roleplay_commands.cpp
   src2/commands/roleplay_commands.h
   src2/commands/messaging_commands.cpp
@@ -135,6 +139,7 @@ set(AKASHI_SOURCES
   src2/include/akashi/network_service.h
   src2/include/akashi/service.h
   src2/include/akashi/text_filter.h
+  src2/include/akashi/plugin.h
   src2/include/akashi/service_registry.h
   src2/include/akashi/settings.h
   src2/proto/ao2_protocol.h
@@ -189,7 +194,9 @@ target_include_directories(akashi_pluginapi INTERFACE
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src2/include>"
     "$<INSTALL_INTERFACE:include>"
 )
+target_link_libraries(akashi_pluginapi INTERFACE akashi_core)
 target_link_libraries(akashi_core PUBLIC
+    Qt6::Concurrent
     Qt6::Core
     Qt6::Sql
     Qt6::Network
@@ -243,9 +250,12 @@ write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/akashiConfigVersion
 install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/akashiConfig.cmake
     ${CMAKE_CURRENT_BINARY_DIR}/akashiConfigVersion.cmake
+    cmake/akashiPlugin.cmake
     DESTINATION lib/cmake/akashi)
 
 if(BUILD_TESTING)
   enable_testing()
+  add_subdirectory(plugins/hello-world)
+  add_subdirectory(plugins/sql-logger)
   add_subdirectory(tests)
 endif()

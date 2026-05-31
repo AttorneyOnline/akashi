@@ -1,5 +1,4 @@
-#ifndef CORE_COMMAND_SPEC_H
-#define CORE_COMMAND_SPEC_H
+#pragma once
 
 #include <QString>
 #include <QStringList>
@@ -19,4 +18,3 @@ struct CommandSpec
 
 } // namespace akashi
 
-#endif // CORE_COMMAND_SPEC_H

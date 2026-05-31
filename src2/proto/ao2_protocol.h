@@ -1,5 +1,4 @@
-#ifndef AO2_PROTOCOL_H
-#define AO2_PROTOCOL_H
+#pragma once
 
 // Named packet headers of the AO2 network protocol, filled in as code moves over.
 namespace ao2 {
@@ -73,4 +72,3 @@ enum PlayerDataType
 
 } // namespace ao2
 
-#endif // AO2_PROTOCOL_H

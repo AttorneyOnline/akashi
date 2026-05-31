@@ -1,5 +1,4 @@
-#ifndef AKASHI_SETTINGS_H
-#define AKASHI_SETTINGS_H
+#pragma once
 
 #include "akashi/config_store.h"
 #include "akashi/setting_notifier.h"
@@ -67,4 +66,3 @@ class Setting
 
 } // namespace akashi
 
-#endif // AKASHI_SETTINGS_H

@@ -15,8 +15,7 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
-#ifndef BAN_MANAGER_H
-#define BAN_MANAGER_H
+#pragma once
 
 #define DB_VERSION 3
 
@@ -31,6 +30,8 @@
 #include <QSqlDriver>
 #include <QSqlError>
 #include <QSqlQuery>
+
+#include <optional>
 
 /**
  * @brief A class used to handle database interaction.
@@ -181,6 +182,15 @@ class AKASHI_CORE_EXPORT DBManager : public QObject
      */
     bool authenticate(QString username, QString password);
 
+    struct Credentials
+    {
+        QString salt;
+        QString stored_hash;
+        QString acl_role;
+    };
+
+    std::optional<Credentials> fetchCredentials(const QString &f_username);
+
     /**
      * @brief Updates the ACL role identifier of a given user.
      *
@@ -270,4 +280,3 @@ class AKASHI_CORE_EXPORT DBManager : public QObject
     void updateDB(int current_version);
 };
 
-#endif // BAN_MANAGER_H

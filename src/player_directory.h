@@ -15,8 +15,7 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
-#ifndef PLAYER_DIRECTORY_H
-#define PLAYER_DIRECTORY_H
+#pragma once
 
 #include "akashi_core_export.h"
 
@@ -90,4 +89,3 @@ class AKASHI_CORE_EXPORT PlayerDirectory
     int (PlayerDirectory::*m_take_free_id)() = &PlayerDirectory::takeLastFreedId;
 };
 
-#endif

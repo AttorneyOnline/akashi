@@ -1,5 +1,4 @@
-#ifndef PROTO_CHAT_H
-#define PROTO_CHAT_H
+#pragma once
 
 #include "akashi_core_export.h"
 
@@ -14,4 +13,3 @@ AKASHI_CORE_EXPORT void registerChatPackets(PacketRegistry &f_handlers, PacketCo
 
 } // namespace akashi
 
-#endif // PROTO_CHAT_H

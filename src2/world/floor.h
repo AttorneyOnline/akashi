@@ -1,5 +1,4 @@
-#ifndef WORLD_FLOOR_H
-#define WORLD_FLOOR_H
+#pragma once
 
 #include "akashi/jukebox_policy.h"
 
@@ -46,4 +45,3 @@ class Floor
 
 } // namespace akashi
 
-#endif // WORLD_FLOOR_H

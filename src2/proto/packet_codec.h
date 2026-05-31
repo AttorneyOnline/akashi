@@ -1,5 +1,4 @@
-#ifndef PROTO_PACKET_CODEC_H
-#define PROTO_PACKET_CODEC_H
+#pragma once
 
 #include "akashi_core_export.h"
 #include "proto/client_profile.h"
@@ -98,4 +97,3 @@ class AKASHI_CORE_EXPORT PacketCodecRegistry
 
 } // namespace akashi
 
-#endif // PROTO_PACKET_CODEC_H

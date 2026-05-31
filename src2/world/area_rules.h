@@ -1,5 +1,4 @@
-#ifndef WORLD_AREA_RULES_H
-#define WORLD_AREA_RULES_H
+#pragma once
 
 #include "akashi/area_rule.h"
 #include "akashi_core_export.h"
@@ -64,4 +63,3 @@ class AKASHI_CORE_EXPORT AreaRuleRegistry
 
 } // namespace akashi
 
-#endif // WORLD_AREA_RULES_H

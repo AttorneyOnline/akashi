@@ -1,5 +1,4 @@
-#ifndef JSON_SETTINGS_H
-#define JSON_SETTINGS_H
+#pragma once
 
 #include "akashi_core_export.h"
 
@@ -17,4 +16,3 @@ class AKASHI_CORE_EXPORT JsonSettings
     static bool writeJsonFile(QIODevice &device, const QSettings::SettingsMap &map);
 };
 
-#endif // JSON_SETTINGS_H

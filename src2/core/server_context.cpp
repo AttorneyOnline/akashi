@@ -2,9 +2,11 @@
 
 #include "akashi/config_store.h"
 #include "akashi/database_service.h"
+#include "akashi/filesystem_service.h"
 #include "akashi/network_service.h"
 #include "akashi/service_registry.h"
 #include "core/config_loading.h"
+#include "core/plugin_manager.h"
 #include "core/log_service.h"
 #include "core/server_settings.h"
 #include "proto/area_music.h"
@@ -17,7 +19,9 @@
 #include "server.h"
 
 #include <QDebug>
+#include <QDir>
 #include <QFileInfo>
+#include <QTextStream>
 
 ServerContext::ServerContext(QObject *parent) :
     QObject(parent)
@@ -112,6 +116,7 @@ ExitCode ServerContext::start()
     }
 
     m_services = new akashi::ServiceRegistry(this);
+    m_services->registerService(std::make_shared<akashi::FileSystemService>());
     m_services->registerService(std::make_shared<akashi::NetworkService>());
     m_services->registerService(std::shared_ptr<akashi::ConfigStore>(m_config_store, [](auto *) {}));
     m_services->registerService(std::shared_ptr<akashi::DatabaseService>(m_database_service, [](auto *) {}));
@@ -149,6 +154,24 @@ ExitCode ServerContext::start()
     connect(m_database_service, &akashi::DatabaseService::maintenanceTriggered,
             m_server->logService(), &akashi::LogService::runWriterMaintenance);
     setStage(Stage::ContentLoaded);
+
+    const QString l_plugin_dir = QDir(m_config_store->rootPath()).absoluteFilePath(QStringLiteral("../plugins"));
+    m_plugin_manager = new akashi::PluginManager(m_services, l_plugin_dir, this);
+    m_services->registerService(std::shared_ptr<akashi::PluginManager>(m_plugin_manager, [](auto *) {}));
+
+    QStringList l_plugin_allowlist;
+    const QString l_allowlist_path = m_config_store->filePath(QStringLiteral("plugins.ini"));
+    QFile l_allowlist_file(l_allowlist_path);
+    if (l_allowlist_file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QTextStream l_stream(&l_allowlist_file);
+        while (!l_stream.atEnd()) {
+            QString l_line = l_stream.readLine().trimmed();
+            if (!l_line.isEmpty() && !l_line.startsWith(QLatin1Char('#')))
+                l_plugin_allowlist.append(l_line);
+        }
+    }
+
+    m_plugin_manager->startPlugins(l_plugin_allowlist);
     setStage(Stage::PluginsLoaded);
     setStage(Stage::Listening);
     setStage(Stage::Running);
@@ -162,6 +185,9 @@ void ServerContext::shutdown()
         return;
     }
     setStage(Stage::Draining);
+    if (m_plugin_manager) {
+        m_plugin_manager->shutdownAll();
+    }
     delete m_server;
     m_server = nullptr;
     setStage(Stage::Stopped);

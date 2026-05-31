@@ -1,5 +1,4 @@
-#ifndef LOG_SERVICE_H
-#define LOG_SERVICE_H
+#pragma once
 
 #include "akashi/log_event.h"
 #include "akashi/log_writer.h"
@@ -80,4 +79,3 @@ class AKASHI_CORE_EXPORT LogService : public QObject, public IService
 
 } // namespace akashi
 
-#endif // LOG_SERVICE_H

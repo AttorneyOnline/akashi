@@ -1,0 +1,76 @@
+#pragma once
+
+#include "akashi/service.h"
+#include "akashi_core_export.h"
+
+#include <QHash>
+#include <QList>
+#include <QObject>
+#include <QString>
+#include <QStringList>
+
+#include <memory>
+
+class QPluginLoader;
+
+namespace akashi {
+
+class IPlugin;
+class ServiceRegistry;
+
+struct PluginInfo
+{
+    QString id;
+    ServiceVersion version;
+    QStringList dependencies;
+    QStringList services;
+    QString file_path;
+
+    enum class State { Discovered, Loaded, Initialized, Started, Failed };
+    State state = State::Discovered;
+};
+
+class AKASHI_CORE_EXPORT PluginManager : public QObject, public IService
+{
+    Q_OBJECT
+
+  public:
+    explicit PluginManager(ServiceRegistry *f_services, const QString &f_plugin_dir,
+                           QObject *parent = nullptr);
+    ~PluginManager() override;
+
+    QString serviceId() const override;
+    ServiceVersion serviceVersion() const override;
+
+    bool startPlugins(const QStringList &f_allowlist = {});
+    void shutdownAll();
+
+    bool loadPlugin(const QString &f_id);
+    bool unloadPlugin(const QString &f_id, bool f_cascade = false);
+    bool reloadPlugin(const QString &f_id);
+
+    QList<PluginInfo> plugins() const;
+    std::optional<PluginInfo> pluginInfo(const QString &f_id) const;
+
+  private:
+    struct PluginEntry
+    {
+        PluginInfo info;
+        QPluginLoader *loader = nullptr;
+        IPlugin *instance = nullptr;
+    };
+
+    bool discover(const QStringList &f_allowlist);
+    QStringList topologicalSort() const;
+    bool validateServices(const PluginEntry &f_entry) const;
+    void cleanupPlugin(const QString &f_id);
+    QStringList dependentsOf(const QString &f_id) const;
+
+    ServiceRegistry *m_services;
+    QString m_plugin_dir;
+    QHash<QString, PluginEntry> m_plugins;
+    QList<QString> m_load_order;
+};
+
+} // namespace akashi
+

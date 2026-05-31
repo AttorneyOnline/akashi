@@ -1,5 +1,4 @@
-#ifndef COMMANDS_AUTHENTICATION_COMMANDS_H
-#define COMMANDS_AUTHENTICATION_COMMANDS_H
+#pragma once
 
 namespace akashi {
 class CommandRegistry;
@@ -11,4 +10,3 @@ void registerAuthenticationCommands(akashi::CommandRegistry &f_registry);
 
 } // namespace akashi::commands
 
-#endif // COMMANDS_AUTHENTICATION_COMMANDS_H

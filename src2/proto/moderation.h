@@ -1,5 +1,4 @@
-#ifndef PROTO_MODERATION_H
-#define PROTO_MODERATION_H
+#pragma once
 
 #include "akashi_core_export.h"
 
@@ -14,4 +13,3 @@ AKASHI_CORE_EXPORT void registerModerationPackets(PacketRegistry &f_handlers, Pa
 
 } // namespace akashi
 
-#endif // PROTO_MODERATION_H

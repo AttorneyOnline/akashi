@@ -1,5 +1,4 @@
-#ifndef CORE_PERMISSION_REGISTRY_H
-#define CORE_PERMISSION_REGISTRY_H
+#pragma once
 
 #include "akashi/service.h"
 #include "akashi_core_export.h"
@@ -120,4 +119,3 @@ namespace sanction {
 
 } // namespace akashi
 
-#endif // CORE_PERMISSION_REGISTRY_H

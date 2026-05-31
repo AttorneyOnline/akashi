@@ -33,7 +33,9 @@ set(UNIT_TESTS
     command_registry
     event_bus
     text_filter
-    writer_sql
+    auth_throttle
+    plugin_interface
+    plugin_manager
 )
 
 foreach(name ${UNIT_TESTS})
@@ -47,3 +49,16 @@ foreach(name ${UNIT_TESTS})
             COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:akashi_core> $<TARGET_FILE_DIR:tst_${name}>)
     endif()
 endforeach()
+
+# WriterSql lives in the sql-logger plugin; compile its source directly for testing.
+qt_add_executable(tst_writer_sql tst_writer_sql.cpp
+    ${CMAKE_SOURCE_DIR}/plugins/sql-logger/writer_sql.cpp)
+target_include_directories(tst_writer_sql PRIVATE ${CMAKE_SOURCE_DIR}/plugins/sql-logger)
+target_link_libraries(tst_writer_sql PRIVATE akashi_core Qt6::Test Qt6::Sql)
+file(COPY fixtures/config DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/run_writer_sql)
+add_test(NAME unit_writer_sql COMMAND tst_writer_sql WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/run_writer_sql)
+set_tests_properties(unit_writer_sql PROPERTIES TIMEOUT 60)
+if(WIN32)
+    add_custom_command(TARGET tst_writer_sql POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:akashi_core> $<TARGET_FILE_DIR:tst_writer_sql>)
+endif()

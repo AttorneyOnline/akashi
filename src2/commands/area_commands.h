@@ -1,5 +1,4 @@
-#ifndef COMMANDS_AREA_COMMANDS_H
-#define COMMANDS_AREA_COMMANDS_H
+#pragma once
 
 namespace akashi {
 class CommandRegistry;
@@ -11,4 +10,3 @@ void registerAreaCommands(akashi::CommandRegistry &f_registry);
 
 } // namespace akashi::commands
 
-#endif // COMMANDS_AREA_COMMANDS_H

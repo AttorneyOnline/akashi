@@ -1,5 +1,4 @@
-#ifndef PROTO_HANDSHAKE_H
-#define PROTO_HANDSHAKE_H
+#pragma once
 
 #include "akashi_core_export.h"
 
@@ -22,4 +21,3 @@ AKASHI_CORE_EXPORT QStringList serverFeatures();
 
 } // namespace akashi
 
-#endif // PROTO_HANDSHAKE_H

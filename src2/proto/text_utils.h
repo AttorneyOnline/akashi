@@ -1,5 +1,4 @@
-#ifndef PROTO_TEXT_UTILS_H
-#define PROTO_TEXT_UTILS_H
+#pragma once
 
 #include "akashi_core_export.h"
 
@@ -12,4 +11,3 @@ AKASHI_CORE_EXPORT QString stripZalgo(QString f_text);
 
 } // namespace akashi
 
-#endif // PROTO_TEXT_UTILS_H

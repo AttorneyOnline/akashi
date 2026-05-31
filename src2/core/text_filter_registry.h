@@ -1,5 +1,4 @@
-#ifndef CORE_TEXT_FILTER_REGISTRY_H
-#define CORE_TEXT_FILTER_REGISTRY_H
+#pragma once
 
 #include "akashi/service.h"
 #include "akashi/text_filter.h"
@@ -48,4 +47,3 @@ class AKASHI_CORE_EXPORT TextFilterRegistry : public IService
 
 } // namespace akashi
 
-#endif // CORE_TEXT_FILTER_REGISTRY_H

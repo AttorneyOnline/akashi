@@ -1,5 +1,4 @@
-#ifndef CORE_COMMAND_CONTEXT_H
-#define CORE_COMMAND_CONTEXT_H
+#pragma once
 
 #include "akashi_core_export.h"
 
@@ -98,4 +97,3 @@ class AKASHI_CORE_EXPORT CommandContext
 
 } // namespace akashi
 
-#endif // CORE_COMMAND_CONTEXT_H

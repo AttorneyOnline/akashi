@@ -1,5 +1,4 @@
-#ifndef SERVER_CONTEXT_H
-#define SERVER_CONTEXT_H
+#pragma once
 
 #include "akashi_core_export.h"
 #include "core/exit_code.h"
@@ -11,6 +10,7 @@ class Server;
 namespace akashi {
 class ConfigStore;
 class DatabaseService;
+class PluginManager;
 class ServiceRegistry;
 }
 
@@ -56,8 +56,8 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
     Server *m_server = nullptr;
     akashi::ConfigStore *m_config_store = nullptr;
     akashi::DatabaseService *m_database_service = nullptr;
+    akashi::PluginManager *m_plugin_manager = nullptr;
     akashi::ServiceRegistry *m_services = nullptr;
     Stage m_stage = Stage::Configuring;
 };
 
-#endif // SERVER_CONTEXT_H

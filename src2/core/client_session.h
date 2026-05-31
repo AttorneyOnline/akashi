@@ -1,5 +1,4 @@
-#ifndef CORE_CLIENT_SESSION_H
-#define CORE_CLIENT_SESSION_H
+#pragma once
 
 #include "akashi_core_export.h"
 #include "core/player_state.h"
@@ -165,4 +164,3 @@ inline const QString CharCurse = QStringLiteral("charcurse");
 
 } // namespace akashi
 
-#endif // CORE_CLIENT_SESSION_H

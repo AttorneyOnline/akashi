@@ -1,5 +1,4 @@
-#ifndef CORE_COMMAND_REGISTRY_H
-#define CORE_COMMAND_REGISTRY_H
+#pragma once
 
 #include "akashi/service.h"
 #include "akashi_core_export.h"
@@ -56,4 +55,3 @@ class AKASHI_CORE_EXPORT CommandRegistry : public IService
 
 } // namespace akashi
 
-#endif // CORE_COMMAND_REGISTRY_H

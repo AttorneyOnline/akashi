@@ -1,5 +1,4 @@
-#ifndef COMMANDS_MESSAGING_COMMANDS_H
-#define COMMANDS_MESSAGING_COMMANDS_H
+#pragma once
 
 namespace akashi {
 class CommandRegistry;
@@ -11,4 +10,3 @@ void registerMessagingCommands(akashi::CommandRegistry &f_registry);
 
 } // namespace akashi::commands
 
-#endif // COMMANDS_MESSAGING_COMMANDS_H

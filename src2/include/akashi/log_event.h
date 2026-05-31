@@ -1,5 +1,4 @@
-#ifndef AKASHI_LOG_EVENT_H
-#define AKASHI_LOG_EVENT_H
+#pragma once
 
 #include <QString>
 
@@ -37,4 +36,3 @@ struct LogEvent
 
 } // namespace akashi
 
-#endif // AKASHI_LOG_EVENT_H

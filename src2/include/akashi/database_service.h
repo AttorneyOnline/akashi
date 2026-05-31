@@ -1,5 +1,4 @@
-#ifndef AKASHI_DATABASE_SERVICE_H
-#define AKASHI_DATABASE_SERVICE_H
+#pragma once
 
 #include "akashi/service.h"
 #include "akashi_core_export.h"
@@ -69,4 +68,3 @@ class AKASHI_CORE_EXPORT DatabaseService : public QObject, public IService
 
 } // namespace akashi
 
-#endif // AKASHI_DATABASE_SERVICE_H

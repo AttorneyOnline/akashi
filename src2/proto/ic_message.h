@@ -1,5 +1,4 @@
-#ifndef PROTO_IC_MESSAGE_H
-#define PROTO_IC_MESSAGE_H
+#pragma once
 
 #include "akashi_core_export.h"
 #include "proto/message.h"
@@ -66,4 +65,3 @@ class AKASHI_CORE_EXPORT ICMessage : public Message
 
 } // namespace akashi
 
-#endif // PROTO_IC_MESSAGE_H

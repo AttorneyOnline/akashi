@@ -1,5 +1,4 @@
-#ifndef AKASHI_EVENT_H
-#define AKASHI_EVENT_H
+#pragma once
 
 #include <QMetaType>
 #include <QString>
@@ -147,4 +146,3 @@ Q_DECLARE_METATYPE(akashi::KickIssuedEvent)
 Q_DECLARE_METATYPE(akashi::CommandExecutedEvent)
 Q_DECLARE_METATYPE(akashi::ConfigReloadedEvent)
 
-#endif // AKASHI_EVENT_H

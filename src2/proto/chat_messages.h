@@ -1,5 +1,4 @@
-#ifndef PROTO_CHAT_MESSAGES_H
-#define PROTO_CHAT_MESSAGES_H
+#pragma once
 
 #include "akashi_core_export.h"
 #include "proto/message.h"
@@ -59,4 +58,3 @@ class AKASHI_CORE_EXPORT CaseAnnouncementMessage : public Message
 
 } // namespace akashi
 
-#endif // PROTO_CHAT_MESSAGES_H

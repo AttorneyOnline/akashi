@@ -15,8 +15,7 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
-#ifndef SERVER_H
-#define SERVER_H
+#pragma once
 
 #include "akashi_core_export.h"
 #include "core/exit_code.h"
@@ -32,6 +31,7 @@
 #include <QDebug>
 #include <QFile>
 #include <QMap>
+#include <QRegularExpression>
 #include <QSettings>
 #include <QStack>
 #include <QString>
@@ -44,6 +44,7 @@
 
 namespace akashi {
 class ArupBroadcaster;
+class AuthThrottle;
 class CommandRegistry;
 class ConfigStore;
 class DatabaseService;
@@ -52,7 +53,6 @@ class FileSystemService;
 class LogService;
 class PacketService;
 class TextFilterRegistry;
-class WriterSql;
 class WriterText;
 class PermissionRegistry;
 class ServiceRegistry;
@@ -386,6 +386,8 @@ class AKASHI_CORE_EXPORT Server : public QObject
 
     akashi::TextFilterRegistry *textFilterRegistry();
 
+    akashi::AuthThrottle *authThrottle();
+
     akashi::ConfigStore *configStore();
     ServerSettings *serverSettings();
     QString configPath(const QString &f_file) const;
@@ -447,7 +449,6 @@ class AKASHI_CORE_EXPORT Server : public QObject
     akashi::LogService *m_log_service = nullptr;
     akashi::EventBus *m_event_bus = nullptr;
     std::shared_ptr<akashi::WriterText> m_text_writer;
-    std::shared_ptr<akashi::WriterSql> m_sql_writer;
 
 
     akashi::ConfigStore *m_config_store = nullptr;
@@ -464,6 +465,7 @@ class AKASHI_CORE_EXPORT Server : public QObject
         QStringList reprimands;
         QStringList gimps;
         QStringList filters;
+        QList<QRegularExpression> compiled_filters;
         QStringList cdns;
     };
     TextData m_text_data;
@@ -480,6 +482,7 @@ class AKASHI_CORE_EXPORT Server : public QObject
     akashi::ArupBroadcaster *m_arup_broadcaster = nullptr;
     akashi::CommandRegistry *m_command_registry = nullptr;
     akashi::PermissionRegistry *m_permission_registry = nullptr;
+    akashi::AuthThrottle *m_auth_throttle = nullptr;
     akashi::TextFilterRegistry *m_text_filter_registry = nullptr;
 
     PlayerStateObserver m_player_state_observer;
@@ -543,9 +546,9 @@ class AKASHI_CORE_EXPORT Server : public QObject
     DBManager *db_manager;
 
     /**
-     * @brief The filesystem guard used for safe file access.
+     * @brief The filesystem guard, resolved from the service registry.
      */
-    akashi::FileSystemService *m_filesystem;
+    akashi::FileSystemService *m_filesystem = nullptr;
 
     /**
      * @brief The registry of shared services, owned by the server context.
@@ -603,4 +606,3 @@ class AKASHI_CORE_EXPORT Server : public QObject
     void allowMessage();
 };
 
-#endif // SERVER_H

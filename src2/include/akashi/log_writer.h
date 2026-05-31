@@ -1,5 +1,4 @@
-#ifndef AKASHI_LOG_WRITER_H
-#define AKASHI_LOG_WRITER_H
+#pragma once
 
 #include "akashi/log_event.h"
 
@@ -19,4 +18,3 @@ class ILogWriter
 
 } // namespace akashi
 
-#endif // AKASHI_LOG_WRITER_H

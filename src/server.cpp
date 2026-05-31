@@ -30,6 +30,7 @@
 #include "commands/messaging_commands.h"
 #include "commands/moderation_commands.h"
 #include "commands/music_commands.h"
+#include "commands/plugin_commands.h"
 #include "commands/roleplay_commands.h"
 #include "akashi/config_store.h"
 #include "akashi/setting_notifier.h"
@@ -40,7 +41,6 @@
 #include "db_manager.h"
 #include "discord.h"
 #include "core/log_service.h"
-#include "core/writer_sql.h"
 #include "core/writer_text.h"
 #include "world/floor.h"
 #include "network/network_socket.h"
@@ -48,6 +48,7 @@
 #include "proto/packet.h"
 #include "proto/packet_service.h"
 #include "serverpublisher.h"
+#include "core/auth_throttle.h"
 #include "core/text_filter_registry.h"
 #include "world/arup_broadcaster.h"
 #include "world/jukebox.h"
@@ -71,6 +72,9 @@ Server::Server(int p_ws_port, akashi::ConfigStore *f_config_store, akashi::Datab
     m_text_data.reprimands = akashi::config::loadTextFile(configPath("text/reprimands.txt"));
     m_text_data.gimps = akashi::config::loadTextFile(configPath("text/gimp.txt"));
     m_text_data.filters = akashi::config::loadTextFile(configPath("text/filter.txt"));
+    m_text_data.compiled_filters.clear();
+    for (const QString &l_pattern : std::as_const(m_text_data.filters))
+        m_text_data.compiled_filters.append(QRegularExpression(l_pattern, QRegularExpression::CaseInsensitiveOption));
     m_text_data.cdns = akashi::config::loadTextFile(configPath("text/cdns.txt"));
     if (m_text_data.cdns.isEmpty())
         m_text_data.cdns = QStringList{"cdn.discord.com"};
@@ -101,7 +105,7 @@ Server::Server(int p_ws_port, akashi::ConfigStore *f_config_store, akashi::Datab
     if (m_services) {
         m_packets = m_services->resolve<akashi::PacketService>("akashi.packets");
     }
-    m_filesystem = new akashi::FileSystemService();
+    m_filesystem = m_services->resolve<akashi::FileSystemService>("akashi.filesystem").get();
     db_manager = new DBManager(f_database->database());
     medieval_parser = new MedievalParser(configPath("text/autorp.json"));
 
@@ -116,9 +120,8 @@ Server::Server(int p_ws_port, akashi::ConfigStore *f_config_store, akashi::Datab
     m_text_filter_registry->registerFilter(QStringLiteral("word-filter"), 100,
         [this](const QString &f_text) -> std::optional<QString> {
             QString l_result = f_text;
-            for (const QString &l_pattern : filterList())
-                l_result.replace(QRegularExpression(l_pattern, QRegularExpression::CaseInsensitiveOption),
-                                 QStringLiteral("❌"));
+            for (const QRegularExpression &l_re : std::as_const(m_text_data.compiled_filters))
+                l_result.replace(l_re, QStringLiteral("❌"));
             return l_result;
         }, true, QStringLiteral("core"));
 
@@ -142,8 +145,12 @@ Server::Server(int p_ws_port, akashi::ConfigStore *f_config_store, akashi::Datab
 
     m_text_filter_registry->registerFilter(QStringLiteral("disemvoweled"), 500,
         [](const QString &f_text) -> std::optional<QString> {
-            return QString(f_text).remove(QRegularExpression(QStringLiteral("[AEIOUaeiou]")));
+            static const QRegularExpression l_vowels(QStringLiteral("[AEIOUaeiou]"));
+            return QString(f_text).remove(l_vowels);
         }, false, QStringLiteral("core"));
+
+    m_auth_throttle = new akashi::AuthThrottle(m_server_settings->max_login_attempts(),
+                                               m_server_settings->login_lockout_seconds());
 
     discord = new Discord(m_discord_settings, m_event_bus,
         [this](const QString &area) -> QString {
@@ -166,9 +173,6 @@ Server::Server(int p_ws_port, akashi::ConfigStore *f_config_store, akashi::Datab
     }
     m_text_writer = std::make_shared<akashi::WriterText>(l_writer_mode, m_log_service);
     m_log_service->registerWriter(m_text_writer, QStringLiteral("core"));
-
-    m_sql_writer = std::make_shared<akashi::WriterSql>(QStringLiteral("data/logs/events.db"));
-    m_log_service->registerWriter(m_sql_writer, QStringLiteral("core"));
 
     m_services->registerService(std::shared_ptr<akashi::CommandRegistry>(m_command_registry, [](auto *) {}));
     m_services->registerService(std::shared_ptr<akashi::PermissionRegistry>(m_permission_registry, [](auto *) {}));
@@ -285,6 +289,10 @@ ExitCode Server::start()
     connect(m_config_store, &akashi::ConfigStore::configReloaded, this, [this]() {
         acl_roles_handler->loadFile(configPath("acl_roles.json"));
     });
+    connect(m_config_store, &akashi::ConfigStore::configReloaded, this, [this]() {
+        m_auth_throttle->setLimits(m_server_settings->max_login_attempts(),
+                                   m_server_settings->login_lockout_seconds());
+    });
 
     // Rate-Limiter for IC-Chat
     m_message_floodguard_timer = new QTimer(this);
@@ -366,6 +374,7 @@ ExitCode Server::start()
     akashi::commands::registerMusicCommands(*m_command_registry);
     akashi::commands::registerRoleplayCommands(*m_command_registry);
     akashi::commands::registerMessagingCommands(*m_command_registry);
+    akashi::commands::registerPluginCommands(*m_command_registry);
     m_command_registry->applyExtensions(configPath("command_extensions.json"));
 
     return ExitCode::Ok;
@@ -583,6 +592,11 @@ akashi::TextFilterRegistry *Server::textFilterRegistry()
     return m_text_filter_registry;
 }
 
+akashi::AuthThrottle *Server::authThrottle()
+{
+    return m_auth_throttle;
+}
+
 void Server::reloadSettings()
 {
     m_config_store->reload();
@@ -592,6 +606,9 @@ void Server::reloadTextData()
 {
     m_text_data.gimps = akashi::config::loadTextFile(configPath("text/gimp.txt"));
     m_text_data.filters = akashi::config::loadTextFile(configPath("text/filter.txt"));
+    m_text_data.compiled_filters.clear();
+    for (const QString &l_pattern : std::as_const(m_text_data.filters))
+        m_text_data.compiled_filters.append(QRegularExpression(l_pattern, QRegularExpression::CaseInsensitiveOption));
     m_text_data.cdns = akashi::config::loadTextFile(configPath("text/cdns.txt"));
     if (m_text_data.cdns.isEmpty())
         m_text_data.cdns = QStringList{"cdn.discord.com"};
@@ -974,7 +991,7 @@ Server::~Server()
     delete discord;
     delete acl_roles_handler;
     delete db_manager;
-    delete m_filesystem;
+    delete m_auth_throttle;
     delete m_command_registry;
     delete m_permission_registry;
     delete m_event_bus;

@@ -15,8 +15,7 @@
 //    You should have received a copy of the GNU Affero General Public License      //
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
-#ifndef NETWORK_SOCKET_H
-#define NETWORK_SOCKET_H
+#pragma once
 
 #include "akashi_core_export.h"
 #include "core/transport.h"
@@ -129,4 +128,3 @@ class AKASHI_CORE_EXPORT NetworkSocket : public akashi::ITransport
     QTimer *m_liveness_timer;
 };
 
-#endif

@@ -1,5 +1,4 @@
-#ifndef PROTO_CLIENT_PROFILE_H
-#define PROTO_CLIENT_PROFILE_H
+#pragma once
 
 #include "akashi_core_export.h"
 
@@ -41,4 +40,3 @@ struct AKASHI_CORE_EXPORT ClientProfile
 
 } // namespace akashi
 
-#endif // PROTO_CLIENT_PROFILE_H

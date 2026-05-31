@@ -1,5 +1,4 @@
-#ifndef WRITER_SQL_H
-#define WRITER_SQL_H
+#pragma once
 
 #include "akashi/log_writer.h"
 #include "akashi_core_export.h"
@@ -54,4 +53,3 @@ class AKASHI_CORE_EXPORT WriterSql : public ILogWriter
 
 } // namespace akashi
 
-#endif // WRITER_SQL_H
