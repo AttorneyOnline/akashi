@@ -22,6 +22,7 @@
 #include "akashi/filesystem_service.h"
 #include "akashi/service_registry.h"
 #include "core/event_bus.h"
+#include "world/area_rules.h"
 #include "aoclient.h"
 #include "area_data.h"
 #include "commands/area_commands.h"
@@ -39,7 +40,6 @@
 #include "core/permission_registry.h"
 #include "core/server_settings.h"
 #include "db_manager.h"
-#include "discord.h"
 #include "core/log_service.h"
 #include "core/writer_text.h"
 #include "world/floor.h"
@@ -63,7 +63,6 @@ Server::Server(int p_ws_port, akashi::ConfigStore *f_config_store, akashi::Datab
     m_player_count(0)
 {
     m_server_settings = new ServerSettings(f_config_store);
-    m_discord_settings = new DiscordSettings(f_config_store);
     m_areas_ini = f_config_store->settings("areas");
     m_ambience_ini = f_config_store->settings("ambience");
 
@@ -107,14 +106,13 @@ Server::Server(int p_ws_port, akashi::ConfigStore *f_config_store, akashi::Datab
     }
     m_filesystem = m_services->resolve<akashi::FileSystemService>("akashi.filesystem").get();
     db_manager = new DBManager(f_database->database());
-    medieval_parser = new MedievalParser(configPath("text/autorp.json"));
-
     acl_roles_handler = new ACLRolesHandler(this);
     acl_roles_handler->loadFile(configPath("acl_roles.json"));
 
     m_permission_registry = new akashi::PermissionRegistry;
     m_command_registry = new akashi::CommandRegistry;
     m_event_bus = new akashi::EventBus;
+    m_area_rule_registry = new akashi::AreaRuleRegistry;
     m_text_filter_registry = new akashi::TextFilterRegistry;
 
     m_text_filter_registry->registerFilter(QStringLiteral("word-filter"), 100,
@@ -129,11 +127,6 @@ Server::Server(int p_ws_port, akashi::ConfigStore *f_config_store, akashi::Datab
         [this](const QString &) -> std::optional<QString> {
             const auto &l_list = gimpList();
             return l_list.at(QRandomGenerator::global()->bounded(l_list.size()));
-        }, false, QStringLiteral("core"));
-
-    m_text_filter_registry->registerFilter(QStringLiteral("medieval"), 300,
-        [this](const QString &f_text) -> std::optional<QString> {
-            return medievalParser()->degrootify(f_text);
         }, false, QStringLiteral("core"));
 
     m_text_filter_registry->registerFilter(QStringLiteral("shaken"), 400,
@@ -151,15 +144,6 @@ Server::Server(int p_ws_port, akashi::ConfigStore *f_config_store, akashi::Datab
 
     m_auth_throttle = new akashi::AuthThrottle(m_server_settings->max_login_attempts(),
                                                m_server_settings->login_lockout_seconds());
-
-    discord = new Discord(m_discord_settings, m_event_bus,
-        [this](const QString &area) -> QString {
-            const auto l_events = m_log_service->recentEvents(area, 0);
-            QString l_text;
-            for (const auto &e : l_events)
-                l_text.append(m_log_service->formatEvent(e) + QStringLiteral("\n"));
-            return l_text;
-        }, this);
 
     m_log_service = new akashi::LogService(f_config_store, m_server_settings->logbuffer(), this);
 
@@ -228,17 +212,56 @@ ExitCode Server::start()
         m_default_floor.music_songs.insert(it.key(), {it.key(), it.value().first, it.value().second});
     }
 
-    // Assembles the area list
+    // Assembles the area list, reading an optional floor assignment per area.
     QStringList l_raw_names = m_areas_ini->childGroups();
     std::sort(l_raw_names.begin(), l_raw_names.end(), [](const QString &a, const QString &b) { return a.split(":")[0].toInt() < b.split(":")[0].toInt(); });
+
+    QMap<QString, int> l_floor_name_to_id;
+    QStringList l_area_floor_names;
+
+    QSet<QString> l_ic_blocked_floors;
     for (const QString &l_raw : qAsConst(l_raw_names)) {
         QStringList l_parts = l_raw.split(":");
         l_parts.removeFirst();
         m_area_names.append(l_parts.join(":"));
+
+        m_areas_ini->beginGroup(l_raw);
+        QString l_floor_name = m_areas_ini->value("floor", "Default").toString();
+        if (m_areas_ini->value("ic_allowed", "true").toString() == "false")
+            l_ic_blocked_floors.insert(l_floor_name);
+        m_areas_ini->endGroup();
+        l_area_floor_names.append(l_floor_name);
+
+        if (!l_floor_name_to_id.contains(l_floor_name)) {
+            int l_id = l_floor_name_to_id.size();
+            l_floor_name_to_id.insert(l_floor_name, l_id);
+        }
     }
+
+    m_floors.resize(l_floor_name_to_id.size());
+    for (auto it = l_floor_name_to_id.constBegin(); it != l_floor_name_to_id.constEnd(); ++it) {
+        m_floors[it.value()].id = it.value();
+        m_floors[it.value()].name = it.key();
+    }
+
+    for (const QString &l_blocked : l_ic_blocked_floors) {
+        int l_fid = l_floor_name_to_id.value(l_blocked, -1);
+        if (l_fid >= 0) {
+            m_area_rule_registry->registerFloorRule(
+                QStringLiteral("no-ic"), akashi::AreaEvent::MessageSent, akashi::RulePhase::Before, l_fid,
+                [name = l_blocked](const akashi::AreaEventDetails &) {
+                    return akashi::RuleVerdict{false, "IC chat is disabled on the " + name + " floor."};
+                }, QStringLiteral("core"));
+        }
+    }
+
     for (int i = 0; i < m_area_names.length(); i++) {
+        int l_floor_id = l_floor_name_to_id.value(l_area_floor_names[i], 0);
+        int l_x_on_floor = m_floors[l_floor_id].area_ids.size();
+        m_floors[l_floor_id].area_ids.append(i);
+
         QString area_name = QString::number(i) + ":" + m_area_names[i];
-        AreaData *l_area = new AreaData(area_name, i, m_areas_ini, m_ambience_ini);
+        AreaData *l_area = new AreaData(area_name, i, l_floor_id, l_x_on_floor, m_areas_ini, m_ambience_ini);
         m_areas.insert(i, l_area);
         l_area->jukebox()->setFloorCatalog(&m_default_floor);
 
@@ -261,7 +284,7 @@ ExitCode Server::start()
 
     m_arup_broadcaster = new akashi::ArupBroadcaster(this);
     for (int i = 0; i < m_areas.size(); ++i) {
-        m_arup_broadcaster->addArea(m_areas[i]->area());
+        m_arup_broadcaster->addArea(m_areas[i]->area(), m_areas[i]->area()->floorId());
     }
     m_arup_broadcaster->setOwnerFormatter([this](int owner_id) -> QString {
         AOClient *owner = clientById(owner_id);
@@ -270,8 +293,12 @@ ExitCode Server::start()
         }
         return QStringLiteral("[") + QString::number(owner->clientId()) + QStringLiteral("] ") + owner->character();
     });
-    connect(m_arup_broadcaster, &akashi::ArupBroadcaster::arupBroadcast, this, [this](const akashi::Packet &packet) {
-        broadcast(packet);
+    connect(m_arup_broadcaster, &akashi::ArupBroadcaster::arupFloorBroadcast, this, [this](const akashi::Packet &packet, int floorId) {
+        const akashi::Floor *l_floor = floorById(floorId);
+        if (!l_floor) return;
+        for (int l_aid : l_floor->area_ids) {
+            broadcast(packet, l_aid);
+        }
     });
     connect(m_arup_broadcaster, &akashi::ArupBroadcaster::arupUnicast, this, &Server::unicast);
 
@@ -592,6 +619,11 @@ akashi::TextFilterRegistry *Server::textFilterRegistry()
     return m_text_filter_registry;
 }
 
+akashi::AreaRuleRegistry *Server::areaRuleRegistry()
+{
+    return m_area_rule_registry;
+}
+
 akashi::AuthThrottle *Server::authThrottle()
 {
     return m_auth_throttle;
@@ -831,6 +863,42 @@ QString Server::areaName(int f_area_id)
     return l_name;
 }
 
+int Server::floorCount() const
+{
+    return m_floors.size();
+}
+
+const akashi::Floor *Server::floorById(int f_floor_id) const
+{
+    if (f_floor_id >= 0 && f_floor_id < m_floors.size())
+        return &m_floors[f_floor_id];
+    return nullptr;
+}
+
+const akashi::Floor *Server::floorByName(const QString &f_name) const
+{
+    for (const akashi::Floor &l_floor : m_floors) {
+        if (l_floor.name.compare(f_name, Qt::CaseInsensitive) == 0)
+            return &l_floor;
+    }
+    return nullptr;
+}
+
+int Server::floorIdForArea(int f_area_id) const
+{
+    if (f_area_id >= 0 && f_area_id < m_areas.size())
+        return m_areas[f_area_id]->area()->floorId();
+    return 0;
+}
+
+QStringList Server::floorNames() const
+{
+    QStringList l_names;
+    for (const akashi::Floor &l_floor : m_floors)
+        l_names.append(l_floor.name);
+    return l_names;
+}
+
 QStringList Server::musicList()
 {
     return m_default_floor.music_ordered;
@@ -861,10 +929,6 @@ std::shared_ptr<akashi::PacketService> Server::packets()
     return m_packets;
 }
 
-MedievalParser *Server::medievalParser()
-{
-    return medieval_parser;
-}
 
 ACLRolesHandler *Server::aclRolesHandler()
 {
@@ -988,13 +1052,12 @@ Server::~Server()
     qDeleteAll(l_clients);
 
     delete server;
-    delete discord;
     delete acl_roles_handler;
     delete db_manager;
     delete m_auth_throttle;
     delete m_command_registry;
     delete m_permission_registry;
     delete m_event_bus;
+    delete m_area_rule_registry;
     delete m_server_settings;
-    delete m_discord_settings;
 }

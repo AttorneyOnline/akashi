@@ -51,10 +51,6 @@ set(AKASHI_SOURCES
   src/data_types.h
   src/db_manager.cpp
   src/db_manager.h
-  src/discord.cpp
-  src/discord.h
-  src/medieval_parser.cpp
-  src/medieval_parser.h
   src/packets.cpp
   src/player_directory.cpp
   src/player_directory.h
@@ -255,7 +251,9 @@ install(FILES
 
 if(BUILD_TESTING)
   enable_testing()
+  add_subdirectory(plugins/discord-integration)
   add_subdirectory(plugins/hello-world)
+  add_subdirectory(plugins/medieval-speak)
   add_subdirectory(plugins/sql-logger)
   add_subdirectory(tests)
 endif()

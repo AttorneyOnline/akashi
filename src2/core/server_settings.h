@@ -57,20 +57,3 @@ class AKASHI_CORE_EXPORT ServerSettings : public akashi::Settings
     akashi::Setting<int> maintenance_max_players{this, "Database/maintenance_max_players", -1, "Maintenance waits while more players than this are online, or -1 to run regardless.", akashi::atLeast(-1)};
 };
 
-// The settings of discord.json.
-class AKASHI_CORE_EXPORT DiscordSettings : public akashi::Settings
-{
-  public:
-    explicit DiscordSettings(akashi::ConfigStore *f_store) :
-        Settings(f_store, "discord") {}
-
-    akashi::Setting<bool> webhook_enabled{this, "Discord/webhook_enabled", false, "Whether Discord webhooks are enabled at all."};
-    akashi::Setting<bool> webhook_modcall_enabled{this, "Discord/webhook_modcall_enabled", false, "Whether modcalls are sent to a webhook."};
-    akashi::Setting<QString> webhook_modcall_url{this, "Discord/webhook_modcall_url", "", "The webhook URL for modcalls."};
-    akashi::Setting<QString> webhook_modcall_content{this, "Discord/webhook_modcall_content", "", "Extra text sent with a modcall, for example a role ping."};
-    akashi::Setting<bool> webhook_modcall_sendfile{this, "Discord/webhook_modcall_sendfile", false, "Whether the area log is attached to a modcall."};
-    akashi::Setting<bool> webhook_ban_enabled{this, "Discord/webhook_ban_enabled", false, "Whether bans are sent to a webhook."};
-    akashi::Setting<QString> webhook_ban_url{this, "Discord/webhook_ban_url", "", "The webhook URL for bans."};
-    akashi::Setting<QString> webhook_color{this, "Discord/webhook_color", "13312842", "The color of webhook messages."};
-};
-

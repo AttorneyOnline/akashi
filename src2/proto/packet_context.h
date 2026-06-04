@@ -169,6 +169,19 @@ class AKASHI_CORE_EXPORT IPacketContext
 
     // Areas.
     virtual void changeArea(int f_area_index) = 0;
+    virtual int floorCount() const = 0;
+    virtual int floorAreaId(int f_floor_id, int f_x) const = 0;
+    virtual int currentFloorId() const = 0;
+    virtual int currentAreaId() const = 0;
+
+    // The area names visible to this client (only their floor).
+    virtual QStringList floorAreaNames() const = 0;
+    // Maps a floor-local area index to the global area id.
+    virtual int floorAreaToGlobal(int f_local_index) const = 0;
+
+    // Runs Before-phase area/floor rules for the given message text.
+    // Returns empty string if allowed, or the block reason.
+    virtual QString checkMessageRule(const QString &f_text) = 0;
 
     // Evidence creation; deletion and edits are further up.
     virtual void addEvidence(const QString &f_name, const QString &f_description, const QString &f_image) = 0;

@@ -44,11 +44,11 @@ class AKASHI_CORE_EXPORT ArupBroadcaster : public QObject
 
     explicit ArupBroadcaster(QObject *parent = nullptr);
 
-    void addArea(Area *area);
+    void addArea(Area *area, int floorId);
     void setOwnerFormatter(OwnerFormatter formatter);
 
-    // Unicast all four ARUP types to one client (join time).
-    void sendFullArup(int clientId);
+    // Unicast all four ARUP types to one client on a specific floor.
+    void sendFullArup(int clientId, int floorId);
 
     // Broadcast one ARUP type to everyone right now, bypassing the
     // deferred timer. The handshake handler uses this so the post-join
@@ -56,9 +56,12 @@ class AKASHI_CORE_EXPORT ArupBroadcaster : public QObject
     void broadcastNow(Type type);
 
     Packet buildArup(Type type) const;
+    Packet buildFloorArup(Type type, int floorId) const;
+
+    int floorCount() const;
 
   Q_SIGNALS:
-    void arupBroadcast(const akashi::Packet &packet);
+    void arupFloorBroadcast(const akashi::Packet &packet, int floorId);
     void arupUnicast(const akashi::Packet &packet, int clientId);
 
   private:
@@ -68,6 +71,7 @@ class AKASHI_CORE_EXPORT ArupBroadcaster : public QObject
     static QString lockString(Area::LockState state);
 
     QVector<Area *> m_areas;
+    QVector<QVector<Area *>> m_floor_areas;
     OwnerFormatter m_format_owner;
     bool m_dirty[4] = {};
     QTimer m_flush_timer;

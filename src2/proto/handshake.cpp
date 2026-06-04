@@ -148,7 +148,7 @@ class ResourceCountHandler : public PacketHandler
         Q_UNUSED(f_message)
         // Evidence is not loaded during this part anymore, so the count is
         // always zero. The client only cares about what it gets from LE.
-        f_context.sendPacket(Packet(ao2::HEADER_SI, {QString::number(f_context.characters().size()), "0", QString::number(f_context.areaNames().size() + f_context.musicList().size())}));
+        f_context.sendPacket(Packet(ao2::HEADER_SI, {QString::number(f_context.characters().size()), "0", QString::number(f_context.floorAreaNames().size() + f_context.musicList().size())}));
     }
 };
 
@@ -168,7 +168,7 @@ class MusicListHandler : public PacketHandler
     void handle(const Message &f_message, IPacketContext &f_context) const override
     {
         Q_UNUSED(f_message)
-        f_context.sendPacket(Packet(ao2::HEADER_SM, f_context.areaNames() + f_context.musicList()));
+        f_context.sendPacket(Packet(ao2::HEADER_SM, f_context.floorAreaNames() + f_context.musicList()));
     }
 };
 
@@ -195,7 +195,7 @@ class JoinHandler : public PacketHandler
         const AreaSnapshot l_area = f_context.areaState();
         f_context.sendPacket(Packet(ao2::HEADER_HP, {"1", QString::number(l_area.def_hp)}));
         f_context.sendPacket(Packet(ao2::HEADER_HP, {"2", QString::number(l_area.pro_hp)}));
-        f_context.sendPacket(Packet(ao2::HEADER_FA, f_context.areaNames()));
+        f_context.sendPacket(Packet(ao2::HEADER_FA, f_context.floorAreaNames()));
         // Here lies OPPASS, the genius of FanatSors who send the modpass to everyone in plain text.
         f_context.sendPacket(Packet(ao2::HEADER_DONE));
         f_context.sendPacket(Packet(ao2::HEADER_BN, {l_area.background, l_area.side}));

@@ -259,6 +259,9 @@ class FakeContext : public akashi::IPacketContext
     QList<akashi::Packet> area_broadcasts;
     QStringList added_evidence;
     int changed_area = -100;
+    int floor_count = 1;
+    struct FloorArea { int floor_id; int x; int area_id; };
+    QList<FloorArea> floor_areas = {{0, 0, 0}, {0, 1, 1}};
 
     bool hasSong(const QString &f_name) const override { return music_name_list.contains(f_name); }
     bool isDjBlocked() const override { return dj_blocked; }
@@ -298,6 +301,26 @@ class FakeContext : public akashi::IPacketContext
     {
         changed_area = f_area_index;
         calls.append("changeArea");
+    }
+
+    int floorCount() const override { return floor_count; }
+    int current_floor_id = 0;
+    int current_area_id = 0;
+    QString message_rule_block;
+    int currentFloorId() const override { return current_floor_id; }
+    int currentAreaId() const override { return current_area_id; }
+    QStringList floor_area_names;
+    QStringList floorAreaNames() const override { return floor_area_names.isEmpty() ? area_name_list : floor_area_names; }
+    int floorAreaToGlobal(int f_local_index) const override { return f_local_index; }
+    QString checkMessageRule(const QString &) override { return message_rule_block; }
+
+    int floorAreaId(int f_floor_id, int f_x) const override
+    {
+        for (const auto &[fid, x, aid] : floor_areas) {
+            if (fid == f_floor_id && x == f_x)
+                return aid;
+        }
+        return -1;
     }
 
     void addEvidence(const QString &f_name, const QString &f_description, const QString &f_image) override

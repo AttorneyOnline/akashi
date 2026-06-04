@@ -1,0 +1,6 @@
+{
+    "id": "akashi.discord",
+    "version": "1.0.0",
+    "dependencies": [],
+    "services": ["akashi.events", "akashi.config", "akashi.network", "akashi.log"]
+}

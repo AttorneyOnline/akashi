@@ -21,7 +21,6 @@
 #include "core/exit_code.h"
 #include "core/mmdb_reader.h"
 #include "data_types.h"
-#include "medieval_parser.h"
 #include "player_directory.h"
 #include "playerstateobserver.h"
 #include "proto/packet.h"
@@ -52,6 +51,7 @@ class EventBus;
 class FileSystemService;
 class LogService;
 class PacketService;
+class AreaRuleRegistry;
 class TextFilterRegistry;
 class WriterText;
 class PermissionRegistry;
@@ -59,14 +59,11 @@ class ServiceRegistry;
 }
 
 class ACLRolesHandler;
-class DiscordSettings;
 class ServerPublisher;
 class ServerSettings;
 class AOClient;
 class AreaData;
 class DBManager;
-class Discord;
-
 /**
  * @brief The class that represents the actual server as it is.
  */
@@ -300,11 +297,12 @@ class AKASHI_CORE_EXPORT Server : public QObject
      */
     QString areaName(int f_area_id);
 
-    /**
-     * @brief Returns the available songs on the server.
-     *
-     * @return A list of songs.
-     */
+    int floorCount() const;
+    const akashi::Floor *floorById(int f_floor_id) const;
+    const akashi::Floor *floorByName(const QString &f_name) const;
+    int floorIdForArea(int f_area_id) const;
+    QStringList floorNames() const;
+
     QStringList musicList();
 
     /**
@@ -336,10 +334,6 @@ class AKASHI_CORE_EXPORT Server : public QObject
      */
     std::shared_ptr<akashi::PacketService> packets();
 
-    /**
-     * @brief Returns a pointer to the server's Ye Olde Chat Filter
-     */
-    MedievalParser *medievalParser();
 
     /**
      * @brief Returns a pointer to ACL role handler.
@@ -385,6 +379,8 @@ class AKASHI_CORE_EXPORT Server : public QObject
     akashi::PermissionRegistry *permissionRegistry();
 
     akashi::TextFilterRegistry *textFilterRegistry();
+
+    akashi::AreaRuleRegistry *areaRuleRegistry();
 
     akashi::AuthThrottle *authThrottle();
 
@@ -437,11 +433,6 @@ class AKASHI_CORE_EXPORT Server : public QObject
     QWebSocketServer *server;
 
     /**
-     * @brief Handles Discord webhooks.
-     */
-    Discord *discord;
-
-    /**
      * @brief Handles HTTP server advertising.
      */
     ServerPublisher *server_publisher;
@@ -453,7 +444,6 @@ class AKASHI_CORE_EXPORT Server : public QObject
 
     akashi::ConfigStore *m_config_store = nullptr;
     ServerSettings *m_server_settings = nullptr;
-    DiscordSettings *m_discord_settings = nullptr;
     QSettings *m_areas_ini = nullptr;
     QSettings *m_ambience_ini = nullptr;
 
@@ -483,6 +473,7 @@ class AKASHI_CORE_EXPORT Server : public QObject
     akashi::CommandRegistry *m_command_registry = nullptr;
     akashi::PermissionRegistry *m_permission_registry = nullptr;
     akashi::AuthThrottle *m_auth_throttle = nullptr;
+    akashi::AreaRuleRegistry *m_area_rule_registry = nullptr;
     akashi::TextFilterRegistry *m_text_filter_registry = nullptr;
 
     PlayerStateObserver m_player_state_observer;
@@ -511,10 +502,8 @@ class AKASHI_CORE_EXPORT Server : public QObject
     QStringList m_area_names;
 
 
-    /**
-     * @brief The default floor holding the music catalog from music.json.
-     */
     akashi::Floor m_default_floor;
+    QVector<akashi::Floor> m_floors;
 
     /**
      * @brief The backgrounds on the server that may be used in areas.
@@ -560,10 +549,6 @@ class AKASHI_CORE_EXPORT Server : public QObject
      */
     std::shared_ptr<akashi::PacketService> m_packets;
 
-    /**
-     * @brief Medieval mode text parser class
-     */
-    MedievalParser *medieval_parser;
 
     /**
      * @see ACLRolesHandler

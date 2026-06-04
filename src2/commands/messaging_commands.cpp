@@ -246,32 +246,6 @@ static void handleUnShake(CommandContext &f_context)
     }
 }
 
-static void handleMedieval(CommandContext &f_context)
-{
-    if (auto l_target = f_context.resolveTarget()) {
-        if (l_target->hasSanction(sanction::medieval))
-            f_context.reply("That player is already speaking Ye Olde English!");
-        else {
-            f_context.reply("It is done, sire.");
-            l_target->reply("Forsooth! Thine speech will henceforth be Ye Olde!");
-        }
-        l_target->setSanction(sanction::medieval, true);
-    }
-}
-
-static void handleUnMedieval(CommandContext &f_context)
-{
-    if (auto l_target = f_context.resolveTarget()) {
-        if (!l_target->hasSanction(sanction::medieval))
-            f_context.reply("That player is not shaken!");
-        else {
-            f_context.reply("Un-medieval'd player.");
-            l_target->reply("Hark! Thine speech hast been returneth to normal.");
-        }
-        l_target->setSanction(sanction::medieval, false);
-    }
-}
-
 static void handleMutePM(CommandContext &f_context)
 {
     AOClient *l_self = f_context.server()->clientById(f_context.clientId());
@@ -453,8 +427,6 @@ void registerMessagingCommands(CommandRegistry &f_registry)
     f_registry.registerCommand({"undisemvowel", {}, {permission::mute}, 1}, handleUnDisemvowel, "core");
     f_registry.registerCommand({"shake", {}, {permission::mute}, 1}, handleShake, "core");
     f_registry.registerCommand({"unshake", {}, {permission::mute}, 1}, handleUnShake, "core");
-    f_registry.registerCommand({"medieval", {}, {permission::mute}, 1}, handleMedieval, "core");
-    f_registry.registerCommand({"unmedieval", {}, {permission::mute}, 1}, handleUnMedieval, "core");
     f_registry.registerCommand({"mutepm", {}, {}, 0}, handleMutePM, "core");
     f_registry.registerCommand({"toggleadverts", {}, {}, 0}, handleToggleAdverts, "core");
     f_registry.registerCommand({"afk", {}, {}, 0}, handleAfk, "core");

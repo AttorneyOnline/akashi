@@ -51,7 +51,7 @@ static bool verifyServerConfig(akashi::ConfigStore *f_store, ServerSettings *f_s
     QSettings *l_areas = f_store->settings("areas");
 
     QStringList l_files{path("config.json"), path("areas.json"), path("backgrounds.txt"),
-        path("characters.txt"), path("music.json"), path("discord.json"),
+        path("characters.txt"), path("music.json"),
         path("text/8ball.txt"), path("text/gimp.txt"), path("text/praise.txt"),
         path("text/reprimands.txt"), path("text/cdns.txt"), path("ipbans.json")};
     for (const QString &f : l_files) {
@@ -96,22 +96,19 @@ ExitCode ServerContext::start()
     m_config_store = new akashi::ConfigStore(akashi::ConfigStore::resolveRootPath(), this);
 
     auto l_server_settings = new ServerSettings(m_config_store);
-    auto l_discord_settings = new DiscordSettings(m_config_store);
-    const bool l_valid = l_server_settings->declare() && l_discord_settings->declare();
+    const bool l_valid = l_server_settings->declare();
 
     m_config_store->settings("acl_roles");
 
     if (!l_valid || !verifyServerConfig(m_config_store, l_server_settings)) {
         qCritical() << "The server configuration is invalid!";
         delete l_server_settings;
-        delete l_discord_settings;
         return ExitCode::InvalidConfig;
     }
 
     m_database_service = new akashi::DatabaseService(QStringLiteral("data"), this);
     if (!m_database_service->open(m_config_store->filePath("akashi.db"))) {
         delete l_server_settings;
-        delete l_discord_settings;
         return ExitCode::DatabaseError;
     }
 
@@ -132,7 +129,6 @@ ExitCode ServerContext::start()
     const int l_port = resolveServerPort(m_config_store, l_server_settings);
     // Server takes ownership of the settings objects.
     delete l_server_settings;
-    delete l_discord_settings;
     m_server = new Server(l_port, m_config_store, m_database_service, m_services, this);
     setStage(Stage::ServicesConstructed);
 

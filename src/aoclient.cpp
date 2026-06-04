@@ -20,6 +20,7 @@
 #include "akashi/event.h"
 #include "akashi/log_event.h"
 #include "area_data.h"
+#include "world/area_rules.h"
 #include "core/client_session.h"
 #include "core/event_bus.h"
 #include "core/log_service.h"
@@ -28,7 +29,6 @@
 #include "core/command_registry.h"
 #include "core/permission_registry.h"
 #include "db_manager.h"
-#include "medieval_parser.h"
 #include "playerstateobserver.h"
 #include "proto/ic.h"
 #include "proto/packet.h"
@@ -163,6 +163,9 @@ void AOClient::changeArea(int new_area)
         return;
     }
 
+    int l_old_floor = m_server->floorIdForArea(areaId());
+    int l_new_floor = m_server->floorIdForArea(new_area);
+
     if (character() != "") {
         m_server->areaById(areaId())->changeCharacter(m_server->characterId(character()), -1);
         m_server->updateCharsTaken(m_server->areaById(areaId()));
@@ -194,6 +197,12 @@ void AOClient::changeArea(int new_area)
             sendPacket("TI", {QString::number(l_timer_id), "3"});
         }
     }
+
+    if (l_old_floor != l_new_floor) {
+        sendPacket(akashi::Packet("FA", floorAreaNames()));
+        sendFullArup();
+    }
+
     sendServerMessage("You moved to area " + m_server->areaName(areaId()));
     if (m_server->areaById(areaId())->sendAreaMessageOnJoin()) {
         sendServerMessage(m_server->areaById(areaId())->areaMessage());
@@ -202,6 +211,61 @@ void AOClient::changeArea(int new_area)
     if (m_server->areaById(areaId())->lockStatus() == AreaData::LockStatus::SPECTATABLE) {
         sendServerMessage("Area " + m_server->areaName(areaId()) + " is spectate-only; to chat IC you will need to be invited by the CM.");
     }
+}
+
+int AOClient::floorCount() const
+{
+    return m_server->floorCount();
+}
+
+int AOClient::floorAreaId(int f_floor_id, int f_x) const
+{
+    const akashi::Floor *l_floor = m_server->floorById(f_floor_id);
+    if (!l_floor || f_x < 0 || f_x >= l_floor->area_ids.size())
+        return -1;
+    return l_floor->area_ids[f_x];
+}
+
+int AOClient::currentFloorId() const
+{
+    return m_server->floorIdForArea(areaId());
+}
+
+int AOClient::currentAreaId() const
+{
+    return areaId();
+}
+
+QStringList AOClient::floorAreaNames() const
+{
+    const akashi::Floor *l_floor = m_server->floorById(m_server->floorIdForArea(areaId()));
+    if (!l_floor)
+        return m_server->areaNames();
+    QStringList l_names;
+    for (int l_aid : l_floor->area_ids) {
+        l_names.append(m_server->areaName(l_aid));
+    }
+    return l_names;
+}
+
+int AOClient::floorAreaToGlobal(int f_local_index) const
+{
+    const akashi::Floor *l_floor = m_server->floorById(m_server->floorIdForArea(areaId()));
+    if (!l_floor || f_local_index < 0 || f_local_index >= l_floor->area_ids.size())
+        return -1;
+    return l_floor->area_ids[f_local_index];
+}
+
+QString AOClient::checkMessageRule(const QString &f_text)
+{
+    akashi::AreaEventDetails l_details;
+    l_details.player_id = clientId();
+    l_details.area_id = areaId();
+    l_details.floor_id = m_server->floorIdForArea(areaId());
+    l_details.text = f_text;
+    akashi::RuleVerdict l_verdict = m_server->areaRuleRegistry()->check(
+        akashi::AreaEvent::MessageSent, akashi::RulePhase::Before, l_details);
+    return l_verdict.allowed ? QString() : l_verdict.reason;
 }
 
 bool AOClient::changeCharacter(int char_id)
@@ -632,7 +696,7 @@ void AOClient::sendEvidenceList()
 
 void AOClient::sendFullArup()
 {
-    m_server->arupBroadcaster()->sendFullArup(clientId());
+    m_server->arupBroadcaster()->sendFullArup(clientId(), m_server->floorIdForArea(areaId()));
 }
 
 void AOClient::broadcastPlayerCount()

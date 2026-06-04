@@ -29,7 +29,7 @@
 static akashi::EvidenceStore::Access toStoreAccess(AreaData::EvidenceMod f_mod);
 static AreaData::EvidenceMod fromStoreAccess(akashi::EvidenceStore::Access f_access);
 
-AreaData::AreaData(QString p_name, int p_index, QSettings *f_areas_ini, QSettings *f_ambience_ini) :
+AreaData::AreaData(QString p_name, int p_index, int p_floor_id, int p_x, QSettings *f_areas_ini, QSettings *f_ambience_ini) :
     m_document("No document."),
     m_defHP(10),
     m_proHP(10),
@@ -43,7 +43,7 @@ AreaData::AreaData(QString p_name, int p_index, QSettings *f_areas_ini, QSetting
     if (l_name.isEmpty()) {
         l_name = "Unnamed Area";
     }
-    m_area = new akashi::Area(p_index, l_name, 0, p_index, this);
+    m_area = new akashi::Area(p_index, l_name, p_floor_id, p_x, this);
     m_display_name = "[" + QString::number(p_index) + "] " + l_name;
     QSettings *areas_ini = f_areas_ini;
     areas_ini->beginGroup(p_name);

@@ -48,7 +48,7 @@ void Area::initTestCase()
 
 void Area::init()
 {
-    m_area = new AreaData("Test Area", 0, m_areas_ini, m_ambience_ini);
+    m_area = new AreaData("Test Area", 0, 0, 0, m_areas_ini, m_ambience_ini);
 }
 
 void Area::cleanup()

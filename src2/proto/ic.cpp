@@ -140,6 +140,12 @@ class IcHandler : public PacketHandler
             return;
         }
 
+        const QString l_rule_block = f_context.checkMessageRule(l_ic.message_text);
+        if (!l_rule_block.isEmpty()) {
+            f_context.sendServerMessage(l_rule_block);
+            return;
+        }
+
         // Desk modifier; "chat" is an old client quirk meaning shown.
         static const QStringList l_allowed_desk_mods = {"chat", "0", "1", "2", "3", "4", "5"};
         if (!l_allowed_desk_mods.contains(l_ic.desk_mod)) {

@@ -52,7 +52,7 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
      * and `YYYYYY` is the actual name of the area.
      * @param p_index The index of the area in the area list.
      */
-    AreaData(QString p_name, int p_index, QSettings *f_areas_ini, QSettings *f_ambience_ini);
+    AreaData(QString p_name, int p_index, int p_floor_id, int p_x, QSettings *f_areas_ini, QSettings *f_ambience_ini);
 
     /**
      * @brief The world-model core this class delegates to; the area-update

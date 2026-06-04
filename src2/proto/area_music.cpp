@@ -95,9 +95,11 @@ class MusicChangeHandler : public PacketHandler
         // The packet historically does two jobs: an argument that is no
         // song moves the client to the area of that name instead.
         if (!f_context.hasSong(l_music.argument) && l_music.argument != ao2::STOP_MUSIC) {
-            const int l_area = f_context.areaNames().indexOf(l_music.argument);
-            if (l_area >= 0) {
-                f_context.changeArea(l_area);
+            const int l_local = f_context.floorAreaNames().indexOf(l_music.argument);
+            if (l_local >= 0) {
+                int l_global = f_context.floorAreaToGlobal(l_local);
+                if (l_global >= 0)
+                    f_context.changeArea(l_global);
             }
             return;
         }

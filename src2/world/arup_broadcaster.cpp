@@ -12,9 +12,12 @@ ArupBroadcaster::ArupBroadcaster(QObject *parent) :
     connect(&m_flush_timer, &QTimer::timeout, this, &ArupBroadcaster::flush);
 }
 
-void ArupBroadcaster::addArea(Area *area)
+void ArupBroadcaster::addArea(Area *area, int floorId)
 {
     m_areas.append(area);
+    if (floorId >= m_floor_areas.size())
+        m_floor_areas.resize(floorId + 1);
+    m_floor_areas[floorId].append(area);
 
     connect(area, &Area::playerCountChanged, this, [this]() {
         markDirty(Type::PlayerCount);
@@ -35,18 +38,19 @@ void ArupBroadcaster::setOwnerFormatter(OwnerFormatter formatter)
     m_format_owner = std::move(formatter);
 }
 
-void ArupBroadcaster::sendFullArup(int clientId)
+void ArupBroadcaster::sendFullArup(int clientId, int floorId)
 {
-    Q_EMIT arupUnicast(buildArup(Type::PlayerCount), clientId);
-    Q_EMIT arupUnicast(buildArup(Type::Status), clientId);
-    Q_EMIT arupUnicast(buildArup(Type::Cm), clientId);
-    Q_EMIT arupUnicast(buildArup(Type::Lock), clientId);
+    Q_EMIT arupUnicast(buildFloorArup(Type::PlayerCount, floorId), clientId);
+    Q_EMIT arupUnicast(buildFloorArup(Type::Status, floorId), clientId);
+    Q_EMIT arupUnicast(buildFloorArup(Type::Cm, floorId), clientId);
+    Q_EMIT arupUnicast(buildFloorArup(Type::Lock, floorId), clientId);
 }
 
 void ArupBroadcaster::broadcastNow(Type type)
 {
     m_dirty[static_cast<int>(type)] = false;
-    Q_EMIT arupBroadcast(buildArup(type));
+    for (int i = 0; i < m_floor_areas.size(); ++i)
+        Q_EMIT arupFloorBroadcast(buildFloorArup(type, i), i);
 }
 
 void ArupBroadcaster::markDirty(Type type)
@@ -62,7 +66,9 @@ void ArupBroadcaster::flush()
     for (int i = 0; i < 4; ++i) {
         if (m_dirty[i]) {
             m_dirty[i] = false;
-            Q_EMIT arupBroadcast(buildArup(static_cast<Type>(i)));
+            Type l_type = static_cast<Type>(i);
+            for (int f = 0; f < m_floor_areas.size(); ++f)
+                Q_EMIT arupFloorBroadcast(buildFloorArup(l_type, f), f);
         }
     }
 }
@@ -90,6 +96,37 @@ Packet ArupBroadcaster::buildArup(Type type) const
     }
 
     return Packet(QStringLiteral("ARUP"), fields);
+}
+
+Packet ArupBroadcaster::buildFloorArup(Type type, int floorId) const
+{
+    QStringList fields;
+    fields.append(QString::number(static_cast<int>(type)));
+
+    const auto &l_areas = (floorId >= 0 && floorId < m_floor_areas.size()) ? m_floor_areas[floorId] : m_areas;
+    for (const Area *area : l_areas) {
+        switch (type) {
+        case Type::PlayerCount:
+            fields.append(QString::number(area->playerCount()));
+            break;
+        case Type::Status:
+            fields.append(area->status());
+            break;
+        case Type::Cm:
+            fields.append(formatOwners(area));
+            break;
+        case Type::Lock:
+            fields.append(lockString(area->lockState()));
+            break;
+        }
+    }
+
+    return Packet(QStringLiteral("ARUP"), fields);
+}
+
+int ArupBroadcaster::floorCount() const
+{
+    return m_floor_areas.size();
 }
 
 QString ArupBroadcaster::formatOwners(const Area *area) const

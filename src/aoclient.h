@@ -239,6 +239,13 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
      * @param new_area The ID of the new area.
      */
     void changeArea(int new_area) override;
+    int floorCount() const override;
+    int floorAreaId(int f_floor_id, int f_x) const override;
+    int currentFloorId() const override;
+    int currentAreaId() const override;
+    QStringList floorAreaNames() const override;
+    int floorAreaToGlobal(int f_local_index) const override;
+    QString checkMessageRule(const QString &f_text) override;
 
     /**
      * @brief Handles an incoming command, checking for authorisation and minimum argument count.

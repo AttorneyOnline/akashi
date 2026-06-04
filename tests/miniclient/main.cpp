@@ -1495,6 +1495,314 @@ class CommandsDance : public QObject
     int m_queue_index = 0;
 };
 
+// The filters scene: a moderator applies each text filter to a target
+// (gimp, disemvowel, shake, medieval), the target speaks in IC, and the
+// echoed text shows the filter's transformation. Each filter is removed
+// before the next one is applied. Every IC message uses unique text so
+// the server's doublepost guard never triggers.
+class FiltersDance : public QObject
+{
+    Q_OBJECT
+
+  public:
+    FiltersDance(const QString &f_address, int f_port, const QString &f_modpass, QObject *parent = nullptr) :
+        QObject(parent),
+        m_address(f_address),
+        m_port(f_port),
+        m_modpass(f_modpass)
+    {
+        m_watchdog = new QTimer(this);
+        m_watchdog->setSingleShot(true);
+        connect(m_watchdog, &QTimer::timeout, this, [this] { fail("timed out waiting for: " + m_waiting_for); });
+
+        m_filters = {
+            {"gimp",       "/gimp",       "Gimped",       "/ungimp",       "Ungimped",
+             "Hello, how are you doing today?"},
+            {"disemvowel", "/disemvowel", "Disemvoweled", "/undisemvowel", "Undisemvoweled",
+             "The king is dead and the queen rules the land."},
+            {"shake",      "/shake",      "Shook",        "/unshake",      "Unshook",
+             "I think you should stop talking nonsense right now please."},
+            {"medieval",   "/medieval",   "It is done",   "/unmedieval",   "Un-medieval",
+             "Where is the blacksmith? I need my sword repaired."},
+        };
+
+        setPhase(Phase::LeaderLogin, "the leader to join and log in");
+        m_leader = new DanceClient("leader", "Phoenix", m_address, m_port, 0, this);
+        connect(m_leader, &DanceClient::failed, this, [this](const QString &f_reason) { fail(f_reason); });
+        connect(m_leader, &DanceClient::ready, this, [this] { m_leader->sendOoc("/login"); });
+        connect(m_leader, &DanceClient::oocReceived, this, &FiltersDance::onLeaderOoc);
+        connect(m_leader, &DanceClient::loggedIn, this, [this] {
+            setPhase(Phase::TargetJoin, "the target to join");
+            m_target = new DanceClient("target", "", m_address, m_port, 0, this);
+            connect(m_target, &DanceClient::failed, this, [this](const QString &f_reason) { fail(f_reason); });
+            connect(m_target, &DanceClient::icReceived, this, &FiltersDance::onTargetIc);
+            connect(m_target, &DanceClient::ready, this, [this] { applyNext(); });
+        });
+    }
+
+  private:
+    struct FilterTest
+    {
+        QString name;
+        QString apply_cmd;
+        QString apply_expect;
+        QString remove_cmd;
+        QString remove_expect;
+        QString ic_text;
+    };
+
+    enum class Phase
+    {
+        LeaderLogin,
+        TargetJoin,
+        Applying,
+        FilteredIc,
+        Removing,
+        CleanIc,
+    };
+
+    AOPacket icMessage(const QString &f_text) const
+    {
+        return AOPacket("MS", {"chat", "-", m_target->character(), "normal", f_text, "def", "1", "0", QString::number(m_target->charId()), "0", "0", "0", "0", "0", "0"});
+    }
+
+    void applyNext()
+    {
+        if (m_filter_index >= m_filters.size()) {
+            m_watchdog->stop();
+            say("");
+            say("all " + QString::number(m_filters.size()) + " text filters verified");
+            QTimer::singleShot(500, qApp, [] { qApp->exit(0); });
+            return;
+        }
+        const FilterTest &l_test = m_filters[m_filter_index];
+        setPhase(Phase::Applying, l_test.name + " apply confirmation");
+        m_leader->sendOoc(l_test.apply_cmd + " " + QString::number(m_target->clientId()));
+    }
+
+    void onLeaderOoc(const QString &f_message)
+    {
+        if (m_phase == Phase::LeaderLogin) {
+            if (f_message.contains("Entering login prompt"))
+                m_leader->sendOoc(m_modpass);
+            return;
+        }
+
+        if (m_filter_index >= m_filters.size())
+            return;
+        const FilterTest &l_test = m_filters[m_filter_index];
+
+        if (m_phase == Phase::Applying && f_message.contains(l_test.apply_expect, Qt::CaseInsensitive)) {
+            say(l_test.name + " applied, sending IC...");
+            setPhase(Phase::FilteredIc, l_test.name + " IC echo");
+            m_target->send(icMessage(l_test.ic_text));
+        }
+
+        if (m_phase == Phase::Removing && f_message.contains(l_test.remove_expect, Qt::CaseInsensitive)) {
+            say(l_test.name + " removed, sending clean IC...");
+            setPhase(Phase::CleanIc, "clean IC echo after " + l_test.name);
+            m_target->send(icMessage(l_test.ic_text + " And that is final."));
+        }
+    }
+
+    void onTargetIc(const QStringList &f_fields)
+    {
+        const QString l_text = f_fields.value(4);
+        if (m_filter_index >= m_filters.size())
+            return;
+        const FilterTest &l_test = m_filters[m_filter_index];
+
+        if (m_phase == Phase::FilteredIc) {
+            say("");
+            say("=== " + l_test.name.toUpper() + " ON ===");
+            say("SENT: " + l_test.ic_text);
+            say("RECV: " + l_text);
+            say("");
+            if (l_text == l_test.ic_text) {
+                fail(l_test.name + " filter did not transform the text");
+                return;
+            }
+            say(l_test.name + " filter transformed the text");
+            setPhase(Phase::Removing, l_test.name + " remove confirmation");
+            m_leader->sendOoc(l_test.remove_cmd + " " + QString::number(m_target->clientId()));
+        }
+        else if (m_phase == Phase::CleanIc) {
+            const QString l_expected = l_test.ic_text + " And that is final.";
+            say("");
+            say("=== " + l_test.name.toUpper() + " OFF ===");
+            say("SENT: " + l_expected);
+            say("RECV: " + l_text);
+            say("");
+            if (l_text != l_expected) {
+                fail(l_test.name + " filter was NOT removed - text still transformed");
+                return;
+            }
+            say(l_test.name + " filter toggled correctly");
+            m_filter_index++;
+            QTimer::singleShot(200, this, &FiltersDance::applyNext);
+        }
+    }
+
+    void setPhase(Phase f_phase, const QString &f_waiting_for)
+    {
+        m_phase = f_phase;
+        m_waiting_for = f_waiting_for;
+        say("--- waiting for " + f_waiting_for + " ---");
+        m_watchdog->start(7000);
+    }
+
+    void say(const QString &f_text)
+    {
+        std::cout << f_text.toStdString() << std::endl;
+    }
+
+    void fail(const QString &f_reason)
+    {
+        say("FAILED: " + f_reason);
+        qApp->exit(1);
+    }
+
+    QString m_address;
+    int m_port;
+    QString m_modpass;
+    QTimer *m_watchdog;
+    QString m_waiting_for;
+    DanceClient *m_leader = nullptr;
+    DanceClient *m_target = nullptr;
+    Phase m_phase = Phase::LeaderLogin;
+    QList<FilterTest> m_filters;
+    int m_filter_index = 0;
+};
+
+class FloorDance : public QObject
+{
+    Q_OBJECT
+
+  public:
+    FloorDance(const QString &f_address, int f_port, const QString &f_modpass, QObject *parent = nullptr) :
+        QObject(parent),
+        m_modpass(f_modpass)
+    {
+        m_watchdog = new QTimer(this);
+        m_watchdog->setSingleShot(true);
+        connect(m_watchdog, &QTimer::timeout, this, [this] { fail("timed out waiting for: " + m_waiting_for); });
+
+        setPhase(Phase::Login, "login");
+        m_client = new DanceClient("player", "Phoenix", f_address, f_port, 0, this);
+        connect(m_client, &DanceClient::failed, this, [this](const QString &f_reason) { fail(f_reason); });
+        connect(m_client, &DanceClient::ready, this, [this] { m_client->sendOoc("/login"); });
+        connect(m_client, &DanceClient::oocReceived, this, &FloorDance::onOoc);
+        connect(m_client, &DanceClient::icReceived, this, &FloorDance::onIc);
+        connect(m_client, &DanceClient::loggedIn, this, [this] {
+            setPhase(Phase::ListFloors, "floors listing");
+            m_client->sendOoc("/floors");
+        });
+    }
+
+  private:
+    enum class Phase
+    {
+        Login,
+        ListFloors,
+        LobbyIc,
+        GoToCourtroom,
+        CourtroomIcBlocked,
+        GoToLobby,
+    };
+
+    AOPacket icMessage(const QString &f_text) const
+    {
+        return AOPacket("MS", {"chat", "-", m_client->character(), "normal", f_text, "def", "1", "0", QString::number(m_client->charId()), "0", "0", "0", "0", "0", "0"});
+    }
+
+    void onOoc(const QString &f_message)
+    {
+        if (m_phase == Phase::Login) {
+            if (f_message.contains("Entering login prompt"))
+                m_client->sendOoc(m_modpass);
+            return;
+        }
+
+        if (m_phase == Phase::ListFloors) {
+            if (f_message.contains("== Floors ==")) {
+                say("floor listing received:");
+                say(f_message);
+                if (!f_message.contains("Lobby") || !f_message.contains("Courtroom")) {
+                    fail("floor listing missing Lobby or Courtroom");
+                    return;
+                }
+                say("floor listing looks good, testing IC on Lobby...");
+                setPhase(Phase::LobbyIc, "IC echo on Lobby");
+                m_client->send(icMessage("Hello from the lobby!"));
+            }
+            return;
+        }
+
+        if (m_phase == Phase::GoToCourtroom) {
+            if (f_message.contains("You moved to area") && f_message.contains("Courtroom")) {
+                say("moved to Courtroom floor, testing IC (should be blocked)...");
+                setPhase(Phase::CourtroomIcBlocked, "IC block on Courtroom");
+                m_client->send(icMessage("This should not go through."));
+            }
+            return;
+        }
+
+        if (m_phase == Phase::CourtroomIcBlocked) {
+            if (f_message.contains("IC chat is disabled")) {
+                say("IC correctly blocked on Courtroom floor: " + f_message);
+                setPhase(Phase::GoToLobby, "area move to Lobby");
+                m_client->sendOoc("/floor Lobby");
+            }
+            return;
+        }
+
+        if (m_phase == Phase::GoToLobby) {
+            if (f_message.contains("You moved to area") && f_message.contains("Basement")) {
+                say("moved back to Lobby floor");
+                m_watchdog->stop();
+                say("");
+                say("floor rules and switching verified");
+                QTimer::singleShot(500, qApp, [] { qApp->exit(0); });
+            }
+            return;
+        }
+    }
+
+    void onIc(const QStringList &f_fields)
+    {
+        if (m_phase == Phase::LobbyIc) {
+            const QString l_text = f_fields.value(4);
+            if (l_text == "Hello from the lobby!") {
+                say("IC works on Lobby floor");
+                setPhase(Phase::GoToCourtroom, "area move to Courtroom");
+                m_client->sendOoc("/floor Courtroom");
+            }
+        }
+    }
+
+    void setPhase(Phase f_phase, const QString &f_waiting_for)
+    {
+        m_phase = f_phase;
+        m_waiting_for = f_waiting_for;
+        say("--- waiting for " + f_waiting_for + " ---");
+        m_watchdog->start(7000);
+    }
+
+    void say(const QString &f_text) { std::cout << f_text.toStdString() << std::endl; }
+
+    void fail(const QString &f_reason)
+    {
+        say("FAILED: " + f_reason);
+        qApp->exit(1);
+    }
+
+    QString m_modpass;
+    QTimer *m_watchdog;
+    QString m_waiting_for;
+    DanceClient *m_client = nullptr;
+    Phase m_phase = Phase::Login;
+};
+
 int main(int argc, char *argv[])
 {
     QCoreApplication app(argc, argv);
@@ -1518,8 +1826,16 @@ int main(int argc, char *argv[])
         CommandsDance l_dance(l_address, l_port, l_modpass);
         return app.exec();
     }
+    if (l_mode == "filters") {
+        FiltersDance l_dance(l_address, l_port, l_modpass);
+        return app.exec();
+    }
+    if (l_mode == "floors") {
+        FloorDance l_dance(l_address, l_port, l_modpass);
+        return app.exec();
+    }
     if (l_mode != "classic") {
-        std::cout << "unknown mode: " << l_mode.toStdString() << " (use classic, evidence, testimony, jukebox or commands)" << std::endl;
+        std::cout << "unknown mode: " << l_mode.toStdString() << " (use classic, evidence, testimony, jukebox, commands, filters or floors)" << std::endl;
         return 1;
     }
     MiniClient l_client(l_address, l_port, l_modpass);

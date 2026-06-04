@@ -497,6 +497,58 @@ static void handleToggleShouts(CommandContext &f_context)
     f_context.reply("Using shouts is now " + l_state);
 }
 
+static void handleFloor(CommandContext &f_context);
+
+static void handleFloors(CommandContext &f_context)
+{
+    if (!f_context.arguments().isEmpty()) {
+        handleFloor(f_context);
+        return;
+    }
+    Server *l_server = f_context.server();
+    QStringList l_lines;
+    l_lines.append("== Floors ==");
+    for (int i = 0; i < l_server->floorCount(); i++) {
+        const akashi::Floor *l_floor = l_server->floorById(i);
+        QStringList l_area_names;
+        for (int l_aid : l_floor->area_ids) {
+            l_area_names.append(l_server->areaName(l_aid));
+        }
+        l_lines.append("[" + QString::number(i) + "] " + l_floor->name + ": " + l_area_names.join(", "));
+    }
+    f_context.reply(l_lines.join("\n"));
+}
+
+static void handleFloor(CommandContext &f_context)
+{
+    Server *l_server = f_context.server();
+    QString l_arg = f_context.argument(0);
+
+    const akashi::Floor *l_floor = nullptr;
+    bool l_ok = false;
+    int l_id = l_arg.toInt(&l_ok);
+    if (l_ok) {
+        l_floor = l_server->floorById(l_id);
+    }
+    else {
+        l_floor = l_server->floorByName(l_arg);
+    }
+
+    if (!l_floor) {
+        f_context.reply("No floor found with that name or ID. Use /floors to list them.");
+        return;
+    }
+    if (l_floor->area_ids.isEmpty()) {
+        f_context.reply("That floor has no areas.");
+        return;
+    }
+
+    AOClient *l_client = l_server->clientById(f_context.clientId());
+    if (l_client) {
+        l_client->changeArea(l_floor->area_ids.first());
+    }
+}
+
 static void handleWebfiles(CommandContext &f_context)
 {
     const QVector<AOClient *> l_clients = f_context.server()->clients();
@@ -511,14 +563,6 @@ static void handleWebfiles(CommandContext &f_context)
         }
     }
     f_context.reply("Character files:\n" + l_weblinks.join("\n"));
-}
-
-static void handleMedievalMode(CommandContext &f_context)
-{
-    AreaData *l_area = f_context.server()->areaById(f_context.areaId());
-    l_area->toggleMedievalMode();
-    QString l_state = l_area->isMedievalMode() ? "enabled." : "disabled.";
-    f_context.replyToArea("Hear ye, hear ye! Medieval Mode is now " + l_state);
 }
 
 void registerAreaCommands(CommandRegistry &f_registry)
@@ -662,16 +706,23 @@ void registerAreaCommands(CommandRegistry &f_registry)
         handleToggleShouts, QStringLiteral("core"));
 
     f_registry.registerCommand(
+        {QStringLiteral("floors"), {}, {}, 0,
+         QStringLiteral("/floors"),
+         QStringLiteral("Lists all floors and their areas.")},
+        handleFloors, QStringLiteral("core"));
+
+    f_registry.registerCommand(
+        {QStringLiteral("floor"), {}, {}, 1,
+         QStringLiteral("/floor <name|id>"),
+         QStringLiteral("Moves you to the first area on the given floor.")},
+        handleFloor, QStringLiteral("core"));
+
+    f_registry.registerCommand(
         {QStringLiteral("webfiles"), {}, {}, 0,
          QStringLiteral("/webfiles"),
          QStringLiteral("Lists download links for iniswapped characters.")},
         handleWebfiles, QStringLiteral("core"));
 
-    f_registry.registerCommand(
-        {QStringLiteral("medievalmode"), {QStringLiteral("medieval_mode")}, {QStringLiteral("mute")}, 0,
-         QStringLiteral("/medievalmode"),
-         QStringLiteral("Toggles medieval mode in the area.")},
-        handleMedievalMode, QStringLiteral("core"));
 }
 
 } // namespace akashi::commands

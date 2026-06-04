@@ -20,7 +20,6 @@ set(UNIT_TESTS
     ic
     area_music
     moderation
-    medieval_parser
     networkservice
     service
     jukebox
@@ -49,6 +48,19 @@ foreach(name ${UNIT_TESTS})
             COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:akashi_core> $<TARGET_FILE_DIR:tst_${name}>)
     endif()
 endforeach()
+
+# MedievalParser lives in the medieval-speak plugin; compile its source directly for testing.
+qt_add_executable(tst_medieval_parser tst_medieval_parser.cpp
+    ${CMAKE_SOURCE_DIR}/plugins/medieval-speak/medieval_parser.cpp)
+target_include_directories(tst_medieval_parser PRIVATE ${CMAKE_SOURCE_DIR}/plugins/medieval-speak)
+target_link_libraries(tst_medieval_parser PRIVATE akashi_core Qt6::Test)
+file(COPY fixtures/config DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/run_medieval_parser)
+add_test(NAME unit_medieval_parser COMMAND tst_medieval_parser WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/run_medieval_parser)
+set_tests_properties(unit_medieval_parser PROPERTIES TIMEOUT 60)
+if(WIN32)
+    add_custom_command(TARGET tst_medieval_parser POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:akashi_core> $<TARGET_FILE_DIR:tst_medieval_parser>)
+endif()
 
 # WriterSql lives in the sql-logger plugin; compile its source directly for testing.
 qt_add_executable(tst_writer_sql tst_writer_sql.cpp
