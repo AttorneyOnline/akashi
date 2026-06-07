@@ -1,5 +1,6 @@
 #include "proto/ic.h"
 
+#include "akashi/area_rule.h"
 #include "core/text_filter_registry.h"
 #include "proto/ao2_protocol.h"
 #include "proto/packet_registry.h"
@@ -140,9 +141,11 @@ class IcHandler : public PacketHandler
             return;
         }
 
-        const QString l_rule_block = f_context.checkMessageRule(l_ic.message_text);
-        if (!l_rule_block.isEmpty()) {
-            f_context.sendServerMessage(l_rule_block);
+        const auto l_rule_block = f_context.checkBeforeRule(AreaEvents::IcMessageSent,
+                                                            {{QStringLiteral("message"), l_ic.message_text},
+                                                             {QStringLiteral("char_name"), l_ic.char_name}});
+        if (l_rule_block) {
+            f_context.sendServerMessage(*l_rule_block);
             return;
         }
 
@@ -155,15 +158,8 @@ class IcHandler : public PacketHandler
             l_ic.desk_mod = "1";
         }
 
-        // Character name; a mismatch means an iniswap.
-        if (f_context.character().toLower() != l_ic.char_name.toLower()) {
-            if (!f_context.isIniswapAllowed()) {
-                const QStringList l_split = l_ic.char_name.split("/");
-                if (!f_context.characters().contains(l_split.at(0), Qt::CaseInsensitive) || l_split.contains("..")) {
-                    return;
-                }
-            }
-        }
+        // A character-name mismatch means an iniswap; the check_iniswap
+        // floor rule gates it above.
         f_context.setIniswap(l_ic.char_name);
 
         // Emote; first-person users show none to others.
@@ -180,10 +176,6 @@ class IcHandler : public PacketHandler
         const bool l_is_testimony_command = testimonyJumpCommand(Packet::unescape(l_text)).hasMatch() || l_text == ">" || l_text == "<";
         if (!f_context.lastIcMessage().isEmpty() && l_text == f_context.lastIcMessage() && !l_is_testimony_command) {
             // No doubleposting.
-            return;
-        }
-        if (l_text == "" && !f_context.isBlankpostingAllowed()) {
-            f_context.sendServerMessage("Blankposting has been forbidden in this area.");
             return;
         }
         f_context.setLastIcMessage(l_text);
@@ -263,6 +255,7 @@ class IcHandler : public PacketHandler
         QStringList l_fields = Ao2IcCodec().encode(l_ic).fields();
         l_fields = f_context.applyTestimony(l_fields);
         f_context.broadcastIc(l_fields, l_ic.evidence);
+        f_context.runAfterRule(AreaEvents::IcMessageSent, {{QStringLiteral("message"), l_ic.message_text}});
     }
 
   private:

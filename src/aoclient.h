@@ -241,11 +241,10 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     void changeArea(int new_area) override;
     int floorCount() const override;
     int floorAreaId(int f_floor_id, int f_x) const override;
-    int currentFloorId() const override;
-    int currentAreaId() const override;
     QStringList floorAreaNames() const override;
     int floorAreaToGlobal(int f_local_index) const override;
-    QString checkMessageRule(const QString &f_text) override;
+    std::optional<QString> checkBeforeRule(const QString &f_event, const QVariantMap &f_payload = {}) override;
+    void runAfterRule(const QString &f_event, const QVariantMap &f_payload = {}) override;
 
     /**
      * @brief Handles an incoming command, checking for authorisation and minimum argument count.
@@ -289,7 +288,6 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
      *
      * @return A randomly generated integer within the bounds given.
      */
-    int genRand(int min, int max);
 
     /**
      * @brief A helper function to add recorded packets to an area's judgelog.
@@ -332,14 +330,10 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     QString serverDescription() const override;
     QUrl assetUrl() const override;
     QString motd() const override;
-    DataTypes::AuthType packetAuthType() const override;
-    int messageFloodguardMs() const override;
-    int globalMessageFloodguardMs() const override;
     int playerCount() const override;
     QStringList characters() const override;
     QStringList areaNames() const override;
     QStringList musicList() const override;
-    akashi::AreaSnapshot areaState() const override;
     akashi::TimerSnapshot globalTimer() const override;
     void announceCharsTaken() override;
     void sendEvidenceList() override;
@@ -414,8 +408,6 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     void closeSocket();
     bool isIcMessageAllowed() const override;
     bool canActInArea() override;
-    bool isIniswapAllowed() const override;
-    bool isBlankpostingAllowed() const override;
     bool isShoutAllowed() const override;
     bool isShownameAllowed() const override;
     bool isImmediateForced() const override;
@@ -426,7 +418,6 @@ class AKASHI_CORE_EXPORT AOClient : public QObject, public akashi::IPacketContex
     void broadcastIc(const QStringList &f_fields, int f_evidence_index) override;
     bool hasSong(const QString &f_name) const override;
     bool isDjBlocked() const override;
-    bool isMusicAllowed() const override;
     bool isJukeboxEnabled() const override;
     QString queueJukeboxSong(const QString &f_song) override;
     QString resolveSongAlias(const QString &f_song) override;

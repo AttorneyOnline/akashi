@@ -65,6 +65,76 @@ MusicCatalog loadMusicList(const QString &f_path)
     return l_catalog;
 }
 
+// Reads the "before"/"after" buckets of one "rules" object. Any key on an
+// action object besides "action" travels along as an argument.
+static QVector<RuleDeclaration> parseRules(const QJsonObject &f_rules)
+{
+    QVector<RuleDeclaration> l_result;
+    for (auto it = f_rules.begin(); it != f_rules.end(); ++it) {
+        const QJsonObject l_buckets = it.value().toObject();
+        const QVector<QPair<QString, RulePhase>> l_phases = {
+            {QStringLiteral("before"), RulePhase::Before},
+            {QStringLiteral("after"), RulePhase::After},
+        };
+        for (const auto &l_phase : l_phases) {
+            const QJsonArray l_actions = l_buckets.value(l_phase.first).toArray();
+            for (const QJsonValue &l_value : l_actions) {
+                const QJsonObject l_object = l_value.toObject();
+                RuleDeclaration l_declaration;
+                l_declaration.event = it.key();
+                l_declaration.phase = l_phase.second;
+                l_declaration.action = l_object.value(QStringLiteral("action")).toString();
+                if (l_declaration.action.isEmpty()) {
+                    qWarning() << "A rule for event" << it.key() << "names no action and was skipped.";
+                    continue;
+                }
+                for (auto arg = l_object.begin(); arg != l_object.end(); ++arg) {
+                    if (arg.key() != QStringLiteral("action"))
+                        l_declaration.args.insert(arg.key(), arg.value().toVariant());
+                }
+                l_result.append(l_declaration);
+            }
+        }
+    }
+    return l_result;
+}
+
+AreaRulesConfig loadAreaRules(const QString &f_path)
+{
+    AreaRulesConfig l_config;
+    QFile l_file(f_path);
+    l_file.open(QIODevice::ReadOnly | QIODevice::Text);
+
+    QJsonParseError l_error;
+    const QJsonDocument l_doc = QJsonDocument::fromJson(l_file.readAll(), &l_error);
+    if (l_error.error != QJsonParseError::NoError || !l_doc.isObject()) {
+        qWarning() << "Unable to load area rules. The following error was encountered:" << l_error.errorString();
+        return l_config;
+    }
+
+    const QJsonObject l_root = l_doc.object();
+    const QJsonObject l_floors = l_root.value(QStringLiteral("floors")).toObject();
+    for (auto it = l_floors.begin(); it != l_floors.end(); ++it) {
+        const auto l_rules = parseRules(it.value().toObject().value(QStringLiteral("rules")).toObject());
+        if (!l_rules.isEmpty())
+            l_config.floor_rules.insert(it.key(), l_rules);
+    }
+
+    for (auto it = l_root.begin(); it != l_root.end(); ++it) {
+        if (!it.value().isObject())
+            continue;
+        const QStringList l_parts = it.key().split(QLatin1Char(':'));
+        bool l_is_area = false;
+        const int l_index = l_parts.first().toInt(&l_is_area);
+        if (!l_is_area || l_parts.size() < 2)
+            continue;
+        const auto l_rules = parseRules(it.value().toObject().value(QStringLiteral("rules")).toObject());
+        if (!l_rules.isEmpty())
+            l_config.area_rules.insert(l_index, l_rules);
+    }
+    return l_config;
+}
+
 QStringList loadIpRangeBans(const QString &f_path)
 {
     QFile l_file(f_path);

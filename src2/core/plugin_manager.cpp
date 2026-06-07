@@ -7,6 +7,7 @@
 #include "core/log_service.h"
 #include "core/permission_registry.h"
 #include "core/text_filter_registry.h"
+#include "world/rule_registry.h"
 
 #include <QCoreApplication>
 #include <QDebug>
@@ -416,6 +417,10 @@ bool PluginManager::validateServices(const PluginEntry &f_entry) const
 
 void PluginManager::cleanupPlugin(const QString &f_id)
 {
+    // Listeners sweep the plugin's applied rules while the registry still
+    // knows which actions the plugin owned.
+    Q_EMIT pluginAboutToUnload(f_id);
+
     m_services->unregisterServicesOwnedBy(f_id);
 
     auto l_commands = m_services->resolve<CommandRegistry>(QStringLiteral("akashi.commands"));
@@ -435,6 +440,9 @@ void PluginManager::cleanupPlugin(const QString &f_id)
 
     auto l_log = m_services->resolve<LogService>(QStringLiteral("akashi.log"));
     if (l_log) l_log->unregisterAll(f_id);
+
+    auto l_rules = m_services->resolve<RuleRegistry>(QStringLiteral("akashi.rules"));
+    if (l_rules) l_rules->unregisterActions(f_id);
 }
 
 QStringList PluginManager::dependentsOf(const QString &f_id) const

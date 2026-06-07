@@ -1,4 +1,18 @@
 {
+    "floors": {
+        "Default": {
+            "rules": {
+                "server_joined": {
+                    "after": [
+                        {
+                            "action": "send_message",
+                            "message": "Welcome! Be nice to each other."
+                        }
+                    ]
+                }
+            }
+        }
+    },
     "0:Basement": {
         "background": "gs4",
         "blankposting_allowed": "true",

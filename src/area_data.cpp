@@ -80,6 +80,18 @@ AreaData::AreaData(QString p_name, int p_index, int p_floor_id, int p_x, QSettin
     connect(m_message_floodguard_timer, &QTimer::timeout, this, &AreaData::allowMessage);
 }
 
+void AreaData::rename(const QString &f_name)
+{
+    m_display_name = "[" + QString::number(m_area->id()) + "] " + f_name;
+    m_area->setName(f_name);
+}
+
+void AreaData::renumber(int f_area_id, int f_floor_id, int f_x)
+{
+    m_area->renumber(f_area_id, f_floor_id, f_x);
+    m_display_name = "[" + QString::number(f_area_id) + "] " + m_area->name();
+}
+
 static QString toWireStatus(AreaData::Status f_status);
 static AreaData::Status fromWireStatus(const QString &f_status);
 
@@ -148,7 +160,6 @@ void AreaData::removeClient(int f_charId, int f_userId)
     }
     m_area->removePlayer(f_userId);
     m_jukebox->playerLeft(f_userId);
-    Q_EMIT userLeftArea(m_area->id(), f_userId);
 }
 
 void AreaData::addClient(int f_charId, int f_userId)
@@ -157,10 +168,6 @@ void AreaData::addClient(int f_charId, int f_userId)
         m_area->takeCharacter(f_charId);
     }
     m_area->addPlayer(f_userId);
-    // The messenger layer reacts by catching the joiner up on the area's
-    // music list, ambience and playing song - the world model itself
-    // never touches the wire.
-    Q_EMIT userJoinedArea(m_area->id(), f_userId);
 }
 
 QList<int> AreaData::owners() const
@@ -395,6 +402,11 @@ void AreaData::startMessageFloodguard(int f_duration)
     m_message_floodguard_timer->setSingleShot(true);
     m_message_floodguard_timer->start(f_duration);
 }
+
+QVector<akashi::BeforeRuleEntry> &AreaData::beforeRules() { return m_before_rules; }
+QVector<akashi::AfterRuleEntry> &AreaData::afterRules() { return m_after_rules; }
+const QVector<akashi::BeforeRuleEntry> &AreaData::beforeRules() const { return m_before_rules; }
+const QVector<akashi::AfterRuleEntry> &AreaData::afterRules() const { return m_after_rules; }
 
 void AreaData::toggleMusic()
 {

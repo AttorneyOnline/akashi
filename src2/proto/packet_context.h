@@ -10,6 +10,7 @@
 #include <QString>
 #include <QStringList>
 #include <QUrl>
+#include <QVariantMap>
 
 #include <optional>
 
@@ -31,16 +32,6 @@ struct TimerSnapshot
 {
     bool running = false;
     int remaining_ms = 0;
-};
-
-// The client's area as the join sequence describes it.
-struct AreaSnapshot
-{
-    int def_hp = 0;
-    int pro_hp = 0;
-    QString background;
-    QString side;
-    QList<TimerSnapshot> timers;
 };
 
 // A pair partner's visible state, resolved for an in-character message.
@@ -87,7 +78,6 @@ class AKASHI_CORE_EXPORT IPacketContext
     virtual QStringList characters() const = 0;
     virtual QStringList areaNames() const = 0;
     virtual QStringList musicList() const = 0;
-    virtual AreaSnapshot areaState() const = 0;
     virtual TimerSnapshot globalTimer() const = 0;
 
     // World changes handlers may trigger.
@@ -137,8 +127,6 @@ class AKASHI_CORE_EXPORT IPacketContext
     // In-character chat: the area's rules and state.
     virtual bool isIcMessageAllowed() const = 0;
     virtual bool canActInArea() = 0;
-    virtual bool isIniswapAllowed() const = 0;
-    virtual bool isBlankpostingAllowed() const = 0;
     virtual bool isShoutAllowed() const = 0;
     virtual bool isShownameAllowed() const = 0;
     virtual bool isImmediateForced() const = 0;
@@ -154,7 +142,6 @@ class AKASHI_CORE_EXPORT IPacketContext
     // Music.
     virtual bool hasSong(const QString &f_name) const = 0;
     virtual bool isDjBlocked() const = 0;
-    virtual bool isMusicAllowed() const = 0;
     virtual bool isJukeboxEnabled() const = 0;
     virtual QString queueJukeboxSong(const QString &f_song) = 0;
     virtual QString resolveSongAlias(const QString &f_song) = 0;
@@ -171,17 +158,16 @@ class AKASHI_CORE_EXPORT IPacketContext
     virtual void changeArea(int f_area_index) = 0;
     virtual int floorCount() const = 0;
     virtual int floorAreaId(int f_floor_id, int f_x) const = 0;
-    virtual int currentFloorId() const = 0;
-    virtual int currentAreaId() const = 0;
 
     // The area names visible to this client (only their floor).
     virtual QStringList floorAreaNames() const = 0;
     // Maps a floor-local area index to the global area id.
     virtual int floorAreaToGlobal(int f_local_index) const = 0;
 
-    // Runs Before-phase area/floor rules for the given message text.
-    // Returns empty string if allowed, or the block reason.
-    virtual QString checkMessageRule(const QString &f_text) = 0;
+    // General rule dispatch against the client's current area and floor.
+    // checkBeforeRule returns the block reason, or nullopt if allowed.
+    virtual std::optional<QString> checkBeforeRule(const QString &f_event, const QVariantMap &f_payload = {}) = 0;
+    virtual void runAfterRule(const QString &f_event, const QVariantMap &f_payload = {}) = 0;
 
     // Evidence creation; deletion and edits are further up.
     virtual void addEvidence(const QString &f_name, const QString &f_description, const QString &f_image) = 0;
@@ -208,9 +194,6 @@ class AKASHI_CORE_EXPORT IPacketContext
     virtual QString serverDescription() const = 0;
     virtual QUrl assetUrl() const = 0;
     virtual QString motd() const = 0;
-    virtual DataTypes::AuthType packetAuthType() const = 0;
-    virtual int messageFloodguardMs() const = 0;
-    virtual int globalMessageFloodguardMs() const = 0;
     // Moderation.
     virtual bool isAuthenticated() const = 0;
     virtual bool canPerform(const QString &f_permission) const = 0;

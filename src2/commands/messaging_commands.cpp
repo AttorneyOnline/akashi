@@ -409,34 +409,34 @@ static void handleFirstPerson(CommandContext &f_context)
 
 void registerMessagingCommands(CommandRegistry &f_registry)
 {
-    f_registry.registerCommand({"pos", {}, {}, 1}, handlePos, "core");
-    f_registry.registerCommand({"forcepos", {}, {permission::gamemaster}, 2}, handleForcePos, "core");
-    f_registry.registerCommand({"g", {}, {}, 1}, handleG, "core");
-    f_registry.registerCommand({"need", {}, {}, 1}, handleNeed, "core");
-    f_registry.registerCommand({"switch", {}, {}, 1}, handleSwitch, "core");
-    f_registry.registerCommand({"randomchar", {}, {}, 0}, handleRandomChar, "core");
-    f_registry.registerCommand({"toggleglobal", {}, {}, 0}, handleToggleGlobal, "core");
-    f_registry.registerCommand({"pm", {}, {}, 2}, handlePM, "core");
-    f_registry.registerCommand({"announce", {}, {permission::announcer}, 1}, handleAnnounce, "core");
-    f_registry.registerCommand({"m", {}, {permission::chat_moderator}, 1}, handleM, "core");
-    f_registry.registerCommand({"gm", {}, {permission::chat_moderator}, 1}, handleGM, "core");
-    f_registry.registerCommand({"lm", {}, {permission::chat_moderator}, 1}, handleLM, "core");
-    f_registry.registerCommand({"gimp", {}, {permission::mute}, 1}, handleGimp, "core");
-    f_registry.registerCommand({"ungimp", {}, {permission::mute}, 1}, handleUngimp, "core");
-    f_registry.registerCommand({"disemvowel", {}, {permission::mute}, 1}, handleDisemvowel, "core");
-    f_registry.registerCommand({"undisemvowel", {}, {permission::mute}, 1}, handleUnDisemvowel, "core");
-    f_registry.registerCommand({"shake", {}, {permission::mute}, 1}, handleShake, "core");
-    f_registry.registerCommand({"unshake", {}, {permission::mute}, 1}, handleUnShake, "core");
-    f_registry.registerCommand({"mutepm", {}, {}, 0}, handleMutePM, "core");
-    f_registry.registerCommand({"toggleadverts", {}, {}, 0}, handleToggleAdverts, "core");
-    f_registry.registerCommand({"afk", {}, {}, 0}, handleAfk, "core");
-    f_registry.registerCommand({"charcurse", {}, {permission::mute}, 1}, handleCharCurse, "core");
-    f_registry.registerCommand({"uncharcurse", {}, {permission::mute}, 1}, handleUnCharCurse, "core");
-    f_registry.registerCommand({"charselect", {}, {}, 0}, handleCharSelect, "core");
-    f_registry.registerCommand({"force_charselect", {"forcecharselect"}, {permission::force_charselect}, 1}, handleForceCharSelect, "core");
-    f_registry.registerCommand({"a", {}, {}, 2}, handleA, "core");
-    f_registry.registerCommand({"s", {}, {}, 0}, handleS, "core");
-    f_registry.registerCommand({"firstperson", {}, {}, 0}, handleFirstPerson, "core");
+    f_registry.registerCommand({"pos", {}, {}, 1, "/pos <position>", "Moves you to a position in the area (def, pro, wit, jud, ...)."}, handlePos, "core");
+    f_registry.registerCommand({"forcepos", {}, {permission::gamemaster}, 2, "/forcepos <position> <id>", "Forces a client to a position."}, handleForcePos, "core");
+    f_registry.registerCommand({"g", {}, {}, 1, "/g <message>", "Sends a message to the global chat."}, handleG, "core");
+    f_registry.registerCommand({"need", {}, {}, 1, "/need <message>", "Sends a player advert to everyone with adverts enabled."}, handleNeed, "core");
+    f_registry.registerCommand({"switch", {}, {}, 1, "/switch <character>", "Switches you to the named character."}, handleSwitch, "core");
+    f_registry.registerCommand({"randomchar", {}, {}, 0, "/randomchar", "Picks a random character for you."}, handleRandomChar, "core");
+    f_registry.registerCommand({"toggleglobal", {}, {}, 0, "/toggleglobal", "Toggles whether you receive global chat."}, handleToggleGlobal, "core");
+    f_registry.registerCommand({"pm", {}, {}, 2, "/pm <id> <message>", "Sends a private message to a client."}, handlePM, "core");
+    f_registry.registerCommand({"announce", {}, {permission::announcer}, 1, "/announce <message>", "Sends an announcement to the whole server."}, handleAnnounce, "core");
+    f_registry.registerCommand({"m", {}, {permission::chat_moderator}, 1, "/m <message>", "Sends a message to the moderator chat."}, handleM, "core");
+    f_registry.registerCommand({"gm", {}, {permission::chat_moderator}, 1, "/gm <message>", "Sends a global message tagged as a moderator."}, handleGM, "core");
+    f_registry.registerCommand({"lm", {}, {permission::chat_moderator}, 1, "/lm <message>", "Sends an area message tagged as a moderator."}, handleLM, "core");
+    f_registry.registerCommand({"gimp", {}, {permission::mute}, 1, "/gimp <id>", "Replaces a client's IC messages with canned lines."}, handleGimp, "core");
+    f_registry.registerCommand({"ungimp", {}, {permission::mute}, 1, "/ungimp <id>", "Lifts a client's gimp."}, handleUngimp, "core");
+    f_registry.registerCommand({"disemvowel", {}, {permission::mute}, 1, "/disemvowel <id>", "Strips the vowels from a client's IC messages."}, handleDisemvowel, "core");
+    f_registry.registerCommand({"undisemvowel", {}, {permission::mute}, 1, "/undisemvowel <id>", "Gives a client their vowels back."}, handleUnDisemvowel, "core");
+    f_registry.registerCommand({"shake", {}, {permission::mute}, 1, "/shake <id>", "Shuffles the words of a client's IC messages."}, handleShake, "core");
+    f_registry.registerCommand({"unshake", {}, {permission::mute}, 1, "/unshake <id>", "Stops shuffling a client's IC messages."}, handleUnShake, "core");
+    f_registry.registerCommand({"mutepm", {}, {}, 0, "/mutepm", "Toggles whether you receive private messages."}, handleMutePM, "core");
+    f_registry.registerCommand({"toggleadverts", {}, {}, 0, "/toggleadverts", "Toggles whether you receive player adverts."}, handleToggleAdverts, "core");
+    f_registry.registerCommand({"afk", {}, {}, 0, "/afk", "Marks you as away."}, handleAfk, "core");
+    f_registry.registerCommand({"charcurse", {}, {permission::mute}, 1, "/charcurse <id> [characters...]", "Restricts a client to the listed characters."}, handleCharCurse, "core");
+    f_registry.registerCommand({"uncharcurse", {}, {permission::mute}, 1, "/uncharcurse <id>", "Lifts a client's character restriction."}, handleUnCharCurse, "core");
+    f_registry.registerCommand({"charselect", {}, {}, 0, "/charselect [id]", "Returns you (or a target, with permission) to character select."}, handleCharSelect, "core");
+    f_registry.registerCommand({"force_charselect", {"forcecharselect"}, {permission::force_charselect}, 1, "/force_charselect <id>", "Forces a client back to character select."}, handleForceCharSelect, "core");
+    f_registry.registerCommand({"a", {}, {}, 2, "/a <area> <message>", "Sends a message to an area you own."}, handleA, "core");
+    f_registry.registerCommand({"s", {}, {}, 0, "/s <message>", "Sends a message to every area you own."}, handleS, "core");
+    f_registry.registerCommand({"firstperson", {}, {}, 0, "/firstperson", "Toggles first-person mode; your emotes stay hidden from others."}, handleFirstPerson, "core");
 }
 
 } // namespace akashi::commands

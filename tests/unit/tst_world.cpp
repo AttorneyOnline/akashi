@@ -1,6 +1,6 @@
 // AI-generated: written by Claude.
 #include "world/area.h"
-#include "world/area_rules.h"
+#include "world/rule_registry.h"
 #include "world/evidence_store.h"
 #include "world/floor.h"
 
@@ -22,12 +22,13 @@ class tst_World : public QObject
     void floorDefaultsMatchToday();
     void rulesApplyToTheirScopeOnly();
     void firstBlockingRuleWins();
-    void areaRulesOverwriteFloorRulesOfTheSameName();
+    void areaRulesOverrideFloorRulesOfSameAction();
     void evidenceStoreNumbersItemsPerViewer();
     void beforeRulesGateWithoutTouchingAfterRules();
     void afterRulesActOnTheWorld();
-    void pluginRuleObjectsRegisterAndReleaseOnUnload();
+    void pluginBeforeRuleObjectsRegisterAndReleaseOnUnload();
     void unregisteringAnOwnerRemovesItsRules();
+    void pluginUnloadSweepTakesDirectAndActionBuiltRules();
 };
 
 void tst_World::areaReportsRealChangesOnly()
@@ -38,18 +39,16 @@ void tst_World::areaReportsRealChangesOnly()
     QSignalSpy l_count(&l_area, &akashi::Area::playerCountChanged);
 
     l_area.setStatus("CASING");
-    l_area.setStatus("CASING"); // no change, no signal
+    l_area.setStatus("CASING");
     l_area.setLockState(akashi::Area::LockState::Spectatable);
     l_area.addPlayer(4);
-    l_area.addPlayer(4); // already present, no signal
+    l_area.addPlayer(4);
 
     QCOMPARE(l_status.size(), 1);
     QCOMPARE(l_lock.size(), 1);
     QCOMPARE(l_count.size(), 1);
     QCOMPARE(l_count[0][0].toInt(), 1);
 
-    // The protocol never limited the status to fixed values: any line
-    // works, cut off at 30 characters.
     const QString l_custom = "Chapter 3 - The Cursed Courtroom Returns";
     l_area.setStatus(l_custom);
     QCOMPARE(l_area.status(), l_custom.left(30));
@@ -67,7 +66,7 @@ void tst_World::areaTracksPlayersAndCharacters()
     QCOMPARE(l_area.playerCount(), 1);
 
     QVERIFY(l_area.takeCharacter(2));
-    QVERIFY(!l_area.takeCharacter(2)); // taken here already
+    QVERIFY(!l_area.takeCharacter(2));
     l_area.releaseCharacter(2);
     QVERIFY(l_area.takeCharacter(2));
 }
@@ -78,15 +77,15 @@ void tst_World::areaManagesOwnersAndInvitations()
     QSignalSpy l_owners(&l_area, &akashi::Area::ownersChanged);
 
     l_area.addOwner(4);
-    l_area.addOwner(4); // already an owner, no signal
+    l_area.addOwner(4);
     QVERIFY(l_area.hasOwners());
     QVERIFY(l_area.removeOwner(4));
-    QVERIFY(!l_area.removeOwner(4)); // no longer an owner
+    QVERIFY(!l_area.removeOwner(4));
     QVERIFY(!l_area.hasOwners());
     QCOMPARE(l_owners.size(), 2);
 
     QVERIFY(l_area.invite(7));
-    QVERIFY(!l_area.invite(7)); // already invited
+    QVERIFY(!l_area.invite(7));
     QVERIFY(l_area.uninvite(7));
     QVERIFY(!l_area.uninvite(7));
 }
@@ -95,7 +94,6 @@ void tst_World::visibilityDefaultsToTheWholeFloor()
 {
     akashi::Area l_area(3, "Basement", 1, 2);
 
-    // Empty set = every area on the floor; a map may narrow it.
     QVERIFY(l_area.visibleAreas().isEmpty());
     l_area.setVisibleAreas({3, 4});
     QCOMPARE(l_area.visibleAreas(), QSet<int>({3, 4}));
@@ -108,61 +106,101 @@ void tst_World::floorDefaultsMatchToday()
 {
     akashi::Floor l_floor;
 
-    // A fresh floor behaves like today's server: characters unique per area.
     QCOMPARE(l_floor.character_policy, akashi::Floor::CharacterPolicy::UniquePerArea);
     QVERIFY(l_floor.area_ids.isEmpty());
+    QVERIFY(l_floor.before_rules.isEmpty());
+    QVERIFY(l_floor.after_rules.isEmpty());
 }
 
 void tst_World::rulesApplyToTheirScopeOnly()
 {
-    akashi::AreaRuleRegistry l_rules;
-    // Rules are a per-area setup: an area can be stricter than its peer.
-    l_rules.registerAreaRule("no-chat-in-area-2", akashi::AreaEvent::MessageSent, akashi::RulePhase::Before, 2,
-                             [](const akashi::AreaEventDetails &) { return akashi::RuleVerdict{false, "This area is silent."}; },
-                             "test");
-    // A floor manages its areas, so its rule covers every area under it.
-    l_rules.registerFloorRule("no-evidence-on-floor-1", akashi::AreaEvent::EvidencePresented, akashi::RulePhase::Before, 1,
-                              [](const akashi::AreaEventDetails &) { return akashi::RuleVerdict{false, "No evidence here."}; },
-                              "test");
+    // Area rule on area 2 for IC, floor rule on floor 1 for evidence.
+    QVector<akashi::BeforeRuleEntry> l_area2_rules = {
+        {akashi::AreaEvents::IcMessageSent, QStringLiteral("block_ic"),
+         [](const akashi::RuleContext &) { return akashi::RuleVerdict{false, "This area is silent."}; },
+         "test"},
+    };
+    QVector<akashi::BeforeRuleEntry> l_floor1_rules = {
+        {akashi::AreaEvents::EvidencePresented, QStringLiteral("block_evidence"),
+         [](const akashi::RuleContext &) { return akashi::RuleVerdict{false, "No evidence here."}; },
+         "test"},
+    };
+    QVector<akashi::BeforeRuleEntry> l_empty;
 
-    // The area rule fires only in its own area, not in its peer.
-    QVERIFY(!l_rules.check(akashi::AreaEvent::MessageSent, akashi::RulePhase::Before, {4, 2, 0, "hello"}).allowed);
-    QVERIFY(l_rules.check(akashi::AreaEvent::MessageSent, akashi::RulePhase::Before, {4, 3, 0, "hello"}).allowed);
-    // The floor rule covers every area of its floor, and only that floor.
-    QVERIFY(!l_rules.check(akashi::AreaEvent::EvidencePresented, akashi::RulePhase::Before, {4, 9, 1, "Knife"}).allowed);
-    QVERIFY(l_rules.check(akashi::AreaEvent::EvidencePresented, akashi::RulePhase::Before, {4, 9, 0, "Knife"}).allowed);
-    // Other events pass through untouched.
-    QVERIFY(l_rules.check(akashi::AreaEvent::PlayerJoined, akashi::RulePhase::Before, {4, 2, 0, {}}).allowed);
+    // Area 2 blocks IC.
+    QVERIFY(!akashi::RuleRegistry::checkBefore(akashi::AreaEvents::IcMessageSent, {4, 2, 0, {}, nullptr},
+                                               l_area2_rules, l_empty).allowed);
+    // Area 3 has no rules — IC allowed.
+    QVERIFY(akashi::RuleRegistry::checkBefore(akashi::AreaEvents::IcMessageSent, {4, 3, 0, {}, nullptr},
+                                              l_empty, l_empty).allowed);
+    // Floor 1 blocks evidence.
+    QVERIFY(!akashi::RuleRegistry::checkBefore(akashi::AreaEvents::EvidencePresented, {4, 9, 1, {}, nullptr},
+                                               l_empty, l_floor1_rules).allowed);
+    // Floor 0 has no rules — evidence allowed.
+    QVERIFY(akashi::RuleRegistry::checkBefore(akashi::AreaEvents::EvidencePresented, {4, 9, 0, {}, nullptr},
+                                              l_empty, l_empty).allowed);
+    // PlayerJoined has no rules anywhere — allowed.
+    QVERIFY(akashi::RuleRegistry::checkBefore(akashi::AreaEvents::PlayerJoined, {4, 2, 0, {}, nullptr},
+                                              l_area2_rules, l_empty).allowed);
 }
 
 void tst_World::firstBlockingRuleWins()
 {
-    akashi::AreaRuleRegistry l_rules;
-    // Area rules are the highest granularity, so they answer first.
-    l_rules.registerAreaRule("area-rule", akashi::AreaEvent::PlayerJoined, akashi::RulePhase::Before, 0,
-                             [](const akashi::AreaEventDetails &) { return akashi::RuleVerdict{false, "the area says no"}; },
-                             "test");
-    l_rules.registerFloorRule("floor-rule", akashi::AreaEvent::PlayerJoined, akashi::RulePhase::Before, 0,
-                              [](const akashi::AreaEventDetails &) { return akashi::RuleVerdict{false, "the floor says no"}; },
-                              "test");
+    QVector<akashi::BeforeRuleEntry> l_area_rules = {
+        {akashi::AreaEvents::PlayerJoined, QStringLiteral("check_lock"),
+         [](const akashi::RuleContext &) { return akashi::RuleVerdict{false, "the area says no"}; },
+         "test"},
+    };
+    QVector<akashi::BeforeRuleEntry> l_floor_rules = {
+        {akashi::AreaEvents::PlayerJoined, QStringLiteral("check_character"),
+         [](const akashi::RuleContext &) { return akashi::RuleVerdict{false, "the floor says no"}; },
+         "test"},
+    };
 
-    QCOMPARE(l_rules.check(akashi::AreaEvent::PlayerJoined, akashi::RulePhase::Before, {4, 0, 0, {}}).reason, QString("the area says no"));
+    const auto l_verdict = akashi::RuleRegistry::checkBefore(akashi::AreaEvents::PlayerJoined, {4, 0, 0, {}, nullptr},
+                                                             l_area_rules, l_floor_rules);
+    QVERIFY(!l_verdict.allowed);
+    QCOMPARE(l_verdict.reason, QString("the area says no"));
 }
 
-void tst_World::areaRulesOverwriteFloorRulesOfTheSameName()
+void tst_World::areaRulesOverrideFloorRulesOfSameAction()
 {
-    akashi::AreaRuleRegistry l_rules;
-    // The floor forbids evidence everywhere...
-    l_rules.registerFloorRule("no-evidence", akashi::AreaEvent::EvidencePresented, akashi::RulePhase::Before, 0,
-                              [](const akashi::AreaEventDetails &) { return akashi::RuleVerdict{false, "No evidence on this floor."}; },
-                              "test");
-    // ...but area 2 overwrites that rule with its own, allowing it.
-    l_rules.registerAreaRule("no-evidence", akashi::AreaEvent::EvidencePresented, akashi::RulePhase::Before, 2,
-                             [](const akashi::AreaEventDetails &) { return akashi::RuleVerdict{}; },
-                             "test");
+    QVector<akashi::BeforeRuleEntry> l_floor_rules = {
+        {akashi::AreaEvents::EvidencePresented, QStringLiteral("check_evidence"),
+         [](const akashi::RuleContext &) { return akashi::RuleVerdict{false, "No evidence on this floor."}; },
+         "test"},
+        {akashi::AreaEvents::EvidencePresented, QStringLiteral("check_permission"),
+         [](const akashi::RuleContext &) { return akashi::RuleVerdict{}; },
+         "test"},
+    };
+    QVector<akashi::BeforeRuleEntry> l_area_rules = {
+        {akashi::AreaEvents::EvidencePresented, QStringLiteral("check_evidence"),
+         [](const akashi::RuleContext &) { return akashi::RuleVerdict{}; },
+         "test"},
+    };
 
-    QVERIFY(l_rules.check(akashi::AreaEvent::EvidencePresented, akashi::RulePhase::Before, {4, 2, 0, "Knife"}).allowed);
-    QVERIFY(!l_rules.check(akashi::AreaEvent::EvidencePresented, akashi::RulePhase::Before, {4, 3, 0, "Knife"}).allowed);
+    // Area overrides check_evidence (allows), floor check_permission still runs (allows).
+    QVERIFY(akashi::RuleRegistry::checkBefore(akashi::AreaEvents::EvidencePresented, {4, 2, 0, {}, nullptr},
+                                              l_area_rules, l_floor_rules).allowed);
+    // Without area rules, floor check_evidence blocks.
+    QVector<akashi::BeforeRuleEntry> l_empty;
+    QVERIFY(!akashi::RuleRegistry::checkBefore(akashi::AreaEvents::EvidencePresented, {4, 3, 0, {}, nullptr},
+                                               l_empty, l_floor_rules).allowed);
+
+    // Floor check_permission blocks, area only overrides check_evidence.
+    QVector<akashi::BeforeRuleEntry> l_floor_rules2 = {
+        {akashi::AreaEvents::EvidencePresented, QStringLiteral("check_evidence"),
+         [](const akashi::RuleContext &) { return akashi::RuleVerdict{false, "floor blocks"}; },
+         "test"},
+        {akashi::AreaEvents::EvidencePresented, QStringLiteral("check_permission"),
+         [](const akashi::RuleContext &) { return akashi::RuleVerdict{false, "no permission"}; },
+         "test"},
+    };
+
+    const auto l_verdict = akashi::RuleRegistry::checkBefore(akashi::AreaEvents::EvidencePresented, {4, 2, 0, {}, nullptr},
+                                                             l_area_rules, l_floor_rules2);
+    QVERIFY(!l_verdict.allowed);
+    QCOMPARE(l_verdict.reason, QString("no permission"));
 }
 
 void tst_World::evidenceStoreNumbersItemsPerViewer()
@@ -174,56 +212,46 @@ void tst_World::evidenceStoreNumbersItemsPerViewer()
     l_store.append({"Contract", "<owner=pro>\nSigned.", "contract.png"});
     l_store.append({"Key", "<owner=all>\nRevealed.", "key.png"});
 
-    // A case manager sees the whole record; each side numbers its own list.
     QCOMPARE(l_store.visibleItems(true, "wit").size(), 4);
-    QCOMPARE(l_store.visibleItems(false, "def").size(), 3); // Sword, Photo, Key
-    QCOMPARE(l_store.visibleItems(false, "pro").size(), 3); // Photo, Contract, Key
+    QCOMPARE(l_store.visibleItems(false, "def").size(), 3);
+    QCOMPARE(l_store.visibleItems(false, "pro").size(), 3);
 
-    // The defense's #2 is the Photo (record index 1), their #3 the Key (3);
-    // the prosecution's #2 is the Contract (2). Same numbers, different items.
     QCOMPARE(l_store.itemIndexByVisibleIndex(2, false, "def"), 1);
     QCOMPARE(l_store.itemIndexByVisibleIndex(3, false, "def"), 3);
     QCOMPARE(l_store.itemIndexByVisibleIndex(2, false, "pro"), 2);
 
-    // And back: the Contract is the prosecution's #2 and nothing to the defense.
     QCOMPARE(l_store.visibleIndexByItemIndex(2, false, "pro"), 2);
     QCOMPARE(l_store.visibleIndexByItemIndex(2, false, "def"), 0);
 
-    // The translation round-trips for every position a viewer can name.
     for (int l_position = 1; l_position <= 3; l_position++) {
         const int l_real = l_store.itemIndexByVisibleIndex(l_position, false, "def");
         QCOMPARE(l_store.visibleIndexByItemIndex(l_real, false, "def"), l_position);
     }
 
-    // A number past the viewer's list is refused, never mismapped.
     QCOMPARE(l_store.itemIndexByVisibleIndex(4, false, "def"), -1);
 
-    // Outside hidden mode every viewer numbers the full record.
     l_store.setAccess(akashi::EvidenceStore::Access::FreeForAll);
     QCOMPARE(l_store.itemIndexByVisibleIndex(3, false, "def"), 2);
 }
 
 void tst_World::beforeRulesGateWithoutTouchingAfterRules()
 {
-    akashi::AreaRuleRegistry l_rules;
-    // The gate refuses the change while it is still a request, so the
-    // world never applies it and the client never sees a flicker of
-    // applied-then-reverted state.
-    l_rules.registerAreaRule("one-character-only", akashi::AreaEvent::PlayerJoined, akashi::RulePhase::Before, 0,
-                             [](const akashi::AreaEventDetails &) { return akashi::RuleVerdict{false, "Only one character selection allowed."}; },
-                             "test");
+    QVector<akashi::BeforeRuleEntry> l_before = {
+        {akashi::AreaEvents::PlayerJoined, QStringLiteral("check_character"),
+         [](const akashi::RuleContext &) { return akashi::RuleVerdict{false, "Only one character selection allowed."}; },
+         "test"},
+    };
     bool l_after_ran = false;
-    l_rules.registerAreaRule("welcome", akashi::AreaEvent::PlayerJoined, akashi::RulePhase::After, 0,
-                             [&l_after_ran](const akashi::AreaEventDetails &) {
-                                 l_after_ran = true;
-                                 return akashi::RuleVerdict{};
-                             },
-                             "test");
+    QVector<akashi::AfterRuleEntry> l_after = {
+        {akashi::AreaEvents::PlayerJoined, QStringLiteral("send_welcome"),
+         [&l_after_ran](const akashi::RuleContext &) { l_after_ran = true; },
+         "test"},
+    };
 
-    const akashi::RuleVerdict l_verdict = l_rules.check(akashi::AreaEvent::PlayerJoined, akashi::RulePhase::Before, {4, 0, 0, {}});
+    const akashi::RuleVerdict l_verdict = akashi::RuleRegistry::checkBefore(
+        akashi::AreaEvents::PlayerJoined, {4, 0, 0, {}, nullptr},
+        l_before, {});
 
-    // The gate blocked, and checking the gate did not run any After rule -
-    // the change never happened, so there is nothing to react to.
     QVERIFY(!l_verdict.allowed);
     QCOMPARE(l_verdict.reason, QString("Only one character selection allowed."));
     QVERIFY(!l_after_ran);
@@ -234,83 +262,122 @@ void tst_World::afterRulesActOnTheWorld()
     akashi::Area l_vault(2, "Vault", 0, 2);
     l_vault.setLockState(akashi::Area::LockState::Locked);
 
-    akashi::AreaRuleRegistry l_rules;
-    // A reaction: saying the magic words in the hallway unlocks the vault.
-    // The function captures what it operates on.
-    l_rules.registerAreaRule("magic-words", akashi::AreaEvent::MessageSent, akashi::RulePhase::After, 1,
-                             [&l_vault](const akashi::AreaEventDetails &f_details) {
-                                 if (f_details.text == "open sesame") {
-                                     l_vault.setLockState(akashi::Area::LockState::Free);
-                                 }
-                                 return akashi::RuleVerdict{};
-                             },
-                             "test");
-    bool l_watcher_ran = false;
-    l_rules.registerFloorRule("watcher", akashi::AreaEvent::MessageSent, akashi::RulePhase::After, 0,
-                              [&l_watcher_ran](const akashi::AreaEventDetails &) {
-                                  l_watcher_ran = true;
-                                  return akashi::RuleVerdict{};
-                              },
-                              "test");
+    QVector<akashi::AfterRuleEntry> l_area_after = {
+        {akashi::AreaEvents::IcMessageSent, QStringLiteral("magic_unlock"),
+         [&l_vault](const akashi::RuleContext &f_ctx) {
+             if (f_ctx.payload.value("message").toString() == "open sesame")
+                 l_vault.setLockState(akashi::Area::LockState::Free);
+         },
+         "test"},
+    };
 
-    // The message went through; every reaction attached to the hook runs.
-    l_rules.check(akashi::AreaEvent::MessageSent, akashi::RulePhase::After, {4, 1, 0, "open sesame"});
+    akashi::RuleRegistry::runAfter(akashi::AreaEvents::IcMessageSent,
+                                   {4, 1, 0, {{QStringLiteral("message"), QStringLiteral("open sesame")}}, nullptr},
+                                   l_area_after, {});
 
     QCOMPARE(l_vault.lockState(), akashi::Area::LockState::Free);
-    QVERIFY(l_watcher_ran);
 }
 
-// A rule the way a plugin would ship it: a subclass of the SDK contract.
-class CursedDoorRule : public akashi::AreaRule
+class CursedDoorRule : public akashi::BeforeRule
 {
   public:
-    akashi::RuleVerdict onEvent(const akashi::AreaEventDetails &f_details) override
+    akashi::RuleVerdict onEvent(const akashi::RuleContext &f_ctx) override
     {
-        if (f_details.text == "Cursed Key") {
+        if (f_ctx.payload.value("evidence_name").toString() == "Cursed Key")
             return {};
-        }
         return {false, "The door only opens for the Cursed Key."};
     }
 };
 
-void tst_World::pluginRuleObjectsRegisterAndReleaseOnUnload()
+void tst_World::pluginBeforeRuleObjectsRegisterAndReleaseOnUnload()
 {
-    akashi::AreaRuleRegistry l_rules;
-    std::shared_ptr<akashi::AreaRule> l_rule = std::make_shared<CursedDoorRule>();
-    std::weak_ptr<akashi::AreaRule> l_alive = l_rule;
+    std::shared_ptr<akashi::BeforeRule> l_rule = std::make_shared<CursedDoorRule>();
+    std::weak_ptr<akashi::BeforeRule> l_alive = l_rule;
 
-    l_rules.registerAreaRule("cursed-door", akashi::AreaEvent::EvidencePresented, akashi::RulePhase::Before, 0, l_rule, "plugin-doors");
+    QVector<akashi::BeforeRuleEntry> l_area_rules = {
+        {akashi::AreaEvents::EvidencePresented, QStringLiteral("cursed_door"),
+         [l_rule](const akashi::RuleContext &f_ctx) { return l_rule->onEvent(f_ctx); },
+         "plugin-doors"},
+    };
     l_rule.reset();
 
-    // The registry keeps the plugin's object alive and runs it like any rule.
     QVERIFY(!l_alive.expired());
-    QVERIFY(!l_rules.check(akashi::AreaEvent::EvidencePresented, akashi::RulePhase::Before, {4, 0, 0, "Rusty Crowbar"}).allowed);
-    QVERIFY(l_rules.check(akashi::AreaEvent::EvidencePresented, akashi::RulePhase::Before, {4, 0, 0, "Cursed Key"}).allowed);
+    QVERIFY(!akashi::RuleRegistry::checkBefore(akashi::AreaEvents::EvidencePresented,
+                                               {4, 0, 0, {{QStringLiteral("evidence_name"), QStringLiteral("Rusty Crowbar")}}, nullptr},
+                                               l_area_rules, {}).allowed);
+    QVERIFY(akashi::RuleRegistry::checkBefore(akashi::AreaEvents::EvidencePresented,
+                                              {4, 0, 0, {{QStringLiteral("evidence_name"), QStringLiteral("Cursed Key")}}, nullptr},
+                                              l_area_rules, {}).allowed);
 
-    // Unloading the plugin unregisters and releases the object.
-    l_rules.unregisterAll("plugin-doors");
-    QCOMPARE(l_rules.ruleCount(), 0);
+    // Clearing the vector releases the shared_ptr.
+    l_area_rules.clear();
     QVERIFY(l_alive.expired());
 }
 
 void tst_World::unregisteringAnOwnerRemovesItsRules()
 {
-    akashi::AreaRuleRegistry l_rules;
-    l_rules.registerAreaRule("mine", akashi::AreaEvent::PlayerJoined, akashi::RulePhase::Before, 0,
-                             [](const akashi::AreaEventDetails &) { return akashi::RuleVerdict{false, "no"}; },
-                             "plugin-a");
-    l_rules.registerFloorRule("also-mine", akashi::AreaEvent::PlayerLeft, akashi::RulePhase::After, 0,
-                              [](const akashi::AreaEventDetails &) { return akashi::RuleVerdict{false, "no"}; },
-                              "plugin-a");
-    l_rules.registerAreaRule("someone-elses", akashi::AreaEvent::PlayerJoined, akashi::RulePhase::Before, 0,
-                             [](const akashi::AreaEventDetails &) { return akashi::RuleVerdict{false, "still no"}; },
-                             "plugin-b");
+    // Rules live on area/floor objects. Unregistering by owner is a sweep.
+    akashi::Floor l_floor;
+    l_floor.before_rules.append({akashi::AreaEvents::PlayerJoined, QStringLiteral("block_a"),
+                                 [](const akashi::RuleContext &) { return akashi::RuleVerdict{false, "no"}; },
+                                 "plugin-a"});
+    l_floor.after_rules.append({akashi::AreaEvents::PlayerLeft, QStringLiteral("watch_a"),
+                                [](const akashi::RuleContext &) {},
+                                "plugin-a"});
+    l_floor.before_rules.append({akashi::AreaEvents::PlayerJoined, QStringLiteral("block_b"),
+                                 [](const akashi::RuleContext &) { return akashi::RuleVerdict{false, "still no"}; },
+                                 "plugin-b"});
 
-    l_rules.unregisterAll("plugin-a");
+    // Remove plugin-a's rules.
+    auto l_remove = [](auto &f_vec, const QString &f_owner) {
+        for (int i = f_vec.size() - 1; i >= 0; --i) {
+            if (f_vec.at(i).owner_id == f_owner)
+                f_vec.removeAt(i);
+        }
+    };
+    l_remove(l_floor.before_rules, QStringLiteral("plugin-a"));
+    l_remove(l_floor.after_rules, QStringLiteral("plugin-a"));
 
-    QCOMPARE(l_rules.ruleCount(), 1);
-    QCOMPARE(l_rules.check(akashi::AreaEvent::PlayerJoined, akashi::RulePhase::Before, {4, 0, 0, {}}).reason, QString("still no"));
-    QVERIFY(l_rules.check(akashi::AreaEvent::PlayerLeft, akashi::RulePhase::After, {4, 0, 0, {}}).allowed);
+    QCOMPARE(l_floor.before_rules.size() + l_floor.after_rules.size(), 1);
+    QCOMPARE(akashi::RuleRegistry::checkBefore(akashi::AreaEvents::PlayerJoined, {4, 0, 0, {}, nullptr},
+                                               {}, l_floor.before_rules).reason,
+             QString("still no"));
+}
+
+void tst_World::pluginUnloadSweepTakesDirectAndActionBuiltRules()
+{
+    akashi::RuleRegistry l_registry;
+    l_registry.registerBeforeAction(
+        QStringLiteral("cursed_gate"),
+        [](akashi::ServiceRegistry &, const QVariantMap &) -> akashi::BeforeRuleFunction {
+            return [](const akashi::RuleContext &) { return akashi::RuleVerdict{false, "no"}; };
+        },
+        QStringLiteral("plugin-doors"));
+
+    akashi::Floor l_floor;
+    // A rule the plugin attached itself.
+    l_floor.before_rules.append({akashi::AreaEvents::PlayerJoined, QStringLiteral("watch"),
+                                 [](const akashi::RuleContext &) { return akashi::RuleVerdict{}; },
+                                 QStringLiteral("plugin-doors")});
+    // A rule built from the plugin's action, attached by config.
+    l_floor.before_rules.append({akashi::AreaEvents::EvidencePresented, QStringLiteral("cursed_gate"),
+                                 [](const akashi::RuleContext &) { return akashi::RuleVerdict{false, "no"}; },
+                                 QStringLiteral("config")});
+    // A core rule that must survive the sweep.
+    l_floor.after_rules.append({akashi::AreaEvents::PlayerJoined, QStringLiteral("send_message"),
+                                [](const akashi::RuleContext &) {},
+                                QStringLiteral("core")});
+
+    const QStringList l_owned = l_registry.actionsOwnedBy(QStringLiteral("plugin-doors"));
+    QCOMPARE(l_owned, QStringList({QStringLiteral("cursed_gate")}));
+
+    const QSet<QString> l_actions(l_owned.begin(), l_owned.end());
+    const int l_removed = akashi::RuleRegistry::removeRules(QStringLiteral("plugin-doors"), l_actions,
+                                                            l_floor.before_rules, l_floor.after_rules);
+    QCOMPARE(l_removed, 2);
+    QVERIFY(l_floor.before_rules.isEmpty());
+    QCOMPARE(l_floor.after_rules.size(), 1);
+    QCOMPARE(l_floor.after_rules[0].owner_id, QString("core"));
 }
 
 }

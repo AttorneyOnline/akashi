@@ -26,6 +26,8 @@ class tst_FileSystem : public QObject
     void pluginDataDirCreatesDirectory();
     void pluginResolveConfinesPaths();
     void pluginResolveRejectsEscape();
+    void spaceCheckHoldsTheMargin();
+    void writeFileWritesAtomicallyAndReadsBack();
 };
 
 void tst_FileSystem::storageResolvesInsideStorage()
@@ -116,6 +118,38 @@ void tst_FileSystem::pluginResolveRejectsEscape()
     QVERIFY(!l_fs.pluginResolve("my-plugin", "../other-plugin/data.db").has_value());
     QVERIFY(!l_fs.pluginResolve("my-plugin", "../../config/secret.json").has_value());
     QVERIFY(!l_fs.pluginResolve("my-plugin", "/etc/passwd").has_value());
+}
+
+void tst_FileSystem::spaceCheckHoldsTheMargin()
+{
+    QTemporaryDir l_tmp;
+    FileSystemService l_fs(l_tmp.path());
+
+    // A small write fits; one the size of the volume itself never does.
+    QVERIFY(l_fs.hasSpaceFor(l_tmp.filePath("small.txt"), 1024));
+    QVERIFY(!l_fs.hasSpaceFor(l_tmp.filePath("giant.txt"), Q_INT64_C(9000000000000000000)));
+
+    // A target whose folders do not exist yet still finds its volume.
+    QVERIFY(l_fs.hasSpaceFor(l_tmp.filePath("not/yet/made/file.txt"), 1024));
+}
+
+void tst_FileSystem::writeFileWritesAtomicallyAndReadsBack()
+{
+    QTemporaryDir l_tmp;
+    FileSystemService l_fs(l_tmp.path());
+
+    const QString l_path = l_tmp.filePath("storage/notes/case.txt");
+    QVERIFY(!l_fs.writeFile(l_path, "first draft\n").has_value());
+
+    QFile l_file(l_path);
+    QVERIFY(l_file.open(QIODevice::ReadOnly));
+    QCOMPARE(l_file.readAll(), QByteArray("first draft\n"));
+    l_file.close();
+
+    // Overwriting replaces the whole file, never appends.
+    QVERIFY(!l_fs.writeFile(l_path, "final\n").has_value());
+    QVERIFY(l_file.open(QIODevice::ReadOnly));
+    QCOMPARE(l_file.readAll(), QByteArray("final\n"));
 }
 
 }

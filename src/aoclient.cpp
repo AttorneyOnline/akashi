@@ -20,7 +20,7 @@
 #include "akashi/event.h"
 #include "akashi/log_event.h"
 #include "area_data.h"
-#include "world/area_rules.h"
+#include "world/rule_registry.h"
 #include "core/client_session.h"
 #include "core/event_bus.h"
 #include "core/log_service.h"
@@ -53,6 +53,7 @@ void AOClient::leave()
     // (banned) connection must not broadcast ARUPs to the whole server.
     if (m_session->joined) {
         m_server->areaById(areaId())->removeClient(m_server->characterId(character()), clientId());
+        runAfterRule(akashi::AreaEvents::PlayerLeft, {});
 
         if (character() != "") {
             m_server->updateCharsTaken(m_server->areaById(areaId()));
@@ -158,13 +159,37 @@ void AOClient::changeArea(int new_area)
         sendServerMessage("You are already in area " + m_server->areaName(areaId()));
         return;
     }
-    if (m_server->areaById(new_area)->lockStatus() == AreaData::LockStatus::LOCKED && !m_server->areaById(new_area)->invited().contains(clientId()) && !canPerform(ACLRole::BYPASS_LOCKS)) {
-        sendServerMessage("Area " + m_server->areaName(new_area) + " is locked.");
+
+    int l_old_area = areaId();
+    int l_old_floor = m_server->floorIdForArea(l_old_area);
+    int l_new_floor = m_server->floorIdForArea(new_area);
+
+    AreaData *l_target = m_server->areaById(new_area);
+    akashi::RuleContext l_ctx;
+    l_ctx.player_id = clientId();
+    l_ctx.area_id = new_area;
+    l_ctx.floor_id = l_new_floor;
+    l_ctx.services = m_server->services();
+    l_ctx.payload = {
+        {QStringLiteral("lock_status"),
+         l_target->lockStatus() == AreaData::LockStatus::LOCKED ? QStringLiteral("locked") :
+         l_target->lockStatus() == AreaData::LockStatus::SPECTATABLE ? QStringLiteral("spectatable") :
+         QStringLiteral("free")},
+        {QStringLiteral("is_invited"), l_target->invited().contains(clientId())},
+        {QStringLiteral("bypass_locks"), canPerform(ACLRole::BYPASS_LOCKS)},
+        {QStringLiteral("area_name"), m_server->areaName(new_area)},
+        {QStringLiteral("character_id"), m_server->characterId(character())},
+    };
+
+    const akashi::Floor *l_target_floor = m_server->floorById(l_new_floor);
+    akashi::RuleVerdict l_verdict = akashi::RuleRegistry::checkBefore(
+        akashi::AreaEvents::PlayerJoined, l_ctx,
+        l_target->beforeRules(),
+        l_target_floor ? l_target_floor->before_rules : QVector<akashi::BeforeRuleEntry>{});
+    if (!l_verdict.allowed) {
+        sendServerMessage(l_verdict.reason);
         return;
     }
-
-    int l_old_floor = m_server->floorIdForArea(areaId());
-    int l_new_floor = m_server->floorIdForArea(new_area);
 
     if (character() != "") {
         m_server->areaById(areaId())->changeCharacter(m_server->characterId(character()), -1);
@@ -179,38 +204,18 @@ void AOClient::changeArea(int new_area)
     }
     m_server->areaById(new_area)->addClient(player()->char_id, clientId());
     setAreaId(new_area);
-    sendEvidenceList(m_server->areaById(new_area));
-    sendPacket("HP", {"1", QString::number(m_server->areaById(new_area)->defHP())});
-    sendPacket("HP", {"2", QString::number(m_server->areaById(new_area)->proHP())});
-    sendPacket("BN", {m_server->areaById(new_area)->background(), m_server->areaById(new_area)->side()});
     if (l_character_taken) {
         sendPacket("DONE");
     }
-    const QList<QTimer *> l_timers = m_server->areaById(areaId())->timers();
-    for (QTimer *l_timer : l_timers) {
-        int l_timer_id = m_server->areaById(areaId())->timers().indexOf(l_timer) + 1;
-        if (l_timer->isActive()) {
-            sendPacket("TI", {QString::number(l_timer_id), "2"});
-            sendPacket("TI", {QString::number(l_timer_id), "0", QString::number(QTime(0, 0).msecsTo(QTime(0, 0).addMSecs(l_timer->remainingTime())))});
-        }
-        else {
-            sendPacket("TI", {QString::number(l_timer_id), "3"});
-        }
-    }
-
-    if (l_old_floor != l_new_floor) {
-        sendPacket(akashi::Packet("FA", floorAreaNames()));
-        sendFullArup();
-    }
-
     sendServerMessage("You moved to area " + m_server->areaName(areaId()));
-    if (m_server->areaById(areaId())->sendAreaMessageOnJoin()) {
-        sendServerMessage(m_server->areaById(areaId())->areaMessage());
-    }
 
-    if (m_server->areaById(areaId())->lockStatus() == AreaData::LockStatus::SPECTATABLE) {
-        sendServerMessage("Area " + m_server->areaName(areaId()) + " is spectate-only; to chat IC you will need to be invited by the CM.");
-    }
+    // The area's state (evidence, penalties, background, timers, music,
+    // floor map) reaches the client through the player_joined after-rules.
+    runAfterRule(akashi::AreaEvents::PlayerJoined, {
+        {QStringLiteral("from_area"), l_old_area},
+        {QStringLiteral("from_floor"), l_old_floor},
+        {QStringLiteral("character_taken"), l_character_taken},
+    });
 }
 
 int AOClient::floorCount() const
@@ -224,16 +229,6 @@ int AOClient::floorAreaId(int f_floor_id, int f_x) const
     if (!l_floor || f_x < 0 || f_x >= l_floor->area_ids.size())
         return -1;
     return l_floor->area_ids[f_x];
-}
-
-int AOClient::currentFloorId() const
-{
-    return m_server->floorIdForArea(areaId());
-}
-
-int AOClient::currentAreaId() const
-{
-    return areaId();
 }
 
 QStringList AOClient::floorAreaNames() const
@@ -256,16 +251,37 @@ int AOClient::floorAreaToGlobal(int f_local_index) const
     return l_floor->area_ids[f_local_index];
 }
 
-QString AOClient::checkMessageRule(const QString &f_text)
+std::optional<QString> AOClient::checkBeforeRule(const QString &f_event, const QVariantMap &f_payload)
 {
-    akashi::AreaEventDetails l_details;
-    l_details.player_id = clientId();
-    l_details.area_id = areaId();
-    l_details.floor_id = m_server->floorIdForArea(areaId());
-    l_details.text = f_text;
-    akashi::RuleVerdict l_verdict = m_server->areaRuleRegistry()->check(
-        akashi::AreaEvent::MessageSent, akashi::RulePhase::Before, l_details);
-    return l_verdict.allowed ? QString() : l_verdict.reason;
+    akashi::RuleContext l_ctx;
+    l_ctx.player_id = clientId();
+    l_ctx.area_id = areaId();
+    l_ctx.floor_id = m_server->floorIdForArea(areaId());
+    l_ctx.services = m_server->services();
+    l_ctx.payload = f_payload;
+    AreaData *l_area = m_server->areaById(areaId());
+    const akashi::Floor *l_floor = m_server->floorById(l_ctx.floor_id);
+    akashi::RuleVerdict l_verdict = akashi::RuleRegistry::checkBefore(f_event, l_ctx,
+        l_area ? l_area->beforeRules() : QVector<akashi::BeforeRuleEntry>{},
+        l_floor ? l_floor->before_rules : QVector<akashi::BeforeRuleEntry>{});
+    if (!l_verdict.allowed)
+        return l_verdict.reason;
+    return std::nullopt;
+}
+
+void AOClient::runAfterRule(const QString &f_event, const QVariantMap &f_payload)
+{
+    akashi::RuleContext l_ctx;
+    l_ctx.player_id = clientId();
+    l_ctx.area_id = areaId();
+    l_ctx.floor_id = m_server->floorIdForArea(areaId());
+    l_ctx.services = m_server->services();
+    l_ctx.payload = f_payload;
+    AreaData *l_area = m_server->areaById(areaId());
+    const akashi::Floor *l_floor = m_server->floorById(l_ctx.floor_id);
+    akashi::RuleRegistry::runAfter(f_event, l_ctx,
+        l_area ? l_area->afterRules() : QVector<akashi::AfterRuleEntry>{},
+        l_floor ? l_floor->after_rules : QVector<akashi::AfterRuleEntry>{});
 }
 
 bool AOClient::changeCharacter(int char_id)
@@ -294,6 +310,7 @@ bool AOClient::changeCharacter(int char_id)
         player()->pos = "";
         m_server->updateCharsTaken(l_area);
         sendPacket("PV", {QString::number(clientId()), "CID", QString::number(char_id)});
+        runAfterRule(akashi::AreaEvents::CharacterChanged, {{QStringLiteral("character"), l_char_selected}});
         return true;
     }
     return false;
@@ -638,9 +655,6 @@ int AOClient::maxPlayerCount() const { return m_server->serverSettings()->max_pl
 QString AOClient::serverDescription() const { return m_server->serverSettings()->server_description(); }
 QUrl AOClient::assetUrl() const { return m_server->assetUrl(); }
 QString AOClient::motd() const { return m_server->serverSettings()->motd(); }
-DataTypes::AuthType AOClient::packetAuthType() const { return m_server->authType(); }
-int AOClient::messageFloodguardMs() const { return m_server->serverSettings()->message_floodguard(); }
-int AOClient::globalMessageFloodguardMs() const { return m_server->serverSettings()->global_message_floodguard(); }
 
 
 int AOClient::playerCount() const
@@ -661,22 +675,6 @@ QStringList AOClient::areaNames() const
 QStringList AOClient::musicList() const
 {
     return m_server->musicList();
-}
-
-akashi::AreaSnapshot AOClient::areaState() const
-{
-    AreaData *l_area = m_server->areaById(areaId());
-
-    akashi::AreaSnapshot l_snapshot;
-    l_snapshot.def_hp = l_area->defHP();
-    l_snapshot.pro_hp = l_area->proHP();
-    l_snapshot.background = l_area->background();
-    l_snapshot.side = l_area->side();
-    const QList<QTimer *> l_timers = l_area->timers();
-    for (QTimer *l_timer : l_timers) {
-        l_snapshot.timers.append(akashi::TimerSnapshot{l_timer->isActive(), QTime(0, 0).msecsTo(QTime(0, 0).addMSecs(l_timer->remainingTime()))});
-    }
-    return l_snapshot;
 }
 
 akashi::TimerSnapshot AOClient::globalTimer() const
@@ -1068,16 +1066,6 @@ bool AOClient::canActInArea()
     return !(l_area->lockStatus() == AreaData::LockStatus::SPECTATABLE && !l_area->invited().contains(clientId()) && !canPerform(ACLRole::BYPASS_LOCKS));
 }
 
-bool AOClient::isIniswapAllowed() const
-{
-    return m_server->areaById(areaId())->isIniswapAllowed();
-}
-
-bool AOClient::isBlankpostingAllowed() const
-{
-    return m_server->areaById(areaId())->isBlankpostingAllowed();
-}
-
 bool AOClient::isShoutAllowed() const
 {
     return m_server->areaById(areaId())->isShoutAllowed();
@@ -1328,11 +1316,6 @@ bool AOClient::hasSong(const QString &f_name) const
 bool AOClient::isDjBlocked() const
 {
     return m_session->hasSanction(akashi::Sanction::DjBlocked);
-}
-
-bool AOClient::isMusicAllowed() const
-{
-    return m_server->areaById(areaId())->isMusicAllowed() || canPerform(ACLRole::CM);
 }
 
 bool AOClient::isJukeboxEnabled() const

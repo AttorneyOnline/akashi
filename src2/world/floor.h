@@ -1,5 +1,6 @@
 #pragma once
 
+#include "akashi/area_rule.h"
 #include "akashi/jukebox_policy.h"
 
 #include <QMap>
@@ -41,6 +42,10 @@ class Floor
 
     // CDN domains approved for URL-based custom songs.
     QStringList approved_cdns;
+
+    // Rules applied to every area on this floor (unless the area overrides).
+    QVector<BeforeRuleEntry> before_rules;
+    QVector<AfterRuleEntry> after_rules;
 };
 
 } // namespace akashi

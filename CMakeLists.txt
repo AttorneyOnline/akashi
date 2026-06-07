@@ -19,14 +19,6 @@ find_package(Qt6 6.4 REQUIRED COMPONENTS ${_qt_components})
 qt_standard_project_setup()
 
 set(AKASHI_SOURCES
-  src/commands/area.cpp
-  src/commands/authentication.cpp
-  src/commands/casing.cpp
-  src/commands/command_helper.cpp
-  src/commands/messaging.cpp
-  src/commands/moderation.cpp
-  src/commands/music.cpp
-  src/commands/roleplay.cpp
   src2/core/event_bus.cpp
   src2/core/event_bus.h
   src2/core/log_service.cpp
@@ -56,6 +48,8 @@ set(AKASHI_SOURCES
   src/player_directory.h
   src/playerstateobserver.cpp
   src/playerstateobserver.h
+  src/rule_actions.cpp
+  src/rule_actions.h
   src/server.cpp
   src/server.h
   src/serverpublisher.cpp
@@ -109,6 +103,8 @@ set(AKASHI_SOURCES
   src2/commands/plugin_commands.h
   src2/commands/roleplay_commands.cpp
   src2/commands/roleplay_commands.h
+  src2/commands/rule_commands.cpp
+  src2/commands/rule_commands.h
   src2/commands/messaging_commands.cpp
   src2/commands/messaging_commands.h
   src2/world/area.cpp
@@ -116,8 +112,8 @@ set(AKASHI_SOURCES
   src2/world/area_settings.h
   src2/world/arup_broadcaster.cpp
   src2/world/arup_broadcaster.h
-  src2/world/area_rules.cpp
-  src2/world/area_rules.h
+  src2/world/rule_registry.cpp
+  src2/world/rule_registry.h
   src2/world/evidence_store.cpp
   src2/world/evidence_store.h
   src2/world/floor.h

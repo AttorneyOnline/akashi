@@ -36,8 +36,18 @@ class AKASHI_CORE_EXPORT Area : public QObject
     // Identity and place on the map.
     int id() const { return m_id; }
     QString name() const { return m_name; }
+    void setName(const QString &f_name) { m_name = f_name; }
     int floorId() const { return m_floor_id; }
     int x() const { return m_x; }
+
+    // Removing an area compacts the id space; the server renumbers the
+    // surviving areas with this.
+    void renumber(int f_id, int f_floor_id, int f_x)
+    {
+        m_id = f_id;
+        m_floor_id = f_floor_id;
+        m_x = f_x;
+    }
 
     // Which areas a player standing here has in their area list, so big maps
     // don't show hundreds of entries. Empty means every area on the floor -

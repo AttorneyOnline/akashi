@@ -52,6 +52,14 @@ class AKASHI_CORE_EXPORT PluginManager : public QObject, public IService
     QList<PluginInfo> plugins() const;
     std::optional<PluginInfo> pluginInfo(const QString &f_id) const;
 
+  Q_SIGNALS:
+    /**
+     * @brief Fires while a plugin's registrations are being removed and
+     * before its library unloads. Anything holding functions built by the
+     * plugin (like applied rules) must drop them now.
+     */
+    void pluginAboutToUnload(const QString &f_plugin_id);
+
   private:
     struct PluginEntry
     {

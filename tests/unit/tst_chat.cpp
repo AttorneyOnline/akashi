@@ -122,31 +122,35 @@ void tst_Chat::oocBroadcastsPlainMessages()
 
 void tst_Chat::evidenceDeleteChecksAccessAndBounds()
 {
+    // Evidence access is a floor rule now.
     FakeContext l_denied;
-    l_denied.evidence_access = false;
+    l_denied.before_rule_block = "You are not allowed to modify the evidence here.";
     l_denied.evidence_total = 3;
     run(Packet("DE", {"1"}), l_denied);
-    QVERIFY(l_denied.calls.isEmpty());
+    QVERIFY(l_denied.deleted_evidence.isEmpty());
+    QCOMPARE(l_denied.calls, QStringList({"checkBeforeRule:evidence_removed", "message:You are not allowed to modify the evidence here."}));
 
     FakeContext l_context;
     l_context.evidence_total = 3;
     run(Packet("DE", {"1"}), l_context);
     QCOMPARE(l_context.deleted_evidence, QList<int>({1}));
-    // The delete happens before the area sees the fresh list.
-    QCOMPARE(l_context.calls, QStringList({"deleteEvidence", "sendEvidenceList"}));
+    // The rules gate first, the delete lands before the fresh list, and the
+    // after-rules only run because something was actually removed.
+    QCOMPARE(l_context.calls, QStringList({"checkBeforeRule:evidence_removed", "deleteEvidence", "sendEvidenceList", "runAfterRule:evidence_removed"}));
 
-    // Out of range or unreadable indexes still refresh the list.
+    // Out of range or unreadable indexes still refresh the list, but no
+    // evidence_removed after-rule fires for them.
     FakeContext l_out_of_range;
     l_out_of_range.evidence_total = 3;
     run(Packet("DE", {"7"}), l_out_of_range);
     QVERIFY(l_out_of_range.deleted_evidence.isEmpty());
-    QCOMPARE(l_out_of_range.calls, QStringList({"sendEvidenceList"}));
+    QCOMPARE(l_out_of_range.calls, QStringList({"checkBeforeRule:evidence_removed", "sendEvidenceList"}));
 
     FakeContext l_garbage;
     l_garbage.evidence_total = 3;
     run(Packet("DE", {"first"}), l_garbage);
     QVERIFY(l_garbage.deleted_evidence.isEmpty());
-    QCOMPARE(l_garbage.calls, QStringList({"sendEvidenceList"}));
+    QCOMPARE(l_garbage.calls, QStringList({"checkBeforeRule:evidence_removed", "sendEvidenceList"}));
 }
 
 void tst_Chat::evidenceEditChecksAccessAndBounds()

@@ -1,5 +1,6 @@
 #include "proto/handshake.h"
 
+#include "akashi/area_rule.h"
 #include "proto/ao2_protocol.h"
 #include "proto/handshake_messages.h"
 #include "proto/packet_codec.h"
@@ -188,27 +189,29 @@ class JoinHandler : public PacketHandler
             return;
         }
 
+        // A blocking server_joined rule turns the connection away like a
+        // ban does: reason shown, never counted as joined.
+        if (auto l_block = f_context.checkBeforeRule(AreaEvents::ServerJoined, {})) {
+            f_context.sendPacket(Packet(ao2::HEADER_BD, {*l_block}));
+            f_context.closeConnection();
+            return;
+        }
+
         f_context.markJoined();
         f_context.announceCharsTaken();
-        f_context.sendEvidenceList();
 
-        const AreaSnapshot l_area = f_context.areaState();
-        f_context.sendPacket(Packet(ao2::HEADER_HP, {"1", QString::number(l_area.def_hp)}));
-        f_context.sendPacket(Packet(ao2::HEADER_HP, {"2", QString::number(l_area.pro_hp)}));
-        f_context.sendPacket(Packet(ao2::HEADER_FA, f_context.floorAreaNames()));
+        // The area's state (evidence, penalties, background, timers, music,
+        // floor map) reaches the client through the player_joined after-rules.
+        f_context.runAfterRule(AreaEvents::PlayerJoined, {{QStringLiteral("from_area"), -1}, {QStringLiteral("from_floor"), -1}});
+
+        sendTimer(f_context, 0, f_context.globalTimer());
         // Here lies OPPASS, the genius of FanatSors who send the modpass to everyone in plain text.
         f_context.sendPacket(Packet(ao2::HEADER_DONE));
-        f_context.sendPacket(Packet(ao2::HEADER_BN, {l_area.background, l_area.side}));
 
         f_context.sendServerMessage("=== MOTD ===\r\n" + f_context.motd() + "\r\n=============");
 
-        // Give the client all the area data.
-        f_context.sendFullArup();
-
-        sendTimer(f_context, 0, f_context.globalTimer());
-        for (int i = 0; i < l_area.timers.size(); i++) {
-            sendTimer(f_context, i + 1, l_area.timers.at(i));
-        }
+        // Once per session, unlike player_joined which fires on every area entry.
+        f_context.runAfterRule(AreaEvents::ServerJoined, {});
 
         f_context.finishJoin();
         // Tell everyone there is a new player.

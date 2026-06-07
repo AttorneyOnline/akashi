@@ -3,6 +3,7 @@
 #include "akashi/service.h"
 #include "akashi_core_export.h"
 
+#include <QByteArray>
 #include <QDir>
 #include <QString>
 
@@ -35,7 +36,25 @@ class AKASHI_CORE_EXPORT FileSystemService : public IService
     QString pluginDataDir(const QString &f_plugin_id);
     std::optional<QString> pluginResolve(const QString &f_plugin_id, const QString &f_relative_path) const;
 
+    /**
+     * @brief True when writing f_bytes at f_path still leaves the volume
+     * its safety margin of free space. An unrecognizable volume counts
+     * as no room.
+     */
+    bool hasSpaceFor(const QString &f_path, qint64 f_bytes) const;
+
+    /**
+     * @brief Writes the whole file atomically (temp file, then rename),
+     * refusing when the disk would drop under the safety margin.
+     *
+     * @return The reason the write was refused, or nothing on success.
+     */
+    std::optional<QString> writeFile(const QString &f_absolute_path, const QByteArray &f_data);
+
   private:
+    // A write may never push the volume under this much free space.
+    static constexpr int s_free_margin_percent = 15;
+
     QString m_app_root;
     QString m_storage_root;
 };

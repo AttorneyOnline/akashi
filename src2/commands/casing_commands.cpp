@@ -190,11 +190,6 @@ static void handleSaveTestimony(CommandContext &f_context)
             return;
         }
 
-        QDir l_dir_testimony("storage/testimony");
-        if (!l_dir_testimony.exists()) {
-            l_dir_testimony.mkpath(".");
-        }
-
         const std::optional<QString> l_testimony_name = AkashiUtils::sanitizedFileName(f_context.argument(0));
         const std::optional<QString> l_path =
             l_testimony_name ? f_context.server()->fileSystem()->resolve(akashi::FileSystemService::Scope::Storage, "testimony/" + *l_testimony_name + ".txt") : std::nullopt;
@@ -202,20 +197,21 @@ static void handleSaveTestimony(CommandContext &f_context)
             f_context.reply("Invalid testimony name. Use only letters, numbers, dashes and underscores.");
             return;
         }
-        QFile l_file(*l_path);
-        if (l_file.exists()) {
+        if (QFile::exists(*l_path)) {
             f_context.reply("Unable to save testimony. Testimony name already exists.");
             return;
         }
 
-        QTextStream l_out(&l_file);
-        if (l_file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
-            for (int i = 0; i < l_recorder->statementCount(); i++) {
-                l_out << l_recorder->statementAt(i)->toSavedLine() << "\n";
-            }
-            f_context.reply("Testimony saved. To load it use /loadtestimony " + *l_testimony_name);
-            l_self->setTestimonySaving(false);
+        QByteArray l_data;
+        for (int i = 0; i < l_recorder->statementCount(); i++) {
+            l_data += l_recorder->statementAt(i)->toSavedLine().toUtf8() + "\n";
         }
+        if (auto l_error = f_context.server()->fileSystem()->writeFile(*l_path, l_data)) {
+            f_context.reply("Unable to save testimony: " + *l_error);
+            return;
+        }
+        f_context.reply("Testimony saved. To load it use /loadtestimony " + *l_testimony_name);
+        l_self->setTestimonySaving(false);
     }
     else {
         f_context.reply("You don't have permission to save a testimony. Please contact a moderator for permission.");

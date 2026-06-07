@@ -180,13 +180,14 @@ void tst_Ic::doublepostAndBlankpostRules()
     run(Packet("MS", l_fields), l_jump);
     QVERIFY(!l_jump.broadcast_ic_fields.isEmpty());
 
+    // Blankposting is a floor rule now; a rule block stops the message.
     SpeakerContext l_blank;
-    l_blank.blankposting_allowed = false;
+    l_blank.before_rule_block = "Blankposting has been forbidden in this area.";
     QStringList l_empty = baseFields();
     l_empty[4] = "";
     run(Packet("MS", l_empty), l_blank);
     QVERIFY(l_blank.broadcast_ic_fields.isEmpty());
-    QCOMPARE(l_blank.calls, QStringList({"message:Blankposting has been forbidden in this area."}));
+    QCOMPARE(l_blank.calls, QStringList({"checkBeforeRule:ic_message_sent", "message:Blankposting has been forbidden in this area."}));
 }
 
 void tst_Ic::textFiltersApplyInOrder()

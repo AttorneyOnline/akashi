@@ -17,6 +17,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #pragma once
 
+#include "akashi/area_rule.h"
 #include "akashi_core_export.h"
 #include "world/area_settings.h"
 #include "world/evidence_store.h"
@@ -35,7 +36,6 @@ class Area;
 class Jukebox;
 }
 
-class Logger;
 
 /**
  * @brief Represents an area on the server, a distinct "room" for people to chat in.
@@ -342,6 +342,17 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
      * @return See short description.
      */
     QString displayName() const;
+
+    /**
+     * @brief Gives the area a new name, keeping the display name in step.
+     */
+    void rename(const QString &f_name);
+
+    /**
+     * @brief Moves the area to a new ID and map position after a removal
+     * compacted the id space.
+     */
+    void renumber(int f_area_id, int f_floor_id, int f_x);
 
     /**
      * @brief Returns a copy of the list of characters taken.
@@ -877,20 +888,10 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
      */
     void startMessageFloodguard(int f_duration);
 
-  Q_SIGNALS:
-
-    /**
-     * @brief userJoinedArea Signals that a new client has joined an area.
-     *
-     * @details This is mostly a signal for more compelex features where multiple managers need to know of the change.
-     *
-     * @param f_area_index Area Index that the client joined in.
-     *
-     *
-     * @param f_user_id The user ID of the client.
-     */
-    void userJoinedArea(int f_area_index, int f_user_id);
-    void userLeftArea(int f_area_index, int f_user_id);
+    QVector<akashi::BeforeRuleEntry> &beforeRules();
+    QVector<akashi::AfterRuleEntry> &afterRules();
+    const QVector<akashi::BeforeRuleEntry> &beforeRules() const;
+    const QVector<akashi::AfterRuleEntry> &afterRules() const;
 
   private:
     /**
@@ -950,11 +951,6 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
 
 
     /**
-     * @brief A pointer to a Logger, used to send requests to log data.
-     */
-    Logger *m_logger;
-
-    /**
      * @brief The list of notecards in the area.
      *
      * @details Notecards are plain text messages that can be left secretly in areas.
@@ -997,6 +993,9 @@ class AKASHI_CORE_EXPORT AreaData : public QObject
      * @brief If false, IC messages will be rejected.
      */
     bool m_can_send_ic_messages = true;
+
+    QVector<akashi::BeforeRuleEntry> m_before_rules;
+    QVector<akashi::AfterRuleEntry> m_after_rules;
 
   private Q_SLOTS:
     /**

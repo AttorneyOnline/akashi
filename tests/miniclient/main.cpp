@@ -156,13 +156,13 @@ class MiniClient : public QObject
             break;
         case Step::JudgeSplash:
             if (l_header == "RT" && l_content.value(0) == "testimony1") {
-                // Move to Courtroom 1, where the evidence mod allows adding.
+                // Move to Hallway, where the evidence mod allows adding.
                 step(Step::AreaMove, "area move confirmation");
-                send(AOPacket("MC", {"Courtroom 1", QString::number(m_char_id)}));
+                send(AOPacket("MC", {"Hallway", QString::number(m_char_id)}));
             }
             break;
         case Step::AreaMove:
-            if (l_header == "CT" && l_content.value(1).contains("You moved to area Courtroom 1")) {
+            if (l_header == "CT" && l_content.value(1).contains("You moved to area Hallway")) {
                 step(Step::Evidence, "LE with the new evidence");
                 send(AOPacket("PE", {"Cross & Sword", "It has a # and a % on it.", "sword&shield.png"}));
             }

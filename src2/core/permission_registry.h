@@ -103,6 +103,8 @@ namespace permission {
     inline const QString ignore_background_list = QStringLiteral("ignore_background_list");
     inline const QString send_notice = QStringLiteral("send_notice");
     inline const QString jukebox = QStringLiteral("jukebox");
+    inline const QString modify_rules = QStringLiteral("modify_rules");
+    inline const QString modify_floors = QStringLiteral("modify_floors");
     inline const QString super = QStringLiteral("super");
 } // namespace permission
 

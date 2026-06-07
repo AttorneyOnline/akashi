@@ -114,10 +114,12 @@ void tst_AreaMusic::musicChangeRespectsTheBlocks()
     run(Packet("MC", {"song1.opus", "0"}), l_dj);
     QCOMPARE(l_dj.calls, QStringList({"message:You are blocked from changing the music."}));
 
+    // The music-allowed area setting is a floor rule now; a rule block
+    // stops the change with its reason.
     FakeContext l_disabled;
-    l_disabled.music_allowed = false;
+    l_disabled.before_rule_block = "Music is disabled in this area.";
     run(Packet("MC", {"song1.opus", "0"}), l_disabled);
-    QCOMPARE(l_disabled.calls, QStringList({"message:Music is disabled in this area."}));
+    QCOMPARE(l_disabled.calls, QStringList({"checkBeforeRule:music_changed", "message:Music is disabled in this area."}));
 }
 
 void tst_AreaMusic::jukeboxInterceptsTheSong()
@@ -187,10 +189,12 @@ void tst_AreaMusic::evidenceIsAddedWithAccess()
     run(Packet("PE", {"Knife", "A bloody knife.", "knife.png"}), l_context);
     QCOMPARE(l_context.added_evidence, QStringList({"Knife", "A bloody knife.", "knife.png"}));
 
+    // Evidence access is a floor rule now.
     FakeContext l_denied;
-    l_denied.evidence_access = false;
+    l_denied.before_rule_block = "You are not allowed to modify the evidence here.";
     run(Packet("PE", {"Knife", "A bloody knife.", "knife.png"}), l_denied);
     QVERIFY(l_denied.added_evidence.isEmpty());
+    QCOMPARE(l_denied.calls, QStringList({"checkBeforeRule:evidence_added", "message:You are not allowed to modify the evidence here."}));
 }
 
 void tst_AreaMusic::hiddenCmAreaTagsNewEvidence()

@@ -19,6 +19,7 @@ bool HelloWorldPlugin::load(akashi::ServiceRegistry &services)
     akashi::CommandSpec l_spec;
     l_spec.name = QStringLiteral("hello");
     l_spec.permissions = {QStringLiteral("none")};
+    l_spec.usage = QStringLiteral("/hello");
     l_spec.description = QStringLiteral("Says hello from the plugin system.");
 
     l_commands->registerCommand(l_spec, [](akashi::CommandContext &ctx) {

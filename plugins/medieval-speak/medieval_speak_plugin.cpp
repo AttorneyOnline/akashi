@@ -50,7 +50,9 @@ bool MedievalSpeakPlugin::load(akashi::ServiceRegistry &services)
         }, false, l_owner);
 
     l_commands->registerCommand(
-        {QStringLiteral("medieval"), {}, {QStringLiteral("mute")}, 1},
+        {QStringLiteral("medieval"), {}, {QStringLiteral("mute")}, 1,
+         QStringLiteral("/medieval <id>"),
+         QStringLiteral("Makes a client speak in medieval English.")},
         [](akashi::CommandContext &f_context) {
             if (auto l_target = f_context.resolveTarget()) {
                 if (l_target->hasSanction(akashi::sanction::medieval))
@@ -64,7 +66,9 @@ bool MedievalSpeakPlugin::load(akashi::ServiceRegistry &services)
         }, l_owner);
 
     l_commands->registerCommand(
-        {QStringLiteral("unmedieval"), {}, {QStringLiteral("mute")}, 1},
+        {QStringLiteral("unmedieval"), {}, {QStringLiteral("mute")}, 1,
+         QStringLiteral("/unmedieval <id>"),
+         QStringLiteral("Returns a client to plain speech.")},
         [](akashi::CommandContext &f_context) {
             if (auto l_target = f_context.resolveTarget()) {
                 if (!l_target->hasSanction(akashi::sanction::medieval))

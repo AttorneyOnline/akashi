@@ -342,16 +342,16 @@ static void handleSubtheme(CommandContext &f_context)
 
 void registerRoleplayCommands(CommandRegistry &f_registry)
 {
-    f_registry.registerCommand({"coinflip", {}, {}, 0}, handleFlip, "core");
-    f_registry.registerCommand({"roll", {"r"}, {}, 0}, handleRoll, "core");
-    f_registry.registerCommand({"rolla", {}, {}, 0}, handleRollA, "core");
-    f_registry.registerCommand({"rollp", {}, {}, 0}, handleRollP, "core");
-    f_registry.registerCommand({"timer", {}, {permission::gamemaster}, 0}, handleTimer, "core");
-    f_registry.registerCommand({"notecard", {}, {}, 1}, handleNotecard, "core");
-    f_registry.registerCommand({"notecard_clear", {"clear_notecard", "notecardclear"}, {}, 0}, handleNotecardClear, "core");
-    f_registry.registerCommand({"notecard_reveal", {"reveal_notecard", "notecardreveal"}, {permission::gamemaster}, 0}, handleNotecardReveal, "core");
-    f_registry.registerCommand({"8ball", {}, {}, 1}, handle8Ball, "core");
-    f_registry.registerCommand({"subtheme", {}, {permission::gamemaster}, 1}, handleSubtheme, "core");
+    f_registry.registerCommand({"coinflip", {}, {}, 0, "/coinflip", "Flips a coin for the area to see."}, handleFlip, "core");
+    f_registry.registerCommand({"roll", {"r"}, {}, 0, "/roll [dice] [faces]", "Rolls dice for the area to see."}, handleRoll, "core");
+    f_registry.registerCommand({"rolla", {}, {}, 0, "/rolla <name>", "Rolls a named die from the dice config."}, handleRollA, "core");
+    f_registry.registerCommand({"rollp", {}, {}, 0, "/rollp [dice] [faces]", "Rolls dice only you and the moderators see."}, handleRollP, "core");
+    f_registry.registerCommand({"timer", {}, {permission::gamemaster}, 0, "/timer [id] [time|start|pause|hide]", "Shows or controls the area's timers."}, handleTimer, "core");
+    f_registry.registerCommand({"notecard", {}, {}, 1, "/notecard <message>", "Writes your hidden notecard."}, handleNotecard, "core");
+    f_registry.registerCommand({"notecard_clear", {"clear_notecard", "notecardclear"}, {}, 0, "/notecard_clear", "Clears your notecard."}, handleNotecardClear, "core");
+    f_registry.registerCommand({"notecard_reveal", {"reveal_notecard", "notecardreveal"}, {permission::gamemaster}, 0, "/notecard_reveal", "Reveals every notecard in the area."}, handleNotecardReveal, "core");
+    f_registry.registerCommand({"8ball", {}, {}, 1, "/8ball <question>", "Asks the magic 8-ball a question."}, handle8Ball, "core");
+    f_registry.registerCommand({"subtheme", {}, {permission::gamemaster}, 1, "/subtheme <name>", "Switches the area's client subtheme."}, handleSubtheme, "core");
 }
 
 } // namespace akashi::commands

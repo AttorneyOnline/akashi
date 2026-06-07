@@ -25,7 +25,8 @@ class tst_Handshake : public QObject
     void identifyRefusesDoubleAndUnparseableVersions();
     void resourceCountsMatchTheLists();
     void characterAndMusicListsAreSent();
-    void joinSendsTheWholeWorldInOrder();
+    void joinRunsJoinRulesBeforeDone();
+    void joinRefusedByServerRule();
     void joinNeedsAHwidAndHappensOnce();
     void characterSelectFollowsTheOldRules();
     void keepaliveAnswersWithCheck();
@@ -164,37 +165,44 @@ void tst_Handshake::characterAndMusicListsAreSent()
     QCOMPARE(l_music.sent.at(0).fields(), l_music.area_name_list + l_music.music_name_list);
 }
 
-void tst_Handshake::joinSendsTheWholeWorldInOrder()
+void tst_Handshake::joinRunsJoinRulesBeforeDone()
 {
     FakeContext l_context;
     l_context.stored_hwid = "hwid123";
-    l_context.area.def_hp = 7;
-    l_context.area.pro_hp = 9;
-    l_context.area.background = "gs4";
-    l_context.area.side = "def";
-    l_context.area.timers = {TimerSnapshot{true, 5000}, TimerSnapshot{false, 0}};
 
     run(Packet("RD"), l_context);
 
     QVERIFY(l_context.joined);
     QVERIFY(!l_context.closed);
+    // The area's state travels through the player_joined after-rules, which
+    // must run while the client still shows its loading screen.
     const QStringList l_expected = {
-        "markJoined", "announceCharsTaken", "sendEvidenceList",
-        "send:HP", "send:HP", "send:FA", "send:DONE", "send:BN",
+        "checkBeforeRule:server_joined",
+        "markJoined", "announceCharsTaken",
+        "runAfterRule:player_joined",
+        "send:TI", "send:DONE",
         "message:=== MOTD ===\r\nMOTD is not set.\r\n=============",
-        "sendFullArup",
-        "send:TI", "send:TI", "send:TI", "send:TI",
+        "runAfterRule:server_joined",
         "finishJoin", "broadcastPlayerCount"};
     QCOMPARE(l_context.calls, l_expected);
 
-    QCOMPARE(l_context.sent.at(0).fields(), QStringList({"1", "7"}));
-    QCOMPARE(l_context.sent.at(1).fields(), QStringList({"2", "9"}));
-    QCOMPARE(l_context.sent.at(4).fields(), QStringList({"gs4", "def"}));
-    // The stopped global timer, the running area timer, the stopped one.
-    QCOMPARE(l_context.sent.at(5).fields(), QStringList({"0", "3"}));
-    QCOMPARE(l_context.sent.at(6).fields(), QStringList({"1", "2"}));
-    QCOMPARE(l_context.sent.at(7).fields(), QStringList({"1", "0", "5000"}));
-    QCOMPARE(l_context.sent.at(8).fields(), QStringList({"2", "3"}));
+    // The stopped global timer is the only packet the handler still builds.
+    QCOMPARE(l_context.sent.at(0).fields(), QStringList({"0", "3"}));
+}
+
+void tst_Handshake::joinRefusedByServerRule()
+{
+    FakeContext l_context;
+    l_context.stored_hwid = "hwid123";
+    l_context.before_rule_block = "The whole floor is locked down.";
+
+    run(Packet("RD"), l_context);
+
+    // Turned away like a ban: reason shown, never counted as joined.
+    QVERIFY(!l_context.joined);
+    QVERIFY(l_context.closed);
+    QCOMPARE(l_context.calls, QStringList({"checkBeforeRule:server_joined", "send:BD", "close"}));
+    QCOMPARE(l_context.sent.at(0).fields(), QStringList({"The whole floor is locked down."}));
 }
 
 void tst_Handshake::joinNeedsAHwidAndHappensOnce()

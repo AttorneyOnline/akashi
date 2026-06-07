@@ -33,6 +33,31 @@ void ArupBroadcaster::addArea(Area *area, int floorId)
     });
 }
 
+void ArupBroadcaster::removeArea(Area *area)
+{
+    area->disconnect(this);
+    m_areas.removeAll(area);
+    for (QVector<Area *> &floorAreas : m_floor_areas) {
+        floorAreas.removeAll(area);
+    }
+}
+
+void ArupBroadcaster::removeFloor(int floorId)
+{
+    if (floorId >= 0 && floorId < m_floor_areas.size()) {
+        m_floor_areas.removeAt(floorId);
+    }
+}
+
+void ArupBroadcaster::clear()
+{
+    for (Area *area : std::as_const(m_areas)) {
+        area->disconnect(this);
+    }
+    m_areas.clear();
+    m_floor_areas.clear();
+}
+
 void ArupBroadcaster::setOwnerFormatter(OwnerFormatter formatter)
 {
     m_format_owner = std::move(formatter);

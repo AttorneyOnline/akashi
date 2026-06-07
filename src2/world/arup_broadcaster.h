@@ -45,6 +45,12 @@ class AKASHI_CORE_EXPORT ArupBroadcaster : public QObject
     explicit ArupBroadcaster(QObject *parent = nullptr);
 
     void addArea(Area *area, int floorId);
+    void removeArea(Area *area);
+    // Drops an emptied floor's slot; later floors shift down one, matching
+    // the server's floor renumbering.
+    void removeFloor(int floorId);
+    // Forgets every area and floor; a world reload re-adds them.
+    void clear();
     void setOwnerFormatter(OwnerFormatter formatter);
 
     // Unicast all four ARUP types to one client on a specific floor.

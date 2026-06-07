@@ -1,73 +1,97 @@
 #pragma once
 
 #include <QString>
+#include <QVariantMap>
+
+#include <functional>
 
 namespace akashi {
 
-// The rule contract plugins build against. Its ABI stays stable across
-// releases under these ground rules:
-//  - AreaEvent only ever gains new values at the end; none are reordered
-//    or removed.
-//  - AreaEventDetails only ever gains new fields at the end. Core builds
-//    it and rules receive it by reference, so older plugins keep reading
-//    the fields they know.
-//  - RuleVerdict's layout is frozen. New kinds of outcomes arrive as new
-//    virtual methods on AreaRule, added at the end - existing methods are
-//    never changed, reordered or removed.
-// The plugin loader additionally refuses plugins built against a different
-// compiler or Qt build, so the in-memory layout of these types agrees.
+class ServiceRegistry;
 
-// The moments a rule can watch.
-enum class AreaEvent
-{
-    PlayerJoined,
-    PlayerLeft,
-    MessageSent,
-    EvidencePresented,
-    MusicRequested,
-    AmbienceRequested,
-};
+// String event names. The enum-like namespace gives code aesthetics and
+// autocomplete; internally everything dispatches by string.
+namespace AreaEvents {
+// Fired once per session in the starting area; player_joined fires on
+// every area entry. A blocking before-rule refuses the connection.
+inline const QString ServerJoined = QStringLiteral("server_joined");
+inline const QString PlayerJoined = QStringLiteral("player_joined");
+inline const QString PlayerLeft = QStringLiteral("player_left");
+inline const QString IcMessageSent = QStringLiteral("ic_message_sent");
+inline const QString OocMessageSent = QStringLiteral("ooc_message_sent");
+inline const QString MusicChanged = QStringLiteral("music_changed");
+inline const QString AmbienceChanged = QStringLiteral("ambience_changed");
+inline const QString EvidencePresented = QStringLiteral("evidence_presented");
+inline const QString EvidenceAdded = QStringLiteral("evidence_added");
+inline const QString EvidenceRemoved = QStringLiteral("evidence_removed");
+inline const QString BackgroundChanged = QStringLiteral("background_changed");
+inline const QString LockChanged = QStringLiteral("lock_changed");
+inline const QString OwnerChanged = QStringLiteral("owner_changed");
+inline const QString CharacterChanged = QStringLiteral("character_changed");
+} // namespace AreaEvents
 
-// When a rule runs relative to the change its event describes. A Before
-// rule runs while the change is still only a request: a block means it
-// never happens and the client is never told, so nothing flickers between
-// applied and reverted. An After rule runs once the change is real - its
-// work is its actions, and its verdict is ignored. When a Before rule
-// blocks, the After rules never run: there is no change to react to.
 enum class RulePhase
 {
     Before,
     After,
 };
 
-// What a rule gets to look at when its event happens.
-struct AreaEventDetails
+// What a rule gets to look at when its event fires.
+struct RuleContext
 {
     int player_id = -1;
     int area_id = -1;
     int floor_id = -1;
-    QString text; // the message or evidence name, when the event carries one
+    QVariantMap payload;
+    ServiceRegistry *services = nullptr;
 };
 
-// What a rule decides about the event itself: let it happen, or block it
-// with a reason the player gets to see. A rule's real work may be the
-// actions it performs while running - the verdict only gates the event.
+// What a before-rule decides: let the event happen, or block it.
 struct RuleVerdict
 {
     bool allowed = true;
     QString reason;
 };
 
-// One rule, shippable by a plugin: subclass it, put the automation in
-// onEvent, and register it with the rule registry under your plugin's
-// owner id - unloading the plugin unregisters and releases it.
-class AreaRule
+using BeforeRuleFunction = std::function<RuleVerdict(const RuleContext &)>;
+using AfterRuleFunction = std::function<void(const RuleContext &)>;
+
+// An applied rule living on an area or floor. The arguments the function
+// was built with travel along so the rule can be saved back to file.
+struct BeforeRuleEntry
+{
+    QString event;
+    QString action;
+    BeforeRuleFunction function;
+    QString owner_id;
+    QVariantMap args;
+};
+
+struct AfterRuleEntry
+{
+    QString event;
+    QString action;
+    AfterRuleFunction function;
+    QString owner_id;
+    QVariantMap args;
+};
+
+// The rule contract plugins build against. Subclass for before-rules
+// (return a verdict) or after-rules (act on the world).
+class BeforeRule
 {
   public:
-    virtual ~AreaRule() = default;
+    virtual ~BeforeRule() = default;
 
-    virtual RuleVerdict onEvent(const AreaEventDetails &f_details) = 0;
+    virtual RuleVerdict onEvent(const RuleContext &f_context) = 0;
+};
+
+class AfterRule
+{
+  public:
+    virtual ~AfterRule() = default;
+
+    virtual void onEvent(const RuleContext &f_context) = 0;
 };
 
 } // namespace akashi
-

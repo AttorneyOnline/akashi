@@ -1,5 +1,6 @@
 #include "proto/chat.h"
 
+#include "akashi/area_rule.h"
 #include "proto/ao2_protocol.h"
 #include "proto/chat_messages.h"
 #include "proto/packet_codec.h"
@@ -123,6 +124,7 @@ class OocHandler : public PacketHandler
         }
 
         f_context.broadcastOoc(l_message);
+        f_context.runAfterRule(AreaEvents::OocMessageSent, {{QStringLiteral("message"), l_message}});
     }
 };
 
@@ -132,13 +134,21 @@ class EvidenceDeleteHandler : public PacketHandler
     void handle(const Message &f_message, IPacketContext &f_context) const override
     {
         const auto &l_delete = static_cast<const EvidenceDeleteMessage &>(f_message);
-        if (!f_context.canModifyEvidence()) {
+
+        // Evidence access is enforced by the check_evidence_access floor rule.
+        auto l_rule_block = f_context.checkBeforeRule(AreaEvents::EvidenceRemoved, {});
+        if (l_rule_block) {
+            f_context.sendServerMessage(*l_rule_block);
             return;
         }
-        if (l_delete.index && *l_delete.index >= 0 && *l_delete.index < f_context.evidenceCount()) {
+        const bool l_deleted = l_delete.index && *l_delete.index >= 0 && *l_delete.index < f_context.evidenceCount();
+        if (l_deleted) {
             f_context.deleteEvidence(*l_delete.index);
         }
         f_context.sendEvidenceList();
+        if (l_deleted) {
+            f_context.runAfterRule(AreaEvents::EvidenceRemoved, {});
+        }
     }
 };
 

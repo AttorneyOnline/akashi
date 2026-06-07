@@ -1,5 +1,6 @@
 #include "proto/area_music.h"
 
+#include "akashi/area_rule.h"
 #include "proto/ao2_protocol.h"
 #include "proto/area_music_messages.h"
 #include "proto/packet_codec.h"
@@ -112,8 +113,11 @@ class MusicChangeHandler : public PacketHandler
             f_context.sendServerMessage("You are blocked from changing the music.");
             return;
         }
-        if (!f_context.isMusicAllowed()) {
-            f_context.sendServerMessage("Music is disabled in this area.");
+
+        // The music-allowed area setting is enforced by a floor rule.
+        auto l_rule_block = f_context.checkBeforeRule(AreaEvents::MusicChanged, {{QStringLiteral("song"), l_music.argument}});
+        if (l_rule_block) {
+            f_context.sendServerMessage(*l_rule_block);
             return;
         }
 
@@ -139,6 +143,7 @@ class MusicChangeHandler : public PacketHandler
 
         f_context.broadcastArea(MusicChangeCodec().encode(l_music));
         f_context.recordMusicChange(l_music.argument);
+        f_context.runAfterRule(AreaEvents::MusicChanged, {{QStringLiteral("song"), l_music.argument}});
     }
 };
 
@@ -176,7 +181,11 @@ class EvidenceAddHandler : public PacketHandler
     void handle(const Message &f_message, IPacketContext &f_context) const override
     {
         const auto &l_evidence = static_cast<const EvidenceAddMessage &>(f_message);
-        if (!f_context.canModifyEvidence()) {
+
+        // Evidence access is enforced by the check_evidence_access floor rule.
+        auto l_rule_block = f_context.checkBeforeRule(AreaEvents::EvidenceAdded, {{QStringLiteral("name"), l_evidence.name}});
+        if (l_rule_block) {
+            f_context.sendServerMessage(*l_rule_block);
             return;
         }
 
@@ -190,6 +199,7 @@ class EvidenceAddHandler : public PacketHandler
             }
         }
         f_context.addEvidence(l_evidence.name, l_description, l_evidence.image);
+        f_context.runAfterRule(AreaEvents::EvidenceAdded, {{QStringLiteral("name"), l_evidence.name}});
     }
 };
 

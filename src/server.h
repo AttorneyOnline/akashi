@@ -40,6 +40,7 @@
 #include <QWebSocketServer>
 
 #include <memory>
+#include <optional>
 
 namespace akashi {
 class ArupBroadcaster;
@@ -51,7 +52,7 @@ class EventBus;
 class FileSystemService;
 class LogService;
 class PacketService;
-class AreaRuleRegistry;
+class RuleRegistry;
 class TextFilterRegistry;
 class WriterText;
 class PermissionRegistry;
@@ -299,9 +300,79 @@ class AKASHI_CORE_EXPORT Server : public QObject
 
     int floorCount() const;
     const akashi::Floor *floorById(int f_floor_id) const;
+    akashi::Floor *floorById(int f_floor_id);
     const akashi::Floor *floorByName(const QString &f_name) const;
     int floorIdForArea(int f_area_id) const;
     QStringList floorNames() const;
+
+    /**
+     * @brief Replaces all "config"-owned rules on floors and areas with the
+     * declarations currently in areas.json. Runs at startup and on
+     * /reloadrules; a plain settings reload leaves rules alone so runtime
+     * rule changes survive it.
+     */
+    void applyConfigRules();
+
+    /**
+     * @brief Creates a new area on the given floor and catches the floor's
+     * clients up on their new area list.
+     *
+     * @return The new area's ID, or -1 if the floor or name is invalid.
+     */
+    int createArea(const QString &f_name, int f_floor_id);
+
+    /**
+     * @brief Creates a new floor holding one starter area, with the core
+     * rule set applied.
+     *
+     * @return The new floor's ID, or -1 if the name is taken or empty.
+     */
+    int createFloor(const QString &f_name);
+
+    bool renameArea(int f_area_id, const QString &f_name);
+    bool renameFloor(int f_floor_id, const QString &f_name);
+
+    /**
+     * @brief Removes an empty area. The id space is compacted; every later
+     * area, its clients, and the floor's area lists renumber in one sweep.
+     *
+     * @return The reason it was refused, or nothing on success.
+     */
+    std::optional<QString> removeArea(int f_area_id);
+
+    /**
+     * @brief Removes a floor whose areas are all empty, areas included.
+     */
+    std::optional<QString> removeFloor(int f_floor_id);
+
+    /**
+     * @brief Writes the live world back to areas.json: floors, area
+     * settings, and the rules that config and commands put there. Core
+     * defaults and plugin rules stay out of the file.
+     *
+     * @return The reason the save was refused, or nothing on success.
+     */
+    std::optional<QString> saveWorld();
+
+    /**
+     * @brief Rebuilds every floor and area from areas.json. Players keep
+     * their place by area name where possible and receive the full join
+     * delivery for the rebuilt world. Session-only area state resets.
+     */
+    std::optional<QString> reloadWorld();
+
+    /**
+     * @brief Writes one floor - its rules, areas and their settings - to
+     * config/floors/<name>.json in the same shape as areas.json.
+     */
+    std::optional<QString> saveFloor(int f_floor_id);
+
+    /**
+     * @brief Loads a floor file. A floor of the same name is replaced in
+     * place (players keep their spot by area name, or land in the floor's
+     * first area); an unknown name becomes a new floor.
+     */
+    std::optional<QString> loadFloor(const QString &f_name);
 
     QStringList musicList();
 
@@ -380,7 +451,7 @@ class AKASHI_CORE_EXPORT Server : public QObject
 
     akashi::TextFilterRegistry *textFilterRegistry();
 
-    akashi::AreaRuleRegistry *areaRuleRegistry();
+    akashi::RuleRegistry *ruleRegistry();
 
     akashi::AuthThrottle *authThrottle();
 
@@ -408,6 +479,13 @@ class AKASHI_CORE_EXPORT Server : public QObject
      * @brief Convenience class to call a reload of available configuraiton elements.
      */
     void reloadSettings();
+
+    /**
+     * @brief Sweeps an unloading plugin's rules off every floor and area:
+     * entries the plugin attached itself, and entries built from its
+     * actions. Runs before the plugin's library leaves memory.
+     */
+    void onPluginAboutToUnload(const QString &f_plugin_id);
 
     /**
      * @brief Handles a new connection.
@@ -473,7 +551,7 @@ class AKASHI_CORE_EXPORT Server : public QObject
     akashi::CommandRegistry *m_command_registry = nullptr;
     akashi::PermissionRegistry *m_permission_registry = nullptr;
     akashi::AuthThrottle *m_auth_throttle = nullptr;
-    akashi::AreaRuleRegistry *m_area_rule_registry = nullptr;
+    akashi::RuleRegistry *m_rule_registry = nullptr;
     akashi::TextFilterRegistry *m_text_filter_registry = nullptr;
 
     PlayerStateObserver m_player_state_observer;
@@ -570,6 +648,35 @@ class AKASHI_CORE_EXPORT Server : public QObject
     void reloadTextData();
     void reloadMusicFloor();
     void reloadBanLists();
+
+    /**
+     * @brief Constructs an area and wires its jukebox; shared between the
+     * startup loop, runtime area creation, and floor files. Settings come
+     * from f_settings when given, the areas config otherwise.
+     */
+    AreaData *buildArea(int f_area_id, const QString &f_name, int f_floor_id, QSettings *f_settings = nullptr, const QString &f_settings_group = {});
+
+    /**
+     * @brief Assembles floors and areas from the areas config; shared
+     * between startup and the runtime world reload.
+     */
+    void buildWorldFromConfig();
+
+    /**
+     * @brief Applies the core rule set every floor starts with.
+     */
+    void applyDefaultFloorRules(akashi::Floor &f_floor);
+
+    /**
+     * @brief Sends a fresh area list and full ARUP to everyone on a floor.
+     */
+    void refreshFloorClients(int f_floor_id);
+
+    /**
+     * @brief Deletes the given areas and renumbers the survivors, the
+     * floors' area lists, and every client's area number.
+     */
+    void compactAreas(QVector<int> f_removed_ids);
 
 
   private Q_SLOTS:

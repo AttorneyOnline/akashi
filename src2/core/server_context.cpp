@@ -154,6 +154,10 @@ ExitCode ServerContext::start()
     const QString l_plugin_dir = QDir(m_config_store->rootPath()).absoluteFilePath(QStringLiteral("../plugins"));
     m_plugin_manager = new akashi::PluginManager(m_services, l_plugin_dir, this);
     m_services->registerService(std::shared_ptr<akashi::PluginManager>(m_plugin_manager, [](auto *) {}));
+    // Applied rules hold functions built by plugin code; the server drops
+    // them before the plugin's library leaves memory.
+    connect(m_plugin_manager, &akashi::PluginManager::pluginAboutToUnload,
+            m_server, &Server::onPluginAboutToUnload);
 
     QStringList l_plugin_allowlist;
     const QString l_allowlist_path = m_config_store->filePath(QStringLiteral("plugins.ini"));

@@ -5,6 +5,7 @@
 
 #include <QFile>
 #include <QString>
+#include <QTemporaryDir>
 #include <QTest>
 
 namespace tests {
@@ -25,6 +26,8 @@ class tst_ConfigLoading : public QObject
     void ordered_songs();
     void regression_pr_314();
     void iprangeBans();
+    void areaRules();
+    void areaRulesSkipNameless();
 
   private:
     akashi::ConfigStore *m_store = nullptr;
@@ -105,6 +108,96 @@ void tst_ConfigLoading::iprangeBans()
     QStringList l_ipranges = akashi::config::loadIpRangeBans(m_store->filePath("ipbans.json"));
     QCOMPARE(l_ipranges.at(0), "192.0.2.0/24");
     QCOMPARE(l_ipranges.at(1), "198.51.100.0/24");
+}
+
+static QString writeAreasFile(QTemporaryDir &f_dir, const QByteArray &f_json)
+{
+    const QString l_path = f_dir.filePath("areas.json");
+    QFile l_file(l_path);
+    l_file.open(QIODevice::WriteOnly | QIODevice::Text);
+    l_file.write(f_json);
+    l_file.close();
+    return l_path;
+}
+
+void tst_ConfigLoading::areaRules()
+{
+    QTemporaryDir l_dir;
+    const QString l_path = writeAreasFile(l_dir, R"({
+        "floors": {
+            "Courtroom": {
+                "rules": {
+                    "ic_message_sent": {
+                        "before": [{"action": "block", "message": "Silence in the court."}]
+                    },
+                    "player_joined": {
+                        "after": [{"action": "send_message", "message": "All rise.", "target": "player"}]
+                    }
+                }
+            }
+        },
+        "0:Basement": {
+            "background": "gs4",
+            "rules": {
+                "evidence_added": {
+                    "before": [{"action": "check_permission", "permission": "canModifyEvidence"}]
+                }
+            }
+        },
+        "1:Hallway": {
+            "background": "gs4"
+        }
+    })");
+
+    const akashi::config::AreaRulesConfig l_config = akashi::config::loadAreaRules(l_path);
+
+    QCOMPARE(l_config.floor_rules.size(), 1);
+    const auto l_floor_rules = l_config.floor_rules.value("Courtroom");
+    QCOMPARE(l_floor_rules.size(), 2);
+    for (const akashi::config::RuleDeclaration &l_rule : l_floor_rules) {
+        if (l_rule.event == "ic_message_sent") {
+            QCOMPARE(l_rule.phase, akashi::RulePhase::Before);
+            QCOMPARE(l_rule.action, QString("block"));
+            QCOMPARE(l_rule.args.value("message").toString(), QString("Silence in the court."));
+        }
+        else {
+            QCOMPARE(l_rule.event, QString("player_joined"));
+            QCOMPARE(l_rule.phase, akashi::RulePhase::After);
+            QCOMPARE(l_rule.action, QString("send_message"));
+            QCOMPARE(l_rule.args.value("target").toString(), QString("player"));
+        }
+    }
+
+    // Only areas that declare rules appear; the key is the area index.
+    QCOMPARE(l_config.area_rules.size(), 1);
+    const auto l_area_rules = l_config.area_rules.value(0);
+    QCOMPARE(l_area_rules.size(), 1);
+    QCOMPARE(l_area_rules[0].event, QString("evidence_added"));
+    QCOMPARE(l_area_rules[0].phase, akashi::RulePhase::Before);
+    QCOMPARE(l_area_rules[0].action, QString("check_permission"));
+    QCOMPARE(l_area_rules[0].args.value("permission").toString(), QString("canModifyEvidence"));
+    QVERIFY(!l_area_rules[0].args.contains("action"));
+}
+
+void tst_ConfigLoading::areaRulesSkipNameless()
+{
+    QTemporaryDir l_dir;
+    const QString l_path = writeAreasFile(l_dir, R"({
+        "floors": {
+            "Lobby": {
+                "rules": {
+                    "music_changed": {
+                        "before": [{"message": "no action name here"}, {"action": "block"}]
+                    }
+                }
+            }
+        }
+    })");
+
+    const akashi::config::AreaRulesConfig l_config = akashi::config::loadAreaRules(l_path);
+    const auto l_rules = l_config.floor_rules.value("Lobby");
+    QCOMPARE(l_rules.size(), 1);
+    QCOMPARE(l_rules[0].action, QString("block"));
 }
 
 }

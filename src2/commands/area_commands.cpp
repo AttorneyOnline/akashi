@@ -1,5 +1,6 @@
 #include "commands/area_commands.h"
 
+#include "akashi/area_rule.h"
 #include "akashi/config_store.h"
 #include "akashi/permissions.h"
 #include "aoclient.h"
@@ -12,6 +13,15 @@
 #include <QRegularExpression>
 
 namespace akashi::commands {
+
+// Command handlers dispatch area events through the invoking client.
+static void runAreaAfterRule(CommandContext &f_context, const QString &f_event, const QVariantMap &f_payload)
+{
+    AOClient *l_client = f_context.server()->clientById(f_context.clientId());
+    if (l_client) {
+        l_client->runAfterRule(f_event, f_payload);
+    }
+}
 
 static QStringList buildAreaList(CommandContext &f_context, int f_area_index)
 {
@@ -103,6 +113,8 @@ static void handleCM(CommandContext &f_context)
     else if (l_area->owners().isEmpty()) {
         l_area->addOwner(f_context.clientId());
         f_context.replyToArea(l_sender_name + " is now CM in this area.");
+        runAreaAfterRule(f_context, akashi::AreaEvents::OwnerChanged,
+                         {{QStringLiteral("owner"), f_context.clientId()}, {QStringLiteral("added"), true}});
     }
     else if (!l_area->owners().contains(f_context.clientId())) {
         f_context.reply("You cannot become a CM in this area when someone else is. You must be CM'ed by an existing one.");
@@ -124,6 +136,8 @@ static void handleCM(CommandContext &f_context)
         }
         l_area->addOwner(l_owner_candidate->clientId());
         f_context.replyToArea(l_owner_candidate->name() + " is now CM in this area.");
+        runAreaAfterRule(f_context, akashi::AreaEvents::OwnerChanged,
+                         {{QStringLiteral("owner"), l_owner_candidate->clientId()}, {QStringLiteral("added"), true}});
     }
     else {
         f_context.reply("You are already a CM in this area.");
@@ -149,6 +163,8 @@ static void handleUnCM(CommandContext &f_context)
             for (int uid : owners) {
                 if (uid != f_context.clientId()) {
                     l_area->removeOwner(uid);
+                    runAreaAfterRule(f_context, akashi::AreaEvents::OwnerChanged,
+                                     {{QStringLiteral("owner"), uid}, {QStringLiteral("added"), false}});
                     AOClient *l_target = f_context.server()->clientById(uid);
                     if (l_target != nullptr) {
                         l_target->sendServerMessage("You have been unCMed.");
@@ -183,6 +199,8 @@ static void handleUnCM(CommandContext &f_context)
     }
 
     l_area->removeOwner(l_uid);
+    runAreaAfterRule(f_context, akashi::AreaEvents::OwnerChanged,
+                     {{QStringLiteral("owner"), l_uid}, {QStringLiteral("added"), false}});
 }
 
 static void handleInvite(CommandContext &f_context)
@@ -250,6 +268,7 @@ static void handleLock(CommandContext &f_context)
             l_area->invite(l_client->clientId());
         }
     }
+    runAreaAfterRule(f_context, akashi::AreaEvents::LockChanged, {{QStringLiteral("state"), QStringLiteral("locked")}});
 }
 
 static void handleSpectatable(CommandContext &f_context)
@@ -267,6 +286,7 @@ static void handleSpectatable(CommandContext &f_context)
             l_area->invite(l_client->clientId());
         }
     }
+    runAreaAfterRule(f_context, akashi::AreaEvents::LockChanged, {{QStringLiteral("state"), QStringLiteral("spectatable")}});
 }
 
 static void handleUnLock(CommandContext &f_context)
@@ -278,6 +298,7 @@ static void handleUnLock(CommandContext &f_context)
     }
     f_context.replyToArea("This area is now unlocked.");
     l_area->unlock();
+    runAreaAfterRule(f_context, akashi::AreaEvents::LockChanged, {{QStringLiteral("state"), QStringLiteral("free")}});
 }
 
 static void handleAreaKick(CommandContext &f_context)
@@ -346,29 +367,36 @@ static void handleSetBackground(CommandContext &f_context)
 {
     QString l_background = f_context.arguments().join(" ");
     AreaData *l_area = f_context.server()->areaById(f_context.areaId());
-    if (f_context.isAuthenticated() || !l_area->isBgLocked()) {
-        if (l_area->lockStatus() == AreaData::LockStatus::SPECTATABLE && !l_area->invited().contains(f_context.clientId()) && !f_context.canPerform(akashi::permission::bypass_locks)) {
-            f_context.reply("Spectators are blocked from changing the background.");
-            return;
-        }
-        if (f_context.server()->backgrounds().contains(l_background, Qt::CaseInsensitive) || l_area->ignoreBgList() == true) {
-            l_area->setBackground(l_background);
-            f_context.server()->broadcast(akashi::Packet("BN", {l_background, l_area->side()}), f_context.areaId());
-            QString ambience_name = f_context.server()->configStore()->settings("ambience")->value(l_background + "/ambience").toString();
-            if (ambience_name != "") {
-                f_context.server()->broadcast(akashi::Packet("MC", {ambience_name, "-1", f_context.characterName(), "1", "1"}), f_context.areaId());
-            }
-            else {
-                f_context.server()->broadcast(akashi::Packet("MC", {"~stop.mp3", "-1", f_context.characterName(), "1", "1"}), f_context.areaId());
-            }
-            f_context.replyToArea(f_context.character() + " changed the background to " + l_background);
+    AOClient *l_client = f_context.server()->clientById(f_context.clientId());
+    if (!l_client) {
+        return;
+    }
+
+    // The background lock is enforced by the check_background floor rule.
+    auto l_rule_block = l_client->checkBeforeRule(akashi::AreaEvents::BackgroundChanged, {{QStringLiteral("background"), l_background}});
+    if (l_rule_block) {
+        f_context.reply(*l_rule_block);
+        return;
+    }
+    if (l_area->lockStatus() == AreaData::LockStatus::SPECTATABLE && !l_area->invited().contains(f_context.clientId()) && !f_context.canPerform(akashi::permission::bypass_locks)) {
+        f_context.reply("Spectators are blocked from changing the background.");
+        return;
+    }
+    if (f_context.server()->backgrounds().contains(l_background, Qt::CaseInsensitive) || l_area->ignoreBgList() == true) {
+        l_area->setBackground(l_background);
+        f_context.server()->broadcast(akashi::Packet("BN", {l_background, l_area->side()}), f_context.areaId());
+        QString ambience_name = f_context.server()->configStore()->settings("ambience")->value(l_background + "/ambience").toString();
+        if (ambience_name != "") {
+            f_context.server()->broadcast(akashi::Packet("MC", {ambience_name, "-1", f_context.characterName(), "1", "1"}), f_context.areaId());
         }
         else {
-            f_context.reply("Invalid background name.");
+            f_context.server()->broadcast(akashi::Packet("MC", {"~stop.mp3", "-1", f_context.characterName(), "1", "1"}), f_context.areaId());
         }
+        f_context.replyToArea(f_context.character() + " changed the background to " + l_background);
+        l_client->runAfterRule(akashi::AreaEvents::BackgroundChanged, {{QStringLiteral("background"), l_background}});
     }
     else {
-        f_context.reply("This area's background is locked.");
+        f_context.reply("Invalid background name.");
     }
 }
 
@@ -549,6 +577,135 @@ static void handleFloor(CommandContext &f_context)
     }
 }
 
+static void handleCreateArea(CommandContext &f_context)
+{
+    Server *l_server = f_context.server();
+    const QString l_name = f_context.arguments().join(" ");
+    const int l_floor_id = l_server->floorIdForArea(f_context.areaId());
+    const int l_area_id = l_server->createArea(l_name, l_floor_id);
+    if (l_area_id < 0) {
+        f_context.reply("That does not look like a usable area name.");
+        return;
+    }
+    f_context.reply("Created area [" + QString::number(l_area_id) + "] " + l_name + " on this floor.");
+}
+
+static void handleCreateFloor(CommandContext &f_context)
+{
+    const QString l_name = f_context.arguments().join(" ");
+    const int l_floor_id = f_context.server()->createFloor(l_name);
+    if (l_floor_id < 0) {
+        f_context.reply("A floor with that name already exists, or the name is unusable.");
+        return;
+    }
+    f_context.reply("Created floor " + l_name + " with one starter area. Use /floor " + l_name + " to visit it.");
+}
+
+static void handleRenameArea(CommandContext &f_context)
+{
+    const QString l_name = f_context.arguments().join(" ");
+    if (!f_context.server()->renameArea(f_context.areaId(), l_name)) {
+        f_context.reply("That does not look like a usable area name.");
+        return;
+    }
+    f_context.replyToArea("This area is now called " + l_name + ".");
+}
+
+static void handleRenameFloor(CommandContext &f_context)
+{
+    Server *l_server = f_context.server();
+    const QString l_name = f_context.arguments().join(" ");
+    if (!l_server->renameFloor(l_server->floorIdForArea(f_context.areaId()), l_name)) {
+        f_context.reply("A floor with that name already exists, or the name is unusable.");
+        return;
+    }
+    f_context.reply("This floor is now called " + l_name + ".");
+}
+
+static void handleRemoveArea(CommandContext &f_context)
+{
+    Server *l_server = f_context.server();
+    bool l_is_id = false;
+    int l_area_id = f_context.argument(0).toInt(&l_is_id);
+    if (!l_is_id) {
+        l_area_id = l_server->areaNames().indexOf(f_context.arguments().join(" "));
+    }
+    const QString l_name = l_server->areaName(l_area_id);
+    if (auto l_error = l_server->removeArea(l_area_id)) {
+        f_context.reply(*l_error);
+        return;
+    }
+    f_context.reply("Removed area " + l_name + ".");
+}
+
+static void handleRemoveFloor(CommandContext &f_context)
+{
+    Server *l_server = f_context.server();
+    bool l_is_id = false;
+    const int l_id = f_context.argument(0).toInt(&l_is_id);
+    const akashi::Floor *l_floor = l_is_id ? l_server->floorById(l_id) : l_server->floorByName(f_context.arguments().join(" "));
+    if (!l_floor) {
+        f_context.reply("No floor found with that name or ID. Use /floors to list them.");
+        return;
+    }
+    const QString l_name = l_floor->name;
+    if (auto l_error = l_server->removeFloor(l_floor->id)) {
+        f_context.reply(*l_error);
+        return;
+    }
+    f_context.reply("Removed floor " + l_name + " and its areas.");
+}
+
+static void handleSaveAreas(CommandContext &f_context)
+{
+    if (auto l_error = f_context.server()->saveWorld()) {
+        f_context.reply("Unable to save: " + *l_error);
+        return;
+    }
+    f_context.reply("Saved the floors, areas and their rules to areas.json.");
+}
+
+static void handleLoadAreas(CommandContext &f_context)
+{
+    if (auto l_error = f_context.server()->reloadWorld()) {
+        f_context.reply("Unable to reload: " + *l_error);
+        return;
+    }
+    f_context.replyToServer("The floors and areas were reloaded from areas.json.");
+}
+
+static void handleSaveFloor(CommandContext &f_context)
+{
+    Server *l_server = f_context.server();
+    int l_floor_id = l_server->floorIdForArea(f_context.areaId());
+    if (f_context.argc() > 0) {
+        bool l_is_id = false;
+        const int l_id = f_context.argument(0).toInt(&l_is_id);
+        const akashi::Floor *l_floor = l_is_id ? l_server->floorById(l_id) : l_server->floorByName(f_context.arguments().join(" "));
+        if (!l_floor) {
+            f_context.reply("No floor found with that name or ID. Use /floors to list them.");
+            return;
+        }
+        l_floor_id = l_floor->id;
+    }
+    const QString l_name = l_server->floorById(l_floor_id)->name;
+    if (auto l_error = l_server->saveFloor(l_floor_id)) {
+        f_context.reply("Unable to save: " + *l_error);
+        return;
+    }
+    f_context.reply("Saved floor " + l_name + " to config/floors. Load it with /loadfloor " + l_name + ".");
+}
+
+static void handleLoadFloor(CommandContext &f_context)
+{
+    const QString l_name = f_context.arguments().join(" ");
+    if (auto l_error = f_context.server()->loadFloor(l_name)) {
+        f_context.reply("Unable to load: " + *l_error);
+        return;
+    }
+    f_context.reply("Loaded floor " + l_name + " from its file.");
+}
+
 static void handleWebfiles(CommandContext &f_context)
 {
     const QVector<AOClient *> l_clients = f_context.server()->clients();
@@ -716,6 +873,66 @@ void registerAreaCommands(CommandRegistry &f_registry)
          QStringLiteral("/floor <name|id>"),
          QStringLiteral("Moves you to the first area on the given floor.")},
         handleFloor, QStringLiteral("core"));
+
+    f_registry.registerCommand(
+        {QStringLiteral("createarea"), {}, {akashi::permission::modify_floors}, 1,
+         QStringLiteral("/createarea <name>"),
+         QStringLiteral("Creates a new area on this floor.")},
+        handleCreateArea, QStringLiteral("core"));
+
+    f_registry.registerCommand(
+        {QStringLiteral("createfloor"), {}, {akashi::permission::modify_floors}, 1,
+         QStringLiteral("/createfloor <name>"),
+         QStringLiteral("Creates a new floor with one starter area.")},
+        handleCreateFloor, QStringLiteral("core"));
+
+    f_registry.registerCommand(
+        {QStringLiteral("renamearea"), {}, {akashi::permission::modify_floors}, 1,
+         QStringLiteral("/renamearea <name>"),
+         QStringLiteral("Renames the area you are in.")},
+        handleRenameArea, QStringLiteral("core"));
+
+    f_registry.registerCommand(
+        {QStringLiteral("renamefloor"), {}, {akashi::permission::modify_floors}, 1,
+         QStringLiteral("/renamefloor <name>"),
+         QStringLiteral("Renames the floor you are on.")},
+        handleRenameFloor, QStringLiteral("core"));
+
+    f_registry.registerCommand(
+        {QStringLiteral("removearea"), {}, {akashi::permission::modify_floors}, 1,
+         QStringLiteral("/removearea <id|name>"),
+         QStringLiteral("Removes an empty area; later area IDs shift down.")},
+        handleRemoveArea, QStringLiteral("core"));
+
+    f_registry.registerCommand(
+        {QStringLiteral("removefloor"), {}, {akashi::permission::modify_floors}, 1,
+         QStringLiteral("/removefloor <id|name>"),
+         QStringLiteral("Removes a floor whose areas are all empty.")},
+        handleRemoveFloor, QStringLiteral("core"));
+
+    f_registry.registerCommand(
+        {QStringLiteral("saveworld"), {QStringLiteral("saveareas")}, {akashi::permission::modify_floors}, 0,
+         QStringLiteral("/saveworld"),
+         QStringLiteral("Saves every floor, area and their rules to areas.json.")},
+        handleSaveAreas, QStringLiteral("core"));
+
+    f_registry.registerCommand(
+        {QStringLiteral("loadworld"), {QStringLiteral("loadareas")}, {akashi::permission::modify_floors}, 0,
+         QStringLiteral("/loadworld"),
+         QStringLiteral("Rebuilds every floor and area from areas.json.")},
+        handleLoadAreas, QStringLiteral("core"));
+
+    f_registry.registerCommand(
+        {QStringLiteral("savefloor"), {}, {akashi::permission::modify_floors}, 0,
+         QStringLiteral("/savefloor [name|id]"),
+         QStringLiteral("Saves one floor to its own file under config/floors.")},
+        handleSaveFloor, QStringLiteral("core"));
+
+    f_registry.registerCommand(
+        {QStringLiteral("loadfloor"), {}, {akashi::permission::modify_floors}, 1,
+         QStringLiteral("/loadfloor <name>"),
+         QStringLiteral("Loads a floor file, replacing a same-named floor or adding a new one.")},
+        handleLoadFloor, QStringLiteral("core"));
 
     f_registry.registerCommand(
         {QStringLiteral("webfiles"), {}, {}, 0,

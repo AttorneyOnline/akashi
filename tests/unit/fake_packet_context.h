@@ -24,7 +24,6 @@ class FakeContext : public akashi::IPacketContext
     QStringList character_list = {"Phoenix", "Edgeworth", "Maya"};
     QStringList area_name_list = {"Basement", "Courtroom"};
     QStringList music_name_list = {"song1.opus", "song2.opus"};
-    akashi::AreaSnapshot area;
     akashi::TimerSnapshot global_timer;
     std::optional<akashi::BanRecord> ban;
     int selected_char_id = -100;
@@ -93,7 +92,6 @@ class FakeContext : public akashi::IPacketContext
     QStringList characters() const override { return character_list; }
     QStringList areaNames() const override { return area_name_list; }
     QStringList musicList() const override { return music_name_list; }
-    akashi::AreaSnapshot areaState() const override { return area; }
     akashi::TimerSnapshot globalTimer() const override { return global_timer; }
 
     void announceCharsTaken() override { calls.append("announceCharsTaken"); }
@@ -175,8 +173,6 @@ class FakeContext : public akashi::IPacketContext
     akashi::TextFilterRegistry *text_filter_registry = nullptr;
     bool ic_message_allowed = true;
     bool area_act_allowed = true;
-    bool iniswap_allowed = true;
-    bool blankposting_allowed = true;
     bool shout_allowed = true;
     bool showname_allowed = true;
     bool immediate_forced = false;
@@ -217,8 +213,6 @@ class FakeContext : public akashi::IPacketContext
     akashi::TextFilterRegistry *filterRegistry() const override { return text_filter_registry; }
     bool isIcMessageAllowed() const override { return ic_message_allowed; }
     bool canActInArea() override { return area_act_allowed; }
-    bool isIniswapAllowed() const override { return iniswap_allowed; }
-    bool isBlankpostingAllowed() const override { return blankposting_allowed; }
     bool isShoutAllowed() const override { return shout_allowed; }
     bool isShownameAllowed() const override { return showname_allowed; }
     bool isImmediateForced() const override { return immediate_forced; }
@@ -246,7 +240,6 @@ class FakeContext : public akashi::IPacketContext
     }
 
     bool dj_blocked = false;
-    bool music_allowed = true;
     bool jukebox_enabled = false;
     QString jukebox_reply = "Song added to the jukebox.";
     QString queued_jukebox_song;
@@ -265,7 +258,6 @@ class FakeContext : public akashi::IPacketContext
 
     bool hasSong(const QString &f_name) const override { return music_name_list.contains(f_name); }
     bool isDjBlocked() const override { return dj_blocked; }
-    bool isMusicAllowed() const override { return music_allowed; }
     bool isJukeboxEnabled() const override { return jukebox_enabled; }
 
     QString queueJukeboxSong(const QString &f_song) override
@@ -304,15 +296,18 @@ class FakeContext : public akashi::IPacketContext
     }
 
     int floorCount() const override { return floor_count; }
-    int current_floor_id = 0;
-    int current_area_id = 0;
-    QString message_rule_block;
-    int currentFloorId() const override { return current_floor_id; }
-    int currentAreaId() const override { return current_area_id; }
     QStringList floor_area_names;
     QStringList floorAreaNames() const override { return floor_area_names.isEmpty() ? area_name_list : floor_area_names; }
     int floorAreaToGlobal(int f_local_index) const override { return f_local_index; }
-    QString checkMessageRule(const QString &) override { return message_rule_block; }
+    QString before_rule_block;
+    std::optional<QString> checkBeforeRule(const QString &f_event, const QVariantMap &) override
+    {
+        calls.append("checkBeforeRule:" + f_event);
+        if (!before_rule_block.isEmpty())
+            return before_rule_block;
+        return std::nullopt;
+    }
+    void runAfterRule(const QString &f_event, const QVariantMap &) override { calls.append("runAfterRule:" + f_event); }
 
     int floorAreaId(int f_floor_id, int f_x) const override
     {
@@ -413,9 +408,6 @@ class FakeContext : public akashi::IPacketContext
     QString server_description = "A test server.";
     QUrl asset_url = QUrl("http://attorneyoffline.de/base/");
     QString server_motd = "MOTD is not set.";
-    DataTypes::AuthType packet_auth_type = DataTypes::AuthType::SIMPLE;
-    int message_floodguard_ms = 250;
-    int global_message_floodguard_ms = 0;
     QString serverNickname() const override { return server_nickname; }
     int maxMessageLength() const override { return max_message_length; }
     QStringList wordFilters() const override { return word_filters; }
@@ -424,8 +416,5 @@ class FakeContext : public akashi::IPacketContext
     QString serverDescription() const override { return server_description; }
     QUrl assetUrl() const override { return asset_url; }
     QString motd() const override { return server_motd; }
-    DataTypes::AuthType packetAuthType() const override { return packet_auth_type; }
-    int messageFloodguardMs() const override { return message_floodguard_ms; }
-    int globalMessageFloodguardMs() const override { return global_message_floodguard_ms; }
 };
 
