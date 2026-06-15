@@ -1427,6 +1427,36 @@ class CommandsDance : public QObject
             {"/g test global", "test global"},
             {"/announce test announcement", "Announcement"},
             {"/forcepos def " + l_tid, "Forced"},
+
+            // -- authentication_commands.cpp: the gated command forms --
+            // The self form is free; the leader's simple-auth login reads as SUPER.
+            {"/listperms", "SUPER"},
+            // Clears a leftover account, so the run is repeatable ("Successfully
+            // removed user testmod" or "Unable to remove user testmod").
+            {"/removeuser testmod", "user testmod"},
+            {"/adduser testmod Sup3r!Secret", "Created user testmod"},
+            // The username form passes its modify_users gate and hits the account.
+            {"/listperms testmod", "has the following permissions"},
+            {"/listperms ghost-user", "wasn't found"},
+            // The two-argument form passes its super gate.
+            {"/changepass N3w!Secret9 testmod", "Successfully changed password"},
+            // The self form needs an advanced-auth account behind the login.
+            {"/changepass OwnP4ss!word", "must be logged in"},
+            // No form takes three arguments.
+            {"/changepass a b c", "Invalid command syntax"},
+            {"/removeuser testmod", "Successfully removed user"},
+
+            // -- /uncm variants: the own form and the remove_gamemaster form --
+            {"/cm", "is now CM"},
+            {"/uncm all", "All CMs except yourself"},
+            {"/uncm", "no longer CM"},
+
+            // -- plugin unload sweeps its commands; reload restores them --
+            {"/plugin unload akashi.medieval-speak", "Plugin unloaded"},
+            {"/medieval " + l_tid, "Invalid command"},
+            {"/plugin load akashi.medieval-speak", "Plugin loaded"},
+            {"/medieval " + l_tid, "It is done, sire"},
+            {"/unmedieval " + l_tid, "Un-medieval"},
         };
     }
 

@@ -1,27 +1,9 @@
-//////////////////////////////////////////////////////////////////////////////////////
-//    akashi - a server for Attorney Online 2                                       //
-//    Copyright (C) 2020  scatterflower                                           //
-//                                                                                  //
-//    This program is free software: you can redistribute it and/or modify          //
-//    it under the terms of the GNU Affero General Public License as                //
-//    published by the Free Software Foundation, either version 3 of the            //
-//    License, or (at your option) any later version.                               //
-//                                                                                  //
-//    This program is distributed in the hope that it will be useful,               //
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of                //
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                 //
-//    GNU Affero General Public License for more details.                           //
-//                                                                                  //
-//    You should have received a copy of the GNU Affero General Public License      //
-//    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
-//////////////////////////////////////////////////////////////////////////////////////
 #pragma once
 
 #define DB_VERSION 3
 
-#include "acl_roles_handler.h"
 #include "akashi_core_export.h"
-#include "crypto_helper.h"
+#include "core/crypto_helper.h"
 
 #include <QDateTime>
 #include <QFileInfo>
@@ -146,7 +128,7 @@ class AKASHI_CORE_EXPORT DBManager : public QObject
      *
      * @return False if the user already exists, true if the user was successfully created.
      *
-     * @see AOClient#cmdLogin and AOClient#cmdLogout for the username and password's contexts.
+     * @see akashi::ClientSession#cmdLogin and akashi::ClientSession#cmdLogout for the username and password's contexts.
      * @see ACLRolesHandler for details regarding ACL roles and ACL role identifiers.
      */
     bool createUser(QString username, QByteArray salt, QString password, QString acl);
@@ -245,16 +227,6 @@ class AKASHI_CORE_EXPORT DBManager : public QObject
     bool updatePassword(QString username, QString password);
 
   private:
-    /**
-     * @note Unused.
-     */
-    const QString CONN_NAME;
-
-    /**
-     * @note Unused.
-     */
-    void openDB();
-
     /**
      * @brief The backing database that stores user details.
      */

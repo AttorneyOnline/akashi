@@ -26,7 +26,7 @@ class tst_ClientSession : public QObject
 void tst_ClientSession::writesThroughOpenTransport()
 {
     FakeTransport *l_transport = new FakeTransport(true);
-    akashi::ClientSession l_session(1, l_transport);
+    akashi::ClientSession l_session(nullptr, l_transport, 1);
 
     l_session.write(akashi::Packet("CT", {"server", "hello"}));
 
@@ -37,7 +37,7 @@ void tst_ClientSession::writesThroughOpenTransport()
 void tst_ClientSession::buffersWhileConnectionIsDown()
 {
     FakeTransport *l_transport = new FakeTransport(true);
-    akashi::ClientSession l_session(1, l_transport);
+    akashi::ClientSession l_session(nullptr, l_transport, 1);
     l_transport->close();
 
     l_session.write(akashi::Packet("CT", {"server", "missed you"}));
@@ -49,7 +49,7 @@ void tst_ClientSession::buffersWhileConnectionIsDown()
 void tst_ClientSession::rebindReplaysPendingInOrder()
 {
     FakeTransport *l_transport = new FakeTransport(true);
-    akashi::ClientSession l_session(1, l_transport);
+    akashi::ClientSession l_session(nullptr, l_transport, 1);
     l_transport->close();
 
     l_session.write(akashi::Packet("CT", {"server", "first"}));
@@ -67,7 +67,7 @@ void tst_ClientSession::rebindReplaysPendingInOrder()
 void tst_ClientSession::bufferIsBoundedAndRecordsOverflow()
 {
     FakeTransport *l_transport = new FakeTransport(false);
-    akashi::ClientSession l_session(1, l_transport);
+    akashi::ClientSession l_session(nullptr, l_transport, 1);
 
     for (int i = 0; i < 600; i++) {
         l_session.write(akashi::Packet("CT", {"server", QString::number(i)}));
@@ -82,7 +82,7 @@ void tst_ClientSession::bufferIsBoundedAndRecordsOverflow()
 void tst_ClientSession::rebindReplacesAndDeletesOldTransport()
 {
     FakeTransport *l_transport = new FakeTransport(true);
-    akashi::ClientSession l_session(1, l_transport);
+    akashi::ClientSession l_session(nullptr, l_transport, 1);
     QSignalSpy l_destroyed(l_transport, &QObject::destroyed);
 
     FakeTransport *l_replacement = new FakeTransport(true);
@@ -101,7 +101,7 @@ void tst_ClientSession::rebindReplacesAndDeletesOldTransport()
 void tst_ClientSession::forwardsTransportSignals()
 {
     FakeTransport *l_transport = new FakeTransport(true);
-    akashi::ClientSession l_session(1, l_transport);
+    akashi::ClientSession l_session(nullptr, l_transport, 1);
     QSignalSpy l_packets(&l_session, &akashi::ClientSession::packetReceived);
     QSignalSpy l_closed(&l_session, &akashi::ClientSession::transportClosed);
 
@@ -116,7 +116,7 @@ void tst_ClientSession::forwardsTransportSignals()
 void tst_ClientSession::addsOnePlayerAndEnforcesTheCap()
 {
     FakeTransport *l_transport = new FakeTransport(true);
-    akashi::ClientSession l_session(4, l_transport);
+    akashi::ClientSession l_session(nullptr, l_transport, 4);
 
     // The default character exists, reuses the session id, and is active.
     QCOMPARE(l_session.players.size(), 1);
@@ -135,7 +135,7 @@ void tst_ClientSession::addsOnePlayerAndEnforcesTheCap()
 void tst_ClientSession::reportsTimeoutWhenNobodyReconnects()
 {
     FakeTransport *l_transport = new FakeTransport(true);
-    akashi::ClientSession l_session(1, l_transport);
+    akashi::ClientSession l_session(nullptr, l_transport, 1);
     QSignalSpy l_timed_out(&l_session, &akashi::ClientSession::reconnectTimedOut);
 
     l_transport->loseConnection();
@@ -148,7 +148,7 @@ void tst_ClientSession::reportsTimeoutWhenNobodyReconnects()
 void tst_ClientSession::bindingANewTransportCancelsTheWait()
 {
     FakeTransport *l_transport = new FakeTransport(true);
-    akashi::ClientSession l_session(1, l_transport);
+    akashi::ClientSession l_session(nullptr, l_transport, 1);
     QSignalSpy l_timed_out(&l_session, &akashi::ClientSession::reconnectTimedOut);
 
     l_transport->loseConnection();

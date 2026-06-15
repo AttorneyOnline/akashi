@@ -1,23 +1,8 @@
-//////////////////////////////////////////////////////////////////////////////////////
-//    akashi - a server for Attorney Online 2                                       //
-//    Copyright (C) 2020  scatterflower                                             //
-//                                                                                  //
-//    This program is free software: you can redistribute it and/or modify          //
-//    it under the terms of the GNU Affero General Public License as                //
-//    published by the Free Software Foundation, either version 3 of the            //
-//    License, or (at your option) any later version.                               //
-//                                                                                  //
-//    This program is distributed in the hope that it will be useful,               //
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of                //
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                 //
-//    GNU Affero General Public License for more details.                           //
-//                                                                                  //
-//    You should have received a copy of the GNU Affero General Public License      //
-//    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
-//////////////////////////////////////////////////////////////////////////////////////
-#include "network/network_socket.h"
+#include "core/websocket_receiver.h"
 
 #include <QTimer>
+#include <QWebSocket>
+#include <QWebSocketServer>
 
 // Ping cadence and how many may go unanswered before the peer counts as dead.
 // Both Qt clients and browsers answer pings in their network stack, so a
@@ -28,19 +13,62 @@ static const int MAX_UNANSWERED_PINGS = 2;
 // How long a started close exchange may wait for the peer before we abort.
 static const int CLOSE_GRACE_MS = 10000;
 
-NetworkSocket::NetworkSocket(QWebSocket *f_socket, QObject *parent) :
-    akashi::ITransport(parent)
+namespace akashi {
+
+WebSocketReceiver::WebSocketReceiver(const QHostAddress &f_address, int f_port,
+                                     const QStringList &f_features, QObject *parent) :
+    ClientReceiver(parent),
+    m_address(f_address),
+    m_port(f_port)
+{
+    m_server = new QWebSocketServer(QStringLiteral("Akashi"), QWebSocketServer::NonSecureMode, this);
+
+    // The FL capability list doubles as the subprotocol vocabulary. The
+    // echo picks the client's first offered token found here, so the
+    // client leads with what it needs accepted; offering only tokens the
+    // server does not speak fails the handshake, which IS the refusal.
+    QStringList l_spoken;
+    for (const QString &l_feature : f_features) {
+        l_spoken.append(QStringLiteral("network_") + l_feature);
+    }
+    m_server->setSupportedSubprotocols(l_spoken);
+    connect(m_server, &QWebSocketServer::newConnection, this, &WebSocketReceiver::onNewConnection);
+}
+
+bool WebSocketReceiver::start()
+{
+    return m_server->listen(m_address, m_port);
+}
+
+QString WebSocketReceiver::lastError() const
+{
+    return m_server->errorString();
+}
+
+int WebSocketReceiver::port() const
+{
+    return m_server->serverPort();
+}
+
+void WebSocketReceiver::onNewConnection()
+{
+    QWebSocket *l_socket = m_server->nextPendingConnection();
+    Q_EMIT inboundClient(new WebSocketTransport(l_socket));
+}
+
+WebSocketTransport::WebSocketTransport(QWebSocket *f_socket, QObject *parent) :
+    ITransport(parent)
 {
     m_client_socket = f_socket;
     m_client_socket->setParent(this);
-    connect(m_client_socket, &QWebSocket::textMessageReceived, this, &NetworkSocket::handleMessage);
-    connect(m_client_socket, &QWebSocket::disconnected, this, &NetworkSocket::onSocketDisconnected);
+    connect(m_client_socket, &QWebSocket::textMessageReceived, this, &WebSocketTransport::handleMessage);
+    connect(m_client_socket, &QWebSocket::disconnected, this, &WebSocketTransport::onSocketDisconnected);
     connect(m_client_socket, &QWebSocket::pong, this, [this](quint64, const QByteArray &) {
         m_unanswered_pings = 0;
     });
 
     m_liveness_timer = new QTimer(this);
-    connect(m_liveness_timer, &QTimer::timeout, this, &NetworkSocket::checkLiveness);
+    connect(m_liveness_timer, &QTimer::timeout, this, &WebSocketTransport::checkLiveness);
     m_liveness_timer->start(PING_INTERVAL_MS);
 
     bool l_is_local = (m_client_socket->peerAddress() == QHostAddress::LocalHost) ||
@@ -60,11 +88,10 @@ NetworkSocket::NetworkSocket(QWebSocket *f_socket, QObject *parent) :
     else {
         m_socket_ip = f_socket->peerAddress();
     }
-
     m_connect_features = parseCapabilityTokens(m_client_socket->request());
 }
 
-QStringList NetworkSocket::parseCapabilityTokens(const QNetworkRequest &f_request)
+QStringList WebSocketTransport::parseCapabilityTokens(const QNetworkRequest &f_request)
 {
     QStringList l_features;
     const QString l_offered = QString::fromUtf8(f_request.rawHeader("Sec-WebSocket-Protocol"));
@@ -84,34 +111,34 @@ QStringList NetworkSocket::parseCapabilityTokens(const QNetworkRequest &f_reques
     return l_features;
 }
 
-QStringList NetworkSocket::connectTimeFeatures() const
+QStringList WebSocketTransport::connectTimeFeatures() const
 {
     return m_connect_features;
 }
 
-QHostAddress NetworkSocket::peerAddress() const
+QHostAddress WebSocketTransport::peerAddress() const
 {
     return m_socket_ip;
 }
 
-void NetworkSocket::close()
+void WebSocketTransport::close()
 {
     closeWithCode(QWebSocketProtocol::CloseCodeNormal);
 }
 
-bool NetworkSocket::isOpen() const
+bool WebSocketTransport::isOpen() const
 {
     return !m_closing && !m_disconnect_reported && m_client_socket->state() == QAbstractSocket::ConnectedState;
 }
 
-akashi::ITransport::Capabilities NetworkSocket::capabilities() const
+ITransport::Capabilities WebSocketTransport::capabilities() const
 {
     // The WebSocket upgrade carries handshake-time headers, so connect-time
     // negotiation is possible on this transport.
-    return akashi::ITransport::ConnectTimeMetadata;
+    return ITransport::ConnectTimeMetadata;
 }
 
-void NetworkSocket::closeWithCode(QWebSocketProtocol::CloseCode f_code)
+void WebSocketTransport::closeWithCode(QWebSocketProtocol::CloseCode f_code)
 {
     if (m_closing || m_disconnect_reported) {
         return;
@@ -123,27 +150,27 @@ void NetworkSocket::closeWithCode(QWebSocketProtocol::CloseCode f_code)
     // to close, so this still ends the connection cleanly.
     QTimer::singleShot(CLOSE_GRACE_MS, this, [this] {
         if (!m_disconnect_reported) {
-            abortConnection(akashi::DisconnectKind::Clean);
+            abortConnection(DisconnectKind::Clean);
         }
     });
     m_client_socket->close(f_code);
 }
 
-void NetworkSocket::abortConnection(akashi::DisconnectKind f_kind)
+void WebSocketTransport::abortConnection(DisconnectKind f_kind)
 {
     m_client_socket->abort();
     reportDisconnect(f_kind);
 }
 
-void NetworkSocket::onSocketDisconnected()
+void WebSocketTransport::onSocketDisconnected()
 {
     // No close frame means the connection just died; a proper close exchange - or a
     // close we started ourselves - is somebody finishing the connection.
     bool l_lost = !m_closing && m_client_socket->closeCode() == QWebSocketProtocol::CloseCodeAbnormalDisconnection;
-    reportDisconnect(l_lost ? akashi::DisconnectKind::Lost : akashi::DisconnectKind::Clean);
+    reportDisconnect(l_lost ? DisconnectKind::Lost : DisconnectKind::Clean);
 }
 
-void NetworkSocket::reportDisconnect(akashi::DisconnectKind f_kind)
+void WebSocketTransport::reportDisconnect(DisconnectKind f_kind)
 {
     if (m_disconnect_reported) {
         return;
@@ -153,17 +180,17 @@ void NetworkSocket::reportDisconnect(akashi::DisconnectKind f_kind)
     Q_EMIT clientDisconnected(f_kind);
 }
 
-void NetworkSocket::checkLiveness()
+void WebSocketTransport::checkLiveness()
 {
     if (m_unanswered_pings >= MAX_UNANSWERED_PINGS) {
-        abortConnection(akashi::DisconnectKind::Lost);
+        abortConnection(DisconnectKind::Lost);
         return;
     }
     ++m_unanswered_pings;
     m_client_socket->ping();
 }
 
-void NetworkSocket::handleMessage(QString f_data)
+void WebSocketTransport::handleMessage(QString f_data)
 {
     // The connection is over once close() is called; frames racing in after
     // that (a rejected client still talking) must not reach the server.
@@ -184,16 +211,18 @@ void NetworkSocket::handleMessage(QString f_data)
     l_all_packets.removeLast();  // Remove the entry after the last terminator
     l_all_packets.removeAll({}); // Remove empty or null strings.
 
-    for (const QString &l_single_packet : qAsConst(l_all_packets)) {
+    for (const QString &l_single_packet : std::as_const(l_all_packets)) {
         // Parsing wants the field separator back that the split consumed.
-        Q_EMIT packetReceived(akashi::Packet::parse(l_single_packet + "#"));
+        Q_EMIT packetReceived(Packet::parse(l_single_packet + "#"));
     }
 }
 
-void NetworkSocket::write(const akashi::Packet &f_packet)
+void WebSocketTransport::write(const Packet &f_packet)
 {
     if (!isOpen()) {
         return;
     }
     m_client_socket->sendTextMessage(f_packet.serialize());
 }
+
+} // namespace akashi

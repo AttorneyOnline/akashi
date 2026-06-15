@@ -61,7 +61,7 @@ class AKASHI_CORE_EXPORT Jukebox : public QObject
     // ── Song validation ──────────────────────────────────────────
     static bool validateSong(const QString &f_name, const QStringList &f_cdns);
 
-    // ── Music state (moved here from AreaData) ───────────────────
+    // ── Music state ───────────────────
     QString currentSong() const;
     QString currentAmbience() const;
     QString musicPlayedBy() const;

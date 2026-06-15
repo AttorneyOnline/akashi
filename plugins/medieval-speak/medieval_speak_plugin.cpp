@@ -9,8 +9,8 @@
 #include "core/permission_registry.h"
 #include "core/text_filter_registry.h"
 
-#include "area_data.h"
-#include "server.h"
+#include "world/area.h"
+#include "core/server_context.h"
 
 #include <QDebug>
 
@@ -50,7 +50,7 @@ bool MedievalSpeakPlugin::load(akashi::ServiceRegistry &services)
         }, false, l_owner);
 
     l_commands->registerCommand(
-        {QStringLiteral("medieval"), {}, {QStringLiteral("mute")}, 1,
+        {QStringLiteral("medieval"), {}, {akashi::permission::mute}, 1,
          QStringLiteral("/medieval <id>"),
          QStringLiteral("Makes a client speak in medieval English.")},
         [](akashi::CommandContext &f_context) {
@@ -66,7 +66,7 @@ bool MedievalSpeakPlugin::load(akashi::ServiceRegistry &services)
         }, l_owner);
 
     l_commands->registerCommand(
-        {QStringLiteral("unmedieval"), {}, {QStringLiteral("mute")}, 1,
+        {QStringLiteral("unmedieval"), {}, {akashi::permission::mute}, 1,
          QStringLiteral("/unmedieval <id>"),
          QStringLiteral("Returns a client to plain speech.")},
         [](akashi::CommandContext &f_context) {
@@ -82,11 +82,11 @@ bool MedievalSpeakPlugin::load(akashi::ServiceRegistry &services)
         }, l_owner);
 
     l_commands->registerCommand(
-        {QStringLiteral("medievalmode"), {QStringLiteral("medieval_mode")}, {QStringLiteral("mute")}, 0,
+        {QStringLiteral("medievalmode"), {QStringLiteral("medieval_mode")}, {akashi::permission::mute}, 0,
          QStringLiteral("/medievalmode"),
          QStringLiteral("Toggles medieval mode in the area.")},
         [](akashi::CommandContext &f_context) {
-            AreaData *l_area = f_context.server()->areaById(f_context.areaId());
+            akashi::Area *l_area = f_context.server()->areaById(f_context.areaId());
             l_area->toggleMedievalMode();
             QString l_state = l_area->isMedievalMode() ? "enabled." : "disabled.";
             f_context.replyToArea("Hear ye, hear ye! Medieval Mode is now " + l_state);

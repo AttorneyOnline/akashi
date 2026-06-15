@@ -1,6 +1,6 @@
 // AI-generated: written by Claude.
 #include "akashi/database_service.h"
-#include "db_manager.h"
+#include "core/db_manager.h"
 
 #include <QSqlDatabase>
 #include <QSqlQuery>

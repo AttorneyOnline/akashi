@@ -2,16 +2,20 @@
 
 #include "akashi/area_rule.h"
 #include "akashi_core_export.h"
-#include "typedefs.h"
 
 #include <QHash>
 #include <QList>
+#include <QMap>
+#include <QPair>
 #include <QStringList>
 #include <QVariantMap>
 #include <QVector>
 
 namespace akashi {
 namespace config {
+
+// Song name to its category and duration, as loaded from music.json.
+using MusicList = QMap<QString, QPair<QString, int>>;
 
 struct MusicCatalog
 {

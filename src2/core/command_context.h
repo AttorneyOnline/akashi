@@ -8,8 +8,8 @@
 
 #include <optional>
 
-class AOClient;
-class Server;
+namespace akashi { class ClientSession; }
+class ServerContext;
 
 namespace akashi {
 class ServiceRegistry;
@@ -20,7 +20,7 @@ namespace akashi {
 class AKASHI_CORE_EXPORT TargetPlayer
 {
   public:
-    explicit TargetPlayer(AOClient *f_client);
+    explicit TargetPlayer(akashi::ClientSession *f_client);
 
     int clientId() const;
     QString name() const;
@@ -46,13 +46,13 @@ class AKASHI_CORE_EXPORT TargetPlayer
     void setTestimonySaving(bool f_state);
 
   private:
-    AOClient *m_client;
+    akashi::ClientSession *m_client;
 };
 
 class AKASHI_CORE_EXPORT CommandContext
 {
   public:
-    CommandContext(AOClient *f_invoker, Server *f_server, QStringList f_arguments);
+    CommandContext(akashi::ClientSession *f_invoker, ServerContext *f_server, QStringList f_arguments);
 
     int clientId() const;
     QString name() const;
@@ -87,11 +87,11 @@ class AKASHI_CORE_EXPORT CommandContext
     static int genRand(int f_min, int f_max);
 
     akashi::ServiceRegistry *services() const;
-    Server *server() const;
+    ServerContext *server() const;
 
   private:
-    AOClient *m_invoker;
-    Server *m_server;
+    akashi::ClientSession *m_invoker;
+    ServerContext *m_server;
     QStringList m_arguments;
 };
 

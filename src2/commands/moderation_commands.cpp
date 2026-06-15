@@ -3,16 +3,16 @@
 #include "akashi/event.h"
 #include "akashi/log_event.h"
 #include "akashi/permissions.h"
-#include "aoclient.h"
-#include "area_data.h"
+#include "core/client_session.h"
 #include "core/command_context.h"
 #include "core/command_registry.h"
 #include "core/command_spec.h"
+#include "core/db_manager.h"
 #include "core/event_bus.h"
 #include "core/log_service.h"
+#include "core/server_context.h"
 #include "core/server_settings.h"
-#include "db_manager.h"
-#include "server.h"
+#include "world/area.h"
 
 #include <QCoreApplication>
 #include <QDateTime>
@@ -65,7 +65,7 @@ static long long parseTime(const QString &f_input)
     return l_total;
 }
 
-static QString reprimand(Server *f_server, bool f_positive = false)
+static QString reprimand(ServerContext *f_server, bool f_positive = false)
 {
     if (f_positive) {
         return f_server->praiseList().at(CommandContext::genRand(0, f_server->praiseList().size() - 1));
@@ -118,16 +118,16 @@ static void handleBan(CommandContext &f_context)
     int l_kick_counter = 0;
 
     switch (f_context.server()->authType()) {
-    case DataTypes::AuthType::SIMPLE:
+    case AuthType::SIMPLE:
         l_ban.moderator = "moderator";
         break;
-    case DataTypes::AuthType::ADVANCED:
+    case AuthType::ADVANCED:
         l_ban.moderator = f_context.moderatorName();
         break;
     }
 
-    const QList<AOClient *> l_targets = f_context.server()->clientsByIpid(l_ban.ipid);
-    for (AOClient *l_client : l_targets) {
+    const QList<akashi::ClientSession *> l_targets = f_context.server()->clientsByIpid(l_ban.ipid);
+    for (akashi::ClientSession *l_client : l_targets) {
         if (!l_ban_logged) {
             l_ban.ip = l_client->remoteIp();
             l_ban.hdid = l_client->hwid();
@@ -182,15 +182,15 @@ static void handleKick(CommandContext &f_context)
         }
     }
 
-    const QList<AOClient *> l_targets = f_context.server()->clientsByIpid(l_target_ipid);
-    for (AOClient *l_client : l_targets) {
+    const QList<akashi::ClientSession *> l_targets = f_context.server()->clientsByIpid(l_target_ipid);
+    for (akashi::ClientSession *l_client : l_targets) {
         l_client->sendPacket("KK", {l_reason});
         l_client->closeSocket();
         l_kick_counter++;
     }
 
     if (l_kick_counter > 0) {
-        QString l_moderator = f_context.server()->authType() == DataTypes::AuthType::ADVANCED
+        QString l_moderator = f_context.server()->authType() == AuthType::ADVANCED
                                   ? f_context.moderatorName()
                                   : QStringLiteral("Moderator");
         f_context.server()->logService()->log({.type = log_type::Kick,
@@ -207,11 +207,11 @@ static void handleMods(CommandContext &f_context)
 {
     QStringList l_entries;
     int l_online_count = 0;
-    const QVector<AOClient *> l_clients = f_context.server()->clients();
-    for (AOClient *l_client : l_clients) {
+    const QVector<akashi::ClientSession *> l_clients = f_context.server()->clients();
+    for (akashi::ClientSession *l_client : l_clients) {
         if (l_client->isAuthenticated()) {
             l_entries << "---";
-            if (f_context.server()->authType() != DataTypes::AuthType::SIMPLE) {
+            if (f_context.server()->authType() != AuthType::SIMPLE) {
                 l_entries << "Moderator: " + l_client->moderatorName();
                 l_entries << "Role:" << l_client->aclRoleId();
             }
@@ -227,6 +227,34 @@ static void handleMods(CommandContext &f_context)
     f_context.reply(l_entries.join("\n"));
 }
 
+// A permission list passes when it is empty or any entry resolves.
+static bool passesAnyOf(CommandContext &f_context, const QStringList &f_permissions)
+{
+    if (f_permissions.isEmpty()) {
+        return true;
+    }
+    for (const QString &l_perm : f_permissions) {
+        if (f_context.canPerform(l_perm)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// A command is usable when any of its forms is open to the caller.
+static bool canUseCommand(CommandContext &f_context, const CommandSpec &f_spec)
+{
+    if (f_spec.variants.isEmpty()) {
+        return passesAnyOf(f_context, f_spec.permissions);
+    }
+    for (const CommandVariant &l_variant : f_spec.variants) {
+        if (passesAnyOf(f_context, l_variant.permissions)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 static void handleCommands(CommandContext &f_context)
 {
     QStringList l_entries;
@@ -237,14 +265,7 @@ static void handleCommands(CommandContext &f_context)
         auto l_spec = l_registry->spec(l_name);
         if (!l_spec)
             continue;
-        bool l_allowed = l_spec->permissions.isEmpty();
-        for (const QString &l_perm : l_spec->permissions) {
-            if (f_context.canPerform(l_perm)) {
-                l_allowed = true;
-                break;
-            }
-        }
-        if (l_allowed) {
+        if (canUseCommand(f_context, *l_spec)) {
             QString l_info = "/" + l_name;
             if (!l_spec->aliases.isEmpty()) {
                 l_info += " [aka: " + l_spec->aliases.join(", ") + "]";
@@ -273,15 +294,7 @@ static void handleHelp(CommandContext &f_context)
 
     auto l_check_permission = [&f_context, l_registry](const QString &f_command_name) -> bool {
         auto l_spec = l_registry->spec(f_command_name);
-        if (!l_spec)
-            return false;
-        if (l_spec->permissions.isEmpty())
-            return true;
-        for (const QString &l_perm : l_spec->permissions) {
-            if (f_context.canPerform(l_perm))
-                return true;
-        }
-        return false;
+        return l_spec && canUseCommand(f_context, *l_spec);
     };
 
     auto l_format_command = [l_registry](const QString &f_command_name) -> QString {
@@ -292,6 +305,16 @@ static void handleHelp(CommandContext &f_context)
         if (!l_spec->usage.isEmpty())
             l_text = l_spec->usage;
         l_text += "\n" + (l_spec->description.isEmpty() ? QString("No details available.") : l_spec->description);
+        // A variant command lists each of its forms with its own gate.
+        for (const CommandVariant &l_variant : l_spec->variants) {
+            if (l_variant.usage.isEmpty())
+                continue;
+            l_text += "\n  " + l_variant.usage;
+            if (!l_variant.description.isEmpty())
+                l_text += " - " + l_variant.description;
+            if (!l_variant.permissions.isEmpty())
+                l_text += " [" + l_variant.permissions.join(", ") + "]";
+        }
         return l_text;
     };
 
@@ -456,7 +479,7 @@ static void handleUnblockWtce(CommandContext &f_context)
 
 static void handleAllowBlankposting(CommandContext &f_context)
 {
-    AreaData *l_area = f_context.server()->areaById(f_context.areaId());
+    akashi::Area *l_area = f_context.server()->areaById(f_context.areaId());
     l_area->toggleBlankposting();
     if (l_area->isBlankpostingAllowed() == false) {
         f_context.replyToArea(f_context.name() + " has set blankposting in the area to forbidden.");
@@ -515,7 +538,7 @@ static void handleReload(CommandContext &f_context)
 
 static void handleForceImmediate(CommandContext &f_context)
 {
-    AreaData *l_area = f_context.server()->areaById(f_context.areaId());
+    akashi::Area *l_area = f_context.server()->areaById(f_context.areaId());
     l_area->toggleImmediate();
     QString l_state = l_area->forceImmediate() ? "on." : "off.";
     f_context.reply("Forced immediate text processing in this area is now " + l_state);
@@ -523,7 +546,7 @@ static void handleForceImmediate(CommandContext &f_context)
 
 static void handleAllowIniswap(CommandContext &f_context)
 {
-    AreaData *l_area = f_context.server()->areaById(f_context.areaId());
+    akashi::Area *l_area = f_context.server()->areaById(f_context.areaId());
     l_area->toggleIniswap();
     QString state = l_area->isIniswapAllowed() ? "allowed." : "disallowed.";
     f_context.reply("Iniswapping in this area is now " + state);
@@ -608,24 +631,24 @@ static void handleKickOther(CommandContext &f_context)
 {
     int l_kick_counter = 0;
 
-    QList<AOClient *> l_target_clients;
-    const QList<AOClient *> l_targets_hwid = f_context.server()->clientsByHwid(f_context.hwid());
+    QList<akashi::ClientSession *> l_target_clients;
+    const QList<akashi::ClientSession *> l_targets_hwid = f_context.server()->clientsByHwid(f_context.hwid());
     l_target_clients = f_context.server()->clientsByIpid(f_context.ipid());
 
-    for (AOClient *l_target_candidate : qAsConst(l_targets_hwid)) {
+    for (akashi::ClientSession *l_target_candidate : qAsConst(l_targets_hwid)) {
         if (!l_target_clients.contains(l_target_candidate)) {
             l_target_clients.append(l_target_candidate);
         }
     }
 
-    QMutableListIterator<AOClient *> it(l_target_clients);
+    QMutableListIterator<akashi::ClientSession *> it(l_target_clients);
     while (it.hasNext()) {
         if (it.next()->clientId() == f_context.clientId()) {
             it.remove();
         }
     }
 
-    for (AOClient *l_target_client : qAsConst(l_target_clients)) {
+    for (akashi::ClientSession *l_target_client : qAsConst(l_target_clients)) {
         l_target_client->closeSocket();
         l_kick_counter++;
     }

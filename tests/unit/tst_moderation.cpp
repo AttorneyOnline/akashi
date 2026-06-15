@@ -87,7 +87,7 @@ void tst_Moderation::modActionNeedsLoginAndPermission()
 
     FakeContext l_no_ban;
     l_no_ban.authenticated = true;
-    l_no_ban.permissions << "KICK";
+    l_no_ban.permissions << "kick";
     run(Packet("MA", {"3", "30", "spam"}), l_no_ban);
     QCOMPARE(l_no_ban.calls, QStringList({"message:You do not have permission to ban users."}));
 }
@@ -96,7 +96,7 @@ void tst_Moderation::modActionKicksAndBans()
 {
     FakeContext l_context;
     l_context.authenticated = true;
-    l_context.permissions << "KICK" << "BAN";
+    l_context.permissions << "kick" << "ban";
     l_context.player_names.insert(3, "Bad");
 
     run(Packet("MA", {"3", "0", "spamming"}), l_context);

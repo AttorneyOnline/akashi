@@ -23,7 +23,7 @@ using AfterActionFactory = std::function<AfterRuleFunction(ServiceRegistry &, co
 // Action definitions map a name to a factory that builds a rule function.
 // Core registers built-ins at startup; plugins add their own.
 //
-// Applied rules live on Floor and AreaData objects directly. The static
+// Applied rules live on Floor and Area objects directly. The static
 // dispatch methods here run the override-aware evaluation: area rules
 // first, then floor rules whose action name isn't overridden by the area.
 class AKASHI_CORE_EXPORT RuleRegistry : public IService

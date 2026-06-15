@@ -1,6 +1,10 @@
 #include "core/permission_registry.h"
 
+#include "core/json_settings.h"
 #include "core/thread_assert.h"
+
+#include <QDebug>
+#include <QSettings>
 
 #include <algorithm>
 
@@ -121,6 +125,201 @@ bool PermissionRegistry::resolve(const PermissionQuery &f_query) const
         }
     }
     return false;
+}
+
+const QString ACLRolesHandler::NONE_ID = "NONE";
+
+const QString ACLRolesHandler::SUPER_ID = "SUPER";
+
+// QStringLiteral instead of permission::super: the initialization order of
+// this static against the header's inline permission ids is not guaranteed.
+const QHash<QString, ACLRole> ACLRolesHandler::readonly_roles{
+    {ACLRolesHandler::NONE_ID, ACLRole()},
+    {ACLRolesHandler::SUPER_ID, ACLRole({QStringLiteral("super")})},
+};
+
+ACLRole::ACLRole() {}
+
+ACLRole::ACLRole(const QSet<QString> &f_permissions) :
+    m_permissions(f_permissions)
+{}
+
+bool ACLRole::canPerform(const QString &f_permission) const
+{
+    if (f_permission.isEmpty() || f_permission == permission::none) {
+        return true;
+    }
+    if (m_permissions.contains(permission::super)) {
+        return true;
+    }
+    return m_permissions.contains(f_permission);
+}
+
+void ACLRole::setPermission(const QString &f_permission, bool f_mode)
+{
+    if (f_mode) {
+        m_permissions.insert(f_permission);
+    }
+    else {
+        m_permissions.remove(f_permission);
+    }
+}
+
+const QSet<QString> &ACLRole::permissions() const
+{
+    return m_permissions;
+}
+
+ACLRolesHandler::ACLRolesHandler(QObject *parent) :
+    QObject(parent)
+{}
+
+ACLRolesHandler::~ACLRolesHandler() {}
+
+bool ACLRolesHandler::roleExists(QString f_id)
+{
+    f_id = f_id.toUpper();
+    return readonly_roles.contains(f_id) || m_roles.contains(f_id);
+}
+
+ACLRole ACLRolesHandler::roleById(QString f_id)
+{
+    f_id = f_id.toUpper();
+    return readonly_roles.contains(f_id) ? readonly_roles.value(f_id) : m_roles.value(f_id);
+}
+
+bool ACLRolesHandler::insertRole(QString f_id, ACLRole f_role)
+{
+    f_id = f_id.toUpper();
+    if (readonly_roles.contains(f_id)) {
+        return false;
+    }
+    m_roles.insert(f_id, f_role);
+    return true;
+}
+
+bool ACLRolesHandler::removeRole(QString f_id)
+{
+    f_id = f_id.toUpper();
+    if (readonly_roles.contains(f_id)) {
+        return false;
+    }
+    else if (!m_roles.contains(f_id)) {
+        return false;
+    }
+    m_roles.remove(f_id);
+    return true;
+}
+
+void ACLRolesHandler::clearRoles()
+{
+    m_roles.clear();
+}
+
+bool ACLRolesHandler::loadFile(QString f_file_name)
+{
+    // JSON files use the custom format, anything else stays INI.
+    QSettings l_settings(f_file_name, f_file_name.endsWith(".json") ? JsonSettings::format() : QSettings::IniFormat);
+    if (!checkSettingsStatus(&l_settings)) {
+        return false;
+    }
+
+    m_roles.clear();
+    QStringList l_role_records;
+    const QStringList l_group_list = l_settings.childGroups();
+    for (const QString &i_group : l_group_list) {
+        const QString l_upper_group = i_group.toUpper();
+        if (readonly_roles.contains(l_upper_group)) {
+            qWarning() << "[ACL Role Handler]"
+                       << "warning: cannot modify role;" << i_group << "is read-only";
+            continue;
+        }
+
+        l_settings.beginGroup(i_group);
+        if (l_role_records.contains(l_upper_group)) {
+            qWarning() << "[ACL Role Handler]"
+                       << "warning: role" << l_upper_group << "already exist";
+            continue;
+        }
+        l_role_records.append(l_upper_group);
+
+        ACLRole l_role;
+        const QStringList l_keys = l_settings.childKeys();
+        for (const QString &i_key : l_keys) {
+            if (l_settings.value(i_key).toBool()) {
+                l_role.setPermission(i_key.toLower(), true);
+            }
+        }
+        m_roles.insert(l_upper_group, std::move(l_role));
+        l_settings.endGroup();
+    }
+
+    return true;
+}
+
+bool ACLRolesHandler::saveFile(QString f_file_name)
+{
+    // JSON files use the custom format, anything else stays INI.
+    QSettings l_settings(f_file_name, f_file_name.endsWith(".json") ? JsonSettings::format() : QSettings::IniFormat);
+    if (!checkSettingsStatus(&l_settings)) {
+        return false;
+    }
+
+    l_settings.clear();
+    const QStringList l_role_id_list = m_roles.keys();
+    for (const QString &l_role_id : l_role_id_list) {
+        const QString l_upper_role_id = l_role_id.toUpper();
+        if (readonly_roles.contains(l_upper_role_id)) {
+            continue;
+        }
+
+        const ACLRole i_role = m_roles.value(l_upper_role_id);
+        l_settings.beginGroup(l_upper_role_id);
+        if (i_role.canPerform(permission::super)) {
+            l_settings.setValue(permission::super, true);
+        }
+        else {
+            QStringList l_permissions(i_role.permissions().begin(), i_role.permissions().end());
+            l_permissions.sort();
+            for (const QString &i_permission : std::as_const(l_permissions)) {
+                l_settings.setValue(i_permission, true);
+            }
+        }
+        l_settings.endGroup();
+    }
+    l_settings.sync();
+    if (l_settings.status() != QSettings::NoError) {
+        qWarning() << "[ACL Role Handler]"
+                   << "error: failed to write file; aborting (" << f_file_name << ")";
+        return false;
+    }
+
+    return true;
+}
+
+bool ACLRolesHandler::checkSettingsStatus(QSettings *f_settings)
+{
+    if (f_settings->status() != QSettings::NoError) {
+        switch (f_settings->status()) {
+        case QSettings::AccessError:
+            qWarning() << "[ACL Role Handler]"
+                       << "error: failed to open file; aborting (" << f_settings->fileName() << ")";
+            break;
+
+        case QSettings::FormatError:
+            qWarning() << "[ACL Role Handler]"
+                       << "error: file is malformed; aborting (" << f_settings->fileName() << ")";
+            break;
+
+        default:
+            qWarning() << "[ACL Role Handler]"
+                       << "error: unknown error; aborting; aborting (" << f_settings->fileName() << ")";
+            break;
+        }
+
+        return false;
+    }
+    return true;
 }
 
 } // namespace akashi

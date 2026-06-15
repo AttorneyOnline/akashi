@@ -17,8 +17,6 @@ namespace akashi {
 
 class CommandContext;
 
-using CommandHandler = std::function<void(CommandContext &)>;
-
 class AKASHI_CORE_EXPORT CommandRegistry : public IService
 {
   public:
@@ -29,6 +27,18 @@ class AKASHI_CORE_EXPORT CommandRegistry : public IService
 
     bool registerCommand(const CommandSpec &f_spec, CommandHandler f_handler,
                          const QString &f_owner_id = {});
+
+    // Registers a command whose forms live in spec.variants; every variant
+    // must carry an id and a handler.
+    bool registerCommand(const CommandSpec &f_spec, const QString &f_owner_id);
+
+    // Adds another gated form to an existing variant-based command. Refuses
+    // unknown commands, duplicate ids, argument windows a declared form
+    // already covers, and commands without variants (their single handler
+    // would become unreachable).
+    bool registerVariant(const QString &f_command_name, const CommandVariant &f_variant,
+                         const QString &f_owner_id = {});
+
     void unregisterAll(const QString &f_owner_id);
 
     std::optional<CommandSpec> spec(const QString &f_command_name) const;

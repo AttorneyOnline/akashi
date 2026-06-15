@@ -1,22 +1,6 @@
-//////////////////////////////////////////////////////////////////////////////////////
-//    akashi - a server for Attorney Online 2                                       //
-//    Copyright (C) 2020  scatterflower                                             //
-//                                                                                  //
-//    This program is free software: you can redistribute it and/or modify          //
-//    it under the terms of the GNU Affero General Public License as                //
-//    published by the Free Software Foundation, either version 3 of the            //
-//    License, or (at your option) any later version.                               //
-//                                                                                  //
-//    This program is distributed in the hope that it will be useful,               //
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of                //
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                 //
-//    GNU Affero General Public License for more details.                           //
-//                                                                                  //
-//    You should have received a copy of the GNU Affero General Public License      //
-//    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
-//////////////////////////////////////////////////////////////////////////////////////
 #pragma once
 
+#include "akashi/client_receiver.h"
 #include "akashi_core_export.h"
 #include "core/transport.h"
 #include "proto/packet.h"
@@ -26,6 +10,39 @@
 #include <QWebSocket>
 
 class QTimer;
+class QWebSocketServer;
+
+namespace akashi {
+
+// The WebSocket door every AO2 client comes through: listens on one port
+// and wraps each accepted socket in a WebSocketTransport.
+class AKASHI_CORE_EXPORT WebSocketReceiver : public ClientReceiver
+{
+    Q_OBJECT
+
+  public:
+    // f_features is the same capability list the FL packet advertises
+    // (proto::serverFeatures) plus the caller's auth token - the one
+    // vocabulary, spoken here as network_-prefixed subprotocol tokens. The
+    // upgrade response echoes the FIRST OFFERED token the server speaks,
+    // so a client leads with the capability it needs accepted - the one
+    // acceptance the handshake may carry. New capabilities follow the
+    // [arch]_[packet]_[version] grammar (network for generic ones), like
+    // ao_ms_2.11.1 or network_auth_simple.
+    WebSocketReceiver(const QHostAddress &f_address, int f_port,
+                      const QStringList &f_features = {}, QObject *parent = nullptr);
+
+    bool start() override;
+    QString lastError() const;
+    int port() const;
+
+  private:
+    void onNewConnection();
+
+    QWebSocketServer *m_server = nullptr;
+    QHostAddress m_address;
+    int m_port;
+};
 
 // The WebSocket transport: the one ITransport implementation core ships. Keeps
 // the WebSocket framing and reverse-proxy IP resolution; the rest of the server
@@ -35,19 +52,19 @@ class QTimer;
 // aborted when it stops answering (catches half-open TCP and frozen clients),
 // a close() that the peer never completes is aborted after a grace period, and
 // clientDisconnected() is emitted exactly once whichever way the connection ends.
-class AKASHI_CORE_EXPORT NetworkSocket : public akashi::ITransport
+class AKASHI_CORE_EXPORT WebSocketTransport : public ITransport
 {
     Q_OBJECT
 
   public:
     // Takes ownership of the QWebSocket.
-    explicit NetworkSocket(QWebSocket *f_socket, QObject *parent = nullptr);
+    explicit WebSocketTransport(QWebSocket *f_socket, QObject *parent = nullptr);
 
     QHostAddress peerAddress() const override;
-    void write(const akashi::Packet &f_packet) override;
+    void write(const Packet &f_packet) override;
     void close() override;
     bool isOpen() const override;
-    akashi::ITransport::Capabilities capabilities() const override;
+    ITransport::Capabilities capabilities() const override;
     QStringList connectTimeFeatures() const override;
 
     /**
@@ -84,7 +101,7 @@ class AKASHI_CORE_EXPORT NetworkSocket : public akashi::ITransport
     /**
      * @brief Forwards the socket-level disconnect as exactly one clientDisconnected().
      */
-    void reportDisconnect(akashi::DisconnectKind f_kind);
+    void reportDisconnect(DisconnectKind f_kind);
 
     /**
      * @brief Starts the WebSocket close exchange, aborting if the peer never finishes it.
@@ -94,7 +111,7 @@ class AKASHI_CORE_EXPORT NetworkSocket : public akashi::ITransport
     /**
      * @brief Drops the connection immediately and reports the disconnect.
      */
-    void abortConnection(akashi::DisconnectKind f_kind);
+    void abortConnection(DisconnectKind f_kind);
 
     QWebSocket *m_client_socket;
 
@@ -104,11 +121,6 @@ class AKASHI_CORE_EXPORT NetworkSocket : public akashi::ITransport
      * @details In the case of the WebSocket we also check if this has been proxy forwarded.
      */
     QHostAddress m_socket_ip;
-
-    /**
-     * @brief The capabilities the client announced in the upgrade request.
-     */
-    QStringList m_connect_features;
 
     /**
      * @brief Guards the exactly-once clientDisconnected() emission.
@@ -125,6 +137,12 @@ class AKASHI_CORE_EXPORT NetworkSocket : public akashi::ITransport
      */
     int m_unanswered_pings = 0;
 
+    /**
+     * @brief The capabilities the client announced in the upgrade request.
+     */
+    QStringList m_connect_features;
+
     QTimer *m_liveness_timer;
 };
 
+} // namespace akashi

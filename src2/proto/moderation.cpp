@@ -1,5 +1,6 @@
 #include "proto/moderation.h"
 
+#include "core/permission_registry.h"
 #include "proto/ao2_protocol.h"
 #include "proto/moderation_messages.h"
 #include "proto/packet_codec.h"
@@ -75,11 +76,11 @@ class ModActionHandler : public PacketHandler
         }
 
         const bool l_is_kick = l_action.duration == 0;
-        if (l_is_kick && !f_context.canPerform(QStringLiteral("KICK"))) {
+        if (l_is_kick && !f_context.canPerform(permission::kick)) {
             f_context.sendServerMessage("You do not have permission to kick users.");
             return;
         }
-        if (!l_is_kick && !f_context.canPerform(QStringLiteral("BAN"))) {
+        if (!l_is_kick && !f_context.canPerform(permission::ban)) {
             f_context.sendServerMessage("You do not have permission to ban users.");
             return;
         }

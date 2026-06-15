@@ -37,6 +37,13 @@ class AKASHI_CORE_EXPORT FileSystemService : public IService
     std::optional<QString> pluginResolve(const QString &f_plugin_id, const QString &f_relative_path) const;
 
     /**
+     * @brief A safe file name built from user input, or nothing when the
+     * input is not allowed. Only letters, numbers, dashes and underscores
+     * pass, ruling out path separators and traversal.
+     */
+    static std::optional<QString> sanitizedFileName(const QString &f_name);
+
+    /**
      * @brief True when writing f_bytes at f_path still leaves the volume
      * its safety margin of free space. An unrecognizable volume counts
      * as no room.

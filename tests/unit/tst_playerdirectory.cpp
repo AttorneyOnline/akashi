@@ -1,7 +1,7 @@
 // AI-generated: written by Claude.
-#include "aoclient.h"
+#include "core/client_session.h"
+#include "core/player_directory.h"
 #include "fake_transport.h"
-#include "player_directory.h"
 
 #include <QTest>
 
@@ -22,12 +22,12 @@ class tst_PlayerDirectory : public QObject
     void listsClientsOldestFirst();
 
   private:
-    AOClient *makeClient(int f_id);
+    akashi::ClientSession *makeClient(int f_id);
 };
 
-AOClient *tst_PlayerDirectory::makeClient(int f_id)
+akashi::ClientSession *tst_PlayerDirectory::makeClient(int f_id)
 {
-    return new AOClient(nullptr, new FakeTransport(true), nullptr, f_id);
+    return new akashi::ClientSession(nullptr, new FakeTransport(true), f_id);
 }
 
 void tst_PlayerDirectory::handsOutLowestIdsFirst()
@@ -95,7 +95,7 @@ void tst_PlayerDirectory::looksUpClientsNullSafely()
     PlayerDirectory l_directory;
     l_directory.setCapacity(3);
     const int l_id = l_directory.takeId();
-    AOClient *l_client = makeClient(l_id);
+    akashi::ClientSession *l_client = makeClient(l_id);
     l_directory.addClient(l_id, l_client);
 
     QCOMPARE(l_directory.clientById(l_id), l_client);
@@ -114,7 +114,7 @@ void tst_PlayerDirectory::removingAClientFreesItsId()
     PlayerDirectory l_directory;
     l_directory.setCapacity(1);
     const int l_id = l_directory.takeId();
-    AOClient *l_client = makeClient(l_id);
+    akashi::ClientSession *l_client = makeClient(l_id);
     l_directory.addClient(l_id, l_client);
     QVERIFY(l_directory.isFull());
 
@@ -133,12 +133,12 @@ void tst_PlayerDirectory::listsClientsOldestFirst()
 {
     PlayerDirectory l_directory;
     l_directory.setCapacity(3);
-    AOClient *l_first = makeClient(l_directory.takeId());
-    AOClient *l_second = makeClient(l_directory.takeId());
+    akashi::ClientSession *l_first = makeClient(l_directory.takeId());
+    akashi::ClientSession *l_second = makeClient(l_directory.takeId());
     l_directory.addClient(0, l_first);
     l_directory.addClient(1, l_second);
 
-    QCOMPARE(l_directory.clients(), QVector<AOClient *>({l_first, l_second}));
+    QCOMPARE(l_directory.clients(), QVector<akashi::ClientSession *>({l_first, l_second}));
     QCOMPARE(l_directory.clientCount(), 2);
 
     l_directory.clear();

@@ -4,6 +4,14 @@
 
 #include <QTime>
 
+// The two ways a moderator can log in: one shared modpass, or per-user
+// accounts in the database. The typed view of the auth setting below.
+enum class AuthType
+{
+    SIMPLE,
+    ADVANCED
+};
+
 // The settings of config.json. Every setting is declared exactly once, here.
 class AKASHI_CORE_EXPORT ServerSettings : public akashi::Settings
 {

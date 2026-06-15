@@ -2,7 +2,7 @@
 #include "fake_transport.h"
 #include "core/client_session.h"
 #include "core/player_state.h"
-#include "playerstateobserver.h"
+#include "core/player_state_observer.h"
 
 #include <QTest>
 
@@ -30,7 +30,7 @@ struct Person
     explicit Person(int id)
     {
         transport = new FakeTransport(true);
-        session = new akashi::ClientSession(id, transport);
+        session = new akashi::ClientSession(nullptr, transport, id);
     }
     ~Person() { delete session; }
     akashi::PlayerState *player() const { return session->active_player; }

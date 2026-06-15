@@ -1,10 +1,21 @@
 #include "akashi/filesystem_service.h"
 
 #include <QFileInfo>
+#include <QRegularExpression>
 #include <QSaveFile>
 #include <QStorageInfo>
 
 namespace akashi {
+
+std::optional<QString> FileSystemService::sanitizedFileName(const QString &f_name)
+{
+    const QString l_trimmed = f_name.trimmed().toLower();
+    static const QRegularExpression l_allowed("^[a-z0-9_-]+$");
+    if (l_allowed.match(l_trimmed).hasMatch()) {
+        return l_trimmed;
+    }
+    return std::nullopt;
+}
 
 FileSystemService::FileSystemService(const QString &f_app_root) :
     m_app_root(QDir::cleanPath(QDir(f_app_root).absolutePath())),

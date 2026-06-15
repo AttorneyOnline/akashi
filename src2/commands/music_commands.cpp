@@ -1,18 +1,18 @@
 #include "commands/music_commands.h"
 
 #include "akashi/permissions.h"
-#include "aoclient.h"
-#include "area_data.h"
+#include "core/client_session.h"
 #include "core/command_context.h"
 #include "core/command_registry.h"
 #include "core/command_spec.h"
+#include "core/server_context.h"
 #include "proto/packet.h"
-#include "server.h"
+#include "world/area.h"
 #include "world/jukebox.h"
 
 namespace akashi::commands {
 
-static QString reprimand(Server *f_server, bool f_positive = false)
+static QString reprimand(ServerContext *f_server, bool f_positive = false)
 {
     if (f_positive)
         return f_server->praiseList().at(CommandContext::genRand(0, f_server->praiseList().size() - 1));
@@ -23,7 +23,7 @@ static QString reprimand(Server *f_server, bool f_positive = false)
 static void handlePlay(CommandContext &f_context)
 {
     QString l_song = f_context.arguments().join(" ");
-    AOClient *l_self = f_context.server()->clientById(f_context.clientId());
+    akashi::ClientSession *l_self = f_context.server()->clientById(f_context.clientId());
     if (l_self->hasSanction(akashi::sanction::dj_blocked)) {
         f_context.reply("You are blocked from changing the music.");
         return;
@@ -36,7 +36,7 @@ static void handlePlay(CommandContext &f_context)
         f_context.reply("The song you tried to play is not from an approved CDN.");
         return;
     }
-    AreaData *l_area = f_context.server()->areaById(f_context.areaId());
+    akashi::Area *l_area = f_context.server()->areaById(f_context.areaId());
     if (!l_area->owners().contains(f_context.clientId()) && !l_area->isPlayEnabled() && !f_context.canPerform(akashi::permission::gamemaster)) {
         f_context.reply("Free music play is disabled in this area.");
         return;
@@ -53,12 +53,12 @@ static void handlePlay(CommandContext &f_context)
 
 static void handlePlayAmbience(CommandContext &f_context)
 {
-    AOClient *l_self = f_context.server()->clientById(f_context.clientId());
+    akashi::ClientSession *l_self = f_context.server()->clientById(f_context.clientId());
     if (l_self->hasSanction(akashi::sanction::dj_blocked)) {
         f_context.reply("You are blocked from changing the ambience.");
         return;
     }
-    AreaData *l_area = f_context.server()->areaById(f_context.areaId());
+    akashi::Area *l_area = f_context.server()->areaById(f_context.areaId());
     if (!l_area->owners().contains(f_context.clientId()) && !l_area->isPlayEnabled()) {
         f_context.reply("Free ambience play is disabled in this area.");
         return;
@@ -75,7 +75,7 @@ static void handlePlayAmbience(CommandContext &f_context)
 
 static void handleCurrentMusic(CommandContext &f_context)
 {
-    AreaData *l_area = f_context.server()->areaById(f_context.areaId());
+    akashi::Area *l_area = f_context.server()->areaById(f_context.areaId());
     if (!l_area->currentMusic().isEmpty() && !l_area->currentMusic().contains("~stop.mp3"))
         f_context.reply("The current song is " + l_area->currentMusic() + " played by " + l_area->musicPlayerBy());
     else
@@ -110,7 +110,7 @@ static void handleUnblockDj(CommandContext &f_context)
 
 static void handleToggleMusic(CommandContext &f_context)
 {
-    AreaData *l_area = f_context.server()->areaById(f_context.areaId());
+    akashi::Area *l_area = f_context.server()->areaById(f_context.areaId());
     l_area->toggleMusic();
     QString l_state = l_area->isMusicAllowed() ? "allowed." : "disallowed.";
     f_context.reply("Music in this area is now " + l_state);
@@ -118,7 +118,7 @@ static void handleToggleMusic(CommandContext &f_context)
 
 static void handleToggleJukebox(CommandContext &f_context)
 {
-    AreaData *l_area = f_context.server()->areaById(f_context.areaId());
+    akashi::Area *l_area = f_context.server()->areaById(f_context.areaId());
     l_area->toggleJukebox();
     QString l_state = l_area->isJukeboxEnabled() ? "enabled." : "disabled.";
     f_context.replyToArea("The jukebox in this area has been " + l_state);
@@ -182,7 +182,7 @@ static void handleJukeboxSkip(CommandContext &f_context)
         l_name = f_context.characterName();
     }
 
-    AreaData *l_area = f_context.server()->areaById(f_context.areaId());
+    akashi::Area *l_area = f_context.server()->areaById(f_context.areaId());
 
     if (l_area->isJukeboxEnabled()) {
         if (l_area->jukebox()->skip()) {
@@ -216,61 +216,61 @@ void registerMusicCommands(CommandRegistry &f_registry)
         handleCurrentMusic, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("block_dj"), {QStringLiteral("blockdj")}, {QStringLiteral("mute")}, 1,
+        {QStringLiteral("block_dj"), {QStringLiteral("blockdj")}, {akashi::permission::mute}, 1,
          QStringLiteral("/block_dj <id>"),
          QStringLiteral("Blocks a client from changing music.")},
         handleBlockDj, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("unblock_dj"), {QStringLiteral("unblockdj")}, {QStringLiteral("mute")}, 1,
+        {QStringLiteral("unblock_dj"), {QStringLiteral("unblockdj")}, {akashi::permission::mute}, 1,
          QStringLiteral("/unblock_dj <id>"),
          QStringLiteral("Restores a client's music permissions.")},
         handleUnblockDj, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("togglemusic"), {}, {QStringLiteral("gamemaster")}, 0,
+        {QStringLiteral("togglemusic"), {}, {akashi::permission::gamemaster}, 0,
          QStringLiteral("/togglemusic"),
          QStringLiteral("Toggles music playing in the area.")},
         handleToggleMusic, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("togglejukebox"), {}, {QStringLiteral("gamemaster"), QStringLiteral("jukebox")}, 0,
+        {QStringLiteral("togglejukebox"), {}, {akashi::permission::gamemaster, akashi::permission::jukebox}, 0,
          QStringLiteral("/togglejukebox"),
          QStringLiteral("Toggles the jukebox in the area.")},
         handleToggleJukebox, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("addmusic"), {}, {QStringLiteral("gamemaster")}, 1,
+        {QStringLiteral("addmusic"), {}, {akashi::permission::gamemaster}, 1,
          QStringLiteral("/addmusic <name>[, truename][, duration]"),
          QStringLiteral("Adds a song to the custom music list.")},
         handleAddMusic, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("addmusiccategory"), {}, {QStringLiteral("gamemaster")}, 1,
+        {QStringLiteral("addmusiccategory"), {}, {akashi::permission::gamemaster}, 1,
          QStringLiteral("/addmusiccategory <name>"),
          QStringLiteral("Adds a category to the custom music list.")},
         handleAddMusicCategory, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("removecustommusic"), {}, {QStringLiteral("gamemaster")}, 1,
+        {QStringLiteral("removecustommusic"), {}, {akashi::permission::gamemaster}, 1,
          QStringLiteral("/removecustommusic <name>"),
          QStringLiteral("Removes a song or category from the custom list.")},
         handleRemoveCustomMusic, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("togglecustommusic"), {}, {QStringLiteral("gamemaster")}, 0,
+        {QStringLiteral("togglecustommusic"), {}, {akashi::permission::gamemaster}, 0,
          QStringLiteral("/togglecustommusic"),
          QStringLiteral("Resets the custom music list to floor defaults.")},
         handleToggleCustomMusic, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("clearcustommusic"), {}, {QStringLiteral("gamemaster")}, 0,
+        {QStringLiteral("clearcustommusic"), {}, {akashi::permission::gamemaster}, 0,
          QStringLiteral("/clearcustommusic"),
          QStringLiteral("Clears all custom songs in the area.")},
         handleClearCustomMusic, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("jukebox_skip"), {QStringLiteral("jukeboxskip")}, {QStringLiteral("gamemaster")}, 0,
+        {QStringLiteral("jukebox_skip"), {QStringLiteral("jukeboxskip")}, {akashi::permission::gamemaster}, 0,
          QStringLiteral("/jukebox_skip"),
          QStringLiteral("Skips the current jukebox song.")},
         handleJukeboxSkip, QStringLiteral("core"));

@@ -1,14 +1,14 @@
 #include "commands/roleplay_commands.h"
 
 #include "akashi/permissions.h"
-#include "aoclient.h"
-#include "area_data.h"
+#include "core/client_session.h"
 #include "core/command_context.h"
 #include "core/command_registry.h"
 #include "core/command_spec.h"
+#include "core/server_context.h"
 #include "core/server_settings.h"
 #include "proto/packet.h"
-#include "server.h"
+#include "world/area.h"
 
 #include <QTime>
 
@@ -40,7 +40,7 @@ static void diceThrower(CommandContext &f_context, int f_sides, int f_dice, bool
 
 static QString areaTimer(CommandContext &f_context, int f_area_idx, int f_timer_idx)
 {
-    AreaData *l_area = f_context.server()->areaById(f_area_idx);
+    akashi::Area *l_area = f_context.server()->areaById(f_area_idx);
     QTimer *l_timer;
     QString l_name = (f_timer_idx == 0) ? "Global timer" : "Timer " + QString::number(f_timer_idx);
     if (f_timer_idx == 0)
@@ -209,13 +209,13 @@ static void handleRollP(CommandContext &f_context)
 
 static void handleTimer(CommandContext &f_context)
 {
-    AreaData *l_area = f_context.server()->areaById(f_context.areaId());
+    akashi::Area *l_area = f_context.server()->areaById(f_context.areaId());
 
     if (f_context.argc() == 0) {
         QStringList l_timers;
         l_timers.append("Currently active timers:");
         for (int i = 0; i <= 4; i++) {
-            l_timers.append(areaTimer(f_context, l_area->index(), i));
+            l_timers.append(areaTimer(f_context, l_area->id(), i));
         }
         f_context.reply(l_timers.join("\n"));
         return;
@@ -229,7 +229,7 @@ static void handleTimer(CommandContext &f_context)
     }
 
     if (f_context.argc() == 1) {
-        f_context.reply(areaTimer(f_context, l_area->index(), l_timer_id));
+        f_context.reply(areaTimer(f_context, l_area->id(), l_timer_id));
         return;
     }
 
@@ -285,7 +285,7 @@ static void handleTimer(CommandContext &f_context)
 
 static void handleNotecard(CommandContext &f_context)
 {
-    AreaData *l_area = f_context.server()->areaById(f_context.areaId());
+    akashi::Area *l_area = f_context.server()->areaById(f_context.areaId());
     QString l_notecard = f_context.arguments().join(" ");
     l_area->addNotecard(f_context.character(), l_notecard);
     f_context.replyToArea(f_context.character() + " wrote a note card.");
@@ -293,7 +293,7 @@ static void handleNotecard(CommandContext &f_context)
 
 static void handleNotecardClear(CommandContext &f_context)
 {
-    AreaData *l_area = f_context.server()->areaById(f_context.areaId());
+    akashi::Area *l_area = f_context.server()->areaById(f_context.areaId());
     if (!l_area->addNotecard(f_context.character(), QString())) {
         f_context.replyToArea(f_context.character() + " erased their note card.");
     }
@@ -301,7 +301,7 @@ static void handleNotecardClear(CommandContext &f_context)
 
 static void handleNotecardReveal(CommandContext &f_context)
 {
-    AreaData *l_area = f_context.server()->areaById(f_context.areaId());
+    akashi::Area *l_area = f_context.server()->areaById(f_context.areaId());
     const QStringList l_notecards = l_area->notecards();
 
     if (l_notecards.isEmpty()) {
@@ -332,8 +332,8 @@ static void handle8Ball(CommandContext &f_context)
 static void handleSubtheme(CommandContext &f_context)
 {
     QString l_subtheme = f_context.arguments().join(" ");
-    const QVector<AOClient *> l_clients = f_context.server()->clients();
-    for (AOClient *l_client : l_clients) {
+    const QVector<akashi::ClientSession *> l_clients = f_context.server()->clients();
+    for (akashi::ClientSession *l_client : l_clients) {
         if (l_client->areaId() == f_context.areaId())
             l_client->sendPacket("ST", {l_subtheme, "1"});
     }

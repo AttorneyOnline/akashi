@@ -1,10 +1,10 @@
 #include "commands/rule_commands.h"
 
 #include "akashi/permissions.h"
-#include "area_data.h"
 #include "core/command_context.h"
 #include "core/command_registry.h"
-#include "server.h"
+#include "core/server_context.h"
+#include "world/area.h"
 #include "world/floor.h"
 #include "world/rule_registry.h"
 
@@ -86,8 +86,8 @@ int removeRulesFrom(const QString &f_event, const QString &f_action,
 
 static void handleRules(CommandContext &f_context)
 {
-    Server *l_server = f_context.server();
-    AreaData *l_area = l_server->areaById(f_context.areaId());
+    ServerContext *l_server = f_context.server();
+    akashi::Area *l_area = l_server->areaById(f_context.areaId());
     const Floor *l_floor = l_server->floorById(l_server->floorIdForArea(f_context.areaId()));
     if (!l_area || !l_floor) {
         return;
@@ -126,7 +126,7 @@ static void handleRuleActions(CommandContext &f_context)
 
 static void handleAddRule(CommandContext &f_context)
 {
-    AreaData *l_area = f_context.server()->areaById(f_context.areaId());
+    akashi::Area *l_area = f_context.server()->areaById(f_context.areaId());
     if (!l_area) {
         return;
     }
@@ -140,7 +140,7 @@ static void handleAddRule(CommandContext &f_context)
 
 static void handleRemoveRule(CommandContext &f_context)
 {
-    AreaData *l_area = f_context.server()->areaById(f_context.areaId());
+    akashi::Area *l_area = f_context.server()->areaById(f_context.areaId());
     if (!l_area) {
         return;
     }

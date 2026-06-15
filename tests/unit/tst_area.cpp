@@ -1,11 +1,11 @@
 // AI-generated: written by Claude.
 #include "akashi/config_store.h"
-#include "area_data.h"
+#include "world/area.h"
 
 #include <QSettings>
 #include <QtTest>
 
-Q_DECLARE_METATYPE(AreaData::Side);
+Q_DECLARE_METATYPE(akashi::Area::Side);
 
 namespace tests {
 namespace unittests {
@@ -15,7 +15,7 @@ class Area : public QObject
     Q_OBJECT
 
   public:
-    AreaData *m_area;
+    akashi::Area *m_area;
     akashi::ConfigStore *m_store = nullptr;
     QSettings *m_areas_ini = nullptr;
     QSettings *m_ambience_ini = nullptr;
@@ -48,7 +48,7 @@ void Area::initTestCase()
 
 void Area::init()
 {
-    m_area = new AreaData("Test Area", 0, 0, 0, m_areas_ini, m_ambience_ini);
+    m_area = new akashi::Area("Test Area", 0, 0, 0, m_areas_ini, m_ambience_ini);
 }
 
 void Area::cleanup()
@@ -62,37 +62,37 @@ void Area::clientJoinLeave()
         // There must be exactly one client in the area, and it must have a charid of 5 and userid 0.
         m_area->addClient(5, 0);
 
-        QCOMPARE(m_area->joinedIDs().size(), 1);
+        QCOMPARE(m_area->players().size(), 1);
         QCOMPARE(m_area->charactersTaken().at(0), 5);
     }
     {
         // No clients must be left in the area.
         m_area->removeClient(5, 0);
 
-        QCOMPARE(m_area->joinedIDs().size(), 0);
+        QCOMPARE(m_area->players().size(), 0);
     }
 }
 
 void Area::areaStatuses_data()
 {
     QTest::addColumn<QString>("statusCall");
-    QTest::addColumn<AreaData::Status>("expectedStatus");
+    QTest::addColumn<QString>("expectedStatus");
     QTest::addColumn<bool>("isSuccessful");
 
-    QTest::newRow("Idle") << "idle" << AreaData::Status::IDLE << true;
-    QTest::newRow("RP") << "rp" << AreaData::Status::RP << true;
-    QTest::newRow("Casing") << "casing" << AreaData::Status::CASING << true;
-    QTest::newRow("Looking for players (long)") << "looking-for-players" << AreaData::Status::LOOKING_FOR_PLAYERS << true;
-    QTest::newRow("Looking for players (short)") << "lfp" << AreaData::Status::LOOKING_FOR_PLAYERS << true;
-    QTest::newRow("Gaming") << "gaming" << AreaData::Status::GAMING << true;
-    QTest::newRow("Recess") << "recess" << AreaData::Status::RECESS << true;
-    QTest::newRow("Nonsense") << "blah" << AreaData::Status::IDLE << false;
+    QTest::newRow("Idle") << "idle" << "IDLE" << true;
+    QTest::newRow("RP") << "rp" << "RP" << true;
+    QTest::newRow("Casing") << "casing" << "CASING" << true;
+    QTest::newRow("Looking for players (long)") << "looking-for-players" << "LOOKING-FOR-PLAYERS" << true;
+    QTest::newRow("Looking for players (short)") << "lfp" << "LOOKING-FOR-PLAYERS" << true;
+    QTest::newRow("Gaming") << "gaming" << "GAMING" << true;
+    QTest::newRow("Recess") << "recess" << "RECESS" << true;
+    QTest::newRow("Nonsense") << "blah" << "IDLE" << false;
 }
 
 void Area::areaStatuses()
 {
     QFETCH(QString, statusCall);
-    QFETCH(AreaData::Status, expectedStatus);
+    QFETCH(QString, expectedStatus);
     QFETCH(bool, isSuccessful);
 
     bool l_success = m_area->changeStatus(statusCall);
@@ -103,27 +103,27 @@ void Area::areaStatuses()
 
 void Area::changeHP_data()
 {
-    QTest::addColumn<AreaData::Side>("side");
+    QTest::addColumn<akashi::Area::Side>("side");
     QTest::addColumn<int>("setHP");
     QTest::addColumn<int>("expectedHP");
 
-    QTest::newRow("Set = Expected (DEF)") << AreaData::Side::DEFENCE << 3 << 3;
-    QTest::newRow("Set = Expected (PRO)") << AreaData::Side::PROSECUTOR << 5 << 5;
-    QTest::newRow("Below Zero (DEF)") << AreaData::Side::DEFENCE << -5 << 0;
-    QTest::newRow("Below Zero (PRO)") << AreaData::Side::PROSECUTOR << -7 << 0;
-    QTest::newRow("Above Ten (DEF)") << AreaData::Side::DEFENCE << 12 << 10;
-    QTest::newRow("Above Ten (PRO)") << AreaData::Side::PROSECUTOR << 14 << 10;
+    QTest::newRow("Set = Expected (DEF)") << akashi::Area::Side::DEFENCE << 3 << 3;
+    QTest::newRow("Set = Expected (PRO)") << akashi::Area::Side::PROSECUTOR << 5 << 5;
+    QTest::newRow("Below Zero (DEF)") << akashi::Area::Side::DEFENCE << -5 << 0;
+    QTest::newRow("Below Zero (PRO)") << akashi::Area::Side::PROSECUTOR << -7 << 0;
+    QTest::newRow("Above Ten (DEF)") << akashi::Area::Side::DEFENCE << 12 << 10;
+    QTest::newRow("Above Ten (PRO)") << akashi::Area::Side::PROSECUTOR << 14 << 10;
 }
 
 void Area::changeHP()
 {
-    QFETCH(AreaData::Side, side);
+    QFETCH(akashi::Area::Side, side);
     QFETCH(int, setHP);
     QFETCH(int, expectedHP);
 
     m_area->changeHP(side, setHP);
 
-    if (AreaData::Side::DEFENCE == side) {
+    if (akashi::Area::Side::DEFENCE == side) {
         QCOMPARE(expectedHP, m_area->defHP());
     }
     else {

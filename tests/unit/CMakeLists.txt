@@ -1,7 +1,6 @@
 # Unit tests. Each test runs in its own folder with a copy of the config fixtures.
 set(UNIT_TESTS
     acl_roles_handler
-    akashi_utils
     area
     config_loading
     configstore

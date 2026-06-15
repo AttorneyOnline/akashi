@@ -28,6 +28,8 @@ class tst_FileSystem : public QObject
     void pluginResolveRejectsEscape();
     void spaceCheckHoldsTheMargin();
     void writeFileWritesAtomicallyAndReadsBack();
+    void sanitizedFileName_data();
+    void sanitizedFileName();
 };
 
 void tst_FileSystem::storageResolvesInsideStorage()
@@ -150,6 +152,35 @@ void tst_FileSystem::writeFileWritesAtomicallyAndReadsBack()
     QVERIFY(!l_fs.writeFile(l_path, "final\n").has_value());
     QVERIFY(l_file.open(QIODevice::ReadOnly));
     QCOMPARE(l_file.readAll(), QByteArray("final\n"));
+}
+
+void tst_FileSystem::sanitizedFileName_data()
+{
+    QTest::addColumn<QString>("input");
+    QTest::addColumn<bool>("valid");
+    QTest::addColumn<QString>("expected");
+
+    QTest::addRow("Plain name") << "my_testimony-1" << true << "my_testimony-1";
+    QTest::addRow("Lowercased and trimmed") << "  Case1  " << true << "case1";
+    QTest::addRow("Parent traversal") << "../../etc/passwd" << false << "";
+    QTest::addRow("Subdirectory") << "sub/name" << false << "";
+    QTest::addRow("Backslash") << "sub\\name" << false << "";
+    QTest::addRow("Dots") << "case.1" << false << "";
+    QTest::addRow("Empty") << "" << false << "";
+    QTest::addRow("Spaces inside") << "my case" << false << "";
+}
+
+void tst_FileSystem::sanitizedFileName()
+{
+    QFETCH(QString, input);
+    QFETCH(bool, valid);
+    QFETCH(QString, expected);
+
+    const std::optional<QString> l_result = FileSystemService::sanitizedFileName(input);
+    QCOMPARE(l_result.has_value(), valid);
+    if (valid) {
+        QCOMPARE(*l_result, expected);
+    }
 }
 
 }

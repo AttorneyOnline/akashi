@@ -1,20 +1,3 @@
-//////////////////////////////////////////////////////////////////////////////////////
-//    akashi - a server for Attorney Online 2                                       //
-//    Copyright (C) 2020  scatterflower                                             //
-//                                                                                  //
-//    This program is free software: you can redistribute it and/or modify          //
-//    it under the terms of the GNU Affero General Public License as                //
-//    published by the Free Software Foundation, either version 3 of the            //
-//    License, or (at your option) any later version.                               //
-//                                                                                  //
-//    This program is distributed in the hope that it will be useful,               //
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of                //
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                 //
-//    GNU Affero General Public License for more details.                           //
-//                                                                                  //
-//    You should have received a copy of the GNU Affero General Public License      //
-//    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
-//////////////////////////////////////////////////////////////////////////////////////
 #pragma once
 
 #include "akashi_core_export.h"
@@ -22,7 +5,7 @@
 #include <QHash>
 #include <QVector>
 
-class AOClient;
+namespace akashi { class ClientSession; }
 
 // The one place that knows who is connected under which ID. It owns the ID
 // pool and the client list together, so they can never disagree - the old
@@ -59,17 +42,17 @@ class AKASHI_CORE_EXPORT PlayerDirectory
     void returnId(int f_id);
 
     // Files an accepted client under the ID it was given.
-    void addClient(int f_id, AOClient *f_client);
+    void addClient(int f_id, akashi::ClientSession *f_client);
 
     // Drops the client filed under the ID and returns the ID to the pool.
     // Unknown IDs are ignored.
     void removeClient(int f_id);
 
     // The client with the given ID, or nullptr when that ID is free.
-    AOClient *clientById(int f_id) const;
+    akashi::ClientSession *clientById(int f_id) const;
 
     // Every connected client, oldest connection first.
-    QVector<AOClient *> clients() const;
+    QVector<akashi::ClientSession *> clients() const;
 
     int clientCount() const;
 
@@ -81,11 +64,10 @@ class AKASHI_CORE_EXPORT PlayerDirectory
     int takeLastFreedId();
     int takeLowestId();
 
-    QVector<AOClient *> m_clients;
-    QHash<int, AOClient *> m_clients_by_id;
+    QVector<akashi::ClientSession *> m_clients;
+    QHash<int, akashi::ClientSession *> m_clients_by_id;
     QVector<int> m_free_ids; // most recently freed at the back
 
     // The selected pick function; setIdAssignment replaces it.
     int (PlayerDirectory::*m_take_free_id)() = &PlayerDirectory::takeLastFreedId;
 };
-

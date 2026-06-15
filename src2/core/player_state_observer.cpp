@@ -1,4 +1,4 @@
-#include "playerstateobserver.h"
+#include "core/player_state_observer.h"
 
 #include "core/client_session.h"
 #include "core/player_state.h"
@@ -25,7 +25,7 @@ void PlayerStateObserver::registerPlayer(akashi::PlayerState *f_player)
     connect(f_player, &akashi::PlayerState::areaIdChanged, this, &PlayerStateObserver::notifyAreaIdChanged);
 
     // Catch the newcomer up on the whole roster, their own entry included.
-    for (akashi::PlayerState *i_player : qAsConst(m_players)) {
+    for (akashi::PlayerState *i_player : std::as_const(m_players)) {
         const QString l_id = QString::number(i_player->id());
         f_player->session()->write(akashi::Packet("PR", {l_id, QString::number(ao2::PLAYER_LIST_ADD)}));
         f_player->session()->write(akashi::Packet("PU", {l_id, QString::number(ao2::PLAYER_DATA_NAME), i_player->oocName()}));
@@ -52,7 +52,7 @@ void PlayerStateObserver::unregisterPlayer(akashi::PlayerState *f_player)
 void PlayerStateObserver::sendToSessions(const akashi::Packet &f_packet)
 {
     QSet<akashi::ClientSession *> l_sent;
-    for (akashi::PlayerState *i_player : qAsConst(m_players)) {
+    for (akashi::PlayerState *i_player : std::as_const(m_players)) {
         akashi::ClientSession *l_session = i_player->session();
         if (!l_sent.contains(l_session)) {
             l_sent.insert(l_session);

@@ -3,10 +3,11 @@
 #include "core/command_registry.h"
 #include "core/command_spec.h"
 #include "core/permission_registry.h"
-#include "acl_roles_handler.h"
 
 #include <QTemporaryDir>
 #include <QTest>
+
+using akashi::ACLRole;
 
 namespace tests {
 namespace unittests {
@@ -46,7 +47,28 @@ class tst_CommandRegistry : public QObject
     void applyExtensionsSkipsCollidingAlias();
     void applyExtensionsMissingFileIsNoop();
     void applyExtensionsSilentlySkipsSameCommandAlias();
+
+    void variantMatchPicksByArgCount();
+    void registerCommandValidatesVariants();
+    void registerVariantAppendsGatedForm();
+    void registerVariantRefusals();
+    void unregisterAllSweepsAddedVariants();
+    void applyExtensionsOverridesVariantPermissions();
 };
+
+// A two-form command like /listperms: a free self form and a gated
+// one-or-more-argument form.
+static akashi::CommandSpec makeVariantSpec(const QString &f_name)
+{
+    akashi::CommandSpec l_spec;
+    l_spec.name = f_name;
+    l_spec.usage = "/" + f_name + " [target]";
+    l_spec.variants = {
+        {QStringLiteral("own"), 0, 0, {}, {}, {}, [](akashi::CommandContext &) {}},
+        {QStringLiteral("user"), 1, -1, {QStringLiteral("modify_users")}, {}, {}, [](akashi::CommandContext &) {}},
+    };
+    return l_spec;
+}
 
 void tst_CommandRegistry::registerAndLookup()
 {
@@ -436,6 +458,139 @@ void tst_CommandRegistry::applyExtensionsSilentlySkipsSameCommandAlias()
     QVERIFY(l_registry.contains("dice"));
     QCOMPARE(l_registry.spec("r")->name, QStringLiteral("roll"));
     QCOMPARE(l_registry.spec("dice")->name, QStringLiteral("roll"));
+}
+
+void tst_CommandRegistry::variantMatchPicksByArgCount()
+{
+    const akashi::CommandSpec l_spec = makeVariantSpec(QStringLiteral("listperms"));
+
+    // First matching form in declaration order wins.
+    QCOMPARE(l_spec.match(0)->id, QStringLiteral("own"));
+    QCOMPARE(l_spec.match(1)->id, QStringLiteral("user"));
+    QCOMPARE(l_spec.match(5)->id, QStringLiteral("user"));
+
+    // Bounded windows reject counts outside them.
+    akashi::CommandSpec l_bounded;
+    l_bounded.variants = {
+        {QStringLiteral("own"), 1, 1, {}, {}, {}, [](akashi::CommandContext &) {}},
+        {QStringLiteral("user"), 2, 2, {}, {}, {}, [](akashi::CommandContext &) {}},
+    };
+    QCOMPARE(l_bounded.match(0), nullptr);
+    QCOMPARE(l_bounded.match(1)->id, QStringLiteral("own"));
+    QCOMPARE(l_bounded.match(2)->id, QStringLiteral("user"));
+    QCOMPARE(l_bounded.match(3), nullptr);
+}
+
+void tst_CommandRegistry::registerCommandValidatesVariants()
+{
+    akashi::CommandRegistry l_registry;
+
+    // The handlerless overload needs at least one variant.
+    akashi::CommandSpec l_empty;
+    l_empty.name = QStringLiteral("empty");
+    QVERIFY(!l_registry.registerCommand(l_empty, QStringLiteral("core")));
+
+    // Every variant needs an id and a handler.
+    akashi::CommandSpec l_no_id = makeVariantSpec(QStringLiteral("noid"));
+    l_no_id.variants[0].id.clear();
+    QVERIFY(!l_registry.registerCommand(l_no_id, QStringLiteral("core")));
+
+    akashi::CommandSpec l_no_handler = makeVariantSpec(QStringLiteral("nohandler"));
+    l_no_handler.variants[1].handler = {};
+    QVERIFY(!l_registry.registerCommand(l_no_handler, QStringLiteral("core")));
+
+    QVERIFY(l_registry.registerCommand(makeVariantSpec(QStringLiteral("listperms")), QStringLiteral("core")));
+    QCOMPARE(l_registry.spec("listperms")->variants.size(), 2);
+}
+
+void tst_CommandRegistry::registerVariantAppendsGatedForm()
+{
+    akashi::CommandRegistry l_registry;
+    akashi::CommandSpec l_spec;
+    l_spec.name = QStringLiteral("inspect");
+    l_spec.variants = {
+        {QStringLiteral("own"), 0, 0, {}, {}, {}, [](akashi::CommandContext &) {}},
+    };
+    QVERIFY(l_registry.registerCommand(l_spec, QStringLiteral("core")));
+
+    // A plugin bolts a gated one-argument form onto the command.
+    akashi::CommandVariant l_extra{QStringLiteral("other"), 1, 1, {QStringLiteral("my.permission")}, {}, {}, [](akashi::CommandContext &) {}};
+    QVERIFY(l_registry.registerVariant(QStringLiteral("inspect"), l_extra, QStringLiteral("my-plugin")));
+
+    const auto l_stored = l_registry.spec("inspect");
+    QCOMPARE(l_stored->variants.size(), 2);
+    QCOMPARE(l_stored->match(1)->id, QStringLiteral("other"));
+    QCOMPARE(l_stored->match(1)->permissions, QStringList{QStringLiteral("my.permission")});
+}
+
+void tst_CommandRegistry::registerVariantRefusals()
+{
+    akashi::CommandRegistry l_registry;
+    QVERIFY(l_registry.registerCommand(makeVariantSpec(QStringLiteral("listperms")), QStringLiteral("core")));
+    l_registry.registerCommand({QStringLiteral("plain"), {}, {}, 0, {}, {}}, [](akashi::CommandContext &) {});
+
+    const auto l_handler = [](akashi::CommandContext &) {};
+
+    // Unknown command.
+    QVERIFY(!l_registry.registerVariant(QStringLiteral("missing"), {QStringLiteral("x"), 0, 0, {}, {}, {}, l_handler}));
+
+    // A command without variants keeps its single handler reachable.
+    QVERIFY(!l_registry.registerVariant(QStringLiteral("plain"), {QStringLiteral("x"), 0, 0, {}, {}, {}, l_handler}));
+
+    // Duplicate id.
+    QVERIFY(!l_registry.registerVariant(QStringLiteral("listperms"), {QStringLiteral("own"), 2, 2, {}, {}, {}, l_handler}));
+
+    // The unbounded "user" form already covers two arguments.
+    QVERIFY(!l_registry.registerVariant(QStringLiteral("listperms"), {QStringLiteral("two"), 2, 2, {}, {}, {}, l_handler}));
+
+    QCOMPARE(l_registry.spec("listperms")->variants.size(), 2);
+}
+
+void tst_CommandRegistry::unregisterAllSweepsAddedVariants()
+{
+    akashi::CommandRegistry l_registry;
+    akashi::CommandSpec l_spec;
+    l_spec.name = QStringLiteral("inspect");
+    l_spec.variants = {
+        {QStringLiteral("own"), 0, 0, {}, {}, {}, [](akashi::CommandContext &) {}},
+    };
+    QVERIFY(l_registry.registerCommand(l_spec, QStringLiteral("core")));
+    QVERIFY(l_registry.registerVariant(QStringLiteral("inspect"),
+                                       {QStringLiteral("other"), 1, 1, {}, {}, {}, [](akashi::CommandContext &) {}},
+                                       QStringLiteral("my-plugin")));
+
+    l_registry.unregisterAll(QStringLiteral("my-plugin"));
+
+    // The command survives; only the plugin's form is gone.
+    const auto l_stored = l_registry.spec("inspect");
+    QVERIFY(l_stored.has_value());
+    QCOMPARE(l_stored->variants.size(), 1);
+    QCOMPARE(l_stored->variants.first().id, QStringLiteral("own"));
+}
+
+void tst_CommandRegistry::applyExtensionsOverridesVariantPermissions()
+{
+    akashi::CommandRegistry l_registry;
+    QVERIFY(l_registry.registerCommand(makeVariantSpec(QStringLiteral("listperms")), QStringLiteral("core")));
+
+    QTemporaryDir l_dir;
+    QVERIFY(l_dir.isValid());
+    const QString l_path = l_dir.filePath(QStringLiteral("ext.json"));
+    QFile l_file(l_path);
+    QVERIFY(l_file.open(QIODevice::WriteOnly));
+    l_file.write(R"({"listperms.user": {"permissions": "super"}, "listperms.missing": {"permissions": "super"}, "listperms": {"permissions": "super"}})");
+    l_file.close();
+
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression("gated forms"));
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression("no variant"));
+    l_registry.applyExtensions(l_path);
+
+    const auto l_stored = l_registry.spec("listperms");
+    // The addressed form changed; the base override on a variant command
+    // only warns, and the other form keeps its gate.
+    QCOMPARE(l_stored->match(1)->permissions, QStringList{QStringLiteral("super")});
+    QVERIFY(l_stored->match(0)->permissions.isEmpty());
+    QVERIFY(l_stored->permissions.isEmpty());
 }
 
 } // namespace unittests

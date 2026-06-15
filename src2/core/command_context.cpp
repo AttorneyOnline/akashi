@@ -1,7 +1,7 @@
 #include "core/command_context.h"
 
-#include "aoclient.h"
-#include "server.h"
+#include "core/client_session.h"
+#include "core/server_context.h"
 
 #include <QRandomGenerator>
 
@@ -9,7 +9,7 @@ namespace akashi {
 
 // -- TargetPlayer --
 
-TargetPlayer::TargetPlayer(AOClient *f_client) :
+TargetPlayer::TargetPlayer(akashi::ClientSession *f_client) :
     m_client(f_client)
 {}
 
@@ -64,7 +64,7 @@ void TargetPlayer::setTestimonySaving(bool f_state) { m_client->setTestimonySavi
 
 // -- CommandContext --
 
-CommandContext::CommandContext(AOClient *f_invoker, Server *f_server, QStringList f_arguments) :
+CommandContext::CommandContext(akashi::ClientSession *f_invoker, ServerContext *f_server, QStringList f_arguments) :
     m_invoker(f_invoker),
     m_server(f_server),
     m_arguments(std::move(f_arguments))
@@ -138,7 +138,7 @@ void CommandContext::sendPacket(const QString &f_header, const QStringList &f_fi
 std::optional<TargetPlayer> CommandContext::resolveTarget(int f_argument_index)
 {
     if (auto l_id = argumentAsInt(f_argument_index)) {
-        AOClient *l_client = m_server->clientById(*l_id);
+        akashi::ClientSession *l_client = m_server->clientById(*l_id);
         if (l_client) {
             return TargetPlayer(l_client);
         }
@@ -159,7 +159,7 @@ akashi::ServiceRegistry *CommandContext::services() const
     return m_server->services();
 }
 
-Server *CommandContext::server() const
+ServerContext *CommandContext::server() const
 {
     return m_server;
 }

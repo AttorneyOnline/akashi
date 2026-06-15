@@ -1,9 +1,9 @@
-#include "rule_actions.h"
+#include "world/rule_actions.h"
 
-#include "aoclient.h"
-#include "area_data.h"
+#include "core/client_session.h"
+#include "world/area.h"
 #include "proto/text_utils.h"
-#include "server.h"
+#include "core/server_context.h"
 #include "world/jukebox.h"
 #include "world/rule_registry.h"
 
@@ -18,28 +18,28 @@ namespace {
 
 // Every action resolves the acting client the same way; a null client means
 // the event fired without a player attached, so gates pass and sends no-op.
-AOClient *clientFor(Server *f_server, const RuleContext &f_context)
+akashi::ClientSession *clientFor(ServerContext *f_server, const RuleContext &f_context)
 {
     return f_server->clientById(f_context.player_id);
 }
 
-AreaData *areaFor(Server *f_server, const RuleContext &f_context)
+akashi::Area *areaFor(ServerContext *f_server, const RuleContext &f_context)
 {
     return f_server->areaById(f_context.area_id);
 }
 
 // The boolean area settings a check_setting rule may gate on.
-using SettingGetter = bool (AreaData::*)() const;
+using SettingGetter = bool (Area::*)() const;
 const QHash<QString, SettingGetter> &settingGetters()
 {
     static const QHash<QString, SettingGetter> s_getters = {
-        {QStringLiteral("blankposting"), &AreaData::isBlankpostingAllowed},
-        {QStringLiteral("iniswap"), &AreaData::isIniswapAllowed},
-        {QStringLiteral("music"), &AreaData::isMusicAllowed},
-        {QStringLiteral("ic_messages"), &AreaData::isMessageAllowed},
-        {QStringLiteral("wtce"), &AreaData::isWtceAllowed},
-        {QStringLiteral("shouts"), &AreaData::isShoutAllowed},
-        {QStringLiteral("shownames"), &AreaData::isShownameAllowed},
+        {QStringLiteral("blankposting"), &Area::isBlankpostingAllowed},
+        {QStringLiteral("iniswap"), &Area::isIniswapAllowed},
+        {QStringLiteral("music"), &Area::isMusicAllowed},
+        {QStringLiteral("ic_messages"), &Area::isMessageAllowed},
+        {QStringLiteral("wtce"), &Area::isWtceAllowed},
+        {QStringLiteral("shouts"), &Area::isShoutAllowed},
+        {QStringLiteral("shownames"), &Area::isShownameAllowed},
     };
     return s_getters;
 }
@@ -47,7 +47,7 @@ const QHash<QString, SettingGetter> &settingGetters()
 // --- Gate factories. Each builds one before-rule from its arguments. ---
 
 // The unconditional "no".
-BeforeRuleFunction block(Server *, ServiceRegistry &, const QVariantMap &f_args)
+BeforeRuleFunction block(ServerContext *, ServiceRegistry &, const QVariantMap &f_args)
 {
     QString l_message = f_args.value(QStringLiteral("message"), QStringLiteral("You cannot do that here.")).toString();
     return [l_message](const RuleContext &) -> RuleVerdict {
@@ -57,7 +57,7 @@ BeforeRuleFunction block(Server *, ServiceRegistry &, const QVariantMap &f_args)
 
 // Holds the door of a locked area. honor_invites=false ignores the guest
 // list; the bypass_locks permission always wins.
-BeforeRuleFunction checkLock(Server *, ServiceRegistry &, const QVariantMap &f_args)
+BeforeRuleFunction checkLock(ServerContext *, ServiceRegistry &, const QVariantMap &f_args)
 {
     bool l_honor_invites = f_args.value(QStringLiteral("honor_invites"), true).toBool();
     return [l_honor_invites](const RuleContext &f_ctx) -> RuleVerdict {
@@ -73,7 +73,7 @@ BeforeRuleFunction checkLock(Server *, ServiceRegistry &, const QVariantMap &f_a
 }
 
 // Refuses entry when the payload's character is already taken there.
-BeforeRuleFunction checkCharacter(Server *f_server, ServiceRegistry &, const QVariantMap &f_args)
+BeforeRuleFunction checkCharacter(ServerContext *f_server, ServiceRegistry &, const QVariantMap &f_args)
 {
     QString l_policy = f_args.value(QStringLiteral("policy"), QStringLiteral("no_duplicates")).toString();
     return [f_server, l_policy](const RuleContext &f_ctx) -> RuleVerdict {
@@ -84,7 +84,7 @@ BeforeRuleFunction checkCharacter(Server *f_server, ServiceRegistry &, const QVa
                             : -1;
         if (l_char_id < 0)
             return {};
-        AreaData *l_area = areaFor(f_server, f_ctx);
+        akashi::Area *l_area = areaFor(f_server, f_ctx);
         if (l_area && l_area->charactersTaken().contains(l_char_id))
             return {false, QStringLiteral("That character is already taken in ") + f_server->areaName(f_ctx.area_id) + QStringLiteral(".")};
         return {};
@@ -92,12 +92,12 @@ BeforeRuleFunction checkCharacter(Server *f_server, ServiceRegistry &, const QVa
 }
 
 // Requires a named permission.
-BeforeRuleFunction checkPermission(Server *f_server, ServiceRegistry &, const QVariantMap &f_args)
+BeforeRuleFunction checkPermission(ServerContext *f_server, ServiceRegistry &, const QVariantMap &f_args)
 {
     QString l_permission = f_args.value(QStringLiteral("permission")).toString();
     QString l_message = f_args.value(QStringLiteral("message"), QStringLiteral("You do not have permission to do that here.")).toString();
     return [f_server, l_permission, l_message](const RuleContext &f_ctx) -> RuleVerdict {
-        AOClient *l_client = clientFor(f_server, f_ctx);
+        akashi::ClientSession *l_client = clientFor(f_server, f_ctx);
         if (!l_client || l_permission.isEmpty())
             return {};
         if (!l_client->canPerform(l_permission))
@@ -108,7 +108,7 @@ BeforeRuleFunction checkPermission(Server *f_server, ServiceRegistry &, const QV
 
 // Blocks while a boolean area setting is off, unless the player holds the
 // bypass permission.
-BeforeRuleFunction checkSetting(Server *f_server, ServiceRegistry &, const QVariantMap &f_args)
+BeforeRuleFunction checkSetting(ServerContext *f_server, ServiceRegistry &, const QVariantMap &f_args)
 {
     QString l_setting = f_args.value(QStringLiteral("setting")).toString();
     QString l_message = f_args.value(QStringLiteral("message"), QStringLiteral("That is disabled in this area.")).toString();
@@ -117,13 +117,13 @@ BeforeRuleFunction checkSetting(Server *f_server, ServiceRegistry &, const QVari
         qWarning() << "check_setting rule references unknown setting" << l_setting << "- the rule will never block.";
     }
     return [f_server, l_setting, l_message, l_bypass](const RuleContext &f_ctx) -> RuleVerdict {
-        AreaData *l_area = areaFor(f_server, f_ctx);
+        akashi::Area *l_area = areaFor(f_server, f_ctx);
         SettingGetter l_getter = settingGetters().value(l_setting, nullptr);
         if (!l_area || !l_getter)
             return {};
         if (std::invoke(l_getter, l_area))
             return {};
-        AOClient *l_client = clientFor(f_server, f_ctx);
+        akashi::ClientSession *l_client = clientFor(f_server, f_ctx);
         if (!l_bypass.isEmpty() && l_client && l_client->canPerform(l_bypass))
             return {};
         return {false, l_message};
@@ -131,10 +131,10 @@ BeforeRuleFunction checkSetting(Server *f_server, ServiceRegistry &, const QVari
 }
 
 // Refuses blank IC messages where the area forbids them.
-BeforeRuleFunction checkBlankposting(Server *f_server, ServiceRegistry &, const QVariantMap &)
+BeforeRuleFunction checkBlankposting(ServerContext *f_server, ServiceRegistry &, const QVariantMap &)
 {
     return [f_server](const RuleContext &f_ctx) -> RuleVerdict {
-        AreaData *l_area = areaFor(f_server, f_ctx);
+        akashi::Area *l_area = areaFor(f_server, f_ctx);
         if (!l_area || l_area->isBlankpostingAllowed())
             return {};
         if (!f_ctx.payload.contains(QStringLiteral("message")))
@@ -148,11 +148,11 @@ BeforeRuleFunction checkBlankposting(Server *f_server, ServiceRegistry &, const 
 
 // Refuses unknown character folders where the area forbids iniswapping;
 // swapping to a listed character stays allowed, as it always was.
-BeforeRuleFunction checkIniswap(Server *f_server, ServiceRegistry &, const QVariantMap &)
+BeforeRuleFunction checkIniswap(ServerContext *f_server, ServiceRegistry &, const QVariantMap &)
 {
     return [f_server](const RuleContext &f_ctx) -> RuleVerdict {
-        AreaData *l_area = areaFor(f_server, f_ctx);
-        AOClient *l_client = clientFor(f_server, f_ctx);
+        akashi::Area *l_area = areaFor(f_server, f_ctx);
+        akashi::ClientSession *l_client = clientFor(f_server, f_ctx);
         if (!l_area || !l_client || l_area->isIniswapAllowed())
             return {};
         const QString l_char_name = f_ctx.payload.value(QStringLiteral("char_name")).toString();
@@ -166,10 +166,10 @@ BeforeRuleFunction checkIniswap(Server *f_server, ServiceRegistry &, const QVari
 }
 
 // Enforces the area's evidence mod (FFA/CM/mod).
-BeforeRuleFunction checkEvidenceAccess(Server *f_server, ServiceRegistry &, const QVariantMap &)
+BeforeRuleFunction checkEvidenceAccess(ServerContext *f_server, ServiceRegistry &, const QVariantMap &)
 {
     return [f_server](const RuleContext &f_ctx) -> RuleVerdict {
-        AOClient *l_client = clientFor(f_server, f_ctx);
+        akashi::ClientSession *l_client = clientFor(f_server, f_ctx);
         if (l_client && !l_client->canModifyEvidence())
             return {false, QStringLiteral("You are not allowed to modify the evidence here.")};
         return {};
@@ -177,11 +177,11 @@ BeforeRuleFunction checkEvidenceAccess(Server *f_server, ServiceRegistry &, cons
 }
 
 // Holds a locked background against everyone but moderators.
-BeforeRuleFunction checkBackground(Server *f_server, ServiceRegistry &, const QVariantMap &)
+BeforeRuleFunction checkBackground(ServerContext *f_server, ServiceRegistry &, const QVariantMap &)
 {
     return [f_server](const RuleContext &f_ctx) -> RuleVerdict {
-        AreaData *l_area = areaFor(f_server, f_ctx);
-        AOClient *l_client = clientFor(f_server, f_ctx);
+        akashi::Area *l_area = areaFor(f_server, f_ctx);
+        akashi::ClientSession *l_client = clientFor(f_server, f_ctx);
         if (l_area && l_area->isBgLocked() && l_client && !l_client->isAuthenticated())
             return {false, QStringLiteral("This area's background is locked.")};
         return {};
@@ -191,12 +191,12 @@ BeforeRuleFunction checkBackground(Server *f_server, ServiceRegistry &, const QV
 // --- Reaction factories. Each builds one after-rule. ---
 
 // A server OOC message to the player, or to the whole area.
-AfterRuleFunction sendMessage(Server *f_server, ServiceRegistry &, const QVariantMap &f_args)
+AfterRuleFunction sendMessage(ServerContext *f_server, ServiceRegistry &, const QVariantMap &f_args)
 {
     QString l_message = f_args.value(QStringLiteral("message")).toString();
     bool l_to_area = f_args.value(QStringLiteral("target")).toString() == QStringLiteral("area");
     return [f_server, l_message, l_to_area](const RuleContext &f_ctx) {
-        AOClient *l_client = clientFor(f_server, f_ctx);
+        akashi::ClientSession *l_client = clientFor(f_server, f_ctx);
         if (!l_client || l_message.isEmpty())
             return;
         if (l_to_area)
@@ -206,21 +206,21 @@ AfterRuleFunction sendMessage(Server *f_server, ServiceRegistry &, const QVarian
     };
 }
 
-AfterRuleFunction sendEvidenceList(Server *f_server, ServiceRegistry &, const QVariantMap &)
+AfterRuleFunction sendEvidenceList(ServerContext *f_server, ServiceRegistry &, const QVariantMap &)
 {
     return [f_server](const RuleContext &f_ctx) {
-        AOClient *l_client = clientFor(f_server, f_ctx);
-        AreaData *l_area = areaFor(f_server, f_ctx);
+        akashi::ClientSession *l_client = clientFor(f_server, f_ctx);
+        akashi::Area *l_area = areaFor(f_server, f_ctx);
         if (l_client && l_area)
             l_client->sendEvidenceList(l_area);
     };
 }
 
-AfterRuleFunction sendPenalties(Server *f_server, ServiceRegistry &, const QVariantMap &)
+AfterRuleFunction sendPenalties(ServerContext *f_server, ServiceRegistry &, const QVariantMap &)
 {
     return [f_server](const RuleContext &f_ctx) {
-        AOClient *l_client = clientFor(f_server, f_ctx);
-        AreaData *l_area = areaFor(f_server, f_ctx);
+        akashi::ClientSession *l_client = clientFor(f_server, f_ctx);
+        akashi::Area *l_area = areaFor(f_server, f_ctx);
         if (!l_client || !l_area)
             return;
         l_client->sendPacket("HP", {"1", QString::number(l_area->defHP())});
@@ -228,21 +228,21 @@ AfterRuleFunction sendPenalties(Server *f_server, ServiceRegistry &, const QVari
     };
 }
 
-AfterRuleFunction sendBackground(Server *f_server, ServiceRegistry &, const QVariantMap &)
+AfterRuleFunction sendBackground(ServerContext *f_server, ServiceRegistry &, const QVariantMap &)
 {
     return [f_server](const RuleContext &f_ctx) {
-        AOClient *l_client = clientFor(f_server, f_ctx);
-        AreaData *l_area = areaFor(f_server, f_ctx);
+        akashi::ClientSession *l_client = clientFor(f_server, f_ctx);
+        akashi::Area *l_area = areaFor(f_server, f_ctx);
         if (l_client && l_area)
             l_client->sendPacket("BN", {l_area->background(), l_area->side()});
     };
 }
 
-AfterRuleFunction sendTimers(Server *f_server, ServiceRegistry &, const QVariantMap &)
+AfterRuleFunction sendTimers(ServerContext *f_server, ServiceRegistry &, const QVariantMap &)
 {
     return [f_server](const RuleContext &f_ctx) {
-        AOClient *l_client = clientFor(f_server, f_ctx);
-        AreaData *l_area = areaFor(f_server, f_ctx);
+        akashi::ClientSession *l_client = clientFor(f_server, f_ctx);
+        akashi::Area *l_area = areaFor(f_server, f_ctx);
         if (!l_client || !l_area)
             return;
         const QList<QTimer *> l_timers = l_area->timers();
@@ -260,11 +260,11 @@ AfterRuleFunction sendTimers(Server *f_server, ServiceRegistry &, const QVariant
 }
 
 // The music list, the ambience, and the current song.
-AfterRuleFunction sendSong(Server *f_server, ServiceRegistry &, const QVariantMap &)
+AfterRuleFunction sendSong(ServerContext *f_server, ServiceRegistry &, const QVariantMap &)
 {
     return [f_server](const RuleContext &f_ctx) {
-        AOClient *l_client = clientFor(f_server, f_ctx);
-        AreaData *l_area = areaFor(f_server, f_ctx);
+        akashi::ClientSession *l_client = clientFor(f_server, f_ctx);
+        akashi::Area *l_area = areaFor(f_server, f_ctx);
         if (!l_client || !l_area)
             return;
         l_client->sendPacket(akashi::Packet("FM", l_area->jukebox()->resolvedList()));
@@ -274,13 +274,13 @@ AfterRuleFunction sendSong(Server *f_server, ServiceRegistry &, const QVariantMa
 }
 
 // The floor's area list and a full ARUP, only when the floor changed.
-AfterRuleFunction sendFloorAreas(Server *f_server, ServiceRegistry &, const QVariantMap &)
+AfterRuleFunction sendFloorAreas(ServerContext *f_server, ServiceRegistry &, const QVariantMap &)
 {
     return [f_server](const RuleContext &f_ctx) {
         int l_from_floor = f_ctx.payload.value(QStringLiteral("from_floor"), -1).toInt();
         if (l_from_floor == f_ctx.floor_id)
             return;
-        AOClient *l_client = clientFor(f_server, f_ctx);
+        akashi::ClientSession *l_client = clientFor(f_server, f_ctx);
         if (!l_client)
             return;
         l_client->sendPacket(akashi::Packet("FA", l_client->floorAreaNames()));
@@ -288,11 +288,11 @@ AfterRuleFunction sendFloorAreas(Server *f_server, ServiceRegistry &, const QVar
     };
 }
 
-AfterRuleFunction sendAreaDescription(Server *f_server, ServiceRegistry &, const QVariantMap &)
+AfterRuleFunction sendAreaDescription(ServerContext *f_server, ServiceRegistry &, const QVariantMap &)
 {
     return [f_server](const RuleContext &f_ctx) {
-        AOClient *l_client = clientFor(f_server, f_ctx);
-        AreaData *l_area = areaFor(f_server, f_ctx);
+        akashi::ClientSession *l_client = clientFor(f_server, f_ctx);
+        akashi::Area *l_area = areaFor(f_server, f_ctx);
         if (l_client && l_area && l_area->sendAreaMessageOnJoin())
             l_client->sendServerMessage(l_area->areaMessage());
     };
@@ -300,30 +300,30 @@ AfterRuleFunction sendAreaDescription(Server *f_server, ServiceRegistry &, const
 
 // Leaving an area takes the invitation with it, unless the player owns the
 // area they left.
-AfterRuleFunction revokeInvite(Server *f_server, ServiceRegistry &, const QVariantMap &)
+AfterRuleFunction revokeInvite(ServerContext *f_server, ServiceRegistry &, const QVariantMap &)
 {
     return [f_server](const RuleContext &f_ctx) {
         const int l_from = f_ctx.payload.value(QStringLiteral("from_area"), -1).toInt();
-        AreaData *l_area = f_server->areaById(l_from);
+        akashi::Area *l_area = f_server->areaById(l_from);
         if (l_area && !l_area->owners().contains(f_ctx.player_id))
             l_area->uninvite(f_ctx.player_id);
     };
 }
 
-AfterRuleFunction sendLockNotice(Server *f_server, ServiceRegistry &, const QVariantMap &)
+AfterRuleFunction sendLockNotice(ServerContext *f_server, ServiceRegistry &, const QVariantMap &)
 {
     return [f_server](const RuleContext &f_ctx) {
-        AOClient *l_client = clientFor(f_server, f_ctx);
-        AreaData *l_area = areaFor(f_server, f_ctx);
-        if (l_client && l_area && l_area->lockStatus() == AreaData::LockStatus::SPECTATABLE)
+        akashi::ClientSession *l_client = clientFor(f_server, f_ctx);
+        akashi::Area *l_area = areaFor(f_server, f_ctx);
+        if (l_client && l_area && l_area->lockState() == akashi::Area::LockState::Spectatable)
             l_client->sendServerMessage(QStringLiteral("Area ") + f_server->areaName(f_ctx.area_id) + QStringLiteral(" is spectate-only; to chat IC you will need to be invited by the CM."));
     };
 }
 
 // --- The catalog. Registration walks these tables. ---
 
-using BeforeFactory = BeforeRuleFunction (*)(Server *, ServiceRegistry &, const QVariantMap &);
-using AfterFactory = AfterRuleFunction (*)(Server *, ServiceRegistry &, const QVariantMap &);
+using BeforeFactory = BeforeRuleFunction (*)(ServerContext *, ServiceRegistry &, const QVariantMap &);
+using AfterFactory = AfterRuleFunction (*)(ServerContext *, ServiceRegistry &, const QVariantMap &);
 
 struct GateDef
 {
@@ -364,7 +364,7 @@ constexpr ReactionDef s_reactions[] = {
 
 } // namespace
 
-void registerCoreRuleActions(Server *f_server, RuleRegistry *f_registry)
+void registerCoreRuleActions(ServerContext *f_server, RuleRegistry *f_registry)
 {
     const QString l_owner = QStringLiteral("core");
     for (const GateDef &l_gate : s_gates) {

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.19)
-project(akashi VERSION 1.9 LANGUAGES CXX)
+project(akashi VERSION 1.9.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -18,6 +18,28 @@ find_package(Qt6 6.4 REQUIRED COMPONENTS ${_qt_components})
 
 qt_standard_project_setup()
 
+# Software identity for the boot screen and the ID packet. Stamped at
+# configure time; a stale branch/commit refreshes on the next CMake run.
+set(AKASHI_CODENAME "jackfruit")
+execute_process(COMMAND git rev-parse --abbrev-ref HEAD
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    OUTPUT_VARIABLE AKASHI_GIT_BRANCH OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+execute_process(COMMAND git rev-parse --short HEAD
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    OUTPUT_VARIABLE AKASHI_GIT_COMMIT OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+if(NOT AKASHI_GIT_BRANCH)
+  set(AKASHI_GIT_BRANCH "unknown")
+endif()
+if(NOT AKASHI_GIT_COMMIT)
+  set(AKASHI_GIT_COMMIT "unknown")
+endif()
+if(CMAKE_BUILD_TYPE)
+  set(AKASHI_RELEASE_TYPE ${CMAKE_BUILD_TYPE})
+else()
+  set(AKASHI_RELEASE_TYPE "Development")
+endif()
+configure_file(src2/core/softwareinformation.h.in softwareinformation.h)
+
 set(AKASHI_SOURCES
   src2/core/event_bus.cpp
   src2/core/event_bus.h
@@ -28,33 +50,19 @@ set(AKASHI_SOURCES
   src2/include/akashi/event.h
   src2/include/akashi/log_event.h
   src2/include/akashi/log_writer.h
-  src/network/network_socket.cpp
-  src/network/network_socket.h
-  src/acl_roles_handler.cpp
-  src/acl_roles_handler.h
-  src/akashiutils.h
-  src/aoclient.cpp
-  src/aoclient.h
-  src/area_data.cpp
-  src/area_data.h
   src2/core/config_loading.cpp
   src2/core/config_loading.h
-  src/crypto_helper.h
-  src/data_types.h
-  src/db_manager.cpp
-  src/db_manager.h
-  src/packets.cpp
-  src/player_directory.cpp
-  src/player_directory.h
-  src/playerstateobserver.cpp
-  src/playerstateobserver.h
-  src/rule_actions.cpp
-  src/rule_actions.h
-  src/server.cpp
-  src/server.h
-  src/serverpublisher.cpp
-  src/serverpublisher.h
-  src/typedefs.h
+  src2/core/crypto_helper.h
+  src2/core/db_manager.cpp
+  src2/core/db_manager.h
+  src2/core/player_directory.cpp
+  src2/core/player_directory.h
+  src2/core/player_state_observer.cpp
+  src2/core/player_state_observer.h
+  src2/core/server_publisher.cpp
+  src2/core/server_publisher.h
+  src2/world/rule_actions.cpp
+  src2/world/rule_actions.h
   src2/core/config_entry.cpp
   src2/core/config_store.cpp
   src2/core/database_service.cpp
@@ -89,6 +97,9 @@ set(AKASHI_SOURCES
   src2/core/settings.cpp
   src2/core/server_context.cpp
   src2/core/server_context.h
+  src2/core/websocket_receiver.cpp
+  src2/core/websocket_receiver.h
+  src2/include/akashi/client_receiver.h
   src2/commands/area_commands.cpp
   src2/commands/area_commands.h
   src2/commands/authentication_commands.cpp
@@ -117,6 +128,8 @@ set(AKASHI_SOURCES
   src2/world/evidence_store.cpp
   src2/world/evidence_store.h
   src2/world/floor.h
+  src2/world/world.cpp
+  src2/world/world.h
   src2/world/jukebox.cpp
   src2/world/jukebox.h
   src2/world/testimony_recorder.cpp
@@ -172,9 +185,6 @@ add_library(akashi_core SHARED ${AKASHI_SOURCES})
 include(GenerateExportHeader)
 generate_export_header(akashi_core BASE_NAME AKASHI_CORE)
 target_include_directories(akashi_core PUBLIC
-    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>"
-    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/network>"
-    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/packet>"
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src2>"
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src2/include>"
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>"
@@ -198,7 +208,7 @@ target_link_libraries(akashi_core PUBLIC
 # The whole project uses Q_EMIT/Q_SIGNALS/Q_SLOTS instead of the lowercase keywords.
 target_compile_definitions(akashi_core PUBLIC QT_NO_KEYWORDS)
 
-qt_add_executable(akashi src/main.cpp)
+qt_add_executable(akashi src2/main.cpp)
 target_link_libraries(akashi PRIVATE akashi_core)
 
 set_target_properties(akashi PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin")

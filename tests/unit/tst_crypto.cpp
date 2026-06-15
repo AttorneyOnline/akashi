@@ -1,5 +1,5 @@
 // AI-generated: written by Claude.
-#include "crypto_helper.h"
+#include "core/crypto_helper.h"
 
 #include <QTest>
 

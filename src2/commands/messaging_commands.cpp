@@ -1,17 +1,17 @@
 #include "commands/messaging_commands.h"
 
 #include "akashi/permissions.h"
-#include "aoclient.h"
-#include "area_data.h"
+#include "core/client_session.h"
 #include "core/command_context.h"
 #include "core/command_registry.h"
 #include "core/command_spec.h"
+#include "core/server_context.h"
 #include "proto/packet.h"
-#include "server.h"
+#include "world/area.h"
 
 namespace akashi::commands {
 
-static QString reprimand(Server *f_server, bool f_positive = false)
+static QString reprimand(ServerContext *f_server, bool f_positive = false)
 {
     if (f_positive)
         return f_server->praiseList().at(CommandContext::genRand(0, f_server->praiseList().size() - 1));
@@ -21,7 +21,7 @@ static QString reprimand(Server *f_server, bool f_positive = false)
 
 static void handlePos(CommandContext &f_context)
 {
-    AOClient *l_self = f_context.server()->clientById(f_context.clientId());
+    akashi::ClientSession *l_self = f_context.server()->clientById(f_context.clientId());
     l_self->changePosition(f_context.argument(0));
     l_self->updateEvidenceList(f_context.server()->areaById(f_context.areaId()));
 }
@@ -29,7 +29,7 @@ static void handlePos(CommandContext &f_context)
 static void handleForcePos(CommandContext &f_context)
 {
     bool ok;
-    QList<AOClient *> l_targets;
+    QList<akashi::ClientSession *> l_targets;
     int l_target_id = f_context.argument(1).toInt(&ok);
     int l_forced_clients = 0;
     if (!ok && f_context.argument(1) != "*") {
@@ -37,7 +37,7 @@ static void handleForcePos(CommandContext &f_context)
         return;
     }
     else if (ok) {
-        AOClient *l_target_client = f_context.server()->clientById(l_target_id);
+        akashi::ClientSession *l_target_client = f_context.server()->clientById(l_target_id);
         if (l_target_client != nullptr)
             l_targets.append(l_target_client);
         else {
@@ -46,13 +46,13 @@ static void handleForcePos(CommandContext &f_context)
         }
     }
     else if (f_context.argument(1) == "*") {
-        const QVector<AOClient *> l_clients = f_context.server()->clients();
-        for (AOClient *l_client : l_clients) {
+        const QVector<akashi::ClientSession *> l_clients = f_context.server()->clients();
+        for (akashi::ClientSession *l_client : l_clients) {
             if (l_client->areaId() == f_context.areaId())
                 l_targets.append(l_client);
         }
     }
-    for (AOClient *l_target : l_targets) {
+    for (akashi::ClientSession *l_target : l_targets) {
         l_target->sendServerMessage("Position forcibly changed by CM.");
         l_target->changePosition(f_context.argument(0));
         l_forced_clients++;
@@ -67,19 +67,19 @@ static void handleG(CommandContext &f_context)
     QString l_sender_message = f_context.arguments().join(" ");
     akashi::Packet l_mod_packet("CT", {"[G][" + f_context.ipid() + "][" + l_sender_area + "]" + l_sender_name, l_sender_message});
     akashi::Packet l_user_packet("CT", {"[G][" + l_sender_area + "]" + l_sender_name, l_sender_message});
-    f_context.server()->broadcast(l_user_packet, l_mod_packet, Server::TARGET_TYPE::AUTHENTICATED);
+    f_context.server()->broadcast(l_user_packet, l_mod_packet, ServerContext::TARGET_TYPE::AUTHENTICATED);
 }
 
 static void handleNeed(CommandContext &f_context)
 {
     QString l_sender_area = f_context.areaName();
     QString l_sender_message = f_context.arguments().join(" ");
-    f_context.server()->broadcast(akashi::Packet("CT", {f_context.server()->serverNickname(), "=== Advert ===\n[" + l_sender_area + "] needs " + l_sender_message + "."}), Server::TARGET_TYPE::ADVERT);
+    f_context.server()->broadcast(akashi::Packet("CT", {f_context.server()->serverNickname(), "=== Advert ===\n[" + l_sender_area + "] needs " + l_sender_message + "."}), ServerContext::TARGET_TYPE::ADVERT);
 }
 
 static void handleSwitch(CommandContext &f_context)
 {
-    AOClient *l_self = f_context.server()->clientById(f_context.clientId());
+    akashi::ClientSession *l_self = f_context.server()->clientById(f_context.clientId());
     int l_selected_char_id = f_context.server()->characterId(f_context.arguments().join(" "));
     if (l_selected_char_id == -1) {
         f_context.reply("That does not look like a valid character.");
@@ -95,8 +95,8 @@ static void handleSwitch(CommandContext &f_context)
 
 static void handleRandomChar(CommandContext &f_context)
 {
-    AOClient *l_self = f_context.server()->clientById(f_context.clientId());
-    AreaData *l_area = f_context.server()->areaById(f_context.areaId());
+    akashi::ClientSession *l_self = f_context.server()->clientById(f_context.clientId());
+    akashi::Area *l_area = f_context.server()->areaById(f_context.areaId());
     int l_selected_char_id;
     bool l_taken = true;
     while (l_taken) {
@@ -112,7 +112,7 @@ static void handleRandomChar(CommandContext &f_context)
 
 static void handleToggleGlobal(CommandContext &f_context)
 {
-    AOClient *l_self = f_context.server()->clientById(f_context.clientId());
+    akashi::ClientSession *l_self = f_context.server()->clientById(f_context.clientId());
     l_self->setGlobalEnabled(!l_self->isGlobalEnabled());
     QString l_str_en = l_self->isGlobalEnabled() ? "shown" : "hidden";
     f_context.reply("Global chat set to " + l_str_en);
@@ -126,7 +126,7 @@ static void handlePM(CommandContext &f_context)
         f_context.reply("That does not look like a valid ID.");
         return;
     }
-    AOClient *l_target_client = f_context.server()->clientById(l_target_id);
+    akashi::ClientSession *l_target_client = f_context.server()->clientById(l_target_id);
     if (l_target_client == nullptr) {
         f_context.reply("No client with that ID found.");
         return;
@@ -150,7 +150,7 @@ static void handleM(CommandContext &f_context)
 {
     QString l_sender_name = f_context.name();
     QString l_sender_message = f_context.arguments().join(" ");
-    f_context.server()->broadcast(akashi::Packet("CT", {"[M]" + l_sender_name, l_sender_message}), Server::TARGET_TYPE::MODCHAT);
+    f_context.server()->broadcast(akashi::Packet("CT", {"[M]" + l_sender_name, l_sender_message}), ServerContext::TARGET_TYPE::MODCHAT);
 }
 
 static void handleGM(CommandContext &f_context)
@@ -158,7 +158,7 @@ static void handleGM(CommandContext &f_context)
     QString l_sender_name = f_context.name();
     QString l_sender_area = f_context.areaName();
     QString l_sender_message = f_context.arguments().join(" ");
-    f_context.server()->broadcast(akashi::Packet("CT", {"[G][" + l_sender_area + "]" + "[" + l_sender_name + "][M]", l_sender_message}), Server::TARGET_TYPE::MODCHAT);
+    f_context.server()->broadcast(akashi::Packet("CT", {"[G][" + l_sender_area + "]" + "[" + l_sender_name + "][M]", l_sender_message}), ServerContext::TARGET_TYPE::MODCHAT);
 }
 
 static void handleLM(CommandContext &f_context)
@@ -248,7 +248,7 @@ static void handleUnShake(CommandContext &f_context)
 
 static void handleMutePM(CommandContext &f_context)
 {
-    AOClient *l_self = f_context.server()->clientById(f_context.clientId());
+    akashi::ClientSession *l_self = f_context.server()->clientById(f_context.clientId());
     l_self->setPmMuted(!l_self->isPmMuted());
     QString l_str_en = l_self->isPmMuted() ? "muted" : "unmuted";
     f_context.reply("PM's are now " + l_str_en);
@@ -256,7 +256,7 @@ static void handleMutePM(CommandContext &f_context)
 
 static void handleToggleAdverts(CommandContext &f_context)
 {
-    AOClient *l_self = f_context.server()->clientById(f_context.clientId());
+    akashi::ClientSession *l_self = f_context.server()->clientById(f_context.clientId());
     l_self->setAdvertEnabled(!l_self->isAdvertEnabled());
     QString l_str_en = l_self->isAdvertEnabled() ? "on" : "off";
     f_context.reply("Advertisements turned " + l_str_en);
@@ -264,7 +264,7 @@ static void handleToggleAdverts(CommandContext &f_context)
 
 static void handleAfk(CommandContext &f_context)
 {
-    AOClient *l_self = f_context.server()->clientById(f_context.clientId());
+    akashi::ClientSession *l_self = f_context.server()->clientById(f_context.clientId());
     l_self->setAfk(true);
     f_context.reply("You are now AFK.");
     l_self->setCharacterName(l_self->characterName() + " [AFK]");
@@ -279,7 +279,7 @@ static void handleCharCurse(CommandContext &f_context)
         return;
     }
 
-    AOClient *l_target = f_context.server()->clientById(l_uid);
+    akashi::ClientSession *l_target = f_context.server()->clientById(l_uid);
     if (l_target == nullptr) {
         f_context.reply("No client with that ID found.");
         return;
@@ -333,7 +333,7 @@ static void handleUnCharCurse(CommandContext &f_context)
         return;
     }
 
-    AOClient *l_target = f_context.server()->clientById(l_uid);
+    akashi::ClientSession *l_target = f_context.server()->clientById(l_uid);
     if (l_target == nullptr) {
         f_context.reply("No client with that ID found.");
         return;
@@ -352,7 +352,7 @@ static void handleUnCharCurse(CommandContext &f_context)
 
 static void handleCharSelect(CommandContext &f_context)
 {
-    AOClient *l_self = f_context.server()->clientById(f_context.clientId());
+    akashi::ClientSession *l_self = f_context.server()->clientById(f_context.clientId());
     l_self->changeCharacter(-1);
     f_context.sendPacket("DONE", {});
 }
@@ -374,7 +374,7 @@ static void handleA(CommandContext &f_context)
         return;
     }
 
-    AreaData *l_area = f_context.server()->areaById(l_area_id);
+    akashi::Area *l_area = f_context.server()->areaById(l_area_id);
     if (!l_area->owners().contains(f_context.clientId())) {
         f_context.reply("You are not CM in that area.");
         return;
@@ -401,7 +401,7 @@ static void handleS(CommandContext &f_context)
 
 static void handleFirstPerson(CommandContext &f_context)
 {
-    AOClient *l_self = f_context.server()->clientById(f_context.clientId());
+    akashi::ClientSession *l_self = f_context.server()->clientById(f_context.clientId());
     l_self->setFirstPerson(!l_self->isFirstPerson());
     QString l_str_en = l_self->isFirstPerson() ? "enabled" : "disabled";
     f_context.reply("First person mode " + l_str_en + ".");

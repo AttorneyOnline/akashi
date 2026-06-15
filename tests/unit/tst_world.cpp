@@ -79,9 +79,16 @@ void tst_World::areaManagesOwnersAndInvitations()
     l_area.addOwner(4);
     l_area.addOwner(4);
     QVERIFY(l_area.hasOwners());
+    // Becoming an owner includes the invitation.
+    QVERIFY(l_area.invited().contains(4));
+
+    // The area frees itself when its last owner leaves it locked.
+    l_area.setLockState(akashi::Area::LockState::Locked);
     QVERIFY(l_area.removeOwner(4));
-    QVERIFY(!l_area.removeOwner(4));
     QVERIFY(!l_area.hasOwners());
+    QCOMPARE(l_area.lockState(), akashi::Area::LockState::Free);
+    QVERIFY(!l_area.invited().contains(4));
+    QVERIFY(!l_area.removeOwner(4));
     QCOMPARE(l_owners.size(), 2);
 
     QVERIFY(l_area.invite(7));

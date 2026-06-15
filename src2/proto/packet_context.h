@@ -1,7 +1,6 @@
 #pragma once
 
 #include "akashi_core_export.h"
-#include "data_types.h"
 #include "proto/client_profile.h"
 #include "proto/packet.h"
 
