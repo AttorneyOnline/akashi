@@ -54,8 +54,23 @@ bool MusicManager::validateSong(QString f_song_name, QStringList f_approved_cdns
         // Only allow HTTPS/HTTP sources.
         if (f_song_name.startsWith("https://") || f_song_name.startsWith("http://")) {
             for (const QString &l_cdn : qAsConst(f_approved_cdns)) {
+                // Normalise the configured entry so operators can write the domain with
+                // or without a scheme/trailing slash (e.g. "https://cdn.discord.com/").
+                QString l_domain = l_cdn.trimmed();
+                if (l_domain.startsWith("https://", Qt::CaseInsensitive)) {
+                    l_domain.remove(0, 8);
+                }
+                else if (l_domain.startsWith("http://", Qt::CaseInsensitive)) {
+                    l_domain.remove(0, 7);
+                }
+                while (l_domain.endsWith("/")) {
+                    l_domain.chop(1);
+                }
+                if (l_domain.isEmpty()) {
+                    continue;
+                }
                 // Iterate trough all available CDNs to find an approved match
-                if (f_song_name.startsWith("https://" + l_cdn + "/", Qt::CaseInsensitive) || f_song_name.startsWith("http://" + l_cdn + "/", Qt::CaseInsensitive)) {
+                if (f_song_name.startsWith("https://" + l_domain + "/", Qt::CaseInsensitive) || f_song_name.startsWith("http://" + l_domain + "/", Qt::CaseInsensitive)) {
                     l_cdn_approved = true;
                     break;
                 }
@@ -69,10 +84,19 @@ bool MusicManager::validateSong(QString f_song_name, QStringList f_approved_cdns
         }
     }
 
+    // Strip the query string and fragment before checking the extension, so signed
+    // URLs (e.g. Discord CDN links ending in "song.mp3?ex=...&is=...&hm=...") still match.
+    QString l_path = f_song_name;
+    for (const QChar l_delimiter : {QChar('?'), QChar('#')}) {
+        const int l_index = l_path.indexOf(l_delimiter);
+        if (l_index != -1) {
+            l_path = l_path.left(l_index);
+        }
+    }
+
     bool l_suffix_found = false;
-    ;
     for (const QString &suffix : qAsConst(l_extensions)) {
-        if (f_song_name.endsWith(suffix)) {
+        if (l_path.endsWith(suffix, Qt::CaseInsensitive)) {
             l_suffix_found = true;
             break;
         }
