@@ -72,13 +72,13 @@ jobs:
           version: 6.5.3
           target: desktop
           arch: win64_mingw
-          tools: 'tools_mingw1120'
+          tools: 'tools_mingw1310'
           cache: true
           cache-key-prefix: install-qt-action
           modules: 'qtwebsockets'
 
       - name: Add MinGW to PATH
-        run: echo "$Env:IQTA_TOOLS\mingw1120_64\bin" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
+        run: echo "$Env:IQTA_TOOLS\mingw1310_64\bin" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Build
         run: |
