@@ -1083,7 +1083,7 @@ class AOClient : public QObject
     /**
      * @brief Lists help information to the command requested. Includes syntax and brief explanation.
      *
-     * @details Takes the command name as an argument.
+     * @details Takes an optional command name as an argument.
      */
     void cmdHelp(int argc, QStringList argv);
 

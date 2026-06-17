@@ -135,7 +135,7 @@ const QMap<QString, AOClient::CommandInfo> AOClient::COMMANDS{
     {"notice", {{ACLRole::SEND_NOTICE}, 1, &AOClient::cmdNotice}},
     {"noticeg", {{ACLRole::SEND_NOTICE}, 1, &AOClient::cmdNoticeGlobal}},
     {"togglejukebox", {{ACLRole::CM, ACLRole::JUKEBOX}, 0, &AOClient::cmdToggleJukebox}},
-    {"help", {{ACLRole::NONE}, 1, &AOClient::cmdHelp}},
+    {"help", {{ACLRole::NONE}, 0, &AOClient::cmdHelp}},
     {"togglemessage", {{ACLRole::CM}, 0, &AOClient::cmdToggleAreaMessageOnJoin}},
     {"clearmessage", {{ACLRole::CM}, 0, &AOClient::cmdClearAreaMessage}},
     {"areamessage", {{ACLRole::CM}, 0, &AOClient::cmdAreaMessage}},

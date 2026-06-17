@@ -33,6 +33,16 @@ QStringList CommandExtension::getAliases() const
     return m_aliases;
 }
 
+QString CommandExtension::getDisplayName() const
+{
+    if (m_aliases.isEmpty()) {
+        return m_command_name;
+    }
+
+    const QString l_label = m_aliases.size() == 1 ? "alias" : "aliases";
+    return m_command_name + " (" + l_label + ": " + m_aliases.join(", ") + ")";
+}
+
 void CommandExtension::setAliases(QStringList f_aliases)
 {
     m_aliases = f_aliases;
@@ -99,12 +109,30 @@ QList<CommandExtension> CommandExtensionCollection::getExtensions() const
 
 bool CommandExtensionCollection::containsExtension(QString f_command_name) const
 {
-    return m_extensions.contains(f_command_name);
+    if (m_extensions.contains(f_command_name)) {
+        return true;
+    }
+
+    for (const CommandExtension &i_extension : m_extensions) {
+        if (i_extension.checkCommandNameAndAlias(f_command_name)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 CommandExtension CommandExtensionCollection::getExtension(QString f_command_name) const
 {
-    return m_extensions.value(f_command_name);
+    if (m_extensions.contains(f_command_name)) {
+        return m_extensions.value(f_command_name);
+    }
+
+    for (const CommandExtension &i_extension : m_extensions) {
+        if (i_extension.checkCommandNameAndAlias(f_command_name)) {
+            return i_extension;
+        }
+    }
+    return CommandExtension();
 }
 
 bool CommandExtensionCollection::loadFile(QString f_filename)
