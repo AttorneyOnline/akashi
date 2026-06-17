@@ -13,7 +13,7 @@ For more support join the official Attorney Online 2 Discord!<br>
 
 # Build Instructions
 If you are unable to use either CI or release builds, you can compile akashi yourself.<br>
-Requires Qt >= 6.0, and Qt websockets. Older versions may work, but are not recommended.
+Requires Qt >= 6.5, and Qt websockets. Older versions may work, but are not recommended.
 
 For instructions on how to build Akashi yourself check the [Build Instructions](https://github.com/AttorneyOnline/akashi/wiki/Building-Akashi)
 
