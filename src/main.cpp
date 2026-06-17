@@ -22,6 +22,7 @@
 
 #include <QCoreApplication>
 #include <QDebug>
+#include <QDir>
 
 Server *server;
 
@@ -35,6 +36,7 @@ int main(int argc, char *argv[])
     QCoreApplication app(argc, argv);
     QCoreApplication::setApplicationName("akashi");
     QCoreApplication::setApplicationVersion("jackfruit (1.9)");
+    qInfo() << "Working directory:" << QDir::currentPath();
     std::atexit(cleanup);
 
     // Verify server configuration is sound.
