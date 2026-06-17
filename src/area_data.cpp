@@ -46,6 +46,10 @@ AreaData::AreaData(QString p_name, int p_index, MusicManager *p_music_manager = 
     QStringList name_split = p_name.split(":");
     name_split.removeFirst();
     m_name = name_split.join(":");
+    if (m_name.isEmpty()) {
+        m_name = "Unnamed Area";
+    }
+    m_display_name = "[" + QString::number(m_index) + "] " + m_name;
     QSettings *areas_ini = ConfigManager::areaData();
     areas_ini->beginGroup(p_name);
     m_background = areas_ini->value("background", "gs4").toString();
@@ -228,6 +232,11 @@ QString AreaData::name() const
 int AreaData::index() const
 {
     return m_index;
+}
+
+QString AreaData::displayName() const
+{
+    return m_display_name;
 }
 
 QList<int> AreaData::charactersTaken() const
