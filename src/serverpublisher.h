@@ -32,7 +32,7 @@ class ServerPublisher : public QObject
 
   public:
     explicit ServerPublisher(int port, int *player_count, QObject *parent = nullptr);
-    virtual ~ServerPublisher(){};
+    virtual ~ServerPublisher() {};
 
   public slots:
 

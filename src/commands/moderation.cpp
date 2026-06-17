@@ -193,17 +193,48 @@ void AOClient::cmdCommands(int argc, QStringList argv)
 
 void AOClient::cmdHelp(int argc, QStringList argv)
 {
+    CommandExtensionCollection *l_extension_collection = server->getCommandExtensionCollection();
+
+    if (argc == 0) {
+        sendServerMessage("Type /help <command> for help on a specific command, or /help all to list all commands.");
+        return;
+    }
+
     if (argc > 1) {
         sendServerMessage("Too many arguments. Please only use the command name.");
         return;
     }
 
-    QString l_command_name = argv[0];
-    ConfigManager::help l_command_info = ConfigManager::commandHelp(l_command_name);
-    if (l_command_info.usage.isEmpty() || l_command_info.text.isEmpty()) // my picoseconds :(
-        sendServerMessage("Unable to find the command " + l_command_name + ".");
-    else
-        sendServerMessage("==Help==\n" + l_command_info.usage + "\n" + l_command_info.text);
+    QString l_command_name = argv[0].toLower();
+
+    auto l_format_command = [l_extension_collection](const CommandExtension l_extension) -> QString {
+        const QString l_description = ConfigManager::commandHelp(l_extension.getCommandName()).text;
+        return "/" + l_extension.getDisplayName() + "\n" + (l_description.isEmpty() ? QString("No details available.") : l_description);
+    };
+
+    QString l_message = "==Help==\n";
+
+    // "all" is reserved
+    if (l_command_name == "all") {
+        QStringList entries;
+        QList<CommandExtension> l_extensions = l_extension_collection->getExtensions();
+        for (auto it = l_extensions.cbegin(); it != l_extensions.cend();) {
+            QString l_formatted_message = l_format_command(*it);
+            if (++it != l_extensions.cend()) {
+                l_formatted_message += "\n";
+            }
+            entries.append(l_formatted_message);
+        }
+        sendServerMessage(l_message + entries.join("\n"));
+        return;
+    }
+
+    if (!l_extension_collection->containsExtension(l_command_name)) {
+        sendServerMessage(l_message + "Unable to find the command " + l_command_name + ".");
+        return;
+    }
+
+    sendServerMessage(l_message + l_format_command(l_extension_collection->getExtension(l_command_name)));
 }
 
 void AOClient::cmdMOTD(int argc, QStringList argv)

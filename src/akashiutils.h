@@ -24,7 +24,7 @@
 class AkashiUtils
 {
   private:
-    AkashiUtils(){};
+    AkashiUtils() {};
 
   public:
     template <typename T>
