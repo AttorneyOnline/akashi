@@ -57,6 +57,11 @@ class CommandExtension
     QStringList getAliases() const;
 
     /**
+     * @brief Returns the command name decorated with its aliases if any
+     */
+    QString getDisplayName() const;
+
+    /**
      * @brief Sets the aliases of the command to the given aliases.
      *
      * @param f_aliases The command aliases.
@@ -154,20 +159,20 @@ class CommandExtensionCollection : public QObject
     QList<CommandExtension> getExtensions() const;
 
     /**
-     * @brief Checks if a command extension associated to the given command name exists.
+     * @brief Checks if a command extension associated to the given command name or aliases exists.
      *
-     * @param f_command_name The target command name.
+     * @param f_command_name The target command name or alias.
      *
      * @return True if the command extension exists, false otherwise.
      */
     bool containsExtension(QString f_command_name) const;
 
     /**
-     * @brief Returns a command extension associated to the given command name. If no command extension is associated to the command name, returns a null command extension.
+     * @brief Returns a command extension associated to the given command name.
      *
-     * @param f_command_name The target command name.
+     * @param f_command_name The target command name or alias.
      *
-     * @return Returns a command extension.
+     * @return Returns a command extension or null if none matches.
      */
     CommandExtension getExtension(QString f_command_name) const;
 
