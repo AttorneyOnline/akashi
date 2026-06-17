@@ -384,9 +384,10 @@ QString ConfigManager::serverName()
     return m_settings->value("Options/server_name", "An Unnamed Server").toString();
 }
 
-QString ConfigManager::serverTag()
+QString ConfigManager::serverNickname()
 {
-    return m_settings->value("Options/server_tag", serverName()).toString();
+    QString l_tag = m_settings->value("Options/server_nickname").toString();
+    return l_tag.isEmpty() ? serverName() : l_tag;
 }
 
 QString ConfigManager::motd()
