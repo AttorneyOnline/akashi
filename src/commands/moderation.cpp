@@ -207,60 +207,55 @@ void AOClient::cmdHelp(int argc, QStringList argv)
 
     QString l_command_name = argv[0].toLower();
 
-    auto l_check_for_permission = [this](const CommandExtension &l_extension) -> bool {
-        const QVector<ACLRole::Permission> l_permissions = l_extension.getPermissions(COMMANDS.value(l_extension.getCommandName()).acl_permissions);
-        if (l_permissions.isEmpty()) {
-            return true;
-        }
-
-        for (const ACLRole::Permission i_permission : qAsConst(l_permissions)) {
+    auto l_check_for_permission = [this, l_extension_collection](const QString &f_command_name) -> bool {
+        const QVector<ACLRole::Permission> l_permissions = l_extension_collection->getExtension(f_command_name).getPermissions(COMMANDS.value(f_command_name).acl_permissions);
+        for (const ACLRole::Permission i_permission : l_permissions) {
             if (checkPermission(i_permission)) {
                 return true;
             }
         }
-
         return false;
     };
 
-    auto l_format_command = [l_extension_collection](const CommandExtension l_extension) -> QString {
-        const QString l_description = ConfigManager::commandHelp(l_extension.getCommandName()).text;
-        return "/" + l_extension.getDisplayName() + "\n" + (l_description.isEmpty() ? QString("No details available.") : l_description);
+    auto l_format_command = [l_extension_collection](const QString &f_command_name) -> QString {
+        QString l_display_name = f_command_name;
+        if (l_extension_collection->containsExtension(f_command_name)) {
+            l_display_name = l_extension_collection->getExtension(f_command_name).getDisplayName();
+        }
+
+        const QString l_description = ConfigManager::commandHelp(f_command_name).text;
+        return "/" + l_display_name + "\n" + (l_description.isEmpty() ? QString("No details available.") : l_description);
     };
 
     QString l_message = "==Help==\n";
 
     // "all" is reserved
     if (l_command_name == "all") {
-        QStringList entries;
-        QList<CommandExtension> l_extensions = l_extension_collection->getExtensions();
-        for (QListIterator<CommandExtension> it(l_extensions); it.hasNext();) {
-            const CommandExtension &l_extension = it.next();
-            if (!l_check_for_permission(l_extension)) {
-                continue;
+        QStringList l_entries;
+        for (auto it = COMMANDS.cbegin(); it != COMMANDS.cend(); ++it) {
+            if (l_check_for_permission(it.key())) {
+                l_entries.append(l_format_command(it.key()));
             }
-
-            QString l_formatted_message = l_format_command(l_extension);
-            if (it.hasNext()) {
-                l_formatted_message += "\n";
-            }
-            entries.append(l_formatted_message);
         }
-        sendServerMessage(l_message + entries.join("\n"));
+        sendServerMessage(l_message + l_entries.join("\n\n"));
         return;
     }
 
-    if (!l_extension_collection->containsExtension(l_command_name)) {
+    if (l_extension_collection->containsExtension(l_command_name)) {
+        l_command_name = l_extension_collection->getExtension(l_command_name).getCommandName();
+    }
+
+    if (!COMMANDS.contains(l_command_name)) {
         sendServerMessage(l_message + "Unable to find the command " + l_command_name + ".");
         return;
     }
 
-    CommandExtension l_extension = l_extension_collection->getExtension(l_command_name);
-    if (!l_check_for_permission(l_extension)) {
+    if (!l_check_for_permission(l_command_name)) {
         sendServerMessage(l_message + "You are not allowed to use the command " + l_command_name + ".");
         return;
     }
 
-    sendServerMessage(l_message + l_format_command(l_extension));
+    sendServerMessage(l_message + l_format_command(l_command_name));
 }
 
 void AOClient::cmdMOTD(int argc, QStringList argv)
