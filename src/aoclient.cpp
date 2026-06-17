@@ -470,17 +470,17 @@ void AOClient::calculateIpid()
 
 void AOClient::sendServerMessage(QString message)
 {
-    sendPacket("CT", {ConfigManager::serverTag(), message, "1"});
+    sendPacket("CT", {ConfigManager::serverNickname(), message, "1"});
 }
 
 void AOClient::sendServerMessageArea(QString message)
 {
-    server->broadcast(PacketFactory::createPacket("CT", {ConfigManager::serverTag(), message, "1"}), areaId());
+    server->broadcast(PacketFactory::createPacket("CT", {ConfigManager::serverNickname(), message, "1"}), areaId());
 }
 
 void AOClient::sendServerBroadcast(QString message)
 {
-    server->broadcast(PacketFactory::createPacket("CT", {ConfigManager::serverTag(), message, "1"}));
+    server->broadcast(PacketFactory::createPacket("CT", {ConfigManager::serverNickname(), message, "1"}));
 }
 
 bool AOClient::checkPermission(ACLRole::Permission f_permission) const
