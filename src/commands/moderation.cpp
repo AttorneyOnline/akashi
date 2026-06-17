@@ -207,6 +207,21 @@ void AOClient::cmdHelp(int argc, QStringList argv)
 
     QString l_command_name = argv[0].toLower();
 
+    auto l_check_for_permission = [this](const CommandExtension &l_extension) -> bool {
+        const QVector<ACLRole::Permission> l_permissions = l_extension.getPermissions(COMMANDS.value(l_extension.getCommandName()).acl_permissions);
+        if (l_permissions.isEmpty()) {
+            return true;
+        }
+
+        for (const ACLRole::Permission i_permission : qAsConst(l_permissions)) {
+            if (checkPermission(i_permission)) {
+                return true;
+            }
+        }
+
+        return false;
+    };
+
     auto l_format_command = [l_extension_collection](const CommandExtension l_extension) -> QString {
         const QString l_description = ConfigManager::commandHelp(l_extension.getCommandName()).text;
         return "/" + l_extension.getDisplayName() + "\n" + (l_description.isEmpty() ? QString("No details available.") : l_description);
@@ -218,9 +233,14 @@ void AOClient::cmdHelp(int argc, QStringList argv)
     if (l_command_name == "all") {
         QStringList entries;
         QList<CommandExtension> l_extensions = l_extension_collection->getExtensions();
-        for (auto it = l_extensions.cbegin(); it != l_extensions.cend();) {
-            QString l_formatted_message = l_format_command(*it);
-            if (++it != l_extensions.cend()) {
+        for (QListIterator<CommandExtension> it(l_extensions); it.hasNext();) {
+            const CommandExtension &l_extension = it.next();
+            if (!l_check_for_permission(l_extension)) {
+                continue;
+            }
+
+            QString l_formatted_message = l_format_command(l_extension);
+            if (it.hasNext()) {
                 l_formatted_message += "\n";
             }
             entries.append(l_formatted_message);
@@ -234,7 +254,13 @@ void AOClient::cmdHelp(int argc, QStringList argv)
         return;
     }
 
-    sendServerMessage(l_message + l_format_command(l_extension_collection->getExtension(l_command_name)));
+    CommandExtension l_extension = l_extension_collection->getExtension(l_command_name);
+    if (!l_check_for_permission(l_extension)) {
+        sendServerMessage(l_message + "You are not allowed to use the command " + l_command_name + ".");
+        return;
+    }
+
+    sendServerMessage(l_message + l_format_command(l_extension));
 }
 
 void AOClient::cmdMOTD(int argc, QStringList argv)
