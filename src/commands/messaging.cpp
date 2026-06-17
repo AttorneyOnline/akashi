@@ -90,7 +90,7 @@ void AOClient::cmdNeed(int argc, QStringList argv)
 
     QString l_sender_area = server->getAreaName(areaId());
     QString l_sender_message = argv.join(" ");
-    server->broadcast(PacketFactory::createPacket("CT", {ConfigManager::serverTag(), "=== Advert ===\n[" + l_sender_area + "] needs " + l_sender_message + "."}), Server::TARGET_TYPE::ADVERT);
+    server->broadcast(PacketFactory::createPacket("CT", {ConfigManager::serverNickname(), "=== Advert ===\n[" + l_sender_area + "] needs " + l_sender_message + "."}), Server::TARGET_TYPE::ADVERT);
 }
 
 void AOClient::cmdSwitch(int argc, QStringList argv)
