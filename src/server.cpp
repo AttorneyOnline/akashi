@@ -284,7 +284,7 @@ PlayerStateObserver *Server::getPlayerStateObserver()
 void Server::reloadSettings()
 {
     ConfigManager::reloadSettings();
-    emit reloadRequest(ConfigManager::serverName(), ConfigManager::serverDescription());
+    emit reloadRequest(ConfigManager::serverNickname(), ConfigManager::serverDescription());
     emit updateHTTPConfiguration();
     handleDiscordIntegration();
     logger->loadLogtext();

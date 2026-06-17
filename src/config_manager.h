@@ -133,9 +133,9 @@ class ConfigManager
     static QString serverName();
 
     /**
-     * @brief Returns the short "tag" version of the server..
+     * @brief Returns the server's nickname.
      */
-    static QString serverTag();
+    static QString serverNickname();
 
     /**
      * @brief Returns the server's Message of the Day..

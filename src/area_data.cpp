@@ -114,10 +114,10 @@ void AreaData::addClient(int f_charId, int f_userId)
     m_joined_ids.append(f_userId);
     emit userJoinedArea(m_index, f_userId);
     // Send out ambience as well. Use channel 1 for that
-    emit sendAreaPacketClient(PacketFactory::createPacket("MC", {m_currentAmbience, QString::number(-1), ConfigManager::serverName(), QString::number(1), QString::number(1)}), f_userId);
+    emit sendAreaPacketClient(PacketFactory::createPacket("MC", {m_currentAmbience, QString::number(-1), ConfigManager::serverNickname(), QString::number(1), QString::number(1)}), f_userId);
     // The name will never be shown as we are using a spectator ID. Still nice for people who network sniff.
     // We auto-loop this so you'll never sit in silence unless wanted.
-    emit sendAreaPacketClient(PacketFactory::createPacket("MC", {m_currentMusic, QString::number(-1), ConfigManager::serverName(), QString::number(1)}), f_userId);
+    emit sendAreaPacketClient(PacketFactory::createPacket("MC", {m_currentMusic, QString::number(-1), ConfigManager::serverNickname(), QString::number(1)}), f_userId);
 }
 
 QList<int> AreaData::owners() const
