@@ -279,10 +279,43 @@ void AOClient::cmdArea(int argc, QStringList argv)
 
 void AOClient::cmdAreaKick(int argc, QStringList argv)
 {
-    Q_UNUSED(argc);
-
     AreaData *l_area = server->getAreaById(areaId());
 
+    int target_area_id = 0; // Default to first area of the server
+
+    // Check if a target area is provided
+    if (argc >= 2) {
+        if (!checkPermission(ACLRole::KICK)) {
+            sendServerMessage("You do not have permission to kick to specific areas. Just the first area as CM. (/areakick [ID]).");
+            return;
+        }
+
+        bool ok;
+        target_area_id = argv[1].toInt(&ok);
+        if (!ok || target_area_id < 0 || target_area_id >= server->getAreaCount()) {
+            sendServerMessage("That does not look like a valid area ID.");
+            return;
+        }
+    }
+
+    AreaData *target_area = server->getAreaById(target_area_id);
+
+    if (argv[0] == "all") {
+        const QVector<AOClient *> l_clients = server->getClients();
+        for (AOClient *l_client : l_clients) {
+            if (l_client->areaId() == areaId() && l_client->clientId() != clientId()) {
+                if (!server->getAreaById(areaId())->owners().contains(l_client->clientId())) {
+                    l_client->changeArea(target_area_id);
+                    l_area->uninvite(l_client->clientId());
+                    l_client->sendServerMessage("You have been kicked to area " + target_area->displayName() + ".");
+                }
+            }
+        }
+        sendServerMessage("All clients kicked to area " + target_area->displayName() + ".");
+        return;
+    }
+
+    // Without secondary area argument
     bool ok;
     int l_idx = argv[0].toInt(&ok);
     if (!ok) {
@@ -302,10 +335,10 @@ void AOClient::cmdAreaKick(int argc, QStringList argv)
         sendServerMessage("That client is not in this area.");
         return;
     }
-    l_client_to_kick->changeArea(0);
+    l_client_to_kick->changeArea(target_area_id);
     l_area->uninvite(l_client_to_kick->clientId());
-
-    sendServerMessage("Client " + argv[0] + " kicked back to area 0.");
+    l_client_to_kick->sendServerMessage("You have been kicked to area " + target_area->displayName() + ".");
+    sendServerMessage("Client " + argv[0] + " kicked to area " + target_area->displayName() + ".");
 }
 
 void AOClient::cmdSetBackground(int argc, QStringList argv)
@@ -492,8 +525,10 @@ void AOClient::cmdClearAreaMessage(int argc, QStringList argv)
 
     AreaData *l_area = server->getAreaById(areaId());
     l_area->clearAreaMessage();
-    if (l_area->sendAreaMessageOnJoin())              // Turn off the automatic sending.
+    if (l_area->sendAreaMessageOnJoin()) // Turn off the automatic sending.
+    {
         cmdToggleAreaMessageOnJoin(0, QStringList{}); // Dummy values.
+    }
 }
 
 void AOClient::cmdWebfiles(int argc, QStringList argv)

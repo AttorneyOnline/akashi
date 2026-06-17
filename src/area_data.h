@@ -389,6 +389,13 @@ class AreaData : public QObject
     int index() const;
 
     /**
+     * @brief Returns the display name of the area.
+     *
+     * @return See short description.
+     */
+    QString displayName() const;
+
+    /**
      * @brief Returns a copy of the list of characters taken.
      *
      * @return A list of character IDs.
@@ -1047,6 +1054,11 @@ class AreaData : public QObject
      * @brief The index of the area in the server's area list.
      */
     int m_index;
+
+    /**
+     * @brief The display name of the area.
+     */
+    QString m_display_name;
 
     /**
      * @brief Pointer to the global music manager.
