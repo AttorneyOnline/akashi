@@ -214,13 +214,19 @@ void AOClient::cmdChangePassword(int argc, QStringList argv)
     QString l_password = argv[0];
     if (argc == 1) {
         if (m_moderator_name.isEmpty()) {
-            sendServerMessage("You are not logged in.");
+            sendServerMessage("You do not have permission to use that command. You must be logged in.");
             return;
         }
         l_username = m_moderator_name;
     }
-    else if (argc == 2 && checkPermission(ACLRole::SUPER)) {
-        l_username = argv[1];
+    else if (argc == 2) {
+
+        if (checkPermission(ACLRole::SUPER)) {
+            l_username = argv[1];
+        }
+        else {
+            sendServerMessage("You do not have permission to use that command.");
+        }
     }
     else {
         sendServerMessage("Invalid command syntax.");
