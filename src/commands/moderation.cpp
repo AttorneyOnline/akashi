@@ -193,17 +193,69 @@ void AOClient::cmdCommands(int argc, QStringList argv)
 
 void AOClient::cmdHelp(int argc, QStringList argv)
 {
+    CommandExtensionCollection *l_extension_collection = server->getCommandExtensionCollection();
+
+    if (argc == 0) {
+        sendServerMessage("Type /help <command> for help on a specific command, or /help all to list all commands.");
+        return;
+    }
+
     if (argc > 1) {
         sendServerMessage("Too many arguments. Please only use the command name.");
         return;
     }
 
-    QString l_command_name = argv[0];
-    ConfigManager::help l_command_info = ConfigManager::commandHelp(l_command_name);
-    if (l_command_info.usage.isEmpty() || l_command_info.text.isEmpty()) // my picoseconds :(
-        sendServerMessage("Unable to find the command " + l_command_name + ".");
-    else
-        sendServerMessage("==Help==\n" + l_command_info.usage + "\n" + l_command_info.text);
+    QString l_command_name = argv[0].toLower();
+
+    auto l_check_for_permission = [this, l_extension_collection](const QString &f_command_name) -> bool {
+        const QVector<ACLRole::Permission> l_permissions = l_extension_collection->getExtension(f_command_name).getPermissions(COMMANDS.value(f_command_name).acl_permissions);
+        for (const ACLRole::Permission i_permission : l_permissions) {
+            if (checkPermission(i_permission)) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    auto l_format_command = [l_extension_collection](const QString &f_command_name) -> QString {
+        QString l_display_name = f_command_name;
+        if (l_extension_collection->containsExtension(f_command_name)) {
+            l_display_name = l_extension_collection->getExtension(f_command_name).getDisplayName();
+        }
+
+        const QString l_description = ConfigManager::commandHelp(f_command_name).text;
+        return "/" + l_display_name + "\n" + (l_description.isEmpty() ? QString("No details available.") : l_description);
+    };
+
+    QString l_message = "==Help==\n";
+
+    // "all" is reserved
+    if (l_command_name == "all") {
+        QStringList l_entries;
+        for (auto it = COMMANDS.cbegin(); it != COMMANDS.cend(); ++it) {
+            if (l_check_for_permission(it.key())) {
+                l_entries.append(l_format_command(it.key()));
+            }
+        }
+        sendServerMessage(l_message + l_entries.join("\n\n"));
+        return;
+    }
+
+    if (l_extension_collection->containsExtension(l_command_name)) {
+        l_command_name = l_extension_collection->getExtension(l_command_name).getCommandName();
+    }
+
+    if (!COMMANDS.contains(l_command_name)) {
+        sendServerMessage(l_message + "Unable to find the command " + l_command_name + ".");
+        return;
+    }
+
+    if (!l_check_for_permission(l_command_name)) {
+        sendServerMessage(l_message + "You are not allowed to use the command " + l_command_name + ".");
+        return;
+    }
+
+    sendServerMessage(l_message + l_format_command(l_command_name));
 }
 
 void AOClient::cmdMOTD(int argc, QStringList argv)
