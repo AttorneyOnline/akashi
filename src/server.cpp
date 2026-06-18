@@ -65,12 +65,12 @@ void Server::start()
     else
         bind_addr = QHostAddress(bind_ip);
     if (bind_addr.protocol() != QAbstractSocket::IPv4Protocol && bind_addr.protocol() != QAbstractSocket::IPv6Protocol && bind_addr != QHostAddress::Any) {
-        qDebug() << bind_ip << "is an invalid IP address to listen on! Server not starting, check your config.";
+        qCritical() << bind_ip << "is an invalid IP address to listen on! Server not starting, check your config.";
     }
 
     server = new QWebSocketServer("Akashi", QWebSocketServer::NonSecureMode, this);
     if (!server->listen(bind_addr, m_port)) {
-        qDebug() << "Server error:" << server->errorString();
+        qCritical() << "Server error:" << server->errorString();
     }
     else {
         connect(server, &QWebSocketServer::newConnection,

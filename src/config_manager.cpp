@@ -303,7 +303,7 @@ QStringList ConfigManager::iprangeBans()
     QJsonParseError l_error;
     QJsonDocument l_ip_bans = QJsonDocument::fromJson(l_json_file.readAll(), &l_error);
     if (l_error.error != QJsonParseError::NoError) {
-        qDebug() << "Unable to parse JSON file. Error:" << l_error.errorString();
+        qWarning() << "Unable to parse JSON file. Error:" << l_error.errorString();
         return {};
     }
 
