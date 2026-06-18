@@ -3,6 +3,8 @@
 #include "config_manager.h"
 #include "packet/packet_factory.h"
 
+#include <QUrl>
+
 MusicManager::MusicManager(QStringList f_cdns, MusicList f_root_list, QStringList f_root_ordered, QObject *parent) :
     QObject(parent),
     m_root_list(f_root_list),
@@ -46,43 +48,47 @@ bool MusicManager::registerArea(int f_area_id)
 
 bool MusicManager::validateSong(QString f_song_name, QStringList f_approved_cdns)
 {
-    QStringList l_extensions = {".opus", ".ogg", ".mp3", ".wav"};
+    const QStringList l_extensions = {".opus", ".ogg", ".mp3", ".wav"};
 
-    bool l_cdn_approved = false;
+    // For a plain (non-URL) song name the whole string is the path; for a URL we
+    // use QUrl::path() so the query string/fragment don't reach the extension check.
+    QString l_path = f_song_name;
+
     // Check if URL formatted.
     if (f_song_name.contains("/")) {
+        const QUrl l_url(f_song_name);
+
         // Only allow HTTPS/HTTP sources.
-        if (f_song_name.startsWith("https://") || f_song_name.startsWith("http://")) {
-            for (const QString &l_cdn : qAsConst(f_approved_cdns)) {
-                // Iterate trough all available CDNs to find an approved match
-                if (f_song_name.startsWith("https://" + l_cdn + "/", Qt::CaseInsensitive) || f_song_name.startsWith("http://" + l_cdn + "/", Qt::CaseInsensitive)) {
-                    l_cdn_approved = true;
-                    break;
-                }
-            }
-            if (!l_cdn_approved) {
-                return false;
-            }
-        }
-        else {
+        if (l_url.scheme() != "https" && l_url.scheme() != "http") {
             return false;
         }
+
+        bool l_cdn_approved = false;
+        for (const QString &l_cdn : qAsConst(f_approved_cdns)) {
+            // Let QUrl extract the host so operators can write the entry with or
+            // without a scheme/trailing slash (e.g. "https://cdn.discord.com/").
+            // fromUserInput() is required here: the plain QUrl() ctor parses a
+            // bare "cdn.discord.com" as a path and returns an empty host().
+            const QString l_domain = QUrl::fromUserInput(l_cdn.trimmed()).host();
+            if (!l_domain.isEmpty() && l_url.host().compare(l_domain, Qt::CaseInsensitive) == 0) {
+                l_cdn_approved = true;
+                break;
+            }
+        }
+        if (!l_cdn_approved) {
+            return false;
+        }
+
+        l_path = l_url.path();
     }
 
-    bool l_suffix_found = false;
-    ;
-    for (const QString &suffix : qAsConst(l_extensions)) {
-        if (f_song_name.endsWith(suffix)) {
-            l_suffix_found = true;
-            break;
+    for (const QString &l_suffix : qAsConst(l_extensions)) {
+        if (l_path.endsWith(l_suffix, Qt::CaseInsensitive)) {
+            return true;
         }
     }
 
-    if (!l_suffix_found) {
-        return false;
-    }
-
-    return true;
+    return false;
 }
 
 bool MusicManager::addCustomSong(QString f_song_name, QString f_real_name, int f_duration, int f_area_id)
