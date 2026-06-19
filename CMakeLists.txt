@@ -38,162 +38,162 @@ if(CMAKE_BUILD_TYPE)
 else()
   set(AKASHI_RELEASE_TYPE "Development")
 endif()
-configure_file(src2/core/softwareinformation.h.in softwareinformation.h)
+configure_file(src/core/softwareinformation.h.in softwareinformation.h)
 
 set(AKASHI_SOURCES
-  src2/core/event_bus.cpp
-  src2/core/event_bus.h
-  src2/core/log_service.cpp
-  src2/core/log_service.h
-  src2/core/writer_text.cpp
-  src2/core/writer_text.h
-  src2/include/akashi/event.h
-  src2/include/akashi/log_event.h
-  src2/include/akashi/log_writer.h
-  src2/core/config_loading.cpp
-  src2/core/config_loading.h
-  src2/core/crypto_helper.h
-  src2/core/db_manager.cpp
-  src2/core/db_manager.h
-  src2/core/player_directory.cpp
-  src2/core/player_directory.h
-  src2/core/player_state_observer.cpp
-  src2/core/player_state_observer.h
-  src2/core/server_publisher.cpp
-  src2/core/server_publisher.h
-  src2/world/rule_actions.cpp
-  src2/world/rule_actions.h
-  src2/core/config_entry.cpp
-  src2/core/config_store.cpp
-  src2/core/database_service.cpp
-  src2/core/exit_code.h
-  src2/core/network_service.cpp
-  src2/core/service.cpp
-  src2/core/service_registry.cpp
-  src2/core/filesystem_service.cpp
-  src2/core/json_settings.cpp
-  src2/core/json_settings.h
-  src2/core/client_session.cpp
-  src2/core/client_session.h
-  src2/core/command_context.cpp
-  src2/core/command_context.h
-  src2/core/command_registry.cpp
-  src2/core/command_registry.h
-  src2/core/command_spec.h
-  src2/core/permission_registry.cpp
-  src2/core/permission_registry.h
-  src2/core/auth_throttle.cpp
-  src2/core/auth_throttle.h
-  src2/core/plugin_manager.cpp
-  src2/core/plugin_manager.h
-  src2/core/text_filter_registry.cpp
-  src2/core/text_filter_registry.h
-  src2/core/mmdb_reader.cpp
-  src2/core/mmdb_reader.h
-  src2/core/player_state.cpp
-  src2/core/player_state.h
-  src2/core/transport.h
-  src2/core/server_settings.h
-  src2/core/settings.cpp
-  src2/core/server_context.cpp
-  src2/core/server_context.h
-  src2/core/websocket_receiver.cpp
-  src2/core/websocket_receiver.h
-  src2/include/akashi/client_receiver.h
-  src2/commands/area_commands.cpp
-  src2/commands/area_commands.h
-  src2/commands/authentication_commands.cpp
-  src2/commands/authentication_commands.h
-  src2/commands/moderation_commands.cpp
-  src2/commands/moderation_commands.h
-  src2/commands/casing_commands.cpp
-  src2/commands/casing_commands.h
-  src2/commands/music_commands.cpp
-  src2/commands/music_commands.h
-  src2/commands/plugin_commands.cpp
-  src2/commands/plugin_commands.h
-  src2/commands/roleplay_commands.cpp
-  src2/commands/roleplay_commands.h
-  src2/commands/rule_commands.cpp
-  src2/commands/rule_commands.h
-  src2/commands/messaging_commands.cpp
-  src2/commands/messaging_commands.h
-  src2/world/area.cpp
-  src2/world/area.h
-  src2/world/area_settings.h
-  src2/world/arup_broadcaster.cpp
-  src2/world/arup_broadcaster.h
-  src2/world/rule_registry.cpp
-  src2/world/rule_registry.h
-  src2/world/evidence_store.cpp
-  src2/world/evidence_store.h
-  src2/world/floor.h
-  src2/world/world.cpp
-  src2/world/world.h
-  src2/world/jukebox.cpp
-  src2/world/jukebox.h
-  src2/world/testimony_recorder.cpp
-  src2/world/testimony_recorder.h
-  src2/include/akashi/area_rule.h
-  src2/include/akashi/config_entry.h
-  src2/include/akashi/config_store.h
-  src2/include/akashi/setting_notifier.h
-  src2/include/akashi/database_service.h
-  src2/include/akashi/filesystem_service.h
-  src2/include/akashi/jukebox_policy.h
-  src2/include/akashi/network_service.h
-  src2/include/akashi/service.h
-  src2/include/akashi/text_filter.h
-  src2/include/akashi/plugin.h
-  src2/include/akashi/service_registry.h
-  src2/include/akashi/settings.h
-  src2/proto/ao2_protocol.h
-  src2/proto/chat.cpp
-  src2/proto/chat.h
-  src2/proto/chat_messages.h
-  src2/proto/client_profile.h
-  src2/proto/area_music.cpp
-  src2/proto/area_music.h
-  src2/proto/area_music_messages.h
-  src2/proto/evidence.cpp
-  src2/proto/evidence.h
-  src2/proto/handshake.cpp
-  src2/proto/handshake.h
-  src2/proto/handshake_messages.h
-  src2/proto/ic.cpp
-  src2/proto/ic.h
-  src2/proto/ic_message.h
-  src2/proto/message.h
-  src2/proto/moderation.cpp
-  src2/proto/moderation.h
-  src2/proto/moderation_messages.h
-  src2/proto/packet_codec.cpp
-  src2/proto/packet_codec.h
-  src2/proto/packet_context.h
-  src2/proto/packet_handler.h
-  src2/proto/packet_registry.cpp
-  src2/proto/packet_registry.h
-  src2/proto/packet_service.cpp
-  src2/proto/packet_service.h
-  src2/proto/packet.cpp
-  src2/proto/packet.h
-  src2/proto/text_utils.cpp
-  src2/proto/text_utils.h
+  src/core/event_bus.cpp
+  src/core/event_bus.h
+  src/core/log_service.cpp
+  src/core/log_service.h
+  src/core/writer_text.cpp
+  src/core/writer_text.h
+  src/include/akashi/event.h
+  src/include/akashi/log_event.h
+  src/include/akashi/log_writer.h
+  src/core/config_loading.cpp
+  src/core/config_loading.h
+  src/core/crypto_helper.h
+  src/core/db_manager.cpp
+  src/core/db_manager.h
+  src/core/player_directory.cpp
+  src/core/player_directory.h
+  src/core/player_state_observer.cpp
+  src/core/player_state_observer.h
+  src/core/server_publisher.cpp
+  src/core/server_publisher.h
+  src/world/rule_actions.cpp
+  src/world/rule_actions.h
+  src/core/config_entry.cpp
+  src/core/config_store.cpp
+  src/core/database_service.cpp
+  src/core/exit_code.h
+  src/core/network_service.cpp
+  src/core/service.cpp
+  src/core/service_registry.cpp
+  src/core/filesystem_service.cpp
+  src/core/json_settings.cpp
+  src/core/json_settings.h
+  src/core/client_session.cpp
+  src/core/client_session.h
+  src/core/command_context.cpp
+  src/core/command_context.h
+  src/core/command_registry.cpp
+  src/core/command_registry.h
+  src/core/command_spec.h
+  src/core/permission_registry.cpp
+  src/core/permission_registry.h
+  src/core/auth_throttle.cpp
+  src/core/auth_throttle.h
+  src/core/plugin_manager.cpp
+  src/core/plugin_manager.h
+  src/core/text_filter_registry.cpp
+  src/core/text_filter_registry.h
+  src/core/mmdb_reader.cpp
+  src/core/mmdb_reader.h
+  src/core/player_state.cpp
+  src/core/player_state.h
+  src/core/transport.h
+  src/core/server_settings.h
+  src/core/settings.cpp
+  src/core/server_context.cpp
+  src/core/server_context.h
+  src/core/websocket_receiver.cpp
+  src/core/websocket_receiver.h
+  src/include/akashi/client_receiver.h
+  src/commands/area_commands.cpp
+  src/commands/area_commands.h
+  src/commands/authentication_commands.cpp
+  src/commands/authentication_commands.h
+  src/commands/moderation_commands.cpp
+  src/commands/moderation_commands.h
+  src/commands/casing_commands.cpp
+  src/commands/casing_commands.h
+  src/commands/music_commands.cpp
+  src/commands/music_commands.h
+  src/commands/plugin_commands.cpp
+  src/commands/plugin_commands.h
+  src/commands/roleplay_commands.cpp
+  src/commands/roleplay_commands.h
+  src/commands/rule_commands.cpp
+  src/commands/rule_commands.h
+  src/commands/messaging_commands.cpp
+  src/commands/messaging_commands.h
+  src/world/area.cpp
+  src/world/area.h
+  src/world/area_settings.h
+  src/world/arup_broadcaster.cpp
+  src/world/arup_broadcaster.h
+  src/world/rule_registry.cpp
+  src/world/rule_registry.h
+  src/world/evidence_store.cpp
+  src/world/evidence_store.h
+  src/world/floor.h
+  src/world/world.cpp
+  src/world/world.h
+  src/world/jukebox.cpp
+  src/world/jukebox.h
+  src/world/testimony_recorder.cpp
+  src/world/testimony_recorder.h
+  src/include/akashi/area_rule.h
+  src/include/akashi/config_entry.h
+  src/include/akashi/config_store.h
+  src/include/akashi/setting_notifier.h
+  src/include/akashi/database_service.h
+  src/include/akashi/filesystem_service.h
+  src/include/akashi/jukebox_policy.h
+  src/include/akashi/network_service.h
+  src/include/akashi/service.h
+  src/include/akashi/text_filter.h
+  src/include/akashi/plugin.h
+  src/include/akashi/service_registry.h
+  src/include/akashi/settings.h
+  src/proto/ao2_protocol.h
+  src/proto/chat.cpp
+  src/proto/chat.h
+  src/proto/chat_messages.h
+  src/proto/client_profile.h
+  src/proto/area_music.cpp
+  src/proto/area_music.h
+  src/proto/area_music_messages.h
+  src/proto/evidence.cpp
+  src/proto/evidence.h
+  src/proto/handshake.cpp
+  src/proto/handshake.h
+  src/proto/handshake_messages.h
+  src/proto/ic.cpp
+  src/proto/ic.h
+  src/proto/ic_message.h
+  src/proto/message.h
+  src/proto/moderation.cpp
+  src/proto/moderation.h
+  src/proto/moderation_messages.h
+  src/proto/packet_codec.cpp
+  src/proto/packet_codec.h
+  src/proto/packet_context.h
+  src/proto/packet_handler.h
+  src/proto/packet_registry.cpp
+  src/proto/packet_registry.h
+  src/proto/packet_service.cpp
+  src/proto/packet_service.h
+  src/proto/packet.cpp
+  src/proto/packet.h
+  src/proto/text_utils.cpp
+  src/proto/text_utils.h
 )
 
 add_library(akashi_core SHARED ${AKASHI_SOURCES})
 include(GenerateExportHeader)
 generate_export_header(akashi_core BASE_NAME AKASHI_CORE)
 target_include_directories(akashi_core PUBLIC
-    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src2>"
-    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src2/include>"
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>"
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/include>"
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>"
 )
 
 # Header-only library for the plugin SDK, filled in during M9 and M10.
 add_library(akashi_pluginapi INTERFACE)
 target_include_directories(akashi_pluginapi INTERFACE
-    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src2/include>"
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/include>"
     "$<INSTALL_INTERFACE:include>"
 )
 target_link_libraries(akashi_pluginapi INTERFACE akashi_core)
@@ -208,7 +208,7 @@ target_link_libraries(akashi_core PUBLIC
 # The whole project uses Q_EMIT/Q_SIGNALS/Q_SLOTS instead of the lowercase keywords.
 target_compile_definitions(akashi_core PUBLIC QT_NO_KEYWORDS)
 
-qt_add_executable(akashi src2/main.cpp)
+qt_add_executable(akashi src/main.cpp)
 target_link_libraries(akashi PRIVATE akashi_core)
 
 set_target_properties(akashi PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin")
@@ -240,7 +240,7 @@ install(TARGETS akashi_core akashi_pluginapi EXPORT akashiTargets
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib)
-install(DIRECTORY src2/include/ DESTINATION include)
+install(DIRECTORY src/include/ DESTINATION include)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/akashi_core_export.h DESTINATION include)
 install(EXPORT akashiTargets NAMESPACE akashi:: DESTINATION lib/cmake/akashi)
 configure_package_config_file(cmake/akashiConfig.cmake.in
