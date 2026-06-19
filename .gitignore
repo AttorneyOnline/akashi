@@ -83,3 +83,8 @@ doxygen/html
 .vscode/
 *.TMP
 bin/data/
+bin/plugins/
+bin/storage/
+bin/server_*.log
+bin/server_*.txt
+docs/

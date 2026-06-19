@@ -155,22 +155,25 @@ void tst_Chat::evidenceDeleteChecksAccessAndBounds()
 
 void tst_Chat::evidenceEditChecksAccessAndBounds()
 {
+    // Evidence access is a floor rule now, and the denial carries its reason.
     FakeContext l_denied;
-    l_denied.evidence_access = false;
+    l_denied.before_rule_block = "You are not allowed to modify the evidence here.";
     l_denied.evidence_total = 3;
     run(Packet("EE", {"1", "Knife", "Sharp.", "knife.png"}), l_denied);
-    QVERIFY(l_denied.calls.isEmpty());
+    QVERIFY(l_denied.replaced_evidence.isEmpty());
+    QCOMPARE(l_denied.calls, QStringList({"checkBeforeRule:evidence_edited", "message:You are not allowed to modify the evidence here."}));
 
     FakeContext l_out_of_range;
     l_out_of_range.evidence_total = 3;
     run(Packet("EE", {"5", "Knife", "Sharp.", "knife.png"}), l_out_of_range);
-    QVERIFY(l_out_of_range.calls.isEmpty());
+    QVERIFY(l_out_of_range.replaced_evidence.isEmpty());
+    QCOMPARE(l_out_of_range.calls, QStringList({"checkBeforeRule:evidence_edited"}));
 
     FakeContext l_context;
     l_context.evidence_total = 3;
     run(Packet("EE", {"1", "Knife", "Sharp.", "knife.png"}), l_context);
     QCOMPARE(l_context.replaced_evidence, QStringList({"1", "Knife", "Sharp.", "knife.png"}));
-    QCOMPARE(l_context.calls, QStringList({"replaceEvidence", "sendEvidenceList"}));
+    QCOMPARE(l_context.calls, QStringList({"checkBeforeRule:evidence_edited", "replaceEvidence", "sendEvidenceList", "runAfterRule:evidence_edited"}));
 }
 
 void tst_Chat::evidenceEditTagsHiddenCmEvidence()

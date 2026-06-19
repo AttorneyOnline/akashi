@@ -110,7 +110,8 @@ static void handleExamine(CommandContext &f_context)
         else {
             l_recorder->restart();
             f_context.server()->broadcast(akashi::Packet("RT", {"testimony2", "0"}), f_context.areaId());
-            f_context.server()->broadcast(akashi::Packet("MS", l_recorder->statementAt(0)->playbackFields()), f_context.areaId());
+            // The title replays through the server's IC broadcast.
+            f_context.server()->broadcastIc(l_recorder->statementAt(0)->playbackFields(), f_context.areaId());
             return;
         }
     }

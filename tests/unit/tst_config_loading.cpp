@@ -114,7 +114,9 @@ static QString writeAreasFile(QTemporaryDir &f_dir, const QByteArray &f_json)
 {
     const QString l_path = f_dir.filePath("areas.json");
     QFile l_file(l_path);
-    l_file.open(QIODevice::WriteOnly | QIODevice::Text);
+    if (!l_file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        return {};
+    }
     l_file.write(f_json);
     l_file.close();
     return l_path;

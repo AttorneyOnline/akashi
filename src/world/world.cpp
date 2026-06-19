@@ -126,6 +126,7 @@ void World::applyDefaultFloorRules(Floor &f_floor)
           {QStringLiteral("message"), QStringLiteral("Music is disabled in this area.")}}},
         {AreaEvents::EvidenceAdded, QStringLiteral("check_evidence_access"), {}},
         {AreaEvents::EvidenceRemoved, QStringLiteral("check_evidence_access"), {}},
+        {AreaEvents::EvidenceEdited, QStringLiteral("check_evidence_access"), {}},
         {AreaEvents::BackgroundChanged, QStringLiteral("check_background"), {}},
     };
     for (const GateDefault &l_gate : l_gate_defaults) {

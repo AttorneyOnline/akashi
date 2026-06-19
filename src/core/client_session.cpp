@@ -724,11 +724,6 @@ QStringList ClientSession::characters() const
     return m_server->characters();
 }
 
-QStringList ClientSession::areaNames() const
-{
-    return m_server->areaNames();
-}
-
 QStringList ClientSession::musicList() const
 {
     return m_server->musicList();

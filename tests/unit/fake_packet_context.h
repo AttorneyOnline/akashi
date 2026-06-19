@@ -35,7 +35,6 @@ class FakeContext : public akashi::IPacketContext
     QStringList commands_run;
     QStringList ooc_broadcasts;
 
-    bool evidence_access = true;
     bool evidence_hidden_cm = false;
     int evidence_total = 0;
     QList<int> deleted_evidence;
@@ -90,13 +89,11 @@ class FakeContext : public akashi::IPacketContext
 
     int playerCount() const override { return player_count; }
     QStringList characters() const override { return character_list; }
-    QStringList areaNames() const override { return area_name_list; }
     QStringList musicList() const override { return music_name_list; }
     akashi::TimerSnapshot globalTimer() const override { return global_timer; }
 
     void announceCharsTaken() override { calls.append("announceCharsTaken"); }
     void sendEvidenceList() override { calls.append("sendEvidenceList"); }
-    void sendFullArup() override { calls.append("sendFullArup"); }
     void broadcastPlayerCount() override { calls.append("broadcastPlayerCount"); }
 
     bool selectCharacter(int f_char_id) override
@@ -135,7 +132,6 @@ class FakeContext : public akashi::IPacketContext
         calls.append("broadcastOoc");
     }
 
-    bool canModifyEvidence() override { return evidence_access; }
     bool isEvidenceHiddenCm() const override { return evidence_hidden_cm; }
     int evidenceCount() const override { return evidence_total; }
 

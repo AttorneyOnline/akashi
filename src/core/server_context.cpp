@@ -781,6 +781,18 @@ void ServerContext::broadcast(const akashi::Packet &packet, int area_index)
     }
 }
 
+void ServerContext::broadcastIc(const QStringList &f_fields, int f_area_id)
+{
+    const akashi::Packet l_classic("MS", f_fields);
+    const QVector<akashi::ClientSession *> l_client_list = m_player_directory.clients();
+    for (akashi::ClientSession *l_client : l_client_list) {
+        if (l_client->areaId() != f_area_id) {
+            continue;
+        }
+        l_client->sendPacket(l_classic);
+    }
+}
+
 void ServerContext::broadcast(const akashi::Packet &packet)
 {
     const QVector<akashi::ClientSession *> l_client_list = m_player_directory.clients();

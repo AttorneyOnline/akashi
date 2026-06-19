@@ -24,6 +24,7 @@ inline const QString AmbienceChanged = QStringLiteral("ambience_changed");
 inline const QString EvidencePresented = QStringLiteral("evidence_presented");
 inline const QString EvidenceAdded = QStringLiteral("evidence_added");
 inline const QString EvidenceRemoved = QStringLiteral("evidence_removed");
+inline const QString EvidenceEdited = QStringLiteral("evidence_edited");
 inline const QString BackgroundChanged = QStringLiteral("background_changed");
 inline const QString LockChanged = QStringLiteral("lock_changed");
 inline const QString OwnerChanged = QStringLiteral("owner_changed");

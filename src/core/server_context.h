@@ -209,6 +209,15 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
     void broadcast(const akashi::Packet &packet, int area_index);
 
     /**
+     * @brief Sends one finished IC message to an area.
+     *
+     * @param f_fields The classic positional MS fields.
+     *
+     * @param f_area_id The area whose clients receive the message.
+     */
+    void broadcastIc(const QStringList &f_fields, int f_area_id);
+
+    /**
      * @brief Sends a packet to all clients in the server.
      *
      * @param packet The packet to send to the clients.

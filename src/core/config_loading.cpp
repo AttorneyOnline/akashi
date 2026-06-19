@@ -14,7 +14,9 @@ QStringList loadTextFile(const QString &f_path)
 {
     QStringList l_list;
     QFile l_file(f_path);
-    l_file.open(QIODevice::ReadOnly | QIODevice::Text);
+    if (!l_file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        return l_list;
+    }
     while (!l_file.atEnd()) {
         l_list.append(l_file.readLine().trimmed());
     }
@@ -26,7 +28,10 @@ MusicCatalog loadMusicList(const QString &f_path)
 {
     MusicCatalog l_catalog;
     QFile l_file(f_path);
-    l_file.open(QIODevice::ReadOnly | QIODevice::Text);
+    if (!l_file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        qWarning() << "Unable to open musiclist" << f_path;
+        return l_catalog;
+    }
 
     QJsonParseError l_error;
     QJsonDocument l_doc = QJsonDocument::fromJson(l_file.readAll(), &l_error);
@@ -103,7 +108,9 @@ AreaRulesConfig loadAreaRules(const QString &f_path)
 {
     AreaRulesConfig l_config;
     QFile l_file(f_path);
-    l_file.open(QIODevice::ReadOnly | QIODevice::Text);
+    if (!l_file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        return l_config;
+    }
 
     QJsonParseError l_error;
     const QJsonDocument l_doc = QJsonDocument::fromJson(l_file.readAll(), &l_error);
@@ -138,7 +145,9 @@ AreaRulesConfig loadAreaRules(const QString &f_path)
 QStringList loadIpRangeBans(const QString &f_path)
 {
     QFile l_file(f_path);
-    l_file.open(QIODevice::ReadOnly | QIODevice::Text);
+    if (!l_file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        return {};
+    }
 
     QJsonParseError l_error;
     QJsonDocument l_doc = QJsonDocument::fromJson(l_file.readAll(), &l_error);
@@ -178,11 +187,12 @@ QStringList loadIpRangeBans(const QString &f_path)
 
 QList<quint32> loadBannedAsns(const QString &f_path)
 {
-    QFile l_file(f_path);
-    l_file.open(QIODevice::ReadOnly | QIODevice::Text);
-    const QJsonObject l_root = QJsonDocument::fromJson(l_file.readAll()).object();
-
     QList<quint32> l_asns;
+    QFile l_file(f_path);
+    if (!l_file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        return l_asns;
+    }
+    const QJsonObject l_root = QJsonDocument::fromJson(l_file.readAll()).object();
     const QStringList l_texts = l_root["asn"].toVariant().toStringList();
     for (const QString &l_text : l_texts) {
         l_asns.append(l_text.toUInt());

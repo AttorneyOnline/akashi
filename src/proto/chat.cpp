@@ -158,7 +158,11 @@ class EvidenceEditHandler : public PacketHandler
     void handle(const Message &f_message, IPacketContext &f_context) const override
     {
         const auto &l_edit = static_cast<const EvidenceEditMessage &>(f_message);
-        if (!f_context.canModifyEvidence()) {
+
+        // Evidence access is enforced by the check_evidence_access floor rule.
+        auto l_rule_block = f_context.checkBeforeRule(AreaEvents::EvidenceEdited, {});
+        if (l_rule_block) {
+            f_context.sendServerMessage(*l_rule_block);
             return;
         }
         if (l_edit.index < 0 || l_edit.index >= f_context.evidenceCount()) {
@@ -176,6 +180,7 @@ class EvidenceEditHandler : public PacketHandler
 
         f_context.replaceEvidence(l_edit.index, l_edit.name, l_description, l_edit.image);
         f_context.sendEvidenceList();
+        f_context.runAfterRule(AreaEvents::EvidenceEdited, {});
     }
 };
 

@@ -173,6 +173,8 @@ class AKASHI_CORE_EXPORT ClientSession : public QObject, public IPacketContext
     void updateEvidenceList(Area *area);
     QString dezalgo(QString p_text);
     bool canModifyEvidence(Area *area);
+    bool canModifyEvidence();
+    void sendFullArup();
     bool changeCharacter(int char_id);
     void loginAttempt(QString message);
     void changeArea(int new_area) override;
@@ -210,12 +212,10 @@ class AKASHI_CORE_EXPORT ClientSession : public QObject, public IPacketContext
     QString motd() const override;
     int playerCount() const override;
     QStringList characters() const override;
-    QStringList areaNames() const override;
     QStringList musicList() const override;
     TimerSnapshot globalTimer() const override;
     void announceCharsTaken() override;
     void sendEvidenceList() override;
-    void sendFullArup() override;
     void broadcastPlayerCount() override;
     bool selectCharacter(int f_char_id) override;
     bool canUseOocChat() const override;
@@ -225,7 +225,6 @@ class AKASHI_CORE_EXPORT ClientSession : public QObject, public IPacketContext
     void attemptLogin(const QString &f_message) override;
     void runCommand(const QString &f_command, const QStringList &f_arguments) override;
     void broadcastOoc(const QString &f_message) override;
-    bool canModifyEvidence() override;
     bool isEvidenceHiddenCm() const override;
     int evidenceCount() const override;
     void deleteEvidence(int f_index) override;

@@ -75,14 +75,12 @@ class AKASHI_CORE_EXPORT IPacketContext
     // World data the handshake hands out.
     virtual int playerCount() const = 0;
     virtual QStringList characters() const = 0;
-    virtual QStringList areaNames() const = 0;
     virtual QStringList musicList() const = 0;
     virtual TimerSnapshot globalTimer() const = 0;
 
     // World changes handlers may trigger.
     virtual void announceCharsTaken() = 0;
     virtual void sendEvidenceList() = 0;
-    virtual void sendFullArup() = 0;
     virtual void broadcastPlayerCount() = 0;
     virtual bool selectCharacter(int f_char_id) = 0;
 
@@ -96,7 +94,6 @@ class AKASHI_CORE_EXPORT IPacketContext
     virtual void broadcastOoc(const QString &f_message) = 0;
 
     // Evidence in the client's area.
-    virtual bool canModifyEvidence() = 0;
     virtual bool isEvidenceHiddenCm() const = 0;
     virtual int evidenceCount() const = 0;
     virtual void deleteEvidence(int f_index) = 0;
