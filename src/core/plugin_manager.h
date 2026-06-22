@@ -26,6 +26,11 @@ struct PluginInfo
     QStringList services;
     QString file_path;
 
+    // Set for script plugins: the language runtime ("lua", "python") and
+    // the entry script the matching host runs. Empty for native plugins.
+    QString runtime;
+    QString entry_path;
+
     enum class State { Discovered, Loaded, Initialized, Started, Failed };
     State state = State::Discovered;
 };
@@ -66,9 +71,20 @@ class AKASHI_CORE_EXPORT PluginManager : public QObject, public IService
         PluginInfo info;
         QPluginLoader *loader = nullptr;
         IPlugin *instance = nullptr;
+
+        bool isScript() const { return !info.runtime.isEmpty(); }
+        bool isActive() const
+        {
+            return info.state == PluginInfo::State::Loaded ||
+                   info.state == PluginInfo::State::Initialized ||
+                   info.state == PluginInfo::State::Started;
+        }
     };
 
     bool discover(const QStringList &f_allowlist);
+    void discoverScriptPlugin(const QString &f_dir_path, const QStringList &f_allowlist);
+    bool loadScriptEntry(PluginEntry &f_entry);
+    void unloadScriptEntry(PluginEntry &f_entry);
     QStringList topologicalSort() const;
     bool validateServices(const PluginEntry &f_entry) const;
     void cleanupPlugin(const QString &f_id);

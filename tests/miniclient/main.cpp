@@ -1833,6 +1833,115 @@ class FloorDance : public QObject
     Phase m_phase = Phase::Login;
 };
 
+// The scripting scene: a moderator drives the commands the hello-lua and
+// hello-python script plugins registered through the scripting FFI, then
+// unloads and reloads them like any other plugin - including the host
+// refusing to go while a script plugin still runs on it.
+class ScriptingDance : public QObject
+{
+    Q_OBJECT
+
+  public:
+    ScriptingDance(const QString &f_address, int f_port, const QString &f_modpass, QObject *parent = nullptr) :
+        QObject(parent),
+        m_modpass(f_modpass)
+    {
+        m_watchdog = new QTimer(this);
+        m_watchdog->setSingleShot(true);
+        connect(m_watchdog, &QTimer::timeout, this, [this] { fail("timed out waiting for: " + m_waiting_for); });
+
+        m_client = new DanceClient("scripter", "Phoenix", f_address, f_port, 0, this);
+        connect(m_client, &DanceClient::failed, this, [this](const QString &f_reason) { fail(f_reason); });
+        connect(m_client, &DanceClient::oocReceived, this, &ScriptingDance::onOoc);
+        connect(m_client, &DanceClient::ready, this, [this] { m_client->sendOoc("/login"); });
+        connect(m_client, &DanceClient::loggedIn, this, [this] {
+            m_logged_in = true;
+            runNext();
+        });
+    }
+
+  private:
+    struct CommandTest {
+        QString command;
+        QString expected;
+    };
+
+    void runNext()
+    {
+        if (m_queue_index >= m_queue.size()) {
+            m_watchdog->stop();
+            say("both script hosts answered through the FFI and unload like plugins");
+            QTimer::singleShot(500, qApp, [] { qApp->exit(0); });
+            return;
+        }
+        const CommandTest &l_test = m_queue[m_queue_index];
+        m_waiting_for = l_test.command + " -> " + l_test.expected;
+        say("--- waiting for " + m_waiting_for + " ---");
+        m_watchdog->start(7000);
+        m_client->sendOoc(l_test.command);
+    }
+
+    void onOoc(const QString &f_message)
+    {
+        if (!m_logged_in) {
+            if (f_message.contains("Entering login prompt")) {
+                m_client->sendOoc(m_modpass);
+            }
+            return;
+        }
+        if (m_queue_index >= m_queue.size()) {
+            return;
+        }
+        if (f_message.contains(m_queue[m_queue_index].expected, Qt::CaseInsensitive)) {
+            say("OK: " + m_queue[m_queue_index].command);
+            m_queue_index++;
+            QTimer::singleShot(200, this, &ScriptingDance::runNext);
+        }
+    }
+
+    void say(const QString &f_text)
+    {
+        std::cout << f_text.toStdString() << std::endl;
+    }
+
+    void fail(const QString &f_reason)
+    {
+        say("FAILED: " + f_reason);
+        qApp->exit(1);
+    }
+
+    QString m_modpass;
+    bool m_logged_in = false;
+    QTimer *m_watchdog;
+    QString m_waiting_for;
+    DanceClient *m_client = nullptr;
+    QList<CommandTest> m_queue = {
+        {"/luahello", "Hello from Lua!"},
+        {"/luahello judge", "Hello from Lua, judge!"},
+        {"/pyhello", "Hello from Python!"},
+        {"/pyhello your honor", "Hello from Python, your honor!"},
+        {"/help luahello", "Says hello from Lua."},
+
+        // A script plugin is a first-class plugin: it unloads alone, its
+        // sibling keeps running, and it comes back with /plugin load.
+        {"/plugin unload akashi.hello-lua", "Plugin unloaded"},
+        {"/luahello", "Invalid command"},
+        {"/pyhello", "Hello from Python!"},
+        {"/plugin load akashi.hello-lua", "Plugin loaded"},
+        {"/luahello", "Hello from Lua!"},
+
+        // The host is a dependency: it refuses to unload under a running
+        // script plugin, and cascade takes them both.
+        {"/plugin unload akashi.lua-host", "Failed to unload"},
+        {"/plugin unload akashi.lua-host --cascade", "Plugin unloaded"},
+        {"/luahello", "Invalid command"},
+        {"/plugin load akashi.lua-host", "Plugin loaded"},
+        {"/plugin load akashi.hello-lua", "Plugin loaded"},
+        {"/luahello", "Hello from Lua!"},
+    };
+    int m_queue_index = 0;
+};
+
 int main(int argc, char *argv[])
 {
     QCoreApplication app(argc, argv);
@@ -1864,8 +1973,12 @@ int main(int argc, char *argv[])
         FloorDance l_dance(l_address, l_port, l_modpass);
         return app.exec();
     }
+    if (l_mode == "scripting") {
+        ScriptingDance l_dance(l_address, l_port, l_modpass);
+        return app.exec();
+    }
     if (l_mode != "classic") {
-        std::cout << "unknown mode: " << l_mode.toStdString() << " (use classic, evidence, testimony, jukebox, commands, filters or floors)" << std::endl;
+        std::cout << "unknown mode: " << l_mode.toStdString() << " (use classic, evidence, testimony, jukebox, commands, filters, floors or scripting)" << std::endl;
         return 1;
     }
     MiniClient l_client(l_address, l_port, l_modpass);

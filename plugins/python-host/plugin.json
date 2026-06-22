@@ -1,0 +1,6 @@
+{
+    "id": "akashi.python-host",
+    "version": "1.0.0",
+    "dependencies": ["akashi.scripting-ffi"],
+    "services": ["akashi.scripting-ffi"]
+}

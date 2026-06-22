@@ -88,3 +88,7 @@ bin/storage/
 bin/server_*.log
 bin/server_*.txt
 docs/
+
+# Lua is fetched at configure time by plugins/lua-host/CMakeLists.txt; never commit it.
+plugins/lua-host/lua/*
+!plugins/lua-host/lua/.clang-format

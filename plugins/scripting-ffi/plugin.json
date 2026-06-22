@@ -1,0 +1,6 @@
+{
+    "id": "akashi.scripting-ffi",
+    "version": "1.0.0",
+    "dependencies": [],
+    "services": ["akashi.commands"]
+}
