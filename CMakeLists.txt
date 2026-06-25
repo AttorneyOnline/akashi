@@ -275,6 +275,8 @@ if(BUILD_TESTING)
       COMMAND ${CMAKE_COMMAND} -E copy_if_different
           ${CMAKE_SOURCE_DIR}/plugins/script-samples/hello-lua.lua
           ${CMAKE_SOURCE_DIR}/plugins/script-samples/hello-python.py
+          ${CMAKE_SOURCE_DIR}/plugins/script-samples/showcase-lua.lua
+          ${CMAKE_SOURCE_DIR}/plugins/script-samples/showcase-python.py
           ${CMAKE_SOURCE_DIR}/bin/plugins)
   add_subdirectory(tests)
 endif()

@@ -1966,6 +1966,14 @@ class ScriptingDance : public QObject
         {Step::Modcall, "Testing the scripted modcall", ""},
         {Step::Command, "/pymodcalls", "modcalls seen: 1"},
 
+        // The showcase plugins: a Lua roll heard by a Python subscriber,
+        // per-plugin state, and the context accessors.
+        {Step::Command, "/luaroll 6", "rolled a"},
+        {Step::Command, "/pyrolls", "rolls witnessed: 1"},
+        {Step::Command, "/note remember the milk", "Noted"},
+        {Step::Command, "/notes", "remember the milk"},
+        {Step::Command, "/luainfo", "playing Phoenix"},
+
         // A permission-gated script command toggling a script text filter
         // on a target, watched live through the IC transform.
         {Step::Command, "/uwu 0", "engaged"},
