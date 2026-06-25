@@ -1853,6 +1853,7 @@ class ScriptingDance : public QObject
         m_client = new DanceClient("scripter", "Phoenix", f_address, f_port, 0, this);
         connect(m_client, &DanceClient::failed, this, [this](const QString &f_reason) { fail(f_reason); });
         connect(m_client, &DanceClient::oocReceived, this, &ScriptingDance::onOoc);
+        connect(m_client, &DanceClient::icReceived, this, &ScriptingDance::onIc);
         connect(m_client, &DanceClient::ready, this, [this] { m_client->sendOoc("/login"); });
         connect(m_client, &DanceClient::loggedIn, this, [this] {
             m_logged_in = true;
@@ -1861,10 +1862,16 @@ class ScriptingDance : public QObject
     }
 
   private:
-    struct CommandTest {
-        QString command;
+    struct Step {
+        enum Kind { Command, Ic, Modcall } kind;
+        QString send;
         QString expected;
     };
+
+    AOPacket icMessage(const QString &f_text) const
+    {
+        return AOPacket("MS", {"chat", "-", m_client->character(), "normal", f_text, "def", "1", "0", QString::number(m_client->charId()), "0", "0", "0", "0", "0", "0"});
+    }
 
     void runNext()
     {
@@ -1874,11 +1881,26 @@ class ScriptingDance : public QObject
             QTimer::singleShot(500, qApp, [] { qApp->exit(0); });
             return;
         }
-        const CommandTest &l_test = m_queue[m_queue_index];
-        m_waiting_for = l_test.command + " -> " + l_test.expected;
+        const Step &l_step = m_queue[m_queue_index];
+        m_waiting_for = l_step.send + " -> " + l_step.expected;
         say("--- waiting for " + m_waiting_for + " ---");
         m_watchdog->start(7000);
-        m_client->sendOoc(l_test.command);
+        switch (l_step.kind) {
+        case Step::Command:
+            m_client->sendOoc(l_step.send);
+            break;
+        case Step::Ic:
+            // The area's message floodguard drops chained IC sends.
+            QTimer::singleShot(400, this, [this, l_step] { m_client->send(icMessage(l_step.send)); });
+            break;
+        case Step::Modcall:
+            // The notice itself is fire-and-forget; the next step reads the
+            // script counter it feeds.
+            m_client->send(AOPacket("ZZ", {l_step.send, "-1"}));
+            m_queue_index++;
+            QTimer::singleShot(400, this, &ScriptingDance::runNext);
+            break;
+        }
     }
 
     void onOoc(const QString &f_message)
@@ -1889,11 +1911,23 @@ class ScriptingDance : public QObject
             }
             return;
         }
-        if (m_queue_index >= m_queue.size()) {
+        if (m_queue_index >= m_queue.size() || m_queue[m_queue_index].kind != Step::Command) {
             return;
         }
         if (f_message.contains(m_queue[m_queue_index].expected, Qt::CaseInsensitive)) {
-            say("OK: " + m_queue[m_queue_index].command);
+            say("OK: " + m_queue[m_queue_index].send);
+            m_queue_index++;
+            QTimer::singleShot(200, this, &ScriptingDance::runNext);
+        }
+    }
+
+    void onIc(const QStringList &f_fields)
+    {
+        if (m_queue_index >= m_queue.size() || m_queue[m_queue_index].kind != Step::Ic) {
+            return;
+        }
+        if (f_fields.value(4).contains(m_queue[m_queue_index].expected, Qt::CaseInsensitive)) {
+            say("OK: IC \"" + m_queue[m_queue_index].send + "\" arrived as \"" + f_fields.value(4) + "\"");
             m_queue_index++;
             QTimer::singleShot(200, this, &ScriptingDance::runNext);
         }
@@ -1915,29 +1949,46 @@ class ScriptingDance : public QObject
     QTimer *m_watchdog;
     QString m_waiting_for;
     DanceClient *m_client = nullptr;
-    QList<CommandTest> m_queue = {
-        {"/luahello", "Hello from Lua!"},
-        {"/luahello judge", "Hello from Lua, judge!"},
-        {"/pyhello", "Hello from Python!"},
-        {"/pyhello your honor", "Hello from Python, your honor!"},
-        {"/help luahello", "Says hello from Lua."},
+    QList<Step> m_queue = {
+        {Step::Command, "/luahello", "Hello from Lua!"},
+        {Step::Command, "/luahello judge", "Hello from Lua, judge!"},
+        {Step::Command, "/pyhello", "Hello from Python!"},
+        {Step::Command, "/pyhello your honor", "Hello from Python, your honor!"},
+        {Step::Command, "/help luahello", "Says hello from Lua."},
+
+        // Context accessors, plugin config, and the custom event hello-lua
+        // publishes on every greeting reaching hello-python.
+        {Step::Command, "/luawhoami", "playing Phoenix"},
+        {Step::Command, "/pyconfig", "not configured"},
+        {Step::Command, "/pygreetings", "greetings seen: 2"},
+
+        // A core server event crossing into a script.
+        {Step::Modcall, "Testing the scripted modcall", ""},
+        {Step::Command, "/pymodcalls", "modcalls seen: 1"},
+
+        // A permission-gated script command toggling a script text filter
+        // on a target, watched live through the IC transform.
+        {Step::Command, "/uwu 0", "engaged"},
+        {Step::Ic, "hello little world", "hewwo wittwe wowwd"},
+        {Step::Command, "/uwu 0", "disengaged"},
+        {Step::Ic, "hello little world again", "hello little world again"},
 
         // A script plugin is a first-class plugin: it unloads alone, its
         // sibling keeps running, and it comes back with /plugin load.
-        {"/plugin unload akashi.hello-lua", "Plugin unloaded"},
-        {"/luahello", "Invalid command"},
-        {"/pyhello", "Hello from Python!"},
-        {"/plugin load akashi.hello-lua", "Plugin loaded"},
-        {"/luahello", "Hello from Lua!"},
+        {Step::Command, "/plugin unload akashi.hello-lua", "Plugin unloaded"},
+        {Step::Command, "/luahello", "Invalid command"},
+        {Step::Command, "/pyhello", "Hello from Python!"},
+        {Step::Command, "/plugin load akashi.hello-lua", "Plugin loaded"},
+        {Step::Command, "/luahello", "Hello from Lua!"},
 
         // The host is a dependency: it refuses to unload under a running
         // script plugin, and cascade takes them both.
-        {"/plugin unload akashi.lua-host", "Failed to unload"},
-        {"/plugin unload akashi.lua-host --cascade", "Plugin unloaded"},
-        {"/luahello", "Invalid command"},
-        {"/plugin load akashi.lua-host", "Plugin loaded"},
-        {"/plugin load akashi.hello-lua", "Plugin loaded"},
-        {"/luahello", "Hello from Lua!"},
+        {Step::Command, "/plugin unload akashi.lua-host", "Failed to unload"},
+        {Step::Command, "/plugin unload akashi.lua-host --cascade", "Plugin unloaded"},
+        {Step::Command, "/luahello", "Invalid command"},
+        {Step::Command, "/plugin load akashi.lua-host", "Plugin loaded"},
+        {Step::Command, "/plugin load akashi.hello-lua", "Plugin loaded"},
+        {Step::Command, "/luahello", "Hello from Lua!"},
     };
     int m_queue_index = 0;
 };

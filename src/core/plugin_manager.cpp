@@ -610,7 +610,7 @@ void PluginManager::cleanupPlugin(const QString &f_id)
     auto l_events = m_services->resolve<EventBus>(QStringLiteral("akashi.events"));
     if (l_events) l_events->unsubscribeAll(f_id);
 
-    auto l_filters = m_services->resolve<TextFilterRegistry>(QStringLiteral("akashi.filters"));
+    auto l_filters = m_services->resolve<TextFilterRegistry>(QStringLiteral("akashi.textfilters"));
     if (l_filters) l_filters->unregisterAll(f_id);
 
     auto l_permissions = m_services->resolve<PermissionRegistry>(QStringLiteral("akashi.permissions"));

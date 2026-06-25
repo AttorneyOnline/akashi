@@ -23,33 +23,48 @@
 #include <QList>
 
 #include <cstring>
+#include <vector>
+
+struct PythonPluginState;
+
+// One registered Python callable and the plugin it belongs to.
+struct PyFnRef
+{
+    PyObject *callable = nullptr;
+    PythonPluginState *plugin = nullptr;
+};
 
 // Everything one Python plugin owns: its module namespace and its handlers.
 struct PythonPluginState
 {
     QByteArray owner_id;
     PyObject *globals = nullptr;
-    QList<PyObject *> handlers;
+    QList<PyFnRef *> fn_refs;
 };
 
 static const AkashiFfi *s_ffi = nullptr;
 static QHash<QString, PythonPluginState *> s_plugins;
 
-// The plugin whose entry script is running; registrations attribute to it.
-static PythonPluginState *s_loading_plugin = nullptr;
+// The plugin whose code is running - its entry script or one of its
+// handlers - so registrations and config reads attribute to it.
+static PythonPluginState *s_active_plugin = nullptr;
 
 // Runs a registered Python handler as handler(context, [args]).
 static void pyCommandTrampoline(void *f_userdata, AkashiCommandContext *f_context,
                                 int f_argc, const char *const *f_argv)
 {
-    PyObject *l_handler = static_cast<PyObject *>(f_userdata);
+    PyFnRef *l_ref = static_cast<PyFnRef *>(f_userdata);
     PyObject *l_context = PyCapsule_New(f_context, "akashi.context", nullptr);
     PyObject *l_args = PyList_New(f_argc);
     for (int i = 0; i < f_argc; i++) {
         PyList_SetItem(l_args, i, PyUnicode_FromString(f_argv[i]));
     }
 
-    PyObject *l_result = PyObject_CallFunctionObjArgs(l_handler, l_context, l_args, nullptr);
+    PythonPluginState *l_previous = s_active_plugin;
+    s_active_plugin = l_ref->plugin;
+    PyObject *l_result = PyObject_CallFunctionObjArgs(l_ref->callable, l_context, l_args, nullptr);
+    s_active_plugin = l_previous;
+
     if (!l_result) {
         PyErr_Print();
     }
@@ -58,10 +73,80 @@ static void pyCommandTrampoline(void *f_userdata, AkashiCommandContext *f_contex
     Py_DECREF(l_context);
 }
 
+// Runs a Python text filter: a returned str rewrites the message, False
+// drops it, anything else leaves it unchanged.
+static int pyFilterTrampoline(void *f_userdata, const char *f_text, size_t f_text_length,
+                              AkashiTextResult *f_result)
+{
+    PyFnRef *l_ref = static_cast<PyFnRef *>(f_userdata);
+    PyObject *l_text = PyUnicode_FromStringAndSize(f_text, Py_ssize_t(f_text_length));
+
+    PythonPluginState *l_previous = s_active_plugin;
+    s_active_plugin = l_ref->plugin;
+    PyObject *l_result = PyObject_CallFunctionObjArgs(l_ref->callable, l_text, nullptr);
+    s_active_plugin = l_previous;
+    Py_DECREF(l_text);
+
+    if (!l_result) {
+        PyErr_Print();
+        return 1;
+    }
+    int l_keep = 1;
+    if (PyUnicode_Check(l_result)) {
+        Py_ssize_t l_length = 0;
+        const char *l_rewritten = PyUnicode_AsUTF8AndSize(l_result, &l_length);
+        if (l_rewritten) {
+            s_ffi->text_result_set(f_result, l_rewritten, size_t(l_length));
+        }
+    }
+    else if (l_result == Py_False) {
+        l_keep = 0;
+    }
+    Py_DECREF(l_result);
+    return l_keep;
+}
+
+// Runs a Python event handler with the payload as a dict.
+static void pyEventTrampoline(void *f_userdata, int f_count,
+                              const char *const *f_keys, const char *const *f_values)
+{
+    PyFnRef *l_ref = static_cast<PyFnRef *>(f_userdata);
+    PyObject *l_payload = PyDict_New();
+    for (int i = 0; i < f_count; i++) {
+        PyObject *l_value = PyUnicode_FromString(f_values[i]);
+        PyDict_SetItemString(l_payload, f_keys[i], l_value);
+        Py_DECREF(l_value);
+    }
+
+    PythonPluginState *l_previous = s_active_plugin;
+    s_active_plugin = l_ref->plugin;
+    PyObject *l_result = PyObject_CallFunctionObjArgs(l_ref->callable, l_payload, nullptr);
+    s_active_plugin = l_previous;
+
+    if (!l_result) {
+        PyErr_Print();
+    }
+    Py_XDECREF(l_result);
+    Py_DECREF(l_payload);
+}
+
 static int pyStringArg(PyObject *f_object, const char **f_text, Py_ssize_t *f_length)
 {
     *f_text = PyUnicode_AsUTF8AndSize(f_object, f_length);
     return *f_text ? 1 : 0;
+}
+
+static PyFnRef *takeFnRef(PyObject *f_callable)
+{
+    if (!s_active_plugin) {
+        return nullptr;
+    }
+    Py_INCREF(f_callable);
+    auto l_ref = new PyFnRef;
+    l_ref->callable = f_callable;
+    l_ref->plugin = s_active_plugin;
+    s_active_plugin->fn_refs.append(l_ref);
+    return l_ref;
 }
 
 static PyObject *pyApiLog(PyObject *, PyObject *f_args)
@@ -82,40 +167,190 @@ static PyObject *pyApiLog(PyObject *, PyObject *f_args)
 static PyObject *pyApiRegisterCommand(PyObject *, PyObject *f_args)
 {
     PyObject *l_name_obj = nullptr, *l_usage_obj = nullptr, *l_description_obj = nullptr, *l_handler = nullptr;
-    if (!PyArg_ParseTuple(f_args, "UUUO", &l_name_obj, &l_usage_obj, &l_description_obj, &l_handler)) {
+    PyObject *l_permission_obj = nullptr;
+    int l_min_args = 0;
+    if (!PyArg_ParseTuple(f_args, "UUUO|Ui", &l_name_obj, &l_usage_obj, &l_description_obj, &l_handler,
+                          &l_permission_obj, &l_min_args)) {
         return nullptr;
     }
     if (!PyCallable_Check(l_handler)) {
         PyErr_SetString(PyExc_TypeError, "handler must be callable");
         return nullptr;
     }
-    if (!s_loading_plugin) {
-        PyErr_SetString(PyExc_RuntimeError, "register_command is only available while the plugin loads");
-        return nullptr;
-    }
 
-    const char *l_name = nullptr, *l_usage = nullptr, *l_description = nullptr;
-    Py_ssize_t l_name_length = 0, l_usage_length = 0, l_description_length = 0;
+    const char *l_name = nullptr, *l_usage = nullptr, *l_description = nullptr, *l_permission = "";
+    Py_ssize_t l_name_length = 0, l_usage_length = 0, l_description_length = 0, l_permission_length = 0;
     if (!pyStringArg(l_name_obj, &l_name, &l_name_length) ||
         !pyStringArg(l_usage_obj, &l_usage, &l_usage_length) ||
         !pyStringArg(l_description_obj, &l_description, &l_description_length)) {
         return nullptr;
     }
+    if (l_permission_obj && !pyStringArg(l_permission_obj, &l_permission, &l_permission_length)) {
+        return nullptr;
+    }
 
-    Py_INCREF(l_handler);
+    PyFnRef *l_ref = takeFnRef(l_handler);
+    if (!l_ref) {
+        PyErr_SetString(PyExc_RuntimeError, "no plugin is active");
+        return nullptr;
+    }
+
     const int l_registered = s_ffi->register_command(
         l_name, size_t(l_name_length), l_usage, size_t(l_usage_length),
         l_description, size_t(l_description_length),
-        "", 0, 0,
-        pyCommandTrampoline, l_handler,
-        s_loading_plugin->owner_id.constData(), size_t(s_loading_plugin->owner_id.size()));
+        l_permission, size_t(l_permission_length), l_min_args,
+        pyCommandTrampoline, l_ref,
+        l_ref->plugin->owner_id.constData(), size_t(l_ref->plugin->owner_id.size()));
     if (!l_registered) {
-        Py_DECREF(l_handler);
         PyErr_SetString(PyExc_ValueError, "register_command: the name is taken or invalid");
         return nullptr;
     }
-    s_loading_plugin->handlers.append(l_handler);
     Py_RETURN_NONE;
+}
+
+static PyObject *pyApiRegisterTextFilter(PyObject *, PyObject *f_args)
+{
+    PyObject *l_id_obj = nullptr, *l_handler = nullptr;
+    int l_order = 0, l_always_active = 0;
+    if (!PyArg_ParseTuple(f_args, "UipO", &l_id_obj, &l_order, &l_always_active, &l_handler)) {
+        return nullptr;
+    }
+    if (!PyCallable_Check(l_handler)) {
+        PyErr_SetString(PyExc_TypeError, "handler must be callable");
+        return nullptr;
+    }
+    const char *l_id = nullptr;
+    Py_ssize_t l_id_length = 0;
+    if (!pyStringArg(l_id_obj, &l_id, &l_id_length)) {
+        return nullptr;
+    }
+
+    PyFnRef *l_ref = takeFnRef(l_handler);
+    if (!l_ref) {
+        PyErr_SetString(PyExc_RuntimeError, "no plugin is active");
+        return nullptr;
+    }
+
+    const int l_registered = s_ffi->register_text_filter(
+        l_id, size_t(l_id_length), l_order, l_always_active,
+        pyFilterTrampoline, l_ref,
+        l_ref->plugin->owner_id.constData(), size_t(l_ref->plugin->owner_id.size()));
+    if (!l_registered) {
+        PyErr_SetString(PyExc_ValueError, "register_text_filter: the id is taken or invalid");
+        return nullptr;
+    }
+    Py_RETURN_NONE;
+}
+
+static PyObject *pyApiSubscribeEvent(PyObject *, PyObject *f_args)
+{
+    PyObject *l_name_obj = nullptr, *l_handler = nullptr;
+    if (!PyArg_ParseTuple(f_args, "UO", &l_name_obj, &l_handler)) {
+        return nullptr;
+    }
+    if (!PyCallable_Check(l_handler)) {
+        PyErr_SetString(PyExc_TypeError, "handler must be callable");
+        return nullptr;
+    }
+    const char *l_name = nullptr;
+    Py_ssize_t l_name_length = 0;
+    if (!pyStringArg(l_name_obj, &l_name, &l_name_length)) {
+        return nullptr;
+    }
+
+    PyFnRef *l_ref = takeFnRef(l_handler);
+    if (!l_ref) {
+        PyErr_SetString(PyExc_RuntimeError, "no plugin is active");
+        return nullptr;
+    }
+    s_ffi->subscribe_event(l_name, size_t(l_name_length), pyEventTrampoline, l_ref,
+                           l_ref->plugin->owner_id.constData(), size_t(l_ref->plugin->owner_id.size()));
+    Py_RETURN_NONE;
+}
+
+static PyObject *pyApiPublishEvent(PyObject *, PyObject *f_args)
+{
+    PyObject *l_name_obj = nullptr, *l_payload = nullptr;
+    if (!PyArg_ParseTuple(f_args, "UO!", &l_name_obj, &PyDict_Type, &l_payload)) {
+        return nullptr;
+    }
+    const char *l_name = nullptr;
+    Py_ssize_t l_name_length = 0;
+    if (!pyStringArg(l_name_obj, &l_name, &l_name_length)) {
+        return nullptr;
+    }
+
+    QList<QByteArray> l_keys, l_values;
+    PyObject *l_key = nullptr, *l_value = nullptr;
+    Py_ssize_t l_position = 0;
+    while (PyDict_Next(l_payload, &l_position, &l_key, &l_value)) {
+        if (!PyUnicode_Check(l_key)) {
+            continue;
+        }
+        PyObject *l_value_str = PyObject_Str(l_value);
+        if (!l_value_str) {
+            PyErr_Clear();
+            continue;
+        }
+        l_keys.append(QByteArray(PyUnicode_AsUTF8(l_key)));
+        l_values.append(QByteArray(PyUnicode_AsUTF8(l_value_str)));
+        Py_DECREF(l_value_str);
+    }
+
+    std::vector<const char *> l_key_ptrs, l_value_ptrs;
+    for (int i = 0; i < l_keys.size(); i++) {
+        l_key_ptrs.push_back(l_keys[i].constData());
+        l_value_ptrs.push_back(l_values[i].constData());
+    }
+    s_ffi->publish_event(l_name, size_t(l_name_length), int(l_key_ptrs.size()), l_key_ptrs.data(), l_value_ptrs.data());
+    Py_RETURN_NONE;
+}
+
+static PyObject *pyApiRegisterPermission(PyObject *, PyObject *f_args)
+{
+    PyObject *l_id_obj = nullptr, *l_display_obj = nullptr, *l_category_obj = nullptr;
+    if (!PyArg_ParseTuple(f_args, "UUU", &l_id_obj, &l_display_obj, &l_category_obj)) {
+        return nullptr;
+    }
+    const char *l_id = nullptr, *l_display = nullptr, *l_category = nullptr;
+    Py_ssize_t l_id_length = 0, l_display_length = 0, l_category_length = 0;
+    if (!pyStringArg(l_id_obj, &l_id, &l_id_length) ||
+        !pyStringArg(l_display_obj, &l_display, &l_display_length) ||
+        !pyStringArg(l_category_obj, &l_category, &l_category_length)) {
+        return nullptr;
+    }
+    if (!s_active_plugin) {
+        PyErr_SetString(PyExc_RuntimeError, "no plugin is active");
+        return nullptr;
+    }
+    s_ffi->register_permission(l_id, size_t(l_id_length), l_display, size_t(l_display_length),
+                               l_category, size_t(l_category_length),
+                               s_active_plugin->owner_id.constData(), size_t(s_active_plugin->owner_id.size()));
+    Py_RETURN_NONE;
+}
+
+static PyObject *pyApiConfigGet(PyObject *, PyObject *f_args)
+{
+    PyObject *l_key_obj = nullptr, *l_fallback_obj = nullptr;
+    if (!PyArg_ParseTuple(f_args, "U|U", &l_key_obj, &l_fallback_obj)) {
+        return nullptr;
+    }
+    const char *l_key = nullptr, *l_fallback = "";
+    Py_ssize_t l_key_length = 0, l_fallback_length = 0;
+    if (!pyStringArg(l_key_obj, &l_key, &l_key_length)) {
+        return nullptr;
+    }
+    if (l_fallback_obj && !pyStringArg(l_fallback_obj, &l_fallback, &l_fallback_length)) {
+        return nullptr;
+    }
+    if (!s_active_plugin) {
+        PyErr_SetString(PyExc_RuntimeError, "no plugin is active");
+        return nullptr;
+    }
+    size_t l_value_length = 0;
+    const char *l_value = s_ffi->config_get(s_active_plugin->owner_id.constData(), size_t(s_active_plugin->owner_id.size()),
+                                            l_key, size_t(l_key_length), l_fallback, size_t(l_fallback_length), &l_value_length);
+    return PyUnicode_FromStringAndSize(l_value, Py_ssize_t(l_value_length));
 }
 
 static AkashiCommandContext *pyContextArg(PyObject *f_capsule)
@@ -174,12 +409,187 @@ static PyObject *pyApiClientId(PyObject *, PyObject *f_args)
     return PyLong_FromLong(s_ffi->client_id(l_context));
 }
 
+static PyObject *pyApiAreaId(PyObject *, PyObject *f_args)
+{
+    PyObject *l_capsule = nullptr;
+    if (!PyArg_ParseTuple(f_args, "O", &l_capsule)) {
+        return nullptr;
+    }
+    AkashiCommandContext *l_context = pyContextArg(l_capsule);
+    if (!l_context) {
+        return nullptr;
+    }
+    return PyLong_FromLong(s_ffi->context_area_id(l_context));
+}
+
+static PyObject *pyStringGetter(PyObject *f_args, const char *(*f_getter)(AkashiCommandContext *, size_t *))
+{
+    PyObject *l_capsule = nullptr;
+    if (!PyArg_ParseTuple(f_args, "O", &l_capsule)) {
+        return nullptr;
+    }
+    AkashiCommandContext *l_context = pyContextArg(l_capsule);
+    if (!l_context) {
+        return nullptr;
+    }
+    size_t l_length = 0;
+    const char *l_value = f_getter(l_context, &l_length);
+    return PyUnicode_FromStringAndSize(l_value, Py_ssize_t(l_length));
+}
+
+static PyObject *pyApiPlayerName(PyObject *, PyObject *f_args)
+{
+    return pyStringGetter(f_args, s_ffi->context_player_name);
+}
+
+static PyObject *pyApiCharacter(PyObject *, PyObject *f_args)
+{
+    return pyStringGetter(f_args, s_ffi->context_character);
+}
+
+static PyObject *pyApiAreaName(PyObject *, PyObject *f_args)
+{
+    return pyStringGetter(f_args, s_ffi->context_area_name);
+}
+
+static PyObject *pyApiIsAuthenticated(PyObject *, PyObject *f_args)
+{
+    PyObject *l_capsule = nullptr;
+    if (!PyArg_ParseTuple(f_args, "O", &l_capsule)) {
+        return nullptr;
+    }
+    AkashiCommandContext *l_context = pyContextArg(l_capsule);
+    if (!l_context) {
+        return nullptr;
+    }
+    return PyBool_FromLong(s_ffi->context_is_authenticated(l_context));
+}
+
+static PyObject *pyApiCanPerform(PyObject *, PyObject *f_args)
+{
+    PyObject *l_capsule = nullptr, *l_permission_obj = nullptr;
+    if (!PyArg_ParseTuple(f_args, "OU", &l_capsule, &l_permission_obj)) {
+        return nullptr;
+    }
+    AkashiCommandContext *l_context = pyContextArg(l_capsule);
+    if (!l_context) {
+        return nullptr;
+    }
+    const char *l_permission = nullptr;
+    Py_ssize_t l_length = 0;
+    if (!pyStringArg(l_permission_obj, &l_permission, &l_length)) {
+        return nullptr;
+    }
+    return PyBool_FromLong(s_ffi->context_can_perform(l_context, l_permission, size_t(l_length)));
+}
+
+static PyObject *pyApiTargetId(PyObject *, PyObject *f_args)
+{
+    PyObject *l_capsule = nullptr;
+    int l_index = 0;
+    if (!PyArg_ParseTuple(f_args, "Oi", &l_capsule, &l_index)) {
+        return nullptr;
+    }
+    AkashiCommandContext *l_context = pyContextArg(l_capsule);
+    if (!l_context) {
+        return nullptr;
+    }
+    return PyLong_FromLong(s_ffi->target_client_id(l_context, l_index));
+}
+
+static PyObject *pyApiTargetReply(PyObject *, PyObject *f_args)
+{
+    PyObject *l_capsule = nullptr, *l_text_obj = nullptr;
+    int l_index = 0;
+    if (!PyArg_ParseTuple(f_args, "OiU", &l_capsule, &l_index, &l_text_obj)) {
+        return nullptr;
+    }
+    AkashiCommandContext *l_context = pyContextArg(l_capsule);
+    if (!l_context) {
+        return nullptr;
+    }
+    const char *l_text = nullptr;
+    Py_ssize_t l_length = 0;
+    if (!pyStringArg(l_text_obj, &l_text, &l_length)) {
+        return nullptr;
+    }
+    return PyBool_FromLong(s_ffi->target_reply(l_context, l_index, l_text, size_t(l_length)));
+}
+
+static PyObject *pyApiTargetHasSanction(PyObject *, PyObject *f_args)
+{
+    PyObject *l_capsule = nullptr, *l_id_obj = nullptr;
+    int l_index = 0;
+    if (!PyArg_ParseTuple(f_args, "OiU", &l_capsule, &l_index, &l_id_obj)) {
+        return nullptr;
+    }
+    AkashiCommandContext *l_context = pyContextArg(l_capsule);
+    if (!l_context) {
+        return nullptr;
+    }
+    const char *l_id = nullptr;
+    Py_ssize_t l_length = 0;
+    if (!pyStringArg(l_id_obj, &l_id, &l_length)) {
+        return nullptr;
+    }
+    return PyBool_FromLong(s_ffi->target_has_sanction(l_context, l_index, l_id, size_t(l_length)));
+}
+
+static PyObject *pyApiTargetSetSanction(PyObject *, PyObject *f_args)
+{
+    PyObject *l_capsule = nullptr, *l_id_obj = nullptr;
+    int l_index = 0, l_active = 0;
+    if (!PyArg_ParseTuple(f_args, "OiUp", &l_capsule, &l_index, &l_id_obj, &l_active)) {
+        return nullptr;
+    }
+    AkashiCommandContext *l_context = pyContextArg(l_capsule);
+    if (!l_context) {
+        return nullptr;
+    }
+    const char *l_id = nullptr;
+    Py_ssize_t l_length = 0;
+    if (!pyStringArg(l_id_obj, &l_id, &l_length)) {
+        return nullptr;
+    }
+    return PyBool_FromLong(s_ffi->target_set_sanction(l_context, l_index, l_id, size_t(l_length), l_active));
+}
+
+static PyObject *pyApiTargetChangeArea(PyObject *, PyObject *f_args)
+{
+    PyObject *l_capsule = nullptr;
+    int l_index = 0, l_area_id = 0;
+    if (!PyArg_ParseTuple(f_args, "Oii", &l_capsule, &l_index, &l_area_id)) {
+        return nullptr;
+    }
+    AkashiCommandContext *l_context = pyContextArg(l_capsule);
+    if (!l_context) {
+        return nullptr;
+    }
+    return PyBool_FromLong(s_ffi->target_change_area(l_context, l_index, l_area_id));
+}
+
 static PyMethodDef s_akashi_methods[] = {
     {"log", pyApiLog, METH_VARARGS, "Writes one line to the server log."},
-    {"register_command", pyApiRegisterCommand, METH_VARARGS, "Registers a chat command: register_command(name, usage, description, handler)."},
+    {"register_command", pyApiRegisterCommand, METH_VARARGS, "register_command(name, usage, description, handler, permission='', min_args=0)."},
+    {"register_text_filter", pyApiRegisterTextFilter, METH_VARARGS, "register_text_filter(id, order, always_active, handler); the handler returns a str rewrite, False to drop, or None."},
+    {"register_permission", pyApiRegisterPermission, METH_VARARGS, "register_permission(id, display_name, category)."},
+    {"subscribe_event", pyApiSubscribeEvent, METH_VARARGS, "subscribe_event(name, handler); the handler receives the payload dict."},
+    {"publish_event", pyApiPublishEvent, METH_VARARGS, "publish_event(name, payload_dict)."},
+    {"config_get", pyApiConfigGet, METH_VARARGS, "config_get(key, fallback='') from the plugin's config file."},
     {"reply", pyApiReply, METH_VARARGS, "Replies to the invoker of the running command."},
     {"reply_to_area", pyApiReplyToArea, METH_VARARGS, "Replies to everyone in the invoker's area."},
     {"client_id", pyApiClientId, METH_VARARGS, "The invoker's client id."},
+    {"area_id", pyApiAreaId, METH_VARARGS, "The invoker's area id."},
+    {"player_name", pyApiPlayerName, METH_VARARGS, "The invoker's OOC name."},
+    {"character", pyApiCharacter, METH_VARARGS, "The invoker's character."},
+    {"area_name", pyApiAreaName, METH_VARARGS, "The invoker's area name."},
+    {"is_authenticated", pyApiIsAuthenticated, METH_VARARGS, "Whether the invoker is a logged-in moderator."},
+    {"can_perform", pyApiCanPerform, METH_VARARGS, "Whether the invoker holds a permission."},
+    {"target_id", pyApiTargetId, METH_VARARGS, "target_id(ctx, argument_index): the client id the argument names, or -1."},
+    {"target_reply", pyApiTargetReply, METH_VARARGS, "target_reply(ctx, argument_index, text)."},
+    {"target_has_sanction", pyApiTargetHasSanction, METH_VARARGS, "target_has_sanction(ctx, argument_index, sanction_id)."},
+    {"target_set_sanction", pyApiTargetSetSanction, METH_VARARGS, "target_set_sanction(ctx, argument_index, sanction_id, active)."},
+    {"target_change_area", pyApiTargetChangeArea, METH_VARARGS, "target_change_area(ctx, argument_index, area_id)."},
     {nullptr, nullptr, 0, nullptr},
 };
 
@@ -198,7 +608,7 @@ class PythonScriptHost : public akashi::IScriptPluginHost
 {
   public:
     QString serviceId() const override { return QStringLiteral("akashi.script-host.python"); }
-    akashi::ServiceVersion serviceVersion() const override { return {1, 0, 0}; }
+    akashi::ServiceVersion serviceVersion() const override { return {1, 1, 0}; }
     QString runtime() const override { return QStringLiteral("python"); }
 
     bool loadScriptPlugin(const QString &f_plugin_id, const QString &f_entry_path) override
@@ -221,14 +631,17 @@ class PythonScriptHost : public akashi::IScriptPluginHost
         PyDict_SetItemString(l_plugin->globals, "__name__", l_name);
         Py_DECREF(l_name);
 
-        s_loading_plugin = l_plugin;
+        PythonPluginState *l_previous = s_active_plugin;
+        s_active_plugin = l_plugin;
         PyObject *l_result = PyRun_String(l_source.constData(), Py_file_input,
                                           l_plugin->globals, l_plugin->globals);
-        s_loading_plugin = nullptr;
+        s_active_plugin = l_previous;
 
         if (!l_result) {
             PyErr_Print();
             qWarning() << "python-host: error in" << f_entry_path;
+            // Half-done registrations must not survive the failed load.
+            s_ffi->unregister_owner(l_plugin->owner_id.constData(), size_t(l_plugin->owner_id.size()));
             releasePlugin(l_plugin);
             return false;
         }
@@ -243,8 +656,8 @@ class PythonScriptHost : public akashi::IScriptPluginHost
         if (!l_plugin) {
             return;
         }
-        // The plugin's commands go before its handlers, so no handler can
-        // fire into released objects.
+        // The plugin's registrations go before its handlers, so no handler
+        // can fire into released objects.
         s_ffi->unregister_owner(l_plugin->owner_id.constData(), size_t(l_plugin->owner_id.size()));
         releasePlugin(l_plugin);
     }
@@ -260,8 +673,9 @@ class PythonScriptHost : public akashi::IScriptPluginHost
   private:
     static void releasePlugin(PythonPluginState *f_plugin)
     {
-        for (PyObject *l_handler : std::as_const(f_plugin->handlers)) {
-            Py_DECREF(l_handler);
+        for (PyFnRef *l_ref : std::as_const(f_plugin->fn_refs)) {
+            Py_DECREF(l_ref->callable);
+            delete l_ref;
         }
         Py_XDECREF(f_plugin->globals);
         delete f_plugin;
@@ -269,7 +683,7 @@ class PythonScriptHost : public akashi::IScriptPluginHost
 };
 
 QString PythonHostPlugin::id() const { return QStringLiteral("akashi.python-host"); }
-akashi::ServiceVersion PythonHostPlugin::pluginVersion() const { return {1, 0, 0}; }
+akashi::ServiceVersion PythonHostPlugin::pluginVersion() const { return {1, 1, 0}; }
 
 bool PythonHostPlugin::load(akashi::ServiceRegistry &services)
 {
