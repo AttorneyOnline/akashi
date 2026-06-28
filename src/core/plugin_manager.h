@@ -10,6 +10,7 @@
 #include <QStringList>
 
 #include <memory>
+#include <optional>
 
 class QPluginLoader;
 
@@ -56,6 +57,14 @@ class AKASHI_CORE_EXPORT PluginManager : public QObject, public IService
 
     QList<PluginInfo> plugins() const;
     std::optional<PluginInfo> pluginInfo(const QString &f_id) const;
+
+    // Reads a script plugin's declaration header: the JSON object after the
+    // "akashi-plugin" marker near the top of the file. Every field has a
+    // default - the id falls back to the file name, the version to 1.0.0,
+    // the runtime to the file extension - and the matching host plugin is
+    // added to the dependencies. Returns nothing when the marker is absent
+    // or the object does not parse.
+    static std::optional<PluginInfo> parseScriptHeader(const QString &f_file_path);
 
   Q_SIGNALS:
     /**

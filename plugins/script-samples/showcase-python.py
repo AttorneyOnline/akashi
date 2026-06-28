@@ -53,6 +53,22 @@ def on_modcall(payload):
 akashi.subscribe_event("showcase.roll", on_roll)
 akashi.subscribe_event("modcall", on_modcall)
 
+# A rule action for the area rule system: an after action reacts to events
+# that actually happened in areas it is attached to.
+ic_tallied = 0
+
+
+def tally_rule(info):
+    global ic_tallied
+    ic_tallied += 1
+
+
+akashi.register_rule_action("py.tally", "after", tally_rule)
+
+
+def tally_command(ctx, args):
+    akashi.reply(ctx, f"ic messages tallied: {ic_tallied}")
+
 
 def note_command(ctx, args):
     notes[akashi.player_name(ctx)] = " ".join(args)
@@ -100,4 +116,5 @@ akashi.register_command("note", "/note <text>", "Leaves yourself a note.", note_
 akashi.register_command("notes", "/notes", "Reads your note back.", notes_command)
 akashi.register_command("shout", "/shout <id>", "Toggles the shout curse on a client.", shout_command, "showcase.shout", 1)
 akashi.register_command("pyrolls", "/pyrolls", "Counts events this plugin witnessed.", tallies_command)
+akashi.register_command("pytally", "/pytally", "Counts IC messages the py.tally rule saw.", tally_command)
 akashi.register_command("pystats", "/pystats", "Shows what the plugin knows about you.", stats_command)

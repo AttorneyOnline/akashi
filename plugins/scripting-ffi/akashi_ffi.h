@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-#define AKASHI_FFI_ABI_VERSION 2
+#define AKASHI_FFI_ABI_VERSION 3
 
 /* Valid only for the duration of a command callback. */
 typedef struct AkashiCommandContext AkashiCommandContext;
@@ -40,6 +40,19 @@ typedef int (*AkashiTextFilterFn)(void *f_userdata, const char *f_text, size_t f
 /* An event handler. The payload arrives as f_count key/value string pairs. */
 typedef void (*AkashiEventFn)(void *f_userdata, int f_count,
                               const char *const *f_keys, const char *const *f_values);
+
+/* Carries a before-rule's refusal back; valid during the callback. */
+typedef struct AkashiRuleResult AkashiRuleResult;
+
+/* A rule action, fired when an area event it is attached to happens. The
+ * event's payload and the arguments the rule was attached with arrive as
+ * key/value string pairs. f_result is non-null for a before-action; calling
+ * rule_result_block on it refuses the event. After-actions get null. */
+typedef void (*AkashiRuleFn)(void *f_userdata,
+                             int f_player_id, int f_area_id, int f_floor_id,
+                             int f_payload_count, const char *const *f_payload_keys, const char *const *f_payload_values,
+                             int f_argument_count, const char *const *f_argument_keys, const char *const *f_argument_values,
+                             AkashiRuleResult *f_result);
 
 typedef struct AkashiFfi
 {
@@ -133,6 +146,19 @@ typedef struct AkashiFfi
                               const char *f_key, size_t f_key_length,
                               const char *f_fallback, size_t f_fallback_length,
                               size_t *f_out_length);
+
+    /* --- Added in ABI version 3 --- */
+
+    /* Registers a named rule action for the area rule system. Owners attach
+     * it to floors and areas with /addrule, /floorrule or areas.json, with
+     * key=value arguments the action receives on every fire. f_before picks
+     * the phase: 1 gates the event, 0 reacts to it. */
+    int (*register_rule_action)(const char *f_name, size_t f_name_length, int f_before,
+                                AkashiRuleFn f_action, void *f_userdata,
+                                const char *f_owner_id, size_t f_owner_id_length);
+
+    /* Refuses the gated event from inside a before-action callback. */
+    void (*rule_result_block)(AkashiRuleResult *f_result, const char *f_reason, size_t f_reason_length);
 } AkashiFfi;
 
 #ifdef __cplusplus

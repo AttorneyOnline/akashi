@@ -1863,7 +1863,7 @@ class ScriptingDance : public QObject
 
   private:
     struct Step {
-        enum Kind { Command, Ic, Modcall } kind;
+        enum Kind { Command, Ic, IcBlocked, Modcall } kind;
         QString send;
         QString expected;
     };
@@ -1890,6 +1890,7 @@ class ScriptingDance : public QObject
             m_client->sendOoc(l_step.send);
             break;
         case Step::Ic:
+        case Step::IcBlocked:
             // The area's message floodguard drops chained IC sends.
             QTimer::singleShot(400, this, [this, l_step] { m_client->send(icMessage(l_step.send)); });
             break;
@@ -1911,7 +1912,12 @@ class ScriptingDance : public QObject
             }
             return;
         }
-        if (m_queue_index >= m_queue.size() || m_queue[m_queue_index].kind != Step::Command) {
+        if (m_queue_index >= m_queue.size()) {
+            return;
+        }
+        // A blocked IC message answers with the rule's reason in OOC.
+        const Step::Kind l_kind = m_queue[m_queue_index].kind;
+        if (l_kind != Step::Command && l_kind != Step::IcBlocked) {
             return;
         }
         if (f_message.contains(m_queue[m_queue_index].expected, Qt::CaseInsensitive)) {
@@ -1981,6 +1987,15 @@ class ScriptingDance : public QObject
         {Step::Command, "/uwu 0", "disengaged"},
         {Step::Ic, "hello little world again", "hello little world again"},
 
+        // Script rule actions attached to the live area: the Lua before
+        // rule blocks by content, the Python after rule tallies what
+        // actually happened - a blocked message never reaches it.
+        {Step::Command, "/addrule ic_message_sent lua.no_word word=banana", "Added lua.no_word"},
+        {Step::Command, "/addrule ic_message_sent py.tally", "Added py.tally"},
+        {Step::IcBlocked, "banana bread for everyone", "banned in this area"},
+        {Step::Ic, "apple bread for everyone", "apple bread"},
+        {Step::Command, "/pytally", "ic messages tallied: 1"},
+
         // A script plugin is a first-class plugin: it unloads alone, its
         // sibling keeps running, and it comes back with /plugin load.
         {Step::Command, "/plugin unload akashi.hello-lua", "Plugin unloaded"},
@@ -1997,6 +2012,10 @@ class ScriptingDance : public QObject
         {Step::Command, "/plugin load akashi.lua-host", "Plugin loaded"},
         {Step::Command, "/plugin load akashi.hello-lua", "Plugin loaded"},
         {Step::Command, "/luahello", "Hello from Lua!"},
+
+        // The cascade took showcase-lua with it, and the unload sweep took
+        // its applied no_word rule off the area - bananas flow again.
+        {Step::Ic, "banana bread once more", "banana bread once more"},
     };
     int m_queue_index = 0;
 };

@@ -108,6 +108,56 @@ static int luaFilterTrampoline(void *f_userdata, const char *f_text, size_t f_te
     return l_keep;
 }
 
+// Runs a Lua rule action with one info table: ids, the event payload and
+// the attached arguments. A returned string blocks with that reason; false
+// blocks with the stock reason; anything else allows.
+static void luaRuleTrampoline(void *f_userdata,
+                              int f_player_id, int f_area_id, int f_floor_id,
+                              int f_payload_count, const char *const *f_payload_keys, const char *const *f_payload_values,
+                              int f_argument_count, const char *const *f_argument_keys, const char *const *f_argument_values,
+                              AkashiRuleResult *f_result)
+{
+    LuaFnRef *l_ref = static_cast<LuaFnRef *>(f_userdata);
+    lua_State *L = l_ref->state;
+    lua_rawgeti(L, LUA_REGISTRYINDEX, l_ref->function_ref);
+    lua_createtable(L, 0, 5);
+    lua_pushinteger(L, f_player_id);
+    lua_setfield(L, -2, "player_id");
+    lua_pushinteger(L, f_area_id);
+    lua_setfield(L, -2, "area_id");
+    lua_pushinteger(L, f_floor_id);
+    lua_setfield(L, -2, "floor_id");
+    lua_createtable(L, 0, f_payload_count);
+    for (int i = 0; i < f_payload_count; i++) {
+        lua_pushstring(L, f_payload_values[i]);
+        lua_setfield(L, -2, f_payload_keys[i]);
+    }
+    lua_setfield(L, -2, "payload");
+    lua_createtable(L, 0, f_argument_count);
+    for (int i = 0; i < f_argument_count; i++) {
+        lua_pushstring(L, f_argument_values[i]);
+        lua_setfield(L, -2, f_argument_keys[i]);
+    }
+    lua_setfield(L, -2, "args");
+
+    if (lua_pcall(L, 1, 1, 0) != LUA_OK) {
+        qWarning().noquote() << "lua-host: rule action error:" << lua_tostring(L, -1);
+        lua_pop(L, 1);
+        return;
+    }
+    if (f_result) {
+        if (lua_isstring(L, -1)) {
+            size_t l_length = 0;
+            const char *l_reason = lua_tolstring(L, -1, &l_length);
+            s_ffi->rule_result_block(f_result, l_reason, l_length);
+        }
+        else if (lua_isboolean(L, -1) && !lua_toboolean(L, -1)) {
+            s_ffi->rule_result_block(f_result, "", 0);
+        }
+    }
+    lua_pop(L, 1);
+}
+
 // Runs a Lua event handler with the payload as a table.
 static void luaEventTrampoline(void *f_userdata, int f_count,
                                const char *const *f_keys, const char *const *f_values)
@@ -184,6 +234,34 @@ static int luaApiRegisterTextFilter(lua_State *L)
         l_plugin->owner_id.constData(), size_t(l_plugin->owner_id.size()));
     if (!l_registered) {
         return luaL_error(L, "register_text_filter: the id is taken or invalid");
+    }
+    lua_pushboolean(L, 1);
+    return 1;
+}
+
+static int luaApiRegisterRuleAction(lua_State *L)
+{
+    size_t l_name_length = 0;
+    const char *l_name = luaL_checklstring(L, 1, &l_name_length);
+    const char *l_phase = luaL_checkstring(L, 2);
+    luaL_checktype(L, 3, LUA_TFUNCTION);
+    const bool l_before = strcmp(l_phase, "before") == 0;
+    if (!l_before && strcmp(l_phase, "after") != 0) {
+        return luaL_error(L, "register_rule_action: the phase must be 'before' or 'after'");
+    }
+
+    LuaPluginState *l_plugin = pluginOf(L);
+    LuaFnRef *l_ref = takeFnRef(L, 3);
+    if (!l_plugin || !l_ref) {
+        return luaL_error(L, "register_rule_action: no plugin is attached to this state");
+    }
+
+    const int l_registered = s_ffi->register_rule_action(
+        l_name, l_name_length, l_before ? 1 : 0,
+        luaRuleTrampoline, l_ref,
+        l_plugin->owner_id.constData(), size_t(l_plugin->owner_id.size()));
+    if (!l_registered) {
+        return luaL_error(L, "register_rule_action: the name is taken or invalid");
     }
     lua_pushboolean(L, 1);
     return 1;
@@ -403,6 +481,7 @@ static const luaL_Reg s_akashi_api[] = {
     {"register_command", luaApiRegisterCommand},
     {"register_text_filter", luaApiRegisterTextFilter},
     {"register_permission", luaApiRegisterPermission},
+    {"register_rule_action", luaApiRegisterRuleAction},
     {"subscribe_event", luaApiSubscribeEvent},
     {"publish_event", luaApiPublishEvent},
     {"config_get", luaApiConfigGet},

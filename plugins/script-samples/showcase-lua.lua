@@ -34,6 +34,16 @@ akashi.register_text_filter("lua.courtesy", 900, true, function(text)
     end
 end)
 
+-- A rule action for the area rule system: owners attach it to floors and
+-- areas with /addrule or areas.json, passing key=value arguments. A before
+-- action returning a string blocks the event with that reason.
+akashi.register_rule_action("lua.no_word", "before", function(info)
+    local banned = info.args.word or "banana"
+    if string.find(info.payload.message or "", banned, 1, true) then
+        return "The word '" .. banned .. "' is banned in this area."
+    end
+end)
+
 -- Core server events, delivered as key/value payloads after they happen.
 local last_join = "nobody yet"
 akashi.subscribe_event("player_joined_area", function(payload)

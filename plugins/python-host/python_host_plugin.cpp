@@ -1,3 +1,6 @@
+// The stable ABI keeps one built plugin working across Python 3.x versions.
+#define Py_LIMITED_API 0x030A0000
+
 // Python.h must come first, and a debug build must not demand the debug
 // python library that plain installations do not ship.
 #ifdef _DEBUG
@@ -104,6 +107,70 @@ static int pyFilterTrampoline(void *f_userdata, const char *f_text, size_t f_tex
     }
     Py_DECREF(l_result);
     return l_keep;
+}
+
+// Runs a Python rule action with one info dict: ids, the event payload and
+// the attached arguments. A returned str blocks with that reason; False
+// blocks with the stock reason; anything else allows.
+static void pyRuleTrampoline(void *f_userdata,
+                             int f_player_id, int f_area_id, int f_floor_id,
+                             int f_payload_count, const char *const *f_payload_keys, const char *const *f_payload_values,
+                             int f_argument_count, const char *const *f_argument_keys, const char *const *f_argument_values,
+                             AkashiRuleResult *f_result)
+{
+    PyFnRef *l_ref = static_cast<PyFnRef *>(f_userdata);
+    PyObject *l_info = PyDict_New();
+    PyObject *l_number = PyLong_FromLong(f_player_id);
+    PyDict_SetItemString(l_info, "player_id", l_number);
+    Py_DECREF(l_number);
+    l_number = PyLong_FromLong(f_area_id);
+    PyDict_SetItemString(l_info, "area_id", l_number);
+    Py_DECREF(l_number);
+    l_number = PyLong_FromLong(f_floor_id);
+    PyDict_SetItemString(l_info, "floor_id", l_number);
+    Py_DECREF(l_number);
+
+    PyObject *l_payload = PyDict_New();
+    for (int i = 0; i < f_payload_count; i++) {
+        PyObject *l_value = PyUnicode_FromString(f_payload_values[i]);
+        PyDict_SetItemString(l_payload, f_payload_keys[i], l_value);
+        Py_DECREF(l_value);
+    }
+    PyDict_SetItemString(l_info, "payload", l_payload);
+    Py_DECREF(l_payload);
+
+    PyObject *l_arguments = PyDict_New();
+    for (int i = 0; i < f_argument_count; i++) {
+        PyObject *l_value = PyUnicode_FromString(f_argument_values[i]);
+        PyDict_SetItemString(l_arguments, f_argument_keys[i], l_value);
+        Py_DECREF(l_value);
+    }
+    PyDict_SetItemString(l_info, "args", l_arguments);
+    Py_DECREF(l_arguments);
+
+    PythonPluginState *l_previous = s_active_plugin;
+    s_active_plugin = l_ref->plugin;
+    PyObject *l_result = PyObject_CallFunctionObjArgs(l_ref->callable, l_info, nullptr);
+    s_active_plugin = l_previous;
+    Py_DECREF(l_info);
+
+    if (!l_result) {
+        PyErr_Print();
+        return;
+    }
+    if (f_result) {
+        if (PyUnicode_Check(l_result)) {
+            Py_ssize_t l_length = 0;
+            const char *l_reason = PyUnicode_AsUTF8AndSize(l_result, &l_length);
+            if (l_reason) {
+                s_ffi->rule_result_block(f_result, l_reason, size_t(l_length));
+            }
+        }
+        else if (l_result == Py_False) {
+            s_ffi->rule_result_block(f_result, "", 0);
+        }
+    }
+    Py_DECREF(l_result);
 }
 
 // Runs a Python event handler with the payload as a dict.
@@ -242,6 +309,45 @@ static PyObject *pyApiRegisterTextFilter(PyObject *, PyObject *f_args)
     Py_RETURN_NONE;
 }
 
+static PyObject *pyApiRegisterRuleAction(PyObject *, PyObject *f_args)
+{
+    PyObject *l_name_obj = nullptr, *l_phase_obj = nullptr, *l_handler = nullptr;
+    if (!PyArg_ParseTuple(f_args, "UUO", &l_name_obj, &l_phase_obj, &l_handler)) {
+        return nullptr;
+    }
+    if (!PyCallable_Check(l_handler)) {
+        PyErr_SetString(PyExc_TypeError, "handler must be callable");
+        return nullptr;
+    }
+    const char *l_name = nullptr, *l_phase = nullptr;
+    Py_ssize_t l_name_length = 0, l_phase_length = 0;
+    if (!pyStringArg(l_name_obj, &l_name, &l_name_length) ||
+        !pyStringArg(l_phase_obj, &l_phase, &l_phase_length)) {
+        return nullptr;
+    }
+    const bool l_before = strcmp(l_phase, "before") == 0;
+    if (!l_before && strcmp(l_phase, "after") != 0) {
+        PyErr_SetString(PyExc_ValueError, "the phase must be 'before' or 'after'");
+        return nullptr;
+    }
+
+    PyFnRef *l_ref = takeFnRef(l_handler);
+    if (!l_ref) {
+        PyErr_SetString(PyExc_RuntimeError, "no plugin is active");
+        return nullptr;
+    }
+
+    const int l_registered = s_ffi->register_rule_action(
+        l_name, size_t(l_name_length), l_before ? 1 : 0,
+        pyRuleTrampoline, l_ref,
+        l_ref->plugin->owner_id.constData(), size_t(l_ref->plugin->owner_id.size()));
+    if (!l_registered) {
+        PyErr_SetString(PyExc_ValueError, "register_rule_action: the name is taken or invalid");
+        return nullptr;
+    }
+    Py_RETURN_NONE;
+}
+
 static PyObject *pyApiSubscribeEvent(PyObject *, PyObject *f_args)
 {
     PyObject *l_name_obj = nullptr, *l_handler = nullptr;
@@ -292,8 +398,13 @@ static PyObject *pyApiPublishEvent(PyObject *, PyObject *f_args)
             PyErr_Clear();
             continue;
         }
-        l_keys.append(QByteArray(PyUnicode_AsUTF8(l_key)));
-        l_values.append(QByteArray(PyUnicode_AsUTF8(l_value_str)));
+        Py_ssize_t l_key_length = 0, l_value_length = 0;
+        const char *l_key_text = PyUnicode_AsUTF8AndSize(l_key, &l_key_length);
+        const char *l_value_text = PyUnicode_AsUTF8AndSize(l_value_str, &l_value_length);
+        if (l_key_text && l_value_text) {
+            l_keys.append(QByteArray(l_key_text, int(l_key_length)));
+            l_values.append(QByteArray(l_value_text, int(l_value_length)));
+        }
         Py_DECREF(l_value_str);
     }
 
@@ -573,6 +684,7 @@ static PyMethodDef s_akashi_methods[] = {
     {"register_command", pyApiRegisterCommand, METH_VARARGS, "register_command(name, usage, description, handler, permission='', min_args=0)."},
     {"register_text_filter", pyApiRegisterTextFilter, METH_VARARGS, "register_text_filter(id, order, always_active, handler); the handler returns a str rewrite, False to drop, or None."},
     {"register_permission", pyApiRegisterPermission, METH_VARARGS, "register_permission(id, display_name, category)."},
+    {"register_rule_action", pyApiRegisterRuleAction, METH_VARARGS, "register_rule_action(name, phase, handler); a before handler may return a str or False to block."},
     {"subscribe_event", pyApiSubscribeEvent, METH_VARARGS, "subscribe_event(name, handler); the handler receives the payload dict."},
     {"publish_event", pyApiPublishEvent, METH_VARARGS, "publish_event(name, payload_dict)."},
     {"config_get", pyApiConfigGet, METH_VARARGS, "config_get(key, fallback='') from the plugin's config file."},
@@ -631,10 +743,21 @@ class PythonScriptHost : public akashi::IScriptPluginHost
         PyDict_SetItemString(l_plugin->globals, "__name__", l_name);
         Py_DECREF(l_name);
 
+        // The stable ABI has no PyRun_String, so the entry compiles and runs
+        // through the interpreter's own builtins.
+        PyObject *l_builtins = PyEval_GetBuiltins();
+        PyObject *l_compile = PyDict_GetItemString(l_builtins, "compile");
+        PyObject *l_exec = PyDict_GetItemString(l_builtins, "exec");
+
         PythonPluginState *l_previous = s_active_plugin;
         s_active_plugin = l_plugin;
-        PyObject *l_result = PyRun_String(l_source.constData(), Py_file_input,
-                                          l_plugin->globals, l_plugin->globals);
+        PyObject *l_result = nullptr;
+        PyObject *l_code = PyObject_CallFunction(l_compile, "sss", l_source.constData(),
+                                                 QFile::encodeName(f_entry_path).constData(), "exec");
+        if (l_code) {
+            l_result = PyObject_CallFunction(l_exec, "OO", l_code, l_plugin->globals);
+            Py_DECREF(l_code);
+        }
         s_active_plugin = l_previous;
 
         if (!l_result) {

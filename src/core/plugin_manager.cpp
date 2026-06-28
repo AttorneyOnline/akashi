@@ -151,8 +151,11 @@ void PluginManager::shutdownAll()
         if (l_entry.isScript()) {
             if (!l_entry.isActive())
                 continue;
-            unloadScriptEntry(l_entry);
+            // Registrations go first: the applied-rule sweep needs the
+            // plugin's action factories still known, and after the sweep
+            // nothing can call into the interpreter the host closes.
             cleanupPlugin(l_id);
+            unloadScriptEntry(l_entry);
             l_entry.info.state = PluginInfo::State::Discovered;
             qInfo() << "Script plugin unloaded:" << l_id;
             continue;
@@ -184,6 +187,25 @@ bool PluginManager::loadPlugin(const QString &f_id)
     PluginEntry &l_entry = it.value();
     if (l_entry.info.state != PluginInfo::State::Discovered)
         return false;
+
+    // A script plugin's file may have changed since discovery; the fresh
+    // header decides its dependencies and services. The id stays what it
+    // was discovered under.
+    if (l_entry.isScript()) {
+        const auto l_fresh = parseScriptHeader(l_entry.info.file_path);
+        if (!l_fresh) {
+            qWarning() << "Script plugin" << f_id << "no longer carries a readable declaration header";
+            return false;
+        }
+        if (l_fresh->id != l_entry.info.id) {
+            qWarning() << "Script plugin" << f_id << "renamed itself to" << l_fresh->id << "- restart to pick the new id up";
+        }
+        l_entry.info.version = l_fresh->version;
+        l_entry.info.runtime = l_fresh->runtime;
+        l_entry.info.entry_path = l_fresh->entry_path;
+        l_entry.info.dependencies = l_fresh->dependencies;
+        l_entry.info.services = l_fresh->services;
+    }
 
     if (!validateServices(l_entry))
         return false;
@@ -259,8 +281,11 @@ bool PluginManager::unloadPlugin(const QString &f_id, bool f_cascade)
 
     PluginEntry &l_entry = it.value();
     if (l_entry.isScript()) {
-        unloadScriptEntry(l_entry);
+        // Registrations go first: the applied-rule sweep needs the plugin's
+        // action factories still known, and after the sweep nothing can
+        // call into the interpreter the host closes.
         cleanupPlugin(f_id);
+        unloadScriptEntry(l_entry);
         l_entry.info.state = PluginInfo::State::Discovered;
         m_load_order.removeOne(f_id);
         return true;
@@ -403,18 +428,18 @@ bool PluginManager::discover(const QStringList &f_allowlist)
     return true;
 }
 
-void PluginManager::discoverScriptPlugin(const QString &f_file_path, const QStringList &f_allowlist)
+std::optional<PluginInfo> PluginManager::parseScriptHeader(const QString &f_file_path)
 {
     QFile l_file(f_file_path);
     if (!l_file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        return;
+        return std::nullopt;
     }
     // The declaration header must sit near the top of the file.
     const QString l_head = QString::fromUtf8(l_file.read(4096));
     const int l_marker = l_head.indexOf(QStringLiteral("akashi-plugin"));
     if (l_marker < 0) {
         // Not a plugin, just a script somebody parked here.
-        return;
+        return std::nullopt;
     }
 
     // The JSON object after the marker, with matched braces so nested
@@ -435,14 +460,14 @@ void PluginManager::discoverScriptPlugin(const QString &f_file_path, const QStri
     }
     if (l_close < 0) {
         qWarning() << "No declaration object after the akashi-plugin marker in" << f_file_path;
-        return;
+        return std::nullopt;
     }
 
     QJsonParseError l_error;
     const QJsonDocument l_doc = QJsonDocument::fromJson(l_head.mid(l_open, l_close - l_open + 1).toUtf8(), &l_error);
     if (l_error.error != QJsonParseError::NoError || !l_doc.isObject()) {
         qWarning() << "Unreadable declaration header in" << f_file_path << ":" << l_error.errorString();
-        return;
+        return std::nullopt;
     }
     const QJsonObject l_md = l_doc.object();
 
@@ -456,27 +481,16 @@ void PluginManager::discoverScriptPlugin(const QString &f_file_path, const QStri
     }
     if (l_runtime.isEmpty()) {
         qWarning() << "No runtime for script plugin" << f_file_path;
-        return;
+        return std::nullopt;
     }
 
     // Everything but the marker itself has a sensible default, so the
     // smallest plugin is one script file with a one-line header.
-    QString l_id = l_md.value(QStringLiteral("id")).toString();
-    if (l_id.isEmpty()) {
-        l_id = l_file_info.completeBaseName();
-    }
-
-    if (!f_allowlist.isEmpty() && !f_allowlist.contains(l_id)) {
-        qInfo() << "Plugin" << l_id << "not in allowlist, skipping";
-        return;
-    }
-    if (m_plugins.contains(l_id)) {
-        qWarning() << "Duplicate plugin id" << l_id << "in" << f_file_path;
-        return;
-    }
-
     PluginInfo l_info;
-    l_info.id = l_id;
+    l_info.id = l_md.value(QStringLiteral("id")).toString();
+    if (l_info.id.isEmpty()) {
+        l_info.id = l_file_info.completeBaseName();
+    }
     l_info.file_path = f_file_path;
     l_info.entry_path = f_file_path;
     l_info.runtime = l_runtime;
@@ -502,16 +516,37 @@ void PluginManager::discoverScriptPlugin(const QString &f_file_path, const QStri
         l_info.services.append(l_val.toString());
     }
 
+    return l_info;
+}
+
+void PluginManager::discoverScriptPlugin(const QString &f_file_path, const QStringList &f_allowlist)
+{
+    const auto l_info = parseScriptHeader(f_file_path);
+    if (!l_info) {
+        return;
+    }
+
+    if (!f_allowlist.isEmpty() && !f_allowlist.contains(l_info->id)) {
+        qInfo() << "Plugin" << l_info->id << "not in allowlist, skipping";
+        return;
+    }
+    if (m_plugins.contains(l_info->id)) {
+        qWarning() << "Duplicate plugin id" << l_info->id << "in" << f_file_path;
+        return;
+    }
+    // The host was scanned before the scripts, so a missing one is missing
+    // for good; dropping the plugin here keeps it out of the load order.
+    const QString l_host_id = QStringLiteral("akashi.") + l_info->runtime + QStringLiteral("-host");
     if (!m_plugins.contains(l_host_id)) {
-        qWarning() << "Script plugin" << l_id << "needs the host plugin" << l_host_id << "which is not present - skipping";
+        qWarning() << "Script plugin" << l_info->id << "needs the host plugin" << l_host_id << "which is not present - skipping";
         return;
     }
 
     PluginEntry l_entry;
-    l_entry.info = l_info;
+    l_entry.info = *l_info;
 
-    m_plugins.insert(l_id, l_entry);
-    qInfo() << "Discovered script plugin:" << l_id << l_info.version.toString() << "(" + l_runtime + ")";
+    m_plugins.insert(l_info->id, l_entry);
+    qInfo() << "Discovered script plugin:" << l_info->id << l_info->version.toString() << "(" + l_info->runtime + ")";
 }
 
 bool PluginManager::loadScriptEntry(PluginEntry &f_entry)

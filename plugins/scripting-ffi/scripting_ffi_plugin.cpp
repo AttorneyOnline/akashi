@@ -12,6 +12,7 @@
 #include "core/event_bus.h"
 #include "core/permission_registry.h"
 #include "core/text_filter_registry.h"
+#include "world/rule_registry.h"
 
 #include <QByteArray>
 #include <QDebug>
@@ -31,6 +32,7 @@ static akashi::TextFilterRegistry *s_filters = nullptr;
 static akashi::EventBus *s_events = nullptr;
 static akashi::PermissionRegistry *s_permissions = nullptr;
 static akashi::ConfigStore *s_config = nullptr;
+static akashi::RuleRegistry *s_rules = nullptr;
 
 // The slot string returns point into; valid until the next FFI call.
 static QByteArray s_string_slot;
@@ -40,6 +42,13 @@ struct AkashiTextResult
 {
     QString text;
     bool set = false;
+};
+
+// What a before-rule callback writes its refusal into.
+struct AkashiRuleResult
+{
+    QString reason;
+    bool blocked = false;
 };
 
 static QString toString(const char *f_text, size_t f_length)
@@ -122,6 +131,9 @@ static void ffiUnregisterOwner(const char *f_owner_id, size_t f_owner_id_length)
     }
     if (s_permissions) {
         s_permissions->unregisterAllPermissions(l_owner);
+    }
+    if (s_rules) {
+        s_rules->unregisterActions(l_owner);
     }
 }
 
@@ -398,6 +410,71 @@ static int ffiRegisterPermission(const char *f_id, size_t f_id_length,
     return s_permissions->registerPermission(l_info, toString(f_owner_id, f_owner_id_length)) ? 1 : 0;
 }
 
+// Marshals one rule fire into the C callback: the context ids plus the
+// event payload and the attached arguments as key/value pairs.
+static void callRuleAction(AkashiRuleFn f_action, void *f_userdata,
+                           const akashi::RuleContext &f_context, const QVariantMap &f_args,
+                           AkashiRuleResult *f_result)
+{
+    QList<QByteArray> l_payload_keys, l_payload_values, l_arg_keys, l_arg_values;
+    std::vector<const char *> l_pk, l_pv, l_ak, l_av;
+    for (auto it = f_context.payload.begin(); it != f_context.payload.end(); ++it) {
+        l_payload_keys.append(it.key().toUtf8());
+        l_payload_values.append(it.value().toString().toUtf8());
+        l_pk.push_back(l_payload_keys.last().constData());
+        l_pv.push_back(l_payload_values.last().constData());
+    }
+    for (auto it = f_args.begin(); it != f_args.end(); ++it) {
+        l_arg_keys.append(it.key().toUtf8());
+        l_arg_values.append(it.value().toString().toUtf8());
+        l_ak.push_back(l_arg_keys.last().constData());
+        l_av.push_back(l_arg_values.last().constData());
+    }
+    f_action(f_userdata, f_context.player_id, f_context.area_id, f_context.floor_id,
+             int(l_pk.size()), l_pk.data(), l_pv.data(),
+             int(l_ak.size()), l_ak.data(), l_av.data(), f_result);
+}
+
+static int ffiRegisterRuleAction(const char *f_name, size_t f_name_length, int f_before,
+                                 AkashiRuleFn f_action, void *f_userdata,
+                                 const char *f_owner_id, size_t f_owner_id_length)
+{
+    const QString l_name = toString(f_name, f_name_length);
+    if (!s_rules || !f_action || l_name.isEmpty() || s_rules->hasAction(l_name)) {
+        return 0;
+    }
+    const QString l_owner = toString(f_owner_id, f_owner_id_length);
+
+    if (f_before) {
+        s_rules->registerBeforeAction(l_name, [f_action, f_userdata](akashi::ServiceRegistry &, const QVariantMap &f_args) -> akashi::BeforeRuleFunction {
+            return [f_action, f_userdata, f_args](const akashi::RuleContext &f_context) -> akashi::RuleVerdict {
+                AkashiRuleResult l_result;
+                callRuleAction(f_action, f_userdata, f_context, f_args, &l_result);
+                if (!l_result.blocked) {
+                    return {true, {}};
+                }
+                return {false, l_result.reason.isEmpty() ? QStringLiteral("This is not allowed here.") : l_result.reason};
+            };
+        }, l_owner);
+    }
+    else {
+        s_rules->registerAfterAction(l_name, [f_action, f_userdata](akashi::ServiceRegistry &, const QVariantMap &f_args) -> akashi::AfterRuleFunction {
+            return [f_action, f_userdata, f_args](const akashi::RuleContext &f_context) {
+                callRuleAction(f_action, f_userdata, f_context, f_args, nullptr);
+            };
+        }, l_owner);
+    }
+    return 1;
+}
+
+static void ffiRuleResultBlock(AkashiRuleResult *f_result, const char *f_reason, size_t f_reason_length)
+{
+    if (f_result) {
+        f_result->reason = toString(f_reason, f_reason_length);
+        f_result->blocked = true;
+    }
+}
+
 static const char *ffiConfigGet(const char *f_owner_id, size_t f_owner_id_length,
                                 const char *f_key, size_t f_key_length,
                                 const char *f_fallback, size_t f_fallback_length,
@@ -437,6 +514,8 @@ static const AkashiFfi s_table = {
     ffiPublishEvent,
     ffiRegisterPermission,
     ffiConfigGet,
+    ffiRegisterRuleAction,
+    ffiRuleResultBlock,
 };
 
 namespace {
@@ -459,7 +538,8 @@ bool ScriptingFfiPlugin::load(akashi::ServiceRegistry &services)
     auto l_events = services.resolve<akashi::EventBus>(QStringLiteral("akashi.events"));
     auto l_permissions = services.resolve<akashi::PermissionRegistry>(QStringLiteral("akashi.permissions"));
     auto l_config = services.resolve<akashi::ConfigStore>(QStringLiteral("akashi.config"));
-    if (!l_commands || !l_filters || !l_events || !l_permissions || !l_config) {
+    auto l_rules = services.resolve<akashi::RuleRegistry>(QStringLiteral("akashi.rules"));
+    if (!l_commands || !l_filters || !l_events || !l_permissions || !l_config || !l_rules) {
         qWarning() << "scripting-ffi: required services not available";
         return false;
     }
@@ -468,6 +548,7 @@ bool ScriptingFfiPlugin::load(akashi::ServiceRegistry &services)
     s_events = l_events.get();
     s_permissions = l_permissions.get();
     s_config = l_config.get();
+    s_rules = l_rules.get();
 
     m_service = std::make_shared<ServiceImpl>();
     if (!services.registerService(m_service, id())) {
@@ -492,5 +573,6 @@ void ScriptingFfiPlugin::shutdown(akashi::ServiceRegistry &services)
     s_events = nullptr;
     s_permissions = nullptr;
     s_config = nullptr;
+    s_rules = nullptr;
     m_service.reset();
 }

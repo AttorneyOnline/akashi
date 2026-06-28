@@ -66,9 +66,33 @@ class tst_PluginManager : public QObject
     void dependentsBlockUnload();
     void cleanupRemovesRegistrations();
 
+    void headerParsesFullManifest();
+    void headerDefaultsEverythingButTheMarker();
+    void headerInfersRuntimeFromExtension();
+    void headerKeepsExplicitDependencies();
+    void headerSurvivesNestedBraces();
+    void headerRejectsMissingMarker();
+    void headerRejectsBadJson();
+    void headerRejectsUnknownExtension();
+    void discoverySkipsScriptWithoutHost();
+
   private:
+    QString writeScript(QTemporaryDir &f_dir, const QString &f_name, const QByteArray &f_content);
+
     akashi::ServiceRegistry m_services;
 };
+
+QString tst_PluginManager::writeScript(QTemporaryDir &f_dir, const QString &f_name, const QByteArray &f_content)
+{
+    const QString l_path = f_dir.filePath(f_name);
+    QFile l_file(l_path);
+    if (!l_file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        return {};
+    }
+    l_file.write(f_content);
+    l_file.close();
+    return l_path;
+}
 
 void tst_PluginManager::init()
 {
@@ -127,6 +151,118 @@ void tst_PluginManager::cleanupRemovesRegistrations()
     QVERIFY(l_commands->contains(QStringLiteral("test_cmd")));
     l_commands->unregisterAll(QStringLiteral("test.plugin"));
     QVERIFY(!l_commands->contains(QStringLiteral("test_cmd")));
+}
+
+void tst_PluginManager::headerParsesFullManifest()
+{
+    QTemporaryDir l_tmp;
+    const QString l_path = writeScript(l_tmp, "greeter.lua", R"(--[[ akashi-plugin
+{
+    "id": "akashi.greeter",
+    "version": "2.3.4",
+    "dependencies": ["akashi.other"],
+    "services": ["akashi.commands"]
+}
+--]]
+print("hi")
+)");
+
+    const auto l_info = akashi::PluginManager::parseScriptHeader(l_path);
+    QVERIFY(l_info.has_value());
+    QCOMPARE(l_info->id, QStringLiteral("akashi.greeter"));
+    QCOMPARE(l_info->version.toString(), QStringLiteral("2.3.4"));
+    QCOMPARE(l_info->runtime, QStringLiteral("lua"));
+    QCOMPARE(l_info->entry_path, l_path);
+    // The host dependency is added in front of the declared ones.
+    QCOMPARE(l_info->dependencies, QStringList({"akashi.lua-host", "akashi.other"}));
+    QCOMPARE(l_info->services, QStringList({"akashi.commands"}));
+}
+
+void tst_PluginManager::headerDefaultsEverythingButTheMarker()
+{
+    QTemporaryDir l_tmp;
+    const QString l_path = writeScript(l_tmp, "tiny.lua", "--[[ akashi-plugin {} ]]\n");
+
+    const auto l_info = akashi::PluginManager::parseScriptHeader(l_path);
+    QVERIFY(l_info.has_value());
+    QCOMPARE(l_info->id, QStringLiteral("tiny"));
+    QCOMPARE(l_info->version.toString(), QStringLiteral("1.0.0"));
+    QCOMPARE(l_info->dependencies, QStringList({"akashi.lua-host"}));
+    QVERIFY(l_info->services.isEmpty());
+}
+
+void tst_PluginManager::headerInfersRuntimeFromExtension()
+{
+    QTemporaryDir l_tmp;
+    const QString l_path = writeScript(l_tmp, "tiny.py", "\"\"\"akashi-plugin {}\"\"\"\n");
+
+    const auto l_info = akashi::PluginManager::parseScriptHeader(l_path);
+    QVERIFY(l_info.has_value());
+    QCOMPARE(l_info->runtime, QStringLiteral("python"));
+    QCOMPARE(l_info->dependencies, QStringList({"akashi.python-host"}));
+}
+
+void tst_PluginManager::headerKeepsExplicitDependencies()
+{
+    QTemporaryDir l_tmp;
+    const QString l_path = writeScript(l_tmp, "explicit.lua",
+                                       R"(--[[ akashi-plugin {"dependencies": ["akashi.lua-host"]} ]])");
+
+    const auto l_info = akashi::PluginManager::parseScriptHeader(l_path);
+    QVERIFY(l_info.has_value());
+    // A declared host dependency is not doubled.
+    QCOMPARE(l_info->dependencies, QStringList({"akashi.lua-host"}));
+}
+
+void tst_PluginManager::headerSurvivesNestedBraces()
+{
+    QTemporaryDir l_tmp;
+    const QString l_path = writeScript(l_tmp, "nested.lua",
+                                       R"(--[[ akashi-plugin {"id": "akashi.nested", "extras": {"depth": {"more": 1}}} ]])");
+
+    const auto l_info = akashi::PluginManager::parseScriptHeader(l_path);
+    QVERIFY(l_info.has_value());
+    QCOMPARE(l_info->id, QStringLiteral("akashi.nested"));
+}
+
+void tst_PluginManager::headerRejectsMissingMarker()
+{
+    QTemporaryDir l_tmp;
+    const QString l_path = writeScript(l_tmp, "plain.lua", "print(\"just a script\")\n");
+
+    QVERIFY(!akashi::PluginManager::parseScriptHeader(l_path).has_value());
+}
+
+void tst_PluginManager::headerRejectsBadJson()
+{
+    QTemporaryDir l_tmp;
+    const QString l_unclosed = writeScript(l_tmp, "unclosed.lua", "--[[ akashi-plugin { \"id\": \"x\" ]]\n");
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression("No declaration object"));
+    QVERIFY(!akashi::PluginManager::parseScriptHeader(l_unclosed).has_value());
+
+    const QString l_garbage = writeScript(l_tmp, "garbage.lua", "--[[ akashi-plugin {id: nope,} ]]\n");
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression("Unreadable declaration header"));
+    QVERIFY(!akashi::PluginManager::parseScriptHeader(l_garbage).has_value());
+}
+
+void tst_PluginManager::headerRejectsUnknownExtension()
+{
+    QTemporaryDir l_tmp;
+    const QString l_path = writeScript(l_tmp, "mystery.rb", "# akashi-plugin {}\n");
+
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression("No runtime"));
+    QVERIFY(!akashi::PluginManager::parseScriptHeader(l_path).has_value());
+}
+
+void tst_PluginManager::discoverySkipsScriptWithoutHost()
+{
+    QTemporaryDir l_tmp;
+    writeScript(l_tmp, "orphan.lua", "--[[ akashi-plugin {\"id\": \"akashi.orphan\"} ]]\n");
+
+    akashi::PluginManager l_mgr(&m_services, l_tmp.path());
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression("needs the host plugin"));
+    QVERIFY(l_mgr.startPlugins());
+    QVERIFY(!l_mgr.pluginInfo(QStringLiteral("akashi.orphan")).has_value());
 }
 
 } // namespace unittests

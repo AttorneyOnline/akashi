@@ -1,6 +1,6 @@
 {
     "id": "akashi.scripting-ffi",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "dependencies": [],
-    "services": ["akashi.commands", "akashi.textfilters", "akashi.events", "akashi.permissions", "akashi.config"]
+    "services": ["akashi.commands", "akashi.textfilters", "akashi.events", "akashi.permissions", "akashi.config", "akashi.rules"]
 }
