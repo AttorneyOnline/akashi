@@ -105,7 +105,6 @@ bool DiscordPlugin::load(akashi::ServiceRegistry &services)
         [applyConfig](akashi::ConfigReloadedEvent &) { applyConfig(); },
         id());
 
-    qInfo() << "discord: plugin loaded";
     return true;
 }
 
@@ -116,5 +115,4 @@ void DiscordPlugin::shutdown(akashi::ServiceRegistry &services)
         l_events->unsubscribeAll(id());
 
     m_sender.reset();
-    qInfo() << "discord: plugin shut down";
 }

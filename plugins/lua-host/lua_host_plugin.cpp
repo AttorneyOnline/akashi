@@ -5,6 +5,7 @@
 
 #include "akashi/script_plugin_host.h"
 #include "akashi/service_registry.h"
+#include "core/logging_categories.h"
 #include "core/plugin_manager.h"
 
 #include <QByteArray>
@@ -78,7 +79,7 @@ static void luaCommandTrampoline(void *f_userdata, AkashiCommandContext *f_conte
         lua_rawseti(L, -2, i + 1);
     }
     if (lua_pcall(L, 2, 0, 0) != LUA_OK) {
-        qWarning().noquote() << "lua-host: handler error:" << lua_tostring(L, -1);
+        qCWarning(akashiScripting).noquote() << "lua-host: handler error:" << lua_tostring(L, -1);
         lua_pop(L, 1);
     }
 }
@@ -93,7 +94,7 @@ static int luaFilterTrampoline(void *f_userdata, const char *f_text, size_t f_te
     lua_rawgeti(L, LUA_REGISTRYINDEX, l_ref->function_ref);
     lua_pushlstring(L, f_text, f_text_length);
     if (lua_pcall(L, 1, 1, 0) != LUA_OK) {
-        qWarning().noquote() << "lua-host: filter error:" << lua_tostring(L, -1);
+        qCWarning(akashiScripting).noquote() << "lua-host: filter error:" << lua_tostring(L, -1);
         lua_pop(L, 1);
         return 1;
     }
@@ -143,7 +144,7 @@ static void luaRuleTrampoline(void *f_userdata,
     lua_setfield(L, -2, "args");
 
     if (lua_pcall(L, 1, 1, 0) != LUA_OK) {
-        qWarning().noquote() << "lua-host: rule action error:" << lua_tostring(L, -1);
+        qCWarning(akashiScripting).noquote() << "lua-host: rule action error:" << lua_tostring(L, -1);
         lua_pop(L, 1);
         return;
     }
@@ -173,7 +174,7 @@ static void luaEventTrampoline(void *f_userdata, int f_count,
         lua_setfield(L, -2, f_keys[i]);
     }
     if (lua_pcall(L, 1, 0, 0) != LUA_OK) {
-        qWarning().noquote() << "lua-host: event handler error:" << lua_tostring(L, -1);
+        qCWarning(akashiScripting).noquote() << "lua-host: event handler error:" << lua_tostring(L, -1);
         lua_pop(L, 1);
     }
 }
@@ -546,7 +547,7 @@ class LuaScriptHost : public akashi::IScriptPluginHost
         lua_setglobal(L, "akashi");
 
         if (luaL_dofile(L, QFile::encodeName(f_entry_path).constData()) != LUA_OK) {
-            qWarning().noquote() << "lua-host: error in" << f_entry_path << ":" << lua_tostring(L, -1);
+            qCWarning(akashiScripting).noquote() << "lua-host: error in" << f_entry_path << ":" << lua_tostring(L, -1);
             // Half-done registrations must not survive the failed load.
             s_ffi->unregister_owner(l_plugin->owner_id.constData(), size_t(l_plugin->owner_id.size()));
             releasePlugin(l_plugin);
@@ -594,18 +595,18 @@ bool LuaHostPlugin::load(akashi::ServiceRegistry &services)
 {
     auto l_ffi_service = services.resolve<ScriptingFfiService>(QStringLiteral("akashi.scripting-ffi"));
     if (!l_ffi_service) {
-        qWarning() << "lua-host: the scripting FFI is not available";
+        qCWarning(akashiScripting) << "lua-host: the scripting FFI is not available";
         return false;
     }
     s_ffi = l_ffi_service->table();
 
     m_host = std::make_shared<LuaScriptHost>();
     if (!services.registerService(m_host, id())) {
-        qWarning() << "lua-host: service id already taken";
+        qCWarning(akashiScripting) << "lua-host: service id already taken";
         s_ffi = nullptr;
         return false;
     }
-    qInfo().noquote() << "lua-host: providing" << m_host->serviceId() << "with" << LUA_RELEASE;
+    qCInfo(akashiScripting).noquote() << "lua-host: providing" << m_host->serviceId() << "with" << LUA_RELEASE;
     return true;
 }
 

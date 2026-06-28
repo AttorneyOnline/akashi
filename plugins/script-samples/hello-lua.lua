@@ -8,7 +8,6 @@
 
 -- A whole akashi plugin in one Lua file: the header above is its manifest,
 -- and dropping the file into bin/plugins is the entire install.
-akashi.log("hello-lua loaded")
 
 -- A declared permission, so role files can grant the uwu curse.
 akashi.register_permission("hello.uwu", "Uwu Curse", "scripting")

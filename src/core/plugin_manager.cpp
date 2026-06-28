@@ -6,6 +6,7 @@
 #include "core/command_registry.h"
 #include "core/event_bus.h"
 #include "core/log_service.h"
+#include "core/logging_categories.h"
 #include "core/permission_registry.h"
 #include "core/text_filter_registry.h"
 #include "world/rule_registry.h"
@@ -56,7 +57,7 @@ bool PluginManager::startPlugins(const QStringList &f_allowlist)
         PluginEntry &l_entry = it.value();
 
         if (!validateServices(l_entry)) {
-            qWarning() << "Plugin" << l_id << "skipped: required service not available";
+            qCWarning(akashiPlugins) << "Plugin" << l_id << "skipped: required service not available";
             l_entry.info.state = PluginInfo::State::Failed;
             continue;
         }
@@ -64,21 +65,21 @@ bool PluginManager::startPlugins(const QStringList &f_allowlist)
         l_entry.loader->load();
         QObject *l_obj = l_entry.loader->instance();
         if (!l_obj) {
-            qWarning() << "Plugin" << l_id << "failed to load:" << l_entry.loader->errorString();
+            qCWarning(akashiPlugins) << "Plugin" << l_id << "failed to load:" << l_entry.loader->errorString();
             l_entry.info.state = PluginInfo::State::Failed;
             continue;
         }
 
         l_entry.instance = qobject_cast<IPlugin *>(l_obj);
         if (!l_entry.instance) {
-            qWarning() << "Plugin" << l_id << "does not implement IPlugin (IID mismatch)";
+            qCWarning(akashiPlugins) << "Plugin" << l_id << "does not implement IPlugin (IID mismatch)";
             l_entry.loader->unload();
             l_entry.info.state = PluginInfo::State::Failed;
             continue;
         }
 
         if (!l_entry.instance->load(*m_services)) {
-            qWarning() << "Plugin" << l_id << "load() returned false";
+            qCWarning(akashiPlugins) << "Plugin" << l_id << "load() returned false";
             l_entry.instance = nullptr;
             l_entry.loader->unload();
             l_entry.info.state = PluginInfo::State::Failed;
@@ -86,7 +87,7 @@ bool PluginManager::startPlugins(const QStringList &f_allowlist)
         }
 
         l_entry.info.state = PluginInfo::State::Loaded;
-        qInfo() << "Plugin loaded:" << l_id << l_entry.info.version.toString();
+        qCInfo(akashiPlugins).noquote() << "Loaded" << l_id << "v" + l_entry.info.version.toString();
     }
 
     for (const QString &l_id : std::as_const(m_load_order)) {
@@ -98,7 +99,7 @@ bool PluginManager::startPlugins(const QStringList &f_allowlist)
             continue;
 
         if (!l_entry.instance->init(*m_services)) {
-            qWarning() << "Plugin" << l_id << "init() returned false";
+            qCWarning(akashiPlugins) << "Plugin" << l_id << "init() returned false";
             l_entry.instance->shutdown(*m_services);
             cleanupPlugin(l_id);
             l_entry.instance = nullptr;
@@ -120,7 +121,7 @@ bool PluginManager::startPlugins(const QStringList &f_allowlist)
 
         l_entry.instance->started(*m_services);
         l_entry.info.state = PluginInfo::State::Started;
-        qInfo() << "Plugin started:" << l_id << l_entry.info.version.toString();
+        qCInfo(akashiPlugins).noquote() << "Started" << l_id << "v" + l_entry.info.version.toString();
     }
 
     // The hosts are running now, so they can find their plugin files.
@@ -151,7 +152,7 @@ void PluginManager::discoverFromScriptHosts()
                 continue;
             }
             if (!m_allowlist.isEmpty() && !m_allowlist.contains(l_manifest.id)) {
-                qInfo() << "Plugin" << l_manifest.id << "not in allowlist, skipping";
+                qCInfo(akashiPlugins).noquote() << "Plugin" << l_manifest.id << "not in allowlist, skipping";
                 continue;
             }
 
@@ -161,7 +162,7 @@ void PluginManager::discoverFromScriptHosts()
                 l_entry.info.runtime = l_host->runtime();
             }
             m_plugins.insert(l_manifest.id, l_entry);
-            qInfo() << "Discovered script plugin:" << l_manifest.id << l_manifest.version.toString() << "(" + l_entry.info.runtime + ")";
+            qCInfo(akashiPlugins).noquote() << "Discovered" << l_manifest.id << "v" + l_manifest.version.toString() << "(" + l_entry.info.runtime + ")";
         }
     }
 }
@@ -191,7 +192,6 @@ void PluginManager::loadDiscoveredScripts()
                 continue;
             }
             if (loadPlugin(l_id)) {
-                qInfo() << "Script plugin started:" << l_id << l_entry.info.version.toString() << "(" + l_entry.info.runtime + ")";
                 l_progress = true;
             }
             else {
@@ -202,7 +202,7 @@ void PluginManager::loadDiscoveredScripts()
 
     for (auto it = m_plugins.cbegin(); it != m_plugins.cend(); ++it) {
         if (it.value().isScript() && it.value().info.state == PluginInfo::State::Discovered) {
-            qWarning() << "Script plugin" << it.key() << "not started: dependencies missing or not running";
+            qCWarning(akashiPlugins) << "Script plugin" << it.key() << "not started: dependencies missing or not running";
         }
     }
 }
@@ -227,7 +227,7 @@ void PluginManager::shutdownAll()
             cleanupPlugin(l_id);
             unloadScriptEntry(l_entry);
             l_entry.info.state = PluginInfo::State::Discovered;
-            qInfo() << "Script plugin unloaded:" << l_id;
+            qCInfo(akashiPlugins).noquote() << "Unloaded" << l_id;
             continue;
         }
 
@@ -239,7 +239,7 @@ void PluginManager::shutdownAll()
         l_entry.instance = nullptr;
         l_entry.loader->unload();
         l_entry.info.state = PluginInfo::State::Discovered;
-        qInfo() << "Plugin unloaded:" << l_id;
+        qCInfo(akashiPlugins).noquote() << "Unloaded" << l_id;
     }
 
     for (auto it = m_plugins.begin(); it != m_plugins.end(); ++it)
@@ -281,7 +281,7 @@ bool PluginManager::loadPlugin(const QString &f_id)
             break;
         }
         if (!l_found) {
-            qWarning() << "Script plugin" << f_id << "is no longer reported by its host";
+            qCWarning(akashiPlugins) << "Script plugin" << f_id << "is no longer reported by its host";
             return false;
         }
     }
@@ -301,7 +301,7 @@ bool PluginManager::loadPlugin(const QString &f_id)
         l_entry.info.state = PluginInfo::State::Started;
         if (!m_load_order.contains(f_id))
             m_load_order.append(f_id);
-        qInfo() << "Plugin loaded:" << f_id << l_entry.info.version.toString() << "(" + l_entry.info.runtime + ")";
+        qCInfo(akashiPlugins).noquote() << "Loaded" << f_id << "v" + l_entry.info.version.toString() << "(" + l_entry.info.runtime + ")";
         return true;
     }
 
@@ -343,7 +343,7 @@ bool PluginManager::loadPlugin(const QString &f_id)
     // become visible now and load with /plugin load.
     discoverFromScriptHosts();
 
-    qInfo() << "Plugin loaded:" << f_id << l_entry.info.version.toString();
+    qCInfo(akashiPlugins).noquote() << "Loaded" << f_id << "v" + l_entry.info.version.toString();
     return true;
 }
 
@@ -373,7 +373,7 @@ bool PluginManager::unloadPlugin(const QString &f_id, bool f_cascade)
         unloadScriptEntry(l_entry);
         l_entry.info.state = PluginInfo::State::Discovered;
         m_load_order.removeOne(f_id);
-        qInfo() << "Plugin unloaded:" << f_id;
+        qCInfo(akashiPlugins).noquote() << "Unloaded" << f_id;
         return true;
     }
 
@@ -384,7 +384,7 @@ bool PluginManager::unloadPlugin(const QString &f_id, bool f_cascade)
     l_entry.info.state = PluginInfo::State::Discovered;
     m_load_order.removeOne(f_id);
 
-    qInfo() << "Plugin unloaded:" << f_id;
+    qCInfo(akashiPlugins).noquote() << "Unloaded" << f_id;
     return true;
 }
 
@@ -423,7 +423,7 @@ bool PluginManager::discover(const QStringList &f_allowlist)
 {
     QDir l_dir(m_plugin_dir);
     if (!l_dir.exists()) {
-        qInfo() << "Plugin directory does not exist:" << m_plugin_dir;
+        qCInfo(akashiPlugins).noquote() << "Plugin directory does not exist:" << m_plugin_dir;
         return true;
     }
 
@@ -443,7 +443,7 @@ bool PluginManager::discover(const QStringList &f_allowlist)
 
         QJsonObject l_meta = l_loader->metaData();
         if (l_meta.isEmpty()) {
-            qWarning() << "No metadata in" << l_file;
+            qCWarning(akashiPlugins) << "No metadata in" << l_file;
             delete l_loader;
             continue;
         }
@@ -451,19 +451,19 @@ bool PluginManager::discover(const QStringList &f_allowlist)
         QJsonObject l_md = l_meta.value(QStringLiteral("MetaData")).toObject();
         QString l_id = l_md.value(QStringLiteral("id")).toString();
         if (l_id.isEmpty()) {
-            qWarning() << "No id in metadata of" << l_file;
+            qCWarning(akashiPlugins) << "No id in metadata of" << l_file;
             delete l_loader;
             continue;
         }
 
         if (!f_allowlist.isEmpty() && !f_allowlist.contains(l_id)) {
-            qInfo() << "Plugin" << l_id << "not in allowlist, skipping";
+            qCInfo(akashiPlugins).noquote() << "Plugin" << l_id << "not in allowlist, skipping";
             delete l_loader;
             continue;
         }
 
         if (m_plugins.contains(l_id)) {
-            qWarning() << "Duplicate plugin id" << l_id << "in" << l_file;
+            qCWarning(akashiPlugins) << "Duplicate plugin id" << l_id << "in" << l_file;
             delete l_loader;
             continue;
         }
@@ -501,7 +501,7 @@ bool PluginManager::discover(const QStringList &f_allowlist)
         l_entry.loader = l_loader;
 
         m_plugins.insert(l_id, l_entry);
-        qInfo() << "Discovered plugin:" << l_id << l_info.version.toString();
+        qCInfo(akashiPlugins).noquote() << "Discovered" << l_id << "v" + l_info.version.toString();
     }
 
     return true;
@@ -538,14 +538,14 @@ std::optional<PluginInfo> PluginManager::parseScriptHeader(const QString &f_file
         }
     }
     if (l_close < 0) {
-        qWarning() << "No declaration object after the akashi-plugin marker in" << f_file_path;
+        qCWarning(akashiPlugins) << "No declaration object after the akashi-plugin marker in" << f_file_path;
         return std::nullopt;
     }
 
     QJsonParseError l_error;
     const QJsonDocument l_doc = QJsonDocument::fromJson(l_head.mid(l_open, l_close - l_open + 1).toUtf8(), &l_error);
     if (l_error.error != QJsonParseError::NoError || !l_doc.isObject()) {
-        qWarning() << "Unreadable declaration header in" << f_file_path << ":" << l_error.errorString();
+        qCWarning(akashiPlugins) << "Unreadable declaration header in" << f_file_path << ":" << l_error.errorString();
         return std::nullopt;
     }
     const QJsonObject l_md = l_doc.object();
@@ -559,7 +559,7 @@ std::optional<PluginInfo> PluginManager::parseScriptHeader(const QString &f_file
                                                                                          : QString();
     }
     if (l_runtime.isEmpty()) {
-        qWarning() << "No runtime for script plugin" << f_file_path;
+        qCWarning(akashiPlugins) << "No runtime for script plugin" << f_file_path;
         return std::nullopt;
     }
 
@@ -602,7 +602,7 @@ bool PluginManager::loadScriptEntry(PluginEntry &f_entry)
 {
     auto l_host = m_services->resolve<IScriptPluginHost>(QStringLiteral("akashi.script-host.") + f_entry.info.runtime);
     if (!l_host) {
-        qWarning() << "Script plugin" << f_entry.info.id << "has no running host for runtime" << f_entry.info.runtime;
+        qCWarning(akashiPlugins) << "Script plugin" << f_entry.info.id << "has no running host for runtime" << f_entry.info.runtime;
         return false;
     }
     return l_host->loadScriptPlugin(f_entry.info.id, f_entry.info.entry_path);
@@ -631,7 +631,7 @@ QStringList PluginManager::topologicalSort() const
         const QString &l_id = it.key();
         for (const QString &l_dep : it.value().info.dependencies) {
             if (!m_plugins.contains(l_dep)) {
-                qWarning() << "Plugin" << l_id << "depends on missing plugin" << l_dep << "- skipping";
+                qCWarning(akashiPlugins) << "Plugin" << l_id << "depends on missing plugin" << l_dep << "- skipping";
                 return {};
             }
             l_adjacency[l_dep].append(l_id);
@@ -662,7 +662,7 @@ QStringList PluginManager::topologicalSort() const
     }
 
     if (l_result.size() != m_plugins.size()) {
-        qCritical() << "Circular dependency detected among plugins";
+        qCCritical(akashiPlugins) << "Circular dependency detected among plugins";
         return {};
     }
 
@@ -673,7 +673,7 @@ bool PluginManager::validateServices(const PluginEntry &f_entry) const
 {
     for (const QString &l_svc : f_entry.info.services) {
         if (!m_services->isAvailable(l_svc)) {
-            qWarning() << "Plugin" << f_entry.info.id << "requires service" << l_svc << "which is not available";
+            qCWarning(akashiPlugins) << "Plugin" << f_entry.info.id << "requires service" << l_svc << "which is not available";
             return false;
         }
     }

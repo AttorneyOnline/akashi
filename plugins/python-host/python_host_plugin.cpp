@@ -18,6 +18,7 @@
 
 #include "akashi/script_plugin_host.h"
 #include "akashi/service_registry.h"
+#include "core/logging_categories.h"
 #include "core/plugin_manager.h"
 
 #include <QByteArray>
@@ -748,7 +749,7 @@ class PythonScriptHost : public akashi::IScriptPluginHost
         }
         QFile l_file(f_entry_path);
         if (!l_file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            qWarning() << "python-host: unable to open" << f_entry_path;
+            qCWarning(akashiScripting) << "python-host: unable to open" << f_entry_path;
             return false;
         }
         const QByteArray l_source = l_file.readAll();
@@ -780,7 +781,7 @@ class PythonScriptHost : public akashi::IScriptPluginHost
 
         if (!l_result) {
             PyErr_Print();
-            qWarning() << "python-host: error in" << f_entry_path;
+            qCWarning(akashiScripting) << "python-host: error in" << f_entry_path;
             // Half-done registrations must not survive the failed load.
             s_ffi->unregister_owner(l_plugin->owner_id.constData(), size_t(l_plugin->owner_id.size()));
             releasePlugin(l_plugin);
@@ -830,7 +831,7 @@ bool PythonHostPlugin::load(akashi::ServiceRegistry &services)
 {
     auto l_ffi_service = services.resolve<ScriptingFfiService>(QStringLiteral("akashi.scripting-ffi"));
     if (!l_ffi_service) {
-        qWarning() << "python-host: the scripting FFI is not available";
+        qCWarning(akashiScripting) << "python-host: the scripting FFI is not available";
         return false;
     }
     s_ffi = l_ffi_service->table();
@@ -842,11 +843,11 @@ bool PythonHostPlugin::load(akashi::ServiceRegistry &services)
 
     m_host = std::make_shared<PythonScriptHost>();
     if (!services.registerService(m_host, id())) {
-        qWarning() << "python-host: service id already taken";
+        qCWarning(akashiScripting) << "python-host: service id already taken";
         s_ffi = nullptr;
         return false;
     }
-    qInfo().noquote() << "python-host: providing" << m_host->serviceId() << "with Python" << QString::fromUtf8(Py_GetVersion()).section(' ', 0, 0);
+    qCInfo(akashiScripting).noquote() << "python-host: providing" << m_host->serviceId() << "with Python" << QString::fromUtf8(Py_GetVersion()).section(' ', 0, 0);
     return true;
 }
 

@@ -26,12 +26,10 @@ bool HelloWorldPlugin::load(akashi::ServiceRegistry &services)
         ctx.reply(QStringLiteral("Hello from the plugin system!"));
     }, id());
 
-    qInfo() << "hello-world plugin loaded";
     return true;
 }
 
 void HelloWorldPlugin::shutdown(akashi::ServiceRegistry &services)
 {
     Q_UNUSED(services);
-    qInfo() << "hello-world plugin shutting down";
 }

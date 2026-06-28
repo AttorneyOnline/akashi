@@ -40,7 +40,7 @@ bool SqlLoggerPlugin::load(akashi::ServiceRegistry &services)
     m_writer = std::make_shared<akashi::WriterSql>(*l_resolved, QStringLiteral("sql_logger_plugin"));
     l_log->registerWriter(m_writer, id());
 
-    qInfo() << "sql-logger: logging events to" << *l_resolved;
+    qInfo().noquote() << "sql-logger: logging events to" << *l_resolved;
     return true;
 }
 
@@ -51,5 +51,4 @@ void SqlLoggerPlugin::shutdown(akashi::ServiceRegistry &services)
         l_log->unregisterAll(id());
 
     m_writer.reset();
-    qInfo() << "sql-logger: shut down";
 }

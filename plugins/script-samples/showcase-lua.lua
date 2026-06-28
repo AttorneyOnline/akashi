@@ -9,9 +9,6 @@
 -- Everything a Lua plugin can do, in one file. The header above is the
 -- manifest; dropping the file into bin/plugins is the entire install.
 
--- The server log.
-akashi.log("showcase-lua loaded")
-
 -- Declared permissions show up in role files, so owners can grant them to
 -- moderator roles like any built-in permission.
 akashi.register_permission("showcase.curse", "Sparkle Curse", "scripting")

@@ -1,3 +1,4 @@
+#include "core/console_log.h"
 #include "core/server_context.h"
 #include "softwareinformation.h"
 
@@ -6,6 +7,7 @@
 
 int main(int argc, char *argv[])
 {
+    akashi::installConsoleLog();
     QCoreApplication app(argc, argv);
     QCoreApplication::setApplicationName(akashi::software::name);
     QCoreApplication::setApplicationVersion(akashi::software::fullVersion());

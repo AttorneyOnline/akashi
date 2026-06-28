@@ -10,8 +10,6 @@
 # manifest, and dropping the file into bin/plugins is the entire install.
 import akashi
 
-akashi.log("hello-python loaded")
-
 greetings_seen = 0
 modcalls_seen = 0
 

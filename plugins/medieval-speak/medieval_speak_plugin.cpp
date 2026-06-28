@@ -92,7 +92,7 @@ bool MedievalSpeakPlugin::load(akashi::ServiceRegistry &services)
             f_context.replyToArea("Hear ye, hear ye! Medieval Mode is now " + l_state);
         }, l_owner);
 
-    qInfo() << "medieval-speak: loaded with data from" << l_resolved;
+    qInfo().noquote() << "medieval-speak: word data from" << l_resolved;
     return true;
 }
 
@@ -107,5 +107,4 @@ void MedievalSpeakPlugin::shutdown(akashi::ServiceRegistry &services)
         l_commands->unregisterAll(id());
 
     m_parser.reset();
-    qInfo() << "medieval-speak: shut down";
 }

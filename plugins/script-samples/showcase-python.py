@@ -10,9 +10,6 @@
 # the manifest; dropping the file into bin/plugins is the entire install.
 import akashi
 
-# The server log.
-akashi.log("showcase-python loaded")
-
 # Declared permissions show up in role files, so owners can grant them to
 # moderator roles like any built-in permission.
 akashi.register_permission("showcase.shout", "Shout Curse", "scripting")

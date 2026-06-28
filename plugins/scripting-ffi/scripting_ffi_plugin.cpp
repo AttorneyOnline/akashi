@@ -6,6 +6,7 @@
 #include "akashi/config_store.h"
 #include "akashi/event.h"
 #include "akashi/service_registry.h"
+#include "core/logging_categories.h"
 #include "core/command_context.h"
 #include "core/command_registry.h"
 #include "core/command_spec.h"
@@ -72,7 +73,7 @@ static akashi::CommandContext *context(AkashiCommandContext *f_context)
 
 static void ffiLogInfo(const char *f_text, size_t f_text_length)
 {
-    qInfo().noquote() << "[scripting]" << toString(f_text, f_text_length);
+    qCInfo(akashiScripting).noquote() << toString(f_text, f_text_length);
 }
 
 static int ffiRegisterCommand(const char *f_name, size_t f_name_length,
@@ -540,7 +541,7 @@ bool ScriptingFfiPlugin::load(akashi::ServiceRegistry &services)
     auto l_config = services.resolve<akashi::ConfigStore>(QStringLiteral("akashi.config"));
     auto l_rules = services.resolve<akashi::RuleRegistry>(QStringLiteral("akashi.rules"));
     if (!l_commands || !l_filters || !l_events || !l_permissions || !l_config || !l_rules) {
-        qWarning() << "scripting-ffi: required services not available";
+        qCWarning(akashiScripting) << "scripting-ffi: required services not available";
         return false;
     }
     s_commands = l_commands.get();
@@ -552,7 +553,7 @@ bool ScriptingFfiPlugin::load(akashi::ServiceRegistry &services)
 
     m_service = std::make_shared<ServiceImpl>();
     if (!services.registerService(m_service, id())) {
-        qWarning() << "scripting-ffi: service id already taken";
+        qCWarning(akashiScripting) << "scripting-ffi: service id already taken";
         s_commands = nullptr;
         s_filters = nullptr;
         s_events = nullptr;
@@ -561,7 +562,7 @@ bool ScriptingFfiPlugin::load(akashi::ServiceRegistry &services)
         return false;
     }
 
-    qInfo() << "scripting-ffi: C surface available, ABI version" << AKASHI_FFI_ABI_VERSION;
+    qCInfo(akashiScripting) << "scripting-ffi: C surface available, ABI version" << AKASHI_FFI_ABI_VERSION;
     return true;
 }
 
