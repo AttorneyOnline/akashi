@@ -259,8 +259,9 @@ void tst_PluginManager::discoverySkipsScriptWithoutHost()
     QTemporaryDir l_tmp;
     writeScript(l_tmp, "orphan.lua", "--[[ akashi-plugin {\"id\": \"akashi.orphan\"} ]]\n");
 
+    // Hosts do their own scanning; with no host running, nobody reports
+    // the file and it never becomes a plugin.
     akashi::PluginManager l_mgr(&m_services, l_tmp.path());
-    QTest::ignoreMessage(QtWarningMsg, QRegularExpression("needs the host plugin"));
     QVERIFY(l_mgr.startPlugins());
     QVERIFY(!l_mgr.pluginInfo(QStringLiteral("akashi.orphan")).has_value());
 }

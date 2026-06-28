@@ -91,7 +91,8 @@ class AKASHI_CORE_EXPORT PluginManager : public QObject, public IService
     };
 
     bool discover(const QStringList &f_allowlist);
-    void discoverScriptPlugin(const QString &f_dir_path, const QStringList &f_allowlist);
+    void discoverFromScriptHosts();
+    void loadDiscoveredScripts();
     bool loadScriptEntry(PluginEntry &f_entry);
     void unloadScriptEntry(PluginEntry &f_entry);
     QStringList topologicalSort() const;
@@ -101,6 +102,7 @@ class AKASHI_CORE_EXPORT PluginManager : public QObject, public IService
 
     ServiceRegistry *m_services;
     QString m_plugin_dir;
+    QStringList m_allowlist;
     QHash<QString, PluginEntry> m_plugins;
     QList<QString> m_load_order;
 };

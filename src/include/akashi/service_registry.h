@@ -34,6 +34,10 @@ class AKASHI_CORE_EXPORT ServiceRegistry : public QObject
 
     bool isAvailable(const QString &f_service_id, const QString &f_version_range = QString()) const;
 
+    // Every registered service id, for discovering convention-named
+    // services like the akashi.script-host.* family.
+    QStringList serviceIds() const { return m_services.keys(); }
+
     // The service cast to its concrete type, or null if missing or of the wrong type.
     template <typename T>
     std::shared_ptr<T> resolve(const QString &f_service_id, const QString &f_version_range = QString()) const

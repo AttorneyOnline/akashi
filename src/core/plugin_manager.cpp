@@ -40,6 +40,7 @@ ServiceVersion PluginManager::serviceVersion() const { return {1, 0, 0}; }
 
 bool PluginManager::startPlugins(const QStringList &f_allowlist)
 {
+    m_allowlist = f_allowlist;
     if (!discover(f_allowlist))
         return false;
 
@@ -57,18 +58,6 @@ bool PluginManager::startPlugins(const QStringList &f_allowlist)
         if (!validateServices(l_entry)) {
             qWarning() << "Plugin" << l_id << "skipped: required service not available";
             l_entry.info.state = PluginInfo::State::Failed;
-            continue;
-        }
-
-        // A script plugin runs through its host and has no init/started
-        // phases of its own; its host is already loaded by dependency order.
-        if (l_entry.isScript()) {
-            if (!loadScriptEntry(l_entry)) {
-                l_entry.info.state = PluginInfo::State::Failed;
-                continue;
-            }
-            l_entry.info.state = PluginInfo::State::Started;
-            qInfo() << "Script plugin started:" << l_id;
             continue;
         }
 
@@ -134,7 +123,88 @@ bool PluginManager::startPlugins(const QStringList &f_allowlist)
         qInfo() << "Plugin started:" << l_id;
     }
 
+    // The hosts are running now, so they can find their plugin files.
+    discoverFromScriptHosts();
+    loadDiscoveredScripts();
+
     return true;
+}
+
+// Asks every registered script host to scan the plugin directory and files
+// the reported manifests as discovered plugins. Safe to run repeatedly;
+// known ids are left alone.
+void PluginManager::discoverFromScriptHosts()
+{
+    const QStringList l_service_ids = m_services->serviceIds();
+    for (const QString &l_service_id : l_service_ids) {
+        if (!l_service_id.startsWith(QStringLiteral("akashi.script-host."))) {
+            continue;
+        }
+        auto l_host = m_services->resolve<IScriptPluginHost>(l_service_id);
+        if (!l_host) {
+            continue;
+        }
+
+        const QList<PluginInfo> l_manifests = l_host->discoverScriptPlugins(m_plugin_dir);
+        for (const PluginInfo &l_manifest : l_manifests) {
+            if (m_plugins.contains(l_manifest.id)) {
+                continue;
+            }
+            if (!m_allowlist.isEmpty() && !m_allowlist.contains(l_manifest.id)) {
+                qInfo() << "Plugin" << l_manifest.id << "not in allowlist, skipping";
+                continue;
+            }
+
+            PluginEntry l_entry;
+            l_entry.info = l_manifest;
+            if (l_entry.info.runtime.isEmpty()) {
+                l_entry.info.runtime = l_host->runtime();
+            }
+            m_plugins.insert(l_manifest.id, l_entry);
+            qInfo() << "Discovered script plugin:" << l_manifest.id << l_manifest.version.toString() << "(" + l_entry.info.runtime + ")";
+        }
+    }
+}
+
+// Loads discovered script plugins in dependency order: whoever's
+// dependencies are all running loads, until nothing moves anymore.
+void PluginManager::loadDiscoveredScripts()
+{
+    bool l_progress = true;
+    while (l_progress) {
+        l_progress = false;
+        const QStringList l_ids = m_plugins.keys();
+        for (const QString &l_id : l_ids) {
+            PluginEntry &l_entry = m_plugins[l_id];
+            if (!l_entry.isScript() || l_entry.info.state != PluginInfo::State::Discovered) {
+                continue;
+            }
+            bool l_ready = true;
+            for (const QString &l_dep : l_entry.info.dependencies) {
+                auto dep_it = m_plugins.constFind(l_dep);
+                if (dep_it == m_plugins.constEnd() || dep_it.value().info.state != PluginInfo::State::Started) {
+                    l_ready = false;
+                    break;
+                }
+            }
+            if (!l_ready) {
+                continue;
+            }
+            if (loadPlugin(l_id)) {
+                qInfo() << "Script plugin started:" << l_id;
+                l_progress = true;
+            }
+            else {
+                l_entry.info.state = PluginInfo::State::Failed;
+            }
+        }
+    }
+
+    for (auto it = m_plugins.cbegin(); it != m_plugins.cend(); ++it) {
+        if (it.value().isScript() && it.value().info.state == PluginInfo::State::Discovered) {
+            qWarning() << "Script plugin" << it.key() << "not started: dependencies missing or not running";
+        }
+    }
 }
 
 void PluginManager::shutdownAll()
@@ -188,23 +258,32 @@ bool PluginManager::loadPlugin(const QString &f_id)
     if (l_entry.info.state != PluginInfo::State::Discovered)
         return false;
 
-    // A script plugin's file may have changed since discovery; the fresh
-    // header decides its dependencies and services. The id stays what it
-    // was discovered under.
+    // A script plugin's file may have changed since discovery; the host's
+    // fresh manifest decides its dependencies and services. The id stays
+    // what it was discovered under.
     if (l_entry.isScript()) {
-        const auto l_fresh = parseScriptHeader(l_entry.info.file_path);
-        if (!l_fresh) {
-            qWarning() << "Script plugin" << f_id << "no longer carries a readable declaration header";
+        auto l_host = m_services->resolve<IScriptPluginHost>(QStringLiteral("akashi.script-host.") + l_entry.info.runtime);
+        if (!l_host) {
             return false;
         }
-        if (l_fresh->id != l_entry.info.id) {
-            qWarning() << "Script plugin" << f_id << "renamed itself to" << l_fresh->id << "- restart to pick the new id up";
+        const QList<PluginInfo> l_manifests = l_host->discoverScriptPlugins(m_plugin_dir);
+        bool l_found = false;
+        for (const PluginInfo &l_manifest : l_manifests) {
+            if (l_manifest.id != l_entry.info.id) {
+                continue;
+            }
+            l_entry.info.version = l_manifest.version;
+            l_entry.info.entry_path = l_manifest.entry_path;
+            l_entry.info.file_path = l_manifest.file_path;
+            l_entry.info.dependencies = l_manifest.dependencies;
+            l_entry.info.services = l_manifest.services;
+            l_found = true;
+            break;
         }
-        l_entry.info.version = l_fresh->version;
-        l_entry.info.runtime = l_fresh->runtime;
-        l_entry.info.entry_path = l_fresh->entry_path;
-        l_entry.info.dependencies = l_fresh->dependencies;
-        l_entry.info.services = l_fresh->services;
+        if (!l_found) {
+            qWarning() << "Script plugin" << f_id << "is no longer reported by its host";
+            return false;
+        }
     }
 
     if (!validateServices(l_entry))
@@ -258,6 +337,10 @@ bool PluginManager::loadPlugin(const QString &f_id)
 
     if (!m_load_order.contains(f_id))
         m_load_order.append(f_id);
+
+    // The plugin may be a script host with plugin files of its own; they
+    // become visible now and load with /plugin load.
+    discoverFromScriptHosts();
 
     return true;
 }
@@ -417,14 +500,6 @@ bool PluginManager::discover(const QStringList &f_allowlist)
         qInfo() << "Discovered plugin:" << l_id << l_info.version.toString();
     }
 
-    // Script plugins are single files whose declaration header carries the
-    // same metadata a native plugin embeds; the hosts scanned above must
-    // already be known, so they come second.
-    const QStringList l_scripts = l_dir.entryList({QStringLiteral("*.lua"), QStringLiteral("*.py")}, QDir::Files);
-    for (const QString &l_script : l_scripts) {
-        discoverScriptPlugin(l_dir.absoluteFilePath(l_script), f_allowlist);
-    }
-
     return true;
 }
 
@@ -517,36 +592,6 @@ std::optional<PluginInfo> PluginManager::parseScriptHeader(const QString &f_file
     }
 
     return l_info;
-}
-
-void PluginManager::discoverScriptPlugin(const QString &f_file_path, const QStringList &f_allowlist)
-{
-    const auto l_info = parseScriptHeader(f_file_path);
-    if (!l_info) {
-        return;
-    }
-
-    if (!f_allowlist.isEmpty() && !f_allowlist.contains(l_info->id)) {
-        qInfo() << "Plugin" << l_info->id << "not in allowlist, skipping";
-        return;
-    }
-    if (m_plugins.contains(l_info->id)) {
-        qWarning() << "Duplicate plugin id" << l_info->id << "in" << f_file_path;
-        return;
-    }
-    // The host was scanned before the scripts, so a missing one is missing
-    // for good; dropping the plugin here keeps it out of the load order.
-    const QString l_host_id = QStringLiteral("akashi.") + l_info->runtime + QStringLiteral("-host");
-    if (!m_plugins.contains(l_host_id)) {
-        qWarning() << "Script plugin" << l_info->id << "needs the host plugin" << l_host_id << "which is not present - skipping";
-        return;
-    }
-
-    PluginEntry l_entry;
-    l_entry.info = *l_info;
-
-    m_plugins.insert(l_info->id, l_entry);
-    qInfo() << "Discovered script plugin:" << l_info->id << l_info->version.toString() << "(" + l_info->runtime + ")";
 }
 
 bool PluginManager::loadScriptEntry(PluginEntry &f_entry)

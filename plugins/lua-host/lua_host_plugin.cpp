@@ -5,9 +5,11 @@
 
 #include "akashi/script_plugin_host.h"
 #include "akashi/service_registry.h"
+#include "core/plugin_manager.h"
 
 #include <QByteArray>
 #include <QDebug>
+#include <QDir>
 #include <QFile>
 #include <QHash>
 #include <QList>
@@ -509,6 +511,22 @@ class LuaScriptHost : public akashi::IScriptPluginHost
     QString serviceId() const override { return QStringLiteral("akashi.script-host.lua"); }
     akashi::ServiceVersion serviceVersion() const override { return {1, 1, 0}; }
     QString runtime() const override { return QStringLiteral("lua"); }
+
+    // A Lua plugin is one .lua file whose declaration header carries the
+    // manifest; finding them is this host's business, not the manager's.
+    QList<akashi::PluginInfo> discoverScriptPlugins(const QString &f_plugin_dir) override
+    {
+        QList<akashi::PluginInfo> l_manifests;
+        const QDir l_dir(f_plugin_dir);
+        const QStringList l_files = l_dir.entryList({QStringLiteral("*.lua")}, QDir::Files, QDir::Name);
+        for (const QString &l_file : l_files) {
+            const auto l_info = akashi::PluginManager::parseScriptHeader(l_dir.absoluteFilePath(l_file));
+            if (l_info && l_info->runtime == runtime()) {
+                l_manifests.append(*l_info);
+            }
+        }
+        return l_manifests;
+    }
 
     bool loadScriptPlugin(const QString &f_plugin_id, const QString &f_entry_path) override
     {
