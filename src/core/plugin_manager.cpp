@@ -86,7 +86,7 @@ bool PluginManager::startPlugins(const QStringList &f_allowlist)
         }
 
         l_entry.info.state = PluginInfo::State::Loaded;
-        qInfo() << "Plugin loaded:" << l_id;
+        qInfo() << "Plugin loaded:" << l_id << l_entry.info.version.toString();
     }
 
     for (const QString &l_id : std::as_const(m_load_order)) {
@@ -120,7 +120,7 @@ bool PluginManager::startPlugins(const QStringList &f_allowlist)
 
         l_entry.instance->started(*m_services);
         l_entry.info.state = PluginInfo::State::Started;
-        qInfo() << "Plugin started:" << l_id;
+        qInfo() << "Plugin started:" << l_id << l_entry.info.version.toString();
     }
 
     // The hosts are running now, so they can find their plugin files.
@@ -191,7 +191,7 @@ void PluginManager::loadDiscoveredScripts()
                 continue;
             }
             if (loadPlugin(l_id)) {
-                qInfo() << "Script plugin started:" << l_id;
+                qInfo() << "Script plugin started:" << l_id << l_entry.info.version.toString() << "(" + l_entry.info.runtime + ")";
                 l_progress = true;
             }
             else {
@@ -301,6 +301,7 @@ bool PluginManager::loadPlugin(const QString &f_id)
         l_entry.info.state = PluginInfo::State::Started;
         if (!m_load_order.contains(f_id))
             m_load_order.append(f_id);
+        qInfo() << "Plugin loaded:" << f_id << l_entry.info.version.toString() << "(" + l_entry.info.runtime + ")";
         return true;
     }
 
@@ -342,6 +343,7 @@ bool PluginManager::loadPlugin(const QString &f_id)
     // become visible now and load with /plugin load.
     discoverFromScriptHosts();
 
+    qInfo() << "Plugin loaded:" << f_id << l_entry.info.version.toString();
     return true;
 }
 
@@ -371,6 +373,7 @@ bool PluginManager::unloadPlugin(const QString &f_id, bool f_cascade)
         unloadScriptEntry(l_entry);
         l_entry.info.state = PluginInfo::State::Discovered;
         m_load_order.removeOne(f_id);
+        qInfo() << "Plugin unloaded:" << f_id;
         return true;
     }
 
@@ -381,6 +384,7 @@ bool PluginManager::unloadPlugin(const QString &f_id, bool f_cascade)
     l_entry.info.state = PluginInfo::State::Discovered;
     m_load_order.removeOne(f_id);
 
+    qInfo() << "Plugin unloaded:" << f_id;
     return true;
 }
 

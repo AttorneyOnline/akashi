@@ -62,10 +62,14 @@ static void handlePluginLoad(CommandContext &f_ctx)
         return;
 
     const QString l_id = f_ctx.argument(1);
-    if (l_mgr->loadPlugin(l_id))
-        f_ctx.reply(QStringLiteral("Plugin loaded: ") + l_id);
-    else
+    if (l_mgr->loadPlugin(l_id)) {
+        const auto l_info = l_mgr->pluginInfo(l_id);
+        f_ctx.reply(QStringLiteral("Plugin loaded: ") + l_id
+                    + (l_info ? QStringLiteral(" v") + l_info->version.toString() : QString()));
+    }
+    else {
         f_ctx.reply(QStringLiteral("Failed to load plugin: ") + l_id);
+    }
 }
 
 static void handlePluginUnload(CommandContext &f_ctx)
@@ -91,10 +95,14 @@ static void handlePluginReload(CommandContext &f_ctx)
         return;
 
     const QString l_id = f_ctx.argument(1);
-    if (l_mgr->reloadPlugin(l_id))
-        f_ctx.reply(QStringLiteral("Plugin reloaded: ") + l_id);
-    else
+    if (l_mgr->reloadPlugin(l_id)) {
+        const auto l_info = l_mgr->pluginInfo(l_id);
+        f_ctx.reply(QStringLiteral("Plugin reloaded: ") + l_id
+                    + (l_info ? QStringLiteral(" v") + l_info->version.toString() : QString()));
+    }
+    else {
         f_ctx.reply(QStringLiteral("Failed to reload plugin: ") + l_id);
+    }
 }
 
 static void handlePlugin(CommandContext &f_ctx)
