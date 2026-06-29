@@ -97,3 +97,9 @@ akashi.register_command("luagreet", "/luagreet", "Greets the area with the confi
     local line = greeting_template:gsub("AREA", akashi.area_name(ctx)):gsub("NAME", akashi.player_name(ctx))
     akashi.reply_to_area(ctx, line)
 end)
+
+-- A task on the server console's menu, run from the terminal without a
+-- game client.
+akashi.register_console_action("Roll a die on the console", function()
+    akashi.log("the console rolled a " .. math.random(6))
+end)

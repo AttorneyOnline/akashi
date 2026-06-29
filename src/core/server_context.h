@@ -46,6 +46,7 @@ class World;
 class ITransport;
 class WebSocketReceiver;
 class PluginManager;
+class ConsoleMenu;
 class ArupBroadcaster;
 class AuthThrottle;
 class CommandRegistry;
@@ -460,6 +461,8 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
 
     akashi::ArupBroadcaster *arupBroadcaster();
 
+    akashi::ConsoleMenu *consoleMenu();
+
     akashi::CommandRegistry *commandRegistry();
 
     akashi::PermissionRegistry *permissionRegistry();
@@ -587,6 +590,7 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
 
     akashi::ArupBroadcaster *m_arup_broadcaster = nullptr;
     akashi::CommandRegistry *m_command_registry = nullptr;
+    akashi::ConsoleMenu *m_console_menu = nullptr;
     akashi::PermissionRegistry *m_permission_registry = nullptr;
     akashi::AuthThrottle *m_auth_throttle = nullptr;
     akashi::RuleRegistry *m_rule_registry = nullptr;

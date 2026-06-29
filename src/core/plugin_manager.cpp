@@ -4,6 +4,7 @@
 #include "akashi/script_plugin_host.h"
 #include "akashi/service_registry.h"
 #include "core/command_registry.h"
+#include "core/console_menu.h"
 #include "core/event_bus.h"
 #include "core/log_service.h"
 #include "core/logging_categories.h"
@@ -302,6 +303,7 @@ bool PluginManager::loadPlugin(const QString &f_id)
         if (!m_load_order.contains(f_id))
             m_load_order.append(f_id);
         qCInfo(akashiPlugins).noquote() << "Loaded" << f_id << "v" + l_entry.info.version.toString() << "(" + l_entry.info.runtime + ")";
+        Q_EMIT pluginLoaded(f_id);
         return true;
     }
 
@@ -344,6 +346,7 @@ bool PluginManager::loadPlugin(const QString &f_id)
     discoverFromScriptHosts();
 
     qCInfo(akashiPlugins).noquote() << "Loaded" << f_id << "v" + l_entry.info.version.toString();
+    Q_EMIT pluginLoaded(f_id);
     return true;
 }
 
@@ -708,6 +711,9 @@ void PluginManager::cleanupPlugin(const QString &f_id)
 
     auto l_rules = m_services->resolve<RuleRegistry>(QStringLiteral("akashi.rules"));
     if (l_rules) l_rules->unregisterActions(f_id);
+
+    auto l_console = m_services->resolve<ConsoleMenu>(QStringLiteral("akashi.console"));
+    if (l_console) l_console->unregisterAll(f_id);
 }
 
 QStringList PluginManager::dependentsOf(const QString &f_id) const

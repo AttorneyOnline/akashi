@@ -10,6 +10,7 @@
 #include "core/command_context.h"
 #include "core/command_registry.h"
 #include "core/command_spec.h"
+#include "core/console_menu.h"
 #include "core/event_bus.h"
 #include "core/permission_registry.h"
 #include "core/text_filter_registry.h"
@@ -34,6 +35,7 @@ static akashi::EventBus *s_events = nullptr;
 static akashi::PermissionRegistry *s_permissions = nullptr;
 static akashi::ConfigStore *s_config = nullptr;
 static akashi::RuleRegistry *s_rules = nullptr;
+static akashi::ConsoleMenu *s_console = nullptr;
 
 // The slot string returns point into; valid until the next FFI call.
 static QByteArray s_string_slot;
@@ -476,6 +478,20 @@ static void ffiRuleResultBlock(AkashiRuleResult *f_result, const char *f_reason,
     }
 }
 
+static int ffiRegisterConsoleAction(const char *f_title, size_t f_title_length,
+                                    AkashiConsoleFn f_action, void *f_userdata,
+                                    const char *f_owner_id, size_t f_owner_id_length)
+{
+    if (!s_console || !f_action) {
+        return 0;
+    }
+    return s_console->registerAction(toString(f_title, f_title_length),
+                                     [f_action, f_userdata] { f_action(f_userdata); },
+                                     toString(f_owner_id, f_owner_id_length))
+               ? 1
+               : 0;
+}
+
 static const char *ffiConfigGet(const char *f_owner_id, size_t f_owner_id_length,
                                 const char *f_key, size_t f_key_length,
                                 const char *f_fallback, size_t f_fallback_length,
@@ -517,6 +533,7 @@ static const AkashiFfi s_table = {
     ffiConfigGet,
     ffiRegisterRuleAction,
     ffiRuleResultBlock,
+    ffiRegisterConsoleAction,
 };
 
 namespace {
@@ -550,6 +567,8 @@ bool ScriptingFfiPlugin::load(akashi::ServiceRegistry &services)
     s_permissions = l_permissions.get();
     s_config = l_config.get();
     s_rules = l_rules.get();
+    // Optional: headless embeddings may run without a console menu.
+    s_console = services.resolve<akashi::ConsoleMenu>(QStringLiteral("akashi.console")).get();
 
     m_service = std::make_shared<ServiceImpl>();
     if (!services.registerService(m_service, id())) {
@@ -575,5 +594,6 @@ void ScriptingFfiPlugin::shutdown(akashi::ServiceRegistry &services)
     s_permissions = nullptr;
     s_config = nullptr;
     s_rules = nullptr;
+    s_console = nullptr;
     m_service.reset();
 }

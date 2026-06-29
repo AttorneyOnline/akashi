@@ -44,6 +44,7 @@
 #include "core/log_service.h"
 #include "core/writer_text.h"
 #include "world/floor.h"
+#include "core/console_menu.h"
 #include "core/websocket_receiver.h"
 #include "proto/packet.h"
 #include "proto/packet_service.h"
@@ -197,6 +198,11 @@ ExitCode ServerContext::start()
     // them before the plugin's library leaves memory.
     connect(m_plugin_manager, &akashi::PluginManager::pluginAboutToUnload,
             this, &ServerContext::onPluginAboutToUnload);
+    // A plugin loaded at runtime registers commands the owner's extensions
+    // may address; re-applying is idempotent.
+    connect(m_plugin_manager, &akashi::PluginManager::pluginLoaded, this, [this](const QString &) {
+        m_command_registry->applyExtensions(configPath("command_extensions.json"));
+    });
 
     QStringList l_plugin_allowlist;
     const QString l_allowlist_path = m_config_store->filePath(QStringLiteral("plugins.ini"));
@@ -211,6 +217,7 @@ ExitCode ServerContext::start()
     }
 
     m_plugin_manager->startPlugins(l_plugin_allowlist);
+    m_command_registry->applyExtensions(configPath("command_extensions.json"));
     setStage(Stage::PluginsLoaded);
     setStage(Stage::Listening);
     setStage(Stage::Running);
@@ -273,6 +280,9 @@ void ServerContext::buildCore()
     m_event_bus = new akashi::EventBus;
     m_rule_registry = new akashi::RuleRegistry;
     akashi::registerCoreRuleActions(this, m_rule_registry);
+
+    m_console_menu = new akashi::ConsoleMenu(this, this);
+    m_services->registerService(std::shared_ptr<akashi::ConsoleMenu>(m_console_menu, [](auto *) {}));
 
     m_world = new akashi::World(m_rule_registry, m_services, m_filesystem, m_areas_ini, m_ambience_ini, this);
     connect(m_world, &akashi::World::areaBuilt, this, &ServerContext::onAreaBuilt);
@@ -492,7 +502,8 @@ ExitCode ServerContext::startListening()
     akashi::commands::registerMessagingCommands(*m_command_registry);
     akashi::commands::registerPluginCommands(*m_command_registry);
     akashi::commands::registerRuleCommands(*m_command_registry);
-    m_command_registry->applyExtensions(configPath("command_extensions.json"));
+    // The command extensions apply after the plugins load, so they can
+    // reach plugin commands too.
 
     return ExitCode::Ok;
 }
@@ -696,6 +707,11 @@ akashi::ArupBroadcaster *ServerContext::arupBroadcaster()
 akashi::CommandRegistry *ServerContext::commandRegistry()
 {
     return m_command_registry;
+}
+
+akashi::ConsoleMenu *ServerContext::consoleMenu()
+{
+    return m_console_menu;
 }
 
 akashi::PermissionRegistry *ServerContext::permissionRegistry()

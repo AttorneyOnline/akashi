@@ -74,6 +74,11 @@ class AKASHI_CORE_EXPORT PluginManager : public QObject, public IService
      */
     void pluginAboutToUnload(const QString &f_plugin_id);
 
+    /**
+     * @brief Fires after a plugin loaded at runtime and is running.
+     */
+    void pluginLoaded(const QString &f_plugin_id);
+
   private:
     struct PluginEntry
     {

@@ -109,6 +109,14 @@ def stats_command(ctx, args):
                       f"\n- {signature}")
 
 
+# A task on the server console's menu, run from the terminal without a
+# game client.
+def console_tallies():
+    akashi.log(f"tallies: rolls={rolls_witnessed} modcalls={modcalls_witnessed} ic={ic_tallied}")
+
+
+akashi.register_console_action("Show showcase tallies", console_tallies)
+
 akashi.register_command("note", "/note <text>", "Leaves yourself a note.", note_command, "", 1)
 akashi.register_command("notes", "/notes", "Reads your note back.", notes_command)
 akashi.register_command("shout", "/shout <id>", "Toggles the shout curse on a client.", shout_command, "showcase.shout", 1)

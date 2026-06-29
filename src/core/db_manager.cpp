@@ -6,12 +6,26 @@ DBManager::DBManager(QSqlDatabase f_database) :
     db(f_database)
 {
     db_version = checkVersion();
+    // A database without a bans table is brand new; it gets the current
+    // schema directly and must never replay the old migrations against it.
+    const bool l_fresh = !db.tables().contains(QStringLiteral("bans"));
     QSqlQuery create_ban_table(db);
     create_ban_table.exec("CREATE TABLE IF NOT EXISTS bans ('ID' INTEGER, 'IPID' TEXT, 'HDID' TEXT, 'IP' TEXT, 'TIME' INTEGER, 'REASON' TEXT, 'DURATION' INTEGER, 'MODERATOR' TEXT, PRIMARY KEY('ID' AUTOINCREMENT))");
     QSqlQuery create_user_table(db);
     create_user_table.exec("CREATE TABLE IF NOT EXISTS users ('ID' INTEGER, 'USERNAME' TEXT, 'SALT' TEXT, 'PASSWORD' TEXT, 'ACL' TEXT, PRIMARY KEY('ID' AUTOINCREMENT))");
-    if (db_version != DB_VERSION)
+    // The lookup indexes are part of the current schema; they carry the
+    // same names migration 3 uses, so nothing double-creates.
+    QSqlQuery(db).exec("CREATE INDEX IF NOT EXISTS bans_ipid_time ON bans(IPID, TIME)");
+    QSqlQuery(db).exec("CREATE INDEX IF NOT EXISTS bans_hdid_time ON bans(HDID, TIME)");
+    QSqlQuery(db).exec("CREATE INDEX IF NOT EXISTS bans_ip ON bans(IP)");
+    QSqlQuery(db).exec("CREATE INDEX IF NOT EXISTS users_username ON users(USERNAME)");
+    if (l_fresh) {
+        QSqlQuery(db).exec("PRAGMA user_version = " + QString::number(DB_VERSION));
+        db_version = DB_VERSION;
+    }
+    else if (db_version != DB_VERSION) {
         updateDB(db_version);
+    }
 }
 
 QPair<bool, DBManager::BanInfo> DBManager::isIPBanned(QString ipid)

@@ -52,8 +52,12 @@ set(AKASHI_SOURCES
   src/include/akashi/log_writer.h
   src/core/config_loading.cpp
   src/core/config_loading.h
+  src/core/console_input.cpp
+  src/core/console_input.h
   src/core/console_log.cpp
   src/core/console_log.h
+  src/core/console_menu.cpp
+  src/core/console_menu.h
   src/core/logging_categories.cpp
   src/core/logging_categories.h
   src/core/crypto_helper.h

@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-#define AKASHI_FFI_ABI_VERSION 3
+#define AKASHI_FFI_ABI_VERSION 4
 
 /* Valid only for the duration of a command callback. */
 typedef struct AkashiCommandContext AkashiCommandContext;
@@ -53,6 +53,9 @@ typedef void (*AkashiRuleFn)(void *f_userdata,
                              int f_payload_count, const char *const *f_payload_keys, const char *const *f_payload_values,
                              int f_argument_count, const char *const *f_argument_keys, const char *const *f_argument_values,
                              AkashiRuleResult *f_result);
+
+/* A task on the server console's menu. Prints its own output. */
+typedef void (*AkashiConsoleFn)(void *f_userdata);
 
 typedef struct AkashiFfi
 {
@@ -159,6 +162,14 @@ typedef struct AkashiFfi
 
     /* Refuses the gated event from inside a before-action callback. */
     void (*rule_result_block)(AkashiRuleResult *f_result, const char *f_reason, size_t f_reason_length);
+
+    /* --- Added in ABI version 4 --- */
+
+    /* Puts a task on the server console's menu, so an operator runs it
+     * from the terminal without a game client. */
+    int (*register_console_action)(const char *f_title, size_t f_title_length,
+                                   AkashiConsoleFn f_action, void *f_userdata,
+                                   const char *f_owner_id, size_t f_owner_id_length);
 } AkashiFfi;
 
 #ifdef __cplusplus

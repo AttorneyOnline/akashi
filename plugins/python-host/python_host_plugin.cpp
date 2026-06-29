@@ -351,6 +351,45 @@ static PyObject *pyApiRegisterRuleAction(PyObject *, PyObject *f_args)
     Py_RETURN_NONE;
 }
 
+// Runs a registered Python console task.
+static void pyConsoleTrampoline(void *f_userdata)
+{
+    PyFnRef *l_ref = static_cast<PyFnRef *>(f_userdata);
+    PythonPluginState *l_previous = s_active_plugin;
+    s_active_plugin = l_ref->plugin;
+    PyObject *l_result = PyObject_CallFunctionObjArgs(l_ref->callable, nullptr);
+    s_active_plugin = l_previous;
+    if (!l_result) {
+        PyErr_Print();
+    }
+    Py_XDECREF(l_result);
+}
+
+static PyObject *pyApiRegisterConsoleAction(PyObject *, PyObject *f_args)
+{
+    PyObject *l_title_obj = nullptr, *l_handler = nullptr;
+    if (!PyArg_ParseTuple(f_args, "UO", &l_title_obj, &l_handler)) {
+        return nullptr;
+    }
+    if (!PyCallable_Check(l_handler)) {
+        PyErr_SetString(PyExc_TypeError, "handler must be callable");
+        return nullptr;
+    }
+    const char *l_title = nullptr;
+    Py_ssize_t l_title_length = 0;
+    if (!pyStringArg(l_title_obj, &l_title, &l_title_length)) {
+        return nullptr;
+    }
+
+    PyFnRef *l_ref = takeFnRef(l_handler);
+    if (!l_ref) {
+        PyErr_SetString(PyExc_RuntimeError, "no plugin is active");
+        return nullptr;
+    }
+    return PyBool_FromLong(s_ffi->register_console_action(l_title, size_t(l_title_length), pyConsoleTrampoline, l_ref,
+                                                          l_ref->plugin->owner_id.constData(), size_t(l_ref->plugin->owner_id.size())));
+}
+
 static PyObject *pyApiSubscribeEvent(PyObject *, PyObject *f_args)
 {
     PyObject *l_name_obj = nullptr, *l_handler = nullptr;
@@ -688,6 +727,7 @@ static PyMethodDef s_akashi_methods[] = {
     {"register_text_filter", pyApiRegisterTextFilter, METH_VARARGS, "register_text_filter(id, order, always_active, handler); the handler returns a str rewrite, False to drop, or None."},
     {"register_permission", pyApiRegisterPermission, METH_VARARGS, "register_permission(id, display_name, category)."},
     {"register_rule_action", pyApiRegisterRuleAction, METH_VARARGS, "register_rule_action(name, phase, handler); a before handler may return a str or False to block."},
+    {"register_console_action", pyApiRegisterConsoleAction, METH_VARARGS, "register_console_action(title, handler): puts a task on the server console's menu."},
     {"subscribe_event", pyApiSubscribeEvent, METH_VARARGS, "subscribe_event(name, handler); the handler receives the payload dict."},
     {"publish_event", pyApiPublishEvent, METH_VARARGS, "publish_event(name, payload_dict)."},
     {"config_get", pyApiConfigGet, METH_VARARGS, "config_get(key, fallback='') from the plugin's config file."},

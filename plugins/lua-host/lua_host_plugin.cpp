@@ -179,6 +179,34 @@ static void luaEventTrampoline(void *f_userdata, int f_count,
     }
 }
 
+// Runs a registered Lua console task.
+static void luaConsoleTrampoline(void *f_userdata)
+{
+    LuaFnRef *l_ref = static_cast<LuaFnRef *>(f_userdata);
+    lua_State *L = l_ref->state;
+    lua_rawgeti(L, LUA_REGISTRYINDEX, l_ref->function_ref);
+    if (lua_pcall(L, 0, 0, 0) != LUA_OK) {
+        qCWarning(akashiScripting).noquote() << "lua-host: console task error:" << lua_tostring(L, -1);
+        lua_pop(L, 1);
+    }
+}
+
+static int luaApiRegisterConsoleAction(lua_State *L)
+{
+    size_t l_title_length = 0;
+    const char *l_title = luaL_checklstring(L, 1, &l_title_length);
+    luaL_checktype(L, 2, LUA_TFUNCTION);
+
+    LuaPluginState *l_plugin = pluginOf(L);
+    LuaFnRef *l_ref = takeFnRef(L, 2);
+    if (!l_plugin || !l_ref) {
+        return luaL_error(L, "register_console_action: no plugin is attached to this state");
+    }
+    lua_pushboolean(L, s_ffi->register_console_action(l_title, l_title_length, luaConsoleTrampoline, l_ref,
+                                                      l_plugin->owner_id.constData(), size_t(l_plugin->owner_id.size())));
+    return 1;
+}
+
 static int luaApiLog(lua_State *L)
 {
     size_t l_length = 0;
@@ -485,6 +513,7 @@ static const luaL_Reg s_akashi_api[] = {
     {"register_text_filter", luaApiRegisterTextFilter},
     {"register_permission", luaApiRegisterPermission},
     {"register_rule_action", luaApiRegisterRuleAction},
+    {"register_console_action", luaApiRegisterConsoleAction},
     {"subscribe_event", luaApiSubscribeEvent},
     {"publish_event", luaApiPublishEvent},
     {"config_get", luaApiConfigGet},

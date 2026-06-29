@@ -1,0 +1,528 @@
+#include "core/console_menu.h"
+
+#include "core/console_input.h"
+
+#include "akashi/service_registry.h"
+#include "core/client_session.h"
+#include "core/plugin_manager.h"
+#include "core/server_context.h"
+#include "core/server_settings.h"
+#include "proto/packet.h"
+#include "softwareinformation.h"
+
+#include <QCoreApplication>
+
+#include <algorithm>
+#include <cstdio>
+#include <iostream>
+
+#ifdef Q_OS_WIN
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <io.h>
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
+
+namespace {
+
+QString pluginStateName(akashi::PluginInfo::State f_state)
+{
+    switch (f_state) {
+    case akashi::PluginInfo::State::Discovered:
+        return QStringLiteral("stopped");
+    case akashi::PluginInfo::State::Loaded:
+        return QStringLiteral("loaded");
+    case akashi::PluginInfo::State::Initialized:
+        return QStringLiteral("initialized");
+    case akashi::PluginInfo::State::Started:
+        return QStringLiteral("running");
+    case akashi::PluginInfo::State::Failed:
+        return QStringLiteral("failed");
+    }
+    return QStringLiteral("unknown");
+}
+
+bool enableVtOnStdout()
+{
+#ifdef Q_OS_WIN
+    if (!_isatty(_fileno(stdout))) {
+        return false;
+    }
+    HANDLE l_handle = GetStdHandle(STD_OUTPUT_HANDLE);
+    DWORD l_mode = 0;
+    if (l_handle == INVALID_HANDLE_VALUE || !GetConsoleMode(l_handle, &l_mode)) {
+        return false;
+    }
+    return SetConsoleMode(l_handle, l_mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING) != 0;
+#else
+    return isatty(fileno(stdout)) != 0;
+#endif
+}
+
+} // namespace
+
+namespace akashi {
+
+ConsoleMenu::ConsoleMenu(ServerContext *f_server, QObject *parent) :
+    QObject(parent),
+    m_server(f_server)
+{}
+
+QString ConsoleMenu::serviceId() const
+{
+    return QStringLiteral("akashi.console");
+}
+
+ServiceVersion ConsoleMenu::serviceVersion() const
+{
+    return {1, 0, 0};
+}
+
+void ConsoleMenu::setInteractive(bool f_interactive)
+{
+    m_interactive = f_interactive;
+    m_vt = f_interactive && enableVtOnStdout();
+}
+
+void ConsoleMenu::show()
+{
+    openMain();
+}
+
+bool ConsoleMenu::registerAction(const QString &f_title, std::function<void()> f_action,
+                                 const QString &f_owner_id)
+{
+    if (f_title.isEmpty() || !f_action) {
+        return false;
+    }
+    for (const ActionEntry &l_entry : std::as_const(m_actions)) {
+        if (l_entry.title == f_title) {
+            return false;
+        }
+    }
+    m_actions.append({f_title, std::move(f_action), f_owner_id});
+    return true;
+}
+
+void ConsoleMenu::unregisterAll(const QString &f_owner_id)
+{
+    m_actions.removeIf([&f_owner_id](const ActionEntry &e) {
+        return e.owner_id == f_owner_id;
+    });
+}
+
+// Prints action output between menus; the next render starts fresh below
+// it instead of repainting over it.
+void ConsoleMenu::printOut(const QString &f_text)
+{
+    std::cout << f_text.toStdString() << std::endl;
+    m_rendered_lines = 0;
+}
+
+void ConsoleMenu::render()
+{
+    QString l_out;
+    // Repainting in place keeps the menu still while the highlight moves.
+    if (m_vt && m_rendered_lines > 0) {
+        l_out += QStringLiteral("\x1b[%1A\x1b[0J").arg(m_rendered_lines);
+    }
+
+    int l_lines = 0;
+    const auto l_add = [&l_out, &l_lines](const QString &f_line) {
+        l_out += f_line + QLatin1Char('\n');
+        l_lines++;
+    };
+
+    l_add(QStringLiteral("--- %1 ---").arg(m_title));
+    if (m_text_entry) {
+        l_add(QStringLiteral("message: %1_").arg(m_text_input));
+    }
+    else {
+        for (int i = 0; i < m_items.size(); i++) {
+            const bool l_current = m_interactive && i == m_selected;
+            QString l_line = QStringLiteral(" %1 %2  %3")
+                                 .arg(l_current ? QStringLiteral(">") : QStringLiteral(" "))
+                                 .arg(i + 1)
+                                 .arg(m_items[i].label);
+            if (l_current && m_vt) {
+                l_line = QStringLiteral("\x1b[36m") + l_line + QStringLiteral("\x1b[0m");
+            }
+            l_add(l_line);
+        }
+    }
+    l_add(m_hint);
+
+    std::fputs(l_out.toUtf8().constData(), stdout);
+    std::fflush(stdout);
+    m_rendered_lines = l_lines;
+}
+
+void ConsoleMenu::activate(int f_index)
+{
+    if (f_index >= 0 && f_index < m_items.size()) {
+        m_items[f_index].activate();
+    }
+}
+
+void ConsoleMenu::goBack()
+{
+    if (m_back) {
+        m_back();
+    }
+    else {
+        // Backing out at the top starts a fresh paint below the log lines.
+        m_rendered_lines = 0;
+        render();
+    }
+}
+
+void ConsoleMenu::handleKey(int f_key, QChar f_character)
+{
+    switch (f_key) {
+    case ConsoleInput::KeyUp:
+        if (!m_text_entry && !m_items.isEmpty()) {
+            m_selected = (m_selected + m_items.size() - 1) % m_items.size();
+            render();
+        }
+        break;
+    case ConsoleInput::KeyDown:
+        if (!m_text_entry && !m_items.isEmpty()) {
+            m_selected = (m_selected + 1) % m_items.size();
+            render();
+        }
+        break;
+    case ConsoleInput::KeyEnter:
+        if (m_text_entry) {
+            const QString l_message = m_text_input.trimmed();
+            m_text_entry = false;
+            m_text_input.clear();
+            if (l_message.isEmpty()) {
+                printOut(QStringLiteral("Cancelled."));
+            }
+            else {
+                m_server->broadcast(Packet(QStringLiteral("CT"), {m_server->serverNickname(), l_message, QStringLiteral("1")}));
+                printOut(QStringLiteral("Broadcast sent."));
+            }
+            openMain();
+        }
+        else {
+            activate(m_selected);
+        }
+        break;
+    case ConsoleInput::KeyBack:
+        if (m_text_entry) {
+            m_text_entry = false;
+            m_text_input.clear();
+            printOut(QStringLiteral("Cancelled."));
+            openMain();
+        }
+        else {
+            goBack();
+        }
+        break;
+    case ConsoleInput::KeyBackspace:
+        if (m_text_entry && !m_text_input.isEmpty()) {
+            m_text_input.chop(1);
+            render();
+        }
+        break;
+    case ConsoleInput::KeyCharacter:
+        if (m_text_entry) {
+            m_text_input += f_character;
+            render();
+        }
+        else if (f_character.isDigit()) {
+            const int l_number = f_character.digitValue();
+            if (l_number == 0) {
+                goBack();
+            }
+            else if (l_number <= m_items.size()) {
+                m_selected = l_number - 1;
+                activate(m_selected);
+            }
+        }
+        break;
+    }
+}
+
+void ConsoleMenu::handleLine(const QString &f_line)
+{
+    if (m_text_entry) {
+        m_text_entry = false;
+        const QString l_message = f_line.trimmed();
+        m_text_input.clear();
+        if (l_message.isEmpty()) {
+            printOut(QStringLiteral("Cancelled."));
+        }
+        else {
+            m_server->broadcast(Packet(QStringLiteral("CT"), {m_server->serverNickname(), l_message, QStringLiteral("1")}));
+            printOut(QStringLiteral("Broadcast sent."));
+        }
+        openMain();
+        return;
+    }
+
+    if (f_line.isEmpty()) {
+        m_rendered_lines = 0;
+        render();
+        return;
+    }
+
+    bool l_ok = false;
+    const int l_number = f_line.toInt(&l_ok);
+    if (!l_ok) {
+        render();
+        return;
+    }
+    if (l_number == 0) {
+        goBack();
+    }
+    else if (l_number <= m_items.size()) {
+        m_selected = l_number - 1;
+        activate(m_selected);
+    }
+    else {
+        render();
+    }
+}
+
+void ConsoleMenu::openMain()
+{
+    m_title = QStringLiteral("akashi console");
+    m_hint = m_interactive ? QStringLiteral("arrows move, enter selects, esc redraws")
+                           : QStringLiteral("enter a number; a blank line redraws");
+    m_back = nullptr;
+    m_selected = 0;
+    m_text_entry = false;
+    m_items = {
+        {QStringLiteral("status"), [this] { printStatus(); render(); }},
+        {QStringLiteral("players"), [this] { openPlayers(); }},
+        {QStringLiteral("plugins"), [this] { openPlugins(); }},
+        {QStringLiteral("tasks (%1)").arg(m_actions.size()), [this] { openTasks(); }},
+        {QStringLiteral("broadcast"), [this] { openBroadcast(); }},
+        {QStringLiteral("reload configuration"), [this] {
+             m_server->reloadSettings();
+             printOut(QStringLiteral("Configuration reloaded."));
+             render();
+         }},
+        {QStringLiteral("shut down"), [this] { openConfirmShutdown(); }},
+    };
+    m_rendered_lines = 0;
+    render();
+}
+
+void ConsoleMenu::printStatus()
+{
+    int l_running = 0;
+    int l_total = 0;
+    if (auto l_plugins = m_server->services()->resolve<PluginManager>(QStringLiteral("akashi.plugins"))) {
+        const auto l_list = l_plugins->plugins();
+        l_total = l_list.size();
+        for (const PluginInfo &l_info : l_list) {
+            if (l_info.state == PluginInfo::State::Started) {
+                l_running++;
+            }
+        }
+    }
+    printOut(QStringLiteral("akashi %1 | players %2/%3 | areas %4 | plugins %5 of %6 running")
+                 .arg(software::fullVersion())
+                 .arg(m_server->playerCount())
+                 .arg(m_server->serverSettings()->max_players())
+                 .arg(m_server->areaNames().size())
+                 .arg(l_running)
+                 .arg(l_total));
+}
+
+void ConsoleMenu::openPlayers()
+{
+    const QVector<ClientSession *> l_clients = m_server->clients();
+    m_title = QStringLiteral("players (%1)").arg(l_clients.size());
+    m_hint = m_interactive ? QStringLiteral("enter opens a player, esc goes back")
+                           : QStringLiteral("enter a row number; 0 goes back");
+    m_back = [this] { openMain(); };
+    m_selected = 0;
+    m_text_entry = false;
+    m_items.clear();
+    for (ClientSession *l_client : l_clients) {
+        const int l_id = l_client->clientId();
+        m_items.append({QStringLiteral("[%1] %2 %3 in %4 (%5)")
+                            .arg(l_id)
+                            .arg(l_client->ipid(),
+                                 l_client->character().isEmpty() ? QStringLiteral("spectator") : l_client->character(),
+                                 m_server->areaName(l_client->areaId()),
+                                 l_client->name().isEmpty() ? QStringLiteral("unnamed") : l_client->name()),
+                        [this, l_id] { openPlayerActions(l_id); }});
+    }
+    if (m_items.isEmpty()) {
+        m_items.append({QStringLiteral("nobody is connected - back"), [this] { openMain(); }});
+    }
+    m_rendered_lines = 0;
+    render();
+}
+
+void ConsoleMenu::openPlayerActions(int f_client_id)
+{
+    ClientSession *l_client = m_server->clientById(f_client_id);
+    if (!l_client) {
+        printOut(QStringLiteral("That player is gone."));
+        openPlayers();
+        return;
+    }
+    m_title = QStringLiteral("player [%1] %2 | ipid %3 | %4 in %5")
+                  .arg(f_client_id)
+                  .arg(l_client->name().isEmpty() ? QStringLiteral("unnamed") : l_client->name(),
+                       l_client->ipid(),
+                       l_client->character().isEmpty() ? QStringLiteral("spectator") : l_client->character(),
+                       m_server->areaName(l_client->areaId()));
+    m_hint = m_interactive ? QStringLiteral("enter selects, esc goes back")
+                           : QStringLiteral("enter a number; 0 goes back");
+    m_back = [this] { openPlayers(); };
+    m_selected = 0;
+    m_text_entry = false;
+    m_items = {
+        {QStringLiteral("kick"), [this, f_client_id] {
+             ClientSession *l_target = m_server->clientById(f_client_id);
+             if (l_target) {
+                 l_target->sendPacket(QStringLiteral("KK"), {QStringLiteral("Kicked from the server console.")});
+                 l_target->closeSocket();
+                 printOut(QStringLiteral("Kicked."));
+             }
+             else {
+                 printOut(QStringLiteral("That player is gone."));
+             }
+             openPlayers();
+         }},
+        {QStringLiteral("back"), [this] { openPlayers(); }},
+    };
+    m_rendered_lines = 0;
+    render();
+}
+
+void ConsoleMenu::openPlugins()
+{
+    auto l_manager = m_server->services()->resolve<PluginManager>(QStringLiteral("akashi.plugins"));
+    QList<PluginInfo> l_plugins = l_manager ? l_manager->plugins() : QList<PluginInfo>();
+    std::sort(l_plugins.begin(), l_plugins.end(), [](const PluginInfo &a, const PluginInfo &b) {
+        return a.id < b.id;
+    });
+
+    m_title = QStringLiteral("plugins (%1)").arg(l_plugins.size());
+    m_hint = m_interactive ? QStringLiteral("enter opens a plugin, esc goes back")
+                           : QStringLiteral("enter a row number; 0 goes back");
+    m_back = [this] { openMain(); };
+    m_selected = 0;
+    m_text_entry = false;
+    m_items.clear();
+    for (const PluginInfo &l_info : std::as_const(l_plugins)) {
+        QString l_label = QStringLiteral("%1 v%2 [%3]").arg(l_info.id, l_info.version.toString(), pluginStateName(l_info.state));
+        if (!l_info.runtime.isEmpty()) {
+            l_label += QStringLiteral(" (%1)").arg(l_info.runtime);
+        }
+        const QString l_id = l_info.id;
+        m_items.append({l_label, [this, l_id] { openPluginActions(l_id); }});
+    }
+    if (m_items.isEmpty()) {
+        m_items.append({QStringLiteral("no plugins discovered - back"), [this] { openMain(); }});
+    }
+    m_rendered_lines = 0;
+    render();
+}
+
+void ConsoleMenu::openPluginActions(const QString &f_plugin_id)
+{
+    auto l_manager = m_server->services()->resolve<PluginManager>(QStringLiteral("akashi.plugins"));
+    const auto l_info = l_manager ? l_manager->pluginInfo(f_plugin_id) : std::nullopt;
+    if (!l_info) {
+        openPlugins();
+        return;
+    }
+    m_title = QStringLiteral("plugin %1 v%2 [%3]").arg(l_info->id, l_info->version.toString(), pluginStateName(l_info->state));
+    m_hint = m_interactive ? QStringLiteral("enter selects, esc goes back")
+                           : QStringLiteral("enter a number; 0 goes back");
+    m_back = [this] { openPlugins(); };
+    m_selected = 0;
+    m_text_entry = false;
+    const QString l_id = f_plugin_id;
+    m_items = {
+        {QStringLiteral("load"), [this, l_id, l_manager] {
+             printOut(l_manager->loadPlugin(l_id) ? QStringLiteral("Loaded.") : QStringLiteral("Unable to load it; see the log."));
+             openPlugins();
+         }},
+        {QStringLiteral("unload"), [this, l_id, l_manager] {
+             printOut(l_manager->unloadPlugin(l_id) ? QStringLiteral("Unloaded.")
+                                                    : QStringLiteral("Unable to unload it; other plugins may depend on it."));
+             openPlugins();
+         }},
+        {QStringLiteral("unload with dependents"), [this, l_id, l_manager] {
+             printOut(l_manager->unloadPlugin(l_id, true) ? QStringLiteral("Unloaded with its dependents.")
+                                                          : QStringLiteral("Unable to unload it."));
+             openPlugins();
+         }},
+        {QStringLiteral("reload"), [this, l_id, l_manager] {
+             printOut(l_manager->reloadPlugin(l_id) ? QStringLiteral("Reloaded.") : QStringLiteral("Unable to reload it; see the log."));
+             openPlugins();
+         }},
+        {QStringLiteral("back"), [this] { openPlugins(); }},
+    };
+    m_rendered_lines = 0;
+    render();
+}
+
+void ConsoleMenu::openTasks()
+{
+    m_title = QStringLiteral("tasks (%1)").arg(m_actions.size());
+    m_hint = m_interactive ? QStringLiteral("enter runs a task, esc goes back")
+                           : QStringLiteral("enter a task number; 0 goes back");
+    m_back = [this] { openMain(); };
+    m_selected = 0;
+    m_text_entry = false;
+    m_items.clear();
+    for (const ActionEntry &l_entry : std::as_const(m_actions)) {
+        const auto l_action = l_entry.action;
+        m_items.append({l_entry.title, [this, l_action] {
+                            m_rendered_lines = 0;
+                            l_action();
+                            render();
+                        }});
+    }
+    if (m_items.isEmpty()) {
+        m_items.append({QStringLiteral("no plugin registered a task - back"), [this] { openMain(); }});
+    }
+    m_rendered_lines = 0;
+    render();
+}
+
+void ConsoleMenu::openBroadcast()
+{
+    m_title = QStringLiteral("broadcast");
+    m_hint = m_interactive ? QStringLiteral("type the message, enter sends, esc cancels")
+                           : QStringLiteral("type the message and press enter; an empty line cancels");
+    m_back = [this] { openMain(); };
+    m_text_entry = true;
+    m_text_input.clear();
+    m_rendered_lines = 0;
+    render();
+}
+
+void ConsoleMenu::openConfirmShutdown()
+{
+    m_title = QStringLiteral("shut down");
+    m_hint = m_interactive ? QStringLiteral("enter selects, esc goes back")
+                           : QStringLiteral("enter a number; 0 goes back");
+    m_back = [this] { openMain(); };
+    m_selected = 1;
+    m_text_entry = false;
+    m_items = {
+        {QStringLiteral("shut the server down now"), [this] {
+             printOut(QStringLiteral("Shutting down."));
+             QCoreApplication::quit();
+         }},
+        {QStringLiteral("keep running"), [this] { openMain(); }},
+    };
+    m_rendered_lines = 0;
+    render();
+}
+
+} // namespace akashi
