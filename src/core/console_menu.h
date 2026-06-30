@@ -73,8 +73,15 @@ class AKASHI_CORE_EXPORT ConsoleMenu : public QObject, public IService
     void openPluginActions(const QString &f_plugin_id);
     void openTasks();
     void openBroadcast();
+    void openAuthentication();
+    void openRootPasswordPrompt();
+    void applyRootPassword(const QString &f_password);
     void openConfirmShutdown();
     void printStatus();
+
+    void openTextEntry(const QString &f_title, const QString &f_prompt, bool f_masked,
+                       std::function<void(const QString &)> f_submit);
+    void submitTextEntry(const QString &f_text);
 
     ServerContext *m_server;
     bool m_interactive = false;
@@ -88,7 +95,10 @@ class AKASHI_CORE_EXPORT ConsoleMenu : public QObject, public IService
     int m_rendered_lines = 0;
 
     bool m_text_entry = false;
+    bool m_text_masked = false;
+    QString m_text_prompt;
     QString m_text_input;
+    std::function<void(const QString &)> m_text_submit;
 
     QList<ActionEntry> m_actions;
 };

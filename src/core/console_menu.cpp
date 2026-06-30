@@ -3,7 +3,11 @@
 #include "core/console_input.h"
 
 #include "akashi/service_registry.h"
+#include "commands/authentication_commands.h"
 #include "core/client_session.h"
+#include "core/crypto_helper.h"
+#include "core/db_manager.h"
+#include "core/permission_registry.h"
 #include "core/plugin_manager.h"
 #include "core/server_context.h"
 #include "core/server_settings.h"
@@ -137,7 +141,7 @@ void ConsoleMenu::render()
 
     l_add(QStringLiteral("--- %1 ---").arg(m_title));
     if (m_text_entry) {
-        l_add(QStringLiteral("message: %1_").arg(m_text_input));
+        l_add(QStringLiteral("%1: %2_").arg(m_text_prompt, m_text_masked ? QString(m_text_input.size(), QLatin1Char('*')) : m_text_input));
     }
     else {
         for (int i = 0; i < m_items.size(); i++) {
@@ -195,17 +199,7 @@ void ConsoleMenu::handleKey(int f_key, QChar f_character)
         break;
     case ConsoleInput::KeyEnter:
         if (m_text_entry) {
-            const QString l_message = m_text_input.trimmed();
-            m_text_entry = false;
-            m_text_input.clear();
-            if (l_message.isEmpty()) {
-                printOut(QStringLiteral("Cancelled."));
-            }
-            else {
-                m_server->broadcast(Packet(QStringLiteral("CT"), {m_server->serverNickname(), l_message, QStringLiteral("1")}));
-                printOut(QStringLiteral("Broadcast sent."));
-            }
-            openMain();
+            submitTextEntry(m_text_input.trimmed());
         }
         else {
             activate(m_selected);
@@ -213,10 +207,7 @@ void ConsoleMenu::handleKey(int f_key, QChar f_character)
         break;
     case ConsoleInput::KeyBack:
         if (m_text_entry) {
-            m_text_entry = false;
-            m_text_input.clear();
-            printOut(QStringLiteral("Cancelled."));
-            openMain();
+            submitTextEntry(QString());
         }
         else {
             goBack();
@@ -250,17 +241,7 @@ void ConsoleMenu::handleKey(int f_key, QChar f_character)
 void ConsoleMenu::handleLine(const QString &f_line)
 {
     if (m_text_entry) {
-        m_text_entry = false;
-        const QString l_message = f_line.trimmed();
-        m_text_input.clear();
-        if (l_message.isEmpty()) {
-            printOut(QStringLiteral("Cancelled."));
-        }
-        else {
-            m_server->broadcast(Packet(QStringLiteral("CT"), {m_server->serverNickname(), l_message, QStringLiteral("1")}));
-            printOut(QStringLiteral("Broadcast sent."));
-        }
-        openMain();
+        submitTextEntry(f_line.trimmed());
         return;
     }
 
@@ -302,6 +283,7 @@ void ConsoleMenu::openMain()
         {QStringLiteral("plugins"), [this] { openPlugins(); }},
         {QStringLiteral("tasks (%1)").arg(m_actions.size()), [this] { openTasks(); }},
         {QStringLiteral("broadcast"), [this] { openBroadcast(); }},
+        {QStringLiteral("authentication"), [this] { openAuthentication(); }},
         {QStringLiteral("reload configuration"), [this] {
              m_server->reloadSettings();
              printOut(QStringLiteral("Configuration reloaded."));
@@ -496,14 +478,113 @@ void ConsoleMenu::openTasks()
 
 void ConsoleMenu::openBroadcast()
 {
-    m_title = QStringLiteral("broadcast");
-    m_hint = m_interactive ? QStringLiteral("type the message, enter sends, esc cancels")
-                           : QStringLiteral("type the message and press enter; an empty line cancels");
     m_back = [this] { openMain(); };
-    m_text_entry = true;
-    m_text_input.clear();
+    openTextEntry(QStringLiteral("broadcast"), QStringLiteral("message"), false, [this](const QString &f_message) {
+        m_server->broadcast(Packet(QStringLiteral("CT"), {m_server->serverNickname(), f_message, QStringLiteral("1")}));
+        printOut(QStringLiteral("Broadcast sent."));
+        openMain();
+    });
+}
+
+void ConsoleMenu::openAuthentication()
+{
+    const bool l_simple = m_server->authType() == AuthType::SIMPLE;
+    m_title = QStringLiteral("authentication | mode: %1")
+                  .arg(l_simple ? QStringLiteral("simple (one shared modpass)")
+                                : QStringLiteral("advanced (user accounts)"));
+    m_hint = m_interactive ? QStringLiteral("enter selects, esc goes back")
+                           : QStringLiteral("enter a number; 0 goes back");
+    m_back = [this] { openMain(); };
+    m_selected = 0;
+    m_text_entry = false;
+    m_items.clear();
+    if (l_simple) {
+        m_items.append({QStringLiteral("switch to advanced (set the root password)"), [this] { openRootPasswordPrompt(); }});
+    }
+    else {
+        m_items.append({QStringLiteral("reset the root password"), [this] { openRootPasswordPrompt(); }});
+        m_items.append({QStringLiteral("switch to simple (single modpass, keeps the user database)"), [this] {
+                            m_server->setAuthType(AuthType::SIMPLE);
+                            QString l_note = QStringLiteral("Switched to simple authentication. Moderators log in with the modpass.");
+                            if (m_server->serverSettings()->modpass().isEmpty()) {
+                                l_note += QStringLiteral("\nWarning: no modpass is set, so nobody can log in until one is configured.");
+                            }
+                            printOut(l_note);
+                            openAuthentication();
+                        }});
+    }
+    m_items.append({QStringLiteral("back"), [this] { openMain(); }});
     m_rendered_lines = 0;
     render();
+}
+
+void ConsoleMenu::openRootPasswordPrompt()
+{
+    m_back = [this] { openAuthentication(); };
+    openTextEntry(QStringLiteral("root password"), QStringLiteral("new password"), true, [this](const QString &f_password) {
+        applyRootPassword(f_password);
+    });
+}
+
+void ConsoleMenu::applyRootPassword(const QString &f_password)
+{
+    if (!commands::passwordMeetsRequirements(m_server->serverSettings(), QStringLiteral("root"), f_password)) {
+        printOut(QStringLiteral("That password does not meet the server's password requirements."));
+        openAuthentication();
+        return;
+    }
+
+    DBManager *l_db = m_server->databaseManager();
+    bool l_stored = l_db->createUser(QStringLiteral("root"), CryptoHelper::randbytes(16), f_password, ACLRolesHandler::SUPER_ID);
+    if (!l_stored) {
+        // The root account already exists; refresh its credentials instead.
+        l_stored = l_db->updatePassword(QStringLiteral("root"), f_password) && l_db->updateACL(QStringLiteral("root"), ACLRolesHandler::SUPER_ID);
+    }
+    if (!l_stored) {
+        printOut(QStringLiteral("Unable to store the root account; see the log."));
+        openAuthentication();
+        return;
+    }
+
+    const bool l_switched = m_server->authType() != AuthType::ADVANCED;
+    m_server->setAuthType(AuthType::ADVANCED);
+    printOut(l_switched ? QStringLiteral("Switched to advanced authentication. Log in with /login root [password].")
+                        : QStringLiteral("Root password updated."));
+    openAuthentication();
+}
+
+void ConsoleMenu::openTextEntry(const QString &f_title, const QString &f_prompt, bool f_masked,
+                                std::function<void(const QString &)> f_submit)
+{
+    m_title = f_title;
+    m_hint = m_interactive ? QStringLiteral("enter submits, esc cancels")
+                           : QStringLiteral("press enter to submit; an empty line cancels");
+    m_text_entry = true;
+    m_text_masked = f_masked;
+    m_text_prompt = f_prompt;
+    m_text_input.clear();
+    m_text_submit = std::move(f_submit);
+    m_rendered_lines = 0;
+    render();
+}
+
+// Every text-entry exit funnels through here: an empty submission cancels
+// back to the view that opened the prompt.
+void ConsoleMenu::submitTextEntry(const QString &f_text)
+{
+    m_text_entry = false;
+    m_text_masked = false;
+    m_text_input.clear();
+    const auto l_submit = std::move(m_text_submit);
+    m_text_submit = nullptr;
+    if (f_text.isEmpty()) {
+        printOut(QStringLiteral("Cancelled."));
+        goBack();
+        return;
+    }
+    if (l_submit) {
+        l_submit(f_text);
+    }
 }
 
 void ConsoleMenu::openConfirmShutdown()

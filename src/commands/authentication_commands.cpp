@@ -24,45 +24,51 @@ static QString decodeMessage(const QString &f_message)
         .replace("<and>", "&");
 }
 
-static bool checkPasswordRequirements(ServerSettings *f_settings, const QString &f_username, const QString &f_password)
+bool passwordMeetsRequirements(ServerSettings *f_settings, const QString &f_username, const QString &f_password)
 {
-    QString l_decoded_password = decodeMessage(f_password);
     if (!f_settings->password_requirements())
         return true;
 
-    if (f_settings->pass_min_length() > l_decoded_password.length())
+    if (f_settings->pass_min_length() > f_password.length())
         return false;
 
-    if (f_settings->pass_max_length() < l_decoded_password.length() && f_settings->pass_max_length() != 0)
+    if (f_settings->pass_max_length() < f_password.length() && f_settings->pass_max_length() != 0)
         return false;
 
     if (f_settings->pass_required_mix_case()) {
-        if (l_decoded_password.toLower() == l_decoded_password)
+        if (f_password.toLower() == f_password)
             return false;
-        if (l_decoded_password.toUpper() == l_decoded_password)
+        if (f_password.toUpper() == f_password)
             return false;
     }
 
     if (f_settings->pass_required_numbers()) {
         QRegularExpression l_regex(QStringLiteral("[0123456789]"));
-        QRegularExpressionMatch l_match = l_regex.match(l_decoded_password);
+        QRegularExpressionMatch l_match = l_regex.match(f_password);
         if (!l_match.hasMatch())
             return false;
     }
 
     if (f_settings->pass_required_special()) {
         QRegularExpression l_regex(QStringLiteral("[~!@#$%^&*_\\-+=`|\\\\(){}\\[\\]:;\"'<>,.?/]"));
-        QRegularExpressionMatch l_match = l_regex.match(l_decoded_password);
+        QRegularExpressionMatch l_match = l_regex.match(f_password);
         if (!l_match.hasMatch())
             return false;
     }
 
     if (!f_settings->pass_can_contain_username()) {
-        if (l_decoded_password.contains(f_username))
+        if (f_password.contains(f_username))
             return false;
     }
 
     return true;
+}
+
+// The command-facing form: OOC packets escape special characters, so the
+// password is decoded before the checks.
+static bool checkPasswordRequirements(ServerSettings *f_settings, const QString &f_username, const QString &f_password)
+{
+    return passwordMeetsRequirements(f_settings, f_username, decodeMessage(f_password));
 }
 
 static void handleLogin(CommandContext &f_context)
