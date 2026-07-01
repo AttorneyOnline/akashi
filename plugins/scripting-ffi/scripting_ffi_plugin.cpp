@@ -492,6 +492,16 @@ static int ffiRegisterConsoleAction(const char *f_title, size_t f_title_length,
                : 0;
 }
 
+static void ffiConsolePrint(const char *f_text, size_t f_text_length)
+{
+    const QString l_text = toString(f_text, f_text_length);
+    if (akashi::ConsoleMenu *l_session = akashi::ConsoleMenu::activeSession()) {
+        l_session->printOut(l_text);
+        return;
+    }
+    qCInfo(akashiConsole).noquote() << l_text;
+}
+
 static const char *ffiConfigGet(const char *f_owner_id, size_t f_owner_id_length,
                                 const char *f_key, size_t f_key_length,
                                 const char *f_fallback, size_t f_fallback_length,
@@ -534,6 +544,7 @@ static const AkashiFfi s_table = {
     ffiRegisterRuleAction,
     ffiRuleResultBlock,
     ffiRegisterConsoleAction,
+    ffiConsolePrint,
 };
 
 namespace {
@@ -547,7 +558,7 @@ class ServiceImpl : public ScriptingFfiService
 } // namespace
 
 QString ScriptingFfiPlugin::id() const { return QStringLiteral("akashi.scripting-ffi"); }
-akashi::ServiceVersion ScriptingFfiPlugin::pluginVersion() const { return {1, 1, 0}; }
+akashi::ServiceVersion ScriptingFfiPlugin::pluginVersion() const { return {1, 3, 0}; }
 
 bool ScriptingFfiPlugin::load(akashi::ServiceRegistry &services)
 {

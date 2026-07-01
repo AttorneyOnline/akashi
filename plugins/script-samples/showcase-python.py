@@ -110,9 +110,10 @@ def stats_command(ctx, args):
 
 
 # A task on the server console's menu, run from the terminal without a
-# game client.
+# game client. console_print reaches the operator who ran the task, even
+# one attached remotely.
 def console_tallies():
-    akashi.log(f"tallies: rolls={rolls_witnessed} modcalls={modcalls_witnessed} ic={ic_tallied}")
+    akashi.console_print(f"tallies: rolls={rolls_witnessed} modcalls={modcalls_witnessed} ic={ic_tallied}")
 
 
 akashi.register_console_action("Show showcase tallies", console_tallies)

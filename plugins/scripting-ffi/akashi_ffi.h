@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-#define AKASHI_FFI_ABI_VERSION 4
+#define AKASHI_FFI_ABI_VERSION 5
 
 /* Valid only for the duration of a command callback. */
 typedef struct AkashiCommandContext AkashiCommandContext;
@@ -54,7 +54,7 @@ typedef void (*AkashiRuleFn)(void *f_userdata,
                              int f_argument_count, const char *const *f_argument_keys, const char *const *f_argument_values,
                              AkashiRuleResult *f_result);
 
-/* A task on the server console's menu. Prints its own output. */
+/* A task on the server console's menu. Prints through console_print. */
 typedef void (*AkashiConsoleFn)(void *f_userdata);
 
 typedef struct AkashiFfi
@@ -170,6 +170,13 @@ typedef struct AkashiFfi
     int (*register_console_action)(const char *f_title, size_t f_title_length,
                                    AkashiConsoleFn f_action, void *f_userdata,
                                    const char *f_owner_id, size_t f_owner_id_length);
+
+    /* --- Added in ABI version 5 --- */
+
+    /* Prints a line to the operator running the current console task -
+     * whether they sit at the server's terminal or are attached remotely.
+     * Outside a task callback the line goes to the server log. */
+    void (*console_print)(const char *f_text, size_t f_text_length);
 } AkashiFfi;
 
 #ifdef __cplusplus

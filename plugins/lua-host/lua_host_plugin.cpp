@@ -215,6 +215,20 @@ static int luaApiLog(lua_State *L)
     return 0;
 }
 
+static int luaApiConsolePrint(lua_State *L)
+{
+    size_t l_length = 0;
+    const char *l_text = luaL_checklstring(L, 1, &l_length);
+    // An older core's table ends before console_print; fall back to the log.
+    if (s_ffi->abi_version >= 5) {
+        s_ffi->console_print(l_text, l_length);
+    }
+    else {
+        s_ffi->log_info(l_text, l_length);
+    }
+    return 0;
+}
+
 static int luaApiRegisterCommand(lua_State *L)
 {
     size_t l_name_length = 0, l_usage_length = 0, l_description_length = 0, l_permission_length = 0;
@@ -509,6 +523,7 @@ static int luaApiTargetChangeArea(lua_State *L)
 
 static const luaL_Reg s_akashi_api[] = {
     {"log", luaApiLog},
+    {"console_print", luaApiConsolePrint},
     {"register_command", luaApiRegisterCommand},
     {"register_text_filter", luaApiRegisterTextFilter},
     {"register_permission", luaApiRegisterPermission},

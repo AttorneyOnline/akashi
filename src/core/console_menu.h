@@ -50,12 +50,22 @@ class AKASHI_CORE_EXPORT ConsoleMenu : public QObject, public IService
     // Prints the main menu; call once the server runs.
     void show();
 
-    // Adds a task to the menu's tasks view. The action prints its own
-    // output. Returns false when the title is empty or already taken.
+    // Adds a task to the menu's tasks view. The action prints through the
+    // session that runs it (see activeSession). Returns false when the
+    // title is empty or already taken.
     bool registerAction(const QString &f_title, std::function<void()> f_action,
                         const QString &f_owner_id = {});
 
     void unregisterAll(const QString &f_owner_id);
+
+    // Prints a line above the menu of this session's operator.
+    void printOut(const QString &f_text);
+
+    // The menu whose operator is running a task right now; null outside a
+    // task callback. Printing here reaches the operator who started the
+    // task, whether they sit at the server's terminal or are attached
+    // remotely.
+    static ConsoleMenu *activeSession();
 
   public Q_SLOTS:
     void handleKey(int f_key, QChar f_character);
@@ -76,7 +86,6 @@ class AKASHI_CORE_EXPORT ConsoleMenu : public QObject, public IService
     };
 
     void render();
-    void printOut(const QString &f_text);
     void writeOut(const QByteArray &f_bytes);
     void activate(int f_index);
     void goBack();
@@ -120,6 +129,8 @@ class AKASHI_CORE_EXPORT ConsoleMenu : public QObject, public IService
     std::function<void(const QString &)> m_text_submit;
 
     QList<ActionEntry> m_actions;
+
+    static ConsoleMenu *s_active_session;
 };
 
 } // namespace akashi

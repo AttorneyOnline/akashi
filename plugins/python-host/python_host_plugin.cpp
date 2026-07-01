@@ -234,6 +234,27 @@ static PyObject *pyApiLog(PyObject *, PyObject *f_args)
     Py_RETURN_NONE;
 }
 
+static PyObject *pyApiConsolePrint(PyObject *, PyObject *f_args)
+{
+    PyObject *l_text_obj = nullptr;
+    if (!PyArg_ParseTuple(f_args, "U", &l_text_obj)) {
+        return nullptr;
+    }
+    const char *l_text = nullptr;
+    Py_ssize_t l_length = 0;
+    if (!pyStringArg(l_text_obj, &l_text, &l_length)) {
+        return nullptr;
+    }
+    // An older core's table ends before console_print; fall back to the log.
+    if (s_ffi->abi_version >= 5) {
+        s_ffi->console_print(l_text, size_t(l_length));
+    }
+    else {
+        s_ffi->log_info(l_text, size_t(l_length));
+    }
+    Py_RETURN_NONE;
+}
+
 static PyObject *pyApiRegisterCommand(PyObject *, PyObject *f_args)
 {
     PyObject *l_name_obj = nullptr, *l_usage_obj = nullptr, *l_description_obj = nullptr, *l_handler = nullptr;
@@ -723,6 +744,7 @@ static PyObject *pyApiTargetChangeArea(PyObject *, PyObject *f_args)
 
 static PyMethodDef s_akashi_methods[] = {
     {"log", pyApiLog, METH_VARARGS, "Writes one line to the server log."},
+    {"console_print", pyApiConsolePrint, METH_VARARGS, "Prints a line to the operator running the current console task."},
     {"register_command", pyApiRegisterCommand, METH_VARARGS, "register_command(name, usage, description, handler, permission='', min_args=0)."},
     {"register_text_filter", pyApiRegisterTextFilter, METH_VARARGS, "register_text_filter(id, order, always_active, handler); the handler returns a str rewrite, False to drop, or None."},
     {"register_permission", pyApiRegisterPermission, METH_VARARGS, "register_permission(id, display_name, category)."},

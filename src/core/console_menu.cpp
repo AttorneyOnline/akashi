@@ -68,6 +68,13 @@ bool enableVtOnStdout()
 
 namespace akashi {
 
+ConsoleMenu *ConsoleMenu::s_active_session = nullptr;
+
+ConsoleMenu *ConsoleMenu::activeSession()
+{
+    return s_active_session;
+}
+
 ConsoleMenu::ConsoleMenu(ServerContext *f_server, QObject *parent) :
     QObject(parent),
     m_server(f_server),
@@ -498,7 +505,10 @@ void ConsoleMenu::openTasks()
                             for (const ActionEntry &l_live : std::as_const(m_action_source->m_actions)) {
                                 if (l_live.title == l_title) {
                                     m_rendered_lines = 0;
+                                    // The task's output belongs to whoever ran it.
+                                    s_active_session = this;
                                     l_live.action();
+                                    s_active_session = nullptr;
                                     render();
                                     return;
                                 }

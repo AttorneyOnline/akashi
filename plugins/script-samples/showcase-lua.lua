@@ -99,7 +99,8 @@ akashi.register_command("luagreet", "/luagreet", "Greets the area with the confi
 end)
 
 -- A task on the server console's menu, run from the terminal without a
--- game client.
+-- game client. console_print reaches the operator who ran the task, even
+-- one attached remotely.
 akashi.register_console_action("Roll a die on the console", function()
-    akashi.log("the console rolled a " .. math.random(6))
+    akashi.console_print("the console rolled a " .. math.random(6))
 end)
