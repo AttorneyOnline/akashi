@@ -636,7 +636,9 @@ void ConsoleMenu::openConfirmShutdown()
     m_items = {
         {QStringLiteral("shut the server down now"), [this] {
              printOut(QStringLiteral("Shutting down."));
-             QCoreApplication::quit();
+             // Deferred: quit() emits aboutToQuit synchronously, and the
+             // teardown may own the very session this call stands on.
+             QMetaObject::invokeMethod(QCoreApplication::instance(), &QCoreApplication::quit, Qt::QueuedConnection);
          }},
         {QStringLiteral("keep running"), [this] { openMain(); }},
     };
