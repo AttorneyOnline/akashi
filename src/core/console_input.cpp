@@ -88,9 +88,15 @@ void ConsoleInput::startKeyReader()
         QMetaObject::invokeMethod(this, [this, f_key, f_character] { Q_EMIT keyPressed(f_key, f_character); }, Qt::QueuedConnection);
         return true;
     };
+    auto l_interrupt = [this, l_alive] {
+        if (*l_alive) {
+            QMetaObject::invokeMethod(this, [this] { Q_EMIT interrupted(); }, Qt::QueuedConnection);
+        }
+    };
+    const bool l_capture = m_capture_interrupt;
 
 #ifdef Q_OS_WIN
-    std::thread([l_emit] {
+    std::thread([l_emit, l_interrupt, l_capture] {
         for (;;) {
             const int l_first = _getch();
             if (l_first == 0 || l_first == 0xE0) {
@@ -119,6 +125,9 @@ void ConsoleInput::startKeyReader()
                 if (!l_emit(KeyBackspace, {})) return;
             }
             else if (l_first == 3) { // ctrl+c
+                if (l_capture) {
+                    l_interrupt();
+                }
                 return;
             }
             else if (l_first >= 32 && l_first < 127) {
@@ -133,14 +142,24 @@ void ConsoleInput::startKeyReader()
         s_termios_saved = true;
         l_raw = s_saved_termios;
         l_raw.c_lflag &= ~(ICANON | ECHO);
+        // Capturing the interrupt needs ctrl+c delivered as a byte, not a signal.
+        if (m_capture_interrupt) {
+            l_raw.c_lflag &= ~ISIG;
+        }
         l_raw.c_cc[VMIN] = 1;
         l_raw.c_cc[VTIME] = 0;
         tcsetattr(STDIN_FILENO, TCSANOW, &l_raw);
     }
 
-    std::thread([l_emit] {
+    std::thread([l_emit, l_interrupt, l_capture] {
         char l_byte = 0;
         while (read(STDIN_FILENO, &l_byte, 1) == 1) {
+            if (l_byte == 3) { // ctrl+c
+                if (l_capture) {
+                    l_interrupt();
+                }
+                return;
+            }
             if (l_byte == 27) {
                 char l_bracket = 0, l_code = 0;
                 if (read(STDIN_FILENO, &l_bracket, 1) == 1 && l_bracket == '[' && read(STDIN_FILENO, &l_code, 1) == 1) {

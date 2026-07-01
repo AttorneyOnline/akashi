@@ -44,6 +44,7 @@ class AKASHI_CORE_EXPORT ServerSettings : public akashi::Settings
     akashi::Setting<int> packet_rate_limit_soft{this, "Options/packet_rate_limit_soft", 10, "Sending packets faster than this warns the client."};
     akashi::Setting<int> packet_rate_limit_hard{this, "Options/packet_rate_limit_hard", 20, "Sending packets faster than this disconnects the client."};
     akashi::Setting<int> afk_timeout{this, "Options/afk_timeout", 300, "Seconds without input before a player counts as AFK.", akashi::atLeast(1)};
+    akashi::Setting<QString> console_socket{this, "Options/console_socket", "akashi-console", "The local socket the akashi-console attach client connects to; a named pipe on Windows. On Linux a name containing a slash is used as a full path. Servers sharing a machine need distinct names. Empty turns attaching off."};
     akashi::Setting<QString> asset_url{this, "Options/asset_url", "", "The URL of the server's asset repository, used by WebAO users."};
     akashi::Setting<bool> advertise{this, "Advertiser/advertise", true, "Whether the server appears on the master server."};
     akashi::Setting<QString> ms_ip{this, "Advertiser/ms_ip", "https://servers.aceattorneyonline.com/servers", "The address of the master server."};

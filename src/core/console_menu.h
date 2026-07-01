@@ -3,6 +3,7 @@
 #include "akashi/service.h"
 #include "akashi_core_export.h"
 
+#include <QByteArray>
 #include <QList>
 #include <QObject>
 #include <QString>
@@ -30,8 +31,21 @@ class AKASHI_CORE_EXPORT ConsoleMenu : public QObject, public IService
     QString serviceId() const override;
     ServiceVersion serviceVersion() const override;
 
-    // Switches on arrow-key navigation with in-place repainting.
+    // Switches on arrow-key navigation with in-place repainting; whether
+    // that repainting works is detected on the server's own terminal.
     void setInteractive(bool f_interactive);
+
+    // The remote form: the transport decides both flags itself.
+    void setInteractive(bool f_interactive, bool f_vt);
+
+    // Routes all menu output through the given writer instead of the
+    // server's terminal. Attached sessions write to their socket with this.
+    void setSink(std::function<void(const QByteArray &)> f_sink);
+
+    // A menu of its own for one attached operator: same views, same plugin
+    // tasks, but its own navigation state and output sink. The caller owns
+    // the returned menu through the parent.
+    ConsoleMenu *createSession(QObject *f_parent);
 
     // Prints the main menu; call once the server runs.
     void show();
@@ -63,6 +77,7 @@ class AKASHI_CORE_EXPORT ConsoleMenu : public QObject, public IService
 
     void render();
     void printOut(const QString &f_text);
+    void writeOut(const QByteArray &f_bytes);
     void activate(int f_index);
     void goBack();
 
@@ -84,6 +99,10 @@ class AKASHI_CORE_EXPORT ConsoleMenu : public QObject, public IService
     void submitTextEntry(const QString &f_text);
 
     ServerContext *m_server;
+    // The primary menu holding the shared plugin task list; sessions point
+    // at the menu they were created from, the primary points at itself.
+    ConsoleMenu *m_action_source;
+    std::function<void(const QByteArray &)> m_sink;
     bool m_interactive = false;
     bool m_vt = false;
 

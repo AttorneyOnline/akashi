@@ -18,7 +18,6 @@
 
 #include <algorithm>
 #include <cstdio>
-#include <iostream>
 
 #ifdef Q_OS_WIN
 #define WIN32_LEAN_AND_MEAN
@@ -71,7 +70,8 @@ namespace akashi {
 
 ConsoleMenu::ConsoleMenu(ServerContext *f_server, QObject *parent) :
     QObject(parent),
-    m_server(f_server)
+    m_server(f_server),
+    m_action_source(this)
 {}
 
 QString ConsoleMenu::serviceId() const
@@ -90,6 +90,24 @@ void ConsoleMenu::setInteractive(bool f_interactive)
     m_vt = f_interactive && enableVtOnStdout();
 }
 
+void ConsoleMenu::setInteractive(bool f_interactive, bool f_vt)
+{
+    m_interactive = f_interactive;
+    m_vt = f_interactive && f_vt;
+}
+
+void ConsoleMenu::setSink(std::function<void(const QByteArray &)> f_sink)
+{
+    m_sink = std::move(f_sink);
+}
+
+ConsoleMenu *ConsoleMenu::createSession(QObject *f_parent)
+{
+    auto *l_session = new ConsoleMenu(m_server, f_parent);
+    l_session->m_action_source = m_action_source;
+    return l_session;
+}
+
 void ConsoleMenu::show()
 {
     openMain();
@@ -101,18 +119,19 @@ bool ConsoleMenu::registerAction(const QString &f_title, std::function<void()> f
     if (f_title.isEmpty() || !f_action) {
         return false;
     }
-    for (const ActionEntry &l_entry : std::as_const(m_actions)) {
+    QList<ActionEntry> &l_actions = m_action_source->m_actions;
+    for (const ActionEntry &l_entry : std::as_const(l_actions)) {
         if (l_entry.title == f_title) {
             return false;
         }
     }
-    m_actions.append({f_title, std::move(f_action), f_owner_id});
+    l_actions.append({f_title, std::move(f_action), f_owner_id});
     return true;
 }
 
 void ConsoleMenu::unregisterAll(const QString &f_owner_id)
 {
-    m_actions.removeIf([&f_owner_id](const ActionEntry &e) {
+    m_action_source->m_actions.removeIf([&f_owner_id](const ActionEntry &e) {
         return e.owner_id == f_owner_id;
     });
 }
@@ -121,8 +140,18 @@ void ConsoleMenu::unregisterAll(const QString &f_owner_id)
 // it instead of repainting over it.
 void ConsoleMenu::printOut(const QString &f_text)
 {
-    std::cout << f_text.toStdString() << std::endl;
+    writeOut(f_text.toUtf8() + '\n');
     m_rendered_lines = 0;
+}
+
+void ConsoleMenu::writeOut(const QByteArray &f_bytes)
+{
+    if (m_sink) {
+        m_sink(f_bytes);
+        return;
+    }
+    std::fwrite(f_bytes.constData(), 1, f_bytes.size(), stdout);
+    std::fflush(stdout);
 }
 
 void ConsoleMenu::render()
@@ -158,8 +187,7 @@ void ConsoleMenu::render()
     }
     l_add(m_hint);
 
-    std::fputs(l_out.toUtf8().constData(), stdout);
-    std::fflush(stdout);
+    writeOut(l_out.toUtf8());
     m_rendered_lines = l_lines;
 }
 
@@ -281,7 +309,7 @@ void ConsoleMenu::openMain()
         {QStringLiteral("status"), [this] { printStatus(); render(); }},
         {QStringLiteral("players"), [this] { openPlayers(); }},
         {QStringLiteral("plugins"), [this] { openPlugins(); }},
-        {QStringLiteral("tasks (%1)").arg(m_actions.size()), [this] { openTasks(); }},
+        {QStringLiteral("tasks (%1)").arg(m_action_source->m_actions.size()), [this] { openTasks(); }},
         {QStringLiteral("broadcast"), [this] { openBroadcast(); }},
         {QStringLiteral("authentication"), [this] { openAuthentication(); }},
         {QStringLiteral("reload configuration"), [this] {
@@ -454,19 +482,29 @@ void ConsoleMenu::openPluginActions(const QString &f_plugin_id)
 
 void ConsoleMenu::openTasks()
 {
-    m_title = QStringLiteral("tasks (%1)").arg(m_actions.size());
+    const QList<ActionEntry> &l_actions = m_action_source->m_actions;
+    m_title = QStringLiteral("tasks (%1)").arg(l_actions.size());
     m_hint = m_interactive ? QStringLiteral("enter runs a task, esc goes back")
                            : QStringLiteral("enter a task number; 0 goes back");
     m_back = [this] { openMain(); };
     m_selected = 0;
     m_text_entry = false;
     m_items.clear();
-    for (const ActionEntry &l_entry : std::as_const(m_actions)) {
-        const auto l_action = l_entry.action;
-        m_items.append({l_entry.title, [this, l_action] {
-                            m_rendered_lines = 0;
-                            l_action();
-                            render();
+    for (const ActionEntry &l_entry : l_actions) {
+        // Resolved by title when run, so a task whose plugin has since
+        // unloaded degrades to a notice instead of a dangling call.
+        const QString l_title = l_entry.title;
+        m_items.append({l_title, [this, l_title] {
+                            for (const ActionEntry &l_live : std::as_const(m_action_source->m_actions)) {
+                                if (l_live.title == l_title) {
+                                    m_rendered_lines = 0;
+                                    l_live.action();
+                                    render();
+                                    return;
+                                }
+                            }
+                            printOut(QStringLiteral("That task is gone; its plugin was unloaded."));
+                            openTasks();
                         }});
     }
     if (m_items.isEmpty()) {

@@ -10,3 +10,4 @@
 //   QT_LOGGING_RULES="akashi.scripting.info=false;akashi.plugins.debug=true"
 AKASHI_CORE_EXPORT const QLoggingCategory &akashiPlugins();
 AKASHI_CORE_EXPORT const QLoggingCategory &akashiScripting();
+AKASHI_CORE_EXPORT const QLoggingCategory &akashiConsole();

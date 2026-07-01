@@ -1,7 +1,9 @@
 #include "core/console_input.h"
 #include "core/console_log.h"
 #include "core/console_menu.h"
+#include "core/console_panel.h"
 #include "core/server_context.h"
+#include "core/server_settings.h"
 #include "softwareinformation.h"
 
 #include <QCoreApplication>
@@ -22,6 +24,11 @@ int main(int argc, char *argv[])
     if (code != ExitCode::Ok) {
         return static_cast<int>(code);
     }
+
+    // The menu is also attachable over a local socket, for servers running
+    // without a terminal of their own.
+    akashi::ConsolePanelServer panel(&context);
+    panel.listen(context.serverSettings()->console_socket());
 
     // The operator menu on the server's own terminal.
     akashi::ConsoleInput console;

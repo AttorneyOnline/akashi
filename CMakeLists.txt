@@ -58,6 +58,8 @@ set(AKASHI_SOURCES
   src/core/console_log.h
   src/core/console_menu.cpp
   src/core/console_menu.h
+  src/core/console_panel.cpp
+  src/core/console_panel.h
   src/core/logging_categories.cpp
   src/core/logging_categories.h
   src/core/crypto_helper.h
@@ -221,6 +223,12 @@ qt_add_executable(akashi src/main.cpp)
 target_link_libraries(akashi PRIVATE akashi_core)
 
 set_target_properties(akashi PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin")
+
+# The terminal that attaches to a running server's console menu.
+qt_add_executable(akashi-console tools/akashi-console/main.cpp)
+target_link_libraries(akashi-console PRIVATE akashi_core)
+set_target_properties(akashi-console PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY $<1:${CMAKE_CURRENT_LIST_DIR}/bin>)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
   if(WIN32)
