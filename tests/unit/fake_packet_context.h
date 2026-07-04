@@ -205,8 +205,13 @@ class FakeContext : public akashi::IPacketContext
         calls.append("updatePosition");
     }
 
-    QSet<QString> activeFilterIds() const override { return active_filter_ids; }
-    akashi::TextFilterRegistry *filterRegistry() const override { return text_filter_registry; }
+    std::optional<QString> applyTextFilters(const QString &f_text) const override
+    {
+        if (text_filter_registry) {
+            return text_filter_registry->apply(f_text, active_filter_ids);
+        }
+        return f_text;
+    }
     bool isIcMessageAllowed() const override { return ic_message_allowed; }
     bool canActInArea() override { return area_act_allowed; }
     bool isShoutAllowed() const override { return shout_allowed; }
@@ -249,7 +254,12 @@ class FakeContext : public akashi::IPacketContext
     QStringList added_evidence;
     int changed_area = -100;
     int floor_count = 1;
-    struct FloorArea { int floor_id; int x; int area_id; };
+    struct FloorArea
+    {
+        int floor_id;
+        int x;
+        int area_id;
+    };
     QList<FloorArea> floor_areas = {{0, 0, 0}, {0, 1, 1}};
 
     bool hasSong(const QString &f_name) const override { return music_name_list.contains(f_name); }
@@ -413,4 +423,3 @@ class FakeContext : public akashi::IPacketContext
     QUrl assetUrl() const override { return asset_url; }
     QString motd() const override { return server_motd; }
 };
-

@@ -39,6 +39,8 @@ set(UNIT_TESTS
 foreach(name ${UNIT_TESTS})
     qt_add_executable(tst_${name} tst_${name}.cpp)
     target_link_libraries(tst_${name} PRIVATE akashi_core Qt6::Test)
+    # Unit tests are white-box: they may use the core's private headers.
+    target_include_directories(tst_${name} PRIVATE ${CMAKE_SOURCE_DIR}/src)
     file(COPY fixtures/config DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/run_${name})
     add_test(NAME unit_${name} COMMAND tst_${name} WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/run_${name})
     set_tests_properties(unit_${name} PROPERTIES TIMEOUT 60)
@@ -51,7 +53,7 @@ endforeach()
 # MedievalParser lives in the medieval-speak plugin; compile its source directly for testing.
 qt_add_executable(tst_medieval_parser tst_medieval_parser.cpp
     ${CMAKE_SOURCE_DIR}/plugins/medieval-speak/medieval_parser.cpp)
-target_include_directories(tst_medieval_parser PRIVATE ${CMAKE_SOURCE_DIR}/plugins/medieval-speak)
+target_include_directories(tst_medieval_parser PRIVATE ${CMAKE_SOURCE_DIR}/plugins/medieval-speak ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(tst_medieval_parser PRIVATE akashi_core Qt6::Test)
 file(COPY fixtures/config DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/run_medieval_parser)
 add_test(NAME unit_medieval_parser COMMAND tst_medieval_parser WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/run_medieval_parser)
@@ -64,7 +66,7 @@ endif()
 # WriterSql lives in the sql-logger plugin; compile its source directly for testing.
 qt_add_executable(tst_writer_sql tst_writer_sql.cpp
     ${CMAKE_SOURCE_DIR}/plugins/sql-logger/writer_sql.cpp)
-target_include_directories(tst_writer_sql PRIVATE ${CMAKE_SOURCE_DIR}/plugins/sql-logger)
+target_include_directories(tst_writer_sql PRIVATE ${CMAKE_SOURCE_DIR}/plugins/sql-logger ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(tst_writer_sql PRIVATE akashi_core Qt6::Test Qt6::Sql)
 file(COPY fixtures/config DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/run_writer_sql)
 add_test(NAME unit_writer_sql COMMAND tst_writer_sql WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/run_writer_sql)

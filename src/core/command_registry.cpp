@@ -1,6 +1,6 @@
 #include "core/command_registry.h"
 
-#include "core/thread_assert.h"
+#include "akashi/thread_assert.h"
 
 #include <QDebug>
 #include <QFile>

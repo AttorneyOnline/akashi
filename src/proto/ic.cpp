@@ -1,7 +1,6 @@
 #include "proto/ic.h"
 
 #include "akashi/area_rule.h"
-#include "core/text_filter_registry.h"
 #include "proto/ao2_protocol.h"
 #include "proto/packet_registry.h"
 #include "proto/text_utils.h"
@@ -180,7 +179,7 @@ class IcHandler : public PacketHandler
         }
         f_context.setLastIcMessage(l_text);
 
-        auto l_filtered = f_context.filterRegistry()->apply(l_text, f_context.activeFilterIds());
+        auto l_filtered = f_context.applyTextFilters(l_text);
         if (!l_filtered)
             return;
         l_ic.message_text = *l_filtered;

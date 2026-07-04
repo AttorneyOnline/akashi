@@ -8,9 +8,7 @@
 #include "core/command_spec.h"
 #include "core/permission_registry.h"
 #include "core/text_filter_registry.h"
-
 #include "world/area.h"
-#include "core/server_context.h"
 
 #include <QDebug>
 
@@ -31,10 +29,8 @@ bool MedievalSpeakPlugin::load(akashi::ServiceRegistry &services)
 
     const QString l_config_name = QStringLiteral("plugins/") + id();
     const QString l_default_data = QStringLiteral("text/autorp.json");
-    l_config->declarePlugin(id(), {
-        akashi::ConfigEntry(QStringLiteral("data_file"), l_default_data,
-                            QStringLiteral("Path to the word replacement data, relative to config root."))
-    });
+    l_config->declarePlugin(id(), {akashi::ConfigEntry(QStringLiteral("data_file"), l_default_data,
+                                                       QStringLiteral("Path to the word replacement data, relative to config root."))});
 
     QString l_data_file = l_config->get<QString>(l_config_name, QStringLiteral("data_file"));
     QString l_resolved = l_config->filePath(l_data_file);
@@ -44,15 +40,10 @@ bool MedievalSpeakPlugin::load(akashi::ServiceRegistry &services)
     const QString l_owner = id();
     MedievalParser *l_parser = m_parser.get();
 
-    l_filters->registerFilter(QStringLiteral("medieval"), 300,
-        [l_parser](const QString &f_text) -> std::optional<QString> {
-            return l_parser->degrootify(f_text);
-        }, false, l_owner);
+    l_filters->registerFilter(QStringLiteral("medieval"), 300, [l_parser](const QString &f_text) -> std::optional<QString> { return l_parser->degrootify(f_text); }, false, l_owner);
 
     l_commands->registerCommand(
-        {QStringLiteral("medieval"), {}, {akashi::permission::mute}, 1,
-         QStringLiteral("/medieval <id>"),
-         QStringLiteral("Makes a client speak in medieval English.")},
+        {QStringLiteral("medieval"), {}, {akashi::permission::mute}, 1, QStringLiteral("/medieval <id>"), QStringLiteral("Makes a client speak in medieval English.")},
         [](akashi::CommandContext &f_context) {
             if (auto l_target = f_context.resolveTarget()) {
                 if (l_target->hasSanction(akashi::sanction::medieval))
@@ -63,12 +54,11 @@ bool MedievalSpeakPlugin::load(akashi::ServiceRegistry &services)
                 }
                 l_target->setSanction(akashi::sanction::medieval, true);
             }
-        }, l_owner);
+        },
+        l_owner);
 
     l_commands->registerCommand(
-        {QStringLiteral("unmedieval"), {}, {akashi::permission::mute}, 1,
-         QStringLiteral("/unmedieval <id>"),
-         QStringLiteral("Returns a client to plain speech.")},
+        {QStringLiteral("unmedieval"), {}, {akashi::permission::mute}, 1, QStringLiteral("/unmedieval <id>"), QStringLiteral("Returns a client to plain speech.")},
         [](akashi::CommandContext &f_context) {
             if (auto l_target = f_context.resolveTarget()) {
                 if (!l_target->hasSanction(akashi::sanction::medieval))
@@ -79,18 +69,18 @@ bool MedievalSpeakPlugin::load(akashi::ServiceRegistry &services)
                 }
                 l_target->setSanction(akashi::sanction::medieval, false);
             }
-        }, l_owner);
+        },
+        l_owner);
 
     l_commands->registerCommand(
-        {QStringLiteral("medievalmode"), {QStringLiteral("medieval_mode")}, {akashi::permission::mute}, 0,
-         QStringLiteral("/medievalmode"),
-         QStringLiteral("Toggles medieval mode in the area.")},
+        {QStringLiteral("medievalmode"), {QStringLiteral("medieval_mode")}, {akashi::permission::mute}, 0, QStringLiteral("/medievalmode"), QStringLiteral("Toggles medieval mode in the area.")},
         [](akashi::CommandContext &f_context) {
-            akashi::Area *l_area = f_context.server()->areaById(f_context.areaId());
+            akashi::Area *l_area = f_context.area();
             l_area->toggleMedievalMode();
             QString l_state = l_area->isMedievalMode() ? "enabled." : "disabled.";
             f_context.replyToArea("Hear ye, hear ye! Medieval Mode is now " + l_state);
-        }, l_owner);
+        },
+        l_owner);
 
     qInfo().noquote() << "medieval-speak: word data from" << l_resolved;
     return true;

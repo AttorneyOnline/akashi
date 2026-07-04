@@ -1,7 +1,7 @@
 #include "core/permission_registry.h"
 
+#include "akashi/thread_assert.h"
 #include "core/json_settings.h"
-#include "core/thread_assert.h"
 
 #include <QDebug>
 #include <QSettings>

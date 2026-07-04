@@ -15,8 +15,6 @@
 
 namespace akashi {
 
-class TextFilterRegistry;
-
 // A ban entry as a handler needs it to tell the client.
 struct BanRecord
 {
@@ -117,8 +115,8 @@ class AKASHI_CORE_EXPORT IPacketContext
     virtual QString lastIcMessage() const = 0;
     virtual void setLastIcMessage(const QString &f_message) = 0;
     virtual void updatePosition(const QString &f_position) = 0;
-    virtual QSet<QString> activeFilterIds() const = 0;
-    virtual TextFilterRegistry *filterRegistry() const = 0;
+    // Runs the invoker's active text filters; no value means the message drops.
+    virtual std::optional<QString> applyTextFilters(const QString &f_text) const = 0;
 
     // In-character chat: the area's rules and state.
     virtual bool isIcMessageAllowed() const = 0;
@@ -203,4 +201,3 @@ class AKASHI_CORE_EXPORT IPacketContext
 };
 
 } // namespace akashi
-

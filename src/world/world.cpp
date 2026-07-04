@@ -1,9 +1,8 @@
 #include "world/world.h"
 
 #include "akashi/filesystem_service.h"
-#include "core/config_loading.h"
-#include "core/json_settings.h"
-#include "core/permission_registry.h"
+#include "akashi/permissions.h"
+#include "world/config_loading.h"
 #include "world/jukebox.h"
 #include "world/rule_registry.h"
 
@@ -120,10 +119,7 @@ void World::applyDefaultFloorRules(Floor &f_floor)
         {AreaEvents::PlayerJoined, QStringLiteral("check_lock"), {}},
         {AreaEvents::IcMessageSent, QStringLiteral("check_blankposting"), {}},
         {AreaEvents::IcMessageSent, QStringLiteral("check_iniswap"), {}},
-        {AreaEvents::MusicChanged, QStringLiteral("check_setting"),
-         {{QStringLiteral("setting"), QStringLiteral("music")},
-          {QStringLiteral("bypass"), permission::gamemaster},
-          {QStringLiteral("message"), QStringLiteral("Music is disabled in this area.")}}},
+        {AreaEvents::MusicChanged, QStringLiteral("check_setting"), {{QStringLiteral("setting"), QStringLiteral("music")}, {QStringLiteral("bypass"), permission::gamemaster}, {QStringLiteral("message"), QStringLiteral("Music is disabled in this area.")}}},
         {AreaEvents::EvidenceAdded, QStringLiteral("check_evidence_access"), {}},
         {AreaEvents::EvidenceRemoved, QStringLiteral("check_evidence_access"), {}},
         {AreaEvents::EvidenceEdited, QStringLiteral("check_evidence_access"), {}},
@@ -542,7 +538,7 @@ std::optional<QString> World::loadFloorFile(const QString &f_name, const QString
     // Rules come from the raw file; settings go through the same QSettings
     // path the startup loader uses.
     const config::AreaRulesConfig l_rule_config = config::loadAreaRules(f_path);
-    QSettings l_file_settings(f_path, JsonSettings::format());
+    QSettings l_file_settings(f_path, m_areas_ini->format());
     QStringList l_raw_names = l_file_settings.childGroups();
     l_raw_names.erase(std::remove_if(l_raw_names.begin(), l_raw_names.end(), [](const QString &f_raw) {
                           bool l_is_area = false;

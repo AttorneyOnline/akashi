@@ -1,6 +1,6 @@
 #include "proto/packet_registry.h"
 
-#include "core/thread_assert.h"
+#include "akashi/thread_assert.h"
 
 namespace akashi {
 

@@ -1,6 +1,6 @@
-#include "text_filter_registry.h"
+#include "core/text_filter_registry.h"
 
-#include "core/thread_assert.h"
+#include "akashi/thread_assert.h"
 
 #include <algorithm>
 

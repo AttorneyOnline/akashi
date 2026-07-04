@@ -1,9 +1,9 @@
-#include "world/rule_actions.h"
+#include "core/rule_actions.h"
 
 #include "core/client_session.h"
-#include "world/area.h"
-#include "proto/text_utils.h"
 #include "core/server_context.h"
+#include "proto/text_utils.h"
+#include "world/area.h"
 #include "world/jukebox.h"
 #include "world/rule_registry.h"
 

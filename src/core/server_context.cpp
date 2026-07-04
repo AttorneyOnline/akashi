@@ -17,14 +17,13 @@
 //////////////////////////////////////////////////////////////////////////////////////
 #include "core/server_context.h"
 
+#include "akashi/config_store.h"
 #include "akashi/database_service.h"
 #include "akashi/filesystem_service.h"
+#include "akashi/network_service.h"
 #include "akashi/service_registry.h"
-#include "core/event_bus.h"
-#include "world/rule_registry.h"
-#include "world/world.h"
-#include "core/client_session.h"
-#include "world/area.h"
+#include "akashi/setting_notifier.h"
+#include "akashi/thread_assert.h"
 #include "commands/area_commands.h"
 #include "commands/authentication_commands.h"
 #include "commands/casing_commands.h"
@@ -34,26 +33,35 @@
 #include "commands/plugin_commands.h"
 #include "commands/roleplay_commands.h"
 #include "commands/rule_commands.h"
-#include "akashi/config_store.h"
-#include "akashi/setting_notifier.h"
+#include "core/arup_broadcaster.h"
+#include "core/auth_throttle.h"
+#include "core/client_session.h"
 #include "core/command_registry.h"
-#include "core/config_loading.h"
-#include "core/permission_registry.h"
-#include "core/server_settings.h"
-#include "core/db_manager.h"
-#include "core/log_service.h"
-#include "core/writer_text.h"
-#include "world/floor.h"
 #include "core/console_menu.h"
+#include "core/db_manager.h"
+#include "core/event_bus.h"
+#include "core/log_service.h"
+#include "core/permission_registry.h"
+#include "core/plugin_manager.h"
+#include "core/rule_actions.h"
+#include "core/server_publisher.h"
+#include "core/server_settings.h"
+#include "core/text_filter_registry.h"
 #include "core/websocket_receiver.h"
+#include "core/writer_text.h"
+#include "proto/area_music.h"
+#include "proto/chat.h"
+#include "proto/handshake.h"
+#include "proto/ic.h"
+#include "proto/moderation.h"
 #include "proto/packet.h"
 #include "proto/packet_service.h"
-#include "world/rule_actions.h"
-#include "core/server_publisher.h"
-#include "core/auth_throttle.h"
-#include "core/text_filter_registry.h"
-#include "world/arup_broadcaster.h"
+#include "world/area.h"
+#include "world/config_loading.h"
+#include "world/floor.h"
 #include "world/jukebox.h"
+#include "world/rule_registry.h"
+#include "world/world.h"
 
 #include <QFileInfo>
 #include <QJsonArray>
@@ -61,15 +69,6 @@
 #include <QJsonObject>
 #include <QRandomGenerator>
 #include <QRegularExpression>
-#include "akashi/network_service.h"
-#include "core/plugin_manager.h"
-#include "core/thread_assert.h"
-#include "proto/area_music.h"
-#include "proto/chat.h"
-#include "proto/handshake.h"
-#include "proto/ic.h"
-#include "proto/moderation.h"
-
 #include <QTextStream>
 
 static bool fileExists(const QFileInfo &f) { return f.exists() && f.isFile(); }
@@ -91,9 +90,9 @@ static bool verifyServerConfig(akashi::ConfigStore *f_store, ServerSettings *f_s
     QSettings *l_areas = f_store->settings("areas");
 
     QStringList l_files{path("config.json"), path("areas.json"), path("backgrounds.txt"),
-        path("characters.txt"), path("music.json"),
-        path("text/8ball.txt"), path("text/gimp.txt"), path("text/praise.txt"),
-        path("text/reprimands.txt"), path("text/cdns.txt"), path("ipbans.json")};
+                        path("characters.txt"), path("music.json"),
+                        path("text/8ball.txt"), path("text/gimp.txt"), path("text/praise.txt"),
+                        path("text/reprimands.txt"), path("text/cdns.txt"), path("ipbans.json")};
     for (const QString &f : l_files) {
         if (!fileExists(QFileInfo(f))) {
             qCritical() << f + " does not exist!";
@@ -224,7 +223,6 @@ ExitCode ServerContext::start()
     return ExitCode::Ok;
 }
 
-
 void ServerContext::buildCore()
 {
     m_player_count = 0;
@@ -290,32 +288,24 @@ void ServerContext::buildCore()
 
     m_text_filter_registry = new akashi::TextFilterRegistry;
 
-    m_text_filter_registry->registerFilter(QStringLiteral("word-filter"), 100,
-        [this](const QString &f_text) -> std::optional<QString> {
+    m_text_filter_registry->registerFilter(QStringLiteral("word-filter"), 100, [this](const QString &f_text) -> std::optional<QString> {
             QString l_result = f_text;
             for (const QRegularExpression &l_re : std::as_const(m_text_data.compiled_filters))
                 l_result.replace(l_re, QStringLiteral("❌"));
-            return l_result;
-        }, true, QStringLiteral("core"));
+            return l_result; }, true, QStringLiteral("core"));
 
-    m_text_filter_registry->registerFilter(QStringLiteral("gimped"), 200,
-        [this](const QString &) -> std::optional<QString> {
+    m_text_filter_registry->registerFilter(QStringLiteral("gimped"), 200, [this](const QString &) -> std::optional<QString> {
             const auto &l_list = gimpList();
-            return l_list.at(QRandomGenerator::global()->bounded(l_list.size()));
-        }, false, QStringLiteral("core"));
+            return l_list.at(QRandomGenerator::global()->bounded(l_list.size())); }, false, QStringLiteral("core"));
 
-    m_text_filter_registry->registerFilter(QStringLiteral("shaken"), 400,
-        [](const QString &f_text) -> std::optional<QString> {
+    m_text_filter_registry->registerFilter(QStringLiteral("shaken"), 400, [](const QString &f_text) -> std::optional<QString> {
             QStringList l_words = f_text.split(QStringLiteral(" "));
             std::shuffle(l_words.begin(), l_words.end(), *QRandomGenerator::global());
-            return l_words.join(QStringLiteral(" "));
-        }, false, QStringLiteral("core"));
+            return l_words.join(QStringLiteral(" ")); }, false, QStringLiteral("core"));
 
-    m_text_filter_registry->registerFilter(QStringLiteral("disemvoweled"), 500,
-        [](const QString &f_text) -> std::optional<QString> {
+    m_text_filter_registry->registerFilter(QStringLiteral("disemvoweled"), 500, [](const QString &f_text) -> std::optional<QString> {
             static const QRegularExpression l_vowels(QStringLiteral("[AEIOUaeiou]"));
-            return QString(f_text).remove(l_vowels);
-        }, false, QStringLiteral("core"));
+            return QString(f_text).remove(l_vowels); }, false, QStringLiteral("core"));
 
     m_auth_throttle = new akashi::AuthThrottle(m_server_settings->max_login_attempts(),
                                                m_server_settings->login_lockout_seconds());
@@ -390,7 +380,8 @@ ExitCode ServerContext::startListening()
     });
     connect(m_arup_broadcaster, &akashi::ArupBroadcaster::arupFloorBroadcast, this, [this](const akashi::Packet &packet, int floorId) {
         const akashi::Floor *l_floor = floorById(floorId);
-        if (!l_floor) return;
+        if (!l_floor)
+            return;
         for (int l_aid : l_floor->area_ids) {
             broadcast(packet, l_aid);
         }
@@ -454,44 +445,36 @@ ExitCode ServerContext::startListening()
     l_register_perm(akashi::permission::super, QStringLiteral("Super"), QStringLiteral("administration"));
 
     // Register the built-in permission resolver chain.
-    m_permission_registry->registerResolver(QStringLiteral("none_check"), 0,
-        [](const akashi::PermissionQuery &q) -> akashi::PermissionVerdict {
+    m_permission_registry->registerResolver(QStringLiteral("none_check"), 0, [](const akashi::PermissionQuery &q) -> akashi::PermissionVerdict {
             if (q.permission.isEmpty() || q.permission == akashi::permission::none) {
                 return akashi::PermissionVerdict::Granted;
             }
-            return akashi::PermissionVerdict::NoOpinion;
-        }, QStringLiteral("core"));
+            return akashi::PermissionVerdict::NoOpinion; }, QStringLiteral("core"));
 
-    m_permission_registry->registerResolver(QStringLiteral("area_owner"), 100,
-        [this](const akashi::PermissionQuery &q) -> akashi::PermissionVerdict {
+    m_permission_registry->registerResolver(QStringLiteral("area_owner"), 100, [this](const akashi::PermissionQuery &q) -> akashi::PermissionVerdict {
             if (q.permission == akashi::permission::gamemaster) {
                 akashi::Area *l_area = areaById(q.area_id);
                 if (l_area && l_area->owners().contains(q.client_id)) {
                     return akashi::PermissionVerdict::Granted;
                 }
             }
-            return akashi::PermissionVerdict::NoOpinion;
-        }, QStringLiteral("core"));
+            return akashi::PermissionVerdict::NoOpinion; }, QStringLiteral("core"));
 
-    m_permission_registry->registerResolver(QStringLiteral("authentication"), 200,
-        [](const akashi::PermissionQuery &q) -> akashi::PermissionVerdict {
+    m_permission_registry->registerResolver(QStringLiteral("authentication"), 200, [](const akashi::PermissionQuery &q) -> akashi::PermissionVerdict {
             if (!q.is_authenticated) {
                 return akashi::PermissionVerdict::Denied;
             }
             if (q.auth_type == QStringLiteral("simple")) {
                 return akashi::PermissionVerdict::Granted;
             }
-            return akashi::PermissionVerdict::NoOpinion;
-        }, QStringLiteral("core"));
+            return akashi::PermissionVerdict::NoOpinion; }, QStringLiteral("core"));
 
-    m_permission_registry->registerResolver(QStringLiteral("role_check"), 300,
-        [this](const akashi::PermissionQuery &q) -> akashi::PermissionVerdict {
+    m_permission_registry->registerResolver(QStringLiteral("role_check"), 300, [this](const akashi::PermissionQuery &q) -> akashi::PermissionVerdict {
             const akashi::ACLRole l_role = acl_roles_handler->roleById(q.acl_role_id);
             if (l_role.canPerform(q.permission)) {
                 return akashi::PermissionVerdict::Granted;
             }
-            return akashi::PermissionVerdict::Denied;
-        }, QStringLiteral("core"));
+            return akashi::PermissionVerdict::Denied; }, QStringLiteral("core"));
 
     akashi::commands::registerAreaCommands(*m_command_registry);
     akashi::commands::registerAuthenticationCommands(*m_command_registry);
@@ -741,7 +724,6 @@ void ServerContext::reloadSettings()
     m_config_store->reload();
 }
 
-
 void ServerContext::reloadTextData()
 {
     m_text_data.gimps = akashi::config::loadTextFile(configPath("text/gimp.txt"));
@@ -939,9 +921,6 @@ QVector<akashi::Area *> ServerContext::areas()
     return m_world->areas();
 }
 
-
-
-
 akashi::LogService *ServerContext::logService()
 {
     return m_log_service;
@@ -959,13 +938,6 @@ void ServerContext::flushModcallLog(const QString &f_area_name)
     }
 }
 
-
-
-
-
-
-
-
 void ServerContext::refreshFloorClients(int f_floor_id)
 {
     const QVector<akashi::ClientSession *> l_clients = clients();
@@ -976,10 +948,6 @@ void ServerContext::refreshFloorClients(int f_floor_id)
         }
     }
 }
-
-
-
-
 
 void ServerContext::onPluginAboutToUnload(const QString &f_plugin_id)
 {
@@ -999,21 +967,10 @@ void ServerContext::onPluginAboutToUnload(const QString &f_plugin_id)
     }
 }
 
-
 // The rules an area or floor carries that belong in the config file: the
 // ones config put there and the ones added by command.
 
 // One area's settings and savable rules, in the shape areas.json reads.
-
-
-
-
-
-
-
-
-
-
 
 QStringList ServerContext::musicList()
 {
@@ -1045,7 +1002,6 @@ std::shared_ptr<akashi::PacketService> ServerContext::packets()
     return m_packets;
 }
 
-
 akashi::ACLRolesHandler *ServerContext::aclRolesHandler()
 {
     return acl_roles_handler;
@@ -1055,7 +1011,6 @@ void ServerContext::allowMessage()
 {
     m_can_send_ic_messages = true;
 }
-
 
 void ServerContext::removeClient(akashi::ClientSession *f_client)
 {
@@ -1102,7 +1057,6 @@ bool ServerContext::isIPBanned(QHostAddress f_remote_IP)
 
 akashi::ConfigStore *ServerContext::configStore() { return m_config_store; }
 ServerSettings *ServerContext::serverSettings() { return m_server_settings; }
-
 
 QString ServerContext::configPath(const QString &f_file) const
 {
@@ -1176,7 +1130,7 @@ void ServerContext::shutdown()
     setStage(Stage::Draining);
     if (m_plugin_manager) {
         m_plugin_manager->shutdownAll();
-    }    // Empty the roster first so no teardown broadcast writes to a neighbour
+    } // Empty the roster first so no teardown broadcast writes to a neighbour
     // mid-destruction, then delete synchronously - a deleteLater posted here
     // never runs, because the event loop is already gone at this point.
     const QVector<akashi::ClientSession *> l_clients = m_player_directory.clients();

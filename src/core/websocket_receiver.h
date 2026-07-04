@@ -2,8 +2,8 @@
 
 #include "akashi/client_receiver.h"
 #include "akashi_core_export.h"
-#include "core/transport.h"
 #include "proto/packet.h"
+#include "proto/transport.h"
 
 #include <QHostAddress>
 #include <QNetworkRequest>

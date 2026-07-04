@@ -8,10 +8,13 @@
 
 #include <optional>
 
-namespace akashi { class ClientSession; }
+namespace akashi {
+class ClientSession;
+}
 class ServerContext;
 
 namespace akashi {
+class Area;
 class ServiceRegistry;
 }
 
@@ -60,6 +63,8 @@ class AKASHI_CORE_EXPORT CommandContext
     QString characterName() const;
     int areaId() const;
     QString areaName() const;
+    // The area the invoker stands in.
+    Area *area() const;
     QString ipid() const;
     QString hwid() const;
     bool isAuthenticated() const;
@@ -96,4 +101,3 @@ class AKASHI_CORE_EXPORT CommandContext
 };
 
 } // namespace akashi
-

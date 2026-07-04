@@ -2,11 +2,11 @@
 
 #include "akashi_core_export.h"
 #include "core/player_state.h"
-#include "core/transport.h"
 #include "proto/client_profile.h"
 #include "proto/packet_codec.h"
 #include "proto/packet_context.h"
 #include "proto/packet_service.h"
+#include "proto/transport.h"
 
 #include <QHostAddress>
 #include <QList>
@@ -247,8 +247,7 @@ class AKASHI_CORE_EXPORT ClientSession : public QObject, public IPacketContext
     QString lastIcMessage() const override;
     void setLastIcMessage(const QString &f_message) override;
     void updatePosition(const QString &f_position) override;
-    QSet<QString> activeFilterIds() const override;
-    TextFilterRegistry *filterRegistry() const override;
+    std::optional<QString> applyTextFilters(const QString &f_text) const override;
 
     bool isAfk() const;
     void setAfk(bool f_afk);

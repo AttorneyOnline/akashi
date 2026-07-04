@@ -1,7 +1,7 @@
 #pragma once
 
 #include "akashi_core_export.h"
-#include "core/transport.h"
+#include "proto/transport.h"
 
 #include <QObject>
 

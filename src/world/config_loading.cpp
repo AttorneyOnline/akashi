@@ -1,11 +1,9 @@
-#include "core/config_loading.h"
+#include "world/config_loading.h"
 
 #include <QFile>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QSqlDatabase>
-#include <QSqlQuery>
 
 namespace akashi {
 namespace config {
@@ -159,28 +157,6 @@ QStringList loadIpRangeBans(const QString &f_path)
     QJsonObject l_root = l_doc.object();
     QStringList l_bans;
     l_bans.append(l_root["ip_range"].toVariant().toStringList());
-
-    if (QFile::exists("storage/asn.sqlite3")) {
-        QSqlDatabase asn_db = QSqlDatabase::contains("ASN") ? QSqlDatabase::database("ASN") : QSqlDatabase::addDatabase("QSQLITE", "ASN");
-        asn_db.setDatabaseName("storage/asn.sqlite3");
-        asn_db.open();
-
-        const QStringList l_asns = l_root["asn"].toVariant().toStringList();
-        QStringList l_placeholders;
-        for (int i = 0; i < l_asns.size(); i++) {
-            l_placeholders.append("?");
-        }
-        QSqlQuery query(asn_db);
-        query.prepare("SELECT ip FROM maxmind WHERE asn in (" + l_placeholders.join(",") + ")");
-        for (const QString &l_asn : l_asns) {
-            query.addBindValue(l_asn);
-        }
-        query.exec();
-        while (query.next()) {
-            l_bans.append(query.value(0).toString());
-        }
-        asn_db.close();
-    }
     l_bans.removeDuplicates();
     return l_bans;
 }

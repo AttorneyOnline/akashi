@@ -1,7 +1,7 @@
 // AI-generated: written by Claude.
 #include "akashi/config_store.h"
-#include "core/config_loading.h"
 #include "core/server_settings.h"
+#include "world/config_loading.h"
 
 #include <QFile>
 #include <QString>

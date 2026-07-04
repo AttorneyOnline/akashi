@@ -1,6 +1,6 @@
 #include "proto/moderation.h"
 
-#include "core/permission_registry.h"
+#include "akashi/permissions.h"
 #include "proto/ao2_protocol.h"
 #include "proto/moderation_messages.h"
 #include "proto/packet_codec.h"

@@ -1,7 +1,7 @@
 #include "core/log_service.h"
 
 #include "akashi/config_store.h"
-#include "core/thread_assert.h"
+#include "akashi/thread_assert.h"
 
 #include <QDateTime>
 #include <QDebug>

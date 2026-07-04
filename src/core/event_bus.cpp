@@ -1,6 +1,6 @@
 #include "core/event_bus.h"
 
-#include "core/thread_assert.h"
+#include "akashi/thread_assert.h"
 
 #include <algorithm>
 
@@ -27,7 +27,7 @@ int EventBus::subscribeRaw(int f_type_id, EventPhase f_phase, int f_priority,
     const int l_handle = m_next_handle++;
 
     auto l_it = std::lower_bound(m_entries.begin(), m_entries.end(), f_priority,
-        [](const Entry &e, int p) { return e.priority < p; });
+                                 [](const Entry &e, int p) { return e.priority < p; });
 
     m_entries.insert(l_it, {l_handle, f_type_id, f_phase, f_priority, std::move(f_handler), f_owner});
     return l_handle;

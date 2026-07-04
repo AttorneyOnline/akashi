@@ -75,6 +75,8 @@ QString CommandContext::name() const { return m_invoker->name(); }
 QString CommandContext::character() const { return m_invoker->character(); }
 QString CommandContext::characterName() const { return m_invoker->characterName(); }
 int CommandContext::areaId() const { return m_invoker->areaId(); }
+
+Area *CommandContext::area() const { return m_server->areaById(m_invoker->areaId()); }
 QString CommandContext::areaName() const { return m_invoker->areaName(); }
 QString CommandContext::ipid() const { return m_invoker->ipid(); }
 QString CommandContext::hwid() const { return m_invoker->hwid(); }

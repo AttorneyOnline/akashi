@@ -1,7 +1,7 @@
 // AI-generated: written by Claude.
+#include "core/arup_broadcaster.h"
 #include "proto/packet.h"
 #include "world/area.h"
-#include "world/arup_broadcaster.h"
 
 #include <QSignalSpy>
 #include <QTest>

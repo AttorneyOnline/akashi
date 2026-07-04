@@ -1,6 +1,7 @@
 #pragma once
 
 #include "akashi_core_export.h"
+#include "proto/packet.h"
 #include "world/area.h"
 
 #include <QObject>
@@ -11,7 +12,6 @@
 
 namespace akashi {
 
-class Packet;
 
 // Centralizes all four area-update (ARUP) broadcasts so every site that
 // changes area state goes through Area setters (which emit signals) and

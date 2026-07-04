@@ -2,24 +2,26 @@
 
 #include "akashi/event.h"
 #include "akashi/log_event.h"
+#include "core/arup_broadcaster.h"
 #include "core/auth_throttle.h"
 #include "core/command_context.h"
 #include "core/command_registry.h"
+#include "core/db_manager.h"
 #include "core/event_bus.h"
 #include "core/log_service.h"
 #include "core/permission_registry.h"
-#include "core/server_settings.h"
-#include "core/db_manager.h"
 #include "core/player_state_observer.h"
+#include "core/server_context.h"
+#include "core/server_settings.h"
+#include "core/text_filter_registry.h"
 #include "proto/evidence.h"
 #include "proto/ic.h"
 #include "proto/packet.h"
 #include "proto/text_utils.h"
-#include "core/server_context.h"
 #include "world/area.h"
-#include "world/arup_broadcaster.h"
 #include "world/jukebox.h"
 #include "world/rule_registry.h"
+
 #include <QFutureWatcher>
 #include <QPointer>
 #include <QQueue>
@@ -30,12 +32,7 @@
 // oldest packet and records the overflow.
 static const int PENDING_PACKET_LIMIT = 512;
 
-
 namespace akashi {
-
-
-
-
 
 void ClientSession::waitForReconnect(int f_grace_seconds)
 {
@@ -101,8 +98,6 @@ void ClientSession::bindTransport(ITransport *f_transport)
         transport->write(pending_packets.dequeue());
     }
 }
-
-
 
 void ClientSession::leave()
 {
@@ -238,9 +233,8 @@ void ClientSession::changeArea(int new_area)
     l_ctx.services = m_server->services();
     l_ctx.payload = {
         {QStringLiteral("lock_status"),
-         l_target->lockState() == akashi::Area::LockState::Locked ? QStringLiteral("locked") :
-         l_target->lockState() == akashi::Area::LockState::Spectatable ? QStringLiteral("spectatable") :
-         QStringLiteral("free")},
+         l_target->lockState() == akashi::Area::LockState::Locked ? QStringLiteral("locked") : l_target->lockState() == akashi::Area::LockState::Spectatable ? QStringLiteral("spectatable")
+                                                                                                                                                             : QStringLiteral("free")},
         {QStringLiteral("is_invited"), l_target->invited().contains(clientId())},
         {QStringLiteral("bypass_locks"), canPerform(permission::bypass_locks)},
         {QStringLiteral("area_name"), m_server->areaName(new_area)},
@@ -278,10 +272,10 @@ void ClientSession::changeArea(int new_area)
     // The area's state (evidence, penalties, background, timers, music,
     // floor map) reaches the client through the player_joined after-rules.
     runAfterRule(akashi::AreaEvents::PlayerJoined, {
-        {QStringLiteral("from_area"), l_old_area},
-        {QStringLiteral("from_floor"), l_old_floor},
-        {QStringLiteral("character_taken"), l_character_taken},
-    });
+                                                       {QStringLiteral("from_area"), l_old_area},
+                                                       {QStringLiteral("from_floor"), l_old_floor},
+                                                       {QStringLiteral("character_taken"), l_character_taken},
+                                                   });
 }
 
 int ClientSession::floorCount() const
@@ -328,8 +322,8 @@ std::optional<QString> ClientSession::checkBeforeRule(const QString &f_event, co
     akashi::Area *l_area = m_server->areaById(areaId());
     const akashi::Floor *l_floor = m_server->floorById(l_ctx.floor_id);
     akashi::RuleVerdict l_verdict = akashi::RuleRegistry::checkBefore(f_event, l_ctx,
-        l_area ? l_area->beforeRules() : QVector<akashi::BeforeRuleEntry>{},
-        l_floor ? l_floor->before_rules : QVector<akashi::BeforeRuleEntry>{});
+                                                                      l_area ? l_area->beforeRules() : QVector<akashi::BeforeRuleEntry>{},
+                                                                      l_floor ? l_floor->before_rules : QVector<akashi::BeforeRuleEntry>{});
     if (!l_verdict.allowed)
         return l_verdict.reason;
     return std::nullopt;
@@ -346,8 +340,8 @@ void ClientSession::runAfterRule(const QString &f_event, const QVariantMap &f_pa
     akashi::Area *l_area = m_server->areaById(areaId());
     const akashi::Floor *l_floor = m_server->floorById(l_ctx.floor_id);
     akashi::RuleRegistry::runAfter(f_event, l_ctx,
-        l_area ? l_area->afterRules() : QVector<akashi::AfterRuleEntry>{},
-        l_floor ? l_floor->after_rules : QVector<akashi::AfterRuleEntry>{});
+                                   l_area ? l_area->afterRules() : QVector<akashi::AfterRuleEntry>{},
+                                   l_floor ? l_floor->after_rules : QVector<akashi::AfterRuleEntry>{});
 }
 
 bool ClientSession::changeCharacter(int char_id)
@@ -516,14 +510,6 @@ int ClientSession::clientId() const
     return id;
 }
 
-
-
-
-
-
-
-
-
 QString ClientSession::name() const
 {
     return player()->oocName();
@@ -682,9 +668,9 @@ void ClientSession::finishJoin()
 void ClientSession::logConnectionAttempt()
 {
     m_server->logService()->log({.type = log_type::Connect,
-        .ipid = session_ipid,
-        .target_ipid = remote_ip.toString(),
-        .hwid = session_hwid});
+                                 .ipid = session_ipid,
+                                 .target_ipid = remote_ip.toString(),
+                                 .hwid = session_hwid});
 }
 
 std::optional<akashi::BanRecord> ClientSession::hardwareBan() const
@@ -712,7 +698,6 @@ int ClientSession::maxPlayerCount() const { return m_server->serverSettings()->m
 QString ClientSession::serverDescription() const { return m_server->serverSettings()->server_description(); }
 QUrl ClientSession::assetUrl() const { return m_server->assetUrl(); }
 QString ClientSession::motd() const { return m_server->serverSettings()->motd(); }
-
 
 int ClientSession::playerCount() const
 {
@@ -799,12 +784,12 @@ void ClientSession::runCommand(const QString &f_command, const QStringList &f_ar
         }
     }
     m_server->logService()->log({.type = log_type::CMD,
-        .area = m_server->areaById(areaId())->name(),
-        .char_name = character() + " " + characterName(),
-        .ooc_name = name(),
-        .ipid = session_ipid,
-        .message = f_command,
-        .args = l_logged_args.join(QStringLiteral(" "))});
+                                 .area = m_server->areaById(areaId())->name(),
+                                 .char_name = character() + " " + characterName(),
+                                 .ooc_name = name(),
+                                 .ipid = session_ipid,
+                                 .message = f_command,
+                                 .args = l_logged_args.join(QStringLiteral(" "))});
 
     handleCommand(f_command, f_arguments.size(), f_arguments);
 }
@@ -813,12 +798,12 @@ void ClientSession::broadcastOoc(const QString &f_message)
 {
     m_server->broadcast(akashi::Packet("CT", {name(), f_message, "0"}), areaId());
     m_server->logService()->log({.type = log_type::OOC,
-        .area = m_server->areaById(areaId())->name(),
-        .char_name = character() + " " + characterName(),
-        .ooc_name = name(),
-        .ipid = session_ipid,
-        .client_id = QString::number(clientId()),
-        .message = f_message});
+                                 .area = m_server->areaById(areaId())->name(),
+                                 .char_name = character() + " " + characterName(),
+                                 .ooc_name = name(),
+                                 .ipid = session_ipid,
+                                 .client_id = QString::number(clientId()),
+                                 .message = f_message});
 }
 
 bool ClientSession::canModifyEvidence()
@@ -869,10 +854,6 @@ bool ClientSession::canUseIcChat() const
 {
     return !hasSanction(akashi::Sanction::Muted);
 }
-
-
-
-
 
 int ClientSession::characterId() const
 {
@@ -958,17 +939,12 @@ void ClientSession::updatePosition(const QString &f_position)
     }
 }
 
-QSet<QString> ClientSession::activeFilterIds() const
+std::optional<QString> ClientSession::applyTextFilters(const QString &f_text) const
 {
     QSet<QString> l_ids = sanctions;
     if (m_server->areaById(areaId())->isMedievalMode())
         l_ids.insert(akashi::Sanction::Medieval);
-    return l_ids;
-}
-
-akashi::TextFilterRegistry *ClientSession::filterRegistry() const
-{
-    return m_server->textFilterRegistry();
+    return m_server->textFilterRegistry()->apply(f_text, l_ids);
 }
 
 bool ClientSession::isAfk() const
@@ -1342,12 +1318,12 @@ void ClientSession::broadcastIc(const QStringList &f_fields, int f_evidence_inde
     }
 
     m_server->logService()->log({.type = log_type::IC,
-        .area = l_area->name(),
-        .char_name = character() + " " + characterName(),
-        .ooc_name = name(),
-        .ipid = session_ipid,
-        .client_id = QString::number(clientId()),
-        .message = player()->last_message});
+                                 .area = l_area->name(),
+                                 .char_name = character() + " " + characterName(),
+                                 .ooc_name = name(),
+                                 .ipid = session_ipid,
+                                 .client_id = QString::number(clientId()),
+                                 .message = player()->last_message});
     l_area->updateLastICMessage(l_fields);
 
     l_area->startMessageFloodguard(m_server->serverSettings()->message_floodguard());
@@ -1384,11 +1360,11 @@ void ClientSession::recordMusicChange(const QString &f_song)
 {
     akashi::Area *l_area = m_server->areaById(areaId());
     m_server->logService()->log({.type = log_type::Music,
-        .area = l_area->name(),
-        .char_name = character() + " " + characterName(),
-        .ooc_name = name(),
-        .ipid = session_ipid,
-        .message = f_song});
+                                 .area = l_area->name(),
+                                 .char_name = character() + " " + characterName(),
+                                 .ooc_name = name(),
+                                 .ipid = session_ipid,
+                                 .message = f_song});
 
     // An empty showname would show as "played by ." in /currentmusic.
     if (characterName().isEmpty()) {
@@ -1517,11 +1493,11 @@ void ClientSession::recordModcall(const QString &f_reason)
 {
     const QString l_area_name = m_server->areaById(areaId())->name();
     m_server->logService()->log({.type = log_type::Modcall,
-        .area = l_area_name,
-        .char_name = character() + " " + characterName(),
-        .ooc_name = name(),
-        .ipid = session_ipid,
-        .client_id = QString::number(clientId())});
+                                 .area = l_area_name,
+                                 .char_name = character() + " " + characterName(),
+                                 .ooc_name = name(),
+                                 .ipid = session_ipid,
+                                 .client_id = QString::number(clientId())});
     m_server->flushModcallLog(l_area_name);
 
     akashi::ModcallEvent l_event{
@@ -1553,9 +1529,9 @@ void ClientSession::kickPlayer(int f_client_id, const QString &f_reason)
     }
 
     m_server->logService()->log({.type = log_type::Kick,
-        .message = f_reason,
-        .moderator = l_moderator_name,
-        .target_ipid = l_target->ipid()});
+                                 .message = f_reason,
+                                 .moderator = l_moderator_name,
+                                 .target_ipid = l_target->ipid()});
     sendServerMessage("Kicked " + QString::number(l_clients.size()) + " client(s) with ipid " + l_target->ipid() + " for reason: " + f_reason);
 }
 
@@ -1596,10 +1572,10 @@ void ClientSession::banPlayer(int f_client_id, int f_duration, const QString &f_
     }
 
     m_server->logService()->log({.type = log_type::Ban,
-        .message = f_reason,
-        .moderator = l_moderator_name,
-        .target_ipid = l_target->ipid(),
-        .duration = l_timestamp});
+                                 .message = f_reason,
+                                 .moderator = l_moderator_name,
+                                 .target_ipid = l_target->ipid(),
+                                 .duration = l_timestamp});
     sendServerMessage("Banned " + QString::number(l_clients.size()) + " client(s) with ipid " + l_target->ipid() + " for reason: " + f_reason);
 
     const int l_ban_id = m_server->databaseManager()->banId(l_ban.ip);
@@ -1611,8 +1587,6 @@ void ClientSession::banPlayer(int f_client_id, int f_duration, const QString &f_
         .reason = l_ban.reason};
     m_server->eventBus()->notify(l_event);
 }
-
-
 
 void ClientSession::sendEvidenceList(akashi::Area *area) const
 {
@@ -1681,9 +1655,7 @@ void ClientSession::loginAttempt(QString message)
 {
     akashi::AuthThrottle *l_throttle = m_server->authThrottle();
     if (l_throttle->isLockedOut(session_ipid)) {
-        sendServerMessage("Too many failed login attempts. Try again in "
-                          + QString::number(l_throttle->remainingLockoutSeconds(session_ipid))
-                          + " seconds.");
+        sendServerMessage("Too many failed login attempts. Try again in " + QString::number(l_throttle->remainingLockoutSeconds(session_ipid)) + " seconds.");
         sendServerMessage("Exiting login prompt.");
         logging_in = false;
         return;
@@ -1705,14 +1677,15 @@ void ClientSession::loginAttempt(QString message)
             l_throttle->recordFailure(session_ipid);
         }
         m_server->logService()->log({.type = log_type::Login,
-            .area = m_server->areaById(areaId())->name(),
-            .char_name = character() + " " + characterName(),
-            .ooc_name = name(),
-            .ipid = session_ipid,
-            .moderator = QStringLiteral("Moderator"),
-            .success = authenticated});
+                                     .area = m_server->areaById(areaId())->name(),
+                                     .char_name = character() + " " + characterName(),
+                                     .ooc_name = name(),
+                                     .ipid = session_ipid,
+                                     .moderator = QStringLiteral("Moderator"),
+                                     .success = authenticated});
         break;
-    case AuthType::ADVANCED: {
+    case AuthType::ADVANCED:
+    {
         QStringList l_login = message.split(" ");
         if (l_login.size() < 2) {
             sendServerMessage("You must specify a username and a password");
@@ -1729,12 +1702,12 @@ void ClientSession::loginAttempt(QString message)
             sendServerMessage("Incorrect password.");
             l_throttle->recordFailure(session_ipid);
             m_server->logService()->log({.type = log_type::Login,
-                .area = m_server->areaById(areaId())->name(),
-                .char_name = character() + " " + characterName(),
-                .ooc_name = name(),
-                .ipid = session_ipid,
-                .moderator = l_username,
-                .success = false});
+                                         .area = m_server->areaById(areaId())->name(),
+                                         .char_name = character() + " " + characterName(),
+                                         .ooc_name = name(),
+                                         .ipid = session_ipid,
+                                         .moderator = l_username,
+                                         .success = false});
             break;
         }
 
@@ -1753,43 +1726,43 @@ void ClientSession::loginAttempt(QString message)
         auto *l_watcher = new QFutureWatcher<QString>(this);
         QPointer<ClientSession> l_guard(this);
         connect(l_watcher, &QFutureWatcher<QString>::finished, this,
-            [l_guard, l_watcher, l_username, l_password, l_stored_hash, l_acl_role, l_needs_rehash]() {
-                l_watcher->deleteLater();
-                if (!l_guard)
-                    return;
-                ClientSession *l_self = l_guard.data();
+                [l_guard, l_watcher, l_username, l_password, l_stored_hash, l_acl_role, l_needs_rehash]() {
+                    l_watcher->deleteLater();
+                    if (!l_guard)
+                        return;
+                    ClientSession *l_self = l_guard.data();
 
-                const QString l_computed = l_watcher->result();
-                const bool l_matches = CryptoHelper::constantTimeEquals(l_computed, l_stored_hash);
+                    const QString l_computed = l_watcher->result();
+                    const bool l_matches = CryptoHelper::constantTimeEquals(l_computed, l_stored_hash);
 
-                akashi::AuthThrottle *l_throttle = l_self->m_server->authThrottle();
-                if (l_matches) {
-                    l_self->authenticated = true;
-                    l_self->acl_role_id = l_acl_role;
-                    l_self->moderator_name = l_username;
-                    l_self->sendPacket("AUTH", {"1"});
-                    if (l_self->m_profile.version.release <= 2 && l_self->m_profile.version.major <= 9 && l_self->m_profile.version.minor <= 0)
-                        l_self->sendServerMessage("Logged in as a moderator.");
-                    l_self->sendServerMessage("Welcome, " + l_username);
-                    l_throttle->recordSuccess(l_self->session_ipid);
+                    akashi::AuthThrottle *l_throttle = l_self->m_server->authThrottle();
+                    if (l_matches) {
+                        l_self->authenticated = true;
+                        l_self->acl_role_id = l_acl_role;
+                        l_self->moderator_name = l_username;
+                        l_self->sendPacket("AUTH", {"1"});
+                        if (l_self->m_profile.version.release <= 2 && l_self->m_profile.version.major <= 9 && l_self->m_profile.version.minor <= 0)
+                            l_self->sendServerMessage("Logged in as a moderator.");
+                        l_self->sendServerMessage("Welcome, " + l_username);
+                        l_throttle->recordSuccess(l_self->session_ipid);
 
-                    if (l_needs_rehash)
-                        l_self->m_server->databaseManager()->updatePassword(l_username, l_password);
-                }
-                else {
-                    l_self->sendPacket("AUTH", {"0"});
-                    l_self->sendServerMessage("Incorrect password.");
-                    l_throttle->recordFailure(l_self->session_ipid);
-                }
+                        if (l_needs_rehash)
+                            l_self->m_server->databaseManager()->updatePassword(l_username, l_password);
+                    }
+                    else {
+                        l_self->sendPacket("AUTH", {"0"});
+                        l_self->sendServerMessage("Incorrect password.");
+                        l_throttle->recordFailure(l_self->session_ipid);
+                    }
 
-                l_self->m_server->logService()->log({.type = log_type::Login,
-                    .area = l_self->m_server->areaById(l_self->areaId())->name(),
-                    .char_name = l_self->character() + " " + l_self->characterName(),
-                    .ooc_name = l_self->name(),
-                    .ipid = l_self->session_ipid,
-                    .moderator = l_username,
-                    .success = l_self->authenticated});
-            });
+                    l_self->m_server->logService()->log({.type = log_type::Login,
+                                                         .area = l_self->m_server->areaById(l_self->areaId())->name(),
+                                                         .char_name = l_self->character() + " " + l_self->characterName(),
+                                                         .ooc_name = l_self->name(),
+                                                         .ipid = l_self->session_ipid,
+                                                         .moderator = l_username,
+                                                         .success = l_self->authenticated});
+                });
         l_watcher->setFuture(l_future);
         return;
     }

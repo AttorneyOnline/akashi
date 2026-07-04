@@ -1,8 +1,8 @@
 // AI-generated: written by Claude.
 #pragma once
 
-#include "core/transport.h"
 #include "proto/packet.h"
+#include "proto/transport.h"
 
 #include <QHostAddress>
 #include <QList>

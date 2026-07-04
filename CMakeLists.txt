@@ -40,28 +40,30 @@ else()
 endif()
 configure_file(src/core/softwareinformation.h.in softwareinformation.h)
 
+# The public headers a plugin may use, and nothing else: the akashi_sdk
+# interface target below carries src/include, and each layer library
+# carries its own include/ directory. Everything else in src/ is private
+# to the core build.
 set(AKASHI_SOURCES
   src/core/event_bus.cpp
-  src/core/event_bus.h
+  src/core/include/core/event_bus.h
   src/core/log_service.cpp
-  src/core/log_service.h
+  src/core/include/core/log_service.h
   src/core/writer_text.cpp
   src/core/writer_text.h
   src/include/akashi/event.h
   src/include/akashi/log_event.h
   src/include/akashi/log_writer.h
-  src/core/config_loading.cpp
-  src/core/config_loading.h
   src/core/console_input.cpp
-  src/core/console_input.h
+  src/core/include/core/console_input.h
   src/core/console_log.cpp
   src/core/console_log.h
   src/core/console_menu.cpp
-  src/core/console_menu.h
+  src/core/include/core/console_menu.h
   src/core/console_panel.cpp
   src/core/console_panel.h
   src/core/logging_categories.cpp
-  src/core/logging_categories.h
+  src/core/include/core/logging_categories.h
   src/core/crypto_helper.h
   src/core/db_manager.cpp
   src/core/db_manager.h
@@ -71,8 +73,10 @@ set(AKASHI_SOURCES
   src/core/player_state_observer.h
   src/core/server_publisher.cpp
   src/core/server_publisher.h
-  src/world/rule_actions.cpp
-  src/world/rule_actions.h
+  src/core/rule_actions.cpp
+  src/core/rule_actions.h
+  src/core/arup_broadcaster.cpp
+  src/core/arup_broadcaster.h
   src/core/config_entry.cpp
   src/core/config_store.cpp
   src/core/database_service.cpp
@@ -86,23 +90,22 @@ set(AKASHI_SOURCES
   src/core/client_session.cpp
   src/core/client_session.h
   src/core/command_context.cpp
-  src/core/command_context.h
+  src/core/include/core/command_context.h
   src/core/command_registry.cpp
-  src/core/command_registry.h
-  src/core/command_spec.h
+  src/core/include/core/command_registry.h
+  src/core/include/core/command_spec.h
   src/core/permission_registry.cpp
-  src/core/permission_registry.h
+  src/core/include/core/permission_registry.h
   src/core/auth_throttle.cpp
   src/core/auth_throttle.h
   src/core/plugin_manager.cpp
-  src/core/plugin_manager.h
+  src/core/include/core/plugin_manager.h
   src/core/text_filter_registry.cpp
-  src/core/text_filter_registry.h
+  src/core/include/core/text_filter_registry.h
   src/core/mmdb_reader.cpp
   src/core/mmdb_reader.h
   src/core/player_state.cpp
   src/core/player_state.h
-  src/core/transport.h
   src/core/server_settings.h
   src/core/settings.cpp
   src/core/server_context.cpp
@@ -128,22 +131,6 @@ set(AKASHI_SOURCES
   src/commands/rule_commands.h
   src/commands/messaging_commands.cpp
   src/commands/messaging_commands.h
-  src/world/area.cpp
-  src/world/area.h
-  src/world/area_settings.h
-  src/world/arup_broadcaster.cpp
-  src/world/arup_broadcaster.h
-  src/world/rule_registry.cpp
-  src/world/rule_registry.h
-  src/world/evidence_store.cpp
-  src/world/evidence_store.h
-  src/world/floor.h
-  src/world/world.cpp
-  src/world/world.h
-  src/world/jukebox.cpp
-  src/world/jukebox.h
-  src/world/testimony_recorder.cpp
-  src/world/testimony_recorder.h
   src/include/akashi/area_rule.h
   src/include/akashi/config_entry.h
   src/include/akashi/config_store.h
@@ -152,75 +139,75 @@ set(AKASHI_SOURCES
   src/include/akashi/filesystem_service.h
   src/include/akashi/jukebox_policy.h
   src/include/akashi/network_service.h
+  src/include/akashi/permissions.h
+  src/include/akashi/sanctions.h
   src/include/akashi/script_plugin_host.h
   src/include/akashi/service.h
   src/include/akashi/text_filter.h
+  src/include/akashi/thread_assert.h
   src/include/akashi/plugin.h
   src/include/akashi/service_registry.h
   src/include/akashi/settings.h
-  src/proto/ao2_protocol.h
-  src/proto/chat.cpp
-  src/proto/chat.h
-  src/proto/chat_messages.h
-  src/proto/client_profile.h
-  src/proto/area_music.cpp
-  src/proto/area_music.h
-  src/proto/area_music_messages.h
-  src/proto/evidence.cpp
-  src/proto/evidence.h
-  src/proto/handshake.cpp
-  src/proto/handshake.h
-  src/proto/handshake_messages.h
-  src/proto/ic.cpp
-  src/proto/ic.h
-  src/proto/ic_message.h
-  src/proto/message.h
-  src/proto/moderation.cpp
-  src/proto/moderation.h
-  src/proto/moderation_messages.h
-  src/proto/packet_codec.cpp
-  src/proto/packet_codec.h
-  src/proto/packet_context.h
-  src/proto/packet_handler.h
-  src/proto/packet_registry.cpp
-  src/proto/packet_registry.h
-  src/proto/packet_service.cpp
-  src/proto/packet_service.h
-  src/proto/packet.cpp
-  src/proto/packet.h
-  src/proto/text_utils.cpp
-  src/proto/text_utils.h
 )
+
+# The dedicated public header target: the SDK headers plus the generated
+# export header. Every library and plugin gets its includes through this
+# or through a layer library's own include/ directory - never through the
+# private src/ tree.
+add_library(akashi_sdk INTERFACE)
+target_include_directories(akashi_sdk INTERFACE
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/include>"
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>"
+    "$<INSTALL_INTERFACE:include>"
+)
+target_link_libraries(akashi_sdk INTERFACE Qt6::Core)
+# The whole project uses Q_EMIT/Q_SIGNALS/Q_SLOTS instead of the lowercase keywords.
+target_compile_definitions(akashi_sdk INTERFACE QT_NO_KEYWORDS)
+
+# The protocol and world layers: static libraries folded into the
+# akashi_core library, each with its own public include directory.
+add_subdirectory(src/proto)
+add_subdirectory(src/world)
 
 add_library(akashi_core SHARED ${AKASHI_SOURCES})
 include(GenerateExportHeader)
 generate_export_header(akashi_core BASE_NAME AKASHI_CORE)
-target_include_directories(akashi_core PUBLIC
-    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>"
-    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/include>"
-    "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>"
+target_include_directories(akashi_core
+    PUBLIC
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/core/include>"
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/proto/include>"
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/world/include>"
+        "$<INSTALL_INTERFACE:include>"
+    PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/src"
 )
 
-# Header-only library for the plugin SDK, filled in during M9 and M10.
+# What a plugin builds against: the SDK headers plus the public faces of
+# the core, protocol and world layers - and only those. A plugin including
+# a private header fails to compile, so the API boundary holds itself.
 add_library(akashi_pluginapi INTERFACE)
 target_include_directories(akashi_pluginapi INTERFACE
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/include>"
     "$<INSTALL_INTERFACE:include>"
 )
 target_link_libraries(akashi_pluginapi INTERFACE akashi_core)
-target_link_libraries(akashi_core PUBLIC
-    Qt6::Concurrent
-    Qt6::Core
-    Qt6::Sql
-    Qt6::Network
-    Qt6::WebSockets
+target_link_libraries(akashi_core
+    PUBLIC
+        akashi_sdk
+        Qt6::Concurrent
+        Qt6::Core
+        Qt6::Sql
+        Qt6::Network
+        Qt6::WebSockets
+    PRIVATE
+        akashi_proto
+        akashi_world
 )
-
-# The whole project uses Q_EMIT/Q_SIGNALS/Q_SLOTS instead of the lowercase keywords.
-target_compile_definitions(akashi_core PUBLIC QT_NO_KEYWORDS)
 
 qt_add_executable(akashi src/main.cpp)
 target_link_libraries(akashi PRIVATE akashi_core)
+# The executable is part of the core build and may use its private headers.
+target_include_directories(akashi PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
 set_target_properties(akashi PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin")
 
@@ -253,11 +240,14 @@ set_target_properties(akashi_core PROPERTIES
 
 # Install rules, so plugins can later use find_package(akashi).
 include(CMakePackageConfigHelpers)
-install(TARGETS akashi_core akashi_pluginapi EXPORT akashiTargets
+install(TARGETS akashi_core akashi_sdk akashi_pluginapi EXPORT akashiTargets
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib)
 install(DIRECTORY src/include/ DESTINATION include)
+install(DIRECTORY src/proto/include/ DESTINATION include)
+install(DIRECTORY src/world/include/ DESTINATION include)
+install(DIRECTORY src/core/include/ DESTINATION include)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/akashi_core_export.h DESTINATION include)
 install(EXPORT akashiTargets NAMESPACE akashi:: DESTINATION lib/cmake/akashi)
 configure_package_config_file(cmake/akashiConfig.cmake.in
