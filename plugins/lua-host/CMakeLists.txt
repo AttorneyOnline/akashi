@@ -1,4 +1,17 @@
-include(${CMAKE_SOURCE_DIR}/cmake/akashiPlugin.cmake)
+cmake_minimum_required(VERSION 3.19)
+# Builds in the akashi tree or standalone against an installed akashi;
+# see plugins/README.md.
+if(NOT TARGET akashi::akashi_pluginapi)
+    project(akashi-lua-host LANGUAGES CXX)
+    set(CMAKE_CXX_STANDARD 20)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+    set(CMAKE_AUTOMOC ON)
+    find_package(Qt6 6.4 REQUIRED COMPONENTS Core)
+    qt_standard_project_setup()
+    find_package(akashi CONFIG REQUIRED)
+else()
+    include(${CMAKE_SOURCE_DIR}/cmake/akashiPlugin.cmake)
+endif()
 
 # The Lua interpreter, compiled in as plain C. The sources are fetched
 # from lua.org at configure time into lua/, which is gitignored - the
@@ -37,4 +50,4 @@ akashi_add_plugin(akashi_lua_host
         lua_host_plugin.cpp
         ${LUA_SOURCES}
 )
-target_include_directories(akashi_lua_host PRIVATE ${CMAKE_SOURCE_DIR}/plugins/scripting-ffi)
+target_include_directories(akashi_lua_host PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../scripting-ffi)

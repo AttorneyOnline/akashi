@@ -191,6 +191,12 @@ target_include_directories(akashi_pluginapi INTERFACE
     "$<INSTALL_INTERFACE:include>"
 )
 target_link_libraries(akashi_pluginapi INTERFACE akashi_core)
+
+# In-tree plugins consume the exact target names an installed akashi
+# exports, so any bundled plugin also builds standalone via find_package.
+add_library(akashi::akashi_core ALIAS akashi_core)
+add_library(akashi::akashi_sdk ALIAS akashi_sdk)
+add_library(akashi::akashi_pluginapi ALIAS akashi_pluginapi)
 target_link_libraries(akashi_core
     PUBLIC
         akashi_sdk
