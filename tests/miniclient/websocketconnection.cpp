@@ -12,7 +12,11 @@ WebSocketConnection::WebSocketConnection(QObject *parent)
     , m_socket(new QWebSocket(QString(), QWebSocketProtocol::VersionLatest, this))
     , m_last_state(QAbstractSocket::UnconnectedState)
 {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
   connect(m_socket, &QWebSocket::errorOccurred, this, &WebSocketConnection::onError);
+#else
+  connect(m_socket, QOverload<QAbstractSocket::SocketError>::of(&QWebSocket::error), this, &WebSocketConnection::onError);
+#endif
   connect(m_socket, &QWebSocket::stateChanged, this, &WebSocketConnection::onStateChanged);
   connect(m_socket, &QWebSocket::textMessageReceived, this, &WebSocketConnection::onTextMessageReceived);
 }

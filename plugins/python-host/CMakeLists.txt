@@ -34,5 +34,7 @@ if(MSVC)
     endif()
     target_link_directories(akashi_python_host PRIVATE ${Python3_LIBRARY_DIRS})
 else()
-    target_link_libraries(akashi_python_host PRIVATE python3)
+    # Windows auto-links the python3 stable-ABI lib; Linux has no
+    # unversioned libpython3.so, so link the found interpreter lib.
+    target_link_libraries(akashi_python_host PRIVATE ${Python3_LIBRARIES})
 endif()
