@@ -15,6 +15,7 @@
 #include <QCoreApplication>
 #include <QDebug>
 #include <QDir>
+#include <QElapsedTimer>
 #include <QFile>
 #include <QFileInfo>
 #include <QJsonArray>
@@ -22,14 +23,15 @@
 #include <QJsonObject>
 #include <QPluginLoader>
 
+#include <algorithm>
 
 namespace akashi {
 
 PluginManager::PluginManager(ServiceRegistry *f_services, const QString &f_plugin_dir,
-                             QObject *parent)
-    : QObject(parent),
-      m_services(f_services),
-      m_plugin_dir(f_plugin_dir)
+                             QObject *parent) :
+    QObject(parent),
+    m_services(f_services),
+    m_plugin_dir(f_plugin_dir)
 {}
 
 PluginManager::~PluginManager()
@@ -63,6 +65,12 @@ bool PluginManager::startPlugins(const QStringList &f_allowlist)
             continue;
         }
 
+        // Time from mapping the binary through the plugin's own load() -
+        // where a heavy plugin (an embedded interpreter, say) pays.
+        l_entry.info.boot_ms = 0;
+        QElapsedTimer l_load_timer;
+        l_load_timer.start();
+
         l_entry.loader->load();
         QObject *l_obj = l_entry.loader->instance();
         if (!l_obj) {
@@ -87,6 +95,7 @@ bool PluginManager::startPlugins(const QStringList &f_allowlist)
             continue;
         }
 
+        l_entry.info.boot_ms += l_load_timer.elapsed();
         l_entry.info.state = PluginInfo::State::Loaded;
         qCInfo(akashiPlugins).noquote() << "Loaded" << l_id << "v" + l_entry.info.version.toString();
     }
@@ -99,6 +108,8 @@ bool PluginManager::startPlugins(const QStringList &f_allowlist)
         if (l_entry.info.state != PluginInfo::State::Loaded)
             continue;
 
+        QElapsedTimer l_init_timer;
+        l_init_timer.start();
         if (!l_entry.instance->init(*m_services)) {
             qCWarning(akashiPlugins) << "Plugin" << l_id << "init() returned false";
             l_entry.instance->shutdown(*m_services);
@@ -109,6 +120,7 @@ bool PluginManager::startPlugins(const QStringList &f_allowlist)
             continue;
         }
 
+        l_entry.info.boot_ms += l_init_timer.elapsed();
         l_entry.info.state = PluginInfo::State::Initialized;
     }
 
@@ -120,15 +132,20 @@ bool PluginManager::startPlugins(const QStringList &f_allowlist)
         if (l_entry.info.state != PluginInfo::State::Initialized)
             continue;
 
+        QElapsedTimer l_start_timer;
+        l_start_timer.start();
         l_entry.instance->started(*m_services);
+        l_entry.info.boot_ms += l_start_timer.elapsed();
         l_entry.info.state = PluginInfo::State::Started;
-        qCInfo(akashiPlugins).noquote() << "Started" << l_id << "v" + l_entry.info.version.toString();
+        qCInfo(akashiPlugins).noquote() << "Started" << l_id << "v" + l_entry.info.version.toString()
+                                        << "(booted in" << l_entry.info.boot_ms << "ms)";
     }
 
     // The hosts are running now, so they can find their plugin files.
     discoverFromScriptHosts();
     loadDiscoveredScripts();
 
+    reportBootTimes();
     return true;
 }
 
@@ -296,13 +313,18 @@ bool PluginManager::loadPlugin(const QString &f_id)
             return false;
     }
 
+    QElapsedTimer l_boot_timer;
+    l_boot_timer.start();
+
     if (l_entry.isScript()) {
         if (!loadScriptEntry(l_entry))
             return false;
+        l_entry.info.boot_ms = l_boot_timer.elapsed();
         l_entry.info.state = PluginInfo::State::Started;
         if (!m_load_order.contains(f_id))
             m_load_order.append(f_id);
-        qCInfo(akashiPlugins).noquote() << "Loaded" << f_id << "v" + l_entry.info.version.toString() << "(" + l_entry.info.runtime + ")";
+        qCInfo(akashiPlugins).noquote() << "Loaded" << f_id << "v" + l_entry.info.version.toString() << "(" + l_entry.info.runtime + ")"
+                                        << "(booted in" << l_entry.info.boot_ms << "ms)";
         Q_EMIT pluginLoaded(f_id);
         return true;
     }
@@ -336,6 +358,7 @@ bool PluginManager::loadPlugin(const QString &f_id)
     l_entry.info.state = PluginInfo::State::Initialized;
 
     l_entry.instance->started(*m_services);
+    l_entry.info.boot_ms = l_boot_timer.elapsed();
     l_entry.info.state = PluginInfo::State::Started;
 
     if (!m_load_order.contains(f_id))
@@ -345,9 +368,37 @@ bool PluginManager::loadPlugin(const QString &f_id)
     // become visible now and load with /plugin load.
     discoverFromScriptHosts();
 
-    qCInfo(akashiPlugins).noquote() << "Loaded" << f_id << "v" + l_entry.info.version.toString();
+    qCInfo(akashiPlugins).noquote() << "Loaded" << f_id << "v" + l_entry.info.version.toString()
+                                    << "(booted in" << l_entry.info.boot_ms << "ms)";
     Q_EMIT pluginLoaded(f_id);
     return true;
+}
+
+// Logs how long the started plugins took to boot, slowest first, so an
+// operator can see at a glance which plugins weigh on startup.
+void PluginManager::reportBootTimes()
+{
+    QList<QPair<QString, qint64>> l_booted;
+    qint64 l_total = 0;
+    for (auto it = m_plugins.constBegin(); it != m_plugins.constEnd(); ++it) {
+        if (it.value().info.state == PluginInfo::State::Started) {
+            l_booted.append({it.key(), it.value().info.boot_ms});
+            l_total += it.value().info.boot_ms;
+        }
+    }
+    if (l_booted.isEmpty())
+        return;
+
+    std::sort(l_booted.begin(), l_booted.end(), [](const auto &a, const auto &b) {
+        return a.second > b.second;
+    });
+
+    QStringList l_slowest;
+    for (int i = 0; i < l_booted.size() && i < 3; ++i)
+        l_slowest.append(l_booted[i].first + QStringLiteral(" ") + QString::number(l_booted[i].second) + QStringLiteral(" ms"));
+
+    qCInfo(akashiPlugins).noquote() << "Booted" << l_booted.size() << "plugins in" << l_total << "ms; slowest:"
+                                    << l_slowest.join(QStringLiteral(", "));
 }
 
 bool PluginManager::unloadPlugin(const QString &f_id, bool f_cascade)
@@ -557,9 +608,9 @@ std::optional<PluginInfo> PluginManager::parseScriptHeader(const QString &f_file
     QString l_runtime = l_md.value(QStringLiteral("runtime")).toString();
     if (l_runtime.isEmpty()) {
         const QString l_suffix = l_file_info.suffix().toLower();
-        l_runtime = l_suffix == QStringLiteral("py") ? QStringLiteral("python")
-                                                     : l_suffix == QStringLiteral("lua") ? QStringLiteral("lua")
-                                                                                         : QString();
+        l_runtime = l_suffix == QStringLiteral("py")    ? QStringLiteral("python")
+                    : l_suffix == QStringLiteral("lua") ? QStringLiteral("lua")
+                                                        : QString();
     }
     if (l_runtime.isEmpty()) {
         qCWarning(akashiPlugins) << "No runtime for script plugin" << f_file_path;
@@ -692,13 +743,16 @@ void PluginManager::cleanupPlugin(const QString &f_id)
     m_services->unregisterServicesOwnedBy(f_id);
 
     auto l_commands = m_services->resolve<CommandRegistry>(QStringLiteral("akashi.commands"));
-    if (l_commands) l_commands->unregisterAll(f_id);
+    if (l_commands)
+        l_commands->unregisterAll(f_id);
 
     auto l_events = m_services->resolve<EventBus>(QStringLiteral("akashi.events"));
-    if (l_events) l_events->unsubscribeAll(f_id);
+    if (l_events)
+        l_events->unsubscribeAll(f_id);
 
     auto l_filters = m_services->resolve<TextFilterRegistry>(QStringLiteral("akashi.textfilters"));
-    if (l_filters) l_filters->unregisterAll(f_id);
+    if (l_filters)
+        l_filters->unregisterAll(f_id);
 
     auto l_permissions = m_services->resolve<PermissionRegistry>(QStringLiteral("akashi.permissions"));
     if (l_permissions) {
@@ -707,13 +761,16 @@ void PluginManager::cleanupPlugin(const QString &f_id)
     }
 
     auto l_log = m_services->resolve<LogService>(QStringLiteral("akashi.log"));
-    if (l_log) l_log->unregisterAll(f_id);
+    if (l_log)
+        l_log->unregisterAll(f_id);
 
     auto l_rules = m_services->resolve<RuleRegistry>(QStringLiteral("akashi.rules"));
-    if (l_rules) l_rules->unregisterActions(f_id);
+    if (l_rules)
+        l_rules->unregisterActions(f_id);
 
     auto l_console = m_services->resolve<ConsoleMenu>(QStringLiteral("akashi.console"));
-    if (l_console) l_console->unregisterAll(f_id);
+    if (l_console)
+        l_console->unregisterAll(f_id);
 }
 
 QStringList PluginManager::dependentsOf(const QString &f_id) const

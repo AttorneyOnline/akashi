@@ -11,11 +11,16 @@ namespace akashi::commands {
 static QString stateLabel(PluginInfo::State f_state)
 {
     switch (f_state) {
-    case PluginInfo::State::Discovered:  return QStringLiteral("Discovered");
-    case PluginInfo::State::Loaded:      return QStringLiteral("Loaded");
-    case PluginInfo::State::Initialized: return QStringLiteral("Initialized");
-    case PluginInfo::State::Started:     return QStringLiteral("Started");
-    case PluginInfo::State::Failed:      return QStringLiteral("Failed");
+    case PluginInfo::State::Discovered:
+        return QStringLiteral("Discovered");
+    case PluginInfo::State::Loaded:
+        return QStringLiteral("Loaded");
+    case PluginInfo::State::Initialized:
+        return QStringLiteral("Initialized");
+    case PluginInfo::State::Started:
+        return QStringLiteral("Started");
+    case PluginInfo::State::Failed:
+        return QStringLiteral("Failed");
     }
     return QStringLiteral("Unknown");
 }
@@ -44,8 +49,9 @@ static void handlePluginList(CommandContext &f_ctx)
 
     QStringList l_lines;
     for (const PluginInfo &l_info : l_plugins) {
-        QString l_line = l_info.id + QStringLiteral(" v") + l_info.version.toString()
-                         + QStringLiteral(" [") + stateLabel(l_info.state) + QStringLiteral("]");
+        QString l_line = l_info.id + QStringLiteral(" v") + l_info.version.toString() + QStringLiteral(" [") + stateLabel(l_info.state) + QStringLiteral("]");
+        if (l_info.state == PluginInfo::State::Started)
+            l_line += QStringLiteral(" booted ") + QString::number(l_info.boot_ms) + QStringLiteral(" ms");
         if (!l_info.dependencies.isEmpty())
             l_line += QStringLiteral(" deps: ") + l_info.dependencies.join(QStringLiteral(", "));
         if (!l_info.services.isEmpty())
@@ -64,8 +70,7 @@ static void handlePluginLoad(CommandContext &f_ctx)
     const QString l_id = f_ctx.argument(1);
     if (l_mgr->loadPlugin(l_id)) {
         const auto l_info = l_mgr->pluginInfo(l_id);
-        f_ctx.reply(QStringLiteral("Plugin loaded: ") + l_id
-                    + (l_info ? QStringLiteral(" v") + l_info->version.toString() : QString()));
+        f_ctx.reply(QStringLiteral("Plugin loaded: ") + l_id + (l_info ? QStringLiteral(" v") + l_info->version.toString() : QString()));
     }
     else {
         f_ctx.reply(QStringLiteral("Failed to load plugin: ") + l_id);
@@ -84,8 +89,7 @@ static void handlePluginUnload(CommandContext &f_ctx)
     if (l_mgr->unloadPlugin(l_id, l_cascade))
         f_ctx.reply(QStringLiteral("Plugin unloaded: ") + l_id);
     else
-        f_ctx.reply(QStringLiteral("Failed to unload plugin: ") + l_id
-                     + QStringLiteral(". Other plugins may depend on it (use --cascade)."));
+        f_ctx.reply(QStringLiteral("Failed to unload plugin: ") + l_id + QStringLiteral(". Other plugins may depend on it (use --cascade)."));
 }
 
 static void handlePluginReload(CommandContext &f_ctx)
@@ -97,8 +101,7 @@ static void handlePluginReload(CommandContext &f_ctx)
     const QString l_id = f_ctx.argument(1);
     if (l_mgr->reloadPlugin(l_id)) {
         const auto l_info = l_mgr->pluginInfo(l_id);
-        f_ctx.reply(QStringLiteral("Plugin reloaded: ") + l_id
-                    + (l_info ? QStringLiteral(" v") + l_info->version.toString() : QString()));
+        f_ctx.reply(QStringLiteral("Plugin reloaded: ") + l_id + (l_info ? QStringLiteral(" v") + l_info->version.toString() : QString()));
     }
     else {
         f_ctx.reply(QStringLiteral("Failed to reload plugin: ") + l_id);
@@ -122,8 +125,7 @@ static void handlePlugin(CommandContext &f_ctx)
     else if (l_sub == QStringLiteral("reload"))
         handlePluginReload(f_ctx);
     else
-        f_ctx.reply(QStringLiteral("Unknown subcommand: ") + l_sub
-                     + QStringLiteral(". Use list, load, unload, or reload."));
+        f_ctx.reply(QStringLiteral("Unknown subcommand: ") + l_sub + QStringLiteral(". Use list, load, unload, or reload."));
 }
 
 void registerPluginCommands(CommandRegistry &f_registry)

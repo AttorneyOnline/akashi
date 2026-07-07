@@ -32,7 +32,19 @@ struct PluginInfo
     QString runtime;
     QString entry_path;
 
-    enum class State { Discovered, Loaded, Initialized, Started, Failed };
+    // Wall-clock time the plugin spent in its load, init and started
+    // callbacks (plus mapping its binary) the last time it booted, so
+    // operators can spot heavy plugins. 0 until it has started.
+    qint64 boot_ms = 0;
+
+    enum class State
+    {
+        Discovered,
+        Loaded,
+        Initialized,
+        Started,
+        Failed
+    };
     State state = State::Discovered;
 };
 
@@ -98,6 +110,7 @@ class AKASHI_CORE_EXPORT PluginManager : public QObject, public IService
     bool discover(const QStringList &f_allowlist);
     void discoverFromScriptHosts();
     void loadDiscoveredScripts();
+    void reportBootTimes();
     bool loadScriptEntry(PluginEntry &f_entry);
     void unloadScriptEntry(PluginEntry &f_entry);
     QStringList topologicalSort() const;
@@ -113,4 +126,3 @@ class AKASHI_CORE_EXPORT PluginManager : public QObject, public IService
 };
 
 } // namespace akashi
-

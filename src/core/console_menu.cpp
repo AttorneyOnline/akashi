@@ -1,10 +1,9 @@
 #include "core/console_menu.h"
 
-#include "core/console_input.h"
-
 #include "akashi/service_registry.h"
 #include "commands/authentication_commands.h"
 #include "core/client_session.h"
+#include "core/console_input.h"
 #include "core/crypto_helper.h"
 #include "core/db_manager.h"
 #include "core/permission_registry.h"
@@ -436,6 +435,9 @@ void ConsoleMenu::openPlugins()
         QString l_label = QStringLiteral("%1 v%2 [%3]").arg(l_info.id, l_info.version.toString(), pluginStateName(l_info.state));
         if (!l_info.runtime.isEmpty()) {
             l_label += QStringLiteral(" (%1)").arg(l_info.runtime);
+        }
+        if (l_info.state == PluginInfo::State::Started) {
+            l_label += QStringLiteral(" · %1 ms").arg(l_info.boot_ms);
         }
         const QString l_id = l_info.id;
         m_items.append({l_label, [this, l_id] { openPluginActions(l_id); }});
