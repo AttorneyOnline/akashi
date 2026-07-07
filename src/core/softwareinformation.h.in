@@ -46,7 +46,7 @@ inline const QStringList motb = {
     QStringLiteral("Here lies OPPASS. It knew too much."),
     QStringLiteral("The MC packet still does two jobs. We are sorry."),
     QStringLiteral("Objection! ...Overruled."),
-    QStringLiteral("jackfruit is technically a fruit."),
+    QStringLiteral("kumquat is technically a fruit."),
     QStringLiteral("nyaa~"),
     QStringLiteral("tsuserver walked so akashi could run."),
     QStringLiteral("Your Honor, the server is up."),

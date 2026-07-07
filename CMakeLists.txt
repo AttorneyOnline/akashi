@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.19)
-project(akashi VERSION 1.9.0 LANGUAGES CXX)
+project(akashi VERSION 2.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -20,7 +20,7 @@ qt_standard_project_setup()
 
 # Software identity for the boot screen and the ID packet. Stamped at
 # configure time; a stale branch/commit refreshes on the next CMake run.
-set(AKASHI_CODENAME "jackfruit")
+set(AKASHI_CODENAME "kumquat")
 execute_process(COMMAND git rev-parse --abbrev-ref HEAD
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     OUTPUT_VARIABLE AKASHI_GIT_BRANCH OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
