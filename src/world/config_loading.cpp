@@ -1,5 +1,7 @@
 #include "world/config_loading.h"
 
+#include "akashi/logging_categories.h"
+
 #include <QFile>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -27,14 +29,14 @@ MusicCatalog loadMusicList(const QString &f_path)
     MusicCatalog l_catalog;
     QFile l_file(f_path);
     if (!l_file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        qWarning() << "Unable to open musiclist" << f_path;
+        qCWarning(akashiConfig) << "Unable to open musiclist" << f_path;
         return l_catalog;
     }
 
     QJsonParseError l_error;
     QJsonDocument l_doc = QJsonDocument::fromJson(l_file.readAll(), &l_error);
     if (l_error.error != QJsonParseError::NoError) {
-        qWarning() << "Unable to load musiclist. The following error was encountered:" << l_error.errorString();
+        qCWarning(akashiConfig) << "Unable to load musiclist. The following error was encountered:" << l_error.errorString();
         return l_catalog;
     }
 
@@ -48,7 +50,7 @@ MusicCatalog loadMusicList(const QString &f_path)
             l_catalog.ordered.append(l_category);
         }
         else {
-            qWarning() << "Category name not set. This may cause the musiclist to be displayed incorrectly.";
+            qCWarning(akashiConfig) << "Category name not set. This may cause the musiclist to be displayed incorrectly.";
         }
 
         QJsonArray l_songs = l_child["songs"].toArray();
@@ -88,7 +90,7 @@ static QVector<RuleDeclaration> parseRules(const QJsonObject &f_rules)
                 l_declaration.phase = l_phase.second;
                 l_declaration.action = l_object.value(QStringLiteral("action")).toString();
                 if (l_declaration.action.isEmpty()) {
-                    qWarning() << "A rule for event" << it.key() << "names no action and was skipped.";
+                    qCWarning(akashiConfig) << "A rule for event" << it.key() << "names no action and was skipped.";
                     continue;
                 }
                 for (auto arg = l_object.begin(); arg != l_object.end(); ++arg) {
@@ -113,7 +115,7 @@ AreaRulesConfig loadAreaRules(const QString &f_path)
     QJsonParseError l_error;
     const QJsonDocument l_doc = QJsonDocument::fromJson(l_file.readAll(), &l_error);
     if (l_error.error != QJsonParseError::NoError || !l_doc.isObject()) {
-        qWarning() << "Unable to load area rules. The following error was encountered:" << l_error.errorString();
+        qCWarning(akashiConfig) << "Unable to load area rules. The following error was encountered:" << l_error.errorString();
         return l_config;
     }
 
@@ -150,7 +152,7 @@ QStringList loadIpRangeBans(const QString &f_path)
     QJsonParseError l_error;
     QJsonDocument l_doc = QJsonDocument::fromJson(l_file.readAll(), &l_error);
     if (l_error.error != QJsonParseError::NoError) {
-        qDebug() << "Unable to parse JSON file. Error:" << l_error.errorString();
+        qCDebug(akashiConfig) << "Unable to parse JSON file. Error:" << l_error.errorString();
         return {};
     }
 

@@ -196,8 +196,28 @@ tree and build it against your installed akashi — it compiles unchanged.
 plugin bringing its own Qt module and config file, `discord-integration`
 shows event subscriptions, and the two script hosts show implementing a
 service other plugins depend on. To bundle a new plugin with the server
-instead, keep the same folder shape and add an
-`add_subdirectory(plugins/<name>)` in the root `CMakeLists.txt`.
+instead, keep the same folder shape and add the folder name to the
+`AKASHI_BUNDLED_PLUGINS` list in `plugins/CMakeLists.txt` — that file
+gives it an `AKASHI_PLUGIN_*` switch automatically.
+
+## Choosing which bundled plugins to build
+
+`plugins/CMakeLists.txt` builds every bundled plugin by default and
+deploys them to `bin/plugins/`. The set is chosen with configure
+arguments: `-DAKASHI_BUILD_PLUGINS=OFF` turns the whole set off, and
+each plugin has its own switch named after its folder —
+`-DAKASHI_PLUGIN_LUA_HOST=OFF` drops `lua-host`, and so on. A server
+
+```
+cmake -S . -B build -DAKASHI_PLUGIN_DISCORD_INTEGRATION=OFF -DAKASHI_PLUGIN_RCON_SERVER=OFF
+```
+
+The python host is additionally skipped when the CPython development
+files are missing, and disabling `scripting-ffi` while keeping a script
+host enabled earns a configure warning, because the hosts depend on it
+at runtime. Disabling a plugin only stops building it — a library an
+earlier build already put in `bin/plugins/` stays there until you
+delete it.
 
 ## The API a plugin sees
 
@@ -224,7 +244,10 @@ past `shutdown()`. The core services:
 Ground rules: everything runs on the server's main thread — lifecycle
 calls and every registry callback — so return quickly; spawn your own
 worker threads for heavy work and marshal results back with queued
-signals. Permissions and sanctions are plain string ids (namespace yours
+signals. Log through a category so the console's category column stays
+filled: include `akashi/logging_categories.h` and use
+`qCInfo(akashiPlugins)` or whichever subsystem fits, or declare your
+own category. Permissions and sanctions are plain string ids (namespace yours
 like `myplugin.curse`); the core ids live in `akashi/permissions.h` and
 `akashi/sanctions.h`. A rule or config argument must never take away a
 permission a role grants.

@@ -61,4 +61,3 @@ class AKASHI_CORE_EXPORT ServiceRegistry : public QObject
 };
 
 } // namespace akashi
-

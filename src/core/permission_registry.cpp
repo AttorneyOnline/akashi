@@ -1,5 +1,6 @@
 #include "core/permission_registry.h"
 
+#include "akashi/logging_categories.h"
 #include "akashi/thread_assert.h"
 #include "core/json_settings.h"
 
@@ -230,15 +231,13 @@ bool ACLRolesHandler::loadFile(QString f_file_name)
     for (const QString &i_group : l_group_list) {
         const QString l_upper_group = i_group.toUpper();
         if (readonly_roles.contains(l_upper_group)) {
-            qWarning() << "[ACL Role Handler]"
-                       << "warning: cannot modify role;" << i_group << "is read-only";
+            qCWarning(akashiConfig) << "acl_roles: cannot modify role;" << i_group << "is read-only";
             continue;
         }
 
         l_settings.beginGroup(i_group);
         if (l_role_records.contains(l_upper_group)) {
-            qWarning() << "[ACL Role Handler]"
-                       << "warning: role" << l_upper_group << "already exist";
+            qCWarning(akashiConfig) << "acl_roles: role" << l_upper_group << "already exists";
             continue;
         }
         l_role_records.append(l_upper_group);
@@ -289,8 +288,7 @@ bool ACLRolesHandler::saveFile(QString f_file_name)
     }
     l_settings.sync();
     if (l_settings.status() != QSettings::NoError) {
-        qWarning() << "[ACL Role Handler]"
-                   << "error: failed to write file; aborting (" << f_file_name << ")";
+        qCWarning(akashiConfig) << "acl_roles: failed to write file; aborting (" << f_file_name << ")";
         return false;
     }
 
@@ -302,18 +300,15 @@ bool ACLRolesHandler::checkSettingsStatus(QSettings *f_settings)
     if (f_settings->status() != QSettings::NoError) {
         switch (f_settings->status()) {
         case QSettings::AccessError:
-            qWarning() << "[ACL Role Handler]"
-                       << "error: failed to open file; aborting (" << f_settings->fileName() << ")";
+            qCWarning(akashiConfig) << "acl_roles: failed to open file; aborting (" << f_settings->fileName() << ")";
             break;
 
         case QSettings::FormatError:
-            qWarning() << "[ACL Role Handler]"
-                       << "error: file is malformed; aborting (" << f_settings->fileName() << ")";
+            qCWarning(akashiConfig) << "acl_roles: file is malformed; aborting (" << f_settings->fileName() << ")";
             break;
 
         default:
-            qWarning() << "[ACL Role Handler]"
-                       << "error: unknown error; aborting; aborting (" << f_settings->fileName() << ")";
+            qCWarning(akashiConfig) << "acl_roles: unknown error; aborting (" << f_settings->fileName() << ")";
             break;
         }
 

@@ -1,5 +1,6 @@
 #include "core/command_registry.h"
 
+#include "akashi/logging_categories.h"
 #include "akashi/thread_assert.h"
 
 #include <QDebug>
@@ -165,7 +166,7 @@ void CommandRegistry::applyExtensions(const QString &f_path)
     }
     QJsonDocument l_doc = QJsonDocument::fromJson(l_file.readAll());
     if (!l_doc.isObject()) {
-        qWarning() << f_path << "is not a valid command extensions file";
+        qCWarning(akashiCommands) << f_path << "is not a valid command extensions file";
         return;
     }
 
@@ -182,7 +183,7 @@ void CommandRegistry::applyExtensions(const QString &f_path)
 
         auto l_entry = m_entries.find(l_name);
         if (l_entry == m_entries.end()) {
-            qWarning() << "command_extensions: unknown command" << l_name;
+            qCWarning(akashiCommands) << "command_extensions: unknown command" << l_name;
             continue;
         }
 
@@ -200,7 +201,7 @@ void CommandRegistry::applyExtensions(const QString &f_path)
                 }
             }
             if (!l_found) {
-                qWarning() << "command_extensions:" << l_name << "has no variant" << l_variant_id;
+                qCWarning(akashiCommands) << "command_extensions:" << l_name << "has no variant" << l_variant_id;
             }
             continue;
         }
@@ -213,7 +214,7 @@ void CommandRegistry::applyExtensions(const QString &f_path)
                     continue;
                 }
                 if (m_entries.contains(l_alias_key) || m_aliases.contains(l_alias_key)) {
-                    qWarning() << "command_extensions:" << l_name << "alias" << l_alias << "collides with an existing command or alias";
+                    qCWarning(akashiCommands) << "command_extensions:" << l_name << "alias" << l_alias << "collides with an existing command or alias";
                     continue;
                 }
                 l_entry->spec.aliases.append(l_alias_key);
@@ -223,8 +224,8 @@ void CommandRegistry::applyExtensions(const QString &f_path)
 
         if (l_ext.contains(QStringLiteral("permissions"))) {
             if (!l_entry->spec.variants.isEmpty()) {
-                qWarning() << "command_extensions:" << l_name << "has gated forms; address one as"
-                           << l_name + QStringLiteral(".<variant>") << "instead";
+                qCWarning(akashiCommands) << "command_extensions:" << l_name << "has gated forms; address one as"
+                                          << l_name + QStringLiteral(".<variant>") << "instead";
             }
             else {
                 l_entry->spec.permissions = l_ext.value(QStringLiteral("permissions")).toString().split(QChar(' '), Qt::SkipEmptyParts);

@@ -16,7 +16,7 @@ class ServerPublisher : public QObject
 
   public:
     explicit ServerPublisher(int port, int *player_count, ServerSettings *f_settings, QObject *parent = nullptr);
-    virtual ~ServerPublisher() {};
+    virtual ~ServerPublisher() = default;
 
   public Q_SLOTS:
 

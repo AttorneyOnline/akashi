@@ -25,4 +25,3 @@ class AKASHI_CORE_EXPORT Evidence
 };
 
 } // namespace akashi
-

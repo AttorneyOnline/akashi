@@ -47,4 +47,3 @@ AKASHI_CORE_EXPORT QList<quint32> loadBannedAsns(const QString &f_path);
 
 } // namespace config
 } // namespace akashi
-

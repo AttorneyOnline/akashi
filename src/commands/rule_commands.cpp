@@ -191,39 +191,27 @@ static void handleReloadRules(CommandContext &f_context)
 void registerRuleCommands(CommandRegistry &f_registry)
 {
     f_registry.registerCommand(
-        {QStringLiteral("rules"), {}, {}, 0,
-         QStringLiteral("/rules"),
-         QStringLiteral("Lists the rules active in this area, floor rules included.")},
+        {QStringLiteral("rules"), {}, {}, 0, QStringLiteral("/rules"), QStringLiteral("Lists the rules active in this area, floor rules included.")},
         handleRules, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("ruleactions"), {}, {}, 0,
-         QStringLiteral("/ruleactions"),
-         QStringLiteral("Lists the rule actions available to /addrule.")},
+        {QStringLiteral("ruleactions"), {}, {}, 0, QStringLiteral("/ruleactions"), QStringLiteral("Lists the rule actions available to /addrule.")},
         handleRuleActions, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("addrule"), {}, {akashi::permission::modify_rules}, 2,
-         QStringLiteral("/addrule <event> <action> [key=value ...]"),
-         QStringLiteral("Attaches a rule action to an event in this area.")},
+        {QStringLiteral("addrule"), {}, {akashi::permission::modify_rules}, 2, QStringLiteral("/addrule <event> <action> [key=value ...]"), QStringLiteral("Attaches a rule action to an event in this area.")},
         handleAddRule, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("removerule"), {}, {akashi::permission::modify_rules}, 1,
-         QStringLiteral("/removerule <event> [action]"),
-         QStringLiteral("Removes this area's rules for an event.")},
+        {QStringLiteral("removerule"), {}, {akashi::permission::modify_rules}, 1, QStringLiteral("/removerule <event> [action]"), QStringLiteral("Removes this area's rules for an event.")},
         handleRemoveRule, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("floorrule"), {}, {akashi::permission::modify_floors}, 2,
-         QStringLiteral("/floorrule <add|remove> <event> [action] [key=value ...]"),
-         QStringLiteral("Adds or removes a rule on this floor.")},
+        {QStringLiteral("floorrule"), {}, {akashi::permission::modify_floors}, 2, QStringLiteral("/floorrule <add|remove> <event> [action] [key=value ...]"), QStringLiteral("Adds or removes a rule on this floor.")},
         handleFloorRule, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("reloadrules"), {}, {akashi::permission::modify_floors}, 0,
-         QStringLiteral("/reloadrules"),
-         QStringLiteral("Reapplies the rule declarations from areas.json.")},
+        {QStringLiteral("reloadrules"), {}, {akashi::permission::modify_floors}, 0, QStringLiteral("/reloadrules"), QStringLiteral("Reapplies the rule declarations from areas.json.")},
         handleReloadRules, QStringLiteral("core"));
 }
 

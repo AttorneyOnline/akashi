@@ -10,4 +10,3 @@
 // The class must initialise m_owner_thread = QThread::currentThread() in its ctor.
 #define AKASHI_ASSERT_OWNER_THREAD() \
     Q_ASSERT(QThread::currentThread() == m_owner_thread)
-

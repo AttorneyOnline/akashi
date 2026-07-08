@@ -7,8 +7,9 @@
 #include <QNetworkReply>
 #include <QUrl>
 
-WebhookSender::WebhookSender(QNetworkAccessManager *f_nam, QObject *parent)
-    : QObject(parent), m_nam(f_nam)
+WebhookSender::WebhookSender(QNetworkAccessManager *f_nam, QObject *parent) :
+    QObject(parent),
+    m_nam(f_nam)
 {
 }
 

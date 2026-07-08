@@ -114,8 +114,7 @@ void tst_LogService::formatAllEventTypes()
         akashi::log_type::Music, akashi::log_type::Login,
         akashi::log_type::CMD, akashi::log_type::Kick,
         akashi::log_type::Ban, akashi::log_type::Modcall,
-        akashi::log_type::Connect
-    };
+        akashi::log_type::Connect};
 
     for (const QString &l_type : l_types) {
         akashi::LogEvent l_event;
@@ -133,7 +132,7 @@ void tst_LogService::legacyPositionalMigration()
     akashi::LogService l_service(nullptr);
 
     l_service.registerTemplate(akashi::log_type::Kick,
-        QStringLiteral("[%1][%2][KICK][%3]: %4"));
+                               QStringLiteral("[%1][%2][KICK][%3]: %4"));
 
     l_service.reloadTemplates();
 
@@ -243,7 +242,7 @@ void tst_LogService::customTemplate()
     akashi::LogService l_service(nullptr);
 
     l_service.registerTemplate(QStringLiteral("custom_plugin"),
-        QStringLiteral("{char_name} did {message} in {area}"));
+                               QStringLiteral("{char_name} did {message} in {area}"));
 
     akashi::LogEvent l_event;
     l_event.timestamp = 1000;

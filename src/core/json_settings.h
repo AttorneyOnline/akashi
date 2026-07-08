@@ -15,4 +15,3 @@ class AKASHI_CORE_EXPORT JsonSettings
     static bool readJsonFile(QIODevice &device, QSettings::SettingsMap &map);
     static bool writeJsonFile(QIODevice &device, const QSettings::SettingsMap &map);
 };
-

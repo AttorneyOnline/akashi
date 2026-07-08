@@ -49,4 +49,3 @@ class Floor
 };
 
 } // namespace akashi
-

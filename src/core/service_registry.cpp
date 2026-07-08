@@ -1,5 +1,6 @@
 #include "akashi/service_registry.h"
 
+#include "akashi/logging_categories.h"
 #include "akashi/thread_assert.h"
 
 #include <QDebug>
@@ -14,7 +15,7 @@ bool ServiceRegistry::registerService(std::shared_ptr<IService> f_service, const
     }
     const QString l_id = f_service->serviceId();
     if (m_services.contains(l_id)) {
-        qWarning() << "Service already registered:" << l_id;
+        qCWarning(akashiServer) << "Service already registered:" << l_id;
         return false;
     }
     m_services.insert(l_id, Entry{f_service, f_owner_id});

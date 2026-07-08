@@ -91,4 +91,3 @@ class AKASHI_CORE_EXPORT ITransport : public QObject
 Q_DECLARE_OPERATORS_FOR_FLAGS(ITransport::Capabilities)
 
 } // namespace akashi
-

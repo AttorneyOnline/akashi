@@ -1,12 +1,10 @@
 // AI-generated: written by Claude.
 #include "scripting_ffi_plugin.h"
 
-#include "scripting_ffi_service.h"
-
 #include "akashi/config_store.h"
 #include "akashi/event.h"
+#include "akashi/logging_categories.h"
 #include "akashi/service_registry.h"
-#include "core/logging_categories.h"
 #include "core/command_context.h"
 #include "core/command_registry.h"
 #include "core/command_spec.h"
@@ -14,6 +12,7 @@
 #include "core/event_bus.h"
 #include "core/permission_registry.h"
 #include "core/text_filter_registry.h"
+#include "scripting_ffi_service.h"
 #include "world/rule_registry.h"
 
 #include <QByteArray>
@@ -103,7 +102,8 @@ static int ffiRegisterCommand(const char *f_name, size_t f_name_length,
         return 0;
     }
 
-    const bool l_registered = s_commands->registerCommand(l_spec, [f_handler, f_userdata](akashi::CommandContext &f_context) {
+    const bool l_registered = s_commands->registerCommand(
+        l_spec, [f_handler, f_userdata](akashi::CommandContext &f_context) {
         // The UTF-8 copies stay alive for the duration of the callback.
         QList<QByteArray> l_utf8;
         std::vector<const char *> l_argv;
@@ -115,8 +115,7 @@ static int ffiRegisterCommand(const char *f_name, size_t f_name_length,
             l_argv.push_back(l_utf8.last().constData());
         }
         f_handler(f_userdata, reinterpret_cast<AkashiCommandContext *>(&f_context),
-                  int(l_argv.size()), l_argv.data());
-    }, toString(f_owner_id, f_owner_id_length));
+                  int(l_argv.size()), l_argv.data()); }, toString(f_owner_id, f_owner_id_length));
     return l_registered ? 1 : 0;
 }
 
@@ -253,14 +252,14 @@ static int ffiRegisterTextFilter(const char *f_id, size_t f_id_length,
     if (!s_filters || !f_filter || l_id.isEmpty() || s_filters->hasFilter(l_id)) {
         return 0;
     }
-    s_filters->registerFilter(l_id, f_order, [f_filter, f_userdata](const QString &f_text) -> std::optional<QString> {
+    s_filters->registerFilter(
+        l_id, f_order, [f_filter, f_userdata](const QString &f_text) -> std::optional<QString> {
         const QByteArray l_utf8 = f_text.toUtf8();
         AkashiTextResult l_result;
         if (!f_filter(f_userdata, l_utf8.constData(), size_t(l_utf8.size()), &l_result)) {
             return std::nullopt;
         }
-        return l_result.set ? l_result.text : f_text;
-    }, f_always_active != 0, toString(f_owner_id, f_owner_id_length));
+        return l_result.set ? l_result.text : f_text; }, f_always_active != 0, toString(f_owner_id, f_owner_id_length));
     return 1;
 }
 
@@ -340,9 +339,8 @@ static QVariantMap toMap(const akashi::ConfigReloadedEvent &)
 template <typename E>
 static void subscribeCoreEvent(AkashiEventFn f_handler, void *f_userdata, const QString &f_owner)
 {
-    s_events->subscribe<E>(akashi::EventPhase::After, 0, [f_handler, f_userdata](E &f_event) {
-        deliverEvent(toMap(f_event), f_handler, f_userdata);
-    }, f_owner);
+    s_events->subscribe<E>(
+        akashi::EventPhase::After, 0, [f_handler, f_userdata](E &f_event) { deliverEvent(toMap(f_event), f_handler, f_userdata); }, f_owner);
 }
 
 static int ffiSubscribeEvent(const char *f_name, size_t f_name_length,
@@ -376,9 +374,8 @@ static int ffiSubscribeEvent(const char *f_name, size_t f_name_length,
         return 1;
     }
 
-    s_events->subscribeCustom(l_name, akashi::EventPhase::After, [f_handler, f_userdata](const QVariantMap &f_payload) {
-        deliverEvent(f_payload, f_handler, f_userdata);
-    }, l_owner);
+    s_events->subscribeCustom(
+        l_name, akashi::EventPhase::After, [f_handler, f_userdata](const QVariantMap &f_payload) { deliverEvent(f_payload, f_handler, f_userdata); }, l_owner);
     return 1;
 }
 
@@ -449,23 +446,21 @@ static int ffiRegisterRuleAction(const char *f_name, size_t f_name_length, int f
     const QString l_owner = toString(f_owner_id, f_owner_id_length);
 
     if (f_before) {
-        s_rules->registerBeforeAction(l_name, [f_action, f_userdata](akashi::ServiceRegistry &, const QVariantMap &f_args) -> akashi::BeforeRuleFunction {
-            return [f_action, f_userdata, f_args](const akashi::RuleContext &f_context) -> akashi::RuleVerdict {
-                AkashiRuleResult l_result;
-                callRuleAction(f_action, f_userdata, f_context, f_args, &l_result);
-                if (!l_result.blocked) {
-                    return {true, {}};
-                }
-                return {false, l_result.reason.isEmpty() ? QStringLiteral("This is not allowed here.") : l_result.reason};
-            };
-        }, l_owner);
+        s_rules->registerBeforeAction(
+            l_name, [f_action, f_userdata](akashi::ServiceRegistry &, const QVariantMap &f_args) -> akashi::BeforeRuleFunction { return [f_action, f_userdata, f_args](const akashi::RuleContext &f_context) -> akashi::RuleVerdict {
+                                                                                                                                     AkashiRuleResult l_result;
+                                                                                                                                     callRuleAction(f_action, f_userdata, f_context, f_args, &l_result);
+                                                                                                                                     if (!l_result.blocked) {
+                                                                                                                                         return {true, {}};
+                                                                                                                                     }
+                                                                                                                                     return {false, l_result.reason.isEmpty() ? QStringLiteral("This is not allowed here.") : l_result.reason};
+                                                                                                                                 }; }, l_owner);
     }
     else {
-        s_rules->registerAfterAction(l_name, [f_action, f_userdata](akashi::ServiceRegistry &, const QVariantMap &f_args) -> akashi::AfterRuleFunction {
-            return [f_action, f_userdata, f_args](const akashi::RuleContext &f_context) {
-                callRuleAction(f_action, f_userdata, f_context, f_args, nullptr);
-            };
-        }, l_owner);
+        s_rules->registerAfterAction(
+            l_name, [f_action, f_userdata](akashi::ServiceRegistry &, const QVariantMap &f_args) -> akashi::AfterRuleFunction { return [f_action, f_userdata, f_args](const akashi::RuleContext &f_context) {
+                                                                                                                                    callRuleAction(f_action, f_userdata, f_context, f_args, nullptr);
+                                                                                                                                }; }, l_owner);
     }
     return 1;
 }
@@ -485,9 +480,8 @@ static int ffiRegisterConsoleAction(const char *f_title, size_t f_title_length,
     if (!s_console || !f_action) {
         return 0;
     }
-    return s_console->registerAction(toString(f_title, f_title_length),
-                                     [f_action, f_userdata] { f_action(f_userdata); },
-                                     toString(f_owner_id, f_owner_id_length))
+    return s_console->registerAction(
+               toString(f_title, f_title_length), [f_action, f_userdata] { f_action(f_userdata); }, toString(f_owner_id, f_owner_id_length))
                ? 1
                : 0;
 }

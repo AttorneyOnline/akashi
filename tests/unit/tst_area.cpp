@@ -79,14 +79,22 @@ void Area::areaStatuses_data()
     QTest::addColumn<QString>("expectedStatus");
     QTest::addColumn<bool>("isSuccessful");
 
-    QTest::newRow("Idle") << "idle" << "IDLE" << true;
-    QTest::newRow("RP") << "rp" << "RP" << true;
-    QTest::newRow("Casing") << "casing" << "CASING" << true;
-    QTest::newRow("Looking for players (long)") << "looking-for-players" << "LOOKING-FOR-PLAYERS" << true;
-    QTest::newRow("Looking for players (short)") << "lfp" << "LOOKING-FOR-PLAYERS" << true;
-    QTest::newRow("Gaming") << "gaming" << "GAMING" << true;
-    QTest::newRow("Recess") << "recess" << "RECESS" << true;
-    QTest::newRow("Nonsense") << "blah" << "IDLE" << false;
+    QTest::newRow("Idle") << "idle"
+                          << "IDLE" << true;
+    QTest::newRow("RP") << "rp"
+                        << "RP" << true;
+    QTest::newRow("Casing") << "casing"
+                            << "CASING" << true;
+    QTest::newRow("Looking for players (long)") << "looking-for-players"
+                                                << "LOOKING-FOR-PLAYERS" << true;
+    QTest::newRow("Looking for players (short)") << "lfp"
+                                                 << "LOOKING-FOR-PLAYERS" << true;
+    QTest::newRow("Gaming") << "gaming"
+                            << "GAMING" << true;
+    QTest::newRow("Recess") << "recess"
+                            << "RECESS" << true;
+    QTest::newRow("Nonsense") << "blah"
+                              << "IDLE" << false;
 }
 
 void Area::areaStatuses()

@@ -39,4 +39,3 @@ struct AKASHI_CORE_EXPORT ClientProfile
 };
 
 } // namespace akashi
-

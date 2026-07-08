@@ -148,10 +148,10 @@ static void handleBan(CommandContext &f_context)
         l_kick_counter++;
 
         f_context.server()->logService()->log({.type = log_type::Ban,
-            .message = l_ban.reason,
-            .moderator = l_ban.moderator,
-            .target_ipid = l_ban.ipid,
-            .duration = l_ban_duration});
+                                               .message = l_ban.reason,
+                                               .moderator = l_ban.moderator,
+                                               .target_ipid = l_ban.ipid,
+                                               .duration = l_ban_duration});
         akashi::BanIssuedEvent l_ban_event{
             .ban_id = l_ban_id,
             .moderator = l_ban.moderator,
@@ -194,9 +194,9 @@ static void handleKick(CommandContext &f_context)
                                   ? f_context.moderatorName()
                                   : QStringLiteral("Moderator");
         f_context.server()->logService()->log({.type = log_type::Kick,
-            .message = l_reason,
-            .moderator = l_moderator,
-            .target_ipid = l_target_ipid});
+                                               .message = l_reason,
+                                               .moderator = l_moderator,
+                                               .target_ipid = l_target_ipid});
         f_context.reply("Kicked " + QString::number(l_kick_counter) + " client(s) with ipid " + l_target_ipid + " for reason: " + l_reason);
     }
     else
@@ -658,165 +658,111 @@ static void handleKickOther(CommandContext &f_context)
 void registerModerationCommands(CommandRegistry &f_registry)
 {
     f_registry.registerCommand(
-        {QStringLiteral("ban"), {}, {akashi::permission::ban}, 3,
-         QStringLiteral("/ban <ipid> <duration> <reason>"),
-         QStringLiteral("Bans a client by IPID.")},
+        {QStringLiteral("ban"), {}, {akashi::permission::ban}, 3, QStringLiteral("/ban <ipid> <duration> <reason>"), QStringLiteral("Bans a client by IPID.")},
         handleBan, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("kick"), {}, {akashi::permission::kick}, 2,
-         QStringLiteral("/kick <ipid> <reason>"),
-         QStringLiteral("Kicks all clients with the given IPID.")},
+        {QStringLiteral("kick"), {}, {akashi::permission::kick}, 2, QStringLiteral("/kick <ipid> <reason>"), QStringLiteral("Kicks all clients with the given IPID.")},
         handleKick, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("mods"), {}, {}, 0,
-         QStringLiteral("/mods"),
-         QStringLiteral("Lists currently logged-in moderators.")},
+        {QStringLiteral("mods"), {}, {}, 0, QStringLiteral("/mods"), QStringLiteral("Lists currently logged-in moderators.")},
         handleMods, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("commands"), {}, {}, 0,
-         QStringLiteral("/commands"),
-         QStringLiteral("Lists all commands available to you.")},
+        {QStringLiteral("commands"), {}, {}, 0, QStringLiteral("/commands"), QStringLiteral("Lists all commands available to you.")},
         handleCommands, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("help"), {}, {}, 0,
-         QStringLiteral("/help [command|all]"),
-         QStringLiteral("Displays help for a command.")},
+        {QStringLiteral("help"), {}, {}, 0, QStringLiteral("/help [command|all]"), QStringLiteral("Displays help for a command.")},
         handleHelp, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("motd"), {}, {}, 0,
-         QStringLiteral("/motd"),
-         QStringLiteral("Displays the Message of the Day.")},
+        {QStringLiteral("motd"), {}, {}, 0, QStringLiteral("/motd"), QStringLiteral("Displays the Message of the Day.")},
         handleMotd, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("set_motd"), {QStringLiteral("setmotd")}, {akashi::permission::motd}, 1,
-         QStringLiteral("/set_motd <message>"),
-         QStringLiteral("Sets the Message of the Day.")},
+        {QStringLiteral("set_motd"), {QStringLiteral("setmotd")}, {akashi::permission::motd}, 1, QStringLiteral("/set_motd <message>"), QStringLiteral("Sets the Message of the Day.")},
         handleSetMotd, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("bans"), {}, {akashi::permission::ban}, 0,
-         QStringLiteral("/bans"),
-         QStringLiteral("Lists the last 5 bans.")},
+        {QStringLiteral("bans"), {}, {akashi::permission::ban}, 0, QStringLiteral("/bans"), QStringLiteral("Lists the last 5 bans.")},
         handleBans, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("unban"), {}, {akashi::permission::ban}, 1,
-         QStringLiteral("/unban <ban_id>"),
-         QStringLiteral("Invalidates a ban by its ID.")},
+        {QStringLiteral("unban"), {}, {akashi::permission::ban}, 1, QStringLiteral("/unban <ban_id>"), QStringLiteral("Invalidates a ban by its ID.")},
         handleUnban, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("about"), {}, {}, 0,
-         QStringLiteral("/about"),
-         QStringLiteral("Displays server version info.")},
+        {QStringLiteral("about"), {}, {}, 0, QStringLiteral("/about"), QStringLiteral("Displays server version info.")},
         handleAbout, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("mute"), {}, {akashi::permission::mute}, 1,
-         QStringLiteral("/mute <id>"),
-         QStringLiteral("Mutes a client.")},
+        {QStringLiteral("mute"), {}, {akashi::permission::mute}, 1, QStringLiteral("/mute <id>"), QStringLiteral("Mutes a client.")},
         handleMute, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("unmute"), {}, {akashi::permission::mute}, 1,
-         QStringLiteral("/unmute <id>"),
-         QStringLiteral("Unmutes a client.")},
+        {QStringLiteral("unmute"), {}, {akashi::permission::mute}, 1, QStringLiteral("/unmute <id>"), QStringLiteral("Unmutes a client.")},
         handleUnmute, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("ooc_mute"), {QStringLiteral("mute_ooc"), QStringLiteral("oocmute")}, {akashi::permission::mute}, 1,
-         QStringLiteral("/ooc_mute <id>"),
-         QStringLiteral("OOC-mutes a client.")},
+        {QStringLiteral("ooc_mute"), {QStringLiteral("mute_ooc"), QStringLiteral("oocmute")}, {akashi::permission::mute}, 1, QStringLiteral("/ooc_mute <id>"), QStringLiteral("OOC-mutes a client.")},
         handleOocMute, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("ooc_unmute"), {QStringLiteral("unmute_ooc"), QStringLiteral("oocunmute")}, {akashi::permission::mute}, 1,
-         QStringLiteral("/ooc_unmute <id>"),
-         QStringLiteral("OOC-unmutes a client.")},
+        {QStringLiteral("ooc_unmute"), {QStringLiteral("unmute_ooc"), QStringLiteral("oocunmute")}, {akashi::permission::mute}, 1, QStringLiteral("/ooc_unmute <id>"), QStringLiteral("OOC-unmutes a client.")},
         handleOocUnmute, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("block_wtce"), {QStringLiteral("blockwtce")}, {akashi::permission::mute}, 1,
-         QStringLiteral("/block_wtce <id>"),
-         QStringLiteral("Blocks a client from using judge controls.")},
+        {QStringLiteral("block_wtce"), {QStringLiteral("blockwtce")}, {akashi::permission::mute}, 1, QStringLiteral("/block_wtce <id>"), QStringLiteral("Blocks a client from using judge controls.")},
         handleBlockWtce, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("unblock_wtce"), {QStringLiteral("unblockwtce")}, {akashi::permission::mute}, 1,
-         QStringLiteral("/unblock_wtce <id>"),
-         QStringLiteral("Restores a client's judge controls.")},
+        {QStringLiteral("unblock_wtce"), {QStringLiteral("unblockwtce")}, {akashi::permission::mute}, 1, QStringLiteral("/unblock_wtce <id>"), QStringLiteral("Restores a client's judge controls.")},
         handleUnblockWtce, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("allow_blankposting"), {QStringLiteral("allowblankposting")}, {akashi::permission::chat_moderator}, 0,
-         QStringLiteral("/allow_blankposting"),
-         QStringLiteral("Toggles blankposting in the area.")},
+        {QStringLiteral("allow_blankposting"), {QStringLiteral("allowblankposting")}, {akashi::permission::chat_moderator}, 0, QStringLiteral("/allow_blankposting"), QStringLiteral("Toggles blankposting in the area.")},
         handleAllowBlankposting, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("baninfo"), {}, {akashi::permission::ban}, 1,
-         QStringLiteral("/baninfo <id> [type]"),
-         QStringLiteral("Looks up ban info.")},
+        {QStringLiteral("baninfo"), {}, {akashi::permission::ban}, 1, QStringLiteral("/baninfo <id> [type]"), QStringLiteral("Looks up ban info.")},
         handleBanInfo, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("reload"), {}, {akashi::permission::super}, 0,
-         QStringLiteral("/reload"),
-         QStringLiteral("Reloads server configuration.")},
+        {QStringLiteral("reload"), {}, {akashi::permission::super}, 0, QStringLiteral("/reload"), QStringLiteral("Reloads server configuration.")},
         handleReload, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("force_noint_pres"), {QStringLiteral("forceimmediate")}, {akashi::permission::gamemaster}, 0,
-         QStringLiteral("/force_noint_pres"),
-         QStringLiteral("Toggles forced immediate text processing.")},
+        {QStringLiteral("force_noint_pres"), {QStringLiteral("forceimmediate")}, {akashi::permission::gamemaster}, 0, QStringLiteral("/force_noint_pres"), QStringLiteral("Toggles forced immediate text processing.")},
         handleForceImmediate, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("allow_iniswap"), {QStringLiteral("allowiniswap")}, {akashi::permission::gamemaster}, 0,
-         QStringLiteral("/allow_iniswap"),
-         QStringLiteral("Toggles iniswap permission in the area.")},
+        {QStringLiteral("allow_iniswap"), {QStringLiteral("allowiniswap")}, {akashi::permission::gamemaster}, 0, QStringLiteral("/allow_iniswap"), QStringLiteral("Toggles iniswap permission in the area.")},
         handleAllowIniswap, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("permitsaving"), {}, {akashi::permission::chat_moderator}, 1,
-         QStringLiteral("/permitsaving <id>"),
-         QStringLiteral("Grants a client permission to save testimony.")},
+        {QStringLiteral("permitsaving"), {}, {akashi::permission::chat_moderator}, 1, QStringLiteral("/permitsaving <id>"), QStringLiteral("Grants a client permission to save testimony.")},
         handlePermitSaving, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("kick_uid"), {QStringLiteral("kickuid")}, {akashi::permission::kick}, 2,
-         QStringLiteral("/kick_uid <id> <reason>"),
-         QStringLiteral("Kicks a single client by UID.")},
+        {QStringLiteral("kick_uid"), {QStringLiteral("kickuid")}, {akashi::permission::kick}, 2, QStringLiteral("/kick_uid <id> <reason>"), QStringLiteral("Kicks a single client by UID.")},
         handleKickUid, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("update_ban"), {QStringLiteral("updateban")}, {akashi::permission::ban}, 3,
-         QStringLiteral("/update_ban <ban_id> <field> <value>"),
-         QStringLiteral("Updates a ban's duration or reason.")},
+        {QStringLiteral("update_ban"), {QStringLiteral("updateban")}, {akashi::permission::ban}, 3, QStringLiteral("/update_ban <ban_id> <field> <value>"), QStringLiteral("Updates a ban's duration or reason.")},
         handleUpdateBan, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("notice"), {}, {akashi::permission::send_notice}, 1,
-         QStringLiteral("/notice <message>"),
-         QStringLiteral("Sends a notice to the area.")},
+        {QStringLiteral("notice"), {}, {akashi::permission::send_notice}, 1, QStringLiteral("/notice <message>"), QStringLiteral("Sends a notice to the area.")},
         handleNotice, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("noticeg"), {}, {akashi::permission::send_notice}, 1,
-         QStringLiteral("/noticeg <message>"),
-         QStringLiteral("Sends a server-wide notice.")},
+        {QStringLiteral("noticeg"), {}, {akashi::permission::send_notice}, 1, QStringLiteral("/noticeg <message>"), QStringLiteral("Sends a server-wide notice.")},
         handleNoticeGlobal, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("kick_other"), {QStringLiteral("kickother")}, {}, 0,
-         QStringLiteral("/kick_other"),
-         QStringLiteral("Kicks your other connected clients.")},
+        {QStringLiteral("kick_other"), {QStringLiteral("kickother")}, {}, 0, QStringLiteral("/kick_other"), QStringLiteral("Kicks your other connected clients.")},
         handleKickOther, QStringLiteral("core"));
 }
 

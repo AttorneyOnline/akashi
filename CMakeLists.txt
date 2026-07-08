@@ -63,7 +63,7 @@ set(AKASHI_SOURCES
   src/core/console_panel.cpp
   src/core/console_panel.h
   src/core/logging_categories.cpp
-  src/core/include/core/logging_categories.h
+  src/include/akashi/logging_categories.h
   src/core/crypto_helper.h
   src/core/db_manager.cpp
   src/core/db_manager.h
@@ -268,27 +268,11 @@ install(FILES
     cmake/akashiPlugin.cmake
     DESTINATION lib/cmake/akashi)
 
+# The bundled plugin set; plugins/CMakeLists.txt owns the
+# AKASHI_BUILD_PLUGINS and per-plugin AKASHI_PLUGIN_* switches.
+add_subdirectory(plugins)
+
 if(BUILD_TESTING)
   enable_testing()
-  add_subdirectory(plugins/discord-integration)
-  add_subdirectory(plugins/hello-world)
-  add_subdirectory(plugins/medieval-speak)
-  add_subdirectory(plugins/sql-logger)
-  add_subdirectory(plugins/scripting-ffi)
-  add_subdirectory(plugins/lua-host)
-  find_package(Python3 COMPONENTS Interpreter Development QUIET)
-  if(Python3_Development_FOUND)
-    add_subdirectory(plugins/python-host)
-  else()
-    message(STATUS "Python development files not found; the python-host plugin is skipped.")
-  endif()
-  # The sample script plugins ship next to the built plugin libraries.
-  add_custom_target(script_samples ALL
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different
-          ${CMAKE_SOURCE_DIR}/plugins/script-samples/hello-lua.lua
-          ${CMAKE_SOURCE_DIR}/plugins/script-samples/hello-python.py
-          ${CMAKE_SOURCE_DIR}/plugins/script-samples/showcase-lua.lua
-          ${CMAKE_SOURCE_DIR}/plugins/script-samples/showcase-python.py
-          ${CMAKE_SOURCE_DIR}/bin/plugins)
   add_subdirectory(tests)
 endif()

@@ -96,7 +96,8 @@ void tst_Moderation::modActionKicksAndBans()
 {
     FakeContext l_context;
     l_context.authenticated = true;
-    l_context.permissions << "kick" << "ban";
+    l_context.permissions << "kick"
+                          << "ban";
     l_context.player_names.insert(3, "Bad");
 
     run(Packet("MA", {"3", "0", "spamming"}), l_context);

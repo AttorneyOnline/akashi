@@ -35,4 +35,3 @@ struct LogEvent
 };
 
 } // namespace akashi
-

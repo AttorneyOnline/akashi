@@ -1,5 +1,7 @@
 #include "core/mmdb_reader.h"
 
+#include "akashi/logging_categories.h"
+
 #include <QDebug>
 #include <QFile>
 #include <QHostAddress>
@@ -20,7 +22,7 @@ bool MmdbReader::open(const QString &f_path)
 
     const qsizetype l_marker = m_data.lastIndexOf(METADATA_MARKER);
     if (l_marker == -1) {
-        qCritical() << f_path << "is not a MaxMind database file.";
+        qCCritical(akashiDb) << f_path << "is not a MaxMind database file.";
         return false;
     }
 
@@ -32,7 +34,7 @@ bool MmdbReader::open(const QString &f_path)
     m_tree_size = quint64(m_node_count) * m_record_size * 2 / 8;
 
     if (m_node_count == 0 || (m_record_size != 24 && m_record_size != 28 && m_record_size != 32)) {
-        qCritical() << f_path << "has an unsupported record size or is empty.";
+        qCCritical(akashiDb) << f_path << "has an unsupported record size or is empty.";
         return false;
     }
     return true;

@@ -1,5 +1,7 @@
 #include "medieval_parser.h"
 
+#include "akashi/logging_categories.h"
+
 #include <QFile>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -23,7 +25,7 @@ MedievalParser::MedievalParser(const QString &f_config_path)
 {
     QFile l_datafile_json(f_config_path);
     if (!l_datafile_json.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        qWarning() << "Unable to open the Medieval Mode data file.";
+        qCWarning(akashiPlugins) << "Unable to open the Medieval Mode data file.";
         datafile_valid = false;
         return;
     }
@@ -58,7 +60,7 @@ void MedievalParser::parseData(const QByteArray &f_json)
     QJsonParseError l_error;
     const QJsonDocument &l_datafile_list_json = QJsonDocument::fromJson(f_json, &l_error);
     if (!(l_error.error == QJsonParseError::NoError)) {
-        qWarning() << "Unable to load Medieval Mode data file. The following error occurred: " + l_error.errorString();
+        qCWarning(akashiPlugins) << "Unable to load Medieval Mode data file. The following error occurred: " + l_error.errorString();
         datafile_valid = false;
         return;
     }

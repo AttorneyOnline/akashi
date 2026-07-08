@@ -13,4 +13,3 @@ enum class ExitCode : int
     // The server database could not be opened.
     DatabaseError = 4,
 };
-

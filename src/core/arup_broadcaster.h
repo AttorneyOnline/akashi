@@ -12,7 +12,6 @@
 
 namespace akashi {
 
-
 // Centralizes all four area-update (ARUP) broadcasts so every site that
 // changes area state goes through Area setters (which emit signals) and
 // this broadcaster reacts. No scattered arup() calls.
@@ -84,4 +83,3 @@ class AKASHI_CORE_EXPORT ArupBroadcaster : public QObject
 };
 
 } // namespace akashi
-

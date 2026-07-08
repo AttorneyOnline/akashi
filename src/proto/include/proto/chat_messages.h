@@ -57,4 +57,3 @@ class AKASHI_CORE_EXPORT CaseAnnouncementMessage : public Message
 };
 
 } // namespace akashi
-

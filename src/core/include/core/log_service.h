@@ -78,4 +78,3 @@ class AKASHI_CORE_EXPORT LogService : public QObject, public IService
 };
 
 } // namespace akashi
-

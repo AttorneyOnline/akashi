@@ -25,4 +25,3 @@ AKASHI_CORE_EXPORT void registerIcPackets(PacketRegistry &f_handlers, PacketCode
 AKASHI_CORE_EXPORT ICMessage icMessageFromOutgoingFields(const QStringList &f_fields);
 
 } // namespace akashi
-

@@ -1,8 +1,8 @@
 // AI-generated: written by Claude.
 #include "akashi/filesystem_service.h"
 
-#include <QTest>
 #include <QTemporaryDir>
+#include <QTest>
 
 namespace tests {
 namespace unittests {

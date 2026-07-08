@@ -41,8 +41,8 @@ class AKASHI_CORE_EXPORT EventBus : public IService
     int subscribe(EventPhase f_phase, int f_priority, std::function<void(E &)> f_handler,
                   const QString &f_owner = {})
     {
-        return subscribeRaw(qMetaTypeId<E>(), f_phase, f_priority,
-            [h = std::move(f_handler)](void *raw) { h(*static_cast<E *>(raw)); }, f_owner);
+        return subscribeRaw(
+            qMetaTypeId<E>(), f_phase, f_priority, [h = std::move(f_handler)](void *raw) { h(*static_cast<E *>(raw)); }, f_owner);
     }
 
     template <typename E>
@@ -83,4 +83,3 @@ class AKASHI_CORE_EXPORT EventBus : public IService
 };
 
 } // namespace akashi
-

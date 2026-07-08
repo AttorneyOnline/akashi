@@ -28,4 +28,3 @@ class SqlLoggerPlugin : public QObject, public akashi::IPlugin
   private:
     std::shared_ptr<akashi::WriterSql> m_writer;
 };
-

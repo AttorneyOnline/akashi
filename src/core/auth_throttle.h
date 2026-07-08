@@ -39,4 +39,3 @@ class AKASHI_CORE_EXPORT AuthThrottle
 };
 
 } // namespace akashi
-

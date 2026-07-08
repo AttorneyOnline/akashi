@@ -24,4 +24,3 @@ class AKASHI_CORE_EXPORT PacketService : public IService
 };
 
 } // namespace akashi
-

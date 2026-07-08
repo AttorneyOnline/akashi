@@ -37,10 +37,10 @@ void tst_EventBus::typedSubscribeAndGate()
     bool l_called = false;
 
     l_bus.subscribe<akashi::ICMessageEvent>(akashi::EventPhase::Before, 0,
-        [&](akashi::ICMessageEvent &e) {
-            l_called = true;
-            QCOMPARE(e.message, QStringLiteral("Hello"));
-        });
+                                            [&](akashi::ICMessageEvent &e) {
+                                                l_called = true;
+                                                QCOMPARE(e.message, QStringLiteral("Hello"));
+                                            });
 
     akashi::ICMessageEvent l_event;
     l_event.message = QStringLiteral("Hello");
@@ -55,9 +55,9 @@ void tst_EventBus::gateCancels()
     akashi::EventBus l_bus;
 
     l_bus.subscribe<akashi::PlayerJoinedAreaEvent>(akashi::EventPhase::Before, 0,
-        [](akashi::PlayerJoinedAreaEvent &e) {
-            e.cancel(QStringLiteral("Area is locked"));
-        });
+                                                   [](akashi::PlayerJoinedAreaEvent &e) {
+                                                       e.cancel(QStringLiteral("Area is locked"));
+                                                   });
 
     akashi::PlayerJoinedAreaEvent l_event;
     l_event.area_id = 1;
@@ -75,10 +75,10 @@ void tst_EventBus::notifyAfterGate()
     bool l_after_called = false;
 
     l_bus.subscribe<akashi::ICMessageEvent>(akashi::EventPhase::Before, 0,
-        [&](akashi::ICMessageEvent &) { l_before_called = true; });
+                                            [&](akashi::ICMessageEvent &) { l_before_called = true; });
 
     l_bus.subscribe<akashi::ICMessageEvent>(akashi::EventPhase::After, 0,
-        [&](akashi::ICMessageEvent &) { l_after_called = true; });
+                                            [&](akashi::ICMessageEvent &) { l_after_called = true; });
 
     akashi::ICMessageEvent l_event;
     l_event.message = QStringLiteral("test");
@@ -97,13 +97,13 @@ void tst_EventBus::priorityOrder()
     QStringList l_order;
 
     l_bus.subscribe<akashi::ICMessageEvent>(akashi::EventPhase::Before, 100,
-        [&](akashi::ICMessageEvent &) { l_order.append(QStringLiteral("low")); });
+                                            [&](akashi::ICMessageEvent &) { l_order.append(QStringLiteral("low")); });
 
     l_bus.subscribe<akashi::ICMessageEvent>(akashi::EventPhase::Before, 0,
-        [&](akashi::ICMessageEvent &) { l_order.append(QStringLiteral("high")); });
+                                            [&](akashi::ICMessageEvent &) { l_order.append(QStringLiteral("high")); });
 
     l_bus.subscribe<akashi::ICMessageEvent>(akashi::EventPhase::Before, 50,
-        [&](akashi::ICMessageEvent &) { l_order.append(QStringLiteral("mid")); });
+                                            [&](akashi::ICMessageEvent &) { l_order.append(QStringLiteral("mid")); });
 
     akashi::ICMessageEvent l_event;
     l_bus.gate(l_event);
@@ -117,7 +117,7 @@ void tst_EventBus::unsubscribe()
     int l_count = 0;
 
     int l_handle = l_bus.subscribe<akashi::ICMessageEvent>(akashi::EventPhase::After, 0,
-        [&](akashi::ICMessageEvent &) { l_count++; });
+                                                           [&](akashi::ICMessageEvent &) { l_count++; });
 
     akashi::ICMessageEvent l_event;
     l_bus.notify(l_event);
@@ -134,11 +134,11 @@ void tst_EventBus::unsubscribeByOwner()
     int l_core_count = 0;
     int l_plugin_count = 0;
 
-    l_bus.subscribe<akashi::ICMessageEvent>(akashi::EventPhase::After, 0,
-        [&](akashi::ICMessageEvent &) { l_core_count++; }, QStringLiteral("core"));
+    l_bus.subscribe<akashi::ICMessageEvent>(
+        akashi::EventPhase::After, 0, [&](akashi::ICMessageEvent &) { l_core_count++; }, QStringLiteral("core"));
 
-    l_bus.subscribe<akashi::ICMessageEvent>(akashi::EventPhase::After, 0,
-        [&](akashi::ICMessageEvent &) { l_plugin_count++; }, QStringLiteral("my-plugin"));
+    l_bus.subscribe<akashi::ICMessageEvent>(
+        akashi::EventPhase::After, 0, [&](akashi::ICMessageEvent &) { l_plugin_count++; }, QStringLiteral("my-plugin"));
 
     akashi::ICMessageEvent l_event;
     l_bus.notify(l_event);
@@ -157,7 +157,7 @@ void tst_EventBus::customEvents()
     QVariantMap l_received;
 
     l_bus.subscribeCustom(QStringLiteral("weather.changed"), akashi::EventPhase::After,
-        [&](const QVariantMap &payload) { l_received = payload; });
+                          [&](const QVariantMap &payload) { l_received = payload; });
 
     QVariantMap l_payload;
     l_payload[QStringLiteral("condition")] = QStringLiteral("rain");
@@ -175,10 +175,10 @@ void tst_EventBus::multipleEventTypes()
     int l_ooc_count = 0;
 
     l_bus.subscribe<akashi::ICMessageEvent>(akashi::EventPhase::After, 0,
-        [&](akashi::ICMessageEvent &) { l_ic_count++; });
+                                            [&](akashi::ICMessageEvent &) { l_ic_count++; });
 
     l_bus.subscribe<akashi::OOCMessageEvent>(akashi::EventPhase::After, 0,
-        [&](akashi::OOCMessageEvent &) { l_ooc_count++; });
+                                             [&](akashi::OOCMessageEvent &) { l_ooc_count++; });
 
     akashi::ICMessageEvent l_ic;
     l_bus.notify(l_ic);
@@ -197,10 +197,10 @@ void tst_EventBus::cancelStopsLaterBeforeHandlers()
     bool l_second_called = false;
 
     l_bus.subscribe<akashi::PlayerJoinedAreaEvent>(akashi::EventPhase::Before, 0,
-        [](akashi::PlayerJoinedAreaEvent &e) { e.cancel(); });
+                                                   [](akashi::PlayerJoinedAreaEvent &e) { e.cancel(); });
 
     l_bus.subscribe<akashi::PlayerJoinedAreaEvent>(akashi::EventPhase::Before, 100,
-        [&](akashi::PlayerJoinedAreaEvent &) { l_second_called = true; });
+                                                   [&](akashi::PlayerJoinedAreaEvent &) { l_second_called = true; });
 
     akashi::PlayerJoinedAreaEvent l_event;
     l_bus.gate(l_event);
@@ -214,10 +214,10 @@ void tst_EventBus::gateAndNotifyPhases()
     QStringList l_trace;
 
     l_bus.subscribe<akashi::MusicChangedEvent>(akashi::EventPhase::Before, 0,
-        [&](akashi::MusicChangedEvent &) { l_trace.append(QStringLiteral("before")); });
+                                               [&](akashi::MusicChangedEvent &) { l_trace.append(QStringLiteral("before")); });
 
     l_bus.subscribe<akashi::MusicChangedEvent>(akashi::EventPhase::After, 0,
-        [&](akashi::MusicChangedEvent &) { l_trace.append(QStringLiteral("after")); });
+                                               [&](akashi::MusicChangedEvent &) { l_trace.append(QStringLiteral("after")); });
 
     akashi::MusicChangedEvent l_event;
     l_event.track_name = QStringLiteral("song.opus");

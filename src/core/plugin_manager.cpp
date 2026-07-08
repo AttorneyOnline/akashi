@@ -1,5 +1,6 @@
 #include "core/plugin_manager.h"
 
+#include "akashi/logging_categories.h"
 #include "akashi/plugin.h"
 #include "akashi/script_plugin_host.h"
 #include "akashi/service_registry.h"
@@ -7,7 +8,6 @@
 #include "core/console_menu.h"
 #include "core/event_bus.h"
 #include "core/log_service.h"
-#include "core/logging_categories.h"
 #include "core/permission_registry.h"
 #include "core/text_filter_registry.h"
 #include "world/rule_registry.h"

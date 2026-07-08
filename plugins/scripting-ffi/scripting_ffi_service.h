@@ -1,8 +1,7 @@
 #pragma once
 
-#include "akashi_ffi.h"
-
 #include "akashi/service.h"
+#include "akashi_ffi.h"
 
 // The service scripting hosts resolve to reach the C function table. The
 // header is shared between the scripting-ffi plugin and its host plugins.

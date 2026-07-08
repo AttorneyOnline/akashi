@@ -20,4 +20,3 @@ AKASHI_CORE_EXPORT void registerHandshakePackets(PacketRegistry &f_handlers, Pac
 AKASHI_CORE_EXPORT QStringList serverFeatures();
 
 } // namespace akashi
-

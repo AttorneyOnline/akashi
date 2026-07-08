@@ -1,6 +1,7 @@
 #include "core/db_manager.h"
 
 #include "akashi/database_service.h"
+#include "akashi/logging_categories.h"
 
 DBManager::DBManager(QSqlDatabase f_database) :
     db(f_database)
@@ -143,7 +144,7 @@ void DBManager::addBan(BanInfo ban)
     query.addBindValue(ban.duration);
     query.addBindValue(ban.moderator);
     if (!query.exec())
-        qDebug() << "SQL Error:" << query.lastError().text();
+        qCDebug(akashiDb) << "SQL Error:" << query.lastError().text();
 }
 
 bool DBManager::invalidateBan(int id)
@@ -342,7 +343,7 @@ bool DBManager::updateBan(int ban_id, QString field, QVariant updated_info)
     }
     query.addBindValue(ban_id);
     if (!query.exec()) {
-        qDebug() << query.lastError();
+        qCDebug(akashiDb) << query.lastError();
         return false;
     }
     else {

@@ -25,7 +25,7 @@ class AKASHI_CORE_EXPORT ConsoleInput : public QObject
         KeyUp,
         KeyDown,
         KeyEnter,
-        KeyBack,      // escape or the left arrow
+        KeyBack, // escape or the left arrow
         KeyBackspace,
         KeyCharacter,
     };

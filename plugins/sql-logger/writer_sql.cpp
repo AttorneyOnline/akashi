@@ -1,5 +1,7 @@
 #include "writer_sql.h"
 
+#include "akashi/logging_categories.h"
+
 #include <QDebug>
 #include <QDir>
 #include <QElapsedTimer>
@@ -121,7 +123,7 @@ void WriterSql::maintenance()
     l_query.exec(QStringLiteral("PRAGMA optimize"));
     l_query.exec(QStringLiteral("PRAGMA wal_checkpoint(TRUNCATE)"));
     l_query.exec(QStringLiteral("ANALYZE"));
-    qInfo() << "WriterSql: maintenance on" << m_db_path << "took" << l_stopwatch.elapsed() << "ms";
+    qCInfo(akashiLog) << "WriterSql: maintenance on" << m_db_path << "took" << l_stopwatch.elapsed() << "ms";
 }
 
 void WriterSql::beginIfNeeded()
@@ -144,7 +146,7 @@ bool WriterSql::ensureOpen()
     QSqlDatabase l_db = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), m_connection_name);
     l_db.setDatabaseName(m_db_path);
     if (!l_db.open()) {
-        qCritical() << "WriterSql: cannot open" << m_db_path << l_db.lastError().text();
+        qCCritical(akashiLog) << "WriterSql: cannot open" << m_db_path << l_db.lastError().text();
         return false;
     }
 

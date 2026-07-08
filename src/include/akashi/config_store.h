@@ -111,4 +111,3 @@ class AKASHI_CORE_EXPORT ConfigStore : public QObject, public IService
 };
 
 } // namespace akashi
-

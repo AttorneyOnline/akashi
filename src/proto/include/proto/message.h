@@ -13,4 +13,3 @@ class AKASHI_CORE_EXPORT Message
 };
 
 } // namespace akashi
-

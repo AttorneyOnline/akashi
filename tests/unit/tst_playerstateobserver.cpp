@@ -1,8 +1,8 @@
 // AI-generated: written by Claude.
-#include "fake_transport.h"
 #include "core/client_session.h"
 #include "core/player_state.h"
 #include "core/player_state_observer.h"
+#include "fake_transport.h"
 
 #include <QTest>
 
@@ -67,10 +67,10 @@ void tst_PlayerStateObserver::registerSendsRosterAndAnnouncement()
 
     // The first arrival gets the roster: their own entry and its four fields.
     QCOMPARE(alice.received(), QStringList({"PR#0#0#%",
-                                        "PU#0#0#alice#%",
-                                        "PU#0#1##%",
-                                        "PU#0#2##%",
-                                        "PU#0#3#0#%"}));
+                                            "PU#0#0#alice#%",
+                                            "PU#0#1##%",
+                                            "PU#0#2##%",
+                                            "PU#0#3#0#%"}));
 
     alice.transport->written.clear();
     observer.registerPlayer(bob.player());
@@ -79,15 +79,15 @@ void tst_PlayerStateObserver::registerSendsRosterAndAnnouncement()
     QCOMPARE(alice.received(), QStringList({"PR#1#0#%"}));
     // ...and the newcomer gets the whole roster, themselves included.
     QCOMPARE(bob.received(), QStringList({"PR#0#0#%",
-                                      "PU#0#0#alice#%",
-                                      "PU#0#1##%",
-                                      "PU#0#2##%",
-                                      "PU#0#3#0#%",
-                                      "PR#1#0#%",
-                                      "PU#1#0##%",
-                                      "PU#1#1##%",
-                                      "PU#1#2##%",
-                                      "PU#1#3#0#%"}));
+                                          "PU#0#0#alice#%",
+                                          "PU#0#1##%",
+                                          "PU#0#2##%",
+                                          "PU#0#3#0#%",
+                                          "PR#1#0#%",
+                                          "PU#1#0##%",
+                                          "PU#1#1##%",
+                                          "PU#1#2##%",
+                                          "PU#1#3#0#%"}));
 }
 
 void tst_PlayerStateObserver::changesReachEveryone()

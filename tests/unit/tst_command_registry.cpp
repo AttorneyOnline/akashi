@@ -125,7 +125,8 @@ void tst_CommandRegistry::unregisterByOwner()
 {
     akashi::CommandRegistry l_registry;
     akashi::CommandSpec l_spec{QStringLiteral("test"), {QStringLiteral("t")}, {}, 0, {}, {}};
-    QVERIFY(l_registry.registerCommand(l_spec, [](akashi::CommandContext &) {}, QStringLiteral("plugin_a")));
+    QVERIFY(l_registry.registerCommand(
+        l_spec, [](akashi::CommandContext &) {}, QStringLiteral("plugin_a")));
     QVERIFY(l_registry.contains("test"));
     QVERIFY(l_registry.contains("t"));
 
@@ -275,9 +276,8 @@ void tst_CommandRegistry::resolverAllNoOpinionDenies()
 void tst_CommandRegistry::resolverUnregisterByOwner()
 {
     akashi::PermissionRegistry l_registry;
-    l_registry.registerResolver(QStringLiteral("plugin_resolver"), 100, [](const akashi::PermissionQuery &) {
-        return akashi::PermissionVerdict::Granted;
-    }, QStringLiteral("plugin_x"));
+    l_registry.registerResolver(
+        QStringLiteral("plugin_resolver"), 100, [](const akashi::PermissionQuery &) { return akashi::PermissionVerdict::Granted; }, QStringLiteral("plugin_x"));
 
     akashi::PermissionQuery l_query;
     l_query.permission = QStringLiteral("custom");
@@ -292,17 +292,16 @@ void tst_CommandRegistry::pluginResolverAtCustomPriority()
     akashi::PermissionRegistry l_registry;
 
     // Core denier at 300.
-    l_registry.registerResolver(QStringLiteral("core_deny"), 300, [](const akashi::PermissionQuery &) {
-        return akashi::PermissionVerdict::Denied;
-    }, QStringLiteral("core"));
+    l_registry.registerResolver(
+        QStringLiteral("core_deny"), 300, [](const akashi::PermissionQuery &) { return akashi::PermissionVerdict::Denied; }, QStringLiteral("core"));
 
     // Plugin granter at 150 — runs before the core denier.
-    l_registry.registerResolver(QStringLiteral("plugin_grant"), 150, [](const akashi::PermissionQuery &q) {
+    l_registry.registerResolver(
+        QStringLiteral("plugin_grant"), 150, [](const akashi::PermissionQuery &q) {
         if (q.permission == QStringLiteral("plugin.special")) {
             return akashi::PermissionVerdict::Granted;
         }
-        return akashi::PermissionVerdict::NoOpinion;
-    }, QStringLiteral("my_plugin"));
+        return akashi::PermissionVerdict::NoOpinion; }, QStringLiteral("my_plugin"));
 
     akashi::PermissionQuery l_special;
     l_special.permission = QStringLiteral("plugin.special");

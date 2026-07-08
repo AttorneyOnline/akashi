@@ -1,6 +1,7 @@
 #include "world/world.h"
 
 #include "akashi/filesystem_service.h"
+#include "akashi/logging_categories.h"
 #include "akashi/permissions.h"
 #include "world/config_loading.h"
 #include "world/jukebox.h"
@@ -233,8 +234,8 @@ void World::applyConfigRules(const QString &f_path)
             f_after.append({f_declaration.event, f_declaration.action, *l_function, QStringLiteral("config"), f_declaration.args});
             return;
         }
-        qWarning() << "Skipping rule for event" << f_declaration.event << "-" << f_declaration.action
-                   << "is not a registered action of that phase.";
+        qCWarning(akashiConfig) << "Skipping rule for event" << f_declaration.event << "-" << f_declaration.action
+                                << "is not a registered action of that phase.";
     };
 
     for (auto it = l_config.floor_rules.constBegin(); it != l_config.floor_rules.constEnd(); ++it) {
@@ -244,7 +245,7 @@ void World::applyConfigRules(const QString &f_path)
                 l_floor = &l_candidate;
         }
         if (!l_floor) {
-            qWarning() << "areas.json declares rules for unknown floor" << it.key();
+            qCWarning(akashiConfig) << "areas.json declares rules for unknown floor" << it.key();
             continue;
         }
         for (const config::RuleDeclaration &l_declaration : it.value())
@@ -254,7 +255,7 @@ void World::applyConfigRules(const QString &f_path)
     for (auto it = l_config.area_rules.constBegin(); it != l_config.area_rules.constEnd(); ++it) {
         Area *l_area = areaById(it.key());
         if (!l_area) {
-            qWarning() << "areas.json declares rules for unknown area index" << it.key();
+            qCWarning(akashiConfig) << "areas.json declares rules for unknown area index" << it.key();
             continue;
         }
         for (const config::RuleDeclaration &l_declaration : it.value())
@@ -589,8 +590,8 @@ std::optional<QString> World::loadFloorFile(const QString &f_name, const QString
                 f_after.append({l_declaration.event, l_declaration.action, *l_function, QStringLiteral("config"), l_declaration.args});
                 continue;
             }
-            qWarning() << "Skipping floor-file rule for event" << l_declaration.event << "-" << l_declaration.action
-                       << "is not a registered action of that phase.";
+            qCWarning(akashiConfig) << "Skipping floor-file rule for event" << l_declaration.event << "-" << l_declaration.action
+                                    << "is not a registered action of that phase.";
         }
     };
     for (auto it = l_rule_config.floor_rules.constBegin(); it != l_rule_config.floor_rules.constEnd(); ++it) {

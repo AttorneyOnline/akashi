@@ -1,5 +1,6 @@
 #include "core/writer_text.h"
 
+#include "akashi/logging_categories.h"
 #include "core/log_service.h"
 
 #include <QDate>
@@ -116,7 +117,7 @@ void WriterText::archiveOldLogs()
         }
     }
     if (l_moved > 0) {
-        qInfo() << "WriterText: archived" << l_moved << "log files older than" << m_archive_after_days << "days";
+        qCInfo(akashiLog) << "WriterText: archived" << l_moved << "log files older than" << m_archive_after_days << "days";
     }
 }
 

@@ -40,4 +40,3 @@ class WriterText : public ILogWriter
 };
 
 } // namespace akashi
-

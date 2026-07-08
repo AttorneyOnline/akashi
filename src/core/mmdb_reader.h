@@ -32,4 +32,3 @@ class AKASHI_CORE_EXPORT MmdbReader
 };
 
 } // namespace akashi
-

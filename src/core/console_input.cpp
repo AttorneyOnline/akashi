@@ -73,7 +73,8 @@ void ConsoleInput::startLineReader()
             if (!*l_alive) {
                 return;
             }
-            QMetaObject::invokeMethod(this, [this, l_text] { Q_EMIT lineEntered(l_text); }, Qt::QueuedConnection);
+            QMetaObject::invokeMethod(
+                this, [this, l_text] { Q_EMIT lineEntered(l_text); }, Qt::QueuedConnection);
         }
     }).detach();
 }
@@ -85,12 +86,14 @@ void ConsoleInput::startKeyReader()
         if (!*l_alive) {
             return false;
         }
-        QMetaObject::invokeMethod(this, [this, f_key, f_character] { Q_EMIT keyPressed(f_key, f_character); }, Qt::QueuedConnection);
+        QMetaObject::invokeMethod(
+            this, [this, f_key, f_character] { Q_EMIT keyPressed(f_key, f_character); }, Qt::QueuedConnection);
         return true;
     };
     auto l_interrupt = [this, l_alive] {
         if (*l_alive) {
-            QMetaObject::invokeMethod(this, [this] { Q_EMIT interrupted(); }, Qt::QueuedConnection);
+            QMetaObject::invokeMethod(
+                this, [this] { Q_EMIT interrupted(); }, Qt::QueuedConnection);
         }
     };
     const bool l_capture = m_capture_interrupt;
@@ -102,27 +105,34 @@ void ConsoleInput::startKeyReader()
             if (l_first == 0 || l_first == 0xE0) {
                 switch (_getch()) {
                 case 72: // up
-                    if (!l_emit(KeyUp, {})) return;
+                    if (!l_emit(KeyUp, {}))
+                        return;
                     break;
                 case 80: // down
-                    if (!l_emit(KeyDown, {})) return;
+                    if (!l_emit(KeyDown, {}))
+                        return;
                     break;
                 case 75: // left
-                    if (!l_emit(KeyBack, {})) return;
+                    if (!l_emit(KeyBack, {}))
+                        return;
                     break;
                 case 77: // right enters, like most terminal menus
-                    if (!l_emit(KeyEnter, {})) return;
+                    if (!l_emit(KeyEnter, {}))
+                        return;
                     break;
                 }
             }
             else if (l_first == '\r' || l_first == '\n') {
-                if (!l_emit(KeyEnter, {})) return;
+                if (!l_emit(KeyEnter, {}))
+                    return;
             }
             else if (l_first == 27) {
-                if (!l_emit(KeyBack, {})) return;
+                if (!l_emit(KeyBack, {}))
+                    return;
             }
             else if (l_first == 8) {
-                if (!l_emit(KeyBackspace, {})) return;
+                if (!l_emit(KeyBackspace, {}))
+                    return;
             }
             else if (l_first == 3) { // ctrl+c
                 if (l_capture) {
@@ -131,7 +141,8 @@ void ConsoleInput::startKeyReader()
                 return;
             }
             else if (l_first >= 32 && l_first < 127) {
-                if (!l_emit(KeyCharacter, QChar(l_first))) return;
+                if (!l_emit(KeyCharacter, QChar(l_first)))
+                    return;
             }
         }
     }).detach();
@@ -165,31 +176,39 @@ void ConsoleInput::startKeyReader()
                 if (read(STDIN_FILENO, &l_bracket, 1) == 1 && l_bracket == '[' && read(STDIN_FILENO, &l_code, 1) == 1) {
                     switch (l_code) {
                     case 'A':
-                        if (!l_emit(KeyUp, {})) return;
+                        if (!l_emit(KeyUp, {}))
+                            return;
                         break;
                     case 'B':
-                        if (!l_emit(KeyDown, {})) return;
+                        if (!l_emit(KeyDown, {}))
+                            return;
                         break;
                     case 'D':
-                        if (!l_emit(KeyBack, {})) return;
+                        if (!l_emit(KeyBack, {}))
+                            return;
                         break;
                     case 'C':
-                        if (!l_emit(KeyEnter, {})) return;
+                        if (!l_emit(KeyEnter, {}))
+                            return;
                         break;
                     }
                 }
                 else {
-                    if (!l_emit(KeyBack, {})) return;
+                    if (!l_emit(KeyBack, {}))
+                        return;
                 }
             }
             else if (l_byte == '\r' || l_byte == '\n') {
-                if (!l_emit(KeyEnter, {})) return;
+                if (!l_emit(KeyEnter, {}))
+                    return;
             }
             else if (l_byte == 127 || l_byte == 8) {
-                if (!l_emit(KeyBackspace, {})) return;
+                if (!l_emit(KeyBackspace, {}))
+                    return;
             }
             else if (l_byte >= 32 && l_byte < 127) {
-                if (!l_emit(KeyCharacter, QChar(l_byte))) return;
+                if (!l_emit(KeyCharacter, QChar(l_byte)))
+                    return;
             }
         }
     }).detach();

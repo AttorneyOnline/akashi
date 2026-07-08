@@ -1,8 +1,8 @@
 // AI-generated: written by Claude.
 #include "world/area.h"
-#include "world/rule_registry.h"
 #include "world/evidence_store.h"
 #include "world/floor.h"
+#include "world/rule_registry.h"
 
 #include <QSignalSpy>
 #include <QTest>
@@ -136,19 +136,24 @@ void tst_World::rulesApplyToTheirScopeOnly()
 
     // Area 2 blocks IC.
     QVERIFY(!akashi::RuleRegistry::checkBefore(akashi::AreaEvents::IcMessageSent, {4, 2, 0, {}, nullptr},
-                                               l_area2_rules, l_empty).allowed);
+                                               l_area2_rules, l_empty)
+                 .allowed);
     // Area 3 has no rules — IC allowed.
     QVERIFY(akashi::RuleRegistry::checkBefore(akashi::AreaEvents::IcMessageSent, {4, 3, 0, {}, nullptr},
-                                              l_empty, l_empty).allowed);
+                                              l_empty, l_empty)
+                .allowed);
     // Floor 1 blocks evidence.
     QVERIFY(!akashi::RuleRegistry::checkBefore(akashi::AreaEvents::EvidencePresented, {4, 9, 1, {}, nullptr},
-                                               l_empty, l_floor1_rules).allowed);
+                                               l_empty, l_floor1_rules)
+                 .allowed);
     // Floor 0 has no rules — evidence allowed.
     QVERIFY(akashi::RuleRegistry::checkBefore(akashi::AreaEvents::EvidencePresented, {4, 9, 0, {}, nullptr},
-                                              l_empty, l_empty).allowed);
+                                              l_empty, l_empty)
+                .allowed);
     // PlayerJoined has no rules anywhere — allowed.
     QVERIFY(akashi::RuleRegistry::checkBefore(akashi::AreaEvents::PlayerJoined, {4, 2, 0, {}, nullptr},
-                                              l_area2_rules, l_empty).allowed);
+                                              l_area2_rules, l_empty)
+                .allowed);
 }
 
 void tst_World::firstBlockingRuleWins()
@@ -188,11 +193,13 @@ void tst_World::areaRulesOverrideFloorRulesOfSameAction()
 
     // Area overrides check_evidence (allows), floor check_permission still runs (allows).
     QVERIFY(akashi::RuleRegistry::checkBefore(akashi::AreaEvents::EvidencePresented, {4, 2, 0, {}, nullptr},
-                                              l_area_rules, l_floor_rules).allowed);
+                                              l_area_rules, l_floor_rules)
+                .allowed);
     // Without area rules, floor check_evidence blocks.
     QVector<akashi::BeforeRuleEntry> l_empty;
     QVERIFY(!akashi::RuleRegistry::checkBefore(akashi::AreaEvents::EvidencePresented, {4, 3, 0, {}, nullptr},
-                                               l_empty, l_floor_rules).allowed);
+                                               l_empty, l_floor_rules)
+                 .allowed);
 
     // Floor check_permission blocks, area only overrides check_evidence.
     QVector<akashi::BeforeRuleEntry> l_floor_rules2 = {
@@ -311,10 +318,12 @@ void tst_World::pluginBeforeRuleObjectsRegisterAndReleaseOnUnload()
     QVERIFY(!l_alive.expired());
     QVERIFY(!akashi::RuleRegistry::checkBefore(akashi::AreaEvents::EvidencePresented,
                                                {4, 0, 0, {{QStringLiteral("evidence_name"), QStringLiteral("Rusty Crowbar")}}, nullptr},
-                                               l_area_rules, {}).allowed);
+                                               l_area_rules, {})
+                 .allowed);
     QVERIFY(akashi::RuleRegistry::checkBefore(akashi::AreaEvents::EvidencePresented,
                                               {4, 0, 0, {{QStringLiteral("evidence_name"), QStringLiteral("Cursed Key")}}, nullptr},
-                                              l_area_rules, {}).allowed);
+                                              l_area_rules, {})
+                .allowed);
 
     // Clearing the vector releases the shared_ptr.
     l_area_rules.clear();
@@ -347,7 +356,8 @@ void tst_World::unregisteringAnOwnerRemovesItsRules()
 
     QCOMPARE(l_floor.before_rules.size() + l_floor.after_rules.size(), 1);
     QCOMPARE(akashi::RuleRegistry::checkBefore(akashi::AreaEvents::PlayerJoined, {4, 0, 0, {}, nullptr},
-                                               {}, l_floor.before_rules).reason,
+                                               {}, l_floor.before_rules)
+                 .reason,
              QString("still no"));
 }
 

@@ -41,4 +41,3 @@ class AKASHI_CORE_EXPORT CharacterPasswordMessage : public Message
 };
 
 } // namespace akashi
-

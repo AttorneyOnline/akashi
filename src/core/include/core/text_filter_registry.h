@@ -46,4 +46,3 @@ class AKASHI_CORE_EXPORT TextFilterRegistry : public IService
 };
 
 } // namespace akashi
-

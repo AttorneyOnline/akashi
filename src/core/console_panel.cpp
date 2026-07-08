@@ -1,8 +1,8 @@
 #include "core/console_panel.h"
 
+#include "akashi/logging_categories.h"
 #include "core/console_input.h"
 #include "core/console_menu.h"
-#include "core/logging_categories.h"
 #include "core/server_context.h"
 
 #include <QLocalServer>

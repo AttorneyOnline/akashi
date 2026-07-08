@@ -20,6 +20,7 @@ class SpeakerContext : public FakeContext
         joined = true;
         text_filter_registry = &m_default_registry;
     }
+
   private:
     akashi::TextFilterRegistry m_default_registry;
 };
@@ -92,7 +93,10 @@ void tst_Ic::extendedMessageExpandsPairData()
     SpeakerContext l_context;
     l_context.pair = PairInfo{"Edgeworth", "thinking", "3&4", "1", true};
     QStringList l_fields = baseFields();
-    l_fields << "Nick" << "1^1" << "5&10" << "0";
+    l_fields << "Nick"
+             << "1^1"
+             << "5&10"
+             << "0";
     run(Packet("MS", l_fields), l_context);
 
     QCOMPARE(l_context.broadcast_ic_fields.size(), 23);
@@ -112,7 +116,10 @@ void tst_Ic::offsetsLoseTheirYForOldClients()
     l_context.stored_profile.version = {2, 6, 0};
     l_context.pair = PairInfo{"Edgeworth", "thinking", "3&4", "1", true};
     QStringList l_fields = baseFields();
-    l_fields << "" << "1" << "5&10" << "0";
+    l_fields << ""
+             << "1"
+             << "5&10"
+             << "0";
     run(Packet("MS", l_fields), l_context);
 
     QCOMPARE(l_context.broadcast_ic_fields.at(19), QString("5"));
@@ -193,15 +200,12 @@ void tst_Ic::doublepostAndBlankpostRules()
 void tst_Ic::textFiltersApplyInOrder()
 {
     akashi::TextFilterRegistry l_registry;
-    l_registry.registerFilter("gimped", 200,
-        [](const QString &) -> std::optional<QString> { return QStringLiteral("I am a heinous criminal."); },
-        false, "test");
-    l_registry.registerFilter("medieval", 300,
-        [](const QString &f_text) -> std::optional<QString> { return "Ye olde " + f_text; },
-        false, "test");
-    l_registry.registerFilter("disemvoweled", 500,
-        [](const QString &f_text) -> std::optional<QString> { return QString(f_text).remove(QRegularExpression("[AEIOUaeiou]")); },
-        false, "test");
+    l_registry.registerFilter(
+        "gimped", 200, [](const QString &) -> std::optional<QString> { return QStringLiteral("I am a heinous criminal."); }, false, "test");
+    l_registry.registerFilter(
+        "medieval", 300, [](const QString &f_text) -> std::optional<QString> { return "Ye olde " + f_text; }, false, "test");
+    l_registry.registerFilter(
+        "disemvoweled", 500, [](const QString &f_text) -> std::optional<QString> { return QString(f_text).remove(QRegularExpression("[AEIOUaeiou]")); }, false, "test");
 
     SpeakerContext l_context;
     l_context.text_filter_registry = &l_registry;
@@ -215,8 +219,17 @@ void tst_Ic::textFiltersApplyInOrder()
 void tst_Ic::additiveNeedsTheSameSpeaker()
 {
     QStringList l_fields = baseFields();
-    l_fields << "" << "-1" << "0" << "0";
-    l_fields << "0" << "0" << "" << "" << "" << "1" << "";
+    l_fields << ""
+             << "-1"
+             << "0"
+             << "0";
+    l_fields << "0"
+             << "0"
+             << ""
+             << ""
+             << ""
+             << "1"
+             << "";
 
     // A different last speaker cancels the additive flag.
     SpeakerContext l_other;

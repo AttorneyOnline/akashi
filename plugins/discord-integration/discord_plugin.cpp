@@ -1,13 +1,13 @@
 #include "discord_plugin.h"
 
-#include "webhook_sender.h"
-
 #include "akashi/config_store.h"
 #include "akashi/event.h"
+#include "akashi/logging_categories.h"
 #include "akashi/network_service.h"
 #include "akashi/service_registry.h"
 #include "core/event_bus.h"
 #include "core/log_service.h"
+#include "webhook_sender.h"
 
 #include <QDebug>
 
@@ -22,29 +22,29 @@ bool DiscordPlugin::load(akashi::ServiceRegistry &services)
     auto l_log = services.resolve<akashi::LogService>(QStringLiteral("akashi.log"));
 
     if (!l_config || !l_events || !l_network) {
-        qWarning() << "discord: required services not available";
+        qCWarning(akashiPlugins) << "discord: required services not available";
         return false;
     }
 
     const QString l_cfg = QStringLiteral("plugins/") + id();
     l_config->declarePlugin(id(), {
-        akashi::ConfigEntry(QStringLiteral("webhook_enabled"), false,
-                            QStringLiteral("Whether Discord webhooks are enabled at all.")),
-        akashi::ConfigEntry(QStringLiteral("webhook_modcall_enabled"), false,
-                            QStringLiteral("Whether modcalls are sent to a webhook.")),
-        akashi::ConfigEntry(QStringLiteral("webhook_modcall_url"), QString(),
-                            QStringLiteral("The webhook URL for modcalls.")),
-        akashi::ConfigEntry(QStringLiteral("webhook_modcall_content"), QString(),
-                            QStringLiteral("Extra text sent with a modcall, for example a role ping.")),
-        akashi::ConfigEntry(QStringLiteral("webhook_modcall_sendfile"), false,
-                            QStringLiteral("Whether the area log is attached to a modcall.")),
-        akashi::ConfigEntry(QStringLiteral("webhook_ban_enabled"), false,
-                            QStringLiteral("Whether bans are sent to a webhook.")),
-        akashi::ConfigEntry(QStringLiteral("webhook_ban_url"), QString(),
-                            QStringLiteral("The webhook URL for bans.")),
-        akashi::ConfigEntry(QStringLiteral("webhook_color"), QStringLiteral("13312842"),
-                            QStringLiteral("The color of webhook messages.")),
-    });
+                                      akashi::ConfigEntry(QStringLiteral("webhook_enabled"), false,
+                                                          QStringLiteral("Whether Discord webhooks are enabled at all.")),
+                                      akashi::ConfigEntry(QStringLiteral("webhook_modcall_enabled"), false,
+                                                          QStringLiteral("Whether modcalls are sent to a webhook.")),
+                                      akashi::ConfigEntry(QStringLiteral("webhook_modcall_url"), QString(),
+                                                          QStringLiteral("The webhook URL for modcalls.")),
+                                      akashi::ConfigEntry(QStringLiteral("webhook_modcall_content"), QString(),
+                                                          QStringLiteral("Extra text sent with a modcall, for example a role ping.")),
+                                      akashi::ConfigEntry(QStringLiteral("webhook_modcall_sendfile"), false,
+                                                          QStringLiteral("Whether the area log is attached to a modcall.")),
+                                      akashi::ConfigEntry(QStringLiteral("webhook_ban_enabled"), false,
+                                                          QStringLiteral("Whether bans are sent to a webhook.")),
+                                      akashi::ConfigEntry(QStringLiteral("webhook_ban_url"), QString(),
+                                                          QStringLiteral("The webhook URL for bans.")),
+                                      akashi::ConfigEntry(QStringLiteral("webhook_color"), QStringLiteral("13312842"),
+                                                          QStringLiteral("The color of webhook messages.")),
+                                  });
 
     m_sender = std::make_unique<WebhookSender>(l_network->networkManager(), this);
 

@@ -51,4 +51,3 @@ class WriterSql : public ILogWriter
 };
 
 } // namespace akashi
-

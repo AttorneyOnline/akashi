@@ -1,5 +1,6 @@
 #include "core/rule_actions.h"
 
+#include "akashi/logging_categories.h"
 #include "core/client_session.h"
 #include "core/server_context.h"
 #include "proto/text_utils.h"
@@ -114,7 +115,7 @@ BeforeRuleFunction checkSetting(ServerContext *f_server, ServiceRegistry &, cons
     QString l_message = f_args.value(QStringLiteral("message"), QStringLiteral("That is disabled in this area.")).toString();
     QString l_bypass = f_args.value(QStringLiteral("bypass")).toString();
     if (!settingGetters().contains(l_setting)) {
-        qWarning() << "check_setting rule references unknown setting" << l_setting << "- the rule will never block.";
+        qCWarning(akashiConfig) << "check_setting rule references unknown setting" << l_setting << "- the rule will never block.";
     }
     return [f_server, l_setting, l_message, l_bypass](const RuleContext &f_ctx) -> RuleVerdict {
         akashi::Area *l_area = areaFor(f_server, f_ctx);

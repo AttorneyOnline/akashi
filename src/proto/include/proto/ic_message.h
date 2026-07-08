@@ -64,4 +64,3 @@ class AKASHI_CORE_EXPORT ICMessage : public Message
 };
 
 } // namespace akashi
-

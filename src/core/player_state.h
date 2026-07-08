@@ -79,4 +79,3 @@ class AKASHI_CORE_EXPORT PlayerState : public QObject
 };
 
 } // namespace akashi
-

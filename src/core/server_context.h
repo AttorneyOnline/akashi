@@ -421,12 +421,10 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
      */
     std::shared_ptr<akashi::PacketService> packets();
 
-
     /**
      * @brief Returns a pointer to ACL role handler.
      */
     akashi::ACLRolesHandler *aclRolesHandler();
-
 
     /**
      * @brief The server-wide global timer.
@@ -560,7 +558,6 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
     akashi::EventBus *m_event_bus = nullptr;
     std::shared_ptr<akashi::WriterText> m_text_writer;
 
-
     akashi::ConfigStore *m_config_store = nullptr;
     ServerSettings *m_server_settings = nullptr;
     QSettings *m_areas_ini = nullptr;
@@ -608,10 +605,6 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
      */
     QStringList m_characters;
 
-
-
-
-
     /**
      * @brief The backgrounds on the server that may be used in areas.
      */
@@ -656,12 +649,10 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
      */
     std::shared_ptr<akashi::PacketService> m_packets;
 
-
     /**
      * @see ACLRolesHandler
      */
     akashi::ACLRolesHandler *acl_roles_handler;
-
 
     /**
      * @brief Takes a client out of the server: player count, roster, its
@@ -723,4 +714,3 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
      */
     void allowMessage();
 };
-

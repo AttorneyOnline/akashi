@@ -1,5 +1,6 @@
 #include "core/server_publisher.h"
 
+#include "akashi/logging_categories.h"
 #include "core/server_settings.h"
 
 #include <QJsonArray>
@@ -57,7 +58,7 @@ void ServerPublisher::publishServer()
         m_manager->post(request, QJsonDocument(serverinfo).toJson());
     }
     else {
-        qWarning() << "Failed to advertise server. Serverlist URL is not valid. URL:" << serverlist.toString();
+        qCWarning(akashiNet) << "Failed to advertise server. Serverlist URL is not valid. URL:" << serverlist.toString();
     }
 }
 
@@ -68,8 +69,8 @@ void ServerPublisher::finished(QNetworkReply *f_reply)
     QString remote_url = reply->url().toString();
 
     if (reply->error() != QNetworkReply::NoError) {
-        qWarning() << "Unable to connect to serverlist due to the following error:" << reply->errorString();
-        qWarning() << "Remote URL:" << remote_url;
+        qCWarning(akashiNet) << "Unable to connect to serverlist due to the following error:" << reply->errorString();
+        qCWarning(akashiNet) << "Remote URL:" << remote_url;
         return;
     }
 
@@ -80,24 +81,24 @@ void ServerPublisher::finished(QNetworkReply *f_reply)
         QJsonDocument document = QJsonDocument::fromJson(data, &error);
 
         if (error.error != QJsonParseError::NoError || !document.isObject()) {
-            qWarning() << "Received malformed response from masterserver. Error:" << error.errorString();
-            qWarning() << "HTTP status code:" << status;
-            qWarning() << "Parse error offset:" << error.offset;
-            qWarning() << "Response body size:" << data.size() << "bytes";
-            qWarning().noquote() << "Raw response body:" << QString::fromUtf8(data);
+            qCWarning(akashiNet) << "Received malformed response from masterserver. Error:" << error.errorString();
+            qCWarning(akashiNet) << "HTTP status code:" << status;
+            qCWarning(akashiNet) << "Parse error offset:" << error.offset;
+            qCWarning(akashiNet) << "Response body size:" << data.size() << "bytes";
+            qCWarning(akashiNet).noquote() << "Raw response body:" << QString::fromUtf8(data);
             return;
         }
 
         QJsonObject body = document.object();
         if (body.contains("errors")) {
-            qWarning() << "Failed to advertise to the serverlist due to the following errors:";
+            qCWarning(akashiNet) << "Failed to advertise to the serverlist due to the following errors:";
             const QJsonArray errors = body["errors"].toArray();
             for (const auto &ref : errors) {
                 QJsonObject error = ref.toObject();
-                qWarning().noquote() << "Error:" << error["type"].toString() << ". Message:" << error["message"].toString();
+                qCWarning(akashiNet).noquote() << "Error:" << error["type"].toString() << ". Message:" << error["message"].toString();
             }
             return;
         }
     }
-    qInfo() << "Sucessfully advertised server to serverlist.";
+    qCInfo(akashiNet) << "Sucessfully advertised server to serverlist.";
 }

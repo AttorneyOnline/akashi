@@ -11,15 +11,13 @@
 #include <Python.h>
 #endif
 
-#include "python_host_plugin.h"
-
-#include "akashi_ffi.h"
-#include "scripting_ffi_service.h"
-
+#include "akashi/logging_categories.h"
 #include "akashi/script_plugin_host.h"
 #include "akashi/service_registry.h"
-#include "core/logging_categories.h"
+#include "akashi_ffi.h"
 #include "core/plugin_manager.h"
+#include "python_host_plugin.h"
+#include "scripting_ffi_service.h"
 
 #include <QByteArray>
 #include <QDebug>

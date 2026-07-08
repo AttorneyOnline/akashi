@@ -51,4 +51,3 @@ class AKASHI_CORE_EXPORT PenaltyMessage : public Message
 };
 
 } // namespace akashi
-

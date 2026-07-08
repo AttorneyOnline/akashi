@@ -1,5 +1,6 @@
 #include "akashi/config_store.h"
 
+#include "akashi/logging_categories.h"
 #include "akashi/setting_notifier.h"
 #include "core/json_settings.h"
 
@@ -95,7 +96,7 @@ QVariant ConfigStore::value(const QString &f_name, const QString &f_key) const
 {
     const QHash<QString, QVariant> l_values = m_values.value(f_name);
     if (!l_values.contains(f_key)) {
-        qWarning() << f_name << "has no declared setting" << f_key;
+        qCWarning(akashiConfig) << f_name << "has no declared setting" << f_key;
         return QVariant();
     }
     return l_values.value(f_key);
@@ -135,8 +136,8 @@ QSettings *ConfigStore::settings(const QString &f_name)
     QString l_ext = formatExtension(f_name);
     auto l_it = m_formats.constFind(l_ext);
     if (l_it == m_formats.constEnd()) {
-        qCritical() << "ConfigStore: unknown format" << l_ext
-                     << "for" << f_name << "- falling back to JSON";
+        qCCritical(akashiConfig) << "ConfigStore: unknown format" << l_ext
+                                 << "for" << f_name << "- falling back to JSON";
         l_ext = QStringLiteral("json");
         l_it = m_formats.constFind(l_ext);
     }
@@ -246,7 +247,7 @@ void ConfigStore::migrateIniFile(const QString &f_name, const QString &f_extensi
         l_target.setValue(l_key, l_value);
     }
     l_target.sync();
-    qInfo() << "Converted" << l_ini_path << "to" << l_target_path;
+    qCInfo(akashiConfig) << "Converted" << l_ini_path << "to" << l_target_path;
 }
 
 bool ConfigStore::loadDeclaredValues(const QString &f_name)
@@ -261,7 +262,7 @@ bool ConfigStore::loadDeclaredValues(const QString &f_name)
     const QStringList l_file_keys = l_settings->allKeys();
     for (const QString &l_key : l_file_keys) {
         if (!findEntry(f_name, l_key)) {
-            qWarning() << l_file_label << "has an unknown setting" << l_key;
+            qCWarning(akashiConfig) << l_file_label << "has an unknown setting" << l_key;
         }
     }
 
@@ -276,12 +277,12 @@ bool ConfigStore::loadDeclaredValues(const QString &f_name)
 
         QVariant l_value;
         if (!convertValue(l_raw, l_entry.typeId(), l_value)) {
-            qCritical() << l_file_label << l_entry.key() << "must be of type" << QMetaType(l_entry.typeId()).name() << "- got" << l_raw.toString();
+            qCCritical(akashiConfig) << l_file_label << l_entry.key() << "must be of type" << QMetaType(l_entry.typeId()).name() << "- got" << l_raw.toString();
             l_valid = false;
             continue;
         }
         if (!l_entry.checkValue(l_value)) {
-            qCritical() << l_file_label << l_entry.key() << "has an invalid value" << l_raw.toString();
+            qCCritical(akashiConfig) << l_file_label << l_entry.key() << "has an invalid value" << l_raw.toString();
             l_valid = false;
             continue;
         }

@@ -251,4 +251,3 @@ class AKASHI_CORE_EXPORT DBManager : public QObject
      */
     void updateDB(int current_version);
 };
-

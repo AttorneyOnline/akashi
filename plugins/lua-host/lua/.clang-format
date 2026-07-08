@@ -1,0 +1,3 @@
+# Vendored Lua 5.4.8 sources keep their upstream formatting.
+DisableFormat: true
+SortIncludes: Never

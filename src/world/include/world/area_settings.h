@@ -29,4 +29,3 @@ struct AreaSettings
 };
 
 } // namespace akashi
-

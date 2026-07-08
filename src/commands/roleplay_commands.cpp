@@ -1,5 +1,6 @@
 #include "commands/roleplay_commands.h"
 
+#include "akashi/logging_categories.h"
 #include "akashi/permissions.h"
 #include "core/client_session.h"
 #include "core/command_context.h"
@@ -133,7 +134,7 @@ static void handleRollA(CommandContext &f_context)
     QString l_dice_name = f_context.arguments().join(" ");
 
     if (f_context.server()->diceFaces(l_dice_name).isEmpty()) {
-        qWarning() << "Unknown dice.";
+        qCWarning(akashiCommands) << "Unknown dice.";
         f_context.reply("Unknown dice.");
     }
     else {
@@ -318,7 +319,7 @@ static void handleNotecardReveal(CommandContext &f_context)
 static void handle8Ball(CommandContext &f_context)
 {
     if (f_context.server()->magic8BallAnswers().isEmpty()) {
-        qWarning() << "8ball.txt is empty!";
+        qCWarning(akashiCommands) << "8ball.txt is empty!";
         f_context.reply("8ball.txt is empty.");
     }
     else {

@@ -2,6 +2,7 @@
 
 #include "akashi/config_store.h"
 #include "akashi/filesystem_service.h"
+#include "akashi/logging_categories.h"
 #include "akashi/service_registry.h"
 #include "core/command_context.h"
 #include "core/command_registry.h"
@@ -23,7 +24,7 @@ bool MedievalSpeakPlugin::load(akashi::ServiceRegistry &services)
     auto l_commands = services.resolve<akashi::CommandRegistry>(QStringLiteral("akashi.commands"));
 
     if (!l_fs || !l_config || !l_filters || !l_commands) {
-        qWarning() << "medieval-speak: required services not available";
+        qCWarning(akashiPlugins) << "medieval-speak: required services not available";
         return false;
     }
 
@@ -40,7 +41,8 @@ bool MedievalSpeakPlugin::load(akashi::ServiceRegistry &services)
     const QString l_owner = id();
     MedievalParser *l_parser = m_parser.get();
 
-    l_filters->registerFilter(QStringLiteral("medieval"), 300, [l_parser](const QString &f_text) -> std::optional<QString> { return l_parser->degrootify(f_text); }, false, l_owner);
+    l_filters->registerFilter(
+        QStringLiteral("medieval"), 300, [l_parser](const QString &f_text) -> std::optional<QString> { return l_parser->degrootify(f_text); }, false, l_owner);
 
     l_commands->registerCommand(
         {QStringLiteral("medieval"), {}, {akashi::permission::mute}, 1, QStringLiteral("/medieval <id>"), QStringLiteral("Makes a client speak in medieval English.")},
@@ -82,7 +84,7 @@ bool MedievalSpeakPlugin::load(akashi::ServiceRegistry &services)
         },
         l_owner);
 
-    qInfo().noquote() << "medieval-speak: word data from" << l_resolved;
+    qCInfo(akashiPlugins).noquote() << "medieval-speak: word data from" << l_resolved;
     return true;
 }
 

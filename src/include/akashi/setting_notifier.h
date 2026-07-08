@@ -22,4 +22,3 @@ class AKASHI_CORE_EXPORT SettingNotifier : public QObject
 };
 
 } // namespace akashi
-

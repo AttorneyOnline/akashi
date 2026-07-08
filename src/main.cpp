@@ -1,3 +1,4 @@
+#include "akashi/logging_categories.h"
 #include "core/console_input.h"
 #include "core/console_log.h"
 #include "core/console_menu.h"
@@ -16,7 +17,7 @@ int main(int argc, char *argv[])
     QCoreApplication::setApplicationName(akashi::software::name);
     QCoreApplication::setApplicationVersion(akashi::software::fullVersion());
 
-    qInfo().noquote() << "\n" + akashi::software::bootSplash();
+    qCInfo(akashiServer).noquote() << "\n" + akashi::software::bootSplash();
 
     ServerContext context;
     QObject::connect(&app, &QCoreApplication::aboutToQuit, &context, &ServerContext::shutdown);

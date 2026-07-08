@@ -232,7 +232,7 @@ void ProtocolTest::performHandshake(TestClient &client, int expectedPlayers)
 
     client.send(QStringLiteral("HI#TESTHWID#%"));
     const QString id = client.takeNext();
-    QVERIFY2(id.startsWith(QStringLiteral("ID#")) && id.endsWith(QStringLiteral("#akashi#jackfruit (1.9)#%")),
+    QVERIFY2(id.startsWith(QStringLiteral("ID#")) && id.endsWith(QStringLiteral("#akashi#kumquat (2.0)#%")),
              qPrintable("unexpected ID: " + id));
 
     client.send(QStringLiteral("ID#AO2#2.10.0#%"));

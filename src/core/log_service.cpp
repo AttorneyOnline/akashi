@@ -1,6 +1,7 @@
 #include "core/log_service.h"
 
 #include "akashi/config_store.h"
+#include "akashi/logging_categories.h"
 #include "akashi/thread_assert.h"
 
 #include <QDateTime>
@@ -234,7 +235,7 @@ void LogService::loadTemplates()
 
         if (l_value.contains(QStringLiteral("%1"))) {
             const QString l_migrated = migratePositionalTemplate(l_it.key(), l_value);
-            qInfo().noquote() << "logtext: migrated positional template for" << l_it.key();
+            qCInfo(akashiLog).noquote() << "logtext: migrated positional template for" << l_it.key();
             m_templates.insert(l_it.key(), l_migrated);
         }
         else {

@@ -65,4 +65,3 @@ class Setting
 };
 
 } // namespace akashi
-

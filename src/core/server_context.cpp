@@ -20,6 +20,7 @@
 #include "akashi/config_store.h"
 #include "akashi/database_service.h"
 #include "akashi/filesystem_service.h"
+#include "akashi/logging_categories.h"
 #include "akashi/network_service.h"
 #include "akashi/service_registry.h"
 #include "akashi/setting_notifier.h"
@@ -81,7 +82,7 @@ static bool verifyServerConfig(akashi::ConfigStore *f_store, ServerSettings *f_s
     QStringList l_dirs{path(""), path("text/")};
     for (const QString &d : l_dirs) {
         if (!dirExists(QFileInfo(d))) {
-            qCritical() << d + " does not exist!";
+            qCCritical(akashiServer) << d + " does not exist!";
             return false;
         }
     }
@@ -95,13 +96,13 @@ static bool verifyServerConfig(akashi::ConfigStore *f_store, ServerSettings *f_s
                         path("text/reprimands.txt"), path("text/cdns.txt"), path("ipbans.json")};
     for (const QString &f : l_files) {
         if (!fileExists(QFileInfo(f))) {
-            qCritical() << f + " does not exist!";
+            qCCritical(akashiServer) << f + " does not exist!";
             return false;
         }
     }
 
     if (l_areas->childGroups().length() < 1) {
-        qCritical() << "areas.json is invalid!";
+        qCCritical(akashiServer) << "areas.json is invalid!";
         return false;
     }
 
@@ -140,7 +141,7 @@ ExitCode ServerContext::start()
     m_config_store->settings("acl_roles");
 
     if (!l_valid || !verifyServerConfig(m_config_store, l_server_settings)) {
-        qCritical() << "The server configuration is invalid!";
+        qCCritical(akashiServer) << "The server configuration is invalid!";
         delete l_server_settings;
         return ExitCode::InvalidConfig;
     }
@@ -255,7 +256,7 @@ void ServerContext::buildCore()
                 faces.append(l_dice_ini.value(key).toString());
             }
             else {
-                qCritical() << "dice.ini max mismatch!";
+                qCCritical(akashiServer) << "dice.ini max mismatch!";
                 break;
             }
         }
@@ -288,22 +289,26 @@ void ServerContext::buildCore()
 
     m_text_filter_registry = new akashi::TextFilterRegistry;
 
-    m_text_filter_registry->registerFilter(QStringLiteral("word-filter"), 100, [this](const QString &f_text) -> std::optional<QString> {
+    m_text_filter_registry->registerFilter(
+        QStringLiteral("word-filter"), 100, [this](const QString &f_text) -> std::optional<QString> {
             QString l_result = f_text;
             for (const QRegularExpression &l_re : std::as_const(m_text_data.compiled_filters))
                 l_result.replace(l_re, QStringLiteral("❌"));
             return l_result; }, true, QStringLiteral("core"));
 
-    m_text_filter_registry->registerFilter(QStringLiteral("gimped"), 200, [this](const QString &) -> std::optional<QString> {
+    m_text_filter_registry->registerFilter(
+        QStringLiteral("gimped"), 200, [this](const QString &) -> std::optional<QString> {
             const auto &l_list = gimpList();
             return l_list.at(QRandomGenerator::global()->bounded(l_list.size())); }, false, QStringLiteral("core"));
 
-    m_text_filter_registry->registerFilter(QStringLiteral("shaken"), 400, [](const QString &f_text) -> std::optional<QString> {
+    m_text_filter_registry->registerFilter(
+        QStringLiteral("shaken"), 400, [](const QString &f_text) -> std::optional<QString> {
             QStringList l_words = f_text.split(QStringLiteral(" "));
             std::shuffle(l_words.begin(), l_words.end(), *QRandomGenerator::global());
             return l_words.join(QStringLiteral(" ")); }, false, QStringLiteral("core"));
 
-    m_text_filter_registry->registerFilter(QStringLiteral("disemvoweled"), 500, [](const QString &f_text) -> std::optional<QString> {
+    m_text_filter_registry->registerFilter(
+        QStringLiteral("disemvoweled"), 500, [](const QString &f_text) -> std::optional<QString> {
             static const QRegularExpression l_vowels(QStringLiteral("[AEIOUaeiou]"));
             return QString(f_text).remove(l_vowels); }, false, QStringLiteral("core"));
 
@@ -340,7 +345,7 @@ ExitCode ServerContext::startListening()
     else
         bind_addr = QHostAddress(bind_ip);
     if (bind_addr.protocol() != QAbstractSocket::IPv4Protocol && bind_addr.protocol() != QAbstractSocket::IPv6Protocol && bind_addr != QHostAddress::Any) {
-        qCritical() << bind_ip << "is an invalid IP address to listen on! Server not starting, check your config.";
+        qCCritical(akashiServer) << bind_ip << "is an invalid IP address to listen on! Server not starting, check your config.";
         return ExitCode::InvalidBindAddress;
     }
 
@@ -348,10 +353,10 @@ ExitCode ServerContext::startListening()
         m_receiver = new akashi::WebSocketReceiver(bind_addr, m_port, l_vocabulary, this);
     connect(m_receiver, &akashi::ClientReceiver::inboundClient, this, &ServerContext::inboundClient);
     if (!m_receiver->start()) {
-        qCritical() << "Server error:" << m_receiver->lastError();
+        qCCritical(akashiServer) << "Server error:" << m_receiver->lastError();
         return ExitCode::PortUnavailable;
     }
-    qInfo() << "Server listening on" << m_receiver->port();
+    qCInfo(akashiServer) << "Server listening on" << m_receiver->port();
 
     // Construct modern advertiser if enabled in config
     server_publisher = new ServerPublisher(m_receiver->port(), &m_player_count, m_server_settings, this);
@@ -445,13 +450,15 @@ ExitCode ServerContext::startListening()
     l_register_perm(akashi::permission::super, QStringLiteral("Super"), QStringLiteral("administration"));
 
     // Register the built-in permission resolver chain.
-    m_permission_registry->registerResolver(QStringLiteral("none_check"), 0, [](const akashi::PermissionQuery &q) -> akashi::PermissionVerdict {
+    m_permission_registry->registerResolver(
+        QStringLiteral("none_check"), 0, [](const akashi::PermissionQuery &q) -> akashi::PermissionVerdict {
             if (q.permission.isEmpty() || q.permission == akashi::permission::none) {
                 return akashi::PermissionVerdict::Granted;
             }
             return akashi::PermissionVerdict::NoOpinion; }, QStringLiteral("core"));
 
-    m_permission_registry->registerResolver(QStringLiteral("area_owner"), 100, [this](const akashi::PermissionQuery &q) -> akashi::PermissionVerdict {
+    m_permission_registry->registerResolver(
+        QStringLiteral("area_owner"), 100, [this](const akashi::PermissionQuery &q) -> akashi::PermissionVerdict {
             if (q.permission == akashi::permission::gamemaster) {
                 akashi::Area *l_area = areaById(q.area_id);
                 if (l_area && l_area->owners().contains(q.client_id)) {
@@ -460,7 +467,8 @@ ExitCode ServerContext::startListening()
             }
             return akashi::PermissionVerdict::NoOpinion; }, QStringLiteral("core"));
 
-    m_permission_registry->registerResolver(QStringLiteral("authentication"), 200, [](const akashi::PermissionQuery &q) -> akashi::PermissionVerdict {
+    m_permission_registry->registerResolver(
+        QStringLiteral("authentication"), 200, [](const akashi::PermissionQuery &q) -> akashi::PermissionVerdict {
             if (!q.is_authenticated) {
                 return akashi::PermissionVerdict::Denied;
             }
@@ -469,7 +477,8 @@ ExitCode ServerContext::startListening()
             }
             return akashi::PermissionVerdict::NoOpinion; }, QStringLiteral("core"));
 
-    m_permission_registry->registerResolver(QStringLiteral("role_check"), 300, [this](const akashi::PermissionQuery &q) -> akashi::PermissionVerdict {
+    m_permission_registry->registerResolver(
+        QStringLiteral("role_check"), 300, [this](const akashi::PermissionQuery &q) -> akashi::PermissionVerdict {
             const akashi::ACLRole l_role = acl_roles_handler->roleById(q.acl_role_id);
             if (l_role.canPerform(q.permission)) {
                 return akashi::PermissionVerdict::Granted;
@@ -963,7 +972,7 @@ void ServerContext::onPluginAboutToUnload(const QString &f_plugin_id)
         l_removed += akashi::RuleRegistry::removeRules(f_plugin_id, l_actions, l_area->beforeRules(), l_area->afterRules());
     }
     if (l_removed > 0) {
-        qInfo() << "Removed" << l_removed << "rule(s) that belonged to plugin" << f_plugin_id;
+        qCInfo(akashiPlugins) << "Removed" << l_removed << "rule(s) that belonged to plugin" << f_plugin_id;
     }
 }
 

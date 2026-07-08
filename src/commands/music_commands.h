@@ -9,4 +9,3 @@ namespace akashi::commands {
 void registerMusicCommands(akashi::CommandRegistry &f_registry);
 
 } // namespace akashi::commands
-

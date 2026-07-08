@@ -12,4 +12,3 @@ class PacketCodecRegistry;
 AKASHI_CORE_EXPORT void registerChatPackets(PacketRegistry &f_handlers, PacketCodecRegistry &f_codecs);
 
 } // namespace akashi
-

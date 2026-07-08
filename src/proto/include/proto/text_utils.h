@@ -10,4 +10,3 @@ namespace akashi {
 AKASHI_CORE_EXPORT QString stripZalgo(QString f_text);
 
 } // namespace akashi
-

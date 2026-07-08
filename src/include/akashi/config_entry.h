@@ -45,4 +45,3 @@ AKASHI_CORE_EXPORT ConfigEntry::Check oneOf(const QStringList &f_words);
 AKASHI_CORE_EXPORT ConfigEntry::Check emptyOrTime();
 
 } // namespace akashi
-

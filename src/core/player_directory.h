@@ -5,7 +5,9 @@
 #include <QHash>
 #include <QVector>
 
-namespace akashi { class ClientSession; }
+namespace akashi {
+class ClientSession;
+}
 
 // The one place that knows who is connected under which ID. It owns the ID
 // pool and the client list together, so they can never disagree - the old

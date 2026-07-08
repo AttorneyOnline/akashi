@@ -1,7 +1,7 @@
 // AI-generated: written by Claude.
-#include "fake_transport.h"
 #include "core/client_session.h"
 #include "core/player_state.h"
+#include "fake_transport.h"
 #include "proto/packet.h"
 
 #include <QSignalSpy>

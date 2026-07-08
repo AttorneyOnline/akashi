@@ -17,13 +17,22 @@ class StubPlugin : public QObject, public akashi::IPlugin
     Q_INTERFACES(akashi::IPlugin)
 
   public:
-    explicit StubPlugin(const QString &f_id) : m_id(f_id) {}
+    explicit StubPlugin(const QString &f_id) :
+        m_id(f_id) {}
 
     QString id() const override { return m_id; }
     akashi::ServiceVersion pluginVersion() const override { return {1, 0, 0}; }
 
-    bool load(akashi::ServiceRegistry &) override { load_order.append(m_id); return m_load_result; }
-    bool init(akashi::ServiceRegistry &) override { init_order.append(m_id); return m_init_result; }
+    bool load(akashi::ServiceRegistry &) override
+    {
+        load_order.append(m_id);
+        return m_load_result;
+    }
+    bool init(akashi::ServiceRegistry &) override
+    {
+        init_order.append(m_id);
+        return m_init_result;
+    }
     void started(akashi::ServiceRegistry &) override { started_order.append(m_id); }
     void shutdown(akashi::ServiceRegistry &) override { shutdown_order.append(m_id); }
 
@@ -146,7 +155,8 @@ void tst_PluginManager::cleanupRemovesRegistrations()
     akashi::CommandSpec l_spec;
     l_spec.name = QStringLiteral("test_cmd");
     l_spec.permissions = {QStringLiteral("none")};
-    l_commands->registerCommand(l_spec, [](akashi::CommandContext &) {}, QStringLiteral("test.plugin"));
+    l_commands->registerCommand(
+        l_spec, [](akashi::CommandContext &) {}, QStringLiteral("test.plugin"));
 
     QVERIFY(l_commands->contains(QStringLiteral("test_cmd")));
     l_commands->unregisterAll(QStringLiteral("test.plugin"));

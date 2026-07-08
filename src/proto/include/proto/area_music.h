@@ -12,4 +12,3 @@ class PacketCodecRegistry;
 AKASHI_CORE_EXPORT void registerAreaMusicPackets(PacketRegistry &f_handlers, PacketCodecRegistry &f_codecs);
 
 } // namespace akashi
-

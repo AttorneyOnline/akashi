@@ -15,7 +15,11 @@ class MockPlugin : public QObject, public akashi::IPlugin
   public:
     QString id() const override { return QStringLiteral("test.mock"); }
     akashi::ServiceVersion pluginVersion() const override { return {0, 1, 0}; }
-    bool load(akashi::ServiceRegistry &) override { m_loaded = true; return true; }
+    bool load(akashi::ServiceRegistry &) override
+    {
+        m_loaded = true;
+        return true;
+    }
     void shutdown(akashi::ServiceRegistry &) override { m_shutdown = true; }
 
     bool m_loaded = false;

@@ -145,4 +145,3 @@ Q_DECLARE_METATYPE(akashi::BanIssuedEvent)
 Q_DECLARE_METATYPE(akashi::KickIssuedEvent)
 Q_DECLARE_METATYPE(akashi::CommandExecutedEvent)
 Q_DECLARE_METATYPE(akashi::ConfigReloadedEvent)
-

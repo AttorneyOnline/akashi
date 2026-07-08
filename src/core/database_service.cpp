@@ -1,5 +1,7 @@
 #include "akashi/database_service.h"
 
+#include "akashi/logging_categories.h"
+
 #include <QDebug>
 #include <QDir>
 #include <QElapsedTimer>
@@ -42,14 +44,14 @@ bool DatabaseService::open(const QString &f_legacy_path)
     // A database from the legacy location is copied once, the original stays as a backup.
     if (!QFileInfo::exists(l_path) && !f_legacy_path.isEmpty() && QFileInfo::exists(f_legacy_path)) {
         QFile::copy(f_legacy_path, l_path);
-        qInfo() << "Copied" << f_legacy_path << "to" << l_path;
+        qCInfo(akashiDb) << "Copied" << f_legacy_path << "to" << l_path;
     }
 
     QSqlDatabase l_database = QSqlDatabase::addDatabase("QSQLITE", "akashi_main");
     l_database.setDatabaseName(l_path);
     m_connection_names.append("akashi_main");
     if (!l_database.open()) {
-        qCritical() << "Database error:" << l_database.lastError().text();
+        qCCritical(akashiDb) << "Database error:" << l_database.lastError().text();
         return false;
     }
     applyPragmas(l_database);
@@ -83,7 +85,7 @@ QSqlDatabase DatabaseService::pluginDatabase(const QString &f_plugin_id)
     l_database.setDatabaseName(m_data_root + "/plugins/" + f_plugin_id + ".db");
     m_connection_names.append(l_name);
     if (!l_database.open()) {
-        qCritical() << "Database error:" << l_database.lastError().text();
+        qCCritical(akashiDb) << "Database error:" << l_database.lastError().text();
     }
     else {
         applyPragmas(l_database);
@@ -94,12 +96,12 @@ QSqlDatabase DatabaseService::pluginDatabase(const QString &f_plugin_id)
 bool DatabaseService::applyMigration(QSqlDatabase f_database, int f_to_version, const std::function<bool(QSqlDatabase &)> &f_migration)
 {
     if (!f_database.transaction()) {
-        qCritical() << "Database error: could not start a transaction:" << f_database.lastError().text();
+        qCCritical(akashiDb) << "Database error: could not start a transaction:" << f_database.lastError().text();
         return false;
     }
 
     if (!f_migration(f_database)) {
-        qCritical() << "Database error: migration to version" << f_to_version << "failed:" << f_database.lastError().text();
+        qCCritical(akashiDb) << "Database error: migration to version" << f_to_version << "failed:" << f_database.lastError().text();
         f_database.rollback();
         return false;
     }
@@ -107,7 +109,7 @@ bool DatabaseService::applyMigration(QSqlDatabase f_database, int f_to_version, 
     QSqlQuery l_version_query(f_database);
     l_version_query.exec("PRAGMA user_version = " + QString::number(f_to_version));
     if (!f_database.commit()) {
-        qCritical() << "Database error: could not commit migration to version" << f_to_version;
+        qCCritical(akashiDb) << "Database error: could not commit migration to version" << f_to_version;
         f_database.rollback();
         return false;
     }
@@ -136,14 +138,14 @@ void DatabaseService::scheduleMaintenance(const QTime &f_time, bool f_vacuum, co
         connect(m_maintenance_timer, &QTimer::timeout, this, &DatabaseService::onMaintenanceDue);
     }
     m_maintenance_timer->start(msecsToNextOccurrence(f_time, QDateTime::currentDateTime()));
-    qInfo() << "Database maintenance scheduled daily at" << f_time.toString("hh:mm");
+    qCInfo(akashiDb) << "Database maintenance scheduled daily at" << f_time.toString("hh:mm");
 }
 
 void DatabaseService::onMaintenanceDue()
 {
     // A busy server gets another try in half an hour.
     if (m_busy_check && m_busy_check()) {
-        qInfo() << "Database maintenance postponed, the server is busy.";
+        qCInfo(akashiDb) << "Database maintenance postponed, the server is busy.";
         m_maintenance_timer->start(30 * 60 * 1000);
         return;
     }
@@ -169,7 +171,7 @@ void DatabaseService::runMaintenance()
         if (m_maintenance_vacuum) {
             l_query.exec("VACUUM");
         }
-        qInfo() << "Database maintenance on" << l_database.databaseName() << "took" << l_stopwatch.elapsed() << "ms";
+        qCInfo(akashiDb) << "Database maintenance on" << l_database.databaseName() << "took" << l_stopwatch.elapsed() << "ms";
     }
 }
 

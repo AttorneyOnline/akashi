@@ -26,4 +26,3 @@ class AKASHI_CORE_EXPORT ModActionMessage : public Message
 };
 
 } // namespace akashi
-

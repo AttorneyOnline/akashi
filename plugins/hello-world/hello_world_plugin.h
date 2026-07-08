@@ -18,4 +18,3 @@ class HelloWorldPlugin : public QObject, public akashi::IPlugin
     bool load(akashi::ServiceRegistry &services) override;
     void shutdown(akashi::ServiceRegistry &services) override;
 };
-

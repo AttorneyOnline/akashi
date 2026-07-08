@@ -2,6 +2,7 @@
 
 #include "akashi/event.h"
 #include "akashi/log_event.h"
+#include "akashi/logging_categories.h"
 #include "core/arup_broadcaster.h"
 #include "core/auth_throttle.h"
 #include "core/command_context.h"
@@ -106,7 +107,7 @@ void ClientSession::leave()
     }
     m_left = true;
 #ifdef NET_DEBUG
-    qDebug() << remote_ip.toString() << "disconnected";
+    qCDebug(akashiNet) << remote_ip.toString() << "disconnected";
 #endif
     // A client that never joined has no presence to withdraw - and a rejected
     // (banned) connection must not broadcast ARUPs to the whole server.
@@ -132,7 +133,7 @@ void ClientSession::leave()
 void ClientSession::handlePacket(const akashi::Packet &packet)
 {
 #ifdef NET_DEBUG
-    qDebug() << "Received packet:" << packet.header() << ":" << packet.fields() << "args length:" << packet.fieldCount();
+    qCDebug(akashiNet) << "Received packet:" << packet.header() << ":" << packet.fields() << "args length:" << packet.fieldCount();
 #endif
 
     // A session without a server (a test harness) forwards packets through

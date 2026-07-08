@@ -65,4 +65,3 @@ class AKASHI_CORE_EXPORT ServerSettings : public akashi::Settings
     akashi::Setting<bool> maintenance_vacuum{this, "Database/maintenance_vacuum", false, "Whether maintenance also compacts the databases with VACUUM."};
     akashi::Setting<int> maintenance_max_players{this, "Database/maintenance_max_players", -1, "Maintenance waits while more players than this are online, or -1 to run regardless.", akashi::atLeast(-1)};
 };
-

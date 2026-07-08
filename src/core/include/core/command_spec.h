@@ -20,7 +20,7 @@ struct CommandVariant
 {
     QString id; // names the form for extension overrides ("command.id")
     int min_args = 0;
-    int max_args = -1; // -1 accepts any count at or above min_args
+    int max_args = -1;       // -1 accepts any count at or above min_args
     QStringList permissions; // any-of, checked at the dispatch gate
     QString usage;
     QString description;

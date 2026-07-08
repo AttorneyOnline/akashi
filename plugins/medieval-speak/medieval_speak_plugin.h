@@ -1,8 +1,7 @@
 #pragma once
 
-#include "medieval_parser.h"
-
 #include "akashi/plugin.h"
+#include "medieval_parser.h"
 
 #include <QObject>
 #include <QtPlugin>

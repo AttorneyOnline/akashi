@@ -273,81 +273,55 @@ static void handleLoadTestimony(CommandContext &f_context)
 void registerCasingCommands(CommandRegistry &f_registry)
 {
     f_registry.registerCommand(
-        {QStringLiteral("doc"), {}, {}, 0,
-         QStringLiteral("/doc [text]"),
-         QStringLiteral("Views or sets the document for the area.")},
+        {QStringLiteral("doc"), {}, {}, 0, QStringLiteral("/doc [text]"), QStringLiteral("Views or sets the document for the area.")},
         handleDoc, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("cleardoc"), {}, {}, 0,
-         QStringLiteral("/cleardoc"),
-         QStringLiteral("Clears the document in the area.")},
+        {QStringLiteral("cleardoc"), {}, {}, 0, QStringLiteral("/cleardoc"), QStringLiteral("Clears the document in the area.")},
         handleClearDoc, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("evidence_mod"), {}, {akashi::permission::modify_evidence}, 1,
-         QStringLiteral("/evidence_mod <mod>"),
-         QStringLiteral("Changes the evidence mod in the area.")},
+        {QStringLiteral("evidence_mod"), {}, {akashi::permission::modify_evidence}, 1, QStringLiteral("/evidence_mod <mod>"), QStringLiteral("Changes the evidence mod in the area.")},
         handleEvidenceMod, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("evidence_swap"), {}, {akashi::permission::gamemaster}, 2,
-         QStringLiteral("/evidence_swap <id1> <id2>"),
-         QStringLiteral("Swaps two pieces of evidence in the area.")},
+        {QStringLiteral("evidence_swap"), {}, {akashi::permission::gamemaster}, 2, QStringLiteral("/evidence_swap <id1> <id2>"), QStringLiteral("Swaps two pieces of evidence in the area.")},
         handleEvidenceSwap, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("testify"), {}, {akashi::permission::gamemaster}, 0,
-         QStringLiteral("/testify"),
-         QStringLiteral("Starts testimony recording.")},
+        {QStringLiteral("testify"), {}, {akashi::permission::gamemaster}, 0, QStringLiteral("/testify"), QStringLiteral("Starts testimony recording.")},
         handleTestify, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("examine"), {}, {akashi::permission::gamemaster}, 0,
-         QStringLiteral("/examine"),
-         QStringLiteral("Starts testimony playback.")},
+        {QStringLiteral("examine"), {}, {akashi::permission::gamemaster}, 0, QStringLiteral("/examine"), QStringLiteral("Starts testimony playback.")},
         handleExamine, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("testimony"), {}, {}, 0,
-         QStringLiteral("/testimony"),
-         QStringLiteral("Lists the statements in the current testimony.")},
+        {QStringLiteral("testimony"), {}, {}, 0, QStringLiteral("/testimony"), QStringLiteral("Lists the statements in the current testimony.")},
         handleTestimony, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("delete"), {}, {akashi::permission::gamemaster}, 0,
-         QStringLiteral("/delete"),
-         QStringLiteral("Deletes the currently selected testimony statement.")},
+        {QStringLiteral("delete"), {}, {akashi::permission::gamemaster}, 0, QStringLiteral("/delete"), QStringLiteral("Deletes the currently selected testimony statement.")},
         handleDeleteStatement, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("update"), {}, {akashi::permission::gamemaster}, 0,
-         QStringLiteral("/update"),
-         QStringLiteral("Replaces the current testimony statement with the next IC message.")},
+        {QStringLiteral("update"), {}, {akashi::permission::gamemaster}, 0, QStringLiteral("/update"), QStringLiteral("Replaces the current testimony statement with the next IC message.")},
         handleUpdateStatement, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("pause"), {QStringLiteral("end")}, {akashi::permission::gamemaster}, 0,
-         QStringLiteral("/pause"),
-         QStringLiteral("Pauses testimony recording or playback.")},
+        {QStringLiteral("pause"), {QStringLiteral("end")}, {akashi::permission::gamemaster}, 0, QStringLiteral("/pause"), QStringLiteral("Pauses testimony recording or playback.")},
         handlePauseTestimony, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("add"), {}, {akashi::permission::gamemaster}, 0,
-         QStringLiteral("/add"),
-         QStringLiteral("Inserts a new statement after the current one.")},
+        {QStringLiteral("add"), {}, {akashi::permission::gamemaster}, 0, QStringLiteral("/add"), QStringLiteral("Inserts a new statement after the current one.")},
         handleAddStatement, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("savetestimony"), {}, {}, 1,
-         QStringLiteral("/savetestimony <name>"),
-         QStringLiteral("Saves the current testimony to a file.")},
+        {QStringLiteral("savetestimony"), {}, {}, 1, QStringLiteral("/savetestimony <name>"), QStringLiteral("Saves the current testimony to a file.")},
         handleSaveTestimony, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("loadtestimony"), {}, {akashi::permission::gamemaster}, 1,
-         QStringLiteral("/loadtestimony <name>"),
-         QStringLiteral("Loads a saved testimony for playback.")},
+        {QStringLiteral("loadtestimony"), {}, {akashi::permission::gamemaster}, 1, QStringLiteral("/loadtestimony <name>"), QStringLiteral("Loads a saved testimony for playback.")},
         handleLoadTestimony, QStringLiteral("core"));
 }
 

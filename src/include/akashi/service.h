@@ -33,4 +33,3 @@ class AKASHI_CORE_EXPORT IService
 };
 
 } // namespace akashi
-

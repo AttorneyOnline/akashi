@@ -96,4 +96,3 @@ class AKASHI_CORE_EXPORT PacketCodecRegistry
 };
 
 } // namespace akashi
-

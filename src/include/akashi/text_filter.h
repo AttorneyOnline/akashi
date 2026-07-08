@@ -10,4 +10,3 @@ namespace akashi {
 using TextFilterFn = std::function<std::optional<QString>(const QString &text)>;
 
 } // namespace akashi
-
