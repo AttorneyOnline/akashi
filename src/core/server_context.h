@@ -31,6 +31,7 @@
 #include <QDebug>
 #include <QFile>
 #include <QMap>
+#include <QPointer>
 #include <QRegularExpression>
 #include <QSettings>
 #include <QStack>
@@ -54,6 +55,9 @@ class WebSocketReceiver;
 class PluginManager;
 class ConsoleMenu;
 class ArupBroadcaster;
+class Authenticator;
+class AuthenticatorRegistry;
+struct AuthOutcome;
 class AuthThrottle;
 class CommandRegistry;
 class ConfigStore;
@@ -522,6 +526,18 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
 
     akashi::AuthThrottle *authThrottle();
 
+    akashi::AuthenticatorRegistry *authenticatorRegistry();
+
+    // The single authentication system resolved at launch, and its id.
+    // Read-only for the server's whole life: /reload never changes it.
+    std::shared_ptr<akashi::Authenticator> activeAuthenticator() const;
+    QString activeAuthSystemId() const;
+
+    // Hands an authentication outcome to the session that asked, if it
+    // still exists. Client ids get reused, so delivery goes through the
+    // QPointer and never through an id lookup.
+    void deliverAuthOutcome(QPointer<akashi::ClientSession> f_session, const akashi::AuthOutcome &f_outcome);
+
     akashi::ConfigStore *configStore();
     ServerSettings *serverSettings();
     QString configPath(const QString &f_file) const;
@@ -531,7 +547,6 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
     QString loggingMode() const;
 
     void setMotd(const QString &f_motd);
-    void setAuthType(AuthType f_auth);
 
     QStringList gimpList() const;
     QStringList cdnList() const;
@@ -720,6 +735,11 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
     akashi::AuthThrottle *m_auth_throttle = nullptr;
     akashi::RuleRegistry *m_rule_registry = nullptr;
     akashi::TextFilterRegistry *m_text_filter_registry = nullptr;
+    akashi::AuthenticatorRegistry *m_authenticator_registry = nullptr;
+
+    // The one active authentication system, resolved once at launch.
+    std::shared_ptr<akashi::Authenticator> m_active_authenticator;
+    QString m_active_auth_system_id;
 
     PlayerStateObserver m_player_state_observer;
 
@@ -793,6 +813,30 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
     void reloadBanLists();
     void reloadAclRoles();
     void reloadAuthLimits();
+
+    // The auth system is chosen at launch and read-only afterwards; a
+    // reload that names a different system only earns a warning.
+    void warnOnAuthSystemChange();
+
+    // Maps the auth setting to a system id: the historic values name the
+    // two core systems, anything else is a plugin-provided system id.
+    QString configuredAuthSystemId() const;
+
+    // Resolves the single active authenticator once plugins have started.
+    // Fails loud: a configured id nobody provides aborts startup.
+    bool resolveActiveAuthenticator();
+
+    // The random secret both bootstraps hand out: hex, sized by the
+    // configured minimum password length.
+    QString generateBootstrapSecret() const;
+
+    // Creates the root account with a one-time random password when the
+    // username system boots over a database that has none.
+    void bootstrapRootAccount();
+
+    // Generates and persists a random modpass when the password system
+    // boots with an empty one.
+    void bootstrapModpass();
 
     /**
      * @brief Tells the global observers the config reloaded, after core

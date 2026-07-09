@@ -118,9 +118,18 @@ class AKASHI_CORE_EXPORT ConsoleMenu : public QObject, public IService
     void openPluginActions(const QString &f_plugin_id);
     void openTasks();
     void openBroadcast();
+
+    // The authentication view: user management under the username system,
+    // the modpass under the password system. Every flow repackages the
+    // same DBManager and ConfigStore paths the client commands use.
     void openAuthentication();
-    void openRootPasswordPrompt();
-    void applyRootPassword(const QString &f_password);
+    void openListUsers();
+    void openAddUserPrompt();
+    void openRemoveUserPrompt();
+    void openAssignRolePrompt();
+    void openChangePasswordPrompt();
+    void openModpassPrompt();
+
     void openConfirmShutdown();
     void printStatus();
 

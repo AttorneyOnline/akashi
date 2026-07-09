@@ -9,7 +9,6 @@
 #include "proto/transport.h"
 #include "world/area.h"
 
-#include <QFutureWatcher>
 #include <QHostAddress>
 #include <QList>
 #include <QObject>
@@ -26,6 +25,7 @@ class ServerContext;
 namespace akashi {
 
 class TextFilterRegistry;
+struct AuthOutcome;
 struct PacketSpec;
 
 // One connection - the person behind it. A session owns 1..N PlayerStates
@@ -194,7 +194,15 @@ class AKASHI_CORE_EXPORT ClientSession : public QObject, public IPacketContext
     // always given. f_announce_done sends the DONE that pushes the client
     // back to the character select screen on a switch to spectator.
     std::optional<QString> takeCharacter(int f_char_id, bool f_announce_done = false);
+
+    // The OOC login prompt: a parser over the authenticate verb, keeping
+    // the historic prompt dance byte for byte.
     void loginAttempt(QString message);
+
+    // Applies an authentication outcome to this session: the AUTH verdict
+    // packet, the messages, the throttle record and the login log. The
+    // server delivers outcomes here through deliverAuthOutcome.
+    void onAuthOutcome(const akashi::AuthOutcome &f_outcome);
     void changeArea(int new_area) override;
     int floorCount() const override;
     int floorAreaId(int f_floor_id, int f_x) const override;
@@ -241,6 +249,12 @@ class AKASHI_CORE_EXPORT ClientSession : public QObject, public IPacketContext
     void setOocName(const QString &f_name) override;
     bool isInLoginPrompt() const override;
     void attemptLogin(const QString &f_message) override;
+    QString activeAuthSystemId() const override;
+    // The one door every login goes through: the already-authenticated and
+    // throttle guards, then the server's single active authenticator. The
+    // outcome comes back through onAuthOutcome, and only if this session
+    // still exists - ids get reused, so delivery is never id-based.
+    void authenticate(const QStringList &f_args) override;
     void runCommand(const QString &f_command, const QStringList &f_arguments) override;
     void broadcastOoc(const QString &f_message) override;
     int evidenceCount() const override;
@@ -375,11 +389,6 @@ class AKASHI_CORE_EXPORT ClientSession : public QObject, public IPacketContext
     // The reconnect wait ran out with nobody coming back; the server
     // deletes the session on this.
     void reconnectTimedOut();
-
-  private Q_SLOTS:
-    // Finishes the advanced login once the hash worker returns; loginAttempt
-    // binds the attempt's particulars ahead of the watcher's finished signal.
-    void onLoginHashComputed(QFutureWatcher<QString> *f_watcher, const QString &f_username, const QString &f_password, const QString &f_stored_hash, const QString &f_acl_role, bool f_needs_rehash);
 
   private:
     // The person's profile as told at the handshake; profile() exposes it.

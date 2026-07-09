@@ -38,6 +38,8 @@ set(UNIT_TESTS
     scheduler
     text_filter
     auth_throttle
+    authenticator_registry
+    username_authenticator
     plugin_interface
     plugin_manager
 )

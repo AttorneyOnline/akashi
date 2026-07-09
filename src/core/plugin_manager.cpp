@@ -5,6 +5,7 @@
 #include "akashi/scheduler.h"
 #include "akashi/script_plugin_host.h"
 #include "akashi/service_registry.h"
+#include "core/authenticator_registry.h"
 #include "core/command_registry.h"
 #include "core/console_menu.h"
 #include "core/log_service.h"
@@ -750,6 +751,10 @@ void PluginManager::cleanupPlugin(const QString &f_id)
     auto l_filters = m_services->resolve<TextFilterRegistry>(QStringLiteral("akashi.textfilters"));
     if (l_filters)
         l_filters->unregisterAll(f_id);
+
+    auto l_authenticators = m_services->resolve<AuthenticatorRegistry>(QStringLiteral("akashi.auth"));
+    if (l_authenticators)
+        l_authenticators->unregisterAll(f_id);
 
     auto l_permissions = m_services->resolve<PermissionRegistry>(QStringLiteral("akashi.permissions"));
     if (l_permissions) {

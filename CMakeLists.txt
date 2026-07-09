@@ -98,6 +98,11 @@ set(AKASHI_SOURCES
   src/core/include/core/permission_registry.h
   src/core/auth_throttle.cpp
   src/core/auth_throttle.h
+  src/core/authenticator_registry.cpp
+  src/core/include/core/authenticator_registry.h
+  src/core/core_authenticators.cpp
+  src/core/core_authenticators.h
+  src/include/akashi/authenticator.h
   src/core/plugin_manager.cpp
   src/core/include/core/plugin_manager.h
   src/core/text_filter_registry.cpp

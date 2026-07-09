@@ -123,6 +123,19 @@ class FakeContext : public akashi::IPacketContext
         calls.append("attemptLogin");
     }
 
+    // The active-system-id knob: what the AUTH handler validates field 0
+    // against and the FL token is built from.
+    QString active_auth_system_id = "password";
+    QList<QStringList> authenticate_args;
+
+    QString activeAuthSystemId() const override { return active_auth_system_id; }
+
+    void authenticate(const QStringList &f_args) override
+    {
+        authenticate_args.append(f_args);
+        calls.append("authenticate:" + f_args.join(","));
+    }
+
     void runCommand(const QString &f_command, const QStringList &f_arguments) override
     {
         commands_run.append(f_command + "|" + f_arguments.join(","));

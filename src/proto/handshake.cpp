@@ -134,7 +134,13 @@ class IdentifyHandler : public PacketHandler
 
         f_context.sendPacket(Packet(ao2::HEADER_PN, {QString::number(f_context.playerCount()), QString::number(f_context.maxPlayerCount()), f_context.serverDescription()}));
 
-        f_context.sendPacket(Packet(ao2::HEADER_FL, serverFeatures()));
+        QStringList l_feature_list = serverFeatures();
+        // The one auth token: which system the AUTH packet must name.
+        // Static per boot, since the active system never changes while
+        // running. auth_packet above is unrelated - it only says the
+        // server sends AUTH verdicts.
+        l_feature_list.append(QStringLiteral("auth_") + f_context.activeAuthSystemId());
+        f_context.sendPacket(Packet(ao2::HEADER_FL, l_feature_list));
 
         if (f_context.assetUrl().isValid()) {
             const QByteArray l_asset_url = f_context.assetUrl().toEncoded(QUrl::EncodeSpaces);

@@ -30,7 +30,7 @@ class AKASHI_CORE_EXPORT ServerSettings : public akashi::Settings
     akashi::Setting<QString> server_description{this, "Options/server_description", "This is a placeholder server description. Tell the world of AO who you are here!", "The server description shown on the master server."};
     akashi::Setting<QString> motd{this, "Options/motd", "MOTD is not set.", "The message of the day sent to joining users."};
     akashi::Setting<bool> webao_enable{this, "Options/webao_enable", true, "Whether WebAO connections are accepted."};
-    akashi::Setting<QString> auth{this, "Options/auth", "simple", "The authorization type, simple or advanced.", akashi::oneOf({"simple", "advanced"})};
+    akashi::Setting<QString> auth{this, "Options/auth", "simple", "The authentication system: simple (one shared modpass), advanced (user accounts), or the id of a plugin-provided system. Chosen at launch; changes take effect on restart."};
     akashi::Setting<QString> modpass{this, "Options/modpass", "changeme", "The moderator password used with simple authorization."};
     akashi::Setting<int> logbuffer{this, "Options/logbuffer", 500, "The number of log messages an area stores.", akashi::atLeast(0)};
     akashi::Setting<QString> logging{this, "Options/logging", "modcall", "The logging type: modcall, full and fullarea write text logs; sql keeps modcall text logs and captures everything in the sql-logger plugin's database.", akashi::oneOf({"modcall", "full", "fullarea", "sql"})};

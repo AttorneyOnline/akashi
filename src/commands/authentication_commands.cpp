@@ -13,8 +13,6 @@
 
 namespace akashi::commands {
 
-static QSet<int> s_change_auth_started;
-
 static QString decodeMessage(const QString &f_message)
 {
     return QString(f_message)
@@ -78,8 +76,8 @@ void cmdLogin(CommandContext &f_context)
         return;
     }
 
-    switch (f_context.server()->authType()) {
-    case AuthType::SIMPLE:
+    const QString l_system_id = f_context.server()->activeAuthSystemId();
+    if (l_system_id == QStringLiteral("password")) {
         if (f_context.server()->serverSettings()->modpass().isEmpty()) {
             f_context.reply("No modpass is set. Please set a modpass before logging in.");
             return;
@@ -87,41 +85,16 @@ void cmdLogin(CommandContext &f_context)
         f_context.reply("Entering login prompt.\nPlease enter the server modpass.");
         f_context.setInLoginPrompt(true);
         return;
-    case AuthType::ADVANCED:
+    }
+    if (l_system_id == QStringLiteral("username")) {
         f_context.reply("Entering login prompt.\nPlease enter your username and password.");
         f_context.setInLoginPrompt(true);
         return;
     }
-}
 
-void cmdChangeAuth(CommandContext &f_context)
-{
-    if (f_context.server()->authType() == AuthType::SIMPLE) {
-        s_change_auth_started.insert(f_context.clientId());
-        f_context.reply("WARNING!\nThis command will change how logging in as a moderator works.\n"
-                        "Only proceed if you know what you are doing\n"
-                        "Use the command /rootpass to set the password for your root account.");
-    }
-}
-
-void cmdRootPass(CommandContext &f_context)
-{
-    if (!s_change_auth_started.contains(f_context.clientId()))
-        return;
-
-    s_change_auth_started.remove(f_context.clientId());
-
-    if (!checkPasswordRequirements(f_context.server()->serverSettings(), QStringLiteral("root"), f_context.argument(0))) {
-        f_context.reply("Password does not meet server requirements.");
-        return;
-    }
-
-    f_context.reply("Changing auth type and setting root password.\nLogin again with /login root [password]");
-    f_context.setAuthenticated(false);
-    f_context.server()->setAuthType(AuthType::ADVANCED);
-
-    QByteArray l_salt = CryptoHelper::randbytes(16);
-    f_context.server()->databaseManager()->createUser(QStringLiteral("root"), l_salt, f_context.argument(0), ACLRolesHandler::SUPER_ID);
+    // The prompt only speaks the core dialects; other systems log in
+    // through the AUTH packet.
+    f_context.reply("This server uses " + l_system_id + " authentication.");
 }
 
 void cmdAddUser(CommandContext &f_context)
@@ -277,14 +250,6 @@ void registerAuthenticationCommands(CommandRegistry &f_registry)
     f_registry.registerCommand(
         {QStringLiteral("login"), {}, {akashi::permission::user}, 0, QStringLiteral("/login"), QStringLiteral("Begins the login process.")},
         cmdLogin, QStringLiteral("core"));
-
-    f_registry.registerCommand(
-        {QStringLiteral("changeauth"), {}, {akashi::permission::super}, 0, QStringLiteral("/changeauth"), QStringLiteral("Switches the server authentication type from simple to advanced.")},
-        cmdChangeAuth, QStringLiteral("core"));
-
-    f_registry.registerCommand(
-        {QStringLiteral("rootpass"), {}, {akashi::permission::super}, 1, QStringLiteral("/rootpass <password>"), QStringLiteral("Sets the root password after /changeauth."), 0},
-        cmdRootPass, QStringLiteral("core"));
 
     f_registry.registerCommand(
         {QStringLiteral("adduser"), {}, {akashi::permission::modify_users}, 2, QStringLiteral("/adduser <username> <password>"), QStringLiteral("Creates a new user with the given credentials."), 1},

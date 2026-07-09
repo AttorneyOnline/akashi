@@ -112,6 +112,11 @@ class AKASHI_CORE_EXPORT IPacketContext
     virtual void setOocName(const QString &f_name) = 0;
     virtual bool isInLoginPrompt() const = 0;
     virtual void attemptLogin(const QString &f_message) = 0;
+
+    // Authentication: the single active system's id (the FL token and the
+    // AUTH packet's field 0), and the one verb every login door calls.
+    virtual QString activeAuthSystemId() const = 0;
+    virtual void authenticate(const QStringList &f_args) = 0;
     virtual void runCommand(const QString &f_command, const QStringList &f_arguments) = 0;
     virtual void broadcastOoc(const QString &f_message) = 0;
 

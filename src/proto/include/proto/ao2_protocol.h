@@ -27,6 +27,9 @@ inline constexpr char HEADER_PE[] = "PE";
 // The moderation and state-sync family.
 inline constexpr char HEADER_ZZ[] = "ZZ";
 inline constexpr char HEADER_MA[] = "MA";
+// AUTH was historically server to client only (the 1/0/-1 login verdicts);
+// the inbound form carries a system id and that system's arguments.
+inline constexpr char HEADER_AUTH[] = "AUTH";
 inline constexpr char HEADER_CH[] = "CH";
 inline constexpr char HEADER_CASEA[] = "CASEA";
 inline constexpr char HEADER_PW[] = "PW";

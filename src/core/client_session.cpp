@@ -1,5 +1,6 @@
 #include "core/client_session.h"
 
+#include "akashi/authenticator.h"
 #include "akashi/config_store.h"
 #include "akashi/event.h"
 #include "akashi/log_event.h"
@@ -25,9 +26,8 @@
 #include "world/jukebox.h"
 #include "world/rule_registry.h"
 
-#include <QFutureWatcher>
+#include <QPointer>
 #include <QQueue>
-#include <QtConcurrent/QtConcurrentRun>
 
 #include <functional>
 
@@ -1730,7 +1730,10 @@ bool ClientSession::canPerform(const QString &f_permission) const
     l_query.client_id = clientId();
     l_query.area_id = areaId();
     l_query.is_authenticated = isAuthenticated();
-    l_query.auth_type = m_server->authType() == AuthType::SIMPLE
+    // The blanket simple-auth grant keys off the ACTIVE system, so a
+    // plugin system's logins resolve through their roles, never through
+    // the simple shortcut. Byte-identical for the two core systems.
+    l_query.auth_type = m_server->activeAuthSystemId() == QStringLiteral("password")
                             ? QStringLiteral("simple")
                             : QStringLiteral("advanced");
     l_query.acl_role_id = acl_role_id;
@@ -1882,124 +1885,96 @@ QString ClientSession::decodeMessage(QString incoming_message)
     return decoded_message;
 }
 
+// The prompt speaks only the two core dialects; /login refuses to open it
+// for anything else. The synchronous refusals (wrong modpass, unknown
+// user) answer before the exit line, the deferred hash outcome after it -
+// exactly the bytes the prompt has always sent.
 void ClientSession::loginAttempt(QString message)
 {
-    akashi::AuthThrottle *l_throttle = m_server->authThrottle();
-    if (l_throttle->isLockedOut(session_ipid)) {
-        sendServerMessage("Too many failed login attempts. Try again in " + QString::number(l_throttle->remainingLockoutSeconds(session_ipid)) + " seconds.");
-        sendServerMessage("Exiting login prompt.");
-        logging_in = false;
-        return;
-    }
-
-    switch (m_server->authType()) {
-    case AuthType::SIMPLE:
-        if (message == m_server->serverSettings()->modpass()) {
-            sendPacket("AUTH", {"1"});
-            if (m_profile.version.release <= 2 && m_profile.version.major <= 9 && m_profile.version.minor <= 0)
-                sendServerMessage("Logged in as a moderator.");
-            authenticated = true;
-            acl_role_id = ACLRolesHandler::SUPER_ID;
-            l_throttle->recordSuccess(session_ipid);
-        }
-        else {
-            sendPacket("AUTH", {"0"});
-            sendServerMessage("Incorrect password.");
-            l_throttle->recordFailure(session_ipid);
-        }
-        m_server->logService()->log({.type = log_type::Login,
-                                     .area = m_server->areaById(areaId())->name(),
-                                     .char_name = character() + " " + characterName(),
-                                     .ooc_name = name(),
-                                     .ipid = session_ipid,
-                                     .moderator = QStringLiteral("Moderator"),
-                                     .success = authenticated});
-        break;
-    case AuthType::ADVANCED:
-    {
-        QStringList l_login = message.split(" ");
+    const QString l_system_id = m_server->activeAuthSystemId();
+    if (l_system_id == QStringLiteral("username")) {
+        const QStringList l_login = message.split(" ");
         if (l_login.size() < 2) {
             sendServerMessage("You must specify a username and a password");
             sendServerMessage("Exiting login prompt.");
             logging_in = false;
             return;
         }
-        QString l_username = l_login[0];
-        QString l_password = l_login[1];
-
-        auto l_creds = m_server->databaseManager()->fetchCredentials(l_username);
-        if (!l_creds) {
-            sendPacket("AUTH", {"0"});
-            sendServerMessage("Incorrect password.");
-            l_throttle->recordFailure(session_ipid);
-            m_server->logService()->log({.type = log_type::Login,
-                                         .area = m_server->areaById(areaId())->name(),
-                                         .char_name = character() + " " + characterName(),
-                                         .ooc_name = name(),
-                                         .ipid = session_ipid,
-                                         .moderator = l_username,
-                                         .success = false});
-            break;
-        }
-
-        sendServerMessage("Exiting login prompt.");
-        logging_in = false;
-
-        QString l_salt = l_creds->salt;
-        QString l_stored_hash = l_creds->stored_hash;
-        QString l_acl_role = l_creds->acl_role;
-        bool l_needs_rehash = QByteArray::fromHex(l_salt.toUtf8()).length() < CryptoHelper::pbkdf2_salt_len;
-
-        QFuture<QString> l_future = QtConcurrent::run([l_salt, l_password]() {
-            return CryptoHelper::hash_password(QByteArray::fromHex(l_salt.toUtf8()), l_password);
-        });
-
-        auto *l_watcher = new QFutureWatcher<QString>(this);
-        connect(l_watcher, &QFutureWatcher<QString>::finished, this,
-                std::bind_front(&ClientSession::onLoginHashComputed, this, l_watcher, l_username, l_password, l_stored_hash, l_acl_role, l_needs_rehash));
-        l_watcher->setFuture(l_future);
-        return;
+        authenticate({l_login[0], l_login[1]});
     }
+    else {
+        authenticate({message});
     }
     sendServerMessage("Exiting login prompt.");
     logging_in = false;
-    return;
 }
 
-void ClientSession::onLoginHashComputed(QFutureWatcher<QString> *f_watcher, const QString &f_username, const QString &f_password, const QString &f_stored_hash, const QString &f_acl_role, bool f_needs_rehash)
+void ClientSession::authenticate(const QStringList &f_args)
 {
-    f_watcher->deleteLater();
-
-    const QString l_computed = f_watcher->result();
-    const bool l_matches = CryptoHelper::constantTimeEquals(l_computed, f_stored_hash);
+    if (authenticated) {
+        sendServerMessage("You are already logged in!");
+        return;
+    }
 
     akashi::AuthThrottle *l_throttle = m_server->authThrottle();
-    if (l_matches) {
+    if (l_throttle->isLockedOut(session_ipid)) {
+        sendServerMessage("Too many failed login attempts. Try again in " + QString::number(l_throttle->remainingLockoutSeconds(session_ipid)) + " seconds.");
+        return;
+    }
+
+    const std::shared_ptr<akashi::Authenticator> l_authenticator = m_server->activeAuthenticator();
+    if (!l_authenticator) {
+        // Resolution is a boot invariant; a missing system refuses cleanly.
+        sendPacket("AUTH", {"0"});
+        return;
+    }
+
+    const akashi::AuthRequest l_request{clientId(), session_ipid, f_args};
+    l_authenticator->authenticate(l_request, std::bind_front(&ServerContext::deliverAuthOutcome, m_server, QPointer<ClientSession>(this)));
+}
+
+void ClientSession::onAuthOutcome(const akashi::AuthOutcome &f_outcome)
+{
+    akashi::AuthThrottle *l_throttle = m_server->authThrottle();
+    switch (f_outcome.kind) {
+    case akashi::AuthOutcome::Kind::Granted:
         authenticated = true;
-        acl_role_id = f_acl_role;
-        moderator_name = f_username;
+        acl_role_id = f_outcome.acl_role_id;
+        moderator_name = f_outcome.moderator_name;
         sendPacket("AUTH", {"1"});
         if (m_profile.version.release <= 2 && m_profile.version.major <= 9 && m_profile.version.minor <= 0)
             sendServerMessage("Logged in as a moderator.");
-        sendServerMessage("Welcome, " + f_username);
+        if (!f_outcome.message.isEmpty())
+            sendServerMessage(f_outcome.message);
         l_throttle->recordSuccess(session_ipid);
-
-        if (f_needs_rehash)
-            m_server->databaseManager()->updatePassword(f_username, f_password);
-    }
-    else {
+        break;
+    case akashi::AuthOutcome::Kind::Refused:
         sendPacket("AUTH", {"0"});
-        sendServerMessage("Incorrect password.");
+        if (!f_outcome.message.isEmpty())
+            sendServerMessage(f_outcome.message);
         l_throttle->recordFailure(session_ipid);
+        break;
+    case akashi::AuthOutcome::Kind::Challenge:
+        // The hook for multi-round systems; the fields relay verbatim,
+        // with no throttle record and no log - nothing was decided yet.
+        sendPacket("AUTH", QStringList{QStringLiteral("challenge")} + f_outcome.challenge);
+        return;
     }
 
+    // The login log falls back to "Moderator" when the system names
+    // nobody, which is how the simple system has always logged.
     m_server->logService()->log({.type = log_type::Login,
                                  .area = m_server->areaById(areaId())->name(),
                                  .char_name = character() + " " + characterName(),
                                  .ooc_name = name(),
                                  .ipid = session_ipid,
-                                 .moderator = f_username,
+                                 .moderator = f_outcome.moderator_name.isEmpty() ? QStringLiteral("Moderator") : f_outcome.moderator_name,
                                  .success = authenticated});
+}
+
+QString ClientSession::activeAuthSystemId() const
+{
+    return m_server ? m_server->activeAuthSystemId() : QString();
 }
 
 } // namespace akashi

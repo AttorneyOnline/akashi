@@ -171,6 +171,9 @@ class ProtocolTest : public QObject
     void defaultFloorGatesEnforceAreaPolicy();
     void savedWorldSurvivesAReload();
     void floorFileRoundTrip();
+    void authPacketAuthenticatesAgainstTheActiveSystem();
+    void advancedBootCreatesARootAccount();
+    void emptyModpassBootGeneratesOne();
     void oocRoundtrip();
     void escapeCodeRoundtrip();
     void pipelinedFrame();
@@ -183,6 +186,7 @@ class ProtocolTest : public QObject
     void joinServer(TestClient &client, int expectedPlayers = 0);
     // Takes a character and logs in with the fixture modpass.
     void loginAsModerator(TestClient &client);
+    void loginAsModeratorWith(TestClient &client, const QString &modpass);
     // Sends a pair-carrying IC message on def and answers with the pair
     // field of the sender's own MS echo: the partner's char id when the
     // mutual match held, -1 when nobody pointed back.
@@ -249,10 +253,12 @@ void ProtocolTest::performHandshake(TestClient &client, int expectedPlayers)
     QCOMPARE(client.takeNext(),
              QStringLiteral("PN#%1#100#This is a placeholder server description. Tell the world of AO who you are here!#%")
                  .arg(expectedPlayers));
+    // The tail token names the active auth system; the fixture runs simple
+    // auth, which is the password system.
     QCOMPARE(client.takeNext(),
              QStringLiteral("FL#noencryption#yellowtext#prezoom#flipping#customobjections#fastloading#deskmod#"
                             "evidence#cccc_ic_support#arup#casing_alerts#modcall_reason#looping_sfx#additive#"
-                            "effects#y_offset#expanded_desk_mods#auth_packet#custom_blips#%"));
+                            "effects#y_offset#expanded_desk_mods#auth_packet#custom_blips#auth_password#%"));
     QCOMPARE(client.takeNext(), QStringLiteral("ASS#http://attorneyoffline.de/base/#%"));
 
     client.send(QStringLiteral("askchaa#%"));
@@ -411,6 +417,11 @@ void ProtocolTest::configRuleBlocksIc()
 
 void ProtocolTest::loginAsModerator(TestClient &client)
 {
+    loginAsModeratorWith(client, QStringLiteral("changeme"));
+}
+
+void ProtocolTest::loginAsModeratorWith(TestClient &client, const QString &modpass)
+{
     client.send(QStringLiteral("CC#0#1#TESTHWID#%"));
     client.waitForIdle();
     while (client.pendingCount() > 0)
@@ -421,7 +432,7 @@ void ProtocolTest::loginAsModerator(TestClient &client)
     client.waitForIdle();
     while (client.pendingCount() > 0)
         client.takeNext();
-    client.send(QStringLiteral("CT#Tester#changeme#%"));
+    client.send(QStringLiteral("CT#Tester#%1#%").arg(modpass));
     client.waitForIdle();
     bool loggedIn = false;
     while (client.pendingCount() > 0)
@@ -1007,6 +1018,183 @@ void ProtocolTest::floorFileRoundTrip()
         received.append(client.takeNext());
     QVERIFY(received.filter(QRegularExpression(QStringLiteral("^MS#"))).isEmpty());
     QVERIFY(!received.filter(QStringLiteral("The tower is sealed.")).isEmpty());
+}
+
+void ProtocolTest::authPacketAuthenticatesAgainstTheActiveSystem()
+{
+    TestClient client;
+    joinServer(client);
+
+    QStringList received;
+    const auto drainInto = [&client, &received]() {
+        received.clear();
+        client.waitForIdle();
+        while (client.pendingCount() > 0)
+            received.append(client.takeNext());
+    };
+
+    // A wrong password is an honest refusal.
+    client.send(QStringLiteral("AUTH#password#wrongpass#%"));
+    drainInto();
+    QVERIFY(received.contains(QStringLiteral("AUTH#0#%")));
+    QVERIFY(!received.filter(QStringLiteral("Incorrect password.")).isEmpty());
+
+    // Naming a system the server does not run never reaches the verb.
+    client.send(QStringLiteral("AUTH#username#a#b#%"));
+    drainInto();
+    QVERIFY(received.contains(QStringLiteral("AUTH#0#%")));
+    QVERIFY(!received.filter(QStringLiteral("This server uses password authentication.")).isEmpty());
+
+    // The right system with the fixture modpass logs in.
+    client.send(QStringLiteral("AUTH#password#changeme#%"));
+    drainInto();
+    QVERIFY(received.contains(QStringLiteral("AUTH#1#%")));
+
+    // A second attempt hits the already-authenticated guard.
+    client.send(QStringLiteral("AUTH#password#changeme#%"));
+    drainInto();
+    QVERIFY(!received.filter(QStringLiteral("You are already logged in!")).isEmpty());
+    QVERIFY(!received.contains(QStringLiteral("AUTH#1#%")));
+}
+
+void ProtocolTest::advancedBootCreatesARootAccount()
+{
+    // The bootstrap needs auth=advanced BEFORE boot: stop the simple-auth
+    // server init() started and rewrite the staged config. The first boot
+    // already converted config.ini to config.json, so the converted file
+    // goes away for the rewritten ini to convert again.
+    // waitForStarted() only proves the process spawned; connecting proves
+    // the boot (and the config migration) finished before the kill.
+    {
+        TestClient l_boot_barrier;
+        QVERIFY2(l_boot_barrier.connectTo(m_port), "the init() server never came up");
+        l_boot_barrier.close();
+    }
+    m_server->kill();
+    QVERIFY(m_server->waitForFinished(5000));
+    m_server->readAll();
+    QVERIFY(QFile::remove(m_workdir->path() + "/config/config.json"));
+    {
+        QSettings config(m_workdir->path() + "/config/config.ini", QSettings::IniFormat);
+        config.setValue("Options/auth", "advanced");
+        config.sync();
+        QCOMPARE(config.status(), QSettings::NoError);
+    }
+    m_server->start(QStringLiteral(AKASHI_BINARY_PATH), QStringList());
+    QVERIFY2(m_server->waitForStarted(10000), "akashi binary failed to restart");
+
+    // The banner prints the one-time root password on the server's merged
+    // output; the password is extracted straight from it.
+    QByteArray output;
+    QRegularExpressionMatch match;
+    const QRegularExpression passwordLine(QStringLiteral("Password: ([0-9a-f]+)"));
+    QDeadlineTimer deadline(15000);
+    while (!deadline.hasExpired()) {
+        m_server->waitForReadyRead(250);
+        output += m_server->readAll();
+        match = passwordLine.match(QString::fromUtf8(output));
+        if (match.hasMatch())
+            break;
+    }
+    QVERIFY2(match.hasMatch(), qPrintable("no root banner in the server output:\n" + QString::fromUtf8(output)));
+    const QString rootPassword = match.captured(1);
+
+    // The advanced boot advertises the username system; performHandshake
+    // pins the simple-auth FL bytes, so the handshake runs by hand here.
+    TestClient client;
+    QVERIFY2(client.connectTo(m_port), "could not connect to the server");
+    QCOMPARE(client.takeNext(), QStringLiteral("decryptor#NOENCRYPT#%"));
+    client.send(QStringLiteral("HI#TESTHWID#%"));
+    client.takeNext();
+    client.send(QStringLiteral("ID#AO2#2.10.0#%"));
+    client.takeNext();
+    const QString features = client.takeNext();
+    QVERIFY2(features.contains(QStringLiteral("#auth_username#")), qPrintable("FL must advertise auth_username: " + features));
+    client.takeNext();
+    client.send(QStringLiteral("askchaa#%"));
+    client.takeNext();
+    client.send(QStringLiteral("RC#%"));
+    client.takeNext();
+    client.send(QStringLiteral("RM#%"));
+    client.takeNext();
+    client.send(QStringLiteral("RD#%"));
+    QVERIFY(client.waitForIdle());
+    while (client.pendingCount() > 0)
+        client.takeNext();
+
+    // The extracted password logs in over the ordinary OOC prompt: the
+    // bootstrap account works end to end.
+    client.send(QStringLiteral("CT#Tester#/login#%"));
+    client.waitForIdle();
+    while (client.pendingCount() > 0)
+        client.takeNext();
+    client.send(QStringLiteral("CT#Tester#root %1#%").arg(rootPassword));
+    // The verdict arrives after an off-thread PBKDF2 derivation, which a
+    // debug build can stretch well past the usual idle window.
+    bool loggedIn = false;
+    QStringList seen;
+    QDeadlineTimer verdict(15000);
+    while (!loggedIn && !verdict.hasExpired()) {
+        const QString packet = client.takeNext(1000);
+        if (packet.isEmpty())
+            continue;
+        seen.append(packet);
+        loggedIn |= packet == QStringLiteral("AUTH#1#%");
+    }
+    QVERIFY2(loggedIn, qPrintable("no AUTH#1 after the bootstrap login; saw: " + seen.join(" | ")));
+}
+
+void ProtocolTest::emptyModpassBootGeneratesOne()
+{
+    // Simple auth with no modpass generates one at boot instead of
+    // leaving the server unloggable. Same reboot dance as the root
+    // bootstrap: barrier, kill, rewrite, reboot, read the banner.
+    {
+        TestClient l_boot_barrier;
+        QVERIFY2(l_boot_barrier.connectTo(m_port), "the init() server never came up");
+        l_boot_barrier.close();
+    }
+    m_server->kill();
+    QVERIFY(m_server->waitForFinished(5000));
+    m_server->readAll();
+    QVERIFY(QFile::remove(m_workdir->path() + "/config/config.json"));
+    {
+        QSettings config(m_workdir->path() + "/config/config.ini", QSettings::IniFormat);
+        config.setValue("Options/modpass", QString());
+        config.sync();
+        QCOMPARE(config.status(), QSettings::NoError);
+    }
+    m_server->start(QStringLiteral(AKASHI_BINARY_PATH), QStringList());
+    QVERIFY2(m_server->waitForStarted(10000), "akashi binary failed to restart");
+
+    QByteArray output;
+    QRegularExpressionMatch match;
+    const QRegularExpression modpassLine(QStringLiteral("Modpass: ([0-9a-f]+)"));
+    QDeadlineTimer deadline(15000);
+    while (!deadline.hasExpired()) {
+        m_server->waitForReadyRead(250);
+        output += m_server->readAll();
+        match = modpassLine.match(QString::fromUtf8(output));
+        if (match.hasMatch())
+            break;
+    }
+    QVERIFY2(match.hasMatch(), qPrintable("no modpass banner in the server output:\n" + QString::fromUtf8(output)));
+    const QString modpass = match.captured(1);
+
+    // The generated modpass persists: the rewritten config carries it.
+    {
+        TestClient l_boot_barrier;
+        QVERIFY2(l_boot_barrier.connectTo(m_port), "the rebooted server never came up");
+        l_boot_barrier.close();
+    }
+    QFile persisted(m_workdir->path() + "/config/config.json");
+    QVERIFY(persisted.open(QIODevice::ReadOnly));
+    QVERIFY2(persisted.readAll().contains(modpass.toUtf8()), "the generated modpass never reached config.json");
+
+    // And it works: the ordinary prompt logs in with it.
+    TestClient client;
+    joinServer(client);
+    loginAsModeratorWith(client, modpass);
 }
 
 void ProtocolTest::oocRoundtrip()

@@ -1,5 +1,6 @@
 #include "core/console_menu.h"
 
+#include "akashi/config_store.h"
 #include "akashi/service_registry.h"
 #include "commands/authentication_commands.h"
 #include "core/client_session.h"
@@ -610,71 +611,154 @@ void ConsoleMenu::openBroadcast()
     });
 }
 
+// The user-management surface. The active system is read-only for the
+// server's whole life, so the view manages the accounts of the running
+// mode instead of offering to switch it.
 void ConsoleMenu::openAuthentication()
 {
-    const bool l_simple = m_server->authType() == AuthType::SIMPLE;
-    m_title = QStringLiteral("authentication | mode: %1")
-                  .arg(l_simple ? QStringLiteral("simple (one shared modpass)")
-                                : QStringLiteral("advanced (user accounts)"));
+    const QString l_system_id = m_server->activeAuthSystemId();
+    QString l_mode = l_system_id;
+    if (l_system_id == QStringLiteral("password")) {
+        l_mode = QStringLiteral("simple (one shared modpass)");
+    }
+    else if (l_system_id == QStringLiteral("username")) {
+        l_mode = QStringLiteral("advanced (user accounts)");
+    }
+    m_title = QStringLiteral("authentication | mode: %1").arg(l_mode);
     m_hint = m_interactive ? QStringLiteral("enter selects, esc goes back")
                            : QStringLiteral("enter a number; 0 goes back");
     m_back = [this] { openMain(); };
     m_selected = 0;
     m_text_entry = false;
     m_items.clear();
-    if (l_simple) {
-        m_items.append({QStringLiteral("switch to advanced (set the root password)"), [this] { openRootPasswordPrompt(); }});
+    if (l_system_id == QStringLiteral("username")) {
+        m_items.append({QStringLiteral("list users"), [this] { openListUsers(); }});
+        m_items.append({QStringLiteral("add a user"), [this] { openAddUserPrompt(); }});
+        m_items.append({QStringLiteral("remove a user"), [this] { openRemoveUserPrompt(); }});
+        m_items.append({QStringLiteral("assign a role"), [this] { openAssignRolePrompt(); }});
+        m_items.append({QStringLiteral("change a password"), [this] { openChangePasswordPrompt(); }});
     }
-    else {
-        m_items.append({QStringLiteral("reset the root password"), [this] { openRootPasswordPrompt(); }});
-        m_items.append({QStringLiteral("switch to simple (single modpass, keeps the user database)"), [this] {
-                            m_server->setAuthType(AuthType::SIMPLE);
-                            QString l_note = QStringLiteral("Switched to simple authentication. Moderators log in with the modpass.");
-                            if (m_server->serverSettings()->modpass().isEmpty()) {
-                                l_note += QStringLiteral("\nWarning: no modpass is set, so nobody can log in until one is configured.");
-                            }
-                            printOut(l_note);
-                            openAuthentication();
-                        }});
+    else if (l_system_id == QStringLiteral("password")) {
+        m_items.append({QStringLiteral("change the modpass"), [this] { openModpassPrompt(); }});
     }
+    // A plugin-provided system manages its own accounts; only back remains.
     m_items.append({QStringLiteral("back"), [this] { openMain(); }});
     m_rendered_lines = 0;
     render();
 }
 
-void ConsoleMenu::openRootPasswordPrompt()
+// Repackages /listusers with the role column; DBManager is the same
+// source of truth the command reads.
+void ConsoleMenu::openListUsers()
+{
+    DBManager *l_db = m_server->databaseManager();
+    const QStringList l_users = l_db->users();
+    if (l_users.isEmpty()) {
+        printOut(QStringLiteral("No users are in the database."));
+    }
+    for (const QString &l_user : l_users) {
+        printOut(QStringLiteral("%1 - %2").arg(l_user, l_db->acl(l_user)));
+    }
+    openAuthentication();
+}
+
+// Mirrors /adduser: a fresh user starts with the NONE role, and the
+// password must meet the owner-configured requirements.
+void ConsoleMenu::openAddUserPrompt()
 {
     m_back = [this] { openAuthentication(); };
-    openTextEntry(QStringLiteral("root password"), QStringLiteral("new password"), true, [this](const QString &f_password) {
-        applyRootPassword(f_password);
+    openTextEntry(QStringLiteral("add a user"), QStringLiteral("username"), false, [this](const QString &f_username) {
+        m_back = [this] { openAuthentication(); };
+        openTextEntry(QStringLiteral("add a user"), QStringLiteral("password"), true, [this, f_username](const QString &f_password) {
+            if (!commands::passwordMeetsRequirements(m_server->serverSettings(), f_username, f_password)) {
+                printOut(QStringLiteral("That password does not meet the server's password requirements."));
+                openAuthentication();
+                return;
+            }
+            printOut(m_server->databaseManager()->createUser(f_username, CryptoHelper::randbytes(16), f_password, ACLRolesHandler::NONE_ID)
+                         ? QStringLiteral("Created user %1. Assign a role to give them permissions.").arg(f_username)
+                         : QStringLiteral("Unable to create user %1; does a user with that name already exist?").arg(f_username));
+            openAuthentication();
+        });
     });
 }
 
-void ConsoleMenu::applyRootPassword(const QString &f_password)
+void ConsoleMenu::openRemoveUserPrompt()
 {
-    if (!commands::passwordMeetsRequirements(m_server->serverSettings(), QStringLiteral("root"), f_password)) {
-        printOut(QStringLiteral("That password does not meet the server's password requirements."));
+    m_back = [this] { openAuthentication(); };
+    openTextEntry(QStringLiteral("remove a user"), QStringLiteral("username"), false, [this](const QString &f_username) {
+        if (f_username == QStringLiteral("root")) {
+            printOut(QStringLiteral("The root account cannot be removed."));
+            openAuthentication();
+            return;
+        }
+        printOut(m_server->databaseManager()->deleteUser(f_username)
+                     ? QStringLiteral("Removed user %1.").arg(f_username)
+                     : QStringLiteral("Unable to remove user %1; does it exist?").arg(f_username));
         openAuthentication();
-        return;
-    }
+    });
+}
 
-    DBManager *l_db = m_server->databaseManager();
-    bool l_stored = l_db->createUser(QStringLiteral("root"), CryptoHelper::randbytes(16), f_password, ACLRolesHandler::SUPER_ID);
-    if (!l_stored) {
-        // The root account already exists; refresh its credentials instead.
-        l_stored = l_db->updatePassword(QStringLiteral("root"), f_password) && l_db->updateACL(QStringLiteral("root"), ACLRolesHandler::SUPER_ID);
-    }
-    if (!l_stored) {
-        printOut(QStringLiteral("Unable to store the root account; see the log."));
+// Mirrors /setperms' guards. Its SUPER escalation rule - only a super may
+// grant SUPER - passes trivially here, because the console operator IS
+// super; root's role stays untouchable like everywhere else.
+void ConsoleMenu::openAssignRolePrompt()
+{
+    m_back = [this] { openAuthentication(); };
+    openTextEntry(QStringLiteral("assign a role"), QStringLiteral("username"), false, [this](const QString &f_username) {
+        if (f_username == QStringLiteral("root")) {
+            printOut(QStringLiteral("You can't change root's role!"));
+            openAuthentication();
+            return;
+        }
+        m_back = [this] { openAuthentication(); };
+        openTextEntry(QStringLiteral("assign a role"), QStringLiteral("role id"), false, [this, f_username](const QString &f_role_id) {
+            if (!m_server->aclRolesHandler()->roleExists(f_role_id)) {
+                printOut(QStringLiteral("That role doesn't exist!"));
+                openAuthentication();
+                return;
+            }
+            printOut(m_server->databaseManager()->updateACL(f_username, f_role_id)
+                         ? QStringLiteral("Assigned role %1 to user %2.").arg(f_role_id, f_username)
+                         : QStringLiteral("%1 wasn't found!").arg(f_username));
+            openAuthentication();
+        });
+    });
+}
+
+// Mirrors /changepass for any user, root included - this is the recovery
+// path for a lost root password.
+void ConsoleMenu::openChangePasswordPrompt()
+{
+    m_back = [this] { openAuthentication(); };
+    openTextEntry(QStringLiteral("change a password"), QStringLiteral("username"), false, [this](const QString &f_username) {
+        m_back = [this] { openAuthentication(); };
+        openTextEntry(QStringLiteral("change a password"), QStringLiteral("new password"), true, [this, f_username](const QString &f_password) {
+            if (!commands::passwordMeetsRequirements(m_server->serverSettings(), f_username, f_password)) {
+                printOut(QStringLiteral("That password does not meet the server's password requirements."));
+                openAuthentication();
+                return;
+            }
+            printOut(m_server->databaseManager()->updatePassword(f_username, f_password)
+                         ? QStringLiteral("Changed the password of %1.").arg(f_username)
+                         : QStringLiteral("There was an error changing the password; does %1 exist?").arg(f_username));
+            openAuthentication();
+        });
+    });
+}
+
+// The one simple-mode task. The write goes through the ConfigStore, so
+// the value persists in config.json and the live modpass() read - the
+// store's cached declared value - is current immediately.
+void ConsoleMenu::openModpassPrompt()
+{
+    m_back = [this] { openAuthentication(); };
+    openTextEntry(QStringLiteral("change the modpass"), QStringLiteral("new modpass"), true, [this](const QString &f_modpass) {
+        m_server->serverSettings()->modpass.set(f_modpass);
+        m_server->configStore()->settings(QStringLiteral("config"))->sync();
+        printOut(QStringLiteral("Modpass changed; it applies to the next login."));
         openAuthentication();
-        return;
-    }
-
-    const bool l_switched = m_server->authType() != AuthType::ADVANCED;
-    m_server->setAuthType(AuthType::ADVANCED);
-    printOut(l_switched ? QStringLiteral("Switched to advanced authentication. Log in with /login root [password].")
-                        : QStringLiteral("Root password updated."));
-    openAuthentication();
+    });
 }
 
 void ConsoleMenu::openTextEntry(const QString &f_title, const QString &f_prompt, bool f_masked,

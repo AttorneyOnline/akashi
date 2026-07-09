@@ -35,6 +35,20 @@ class ModActionCodec : public Codec
     }
 };
 
+class AuthCodec : public Codec
+{
+  public:
+    std::unique_ptr<Message> decode(const Packet &f_packet) const override
+    {
+        auto l_message = std::make_unique<AuthMessage>();
+        l_message->system_id = f_packet.field(0);
+        for (int i = 1; i < f_packet.fieldCount(); i++) {
+            l_message->args.append(f_packet.field(i));
+        }
+        return l_message;
+    }
+};
+
 class ModcallHandler : public PacketHandler
 {
   public:
@@ -99,6 +113,25 @@ class ModActionHandler : public PacketHandler
     }
 };
 
+// AUTH: a self-describing login. Field 0 must name the server's single
+// active system - the honest desync error keeps a client from feeding
+// its credentials to a system that is not running.
+class AuthenticateHandler : public PacketHandler
+{
+  public:
+    void handle(const Message &f_message, IPacketContext &f_context) const override
+    {
+        const auto &l_auth = static_cast<const AuthMessage &>(f_message);
+        if (l_auth.system_id != f_context.activeAuthSystemId()) {
+            f_context.sendPacket(Packet(ao2::HEADER_AUTH, {QStringLiteral("0")}));
+            f_context.sendServerMessage("This server uses " + f_context.activeAuthSystemId() + " authentication.");
+            return;
+        }
+
+        f_context.authenticate(l_auth.args);
+    }
+};
+
 } // namespace
 
 void registerModerationPackets(PacketRegistry &f_handlers, PacketCodecRegistry &f_codecs)
@@ -107,9 +140,13 @@ void registerModerationPackets(PacketRegistry &f_handlers, PacketCodecRegistry &
 
     f_handlers.registerHandler({ao2::HEADER_ZZ, 2, permission::user}, std::make_shared<ModcallHandler>(), l_owner);
     f_handlers.registerHandler({ao2::HEADER_MA, 3, permission::user}, std::make_shared<ModActionHandler>(), l_owner);
+    // The system id plus at least one argument; joined-only, so a pre-join
+    // AUTH dies at dispatch like the rest of the family.
+    f_handlers.registerHandler({ao2::HEADER_AUTH, 2, permission::user}, std::make_shared<AuthenticateHandler>(), l_owner);
 
     f_codecs.registerCodec(ao2::HEADER_ZZ, always(), 0, std::make_shared<ModcallCodec>(), l_owner);
     f_codecs.registerCodec(ao2::HEADER_MA, always(), 0, std::make_shared<ModActionCodec>(), l_owner);
+    f_codecs.registerCodec(ao2::HEADER_AUTH, always(), 0, std::make_shared<AuthCodec>(), l_owner);
 }
 
 } // namespace akashi

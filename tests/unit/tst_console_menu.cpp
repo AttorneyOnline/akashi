@@ -18,6 +18,10 @@ class tst_ConsoleMenu : public QObject
 
   private:
     // The menu is driven through its sink; the tasks view needs no server.
+    // Limitation: this menu runs without a ServerContext, so the rebuilt
+    // authentication views (user management, the modpass entry) are not
+    // drivable here - they read the server on open. The protocol suite and
+    // the live playtests cover them.
     ConsoleMenu *makeMenu(QByteArray *f_capture, bool f_vt);
 };
 

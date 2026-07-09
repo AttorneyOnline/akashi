@@ -118,7 +118,9 @@ void tst_Handshake::identifyAcceptsAo2AndDescribesServer()
     QCOMPARE(l_context.sent.at(0).field(0), QString("3"));
     QCOMPARE(l_context.sent.at(0).field(1), QString("100"));
     QCOMPARE(l_context.sent.at(1).header(), QString("FL"));
-    QCOMPARE(l_context.sent.at(1).fieldCount(), 19);
+    QCOMPARE(l_context.sent.at(1).fieldCount(), 20);
+    // The one auth token, built from the context's active system.
+    QCOMPARE(l_context.sent.at(1).field(19), QString("auth_password"));
     QCOMPARE(l_context.sent.at(2).header(), QString("ASS"));
     QCOMPARE(l_context.sent.at(2).field(0), QString("http://attorneyoffline.de/base/"));
 }

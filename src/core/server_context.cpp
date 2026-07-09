@@ -39,9 +39,12 @@
 #include "commands/rule_commands.h"
 #include "core/arup_broadcaster.h"
 #include "core/auth_throttle.h"
+#include "core/authenticator_registry.h"
 #include "core/client_session.h"
 #include "core/command_registry.h"
 #include "core/console_menu.h"
+#include "core/core_authenticators.h"
+#include "core/crypto_helper.h"
 #include "core/db_manager.h"
 #include "core/discord_hook.h"
 #include "core/log_service.h"
@@ -229,9 +232,131 @@ ExitCode ServerContext::start()
     m_plugin_manager->startPlugins(l_plugin_allowlist);
     m_command_registry->applyExtensions(configPath("command_extensions.json"));
     setStage(Stage::PluginsLoaded);
+
+    // The one active authentication system resolves after the plugins
+    // started, so a plugin-provided system can be the configured one. The
+    // socket already listens, but start() runs in a single event loop
+    // turn: no connection is serviced before this resolves.
+    if (!resolveActiveAuthenticator()) {
+        return ExitCode::InvalidConfig;
+    }
+    bootstrapRootAccount();
+    bootstrapModpass();
+
     setStage(Stage::Listening);
     setStage(Stage::Running);
     return ExitCode::Ok;
+}
+
+QString ServerContext::configuredAuthSystemId() const
+{
+    const QString l_configured = m_server_settings->auth().trimmed();
+    if (l_configured.compare(QLatin1String("simple"), Qt::CaseInsensitive) == 0) {
+        return QStringLiteral("password");
+    }
+    if (l_configured.compare(QLatin1String("advanced"), Qt::CaseInsensitive) == 0) {
+        return QStringLiteral("username");
+    }
+    return l_configured;
+}
+
+bool ServerContext::resolveActiveAuthenticator()
+{
+    const QString l_system_id = configuredAuthSystemId();
+    m_active_authenticator = m_authenticator_registry->authenticatorFor(l_system_id);
+    if (!m_active_authenticator) {
+        // Never fall back to a weaker system: an unresolvable id stops the
+        // server before anybody can log in.
+        qCCritical(akashiServer).noquote() << QStringLiteral("No authentication system named \"%1\" is registered; the server cannot start. Check the auth setting, or load the plugin that provides it.").arg(l_system_id);
+        return false;
+    }
+    m_active_auth_system_id = m_active_authenticator->systemId();
+    return true;
+}
+
+QString ServerContext::generateBootstrapSecret() const
+{
+    // Hex-spelled random secret as long as the configured minimum password
+    // length demands, floored at the setting's own default for the
+    // degenerate zero case.
+    const int l_length = qMax(m_server_settings->pass_min_length(), 8);
+    return QString::fromLatin1(CryptoHelper::randbytes((l_length + 1) / 2).toHex()).left(l_length);
+}
+
+void ServerContext::bootstrapRootAccount()
+{
+    if (m_active_auth_system_id != QStringLiteral("username")) {
+        return;
+    }
+    if (db_manager->fetchCredentials(QStringLiteral("root"))) {
+        return;
+    }
+
+    const QString l_password = generateBootstrapSecret();
+    if (!db_manager->createUser(QStringLiteral("root"), CryptoHelper::randbytes(16), l_password, akashi::ACLRolesHandler::SUPER_ID)) {
+        qCCritical(akashiServer) << "Unable to create the root account; see the database log.";
+        return;
+    }
+
+    // Console only - this banner must never route through the LogService,
+    // so the password cannot land in a log file.
+    qCInfo(akashiServer).noquote() << QStringLiteral(
+                                          "\n==================================================================\n"
+                                          "  No root account existed, so one was created.\n"
+                                          "  Username: root\n"
+                                          "  Password: %1\n"
+                                          "  Log in with /login root <password> and change the password in\n"
+                                          "  the console's authentication menu or with /changepass.\n"
+                                          "  This password is shown once and never logged.\n"
+                                          "==================================================================")
+                                          .arg(l_password);
+}
+
+void ServerContext::bootstrapModpass()
+{
+    if (m_active_auth_system_id != QStringLiteral("password")) {
+        return;
+    }
+    if (!m_server_settings->modpass().isEmpty()) {
+        return;
+    }
+
+    // The same ConfigStore write path as the console menu's modpass item:
+    // live immediately, persisted to config.json.
+    const QString l_modpass = generateBootstrapSecret();
+    m_server_settings->modpass.set(l_modpass);
+    m_config_store->settings(QStringLiteral("config"))->sync();
+
+    // Console only - this banner must never route through the LogService,
+    // so the modpass cannot land in a log file.
+    qCInfo(akashiServer).noquote() << QStringLiteral(
+                                          "\n==================================================================\n"
+                                          "  No modpass was set, so one was generated.\n"
+                                          "  Modpass: %1\n"
+                                          "  Log in with /login and change it in the console's\n"
+                                          "  authentication menu; it is stored in config.json.\n"
+                                          "==================================================================")
+                                          .arg(l_modpass);
+}
+
+std::shared_ptr<akashi::Authenticator> ServerContext::activeAuthenticator() const
+{
+    return m_active_authenticator;
+}
+
+QString ServerContext::activeAuthSystemId() const
+{
+    return m_active_auth_system_id;
+}
+
+void ServerContext::deliverAuthOutcome(QPointer<akashi::ClientSession> f_session, const akashi::AuthOutcome &f_outcome)
+{
+    // Client ids get reused; only the QPointer proves the session that
+    // asked is still the one answering the door.
+    if (!f_session) {
+        return;
+    }
+    f_session->onAuthOutcome(f_outcome);
 }
 
 void ServerContext::buildCore()
@@ -326,6 +451,14 @@ void ServerContext::buildCore()
     m_auth_throttle = new akashi::AuthThrottle(m_server_settings->max_login_attempts(),
                                                m_server_settings->login_lockout_seconds());
 
+    // Every authentication system the server could run; plugins add their
+    // own before the launch-time resolution picks the one active system.
+    m_authenticator_registry = new akashi::AuthenticatorRegistry;
+    m_authenticator_registry->registerAuthenticator(
+        std::make_shared<akashi::PasswordAuthenticator>(m_server_settings), QStringLiteral("core"));
+    m_authenticator_registry->registerAuthenticator(
+        std::make_shared<akashi::UsernameAuthenticator>(db_manager), QStringLiteral("core"));
+
     m_log_service = new akashi::LogService(m_config_store, m_server_settings->logbuffer(), this);
 
     const QString l_log_mode = m_server_settings->logging().toLower();
@@ -344,6 +477,7 @@ void ServerContext::buildCore()
     m_services->registerService(std::shared_ptr<akashi::LogService>(m_log_service, [](auto *) {}));
     m_services->registerService(std::shared_ptr<akashi::TextFilterRegistry>(m_text_filter_registry, [](auto *) {}));
     m_services->registerService(std::shared_ptr<akashi::RuleRegistry>(m_rule_registry, [](auto *) {}));
+    m_services->registerService(std::shared_ptr<akashi::AuthenticatorRegistry>(m_authenticator_registry, [](auto *) {}));
 }
 
 std::optional<QString> ServerContext::applyWordFilter(const QString &f_text) const
@@ -545,7 +679,11 @@ ExitCode ServerContext::startListening()
         return ExitCode::InvalidBindAddress;
     }
 
-    QStringList l_vocabulary = akashi::serverFeatures();
+    // The configured auth id stands in for the active one, which
+        // resolves only after the plugins start - a config naming an
+        // unloadable system stops the server anyway.
+        QStringList l_vocabulary = akashi::serverFeatures();
+        l_vocabulary.append(QStringLiteral("auth_") + configuredAuthSystemId());
         m_receiver = new akashi::WebSocketReceiver(bind_addr, m_port, l_vocabulary, this);
     connect(m_receiver, &akashi::ClientReceiver::inboundClient, this, &ServerContext::inboundClient);
     if (!m_receiver->start()) {
@@ -591,6 +729,7 @@ ExitCode ServerContext::startListening()
     connect(m_config_store, &akashi::ConfigStore::configReloaded, m_log_service, &akashi::LogService::reloadTemplates);
     connect(m_config_store, &akashi::ConfigStore::configReloaded, this, &ServerContext::reloadAclRoles);
     connect(m_config_store, &akashi::ConfigStore::configReloaded, this, &ServerContext::reloadAuthLimits);
+    connect(m_config_store, &akashi::ConfigStore::configReloaded, this, &ServerContext::warnOnAuthSystemChange);
     // Observers hear about the reload last, after core re-read everything.
     connect(m_config_store, &akashi::ConfigStore::configReloaded, this, &ServerContext::publishConfigReloaded);
 
@@ -951,6 +1090,11 @@ akashi::AuthThrottle *ServerContext::authThrottle()
     return m_auth_throttle;
 }
 
+akashi::AuthenticatorRegistry *ServerContext::authenticatorRegistry()
+{
+    return m_authenticator_registry;
+}
+
 void ServerContext::reloadSettings()
 {
     // Rules are deliberately not re-applied here: a reload must not undo
@@ -1008,6 +1152,13 @@ void ServerContext::reloadAuthLimits()
 {
     m_auth_throttle->setLimits(m_server_settings->max_login_attempts(),
                                m_server_settings->login_lockout_seconds());
+}
+
+void ServerContext::warnOnAuthSystemChange()
+{
+    if (configuredAuthSystemId() != m_active_auth_system_id) {
+        qCWarning(akashiServer).noquote() << QStringLiteral("The auth setting now names \"%1\", but auth system changes take effect on restart; the server keeps running \"%2\".").arg(configuredAuthSystemId(), m_active_auth_system_id);
+    }
 }
 
 void ServerContext::publishConfigReloaded()
@@ -1437,11 +1588,6 @@ void ServerContext::setMotd(const QString &f_motd)
     m_server_settings->motd.set(f_motd);
 }
 
-void ServerContext::setAuthType(AuthType f_auth)
-{
-    m_server_settings->auth.set(f_auth == AuthType::ADVANCED ? QStringLiteral("advanced") : QStringLiteral("simple"));
-}
-
 QStringList ServerContext::gimpList() const { return m_text_data.gimps; }
 QStringList ServerContext::cdnList() const { return m_text_data.cdns; }
 QStringList ServerContext::praiseList() const { return m_text_data.praises; }
@@ -1480,6 +1626,10 @@ void ServerContext::shutdown()
 
     delete m_receiver;
     m_receiver = nullptr;
+    // The registry holds the core systems, which read the settings and the
+    // database; it goes before both.
+    m_active_authenticator.reset();
+    delete m_authenticator_registry;
     delete acl_roles_handler;
     delete db_manager;
     delete m_auth_throttle;

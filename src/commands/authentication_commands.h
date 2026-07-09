@@ -13,8 +13,6 @@ namespace akashi::commands {
 
 // The command handlers this file exports to the registry.
 void cmdLogin(akashi::CommandContext &f_context);
-void cmdChangeAuth(akashi::CommandContext &f_context);
-void cmdRootPass(akashi::CommandContext &f_context);
 void cmdAddUser(akashi::CommandContext &f_context);
 void cmdRemoveUser(akashi::CommandContext &f_context);
 void cmdListPermsSelf(akashi::CommandContext &f_context);

@@ -23,6 +23,8 @@ class tst_Moderation : public QObject
     void modcallHandlerLeavesPreJoinGatingToTheDispatcher();
     void modActionNeedsLoginAndPermission();
     void modActionKicksAndBans();
+    void authRoutesArgsToTheActiveSystem();
+    void authRefusesAMismatchedSystemId();
 
   private:
     void run(const Packet &f_packet, FakeContext &f_context);
@@ -130,6 +132,34 @@ void tst_Moderation::modActionKicksAndBans()
     run(Packet("MA", {"7", "0", "gone"}), l_context);
     QVERIFY(l_context.calls.contains("message:User not found."));
     QCOMPARE(l_context.kicks.size(), 1);
+}
+
+void tst_Moderation::authRoutesArgsToTheActiveSystem()
+{
+    FakeContext l_context;
+    l_context.active_auth_system_id = "password";
+    run(Packet("AUTH", {"password", "changeme"}), l_context);
+    QCOMPARE(l_context.authenticate_args.size(), 1);
+    QCOMPARE(l_context.authenticate_args.first(), QStringList({"changeme"}));
+
+    // Every field after the system id reaches the verb, in order.
+    l_context.active_auth_system_id = "username";
+    run(Packet("AUTH", {"username", "root", "hunter2"}), l_context);
+    QCOMPARE(l_context.authenticate_args.last(), QStringList({"root", "hunter2"}));
+}
+
+void tst_Moderation::authRefusesAMismatchedSystemId()
+{
+    FakeContext l_context;
+    l_context.active_auth_system_id = "password";
+    run(Packet("AUTH", {"username", "a", "b"}), l_context);
+
+    // The verb is never reached; the refusal is the honest desync error.
+    QVERIFY(l_context.authenticate_args.isEmpty());
+    QCOMPARE(l_context.sent.size(), 1);
+    QCOMPARE(l_context.sent.first().header(), QString("AUTH"));
+    QCOMPARE(l_context.sent.first().field(0), QString("0"));
+    QVERIFY(l_context.calls.contains("message:This server uses password authentication."));
 }
 
 }

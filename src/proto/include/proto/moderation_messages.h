@@ -4,6 +4,7 @@
 #include "proto/message.h"
 
 #include <QString>
+#include <QStringList>
 
 namespace akashi {
 
@@ -23,6 +24,15 @@ class AKASHI_CORE_EXPORT ModActionMessage : public Message
     int target_id = -1;
     int duration = 0;
     QString reason;
+};
+
+// AUTH: a client logs in against the server's single active system;
+// field 0 names the system, the rest are its arguments.
+class AKASHI_CORE_EXPORT AuthMessage : public Message
+{
+  public:
+    QString system_id;
+    QStringList args;
 };
 
 } // namespace akashi
