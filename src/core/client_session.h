@@ -7,7 +7,9 @@
 #include "proto/packet_context.h"
 #include "proto/packet_service.h"
 #include "proto/transport.h"
+#include "world/area.h"
 
+#include <QFutureWatcher>
 #include <QHostAddress>
 #include <QList>
 #include <QObject>
@@ -23,7 +25,6 @@ class ServerContext;
 
 namespace akashi {
 
-class Area;
 class TextFilterRegistry;
 struct PacketSpec;
 
@@ -38,6 +39,15 @@ class AKASHI_CORE_EXPORT ClientSession : public QObject, public IPacketContext
     Q_OBJECT
 
   public:
+    // How far this connection has come: a fresh socket, past the handshake,
+    // or a full player in the world. The stage only ever moves forward.
+    enum class SessionStage
+    {
+        Connected,
+        Identified,
+        Joined,
+    };
+
     // Takes ownership of the transport. The session outlives any one socket:
     // its signals are the stable surface the server connects to, so a
     // reconnect can bind a fresh transport to the same session.
@@ -87,8 +97,6 @@ class AKASHI_CORE_EXPORT ClientSession : public QObject, public IPacketContext
     QHostAddress remote_ip;
     QString session_hwid;
     QString session_ipid;
-    bool identified = false;
-    bool has_joined = false;
 
     // The server's packet pipeline and the codecs picked for this client,
     // refreshed when it identifies.
@@ -146,6 +154,10 @@ class AKASHI_CORE_EXPORT ClientSession : public QObject, public IPacketContext
     // --- Person-level accessors ---
 
     QString ipid() const;
+    SessionStage stage() const;
+
+    // Moves the lifecycle forward; a lower or equal stage is a no-op.
+    void advanceStage(SessionStage f_stage);
     bool isJoined() const;
     bool isAuthenticated() const override;
     void calculateIpid();
@@ -175,7 +187,13 @@ class AKASHI_CORE_EXPORT ClientSession : public QObject, public IPacketContext
     bool canModifyEvidence(Area *area);
     bool canModifyEvidence();
     void sendFullArup();
-    bool changeCharacter(int char_id);
+    // The one door every character change goes through: person gates, the
+    // character_changed before-rules, the area's uniqueness mechanism, the
+    // PV/CharsCheck sends and the after-rule dispatch. Returns the refusal
+    // reason on failure - empty for the silent refusals the mechanism has
+    // always given. f_announce_done sends the DONE that pushes the client
+    // back to the character select screen on a switch to spectator.
+    std::optional<QString> takeCharacter(int f_char_id, bool f_announce_done = false);
     void loginAttempt(QString message);
     void changeArea(int new_area) override;
     int floorCount() const override;
@@ -183,6 +201,7 @@ class AKASHI_CORE_EXPORT ClientSession : public QObject, public IPacketContext
     QStringList floorAreaNames() const override;
     int floorAreaToGlobal(int f_local_index) const override;
     std::optional<QString> checkBeforeRule(const QString &f_event, const QVariantMap &f_payload = {}) override;
+    QVariantMap runTransformRules(const QString &f_event, const QVariantMap &f_payload) override;
     void runAfterRule(const QString &f_event, const QVariantMap &f_payload = {}) override;
     void handleCommand(QString command, int argc, QStringList argv);
     QString decodeMessage(QString incoming_message);
@@ -204,7 +223,6 @@ class AKASHI_CORE_EXPORT ClientSession : public QObject, public IPacketContext
     std::optional<BanRecord> hardwareBan() const override;
     QString serverNickname() const override;
     int maxMessageLength() const override;
-    QStringList wordFilters() const override;
     bool webaoEnabled() const override;
     int maxPlayerCount() const override;
     QString serverDescription() const override;
@@ -225,7 +243,6 @@ class AKASHI_CORE_EXPORT ClientSession : public QObject, public IPacketContext
     void attemptLogin(const QString &f_message) override;
     void runCommand(const QString &f_command, const QStringList &f_arguments) override;
     void broadcastOoc(const QString &f_message) override;
-    bool isEvidenceHiddenCm() const override;
     int evidenceCount() const override;
     void deleteEvidence(int f_index) override;
     void replaceEvidence(int f_index, const QString &f_name, const QString &f_description, const QString &f_image) override;
@@ -243,11 +260,11 @@ class AKASHI_CORE_EXPORT ClientSession : public QObject, public IPacketContext
     QString flipping() const;
     QString pos() const;
     int pairingWith() const;
-    void setPairingWith(int f_char_id);
+    void setPairingWith(int f_char_id) override;
     QString lastIcMessage() const override;
     void setLastIcMessage(const QString &f_message) override;
     void updatePosition(const QString &f_position) override;
-    std::optional<QString> applyTextFilters(const QString &f_text) const override;
+    std::optional<QString> applyTextFilters(const QString &f_text, akashi::TextChannel f_channel) const override;
 
     bool isAfk() const;
     void setAfk(bool f_afk);
@@ -268,7 +285,6 @@ class AKASHI_CORE_EXPORT ClientSession : public QObject, public IPacketContext
     void setAuthenticated(bool f_state);
 
     void setInLoginPrompt(bool f_in_login_prompt);
-    void setCharacterId(int f_char_id);
     void setFirstPerson(bool f_first_person);
     bool isGlobalEnabled() const;
     void setGlobalEnabled(bool f_global_enabled);
@@ -276,12 +292,10 @@ class AKASHI_CORE_EXPORT ClientSession : public QObject, public IPacketContext
     QList<int> charCurseList() const;
     void addCharCurse(int f_char_id);
     void clearCharCurse();
-    void changePosition(QString new_pos);
+    void changePosition(QString f_new_pos);
     void closeSocket();
     bool isIcMessageAllowed() const override;
     bool canActInArea() override;
-    bool isShoutAllowed() const override;
-    bool isShownameAllowed() const override;
     bool isImmediateForced() const override;
     QString areaSide() const override;
     QStringList lastAreaMessage() const override;
@@ -290,18 +304,41 @@ class AKASHI_CORE_EXPORT ClientSession : public QObject, public IPacketContext
     void broadcastIc(const QStringList &f_fields, int f_evidence_index) override;
     bool hasSong(const QString &f_name) const override;
     bool isDjBlocked() const override;
-    bool isJukeboxEnabled() const override;
-    QString queueJukeboxSong(const QString &f_song) override;
-    QString resolveSongAlias(const QString &f_song) override;
-    void recordMusicChange(const QString &f_song) override;
+    std::optional<QString> playMusic(const QString &f_song, MusicSource f_source, const QString &f_char_id, const QString &f_effects) override;
+    // The ambience verb; commands are its only doors, so it lives off the
+    // packet context. The source is PlayCommand or Background.
+    std::optional<QString> playAmbience(const QString &f_song, MusicSource f_source);
+
+    // The scene verbs below are command-only doors like playAmbience: each
+    // owns its rules, the mutation and the broadcasts, and returns the
+    // refusal reason or nothing when done.
+
+    // Background: rules, the list validation, the BN broadcast, the
+    // background's ambience through playAmbience, and the area notice.
+    std::optional<QString> changeBackground(const QString &f_background);
+
+    // The background side, gated by the same background rules.
+    std::optional<QString> changeBackgroundSide(const QString &f_side);
+
+    // Status: validates against the known names, then rules, the commit
+    // and the area notice. The area-update broadcast follows the change.
+    std::optional<QString> changeAreaStatus(const QString &f_name);
+
+    // The case document; empty text resets it to "No document.".
+    std::optional<QString> changeDocument(const QString &f_text);
+
+    // The area lock; locking or spectating invites everyone present.
+    std::optional<QString> setAreaLock(Area::LockState f_state);
+
+    // Case manager spots. The ownership checks stay with the commands.
+    std::optional<QString> addAreaOwner(int f_target);
+    std::optional<QString> removeAreaOwner(int f_target);
     bool isWtceBlocked() const override;
-    bool isWtceAllowed() const override;
     bool startWtceCooldown() override;
-    void logJudgeAction(const QString &f_action) override;
+    std::optional<QString> useWtce(const QString &f_splash, const std::optional<QString> &f_variant) override;
+    std::optional<QString> changePenalty(int f_bar, int f_value) override;
     void addEvidence(const QString &f_name, const QString &f_description, const QString &f_image) override;
     void broadcastArea(const Packet &f_packet) override;
-    void setPenalty(int f_bar, int f_value) override;
-    int penalty(int f_bar) const override;
     void broadcastCaseAlert(const QList<bool> &f_needs, const Packet &f_packet) override;
     void setCharacterPassword(const QString &f_password) override;
     bool canPerform(const QString &f_permission) const override;
@@ -339,9 +376,17 @@ class AKASHI_CORE_EXPORT ClientSession : public QObject, public IPacketContext
     // deletes the session on this.
     void reconnectTimedOut();
 
+  private Q_SLOTS:
+    // Finishes the advanced login once the hash worker returns; loginAttempt
+    // binds the attempt's particulars ahead of the watcher's finished signal.
+    void onLoginHashComputed(QFutureWatcher<QString> *f_watcher, const QString &f_username, const QString &f_password, const QString &f_stored_hash, const QString &f_acl_role, bool f_needs_rehash);
+
   private:
     // The person's profile as told at the handshake; profile() exposes it.
     ClientProfile m_profile;
+
+    // Where the connection stands in its lifecycle; advanceStage moves it.
+    SessionStage m_stage = SessionStage::Connected;
 
     // Set once leave() has run, making it idempotent.
     bool m_left = false;
@@ -360,18 +405,5 @@ class AKASHI_CORE_EXPORT ClientSession : public QObject, public IPacketContext
 
     bool checkTestimonySymbols(const QString &message);
 };
-
-// The ids of the built-in sanctions. Plugins register their own alongside.
-namespace Sanction {
-inline const QString Muted = QStringLiteral("muted");
-inline const QString OocMuted = QStringLiteral("ooc_muted");
-inline const QString DjBlocked = QStringLiteral("dj_blocked");
-inline const QString WtceBlocked = QStringLiteral("wtce_blocked");
-inline const QString Gimped = QStringLiteral("gimped");
-inline const QString Shaken = QStringLiteral("shaken");
-inline const QString Disemvoweled = QStringLiteral("disemvoweled");
-inline const QString Medieval = QStringLiteral("medieval");
-inline const QString CharCurse = QStringLiteral("charcurse");
-} // namespace Sanction
 
 } // namespace akashi

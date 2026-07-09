@@ -42,8 +42,7 @@ void TargetPlayer::changeArea(int f_area_id)
 
 void TargetPlayer::forceCharacterSelect()
 {
-    m_client->changeCharacter(-1);
-    m_client->sendPacket("DONE");
+    m_client->takeCharacter(-1, true);
 }
 
 void TargetPlayer::sendPacket(const QString &f_header, const QStringList &f_fields)

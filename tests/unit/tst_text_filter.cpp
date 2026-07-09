@@ -21,13 +21,21 @@ class tst_TextFilter : public QObject
     void alwaysActiveRunsWithEmptyActiveSet();
     void nonActiveFilterIsSkipped();
     void nulloptStopsTheChain();
+    void dropMidChainNeverRunsLaterFilters();
+    void unknownActiveIdIsIgnored();
+    void duplicateIdIsRefused();
     void ownerTrackedUnregister();
+    void unregisterUnknownOwnerIsANoOp();
     void hasFilterQuery();
+    void oocOnlyFilterNeverRunsOnIc();
     void gimpReplacesEntireMessage();
     void medievalTransformsText();
     void shakePreservesWordSet();
     void disemvowelStripsVowels();
     void wordFilterRedactsMatches();
+    void icOnlyFilterSkipsTheOocChannel();
+    void bothChannelFilterRunsOnBoth();
+    void applyFilterRunsOneFilterAlone();
 };
 
 void tst_TextFilter::singleFilterTransformsText()
@@ -101,6 +109,58 @@ void tst_TextFilter::nulloptStopsTheChain()
     QVERIFY(!l_result.has_value());
 }
 
+void tst_TextFilter::dropMidChainNeverRunsLaterFilters()
+{
+    TextFilterRegistry l_registry;
+    int l_later_runs = 0;
+    l_registry.registerFilter(
+        "prefix", 100, [](const QString &t) -> std::optional<QString> { return "A" + t; }, true, "test");
+    l_registry.registerFilter(
+        "drop", 200, [](const QString &) -> std::optional<QString> { return std::nullopt; }, true, "test");
+    l_registry.registerFilter(
+        "later", 300, [&l_later_runs](const QString &t) -> std::optional<QString> {
+            l_later_runs++;
+            return t; }, true, "test");
+
+    auto l_result = l_registry.apply("hello", {});
+    QVERIFY(!l_result.has_value());
+    QCOMPARE(l_later_runs, 0);
+}
+
+void tst_TextFilter::unknownActiveIdIsIgnored()
+{
+    // An active set naming no registered filter changes nothing.
+    TextFilterRegistry l_registry;
+    l_registry.registerFilter(
+        "upper", 100, [](const QString &t) -> std::optional<QString> { return t.toUpper(); }, false, "test");
+
+    auto l_result = l_registry.apply("hello", {"ghost"});
+    QVERIFY(l_result.has_value());
+    QCOMPARE(*l_result, QString("hello"));
+}
+
+void tst_TextFilter::duplicateIdIsRefused()
+{
+    // A second registration under a known id is refused with a warning
+    // naming the id and both owners; only the first ever runs.
+    TextFilterRegistry l_registry;
+    l_registry.registerFilter(
+        "twice", 100, [](const QString &t) -> std::optional<QString> { return t + "A"; }, true, "first");
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression("twice.*second.*first"));
+    l_registry.registerFilter(
+        "twice", 200, [](const QString &t) -> std::optional<QString> { return t + "B"; }, true, "second");
+
+    QCOMPARE(*l_registry.apply("X", {}), QString("XA"));
+
+    // applyFilter reaches the surviving first registration.
+    QCOMPARE(*l_registry.applyFilter("twice", "X"), QString("XA"));
+
+    // The refused owner holds nothing, so its sweep removes nothing.
+    l_registry.unregisterAll("second");
+    QVERIFY(l_registry.hasFilter("twice"));
+    QCOMPARE(*l_registry.apply("X", {}), QString("XA"));
+}
+
 void tst_TextFilter::ownerTrackedUnregister()
 {
     TextFilterRegistry l_registry;
@@ -118,6 +178,18 @@ void tst_TextFilter::ownerTrackedUnregister()
     QCOMPARE(*l_result, QString("XC"));
 }
 
+void tst_TextFilter::unregisterUnknownOwnerIsANoOp()
+{
+    TextFilterRegistry l_registry;
+    l_registry.registerFilter(
+        "keeper", 100, [](const QString &t) -> std::optional<QString> { return t + "K"; }, true, "plugin");
+
+    l_registry.unregisterAll("nobody");
+
+    QVERIFY(l_registry.hasFilter("keeper"));
+    QCOMPARE(*l_registry.apply("X", {}), QString("XK"));
+}
+
 void tst_TextFilter::hasFilterQuery()
 {
     TextFilterRegistry l_registry;
@@ -126,6 +198,17 @@ void tst_TextFilter::hasFilterQuery()
     l_registry.registerFilter(
         "present", 100, [](const QString &t) -> std::optional<QString> { return t; }, false, "test");
     QVERIFY(l_registry.hasFilter("present"));
+}
+
+void tst_TextFilter::oocOnlyFilterNeverRunsOnIc()
+{
+    TextFilterRegistry l_registry;
+    l_registry.registerFilter(
+        "ooc-notice", 100, [](const QString &t) -> std::optional<QString> { return t.toUpper(); }, true, "test",
+        {TextChannel::Ooc});
+
+    QCOMPARE(*l_registry.apply("hello", {}, TextChannel::Ic), QString("hello"));
+    QCOMPARE(*l_registry.apply("hello", {}, TextChannel::Ooc), QString("HELLO"));
 }
 
 void tst_TextFilter::gimpReplacesEntireMessage()
@@ -186,6 +269,43 @@ void tst_TextFilter::wordFilterRedactsMatches()
 
     auto l_result = l_registry.apply("this is Bad word", {});
     QCOMPARE(*l_result, QString("this is ❌ word"));
+}
+
+void tst_TextFilter::icOnlyFilterSkipsTheOocChannel()
+{
+    // Registration defaults to IC-only, so sanction filters never touch OOC.
+    TextFilterRegistry l_registry;
+    l_registry.registerFilter(
+        "gimped", 200, [](const QString &) -> std::optional<QString> { return QStringLiteral("I am a heinous criminal."); }, true, "test");
+
+    QCOMPARE(*l_registry.apply("hello", {}, TextChannel::Ic), QString("I am a heinous criminal."));
+    QCOMPARE(*l_registry.apply("hello", {}, TextChannel::Ooc), QString("hello"));
+}
+
+void tst_TextFilter::bothChannelFilterRunsOnBoth()
+{
+    TextFilterRegistry l_registry;
+    l_registry.registerFilter(
+        "word-filter", 100, [](const QString &t) -> std::optional<QString> { return QString(t).replace("bad", "❌"); }, true, "test",
+        {TextChannel::Ic, TextChannel::Ooc});
+
+    QCOMPARE(*l_registry.apply("a bad word", {}, TextChannel::Ic), QString("a ❌ word"));
+    QCOMPARE(*l_registry.apply("a bad word", {}, TextChannel::Ooc), QString("a ❌ word"));
+}
+
+void tst_TextFilter::applyFilterRunsOneFilterAlone()
+{
+    // The apply_filter rule action reaches one named filter directly:
+    // channels, active sets and the other filters play no part.
+    TextFilterRegistry l_registry;
+    l_registry.registerFilter(
+        "medieval", 300, [](const QString &t) -> std::optional<QString> { return "Ye olde " + t; }, false, "test");
+    l_registry.registerFilter(
+        "upper", 400, [](const QString &t) -> std::optional<QString> { return t.toUpper(); }, true, "test");
+
+    QCOMPARE(*l_registry.applyFilter("medieval", "hello"), QString("Ye olde hello"));
+    // An unknown id leaves the text unchanged.
+    QCOMPARE(*l_registry.applyFilter("missing", "hello"), QString("hello"));
 }
 
 } // namespace unittests

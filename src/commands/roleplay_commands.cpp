@@ -9,6 +9,7 @@
 #include "core/server_context.h"
 #include "core/server_settings.h"
 #include "proto/packet.h"
+#include "proto/timer_packets.h"
 #include "world/area.h"
 
 #include <QTime>
@@ -57,7 +58,7 @@ static QString areaTimer(CommandContext &f_context, int f_area_idx, int f_timer_
     return l_name + " is inactive.";
 }
 
-static void handleFlip(CommandContext &f_context)
+void cmdCoinFlip(CommandContext &f_context)
 {
     QString l_sender_name = f_context.name();
     QStringList l_faces = {"heads", "tails"};
@@ -65,7 +66,7 @@ static void handleFlip(CommandContext &f_context)
     f_context.replyToArea(l_sender_name + " flipped a coin and got " + l_face + ".");
 }
 
-static void handleRoll(CommandContext &f_context)
+void cmdRoll(CommandContext &f_context)
 {
     int l_sides = 6;
     int l_dice = 1;
@@ -129,7 +130,7 @@ static void handleRoll(CommandContext &f_context)
     diceThrower(f_context, l_sides, l_dice, false);
 }
 
-static void handleRollA(CommandContext &f_context)
+void cmdRollA(CommandContext &f_context)
 {
     QString l_dice_name = f_context.arguments().join(" ");
 
@@ -144,7 +145,7 @@ static void handleRollA(CommandContext &f_context)
     }
 }
 
-static void handleRollP(CommandContext &f_context)
+void cmdRollP(CommandContext &f_context)
 {
     int l_sides = 6;
     int l_dice = 1;
@@ -208,7 +209,7 @@ static void handleRollP(CommandContext &f_context)
     diceThrower(f_context, l_sides, l_dice, true);
 }
 
-static void handleTimer(CommandContext &f_context)
+void cmdTimer(CommandContext &f_context)
 {
     akashi::Area *l_area = f_context.server()->areaById(f_context.areaId());
 
@@ -245,18 +246,19 @@ static void handleTimer(CommandContext &f_context)
     else
         l_requested_timer = l_area->timers().at(l_timer_id - 1);
 
-    akashi::Packet l_show_timer("TI", {QString::number(l_timer_id), "2"});
-    akashi::Packet l_hide_timer("TI", {QString::number(l_timer_id), "3"});
     bool l_is_global = l_timer_id == 0;
+    // Every timer packet leaves through the shared TI builders.
+    auto l_send = [&f_context, l_is_global](const akashi::Packet &f_packet) {
+        l_is_global ? f_context.server()->broadcast(f_packet) : f_context.server()->broadcast(f_packet, f_context.areaId());
+    };
 
     QTime l_requested_time = QTime::fromString(f_context.argument(1), "hh:mm:ss");
     if (l_requested_time.isValid()) {
         l_requested_timer->setInterval(QTime(0, 0).msecsTo(l_requested_time));
         l_requested_timer->start();
         f_context.reply("Set timer " + QString::number(l_timer_id) + " to " + f_context.argument(1) + ".");
-        akashi::Packet l_update_timer("TI", {QString::number(l_timer_id), "0", QString::number(QTime(0, 0).msecsTo(l_requested_time))});
-        l_is_global ? f_context.server()->broadcast(l_show_timer) : f_context.server()->broadcast(l_show_timer, f_context.areaId());
-        l_is_global ? f_context.server()->broadcast(l_update_timer) : f_context.server()->broadcast(l_update_timer, f_context.areaId());
+        l_send(akashi::timerShow(l_timer_id));
+        l_send(akashi::timerValue(l_timer_id, QTime(0, 0).msecsTo(l_requested_time)));
         return;
     }
     else {
@@ -264,27 +266,25 @@ static void handleTimer(CommandContext &f_context)
         if (l_action == "start") {
             l_requested_timer->start();
             f_context.reply("Started timer " + QString::number(l_timer_id) + ".");
-            akashi::Packet l_update_timer("TI", {QString::number(l_timer_id), "0", QString::number(QTime(0, 0).msecsTo(QTime(0, 0).addMSecs(l_requested_timer->remainingTime())))});
-            l_is_global ? f_context.server()->broadcast(l_show_timer) : f_context.server()->broadcast(l_show_timer, f_context.areaId());
-            l_is_global ? f_context.server()->broadcast(l_update_timer) : f_context.server()->broadcast(l_update_timer, f_context.areaId());
+            l_send(akashi::timerShow(l_timer_id));
+            l_send(akashi::timerValue(l_timer_id, QTime(0, 0).msecsTo(QTime(0, 0).addMSecs(l_requested_timer->remainingTime()))));
         }
         else if (l_action == "pause" || l_action == "stop") {
             l_requested_timer->setInterval(l_requested_timer->remainingTime());
             l_requested_timer->stop();
             f_context.reply("Stopped timer " + QString::number(l_timer_id) + ".");
-            akashi::Packet l_update_timer("TI", {QString::number(l_timer_id), "1", QString::number(QTime(0, 0).msecsTo(QTime(0, 0).addMSecs(l_requested_timer->interval())))});
-            l_is_global ? f_context.server()->broadcast(l_update_timer) : f_context.server()->broadcast(l_update_timer, f_context.areaId());
+            l_send(akashi::timerValue(l_timer_id, QTime(0, 0).msecsTo(QTime(0, 0).addMSecs(l_requested_timer->interval())), true));
         }
         else if (l_action == "hide" || l_action == "unset") {
             l_requested_timer->setInterval(0);
             l_requested_timer->stop();
             f_context.reply("Hid timer " + QString::number(l_timer_id) + ".");
-            l_is_global ? f_context.server()->broadcast(l_hide_timer) : f_context.server()->broadcast(l_hide_timer, f_context.areaId());
+            l_send(akashi::timerHide(l_timer_id));
         }
     }
 }
 
-static void handleNotecard(CommandContext &f_context)
+void cmdNotecard(CommandContext &f_context)
 {
     akashi::Area *l_area = f_context.server()->areaById(f_context.areaId());
     QString l_notecard = f_context.arguments().join(" ");
@@ -292,7 +292,7 @@ static void handleNotecard(CommandContext &f_context)
     f_context.replyToArea(f_context.character() + " wrote a note card.");
 }
 
-static void handleNotecardClear(CommandContext &f_context)
+void cmdNotecardClear(CommandContext &f_context)
 {
     akashi::Area *l_area = f_context.server()->areaById(f_context.areaId());
     if (!l_area->addNotecard(f_context.character(), QString())) {
@@ -300,7 +300,7 @@ static void handleNotecardClear(CommandContext &f_context)
     }
 }
 
-static void handleNotecardReveal(CommandContext &f_context)
+void cmdNotecardReveal(CommandContext &f_context)
 {
     akashi::Area *l_area = f_context.server()->areaById(f_context.areaId());
     const QStringList l_notecards = l_area->notecards();
@@ -316,7 +316,7 @@ static void handleNotecardReveal(CommandContext &f_context)
     f_context.replyToArea(l_message);
 }
 
-static void handle8Ball(CommandContext &f_context)
+void cmd8Ball(CommandContext &f_context)
 {
     if (f_context.server()->magic8BallAnswers().isEmpty()) {
         qCWarning(akashiCommands) << "8ball.txt is empty!";
@@ -330,7 +330,7 @@ static void handle8Ball(CommandContext &f_context)
     }
 }
 
-static void handleSubtheme(CommandContext &f_context)
+void cmdSubtheme(CommandContext &f_context)
 {
     QString l_subtheme = f_context.arguments().join(" ");
     const QVector<akashi::ClientSession *> l_clients = f_context.server()->clients();
@@ -343,16 +343,16 @@ static void handleSubtheme(CommandContext &f_context)
 
 void registerRoleplayCommands(CommandRegistry &f_registry)
 {
-    f_registry.registerCommand({"coinflip", {}, {}, 0, "/coinflip", "Flips a coin for the area to see."}, handleFlip, "core");
-    f_registry.registerCommand({"roll", {"r"}, {}, 0, "/roll [dice] [faces]", "Rolls dice for the area to see."}, handleRoll, "core");
-    f_registry.registerCommand({"rolla", {}, {}, 0, "/rolla <name>", "Rolls a named die from the dice config."}, handleRollA, "core");
-    f_registry.registerCommand({"rollp", {}, {}, 0, "/rollp [dice] [faces]", "Rolls dice only you and the moderators see."}, handleRollP, "core");
-    f_registry.registerCommand({"timer", {}, {permission::gamemaster}, 0, "/timer [id] [time|start|pause|hide]", "Shows or controls the area's timers."}, handleTimer, "core");
-    f_registry.registerCommand({"notecard", {}, {}, 1, "/notecard <message>", "Writes your hidden notecard."}, handleNotecard, "core");
-    f_registry.registerCommand({"notecard_clear", {"clear_notecard", "notecardclear"}, {}, 0, "/notecard_clear", "Clears your notecard."}, handleNotecardClear, "core");
-    f_registry.registerCommand({"notecard_reveal", {"reveal_notecard", "notecardreveal"}, {permission::gamemaster}, 0, "/notecard_reveal", "Reveals every notecard in the area."}, handleNotecardReveal, "core");
-    f_registry.registerCommand({"8ball", {}, {}, 1, "/8ball <question>", "Asks the magic 8-ball a question."}, handle8Ball, "core");
-    f_registry.registerCommand({"subtheme", {}, {permission::gamemaster}, 1, "/subtheme <name>", "Switches the area's client subtheme."}, handleSubtheme, "core");
+    f_registry.registerCommand({"coinflip", {}, {permission::user}, 0, "/coinflip", "Flips a coin for the area to see."}, cmdCoinFlip, "core");
+    f_registry.registerCommand({"roll", {"r"}, {permission::user}, 0, "/roll [dice] [faces]", "Rolls dice for the area to see."}, cmdRoll, "core");
+    f_registry.registerCommand({"rolla", {}, {permission::user}, 0, "/rolla <name>", "Rolls a named die from the dice config."}, cmdRollA, "core");
+    f_registry.registerCommand({"rollp", {}, {permission::user}, 0, "/rollp [dice] [faces]", "Rolls dice only you and the moderators see."}, cmdRollP, "core");
+    f_registry.registerCommand({"timer", {}, {permission::gamemaster}, 0, "/timer [id] [time|start|pause|hide]", "Shows or controls the area's timers."}, cmdTimer, "core");
+    f_registry.registerCommand({"notecard", {}, {permission::user}, 1, "/notecard <message>", "Writes your hidden notecard."}, cmdNotecard, "core");
+    f_registry.registerCommand({"notecard_clear", {"clear_notecard", "notecardclear"}, {permission::user}, 0, "/notecard_clear", "Clears your notecard."}, cmdNotecardClear, "core");
+    f_registry.registerCommand({"notecard_reveal", {"reveal_notecard", "notecardreveal"}, {permission::gamemaster}, 0, "/notecard_reveal", "Reveals every notecard in the area."}, cmdNotecardReveal, "core");
+    f_registry.registerCommand({"8ball", {}, {permission::user}, 1, "/8ball <question>", "Asks the magic 8-ball a question."}, cmd8Ball, "core");
+    f_registry.registerCommand({"subtheme", {}, {permission::gamemaster}, 1, "/subtheme <name>", "Switches the area's client subtheme."}, cmdSubtheme, "core");
 }
 
 } // namespace akashi::commands

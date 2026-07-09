@@ -135,9 +135,30 @@ bool ConsoleMenu::registerAction(const QString &f_title, std::function<void()> f
     return true;
 }
 
+bool ConsoleMenu::registerScheduledAction(const QString &f_title,
+                                          std::function<std::optional<QDateTime>()> f_next_run,
+                                          std::function<void()> f_action,
+                                          const QString &f_owner_id)
+{
+    if (f_title.isEmpty() || !f_next_run || !f_action) {
+        return false;
+    }
+    QList<ScheduledEntry> &l_scheduled = m_action_source->m_scheduled;
+    for (const ScheduledEntry &l_entry : std::as_const(l_scheduled)) {
+        if (l_entry.title == f_title) {
+            return false;
+        }
+    }
+    l_scheduled.append({f_title, std::move(f_next_run), std::move(f_action), f_owner_id});
+    return true;
+}
+
 void ConsoleMenu::unregisterAll(const QString &f_owner_id)
 {
     m_action_source->m_actions.removeIf([&f_owner_id](const ActionEntry &e) {
+        return e.owner_id == f_owner_id;
+    });
+    m_action_source->m_scheduled.removeIf([&f_owner_id](const ScheduledEntry &e) {
         return e.owner_id == f_owner_id;
     });
 }
@@ -197,9 +218,21 @@ void ConsoleMenu::render()
     m_rendered_lines = l_lines;
 }
 
+// A clean screen for whatever an action prints or opens; the old content
+// stays in the terminal's scrollback. Non-VT terminals keep appending.
+void ConsoleMenu::clearScreen()
+{
+    if (!m_vt) {
+        return;
+    }
+    writeOut(QByteArrayLiteral("\x1b[2J\x1b[H"));
+    m_rendered_lines = 0;
+}
+
 void ConsoleMenu::activate(int f_index)
 {
     if (f_index >= 0 && f_index < m_items.size()) {
+        clearScreen();
         m_items[f_index].activate();
     }
 }
@@ -207,6 +240,7 @@ void ConsoleMenu::activate(int f_index)
 void ConsoleMenu::goBack()
 {
     if (m_back) {
+        clearScreen();
         m_back();
     }
     else {
@@ -315,7 +349,7 @@ void ConsoleMenu::openMain()
         {QStringLiteral("status"), [this] { printStatus(); render(); }},
         {QStringLiteral("players"), [this] { openPlayers(); }},
         {QStringLiteral("plugins"), [this] { openPlugins(); }},
-        {QStringLiteral("tasks (%1)").arg(m_action_source->m_actions.size()), [this] { openTasks(); }},
+        {QStringLiteral("tasks (%1)").arg(m_action_source->m_actions.size() + m_action_source->m_scheduled.size()), [this] { openTasks(); }},
         {QStringLiteral("broadcast"), [this] { openBroadcast(); }},
         {QStringLiteral("authentication"), [this] { openAuthentication(); }},
         {QStringLiteral("reload configuration"), [this] {
@@ -489,16 +523,56 @@ void ConsoleMenu::openPluginActions(const QString &f_plugin_id)
     render();
 }
 
+// Turns a next-run time into the label suffix of a scheduled task.
+QString ConsoleMenu::describeNextRun(const std::optional<QDateTime> &f_when)
+{
+    if (!f_when.has_value() || !f_when->isValid()) {
+        return QStringLiteral("not scheduled");
+    }
+    const qint64 l_seconds = QDateTime::currentDateTime().secsTo(*f_when);
+    if (l_seconds < 60) {
+        return QStringLiteral("next run under a minute");
+    }
+    if (l_seconds < 60 * 60) {
+        return QStringLiteral("next run in %1m").arg(l_seconds / 60);
+    }
+    if (l_seconds < 24 * 60 * 60) {
+        return QStringLiteral("next run in %1h %2m").arg(l_seconds / 3600).arg(l_seconds % 3600 / 60);
+    }
+    return QStringLiteral("next run in %1d %2h").arg(l_seconds / 86400).arg(l_seconds % 86400 / 3600);
+}
+
 void ConsoleMenu::openTasks()
 {
     const QList<ActionEntry> &l_actions = m_action_source->m_actions;
-    m_title = QStringLiteral("tasks (%1)").arg(l_actions.size());
+    const QList<ScheduledEntry> &l_scheduled = m_action_source->m_scheduled;
+    m_title = QStringLiteral("tasks (%1)").arg(l_actions.size() + l_scheduled.size());
     m_hint = m_interactive ? QStringLiteral("enter runs a task, esc goes back")
                            : QStringLiteral("enter a task number; 0 goes back");
     m_back = [this] { openMain(); };
     m_selected = 0;
     m_text_entry = false;
     m_items.clear();
+    for (const ScheduledEntry &l_entry : l_scheduled) {
+        // Resolved by title when run, like the plain tasks below; the view
+        // reopens afterwards so the next-run column stays current.
+        const QString l_title = l_entry.title;
+        m_items.append({QStringLiteral("%1 - %2").arg(l_title, describeNextRun(l_entry.next_run())),
+                        [this, l_title] {
+                            for (const ScheduledEntry &l_live : std::as_const(m_action_source->m_scheduled)) {
+                                if (l_live.title == l_title) {
+                                    m_rendered_lines = 0;
+                                    s_active_session = this;
+                                    l_live.action();
+                                    s_active_session = nullptr;
+                                    openTasks();
+                                    return;
+                                }
+                            }
+                            printOut(QStringLiteral("That task is gone; its owner was unloaded."));
+                            openTasks();
+                        }});
+    }
     for (const ActionEntry &l_entry : l_actions) {
         // Resolved by title when run, so a task whose plugin has since
         // unloaded degrades to a notice instead of a dangling call.
@@ -520,7 +594,7 @@ void ConsoleMenu::openTasks()
                         }});
     }
     if (m_items.isEmpty()) {
-        m_items.append({QStringLiteral("no plugin registered a task - back"), [this] { openMain(); }});
+        m_items.append({QStringLiteral("no tasks registered - back"), [this] { openMain(); }});
     }
     m_rendered_lines = 0;
     render();
@@ -627,6 +701,7 @@ void ConsoleMenu::submitTextEntry(const QString &f_text)
     m_text_input.clear();
     const auto l_submit = std::move(m_text_submit);
     m_text_submit = nullptr;
+    clearScreen();
     if (f_text.isEmpty()) {
         printOut(QStringLiteral("Cancelled."));
         goBack();

@@ -24,6 +24,7 @@ class tst_WriterSql : public QObject
     void flushCommitsTransaction();
     void batchWriteThenFlush();
     void ipidAndHwidDenormalizedOnEvents();
+    void eventWithoutHwidKeepsItsIdentity();
     void ipidAndHwidDenormalizedOnConnections();
     void emptyFieldsStoreAsNull();
     void successFieldStoredCorrectly();
@@ -305,6 +306,37 @@ void tst_WriterSql::ipidAndHwidDenormalizedOnEvents()
     QCOMPARE(l_query.value(0).toString(), QStringLiteral("abcd1234"));
     QCOMPARE(l_query.value(1).toString(), QStringLiteral("hw-001"));
     QVERIFY(l_query.value(2).toInt() > 0);
+    closeReadOnly(l_db);
+}
+
+void tst_WriterSql::eventWithoutHwidKeepsItsIdentity()
+{
+    QTemporaryDir l_dir;
+    QString l_path = l_dir.path() + "/events.db";
+
+    {
+        akashi::WriterSql l_writer(l_path);
+        // Most game events carry an ipid but no hardware id at all; the
+        // identity must still resolve instead of failing on a NULL bind.
+        akashi::LogEvent l_event;
+        l_event.timestamp = 1000;
+        l_event.type = akashi::log_type::IC;
+        l_event.ipid = QStringLiteral("abcd1234");
+        l_event.message = QStringLiteral("Hello");
+        l_writer.write(l_event);
+        l_writer.flush();
+    }
+
+    QSqlDatabase l_db = openReadOnly(l_path);
+    QSqlQuery l_query(l_db);
+    l_query.exec(QStringLiteral("SELECT identity_id FROM events"));
+    QVERIFY(l_query.first());
+    QVERIFY(l_query.value(0).toInt() > 0);
+
+    l_query.exec(QStringLiteral("SELECT ipid, hwid FROM identities"));
+    QVERIFY(l_query.first());
+    QCOMPARE(l_query.value(0).toString(), QStringLiteral("abcd1234"));
+    QCOMPARE(l_query.value(1).toString(), QString());
     closeReadOnly(l_db);
 }
 

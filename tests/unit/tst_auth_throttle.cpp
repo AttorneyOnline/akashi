@@ -23,6 +23,9 @@ class tst_AuthThrottle : public QObject
     void setLimitsChangesThreshold();
     void expiredLockoutResetsCountOnNextFailure();
     void separateIpidsAreIndependent();
+    void remainingSecondsIsZeroWithoutLockout();
+    void successOnUnknownIpidIsANoOp();
+    void successClearsAnActiveLockout();
 };
 
 void tst_AuthThrottle::freshIpidIsNotLockedOut()
@@ -131,6 +134,42 @@ void tst_AuthThrottle::separateIpidsAreIndependent()
 
     l_throttle.recordFailure("bob");
     QVERIFY(!l_throttle.isLockedOut("bob"));
+}
+
+void tst_AuthThrottle::remainingSecondsIsZeroWithoutLockout()
+{
+    // Failures below the limit leave a record but no lockout to count down.
+    AuthThrottle l_throttle(3, 10);
+    l_throttle.recordFailure("abc123");
+    l_throttle.recordFailure("abc123");
+
+    QVERIFY(!l_throttle.isLockedOut("abc123"));
+    QCOMPARE(l_throttle.remainingLockoutSeconds("abc123"), 0);
+}
+
+void tst_AuthThrottle::successOnUnknownIpidIsANoOp()
+{
+    AuthThrottle l_throttle(3, 10);
+    l_throttle.recordSuccess("stranger");
+    l_throttle.reset("stranger");
+
+    QVERIFY(!l_throttle.isLockedOut("stranger"));
+    QCOMPARE(l_throttle.remainingLockoutSeconds("stranger"), 0);
+}
+
+void tst_AuthThrottle::successClearsAnActiveLockout()
+{
+    AuthThrottle l_throttle(2, 10);
+    l_throttle.recordFailure("abc123");
+    l_throttle.recordFailure("abc123");
+    QVERIFY(l_throttle.isLockedOut("abc123"));
+
+    // A success wipes the record entirely, lockout and all. The caller
+    // gates logins during a lockout, so reaching here means an operator
+    // path chose to forgive.
+    l_throttle.recordSuccess("abc123");
+    QVERIFY(!l_throttle.isLockedOut("abc123"));
+    QCOMPARE(l_throttle.remainingLockoutSeconds("abc123"), 0);
 }
 
 }

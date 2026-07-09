@@ -1,6 +1,6 @@
 #pragma once
 
-#define DB_VERSION 3
+#define DB_VERSION 4
 
 #include "akashi_core_export.h"
 #include "core/crypto_helper.h"
@@ -57,6 +57,41 @@ class AKASHI_CORE_EXPORT DBManager : public QObject
         int id;             //!< The unique ID of the ban.
         QString moderator;  //!< The moderator who issued the ban.
     };
+
+    /**
+     * @brief A stored timed sanction: applied on connect while active,
+     * lifted by the scheduler when it expires.
+     */
+    struct SanctionInfo
+    {
+        QString ipid;      //!< The sanctioned user's IPID.
+        QString sanction;  //!< The sanction id, for example "muted".
+        QString moderator; //!< The moderator who issued the sanction.
+        qint64 issued;     //!< When the sanction was issued, in epoch seconds.
+        qint64 expires;    //!< When the sanction lifts, in epoch seconds.
+    };
+
+    /**
+     * @brief Stores a timed sanction, replacing an earlier one for the
+     * same IPID and sanction id.
+     */
+    void upsertSanction(const SanctionInfo &f_sanction);
+
+    /**
+     * @brief Removes a stored sanction.
+     */
+    void removeSanction(const QString &f_ipid, const QString &f_sanction);
+
+    /**
+     * @brief The sanctions still active for an IPID at the given moment.
+     */
+    QList<SanctionInfo> sanctionsFor(const QString &f_ipid, qint64 f_now);
+
+    /**
+     * @brief Every stored sanction, expired ones included - the boot pass
+     * arms a lift for each and overdue lifts clean themselves up.
+     */
+    QList<SanctionInfo> allSanctions();
 
     /**
      * @brief Checks if there is a record in the Bans table with the given IPID.

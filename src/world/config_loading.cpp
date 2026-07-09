@@ -70,8 +70,53 @@ MusicCatalog loadMusicList(const QString &f_path)
     return l_catalog;
 }
 
-// Reads the "before"/"after" buckets of one "rules" object. Any key on an
-// action object besides "action" travels along as an argument.
+// The old check_setting name table is gone: the setting vocabulary is the
+// Area property surface now, and the trap names either remap to their new
+// spelling or refuse with the replacement named. Returns false when the
+// declaration must be skipped.
+static bool remapDeprecatedSetting(RuleDeclaration &f_declaration)
+{
+    if (f_declaration.action != QStringLiteral("check_setting"))
+        return true;
+    const QString l_setting = f_declaration.args.value(QStringLiteral("setting")).toString();
+    if (l_setting == QStringLiteral("music")) {
+        f_declaration.args.insert(QStringLiteral("setting"), QStringLiteral("music_allowed"));
+        qCInfo(akashiConfig) << "check_setting setting \"music\" is deprecated - remapped to \"music_allowed\".";
+        return true;
+    }
+    if (l_setting == QStringLiteral("blankposting")) {
+        f_declaration.action = QStringLiteral("check_blankposting");
+        f_declaration.args.remove(QStringLiteral("setting"));
+        qCInfo(akashiConfig) << "check_setting setting \"blankposting\" is deprecated - remapped to the check_blankposting action.";
+        return true;
+    }
+    if (l_setting == QStringLiteral("iniswap")) {
+        f_declaration.action = QStringLiteral("check_iniswap");
+        f_declaration.args.remove(QStringLiteral("setting"));
+        qCInfo(akashiConfig) << "check_setting setting \"iniswap\" is deprecated - remapped to the check_iniswap action.";
+        return true;
+    }
+    if (l_setting == QStringLiteral("shouts")) {
+        qCWarning(akashiConfig) << "check_setting no longer gates \"shouts\" - shouts are downgraded by the strip_shouts transform rule. The rule was skipped.";
+        return false;
+    }
+    if (l_setting == QStringLiteral("shownames")) {
+        qCWarning(akashiConfig) << "check_setting no longer gates \"shownames\" - use the check_showname action. The rule was skipped.";
+        return false;
+    }
+    if (l_setting == QStringLiteral("wtce")) {
+        qCWarning(akashiConfig) << "check_setting no longer gates \"wtce\" - use the check_wtce action. The rule was skipped.";
+        return false;
+    }
+    if (l_setting == QStringLiteral("ic_messages")) {
+        qCWarning(akashiConfig) << "check_setting no longer gates \"ic_messages\" - the IC floodguard is not a rule. The rule was skipped.";
+        return false;
+    }
+    return true;
+}
+
+// Reads the "before"/"transform"/"after" buckets of one "rules" object. Any
+// key on an action object besides "action" travels along as an argument.
 static QVector<RuleDeclaration> parseRules(const QJsonObject &f_rules)
 {
     QVector<RuleDeclaration> l_result;
@@ -79,6 +124,7 @@ static QVector<RuleDeclaration> parseRules(const QJsonObject &f_rules)
         const QJsonObject l_buckets = it.value().toObject();
         const QVector<QPair<QString, RulePhase>> l_phases = {
             {QStringLiteral("before"), RulePhase::Before},
+            {QStringLiteral("transform"), RulePhase::Transform},
             {QStringLiteral("after"), RulePhase::After},
         };
         for (const auto &l_phase : l_phases) {
@@ -96,6 +142,9 @@ static QVector<RuleDeclaration> parseRules(const QJsonObject &f_rules)
                 for (auto arg = l_object.begin(); arg != l_object.end(); ++arg) {
                     if (arg.key() != QStringLiteral("action"))
                         l_declaration.args.insert(arg.key(), arg.value().toVariant());
+                }
+                if (!remapDeprecatedSetting(l_declaration)) {
+                    continue;
                 }
                 l_result.append(l_declaration);
             }

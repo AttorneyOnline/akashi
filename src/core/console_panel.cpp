@@ -9,6 +9,8 @@
 #include <QLocalSocket>
 #include <QTimer>
 
+#include <functional>
+
 namespace akashi {
 
 ConsolePanelServer::ConsolePanelServer(ServerContext *f_server, QObject *parent) :
@@ -51,7 +53,7 @@ ConsolePanelSession::ConsolePanelSession(QLocalSocket *f_socket, ConsoleMenu *f_
     m_socket->setParent(this);
     m_menu = f_menu_service->createSession(this);
     m_menu->setInteractive(true, true);
-    m_menu->setSink([this](const QByteArray &f_bytes) { m_socket->write(f_bytes); });
+    m_menu->setSink(std::bind_front(&ConsolePanelSession::writeToSocket, this));
 
     connect(m_socket, &QLocalSocket::readyRead, this, &ConsolePanelSession::readSocket);
     connect(m_socket, &QLocalSocket::disconnected, this, &QObject::deleteLater);
@@ -59,14 +61,22 @@ ConsolePanelSession::ConsolePanelSession(QLocalSocket *f_socket, ConsoleMenu *f_
     // A lone escape needs a moment to prove no arrow sequence follows it.
     m_escape_timer->setSingleShot(true);
     m_escape_timer->setInterval(50);
-    connect(m_escape_timer, &QTimer::timeout, this, [this] {
-        if (m_mode == Mode::Keys && m_pending == QByteArrayLiteral("\x1b")) {
-            m_pending.clear();
-            m_menu->handleKey(ConsoleInput::KeyBack, {});
-        }
-    });
+    connect(m_escape_timer, &QTimer::timeout, this, &ConsolePanelSession::onEscapeTimeout);
 
     m_menu->show();
+}
+
+void ConsolePanelSession::writeToSocket(const QByteArray &f_bytes)
+{
+    m_socket->write(f_bytes);
+}
+
+void ConsolePanelSession::onEscapeTimeout()
+{
+    if (m_mode == Mode::Keys && m_pending == QByteArrayLiteral("\x1b")) {
+        m_pending.clear();
+        m_menu->handleKey(ConsoleInput::KeyBack, {});
+    }
 }
 
 void ConsolePanelSession::readSocket()

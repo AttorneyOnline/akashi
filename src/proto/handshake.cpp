@@ -1,10 +1,12 @@
 #include "proto/handshake.h"
 
 #include "akashi/area_rule.h"
+#include "akashi/permissions.h"
 #include "proto/ao2_protocol.h"
 #include "proto/handshake_messages.h"
 #include "proto/packet_codec.h"
 #include "proto/packet_registry.h"
+#include "proto/timer_packets.h"
 
 #include <QCoreApplication>
 #include <QRegularExpression>
@@ -222,11 +224,11 @@ class JoinHandler : public PacketHandler
     static void sendTimer(IPacketContext &f_context, int f_timer_id, const TimerSnapshot &f_timer)
     {
         if (f_timer.running) {
-            f_context.sendPacket(Packet(ao2::HEADER_TI, {QString::number(f_timer_id), "2"}));
-            f_context.sendPacket(Packet(ao2::HEADER_TI, {QString::number(f_timer_id), "0", QString::number(f_timer.remaining_ms)}));
+            f_context.sendPacket(timerShow(f_timer_id));
+            f_context.sendPacket(timerValue(f_timer_id, f_timer.remaining_ms));
         }
         else {
-            f_context.sendPacket(Packet(ao2::HEADER_TI, {QString::number(f_timer_id), "3"}));
+            f_context.sendPacket(timerHide(f_timer_id));
         }
     }
 };
@@ -237,11 +239,6 @@ class CharacterSelectHandler : public PacketHandler
     void handle(const Message &f_message, IPacketContext &f_context) const override
     {
         const auto &l_select = static_cast<const CharacterSelectMessage &>(f_message);
-        if (!f_context.isJoined()) {
-            // No character selecting when you aren't joined.
-            return;
-        }
-
         if (l_select.char_id < -1 || l_select.char_id > f_context.characters().size() - 1) {
             // The connection closes, but the selection below still runs, like it always has.
             f_context.sendPacket(Packet(ao2::HEADER_KK, {"A protocol error has been encountered.Packet : CC\nCharacter ID out of range."}));
@@ -301,15 +298,17 @@ void registerHandshakePackets(PacketRegistry &f_handlers, PacketCodecRegistry &f
 {
     const QString l_owner = QStringLiteral("core");
 
-    f_handlers.registerHandler({ao2::HEADER_HI, 1, {}}, std::make_shared<HelloHandler>(), l_owner);
-    f_handlers.registerHandler({ao2::HEADER_ID, 2, {}}, std::make_shared<IdentifyHandler>(), l_owner);
-    f_handlers.registerHandler({ao2::HEADER_ASKCHAA, 0, {}}, std::make_shared<ResourceCountHandler>(), l_owner);
-    f_handlers.registerHandler({ao2::HEADER_RC, 0, {}}, std::make_shared<CharacterListHandler>(), l_owner);
-    f_handlers.registerHandler({ao2::HEADER_RM, 0, {}}, std::make_shared<MusicListHandler>(), l_owner);
-    f_handlers.registerHandler({ao2::HEADER_RD, 0, {}}, std::make_shared<JoinHandler>(), l_owner);
-    f_handlers.registerHandler({ao2::HEADER_CC, 3, {}}, std::make_shared<CharacterSelectHandler>(), l_owner);
-    f_handlers.registerHandler({ao2::HEADER_CH, 1, {}}, std::make_shared<KeepaliveHandler>(), l_owner);
-    f_handlers.registerHandler({ao2::HEADER_PW, 1, {}}, std::make_shared<CharacterPasswordHandler>(), l_owner);
+    // The handshake surface is the only one open to a fresh connection;
+    // everything past RD requires the user tier.
+    f_handlers.registerHandler({ao2::HEADER_HI, 1, permission::none}, std::make_shared<HelloHandler>(), l_owner);
+    f_handlers.registerHandler({ao2::HEADER_ID, 2, permission::none}, std::make_shared<IdentifyHandler>(), l_owner);
+    f_handlers.registerHandler({ao2::HEADER_ASKCHAA, 0, permission::none}, std::make_shared<ResourceCountHandler>(), l_owner);
+    f_handlers.registerHandler({ao2::HEADER_RC, 0, permission::none}, std::make_shared<CharacterListHandler>(), l_owner);
+    f_handlers.registerHandler({ao2::HEADER_RM, 0, permission::none}, std::make_shared<MusicListHandler>(), l_owner);
+    f_handlers.registerHandler({ao2::HEADER_RD, 0, permission::none}, std::make_shared<JoinHandler>(), l_owner);
+    f_handlers.registerHandler({ao2::HEADER_CC, 3, permission::user}, std::make_shared<CharacterSelectHandler>(), l_owner);
+    f_handlers.registerHandler({ao2::HEADER_CH, 1, permission::none}, std::make_shared<KeepaliveHandler>(), l_owner);
+    f_handlers.registerHandler({ao2::HEADER_PW, 1, permission::user}, std::make_shared<CharacterPasswordHandler>(), l_owner);
 
     f_codecs.registerCodec(ao2::HEADER_HI, always(), 0, std::make_shared<HelloCodec>(), l_owner);
     f_codecs.registerCodec(ao2::HEADER_ID, always(), 0, std::make_shared<IdentifyCodec>(), l_owner);

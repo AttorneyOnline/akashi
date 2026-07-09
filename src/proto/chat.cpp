@@ -1,6 +1,7 @@
 #include "proto/chat.h"
 
 #include "akashi/area_rule.h"
+#include "akashi/permissions.h"
 #include "proto/ao2_protocol.h"
 #include "proto/chat_messages.h"
 #include "proto/packet_codec.h"
@@ -85,19 +86,22 @@ class OocHandler : public PacketHandler
             return;
         }
 
+        // The name checks run against the sanitized local; a refused name
+        // never commits, so it neither sticks as session state nor sends a
+        // player update for a rejected rename.
         static const QRegularExpression l_forbidden("\\[|\\]|\\{|\\}|\\#|\\$|\\%|\\&");
         QString l_name = stripZalgo(l_ooc.name);
         l_name.replace(l_forbidden, "");
-        f_context.setOocName(l_name);
         // Impersonation and empty name protection.
-        if (f_context.oocName().trimmed().replace("​", "").isEmpty() || f_context.oocName() == f_context.serverNickname()) {
+        if (l_name.trimmed().replace("​", "").isEmpty() || l_name == f_context.serverNickname()) {
             return;
         }
 
-        if (f_context.oocName().length() > 30) {
+        if (l_name.length() > 30) {
             f_context.sendServerMessage("Your name is too long! Please limit it to under 30 characters.");
             return;
         }
+        f_context.setOocName(l_name);
 
         // A client in the login prompt is sending its password, not a chat line.
         if (f_context.isInLoginPrompt()) {
@@ -110,16 +114,24 @@ class OocHandler : public PacketHandler
             return;
         }
 
-        const QStringList l_filters = f_context.wordFilters();
-        for (const QString &l_filter : l_filters) {
-            QRegularExpression l_pattern(l_filter, QRegularExpression::CaseInsensitiveOption);
-            l_message.replace(l_pattern, "❌");
+        // The registry chain guards OOC too; only filters registered for
+        // the OOC channel run here, which is the word filter by default.
+        const auto l_filtered = f_context.applyTextFilters(l_message, TextChannel::Ooc);
+        if (!l_filtered) {
+            return;
         }
+        l_message = *l_filtered;
 
         if (l_message.at(0) == '/') {
             QStringList l_arguments = l_message.split(" ", Qt::SkipEmptyParts);
             const QString l_command = l_arguments.takeFirst().trimmed().toLower().mid(1);
             f_context.runCommand(l_command, l_arguments);
+            return;
+        }
+
+        // Commands returned above; only plain chat lines are gated by rules.
+        if (const auto l_rule_block = f_context.checkBeforeRule(AreaEvents::OocMessageSent, {{QStringLiteral("message"), l_message}})) {
+            f_context.sendServerMessage(*l_rule_block);
             return;
         }
 
@@ -169,16 +181,8 @@ class EvidenceEditHandler : public PacketHandler
             return;
         }
 
-        QString l_description = l_edit.description;
-        // Hidden-CM areas tag untagged evidence as visible to everyone.
-        if (f_context.isEvidenceHiddenCm()) {
-            static const QRegularExpression l_owner_tag("<owner=(.*?)>");
-            if (!l_owner_tag.match(l_description).hasMatch()) {
-                l_description = "<owner=all>\n" + l_description;
-            }
-        }
-
-        f_context.replaceEvidence(l_edit.index, l_edit.name, l_description, l_edit.image);
+        // The hidden-CM owner tagging happens inside the evidence path.
+        f_context.replaceEvidence(l_edit.index, l_edit.name, l_edit.description, l_edit.image);
         f_context.sendEvidenceList();
         f_context.runAfterRule(AreaEvents::EvidenceEdited, {});
     }
@@ -258,11 +262,11 @@ void registerChatPackets(PacketRegistry &f_handlers, PacketCodecRegistry &f_code
 {
     const QString l_owner = QStringLiteral("core");
 
-    f_handlers.registerHandler({ao2::HEADER_CT, 2, {}}, std::make_shared<OocHandler>(), l_owner);
-    f_handlers.registerHandler({ao2::HEADER_DE, 1, {}}, std::make_shared<EvidenceDeleteHandler>(), l_owner);
-    f_handlers.registerHandler({ao2::HEADER_EE, 4, {}}, std::make_shared<EvidenceEditHandler>(), l_owner);
-    f_handlers.registerHandler({ao2::HEADER_SETCASE, 7, {}}, std::make_shared<CasingPreferencesHandler>(), l_owner);
-    f_handlers.registerHandler({ao2::HEADER_CASEA, 6, {}}, std::make_shared<CaseAnnouncementHandler>(), l_owner);
+    f_handlers.registerHandler({ao2::HEADER_CT, 2, permission::user}, std::make_shared<OocHandler>(), l_owner);
+    f_handlers.registerHandler({ao2::HEADER_DE, 1, permission::user}, std::make_shared<EvidenceDeleteHandler>(), l_owner);
+    f_handlers.registerHandler({ao2::HEADER_EE, 4, permission::user}, std::make_shared<EvidenceEditHandler>(), l_owner);
+    f_handlers.registerHandler({ao2::HEADER_SETCASE, 7, permission::user}, std::make_shared<CasingPreferencesHandler>(), l_owner);
+    f_handlers.registerHandler({ao2::HEADER_CASEA, 6, permission::user}, std::make_shared<CaseAnnouncementHandler>(), l_owner);
 
     f_codecs.registerCodec(ao2::HEADER_CT, always(), 0, std::make_shared<OocCodec>(), l_owner);
     f_codecs.registerCodec(ao2::HEADER_DE, always(), 0, std::make_shared<EvidenceDeleteCodec>(), l_owner);

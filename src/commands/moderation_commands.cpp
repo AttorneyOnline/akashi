@@ -1,15 +1,12 @@
 #include "commands/moderation_commands.h"
 
-#include "akashi/event.h"
-#include "akashi/log_event.h"
 #include "akashi/permissions.h"
+#include "akashi/scheduler.h"
 #include "core/client_session.h"
 #include "core/command_context.h"
 #include "core/command_registry.h"
 #include "core/command_spec.h"
 #include "core/db_manager.h"
-#include "core/event_bus.h"
-#include "core/log_service.h"
 #include "core/server_context.h"
 #include "core/server_settings.h"
 #include "world/area.h"
@@ -18,7 +15,7 @@
 #include <QDateTime>
 #include <QRegularExpression>
 
-namespace log_type = akashi::log_type;
+#include <functional>
 
 namespace akashi::commands {
 
@@ -89,15 +86,16 @@ static void sendNotice(CommandContext &f_context, const QString &f_notice, bool 
         f_context.server()->broadcast(l_packet, f_context.areaId());
 }
 
-static void handleBan(CommandContext &f_context)
+// The /ban door: parses the duration and phrases the replies; the act
+// itself is the server's ban verb. This door's KB carries the ban id and
+// the until text.
+void cmdBan(CommandContext &f_context)
 {
     QString l_args_str = f_context.argument(2);
     if (f_context.argc() > 3) {
         for (int i = 3; i < f_context.argc(); i++)
             l_args_str += " " + f_context.argument(i);
     }
-
-    DBManager::BanInfo l_ban;
 
     long long l_duration_seconds = 0;
     if (f_context.argument(1) == "perma")
@@ -110,71 +108,38 @@ static void handleBan(CommandContext &f_context)
         return;
     }
 
-    l_ban.duration = l_duration_seconds;
-    l_ban.ipid = f_context.argument(0);
-    l_ban.reason = l_args_str;
-    l_ban.time = QDateTime::currentDateTime().toSecsSinceEpoch();
-    bool l_ban_logged = false;
-    int l_kick_counter = 0;
-
+    QString l_moderator;
     switch (f_context.server()->authType()) {
     case AuthType::SIMPLE:
-        l_ban.moderator = "moderator";
+        l_moderator = "moderator";
         break;
     case AuthType::ADVANCED:
-        l_ban.moderator = f_context.moderatorName();
+        l_moderator = f_context.moderatorName();
         break;
     }
 
-    const QList<akashi::ClientSession *> l_targets = f_context.server()->clientsByIpid(l_ban.ipid);
-    for (akashi::ClientSession *l_client : l_targets) {
-        if (!l_ban_logged) {
-            l_ban.ip = l_client->remoteIp();
-            l_ban.hdid = l_client->hwid();
-            f_context.server()->databaseManager()->addBan(l_ban);
-            f_context.reply("Banned user with ipid " + l_ban.ipid + " for reason: " + l_ban.reason);
-            l_ban_logged = true;
-        }
-        QString l_ban_duration;
-        if (!(l_ban.duration == -2)) {
-            l_ban_duration = QDateTime::fromSecsSinceEpoch(l_ban.time).addSecs(l_ban.duration).toString("MM/dd/yyyy, hh:mm");
-        }
-        else {
-            l_ban_duration = "Permanently.";
-        }
-        int l_ban_id = f_context.server()->databaseManager()->banId(l_ban.ip);
-        l_client->sendPacket("KB", {l_ban.reason + "\nID: " + QString::number(l_ban_id) + "\nUntil: " + l_ban_duration});
-        l_client->closeSocket();
-        l_kick_counter++;
+    const QString l_ipid = f_context.argument(0);
+    const auto l_result = f_context.server()->banPlayers(
+        l_ipid, l_duration_seconds, l_args_str, l_moderator, QStringLiteral("Permanently."),
+        [&l_args_str](int f_ban_id, const QString &f_until) {
+            return l_args_str + "\nID: " + QString::number(f_ban_id) + "\nUntil: " + f_until;
+        });
 
-        f_context.server()->logService()->log({.type = log_type::Ban,
-                                               .message = l_ban.reason,
-                                               .moderator = l_ban.moderator,
-                                               .target_ipid = l_ban.ipid,
-                                               .duration = l_ban_duration});
-        akashi::BanIssuedEvent l_ban_event{
-            .ban_id = l_ban_id,
-            .moderator = l_ban.moderator,
-            .target_ipid = l_ban.ipid,
-            .duration = l_ban_duration,
-            .reason = l_ban.reason};
-        f_context.server()->eventBus()->notify(l_ban_event);
+    if (l_result.clients_kicked == 0) {
+        f_context.reply("Banned " + l_ipid + " for reason: " + l_args_str);
+        return;
     }
-
-    if (l_kick_counter > 1)
-        f_context.reply("Kicked " + QString::number(l_kick_counter) + " clients with matching ipids.");
-
-    if (!l_ban_logged) {
-        f_context.server()->databaseManager()->addBan(l_ban);
-        f_context.reply("Banned " + l_ban.ipid + " for reason: " + l_ban.reason);
-    }
+    f_context.reply("Banned user with ipid " + l_ipid + " for reason: " + l_args_str);
+    if (l_result.clients_kicked > 1)
+        f_context.reply("Kicked " + QString::number(l_result.clients_kicked) + " clients with matching ipids.");
 }
 
-static void handleKick(CommandContext &f_context)
+// The /kick door: everyone on the IPID; the act itself is the server's
+// kick verb.
+void cmdKick(CommandContext &f_context)
 {
     QString l_target_ipid = f_context.argument(0);
     QString l_reason = f_context.argument(1);
-    int l_kick_counter = 0;
 
     if (f_context.argc() > 2) {
         for (int i = 2; i < f_context.argc(); i++) {
@@ -183,27 +148,18 @@ static void handleKick(CommandContext &f_context)
     }
 
     const QList<akashi::ClientSession *> l_targets = f_context.server()->clientsByIpid(l_target_ipid);
-    for (akashi::ClientSession *l_client : l_targets) {
-        l_client->sendPacket("KK", {l_reason});
-        l_client->closeSocket();
-        l_kick_counter++;
-    }
-
-    if (l_kick_counter > 0) {
-        QString l_moderator = f_context.server()->authType() == AuthType::ADVANCED
-                                  ? f_context.moderatorName()
-                                  : QStringLiteral("Moderator");
-        f_context.server()->logService()->log({.type = log_type::Kick,
-                                               .message = l_reason,
-                                               .moderator = l_moderator,
-                                               .target_ipid = l_target_ipid});
-        f_context.reply("Kicked " + QString::number(l_kick_counter) + " client(s) with ipid " + l_target_ipid + " for reason: " + l_reason);
-    }
-    else
+    if (l_targets.isEmpty()) {
         f_context.reply("User with ipid not found!");
+        return;
+    }
+    const QString l_moderator = f_context.server()->authType() == AuthType::ADVANCED
+                                    ? f_context.moderatorName()
+                                    : QStringLiteral("Moderator");
+    f_context.server()->kickClients(l_targets, l_target_ipid, l_reason, l_moderator);
+    f_context.reply("Kicked " + QString::number(l_targets.size()) + " client(s) with ipid " + l_target_ipid + " for reason: " + l_reason);
 }
 
-static void handleMods(CommandContext &f_context)
+void cmdMods(CommandContext &f_context)
 {
     QStringList l_entries;
     int l_online_count = 0;
@@ -227,35 +183,15 @@ static void handleMods(CommandContext &f_context)
     f_context.reply(l_entries.join("\n"));
 }
 
-// A permission list passes when it is empty or any entry resolves.
-static bool passesAnyOf(CommandContext &f_context, const QStringList &f_permissions)
+// The caller's permissions, asked the way the dispatch gate asks.
+static std::function<bool(const QString &)> callerPermissions(CommandContext &f_context)
 {
-    if (f_permissions.isEmpty()) {
-        return true;
-    }
-    for (const QString &l_perm : f_permissions) {
-        if (f_context.canPerform(l_perm)) {
-            return true;
-        }
-    }
-    return false;
+    return [&f_context](const QString &f_permission) {
+        return f_context.canPerform(f_permission);
+    };
 }
 
-// A command is usable when any of its forms is open to the caller.
-static bool canUseCommand(CommandContext &f_context, const CommandSpec &f_spec)
-{
-    if (f_spec.variants.isEmpty()) {
-        return passesAnyOf(f_context, f_spec.permissions);
-    }
-    for (const CommandVariant &l_variant : f_spec.variants) {
-        if (passesAnyOf(f_context, l_variant.permissions)) {
-            return true;
-        }
-    }
-    return false;
-}
-
-static void handleCommands(CommandContext &f_context)
+void cmdCommands(CommandContext &f_context)
 {
     QStringList l_entries;
     l_entries << "Allowed commands:";
@@ -265,7 +201,7 @@ static void handleCommands(CommandContext &f_context)
         auto l_spec = l_registry->spec(l_name);
         if (!l_spec)
             continue;
-        if (canUseCommand(f_context, *l_spec)) {
+        if (l_registry->canUse(l_name, callerPermissions(f_context))) {
             QString l_info = "/" + l_name;
             if (!l_spec->aliases.isEmpty()) {
                 l_info += " [aka: " + l_spec->aliases.join(", ") + "]";
@@ -276,7 +212,7 @@ static void handleCommands(CommandContext &f_context)
     f_context.reply(l_entries.join("\n"));
 }
 
-static void handleHelp(CommandContext &f_context)
+void cmdHelp(CommandContext &f_context)
 {
     CommandRegistry *l_registry = f_context.server()->commandRegistry();
 
@@ -293,8 +229,7 @@ static void handleHelp(CommandContext &f_context)
     QString l_command_name = f_context.argument(0).toLower();
 
     auto l_check_permission = [&f_context, l_registry](const QString &f_command_name) -> bool {
-        auto l_spec = l_registry->spec(f_command_name);
-        return l_spec && canUseCommand(f_context, *l_spec);
+        return l_registry->canUse(f_command_name, callerPermissions(f_context));
     };
 
     auto l_format_command = [l_registry](const QString &f_command_name) -> QString {
@@ -344,19 +279,19 @@ static void handleHelp(CommandContext &f_context)
     f_context.reply(l_message + l_format_command(l_command_name));
 }
 
-static void handleMotd(CommandContext &f_context)
+void cmdMotd(CommandContext &f_context)
 {
     f_context.reply("=== MOTD ===\r\n" + f_context.server()->serverSettings()->motd() + "\r\n=============");
 }
 
-static void handleSetMotd(CommandContext &f_context)
+void cmdSetMotd(CommandContext &f_context)
 {
     QString l_motd = f_context.arguments().join(" ");
     f_context.server()->setMotd(l_motd);
     f_context.reply("MOTD has been changed.");
 }
 
-static void handleBans(CommandContext &f_context)
+void cmdBans(CommandContext &f_context)
 {
     QStringList l_recent_bans;
     l_recent_bans << "Last 5 bans:";
@@ -380,7 +315,7 @@ static void handleBans(CommandContext &f_context)
     f_context.reply(l_recent_bans.join("\n"));
 }
 
-static void handleUnban(CommandContext &f_context)
+void cmdUnban(CommandContext &f_context)
 {
     bool ok;
     int l_target_ban = f_context.argument(0).toInt(&ok);
@@ -394,14 +329,43 @@ static void handleUnban(CommandContext &f_context)
         f_context.reply("Couldn't invalidate ban " + f_context.argument(0) + ", are you sure it exists?");
 }
 
-static void handleAbout(CommandContext &f_context)
+void cmdAbout(CommandContext &f_context)
 {
     f_context.sendPacket("CT", {"The akashi dev team", "Thank you for using akashi! Made with love by scatterflower, with help from in1tiate, Salanto, and mangosarentliterature. akashi " + QCoreApplication::applicationVersion() + ". For documentation and reporting issues, see the source: https://github.com/AttorneyOnline/akashi"});
 }
 
-static void handleMute(CommandContext &f_context)
+bool applySanctionSchedule(CommandContext &f_context, TargetPlayer &f_target, const QString &f_sanction_id)
+{
+    if (f_context.argc() <= 1) {
+        // A plain sanction holds until lifted by hand; an older stored
+        // lift must not cut it short.
+        f_context.server()->clearStoredSanction(f_target.ipid(), f_sanction_id);
+        return true;
+    }
+    const QString l_text = QStringList(f_context.arguments().mid(1)).join(QLatin1Char(' '));
+    const auto l_until = akashi::parseWhen(l_text, QDateTime::currentDateTime());
+    if (!l_until.has_value()) {
+        f_context.reply("Could not read \"" + l_text + "\" as a time. Use a duration like 1d12h30m, a weekday, or a date like 01.01.2028 18:00.");
+        return false;
+    }
+    const QString l_moderator = f_context.server()->authType() == AuthType::ADVANCED
+                                    ? f_context.moderatorName()
+                                    : QStringLiteral("moderator");
+    f_context.server()->applyTimedSanction(f_target.ipid(), f_sanction_id, *l_until, l_moderator);
+    f_context.reply("The sanction lifts itself " + l_until->toString("yyyy-MM-dd hh:mm") + ".");
+    return true;
+}
+
+void clearSanctionSchedule(CommandContext &f_context, TargetPlayer &f_target, const QString &f_sanction_id)
+{
+    f_context.server()->clearStoredSanction(f_target.ipid(), f_sanction_id);
+}
+
+void cmdMute(CommandContext &f_context)
 {
     if (auto l_target = f_context.resolveTarget()) {
+        if (!applySanctionSchedule(f_context, *l_target, akashi::sanction::muted))
+            return;
         if (l_target->hasSanction(akashi::sanction::muted))
             f_context.reply("That player is already muted!");
         else {
@@ -412,9 +376,10 @@ static void handleMute(CommandContext &f_context)
     }
 }
 
-static void handleUnmute(CommandContext &f_context)
+void cmdUnmute(CommandContext &f_context)
 {
     if (auto l_target = f_context.resolveTarget()) {
+        clearSanctionSchedule(f_context, *l_target, akashi::sanction::muted);
         if (!l_target->hasSanction(akashi::sanction::muted))
             f_context.reply("That player is not muted!");
         else {
@@ -425,9 +390,11 @@ static void handleUnmute(CommandContext &f_context)
     }
 }
 
-static void handleOocMute(CommandContext &f_context)
+void cmdOocMute(CommandContext &f_context)
 {
     if (auto l_target = f_context.resolveTarget()) {
+        if (!applySanctionSchedule(f_context, *l_target, akashi::sanction::ooc_muted))
+            return;
         if (l_target->hasSanction(akashi::sanction::ooc_muted))
             f_context.reply("That player is already OOC muted!");
         else {
@@ -438,9 +405,10 @@ static void handleOocMute(CommandContext &f_context)
     }
 }
 
-static void handleOocUnmute(CommandContext &f_context)
+void cmdOocUnmute(CommandContext &f_context)
 {
     if (auto l_target = f_context.resolveTarget()) {
+        clearSanctionSchedule(f_context, *l_target, akashi::sanction::ooc_muted);
         if (!l_target->hasSanction(akashi::sanction::ooc_muted))
             f_context.reply("That player is not OOC muted!");
         else {
@@ -451,9 +419,11 @@ static void handleOocUnmute(CommandContext &f_context)
     }
 }
 
-static void handleBlockWtce(CommandContext &f_context)
+void cmdBlockWtce(CommandContext &f_context)
 {
     if (auto l_target = f_context.resolveTarget()) {
+        if (!applySanctionSchedule(f_context, *l_target, akashi::sanction::wtce_blocked))
+            return;
         if (l_target->hasSanction(akashi::sanction::wtce_blocked))
             f_context.reply("That player is already judge blocked!");
         else {
@@ -464,9 +434,10 @@ static void handleBlockWtce(CommandContext &f_context)
     }
 }
 
-static void handleUnblockWtce(CommandContext &f_context)
+void cmdUnblockWtce(CommandContext &f_context)
 {
     if (auto l_target = f_context.resolveTarget()) {
+        clearSanctionSchedule(f_context, *l_target, akashi::sanction::wtce_blocked);
         if (!l_target->hasSanction(akashi::sanction::wtce_blocked))
             f_context.reply("That player is not judge blocked!");
         else {
@@ -477,7 +448,7 @@ static void handleUnblockWtce(CommandContext &f_context)
     }
 }
 
-static void handleAllowBlankposting(CommandContext &f_context)
+void cmdAllowBlankposting(CommandContext &f_context)
 {
     akashi::Area *l_area = f_context.server()->areaById(f_context.areaId());
     l_area->toggleBlankposting();
@@ -489,7 +460,7 @@ static void handleAllowBlankposting(CommandContext &f_context)
     }
 }
 
-static void handleBanInfo(CommandContext &f_context)
+void cmdBanInfo(CommandContext &f_context)
 {
     QStringList l_ban_info;
     l_ban_info << ("Ban Info for " + f_context.argument(0));
@@ -530,13 +501,13 @@ static void handleBanInfo(CommandContext &f_context)
     f_context.reply(l_ban_info.join("\n"));
 }
 
-static void handleReload(CommandContext &f_context)
+void cmdReload(CommandContext &f_context)
 {
     f_context.server()->reloadSettings();
     f_context.reply("Reloaded configurations");
 }
 
-static void handleForceImmediate(CommandContext &f_context)
+void cmdForceNointPres(CommandContext &f_context)
 {
     akashi::Area *l_area = f_context.server()->areaById(f_context.areaId());
     l_area->toggleImmediate();
@@ -544,7 +515,7 @@ static void handleForceImmediate(CommandContext &f_context)
     f_context.reply("Forced immediate text processing in this area is now " + l_state);
 }
 
-static void handleAllowIniswap(CommandContext &f_context)
+void cmdAllowIniswap(CommandContext &f_context)
 {
     akashi::Area *l_area = f_context.server()->areaById(f_context.areaId());
     l_area->toggleIniswap();
@@ -552,7 +523,7 @@ static void handleAllowIniswap(CommandContext &f_context)
     f_context.reply("Iniswapping in this area is now " + state);
 }
 
-static void handlePermitSaving(CommandContext &f_context)
+void cmdPermitSaving(CommandContext &f_context)
 {
     if (auto l_target = f_context.resolveTarget()) {
         l_target->setTestimonySaving(true);
@@ -560,7 +531,9 @@ static void handlePermitSaving(CommandContext &f_context)
     }
 }
 
-static void handleKickUid(CommandContext &f_context)
+// The /kick_uid door: one client only; the act itself is the server's
+// kick verb, so unlike before this door leaves a log entry like /kick.
+void cmdKickUid(CommandContext &f_context)
 {
     QString l_reason = f_context.argument(1);
 
@@ -571,13 +544,15 @@ static void handleKickUid(CommandContext &f_context)
     }
 
     if (auto l_target = f_context.resolveTarget()) {
-        l_target->sendPacket("KK", {l_reason});
-        l_target->closeSocket();
+        const QString l_moderator = f_context.server()->authType() == AuthType::ADVANCED
+                                        ? f_context.moderatorName()
+                                        : QStringLiteral("Moderator");
+        f_context.server()->kickClients({f_context.server()->clientById(l_target->clientId())}, l_target->ipid(), l_reason, l_moderator);
         f_context.reply("Kicked client with UID " + f_context.argument(0) + " for reason: " + l_reason);
     }
 }
 
-static void handleUpdateBan(CommandContext &f_context)
+void cmdUpdateBan(CommandContext &f_context)
 {
     bool conv_ok = false;
     int l_ban_id = f_context.argument(0).toInt(&conv_ok);
@@ -617,17 +592,17 @@ static void handleUpdateBan(CommandContext &f_context)
     f_context.reply("Ban updated.");
 }
 
-static void handleNotice(CommandContext &f_context)
+void cmdNotice(CommandContext &f_context)
 {
     sendNotice(f_context, f_context.arguments().join(" "));
 }
 
-static void handleNoticeGlobal(CommandContext &f_context)
+void cmdNoticeG(CommandContext &f_context)
 {
     sendNotice(f_context, f_context.arguments().join(" "), true);
 }
 
-static void handleKickOther(CommandContext &f_context)
+void cmdKickOther(CommandContext &f_context)
 {
     int l_kick_counter = 0;
 
@@ -659,111 +634,111 @@ void registerModerationCommands(CommandRegistry &f_registry)
 {
     f_registry.registerCommand(
         {QStringLiteral("ban"), {}, {akashi::permission::ban}, 3, QStringLiteral("/ban <ipid> <duration> <reason>"), QStringLiteral("Bans a client by IPID.")},
-        handleBan, QStringLiteral("core"));
+        cmdBan, QStringLiteral("core"));
 
     f_registry.registerCommand(
         {QStringLiteral("kick"), {}, {akashi::permission::kick}, 2, QStringLiteral("/kick <ipid> <reason>"), QStringLiteral("Kicks all clients with the given IPID.")},
-        handleKick, QStringLiteral("core"));
+        cmdKick, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("mods"), {}, {}, 0, QStringLiteral("/mods"), QStringLiteral("Lists currently logged-in moderators.")},
-        handleMods, QStringLiteral("core"));
+        {QStringLiteral("mods"), {}, {akashi::permission::user}, 0, QStringLiteral("/mods"), QStringLiteral("Lists currently logged-in moderators.")},
+        cmdMods, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("commands"), {}, {}, 0, QStringLiteral("/commands"), QStringLiteral("Lists all commands available to you.")},
-        handleCommands, QStringLiteral("core"));
+        {QStringLiteral("commands"), {}, {akashi::permission::user}, 0, QStringLiteral("/commands"), QStringLiteral("Lists all commands available to you.")},
+        cmdCommands, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("help"), {}, {}, 0, QStringLiteral("/help [command|all]"), QStringLiteral("Displays help for a command.")},
-        handleHelp, QStringLiteral("core"));
+        {QStringLiteral("help"), {}, {akashi::permission::user}, 0, QStringLiteral("/help [command|all]"), QStringLiteral("Displays help for a command.")},
+        cmdHelp, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("motd"), {}, {}, 0, QStringLiteral("/motd"), QStringLiteral("Displays the Message of the Day.")},
-        handleMotd, QStringLiteral("core"));
+        {QStringLiteral("motd"), {}, {akashi::permission::user}, 0, QStringLiteral("/motd"), QStringLiteral("Displays the Message of the Day.")},
+        cmdMotd, QStringLiteral("core"));
 
     f_registry.registerCommand(
         {QStringLiteral("set_motd"), {QStringLiteral("setmotd")}, {akashi::permission::motd}, 1, QStringLiteral("/set_motd <message>"), QStringLiteral("Sets the Message of the Day.")},
-        handleSetMotd, QStringLiteral("core"));
+        cmdSetMotd, QStringLiteral("core"));
 
     f_registry.registerCommand(
         {QStringLiteral("bans"), {}, {akashi::permission::ban}, 0, QStringLiteral("/bans"), QStringLiteral("Lists the last 5 bans.")},
-        handleBans, QStringLiteral("core"));
+        cmdBans, QStringLiteral("core"));
 
     f_registry.registerCommand(
         {QStringLiteral("unban"), {}, {akashi::permission::ban}, 1, QStringLiteral("/unban <ban_id>"), QStringLiteral("Invalidates a ban by its ID.")},
-        handleUnban, QStringLiteral("core"));
+        cmdUnban, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("about"), {}, {}, 0, QStringLiteral("/about"), QStringLiteral("Displays server version info.")},
-        handleAbout, QStringLiteral("core"));
+        {QStringLiteral("about"), {}, {akashi::permission::user}, 0, QStringLiteral("/about"), QStringLiteral("Displays server version info.")},
+        cmdAbout, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("mute"), {}, {akashi::permission::mute}, 1, QStringLiteral("/mute <id>"), QStringLiteral("Mutes a client.")},
-        handleMute, QStringLiteral("core"));
+        {QStringLiteral("mute"), {}, {akashi::permission::mute}, 1, QStringLiteral("/mute <id> [until]"), QStringLiteral("Mutes a client, until a time like 1d12h, friday or 01.01.2028 18:00 if one is given.")},
+        cmdMute, QStringLiteral("core"));
 
     f_registry.registerCommand(
         {QStringLiteral("unmute"), {}, {akashi::permission::mute}, 1, QStringLiteral("/unmute <id>"), QStringLiteral("Unmutes a client.")},
-        handleUnmute, QStringLiteral("core"));
+        cmdUnmute, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("ooc_mute"), {QStringLiteral("mute_ooc"), QStringLiteral("oocmute")}, {akashi::permission::mute}, 1, QStringLiteral("/ooc_mute <id>"), QStringLiteral("OOC-mutes a client.")},
-        handleOocMute, QStringLiteral("core"));
+        {QStringLiteral("ooc_mute"), {QStringLiteral("mute_ooc"), QStringLiteral("oocmute")}, {akashi::permission::mute}, 1, QStringLiteral("/ooc_mute <id> [until]"), QStringLiteral("OOC-mutes a client, until a time like 1d12h, friday or 01.01.2028 18:00 if one is given.")},
+        cmdOocMute, QStringLiteral("core"));
 
     f_registry.registerCommand(
         {QStringLiteral("ooc_unmute"), {QStringLiteral("unmute_ooc"), QStringLiteral("oocunmute")}, {akashi::permission::mute}, 1, QStringLiteral("/ooc_unmute <id>"), QStringLiteral("OOC-unmutes a client.")},
-        handleOocUnmute, QStringLiteral("core"));
+        cmdOocUnmute, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("block_wtce"), {QStringLiteral("blockwtce")}, {akashi::permission::mute}, 1, QStringLiteral("/block_wtce <id>"), QStringLiteral("Blocks a client from using judge controls.")},
-        handleBlockWtce, QStringLiteral("core"));
+        {QStringLiteral("block_wtce"), {QStringLiteral("blockwtce")}, {akashi::permission::mute}, 1, QStringLiteral("/block_wtce <id> [until]"), QStringLiteral("Blocks a client from using judge controls, until a time like 1d12h if one is given.")},
+        cmdBlockWtce, QStringLiteral("core"));
 
     f_registry.registerCommand(
         {QStringLiteral("unblock_wtce"), {QStringLiteral("unblockwtce")}, {akashi::permission::mute}, 1, QStringLiteral("/unblock_wtce <id>"), QStringLiteral("Restores a client's judge controls.")},
-        handleUnblockWtce, QStringLiteral("core"));
+        cmdUnblockWtce, QStringLiteral("core"));
 
     f_registry.registerCommand(
         {QStringLiteral("allow_blankposting"), {QStringLiteral("allowblankposting")}, {akashi::permission::chat_moderator}, 0, QStringLiteral("/allow_blankposting"), QStringLiteral("Toggles blankposting in the area.")},
-        handleAllowBlankposting, QStringLiteral("core"));
+        cmdAllowBlankposting, QStringLiteral("core"));
 
     f_registry.registerCommand(
         {QStringLiteral("baninfo"), {}, {akashi::permission::ban}, 1, QStringLiteral("/baninfo <id> [type]"), QStringLiteral("Looks up ban info.")},
-        handleBanInfo, QStringLiteral("core"));
+        cmdBanInfo, QStringLiteral("core"));
 
     f_registry.registerCommand(
         {QStringLiteral("reload"), {}, {akashi::permission::super}, 0, QStringLiteral("/reload"), QStringLiteral("Reloads server configuration.")},
-        handleReload, QStringLiteral("core"));
+        cmdReload, QStringLiteral("core"));
 
     f_registry.registerCommand(
         {QStringLiteral("force_noint_pres"), {QStringLiteral("forceimmediate")}, {akashi::permission::gamemaster}, 0, QStringLiteral("/force_noint_pres"), QStringLiteral("Toggles forced immediate text processing.")},
-        handleForceImmediate, QStringLiteral("core"));
+        cmdForceNointPres, QStringLiteral("core"));
 
     f_registry.registerCommand(
         {QStringLiteral("allow_iniswap"), {QStringLiteral("allowiniswap")}, {akashi::permission::gamemaster}, 0, QStringLiteral("/allow_iniswap"), QStringLiteral("Toggles iniswap permission in the area.")},
-        handleAllowIniswap, QStringLiteral("core"));
+        cmdAllowIniswap, QStringLiteral("core"));
 
     f_registry.registerCommand(
         {QStringLiteral("permitsaving"), {}, {akashi::permission::chat_moderator}, 1, QStringLiteral("/permitsaving <id>"), QStringLiteral("Grants a client permission to save testimony.")},
-        handlePermitSaving, QStringLiteral("core"));
+        cmdPermitSaving, QStringLiteral("core"));
 
     f_registry.registerCommand(
         {QStringLiteral("kick_uid"), {QStringLiteral("kickuid")}, {akashi::permission::kick}, 2, QStringLiteral("/kick_uid <id> <reason>"), QStringLiteral("Kicks a single client by UID.")},
-        handleKickUid, QStringLiteral("core"));
+        cmdKickUid, QStringLiteral("core"));
 
     f_registry.registerCommand(
         {QStringLiteral("update_ban"), {QStringLiteral("updateban")}, {akashi::permission::ban}, 3, QStringLiteral("/update_ban <ban_id> <field> <value>"), QStringLiteral("Updates a ban's duration or reason.")},
-        handleUpdateBan, QStringLiteral("core"));
+        cmdUpdateBan, QStringLiteral("core"));
 
     f_registry.registerCommand(
         {QStringLiteral("notice"), {}, {akashi::permission::send_notice}, 1, QStringLiteral("/notice <message>"), QStringLiteral("Sends a notice to the area.")},
-        handleNotice, QStringLiteral("core"));
+        cmdNotice, QStringLiteral("core"));
 
     f_registry.registerCommand(
         {QStringLiteral("noticeg"), {}, {akashi::permission::send_notice}, 1, QStringLiteral("/noticeg <message>"), QStringLiteral("Sends a server-wide notice.")},
-        handleNoticeGlobal, QStringLiteral("core"));
+        cmdNoticeG, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("kick_other"), {QStringLiteral("kickother")}, {}, 0, QStringLiteral("/kick_other"), QStringLiteral("Kicks your other connected clients.")},
-        handleKickOther, QStringLiteral("core"));
+        {QStringLiteral("kick_other"), {QStringLiteral("kickother")}, {akashi::permission::user}, 0, QStringLiteral("/kick_other"), QStringLiteral("Kicks your other connected clients.")},
+        cmdKickOther, QStringLiteral("core"));
 }
 
 } // namespace akashi::commands

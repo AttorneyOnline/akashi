@@ -283,7 +283,11 @@ int WriterSql::typeId(const QString &f_name)
 
     m_select_type->bindValue(0, f_name);
     m_select_type->exec();
-    m_select_type->first();
+    if (!m_select_type->first()) {
+        // Never cache a failed lookup; the next event tries again.
+        qCWarning(akashiLog) << "WriterSql: could not resolve event type" << f_name;
+        return 0;
+    }
     int l_id = m_select_type->value(0).toInt();
     m_type_cache.insert(f_name, l_id);
     return l_id;
@@ -291,20 +295,28 @@ int WriterSql::typeId(const QString &f_name)
 
 int WriterSql::identityId(const QString &f_ipid, const QString &f_hwid)
 {
-    const auto l_key = qMakePair(f_ipid, f_hwid);
+    // Most events carry no hardware id. A null string would bind as SQL
+    // NULL: the NOT NULL column rejects it, OR IGNORE swallows the error,
+    // and the lookup below never matches - so store an empty one instead.
+    const QString l_hwid = f_hwid.isNull() ? QStringLiteral("") : f_hwid;
+    const auto l_key = qMakePair(f_ipid, l_hwid);
     auto l_it = m_identity_cache.constFind(l_key);
     if (l_it != m_identity_cache.constEnd()) {
         return l_it.value();
     }
 
     m_insert_identity->bindValue(0, f_ipid);
-    m_insert_identity->bindValue(1, f_hwid);
+    m_insert_identity->bindValue(1, l_hwid);
     m_insert_identity->exec();
 
     m_select_identity->bindValue(0, f_ipid);
-    m_select_identity->bindValue(1, f_hwid);
+    m_select_identity->bindValue(1, l_hwid);
     m_select_identity->exec();
-    m_select_identity->first();
+    if (!m_select_identity->first()) {
+        // Never cache a failed lookup; the next event tries again.
+        qCWarning(akashiLog) << "WriterSql: could not resolve identity" << f_ipid;
+        return 0;
+    }
     int l_id = m_select_identity->value(0).toInt();
     m_identity_cache.insert(l_key, l_id);
     return l_id;

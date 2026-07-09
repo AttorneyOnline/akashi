@@ -16,8 +16,11 @@ class tst_ClientSession : public QObject
     void buffersWhileConnectionIsDown();
     void rebindReplaysPendingInOrder();
     void bufferIsBoundedAndRecordsOverflow();
+    void overflowBeginsExactlyBeyondTheLimit();
     void rebindReplacesAndDeletesOldTransport();
+    void rebindToClosedTransportKeepsThePending();
     void forwardsTransportSignals();
+    void serverlessSessionForwardsANullPacketWithoutProcessing();
     void addsOnePlayerAndEnforcesTheCap();
     void reportsTimeoutWhenNobodyReconnects();
     void bindingANewTransportCancelsTheWait();
@@ -79,6 +82,26 @@ void tst_ClientSession::bufferIsBoundedAndRecordsOverflow()
     QCOMPARE(l_session.pending_packets.head().fields()[1], QString::number(600 - 512));
 }
 
+void tst_ClientSession::overflowBeginsExactlyBeyondTheLimit()
+{
+    FakeTransport *l_transport = new FakeTransport(false);
+    akashi::ClientSession l_session(nullptr, l_transport, 1);
+
+    // The 512th packet still fits without a drop.
+    for (int i = 0; i < 512; i++) {
+        l_session.write(akashi::Packet("CT", {"server", QString::number(i)}));
+    }
+    QCOMPARE(l_session.pending_packets.size(), 512);
+    QVERIFY(!l_session.pending_overflowed);
+    QCOMPARE(l_session.pending_packets.head().fields()[1], QString("0"));
+
+    // The 513th drops exactly the oldest and records the overflow.
+    l_session.write(akashi::Packet("CT", {"server", "512"}));
+    QCOMPARE(l_session.pending_packets.size(), 512);
+    QVERIFY(l_session.pending_overflowed);
+    QCOMPARE(l_session.pending_packets.head().fields()[1], QString("1"));
+}
+
 void tst_ClientSession::rebindReplacesAndDeletesOldTransport()
 {
     FakeTransport *l_transport = new FakeTransport(true);
@@ -98,6 +121,30 @@ void tst_ClientSession::rebindReplacesAndDeletesOldTransport()
     QCOMPARE(l_replacement->written.size(), 1);
 }
 
+void tst_ClientSession::rebindToClosedTransportKeepsThePending()
+{
+    FakeTransport *l_transport = new FakeTransport(true);
+    akashi::ClientSession l_session(nullptr, l_transport, 1);
+    l_transport->close();
+
+    l_session.write(akashi::Packet("CT", {"server", "first"}));
+    l_session.write(akashi::Packet("CT", {"server", "second"}));
+
+    // A replacement that is already closed replays nothing and loses nothing.
+    FakeTransport *l_closed = new FakeTransport(false);
+    l_session.bindTransport(l_closed);
+    QCOMPARE(l_closed->written.size(), 0);
+    QCOMPARE(l_session.pending_packets.size(), 2);
+
+    // The next open transport gets the whole held sequence in order.
+    FakeTransport *l_open = new FakeTransport(true);
+    l_session.bindTransport(l_open);
+    QCOMPARE(l_session.pending_packets.size(), 0);
+    QCOMPARE(l_open->written.size(), 2);
+    QCOMPARE(l_open->written[0].fields()[1], QString("first"));
+    QCOMPARE(l_open->written[1].fields()[1], QString("second"));
+}
+
 void tst_ClientSession::forwardsTransportSignals()
 {
     FakeTransport *l_transport = new FakeTransport(true);
@@ -111,6 +158,22 @@ void tst_ClientSession::forwardsTransportSignals()
 
     QCOMPARE(l_packets.size(), 1);
     QCOMPARE(l_closed.size(), 1);
+}
+
+void tst_ClientSession::serverlessSessionForwardsANullPacketWithoutProcessing()
+{
+    FakeTransport *l_transport = new FakeTransport(true);
+    akashi::ClientSession l_session(nullptr, l_transport, 1);
+    QSignalSpy l_packets(&l_session, &akashi::ClientSession::packetReceived);
+
+    // Without a server, handlePacket forwards through the signal but
+    // processes nothing - even a null packet passes through harmlessly.
+    Q_EMIT l_transport->packetReceived(akashi::Packet());
+    Q_EMIT l_transport->packetReceived(akashi::Packet("", {"garbage"}));
+
+    QCOMPARE(l_packets.size(), 2);
+    QCOMPARE(l_transport->written.size(), 0);
+    QCOMPARE(l_session.pending_packets.size(), 0);
 }
 
 void tst_ClientSession::addsOnePlayerAndEnforcesTheCap()

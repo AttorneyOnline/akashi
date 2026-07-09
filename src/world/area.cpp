@@ -20,12 +20,11 @@ Area::Area(int f_id, const QString &f_name, int f_floor_id, int f_x, QObject *pa
 }
 
 Area::Area(const QString &f_settings_group, int f_id, int f_floor_id, int f_x,
-           QSettings *f_areas_ini, QSettings *f_ambience_ini, QObject *parent) :
+           QSettings *f_areas_ini, QObject *parent) :
     QObject(parent),
     m_id(f_id),
     m_floor_id(f_floor_id),
-    m_x(f_x),
-    m_ambience_ini(f_ambience_ini)
+    m_x(f_x)
 {
     QStringList l_name_split = f_settings_group.split(":");
     l_name_split.removeFirst();
@@ -73,11 +72,12 @@ void Area::setupComponents()
         m_timers.append(new QTimer(this));
     }
     m_jukebox = new Jukebox(this);
-    connect(m_jukebox, &Jukebox::songStarted, this, [this](const JukeboxSong &f_song) {
-        m_jukebox->changeMusic(f_song.name, QStringLiteral("Jukebox"));
-    });
-    m_message_floodguard_timer = new QTimer(this);
-    connect(m_message_floodguard_timer, &QTimer::timeout, this, &Area::allowMessage);
+    connect(m_jukebox, &Jukebox::songStarted, this, &Area::onJukeboxSongStarted);
+}
+
+void Area::onJukeboxSongStarted(const JukeboxSong &f_song)
+{
+    m_jukebox->changeMusic(f_song.name, QStringLiteral("Jukebox"));
 }
 
 void Area::addPlayer(int f_player_id)
@@ -157,18 +157,21 @@ void Area::addOwner(int f_player_id)
     invite(f_player_id);
 }
 
-bool Area::removeOwner(int f_player_id)
+Area::OwnerRemoval Area::removeOwner(int f_player_id)
 {
-    if (m_owners.removeAll(f_player_id) > 0) {
-        Q_EMIT ownersChanged();
+    // A non-owner has no spot to give up; their invitation stays too.
+    if (!m_owners.contains(f_player_id)) {
+        return OwnerRemoval::NotAnOwner;
     }
+    m_owners.removeAll(f_player_id);
+    Q_EMIT ownersChanged();
     uninvite(f_player_id);
 
     if (m_owners.isEmpty() && m_lock_state != LockState::Free) {
         setLockState(LockState::Free);
-        return true;
+        return OwnerRemoval::RemovedAndUnlocked;
     }
-    return false;
+    return OwnerRemoval::Removed;
 }
 
 bool Area::invite(int f_player_id)
@@ -202,7 +205,7 @@ void Area::setStatus(const QString &f_status)
     }
 }
 
-bool Area::changeStatus(const QString &f_name)
+std::optional<QString> Area::canonicalStatus(const QString &f_name)
 {
     // The known names keep their exact old spellings on the wire.
     static const QMap<QString, QString> s_statuses = {
@@ -215,9 +218,18 @@ bool Area::changeStatus(const QString &f_name)
         {QStringLiteral("gaming"), QStringLiteral("GAMING")},
     };
     if (!s_statuses.contains(f_name)) {
+        return std::nullopt;
+    }
+    return s_statuses[f_name];
+}
+
+bool Area::changeStatus(const QString &f_name)
+{
+    const std::optional<QString> l_status = canonicalStatus(f_name);
+    if (!l_status) {
         return false;
     }
-    setStatus(s_statuses[f_name]);
+    setStatus(*l_status);
     return true;
 }
 
@@ -271,13 +283,6 @@ void Area::changeAmbience(const QString &f_new_song)
     m_jukebox->changeAmbience(f_new_song);
 }
 
-void Area::startMessageFloodguard(int f_duration)
-{
-    m_can_send_ic_messages = false;
-    m_message_floodguard_timer->setSingleShot(true);
-    m_message_floodguard_timer->start(f_duration);
-}
-
 void Area::changeHP(Side f_side, int f_new_hp)
 {
     if (f_side == Side::DEFENCE) {
@@ -285,15 +290,6 @@ void Area::changeHP(Side f_side, int f_new_hp)
     }
     else if (f_side == Side::PROSECUTOR) {
         m_pro_hp = std::min(std::max(0, f_new_hp), 10);
-    }
-}
-
-void Area::setBackground(const QString &f_background)
-{
-    m_settings.background = f_background;
-    if (m_ambience_ini) {
-        const QString l_ambience = m_ambience_ini->value(f_background + "/ambience").toString();
-        m_jukebox->changeAmbience(l_ambience.isEmpty() ? QString() : l_ambience);
     }
 }
 

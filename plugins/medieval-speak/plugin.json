@@ -1,6 +1,0 @@
-{
-    "id": "akashi.medieval-speak",
-    "version": "1.0.0",
-    "dependencies": [],
-    "services": ["akashi.textfilters", "akashi.commands", "akashi.config"]
-}

@@ -43,5 +43,9 @@ AKASHI_CORE_EXPORT ConfigEntry::Check allOf(const QList<ConfigEntry::Check> &f_c
 AKASHI_CORE_EXPORT ConfigEntry::Check oneOf(const QStringList &f_words);
 // The value must be empty or a time of day like 04:30.
 AKASHI_CORE_EXPORT ConfigEntry::Check emptyOrTime();
+// The value must be a well-formed http or https URL.
+AKASHI_CORE_EXPORT ConfigEntry::Check url();
+// An empty value passes; anything else must pass the given check.
+AKASHI_CORE_EXPORT ConfigEntry::Check emptyOr(ConfigEntry::Check f_check);
 
 } // namespace akashi

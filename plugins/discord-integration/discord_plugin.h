@@ -5,10 +5,6 @@
 #include <QObject>
 #include <QtPlugin>
 
-#include <memory>
-
-class WebhookSender;
-
 class DiscordPlugin : public QObject, public akashi::IPlugin
 {
     Q_OBJECT
@@ -21,7 +17,4 @@ class DiscordPlugin : public QObject, public akashi::IPlugin
 
     bool load(akashi::ServiceRegistry &services) override;
     void shutdown(akashi::ServiceRegistry &services) override;
-
-  private:
-    std::unique_ptr<WebhookSender> m_sender;
 };

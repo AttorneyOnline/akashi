@@ -63,9 +63,7 @@ WebSocketTransport::WebSocketTransport(QWebSocket *f_socket, QObject *parent) :
     m_client_socket->setParent(this);
     connect(m_client_socket, &QWebSocket::textMessageReceived, this, &WebSocketTransport::handleMessage);
     connect(m_client_socket, &QWebSocket::disconnected, this, &WebSocketTransport::onSocketDisconnected);
-    connect(m_client_socket, &QWebSocket::pong, this, [this](quint64, const QByteArray &) {
-        m_unanswered_pings = 0;
-    });
+    connect(m_client_socket, &QWebSocket::pong, this, &WebSocketTransport::onPong);
 
     m_liveness_timer = new QTimer(this);
     connect(m_liveness_timer, &QTimer::timeout, this, &WebSocketTransport::checkLiveness);
@@ -178,6 +176,11 @@ void WebSocketTransport::reportDisconnect(DisconnectKind f_kind)
     m_disconnect_reported = true;
     m_liveness_timer->stop();
     Q_EMIT clientDisconnected(f_kind);
+}
+
+void WebSocketTransport::onPong()
+{
+    m_unanswered_pings = 0;
 }
 
 void WebSocketTransport::checkLiveness()

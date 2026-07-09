@@ -2,5 +2,5 @@
     "id": "akashi.sql-logger",
     "version": "1.0.0",
     "dependencies": [],
-    "services": ["akashi.log", "akashi.config", "akashi.filesystem"]
+    "services": ["akashi.log", "akashi.database", "akashi.config"]
 }

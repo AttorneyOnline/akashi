@@ -87,6 +87,9 @@ class tst_Jukebox : public QObject
     void timerMovesToTheNextSongOnItsOwn();
     void policySeamCarriesEveryDecision();
     void playerDeparturesReachThePolicy();
+    void refusedRequestStartsNothing();
+    void playerLeftForAnUnknownPlayerChangesNothing();
+    void nullPolicyKeepsTheCurrentOne();
 
     // ── Floor catalog ───────────────────────────────────────────
     void setFloorCatalogClearsCustomsAndEmits();
@@ -127,6 +130,7 @@ class tst_Jukebox : public QObject
     // ── queueSong ───────────────────────────────────────────────
     void queueSongResolvesFromCatalog();
     void queueSongRejectsUnknownSong();
+    void queueSongWithoutAnyCatalogRefuses();
 };
 
 // ── Playback engine ─────────────────────────────────────────────
@@ -261,6 +265,41 @@ void tst_Jukebox::playerDeparturesReachThePolicy()
     l_jukebox.playerLeft(3);
     l_jukebox.playerLeft(5);
     QCOMPARE(l_scripted->departures, (QList<int>{3, 5}));
+}
+
+void tst_Jukebox::refusedRequestStartsNothing()
+{
+    Jukebox l_jukebox;
+    QSignalSpy l_started(&l_jukebox, &Jukebox::songStarted);
+
+    // The refused song never reaches the queue, so the idle jukebox finds
+    // nothing to play and stays silent.
+    QCOMPARE(l_jukebox.request(0, song("broken", 0)), "Unable to add song. Duration shorter than 1.");
+    QCOMPARE(l_started.count(), 0);
+    QVERIFY(!l_jukebox.isPlaying());
+    QCOMPARE(l_jukebox.pendingCount(), 0);
+}
+
+void tst_Jukebox::playerLeftForAnUnknownPlayerChangesNothing()
+{
+    Jukebox l_jukebox;
+    l_jukebox.request(0, song("first"));
+
+    // The queue policy ties nothing to players; an unknown departure is a
+    // no-op for it and playback carries on.
+    l_jukebox.playerLeft(99);
+    QVERIFY(l_jukebox.isPlaying());
+    QCOMPARE(l_jukebox.currentSongName(), "first");
+    QCOMPARE(l_jukebox.pendingCount(), 1);
+}
+
+void tst_Jukebox::nullPolicyKeepsTheCurrentOne()
+{
+    Jukebox l_jukebox;
+    l_jukebox.setPolicy(nullptr);
+
+    // The default queue policy still answers.
+    QCOMPARE(l_jukebox.request(0, song("first")), "Song added to Jukebox.");
 }
 
 // ── Floor catalog ───────────────────────────────────────────────
@@ -599,6 +638,17 @@ void tst_Jukebox::queueSongRejectsUnknownSong()
 
     const QString l_result = l_jukebox.queueSong(0, "nonexistent.opus");
     QCOMPARE(l_result, "Song not found in the music list.");
+}
+
+void tst_Jukebox::queueSongWithoutAnyCatalogRefuses()
+{
+    Jukebox l_jukebox;
+    QSignalSpy l_started(&l_jukebox, &Jukebox::songStarted);
+
+    // No floor catalog, no customs: every name is unknown, nothing starts.
+    QCOMPARE(l_jukebox.queueSong(0, "Pursuit.opus"), "Song not found in the music list.");
+    QCOMPARE(l_started.count(), 0);
+    QVERIFY(!l_jukebox.isPlaying());
 }
 
 }

@@ -33,7 +33,7 @@ class AKASHI_CORE_EXPORT ServerSettings : public akashi::Settings
     akashi::Setting<QString> auth{this, "Options/auth", "simple", "The authorization type, simple or advanced.", akashi::oneOf({"simple", "advanced"})};
     akashi::Setting<QString> modpass{this, "Options/modpass", "changeme", "The moderator password used with simple authorization."};
     akashi::Setting<int> logbuffer{this, "Options/logbuffer", 500, "The number of log messages an area stores.", akashi::atLeast(0)};
-    akashi::Setting<QString> logging{this, "Options/logging", "modcall", "The logging type: modcall, full or fullarea.", akashi::oneOf({"modcall", "full", "fullarea"})};
+    akashi::Setting<QString> logging{this, "Options/logging", "modcall", "The logging type: modcall, full and fullarea write text logs; sql keeps modcall text logs and captures everything in the sql-logger plugin's database.", akashi::oneOf({"modcall", "full", "fullarea", "sql"})};
     akashi::Setting<int> maximum_statements{this, "Options/maximum_statements", 10, "The maximum number of statements the testimony recorder stores.", akashi::atLeast(0)};
     akashi::Setting<int> multiclient_limit{this, "Options/multiclient_limit", 15, "The maximum number of connections from the same IP address.", akashi::atLeast(1)};
     akashi::Setting<int> reconnect_grace{this, "Options/reconnect_grace", 0, "How many seconds a client that lost its connection keeps its place for a reconnect. 0 removes it immediately; while a client waits, its character stays taken.", akashi::atLeast(0)};
@@ -45,9 +45,9 @@ class AKASHI_CORE_EXPORT ServerSettings : public akashi::Settings
     akashi::Setting<int> packet_rate_limit_hard{this, "Options/packet_rate_limit_hard", 20, "Sending packets faster than this disconnects the client."};
     akashi::Setting<int> afk_timeout{this, "Options/afk_timeout", 300, "Seconds without input before a player counts as AFK.", akashi::atLeast(1)};
     akashi::Setting<QString> console_socket{this, "Options/console_socket", "akashi-console", "The local socket the akashi-console attach client connects to; a named pipe on Windows. On Linux a name containing a slash is used as a full path. Servers sharing a machine need distinct names. Empty turns attaching off."};
-    akashi::Setting<QString> asset_url{this, "Options/asset_url", "", "The URL of the server's asset repository, used by WebAO users."};
+    akashi::Setting<QString> asset_url{this, "Options/asset_url", "", "The URL of the server's asset repository, used by WebAO users.", akashi::emptyOr(akashi::url())};
     akashi::Setting<bool> advertise{this, "Advertiser/advertise", true, "Whether the server appears on the master server."};
-    akashi::Setting<QString> ms_ip{this, "Advertiser/ms_ip", "https://servers.aceattorneyonline.com/servers", "The address of the master server."};
+    akashi::Setting<QString> ms_ip{this, "Advertiser/ms_ip", "https://servers.aceattorneyonline.com/servers", "The address of the master server.", akashi::url()};
     akashi::Setting<QString> hostname{this, "Advertiser/hostname", "", "Optional hostname of the server, disables automatic IP detection."};
     akashi::Setting<bool> cloudflare_enabled{this, "Advertiser/cloudflare_enabled", false, "Whether the advertised WebAO port is rewritten to 80 for Cloudflare tunnels."};
     akashi::Setting<int> max_value{this, "Dice/max_value", 100, "The maximum number of sides dice can have.", akashi::atLeast(1)};
@@ -61,7 +61,11 @@ class AKASHI_CORE_EXPORT ServerSettings : public akashi::Settings
     akashi::Setting<bool> pass_required_numbers{this, "Password/pass_required_numbers", true, "Whether passwords need at least one number."};
     akashi::Setting<bool> pass_required_special{this, "Password/pass_required_special", true, "Whether passwords need at least one special character."};
     akashi::Setting<bool> pass_can_contain_username{this, "Password/pass_can_contain_username", false, "Whether passwords may contain the username."};
-    akashi::Setting<QTime> maintenance_time{this, "Database/maintenance_time", QTime(), "The daily time when database maintenance runs, for example 04:30. Empty to disable.", akashi::emptyOrTime()};
+    akashi::Setting<QTime> maintenance_time{this, "Database/maintenance_time", QTime(), "The time of day when database maintenance runs, for example 04:30. Empty to disable.", akashi::emptyOrTime()};
+    akashi::Setting<QString> maintenance_day{this, "Database/maintenance_day", "daily", "How often maintenance runs: daily, or a weekday like sunday for once a week.", akashi::oneOf({"daily", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"})};
     akashi::Setting<bool> maintenance_vacuum{this, "Database/maintenance_vacuum", false, "Whether maintenance also compacts the databases with VACUUM."};
     akashi::Setting<int> maintenance_max_players{this, "Database/maintenance_max_players", -1, "Maintenance waits while more players than this are online, or -1 to run regardless.", akashi::atLeast(-1)};
+    akashi::Setting<QTime> backup_time{this, "Database/backup_time", QTime(), "The time of day when database backups run, for example 05:00. Empty to disable.", akashi::emptyOrTime()};
+    akashi::Setting<QString> backup_day{this, "Database/backup_day", "daily", "How often backups run: daily, or a weekday like sunday for once a week.", akashi::oneOf({"daily", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"})};
+    akashi::Setting<int> backup_keep{this, "Database/backup_keep", 7, "How many backups of each database to keep.", akashi::atLeast(1)};
 };

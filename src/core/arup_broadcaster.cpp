@@ -19,18 +19,10 @@ void ArupBroadcaster::addArea(Area *area, int floorId)
         m_floor_areas.resize(floorId + 1);
     m_floor_areas[floorId].append(area);
 
-    connect(area, &Area::playerCountChanged, this, [this]() {
-        markDirty(Type::PlayerCount);
-    });
-    connect(area, &Area::statusChanged, this, [this]() {
-        markDirty(Type::Status);
-    });
-    connect(area, &Area::ownersChanged, this, [this]() {
-        markDirty(Type::Cm);
-    });
-    connect(area, &Area::lockStateChanged, this, [this]() {
-        markDirty(Type::Lock);
-    });
+    connect(area, &Area::playerCountChanged, this, std::bind_front(&ArupBroadcaster::markDirty, this, Type::PlayerCount));
+    connect(area, &Area::statusChanged, this, std::bind_front(&ArupBroadcaster::markDirty, this, Type::Status));
+    connect(area, &Area::ownersChanged, this, std::bind_front(&ArupBroadcaster::markDirty, this, Type::Cm));
+    connect(area, &Area::lockStateChanged, this, std::bind_front(&ArupBroadcaster::markDirty, this, Type::Lock));
 }
 
 void ArupBroadcaster::removeArea(Area *area)

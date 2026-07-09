@@ -46,6 +46,15 @@ class AKASHI_CORE_EXPORT CommandRegistry : public IService
     QStringList commandNames() const;
     bool contains(const QString &f_command_name) const;
 
+    // True when the permission list is empty or any entry resolves - the
+    // exact any-of gate the dispatcher applies to the matched form.
+    static bool passesAnyOf(const QStringList &f_permissions, const std::function<bool(const QString &)> &f_can_perform);
+
+    // True when any form of the command is open to a caller whose
+    // permissions f_can_perform answers for; false for unknown commands.
+    // /commands and /help list through this so they mirror the dispatcher.
+    bool canUse(const QString &f_command, const std::function<bool(const QString &)> &f_can_perform) const;
+
     void applyExtensions(const QString &f_path);
 
   private:

@@ -70,7 +70,7 @@ void tst_Packet::parseRejectsBrokenInput()
 
 void tst_Packet::serializeMatchesTheProtocolFormat()
 {
-    QCOMPARE(Packet("DONE").serialize(), "DONE##%");
+    QCOMPARE(Packet("DONE").serialize(), "DONE#%");
     QCOMPARE(Packet("HP", {"1", "10"}).serialize(), "HP#1#10#%");
     QCOMPARE(Packet("CT", {"Tester", "a#b%c$d&e"}).serialize(), "CT#Tester#a<num>b<percent>c<dollar>d<and>e#%");
 }

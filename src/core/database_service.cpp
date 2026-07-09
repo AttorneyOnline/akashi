@@ -7,9 +7,9 @@
 #include <QElapsedTimer>
 #include <QFile>
 #include <QFileInfo>
+#include <QLocale>
 #include <QSqlError>
 #include <QSqlQuery>
-#include <QTimer>
 
 namespace akashi {
 
@@ -31,6 +31,10 @@ ServiceVersion DatabaseService::serviceVersion() const
 DatabaseService::~DatabaseService()
 {
     for (const QString &l_name : std::as_const(m_connection_names)) {
+        QSqlDatabase::database(l_name).close();
+        QSqlDatabase::removeDatabase(l_name);
+    }
+    for (const QString &l_name : std::as_const(m_reader_names)) {
         QSqlDatabase::database(l_name).close();
         QSqlDatabase::removeDatabase(l_name);
     }
@@ -93,6 +97,35 @@ QSqlDatabase DatabaseService::pluginDatabase(const QString &f_plugin_id)
     return l_database;
 }
 
+QSqlDatabase DatabaseService::reader(const QString &f_source)
+{
+    const QString l_key = (f_source.isEmpty() || f_source == QStringLiteral("main"))
+                              ? QStringLiteral("main")
+                              : f_source;
+    const QString l_path = l_key == QStringLiteral("main")
+                               ? m_data_root + "/akashi.db"
+                               : m_data_root + "/plugins/" + l_key + ".db";
+    if (!QFileInfo::exists(l_path)) {
+        return {};
+    }
+
+    const QString l_name = "akashi_reader_" + l_key;
+    if (QSqlDatabase::contains(l_name)) {
+        return QSqlDatabase::database(l_name);
+    }
+
+    QSqlDatabase l_database = QSqlDatabase::addDatabase("QSQLITE", l_name);
+    l_database.setDatabaseName(l_path);
+    // Read-only at the engine level: any write is refused, and no PRAGMA can
+    // re-enable it because the file handle itself is read-only.
+    l_database.setConnectOptions(QStringLiteral("QSQLITE_OPEN_READONLY"));
+    m_reader_names.append(l_name);
+    if (!l_database.open()) {
+        qCWarning(akashiDb) << "Read-only open of" << l_path << "failed:" << l_database.lastError().text();
+    }
+    return l_database;
+}
+
 bool DatabaseService::applyMigration(QSqlDatabase f_database, int f_to_version, const std::function<bool(QSqlDatabase &)> &f_migration)
 {
     if (!f_database.transaction()) {
@@ -123,39 +156,13 @@ int DatabaseService::schemaVersion(QSqlDatabase f_database)
     return l_query.first() ? l_query.value(0).toInt() : 0;
 }
 
-void DatabaseService::scheduleMaintenance(const QTime &f_time, bool f_vacuum, const std::function<bool()> &f_busy_check)
+void DatabaseService::runMaintenanceNow(bool f_vacuum)
 {
-    m_maintenance_time = f_time;
-    m_maintenance_vacuum = f_vacuum;
-    m_busy_check = f_busy_check;
-    if (!f_time.isValid()) {
-        return;
-    }
-
-    if (!m_maintenance_timer) {
-        m_maintenance_timer = new QTimer(this);
-        m_maintenance_timer->setSingleShot(true);
-        connect(m_maintenance_timer, &QTimer::timeout, this, &DatabaseService::onMaintenanceDue);
-    }
-    m_maintenance_timer->start(msecsToNextOccurrence(f_time, QDateTime::currentDateTime()));
-    qCInfo(akashiDb) << "Database maintenance scheduled daily at" << f_time.toString("hh:mm");
-}
-
-void DatabaseService::onMaintenanceDue()
-{
-    // A busy server gets another try in half an hour.
-    if (m_busy_check && m_busy_check()) {
-        qCInfo(akashiDb) << "Database maintenance postponed, the server is busy.";
-        m_maintenance_timer->start(30 * 60 * 1000);
-        return;
-    }
-
-    runMaintenance();
+    runMaintenance(f_vacuum);
     Q_EMIT maintenanceTriggered();
-    m_maintenance_timer->start(msecsToNextOccurrence(m_maintenance_time, QDateTime::currentDateTime()));
 }
 
-void DatabaseService::runMaintenance()
+void DatabaseService::runMaintenance(bool f_vacuum)
 {
     for (const QString &l_name : std::as_const(m_connection_names)) {
         QSqlDatabase l_database = QSqlDatabase::database(l_name);
@@ -168,20 +175,71 @@ void DatabaseService::runMaintenance()
         QSqlQuery l_query(l_database);
         l_query.exec("PRAGMA optimize");
         l_query.exec("PRAGMA wal_checkpoint(TRUNCATE)");
-        if (m_maintenance_vacuum) {
+        if (f_vacuum) {
             l_query.exec("VACUUM");
         }
         qCInfo(akashiDb) << "Database maintenance on" << l_database.databaseName() << "took" << l_stopwatch.elapsed() << "ms";
     }
 }
 
-qint64 DatabaseService::msecsToNextOccurrence(const QTime &f_time, const QDateTime &f_now)
+int DatabaseService::runBackups(int f_keep)
 {
-    QDateTime l_next(f_now.date(), f_time);
-    if (l_next <= f_now) {
-        l_next = l_next.addDays(1);
+    const int l_keep = qMax(1, f_keep);
+    const QString l_backup_root = m_data_root + "/backups";
+    QDir().mkpath(l_backup_root);
+    const QString l_stamp = QDateTime::currentDateTime().toString("yyyyMMdd-HHmmss");
+    int l_written = 0;
+    for (const QString &l_name : std::as_const(m_connection_names)) {
+        QSqlDatabase l_database = QSqlDatabase::database(l_name);
+        if (!l_database.isOpen()) {
+            continue;
+        }
+
+        // VACUUM INTO writes a compacted, transactionally consistent copy
+        // without blocking the live connection.
+        const QString l_base = QFileInfo(l_database.databaseName()).completeBaseName();
+        const QString l_target = l_backup_root + "/" + l_base + "-" + l_stamp + ".db";
+        if (QFileInfo::exists(l_target)) {
+            QFile::remove(l_target);
+        }
+        QString l_escaped = l_target;
+        l_escaped.replace("'", "''");
+        QSqlQuery l_query(l_database);
+        if (!l_query.exec("VACUUM INTO '" + l_escaped + "'")) {
+            qCWarning(akashiDb) << "Backup of" << l_database.databaseName() << "failed:" << l_query.lastError().text();
+            continue;
+        }
+        l_written++;
+
+        // The stamp sorts chronologically, so the oldest copies go first.
+        QDir l_dir(l_backup_root);
+        QStringList l_backups = l_dir.entryList({l_base + "-*.db"}, QDir::Files, QDir::Name);
+        while (l_backups.size() > l_keep) {
+            l_dir.remove(l_backups.takeFirst());
+        }
     }
-    return f_now.msecsTo(l_next);
+    qCInfo(akashiDb) << "Backed up" << l_written << "database(s) to" << l_backup_root;
+    return l_written;
+}
+
+QStringList DatabaseService::overview() const
+{
+    const QLocale l_locale;
+    QStringList l_lines;
+    for (const QString &l_name : std::as_const(m_connection_names)) {
+        QSqlDatabase l_database = QSqlDatabase::database(l_name);
+        if (!l_database.isOpen()) {
+            continue;
+        }
+        const QFileInfo l_info(l_database.databaseName());
+        const QFileInfo l_wal(l_database.databaseName() + "-wal");
+        l_lines.append(QStringLiteral("%1 | %2 | WAL %3 | schema v%4")
+                           .arg(l_info.filePath(),
+                                l_locale.formattedDataSize(l_info.size()),
+                                l_wal.exists() ? l_locale.formattedDataSize(l_wal.size()) : QStringLiteral("0 B"))
+                           .arg(schemaVersion(l_database)));
+    }
+    return l_lines;
 }
 
 } // namespace akashi

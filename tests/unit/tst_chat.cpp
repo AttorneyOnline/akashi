@@ -4,6 +4,7 @@
 #include "proto/packet_codec.h"
 #include "proto/packet_registry.h"
 
+#include <QRegularExpression>
 #include <QTest>
 
 namespace tests {
@@ -23,9 +24,12 @@ class tst_Chat : public QObject
     void oocPasswordGoesToTheLoginPrompt();
     void oocSlashRunsACommand();
     void oocBroadcastsPlainMessages();
+    void oocOversizedMessageDropsQuietly();
+    void oocBeforeRuleGatesPlainChat();
+    void oocRunsTheOocFilterChain();
     void evidenceDeleteChecksAccessAndBounds();
     void evidenceEditChecksAccessAndBounds();
-    void evidenceEditTagsHiddenCmEvidence();
+    void evidenceEditPassesDescriptionThrough();
     void casingPreferencesNeedFiveNumbers();
     void caseAnnouncementAlertsMatchingClients();
     void caseAnnouncementNeedsAValidRole();
@@ -74,18 +78,24 @@ void tst_Chat::oocRefusesMutedEmptyAndImpersonation()
     QVERIFY(l_muted.ooc_broadcasts.isEmpty());
     QCOMPARE(l_muted.calls, QStringList({"message:You are OOC muted, and cannot speak."}));
 
+    // A refused name never commits: no session state, no rename, and so
+    // no player update for a rejected packet.
     FakeContext l_nameless;
     run(Packet("CT", {"[]", "hello"}), l_nameless);
     QVERIFY(l_nameless.ooc_broadcasts.isEmpty());
+    QVERIFY(!l_nameless.calls.contains("setOocName"));
 
     FakeContext l_impersonator;
     run(Packet("CT", {l_impersonator.serverNickname(), "hello"}), l_impersonator);
     QVERIFY(l_impersonator.ooc_broadcasts.isEmpty());
+    QVERIFY(!l_impersonator.calls.contains("setOocName"));
 
     FakeContext l_longname;
     run(Packet("CT", {QString(31, 'a'), "hello"}), l_longname);
     QVERIFY(l_longname.ooc_broadcasts.isEmpty());
     QVERIFY(l_longname.calls.last().startsWith("message:Your name is too long!"));
+    QVERIFY(!l_longname.calls.contains("setOocName"));
+    QVERIFY(l_longname.ooc_name.isEmpty());
 }
 
 void tst_Chat::oocPasswordGoesToTheLoginPrompt()
@@ -114,10 +124,71 @@ void tst_Chat::oocBroadcastsPlainMessages()
     FakeContext l_context;
     run(Packet("CT", {"someone", "an ordinary chat line"}), l_context);
     QCOMPARE(l_context.ooc_broadcasts, QStringList({"an ordinary chat line"}));
+    // The ooc_message_sent rules gate before the broadcast and react after.
+    QVERIFY(l_context.calls.indexOf("checkBeforeRule:ooc_message_sent") < l_context.calls.indexOf("broadcastOoc"));
+    QVERIFY(l_context.calls.indexOf("broadcastOoc") < l_context.calls.indexOf("runAfterRule:ooc_message_sent"));
 
     FakeContext l_empty;
     run(Packet("CT", {"someone", ""}), l_empty);
     QVERIFY(l_empty.ooc_broadcasts.isEmpty());
+}
+
+void tst_Chat::oocOversizedMessageDropsQuietly()
+{
+    // The length check runs before the filters, the rules and the broadcast.
+    FakeContext l_context;
+    run(Packet("CT", {"someone", QString(l_context.max_message_length + 1, 'a')}), l_context);
+    QVERIFY(l_context.ooc_broadcasts.isEmpty());
+    QCOMPARE(l_context.calls, QStringList({"setOocName"}));
+}
+
+void tst_Chat::oocBeforeRuleGatesPlainChat()
+{
+    FakeContext l_blocked;
+    l_blocked.before_rule_block = "The gallery is silent.";
+    run(Packet("CT", {"someone", "hello"}), l_blocked);
+    QVERIFY(l_blocked.ooc_broadcasts.isEmpty());
+    QCOMPARE(l_blocked.calls, QStringList({"setOocName", "applyTextFilters:ooc", "checkBeforeRule:ooc_message_sent", "message:The gallery is silent."}));
+
+    // Commands are not chat lines; the rule never sees them.
+    FakeContext l_command;
+    l_command.before_rule_block = "The gallery is silent.";
+    run(Packet("CT", {"someone", "/help"}), l_command);
+    QCOMPARE(l_command.commands_run, QStringList({"help|"}));
+    QVERIFY(!l_command.calls.contains("checkBeforeRule:ooc_message_sent"));
+
+    // A command that will fail (nobody registered it) is still a command;
+    // the dispatcher answers it, the ooc rule never fires, nothing echoes.
+    FakeContext l_unknown;
+    l_unknown.before_rule_block = "The gallery is silent.";
+    run(Packet("CT", {"someone", "/notacommand argument"}), l_unknown);
+    QCOMPARE(l_unknown.commands_run, QStringList({"notacommand|argument"}));
+    QVERIFY(!l_unknown.calls.contains("checkBeforeRule:ooc_message_sent"));
+    QVERIFY(!l_unknown.calls.contains("runAfterRule:ooc_message_sent"));
+    QVERIFY(l_unknown.ooc_broadcasts.isEmpty());
+}
+
+void tst_Chat::oocRunsTheOocFilterChain()
+{
+    // The word filter registers for both channels in core; OOC redacts
+    // through the same registry chain IC uses.
+    akashi::TextFilterRegistry l_registry;
+    l_registry.registerFilter(
+        "word-filter", 100, [](const QString &f_text) -> std::optional<QString> {
+            QString l_result = f_text;
+            l_result.replace(QRegularExpression("bad", QRegularExpression::CaseInsensitiveOption), QStringLiteral("❌"));
+            return l_result; }, true, "test", {akashi::TextChannel::Ic, akashi::TextChannel::Ooc});
+    // Sanction filters stay IC-only and must never touch OOC.
+    l_registry.registerFilter(
+        "gimped", 200, [](const QString &) -> std::optional<QString> { return QStringLiteral("I am a heinous criminal."); }, false, "test");
+
+    FakeContext l_context;
+    l_context.text_filter_registry = &l_registry;
+    l_context.active_filter_ids = {"gimped"};
+    run(Packet("CT", {"someone", "a Bad word"}), l_context);
+
+    QCOMPARE(l_context.ooc_broadcasts, QStringList({"a ❌ word"}));
+    QVERIFY(l_context.calls.indexOf("applyTextFilters:ooc") < l_context.calls.indexOf("broadcastOoc"));
 }
 
 void tst_Chat::evidenceDeleteChecksAccessAndBounds()
@@ -176,20 +247,15 @@ void tst_Chat::evidenceEditChecksAccessAndBounds()
     QCOMPARE(l_context.calls, QStringList({"checkBeforeRule:evidence_edited", "replaceEvidence", "sendEvidenceList", "runAfterRule:evidence_edited"}));
 }
 
-void tst_Chat::evidenceEditTagsHiddenCmEvidence()
+void tst_Chat::evidenceEditPassesDescriptionThrough()
 {
-    FakeContext l_untagged;
-    l_untagged.evidence_total = 3;
-    l_untagged.evidence_hidden_cm = true;
-    run(Packet("EE", {"1", "Knife", "Sharp.", "knife.png"}), l_untagged);
-    QCOMPARE(l_untagged.replaced_evidence.at(2), QString("<owner=all>\nSharp."));
-
-    // An existing owner tag stays untouched.
-    FakeContext l_tagged;
-    l_tagged.evidence_total = 3;
-    l_tagged.evidence_hidden_cm = true;
-    run(Packet("EE", {"1", "Knife", "<owner=def>\nSharp.", "knife.png"}), l_tagged);
-    QCOMPARE(l_tagged.replaced_evidence.at(2), QString("<owner=def>\nSharp."));
+    // The hidden-CM owner tagging lives in the session's evidence path
+    // (EvidenceStore::taggedDescription, covered by tst_area); the handler
+    // forwards the description verbatim.
+    FakeContext l_context;
+    l_context.evidence_total = 3;
+    run(Packet("EE", {"1", "Knife", "<owner=def>\nSharp.", "knife.png"}), l_context);
+    QCOMPARE(l_context.replaced_evidence.at(2), QString("<owner=def>\nSharp."));
 }
 
 void tst_Chat::casingPreferencesNeedFiveNumbers()

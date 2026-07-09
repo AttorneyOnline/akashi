@@ -61,8 +61,30 @@ void Packet::setField(int f_index, const QString &f_value)
     m_fields[f_index] = f_value;
 }
 
+void Packet::setHeader(const QString &f_header)
+{
+    m_header = f_header;
+}
+
+void Packet::setFields(const QStringList &f_fields)
+{
+    m_fields = f_fields;
+}
+
+void Packet::appendField(const QString &f_value)
+{
+    m_fields.append(f_value);
+}
+
 QString Packet::serialize() const
 {
+    // A zero-field packet is "HEADER#%", not "HEADER##%" - the doubled
+    // delimiter reads as one phantom empty field to a strict parser. The
+    // AO2 client's own serializer emits no field section when empty.
+    if (m_fields.isEmpty()) {
+        return m_header + "#%";
+    }
+
     const bool l_is_evidence = m_header == QLatin1String(ao2::HEADER_LE);
     QStringList l_fields = m_fields;
     for (QString &l_field : l_fields) {

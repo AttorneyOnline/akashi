@@ -525,6 +525,682 @@ static PyObject *pyApiConfigGet(PyObject *, PyObject *f_args)
     return PyUnicode_FromStringAndSize(l_value, Py_ssize_t(l_value_length));
 }
 
+static PyObject *pyApiConfigSet(PyObject *, PyObject *f_args)
+{
+    PyObject *l_key_obj = nullptr, *l_value_obj = nullptr;
+    if (!PyArg_ParseTuple(f_args, "UU", &l_key_obj, &l_value_obj)) {
+        return nullptr;
+    }
+    const char *l_key = nullptr, *l_value = nullptr;
+    Py_ssize_t l_key_length = 0, l_value_length = 0;
+    if (!pyStringArg(l_key_obj, &l_key, &l_key_length) || !pyStringArg(l_value_obj, &l_value, &l_value_length)) {
+        return nullptr;
+    }
+    if (!s_active_plugin || s_ffi->abi_version < 6) {
+        PyErr_SetString(PyExc_RuntimeError, "config_set unavailable");
+        return nullptr;
+    }
+    const int l_ok = s_ffi->config_set(s_active_plugin->owner_id.constData(), size_t(s_active_plugin->owner_id.size()),
+                                       l_key, size_t(l_key_length), l_value, size_t(l_value_length));
+    return PyBool_FromLong(l_ok);
+}
+
+static PyObject *pyApiConfigDeclare(PyObject *, PyObject *f_args)
+{
+    const char *l_key = nullptr, *l_type = nullptr, *l_default = "", *l_desc = "";
+    Py_ssize_t l_key_length = 0, l_type_length = 0, l_default_length = 0, l_desc_length = 0;
+    if (!PyArg_ParseTuple(f_args, "s#s#|s#s#", &l_key, &l_key_length, &l_type, &l_type_length,
+                          &l_default, &l_default_length, &l_desc, &l_desc_length)) {
+        return nullptr;
+    }
+    if (!s_active_plugin || s_ffi->abi_version < 8) {
+        PyErr_SetString(PyExc_RuntimeError, "config_declare unavailable");
+        return nullptr;
+    }
+    const int l_ok = s_ffi->config_declare(s_active_plugin->owner_id.constData(), size_t(s_active_plugin->owner_id.size()),
+                                           l_key, size_t(l_key_length), l_type, size_t(l_type_length),
+                                           l_default, size_t(l_default_length), l_desc, size_t(l_desc_length));
+    return PyBool_FromLong(l_ok);
+}
+
+static PyObject *pyApiFsRead(PyObject *, PyObject *f_args)
+{
+    PyObject *l_path_obj = nullptr;
+    if (!PyArg_ParseTuple(f_args, "U", &l_path_obj)) {
+        return nullptr;
+    }
+    const char *l_path = nullptr;
+    Py_ssize_t l_path_length = 0;
+    if (!pyStringArg(l_path_obj, &l_path, &l_path_length)) {
+        return nullptr;
+    }
+    if (!s_active_plugin || s_ffi->abi_version < 6) {
+        PyErr_SetString(PyExc_RuntimeError, "fs_read unavailable");
+        return nullptr;
+    }
+    size_t l_out_length = 0;
+    const char *l_data = s_ffi->fs_read(s_active_plugin->owner_id.constData(), size_t(s_active_plugin->owner_id.size()),
+                                        l_path, size_t(l_path_length), &l_out_length);
+    return PyBytes_FromStringAndSize(l_data, Py_ssize_t(l_out_length));
+}
+
+static PyObject *pyApiFsWrite(PyObject *, PyObject *f_args)
+{
+    PyObject *l_path_obj = nullptr;
+    const char *l_data = nullptr;
+    Py_ssize_t l_data_length = 0;
+    if (!PyArg_ParseTuple(f_args, "Uy#", &l_path_obj, &l_data, &l_data_length)) {
+        return nullptr;
+    }
+    const char *l_path = nullptr;
+    Py_ssize_t l_path_length = 0;
+    if (!pyStringArg(l_path_obj, &l_path, &l_path_length)) {
+        return nullptr;
+    }
+    if (!s_active_plugin || s_ffi->abi_version < 6) {
+        PyErr_SetString(PyExc_RuntimeError, "fs_write unavailable");
+        return nullptr;
+    }
+    const int l_ok = s_ffi->fs_write(s_active_plugin->owner_id.constData(), size_t(s_active_plugin->owner_id.size()),
+                                     l_path, size_t(l_path_length), l_data, size_t(l_data_length));
+    return PyBool_FromLong(l_ok);
+}
+
+static PyObject *pyApiFsExists(PyObject *, PyObject *f_args)
+{
+    PyObject *l_path_obj = nullptr;
+    if (!PyArg_ParseTuple(f_args, "U", &l_path_obj)) {
+        return nullptr;
+    }
+    const char *l_path = nullptr;
+    Py_ssize_t l_path_length = 0;
+    if (!pyStringArg(l_path_obj, &l_path, &l_path_length)) {
+        return nullptr;
+    }
+    if (!s_active_plugin || s_ffi->abi_version < 6) {
+        PyErr_SetString(PyExc_RuntimeError, "fs_exists unavailable");
+        return nullptr;
+    }
+    const int l_exists = s_ffi->fs_exists(s_active_plugin->owner_id.constData(), size_t(s_active_plugin->owner_id.size()),
+                                          l_path, size_t(l_path_length));
+    return PyBool_FromLong(l_exists);
+}
+
+// Reads an optional Python sequence of str into parallel arrays, kept alive
+// by f_storage.
+static bool pyCollectParams(PyObject *f_seq, QList<QByteArray> &f_storage,
+                            std::vector<const char *> &f_ptrs, std::vector<size_t> &f_lengths)
+{
+    if (!f_seq || f_seq == Py_None) {
+        return true;
+    }
+    // Stable-ABI sequence access: no PySequence_Fast macros under the
+    // limited API. GetItem returns a new reference each time.
+    const Py_ssize_t l_count = PySequence_Size(f_seq);
+    if (l_count < 0) {
+        return false;
+    }
+    for (Py_ssize_t i = 0; i < l_count; i++) {
+        PyObject *l_item = PySequence_GetItem(f_seq, i);
+        Py_ssize_t l_length = 0;
+        const char *l_text = l_item ? PyUnicode_AsUTF8AndSize(l_item, &l_length) : nullptr;
+        f_storage.append(QByteArray(l_text ? l_text : "", int(l_length)));
+        Py_XDECREF(l_item);
+    }
+    for (const QByteArray &l_param : f_storage) {
+        f_ptrs.push_back(l_param.constData());
+        f_lengths.push_back(size_t(l_param.size()));
+    }
+    return true;
+}
+
+static PyObject *pyApiSqlExec(PyObject *, PyObject *f_args)
+{
+    PyObject *l_sql_obj = nullptr, *l_params = nullptr;
+    if (!PyArg_ParseTuple(f_args, "U|O", &l_sql_obj, &l_params)) {
+        return nullptr;
+    }
+    const char *l_sql = nullptr;
+    Py_ssize_t l_sql_length = 0;
+    if (!pyStringArg(l_sql_obj, &l_sql, &l_sql_length)) {
+        return nullptr;
+    }
+    if (!s_active_plugin || s_ffi->abi_version < 6) {
+        PyErr_SetString(PyExc_RuntimeError, "sql_exec unavailable");
+        return nullptr;
+    }
+    QList<QByteArray> l_storage;
+    std::vector<const char *> l_ptrs;
+    std::vector<size_t> l_lengths;
+    if (!pyCollectParams(l_params, l_storage, l_ptrs, l_lengths)) {
+        return nullptr;
+    }
+    const int l_affected = s_ffi->sql_exec(s_active_plugin->owner_id.constData(), size_t(s_active_plugin->owner_id.size()),
+                                           l_sql, size_t(l_sql_length), int(l_ptrs.size()),
+                                           l_ptrs.empty() ? nullptr : l_ptrs.data(),
+                                           l_lengths.empty() ? nullptr : l_lengths.data());
+    return PyLong_FromLong(l_affected);
+}
+
+// Hands a query row to a Python callable as a dict of column -> value.
+static void pySqlRowTrampoline(void *f_userdata, int f_count,
+                               const char *const *f_columns, const char *const *f_values)
+{
+    PyObject *l_callback = static_cast<PyObject *>(f_userdata);
+    PyObject *l_dict = PyDict_New();
+    for (int i = 0; i < f_count; i++) {
+        PyObject *l_value = PyUnicode_FromString(f_values[i]);
+        PyDict_SetItemString(l_dict, f_columns[i], l_value);
+        Py_DECREF(l_value);
+    }
+    PyObject *l_result = PyObject_CallFunctionObjArgs(l_callback, l_dict, nullptr);
+    Py_DECREF(l_dict);
+    if (l_result) {
+        Py_DECREF(l_result);
+    }
+    else {
+        PyErr_Print();
+    }
+}
+
+static PyObject *pyApiSqlQuery(PyObject *, PyObject *f_args)
+{
+    PyObject *l_sql_obj = nullptr, *l_callback = nullptr, *l_params = nullptr;
+    if (!PyArg_ParseTuple(f_args, "UO|O", &l_sql_obj, &l_callback, &l_params)) {
+        return nullptr;
+    }
+    if (!PyCallable_Check(l_callback)) {
+        PyErr_SetString(PyExc_TypeError, "sql_query: second argument must be callable");
+        return nullptr;
+    }
+    const char *l_sql = nullptr;
+    Py_ssize_t l_sql_length = 0;
+    if (!pyStringArg(l_sql_obj, &l_sql, &l_sql_length)) {
+        return nullptr;
+    }
+    if (!s_active_plugin || s_ffi->abi_version < 6) {
+        PyErr_SetString(PyExc_RuntimeError, "sql_query unavailable");
+        return nullptr;
+    }
+    QList<QByteArray> l_storage;
+    std::vector<const char *> l_ptrs;
+    std::vector<size_t> l_lengths;
+    if (!pyCollectParams(l_params, l_storage, l_ptrs, l_lengths)) {
+        return nullptr;
+    }
+    const int l_rows = s_ffi->sql_query(s_active_plugin->owner_id.constData(), size_t(s_active_plugin->owner_id.size()),
+                                        l_sql, size_t(l_sql_length), int(l_ptrs.size()),
+                                        l_ptrs.empty() ? nullptr : l_ptrs.data(),
+                                        l_lengths.empty() ? nullptr : l_lengths.data(),
+                                        pySqlRowTrampoline, l_callback);
+    return PyLong_FromLong(l_rows);
+}
+
+// Runs the migration body: the Python callable held as userdata.
+static int pyMigrationTrampoline(void *f_userdata)
+{
+    PyObject *l_callback = static_cast<PyObject *>(f_userdata);
+    PyObject *l_result = PyObject_CallFunctionObjArgs(l_callback, nullptr);
+    if (!l_result) {
+        PyErr_Print();
+        return 0;
+    }
+    const int l_ok = PyObject_IsTrue(l_result);
+    Py_DECREF(l_result);
+    return l_ok;
+}
+
+static PyObject *pyApiSqlMigrate(PyObject *, PyObject *f_args)
+{
+    int l_version = 0;
+    PyObject *l_callback = nullptr;
+    if (!PyArg_ParseTuple(f_args, "iO", &l_version, &l_callback)) {
+        return nullptr;
+    }
+    if (!PyCallable_Check(l_callback)) {
+        PyErr_SetString(PyExc_TypeError, "sql_migrate: second argument must be callable");
+        return nullptr;
+    }
+    if (!s_active_plugin || s_ffi->abi_version < 8) {
+        PyErr_SetString(PyExc_RuntimeError, "sql_migrate unavailable");
+        return nullptr;
+    }
+    const int l_ok = s_ffi->sql_migrate(s_active_plugin->owner_id.constData(), size_t(s_active_plugin->owner_id.size()),
+                                        l_version, pyMigrationTrampoline, l_callback);
+    return PyBool_FromLong(l_ok);
+}
+
+static PyObject *pyApiSqlRead(PyObject *, PyObject *f_args)
+{
+    PyObject *l_source_obj = nullptr, *l_sql_obj = nullptr, *l_callback = nullptr, *l_params = nullptr;
+    if (!PyArg_ParseTuple(f_args, "UUO|O", &l_source_obj, &l_sql_obj, &l_callback, &l_params)) {
+        return nullptr;
+    }
+    if (!PyCallable_Check(l_callback)) {
+        PyErr_SetString(PyExc_TypeError, "sql_read: third argument must be callable");
+        return nullptr;
+    }
+    const char *l_source = nullptr, *l_sql = nullptr;
+    Py_ssize_t l_source_length = 0, l_sql_length = 0;
+    if (!pyStringArg(l_source_obj, &l_source, &l_source_length) || !pyStringArg(l_sql_obj, &l_sql, &l_sql_length)) {
+        return nullptr;
+    }
+    if (s_ffi->abi_version < 8) {
+        PyErr_SetString(PyExc_RuntimeError, "sql_read unavailable");
+        return nullptr;
+    }
+    QList<QByteArray> l_storage;
+    std::vector<const char *> l_ptrs;
+    std::vector<size_t> l_lengths;
+    if (!pyCollectParams(l_params, l_storage, l_ptrs, l_lengths)) {
+        return nullptr;
+    }
+    const int l_rows = s_ffi->sql_read(l_source, size_t(l_source_length), l_sql, size_t(l_sql_length),
+                                       int(l_ptrs.size()),
+                                       l_ptrs.empty() ? nullptr : l_ptrs.data(),
+                                       l_lengths.empty() ? nullptr : l_lengths.data(),
+                                       pySqlRowTrampoline, l_callback);
+    return PyLong_FromLong(l_rows);
+}
+
+static PyObject *pyApiScheduleRepeating(PyObject *, PyObject *f_args)
+{
+    PyObject *l_job_obj = nullptr, *l_day_obj = nullptr, *l_time_obj = nullptr, *l_handler = nullptr;
+    if (!PyArg_ParseTuple(f_args, "UUUO", &l_job_obj, &l_day_obj, &l_time_obj, &l_handler)) {
+        return nullptr;
+    }
+    if (!PyCallable_Check(l_handler)) {
+        PyErr_SetString(PyExc_TypeError, "schedule_repeating: last argument must be callable");
+        return nullptr;
+    }
+    const char *l_job = nullptr, *l_day = nullptr, *l_time = nullptr;
+    Py_ssize_t l_job_length = 0, l_day_length = 0, l_time_length = 0;
+    if (!pyStringArg(l_job_obj, &l_job, &l_job_length) || !pyStringArg(l_day_obj, &l_day, &l_day_length) || !pyStringArg(l_time_obj, &l_time, &l_time_length)) {
+        return nullptr;
+    }
+    if (s_ffi->abi_version < 9) {
+        PyErr_SetString(PyExc_RuntimeError, "schedule_repeating unavailable");
+        return nullptr;
+    }
+    PyFnRef *l_ref = takeFnRef(l_handler);
+    if (!l_ref) {
+        return nullptr;
+    }
+    return PyBool_FromLong(s_ffi->schedule_repeating(l_ref->plugin->owner_id.constData(), size_t(l_ref->plugin->owner_id.size()),
+                                                     l_job, size_t(l_job_length), l_day, size_t(l_day_length),
+                                                     l_time, size_t(l_time_length), pyConsoleTrampoline, l_ref));
+}
+
+static PyObject *pyApiScheduleOnce(PyObject *, PyObject *f_args)
+{
+    PyObject *l_job_obj = nullptr, *l_when_obj = nullptr, *l_handler = nullptr;
+    if (!PyArg_ParseTuple(f_args, "UUO", &l_job_obj, &l_when_obj, &l_handler)) {
+        return nullptr;
+    }
+    if (!PyCallable_Check(l_handler)) {
+        PyErr_SetString(PyExc_TypeError, "schedule_once: last argument must be callable");
+        return nullptr;
+    }
+    const char *l_job = nullptr, *l_when = nullptr;
+    Py_ssize_t l_job_length = 0, l_when_length = 0;
+    if (!pyStringArg(l_job_obj, &l_job, &l_job_length) || !pyStringArg(l_when_obj, &l_when, &l_when_length)) {
+        return nullptr;
+    }
+    if (s_ffi->abi_version < 9) {
+        PyErr_SetString(PyExc_RuntimeError, "schedule_once unavailable");
+        return nullptr;
+    }
+    PyFnRef *l_ref = takeFnRef(l_handler);
+    if (!l_ref) {
+        return nullptr;
+    }
+    return PyBool_FromLong(s_ffi->schedule_once(l_ref->plugin->owner_id.constData(), size_t(l_ref->plugin->owner_id.size()),
+                                                l_job, size_t(l_job_length), l_when, size_t(l_when_length),
+                                                pyConsoleTrampoline, l_ref));
+}
+
+static PyObject *pyApiScheduleCancel(PyObject *, PyObject *f_args)
+{
+    PyObject *l_job_obj = nullptr;
+    if (!PyArg_ParseTuple(f_args, "U", &l_job_obj)) {
+        return nullptr;
+    }
+    const char *l_job = nullptr;
+    Py_ssize_t l_job_length = 0;
+    if (!pyStringArg(l_job_obj, &l_job, &l_job_length)) {
+        return nullptr;
+    }
+    if (!s_active_plugin || s_ffi->abi_version < 9) {
+        PyErr_SetString(PyExc_RuntimeError, "schedule_cancel unavailable");
+        return nullptr;
+    }
+    s_ffi->schedule_cancel(s_active_plugin->owner_id.constData(), size_t(s_active_plugin->owner_id.size()),
+                           l_job, size_t(l_job_length));
+    Py_RETURN_NONE;
+}
+
+static PyObject *pyApiScheduleNextRun(PyObject *, PyObject *f_args)
+{
+    PyObject *l_job_obj = nullptr;
+    if (!PyArg_ParseTuple(f_args, "U", &l_job_obj)) {
+        return nullptr;
+    }
+    const char *l_job = nullptr;
+    Py_ssize_t l_job_length = 0;
+    if (!pyStringArg(l_job_obj, &l_job, &l_job_length)) {
+        return nullptr;
+    }
+    if (!s_active_plugin || s_ffi->abi_version < 9) {
+        PyErr_SetString(PyExc_RuntimeError, "schedule_next_run unavailable");
+        return nullptr;
+    }
+    size_t l_out_length = 0;
+    const char *l_next = s_ffi->schedule_next_run(s_active_plugin->owner_id.constData(), size_t(s_active_plugin->owner_id.size()),
+                                                  l_job, size_t(l_job_length), &l_out_length);
+    return PyUnicode_FromStringAndSize(l_next, Py_ssize_t(l_out_length));
+}
+
+static PyObject *pyApiAreaGet(PyObject *, PyObject *f_args)
+{
+    int l_area_id = 0;
+    PyObject *l_key_obj = nullptr;
+    if (!PyArg_ParseTuple(f_args, "iU", &l_area_id, &l_key_obj)) {
+        return nullptr;
+    }
+    const char *l_key = nullptr;
+    Py_ssize_t l_key_length = 0;
+    if (!pyStringArg(l_key_obj, &l_key, &l_key_length)) {
+        return nullptr;
+    }
+    if (s_ffi->abi_version < 10) {
+        PyErr_SetString(PyExc_RuntimeError, "area_get unavailable");
+        return nullptr;
+    }
+    size_t l_out_length = 0;
+    const char *l_value = s_ffi->area_get(l_area_id, l_key, size_t(l_key_length), &l_out_length);
+    return PyUnicode_FromStringAndSize(l_value, Py_ssize_t(l_out_length));
+}
+
+static PyObject *pyApiAreaSet(PyObject *, PyObject *f_args)
+{
+    int l_area_id = 0;
+    PyObject *l_key_obj = nullptr, *l_value_obj = nullptr;
+    if (!PyArg_ParseTuple(f_args, "iUU", &l_area_id, &l_key_obj, &l_value_obj)) {
+        return nullptr;
+    }
+    const char *l_key = nullptr, *l_value = nullptr;
+    Py_ssize_t l_key_length = 0, l_value_length = 0;
+    if (!pyStringArg(l_key_obj, &l_key, &l_key_length) || !pyStringArg(l_value_obj, &l_value, &l_value_length)) {
+        return nullptr;
+    }
+    if (s_ffi->abi_version < 10) {
+        PyErr_SetString(PyExc_RuntimeError, "area_set unavailable");
+        return nullptr;
+    }
+    return PyBool_FromLong(s_ffi->area_set(l_area_id, l_key, size_t(l_key_length), l_value, size_t(l_value_length)));
+}
+
+static PyObject *pyApiFloorGet(PyObject *, PyObject *f_args)
+{
+    int l_floor_id = 0;
+    PyObject *l_key_obj = nullptr;
+    if (!PyArg_ParseTuple(f_args, "iU", &l_floor_id, &l_key_obj)) {
+        return nullptr;
+    }
+    const char *l_key = nullptr;
+    Py_ssize_t l_key_length = 0;
+    if (!pyStringArg(l_key_obj, &l_key, &l_key_length)) {
+        return nullptr;
+    }
+    if (s_ffi->abi_version < 10) {
+        PyErr_SetString(PyExc_RuntimeError, "floor_get unavailable");
+        return nullptr;
+    }
+    size_t l_out_length = 0;
+    const char *l_value = s_ffi->floor_get(l_floor_id, l_key, size_t(l_key_length), &l_out_length);
+    return PyUnicode_FromStringAndSize(l_value, Py_ssize_t(l_out_length));
+}
+
+static PyObject *pyApiWorldAreaCount(PyObject *, PyObject *)
+{
+    return PyLong_FromLong(s_ffi->abi_version < 10 ? 0 : s_ffi->world_area_count());
+}
+
+static PyObject *pyApiWorldFloorCount(PyObject *, PyObject *)
+{
+    return PyLong_FromLong(s_ffi->abi_version < 10 ? 0 : s_ffi->world_floor_count());
+}
+
+// Hands an outbound packet to a Python interceptor as (header, [fields]).
+// Return False to drop it, a list of strings to replace the fields, else it
+// passes unchanged.
+static int pyInterceptorTrampoline(void *f_userdata,
+                                   const char *f_header, size_t f_header_length,
+                                   int f_field_count, const char *const *f_fields, const size_t *f_field_lengths,
+                                   AkashiPacketResult *f_result)
+{
+    PyFnRef *l_ref = static_cast<PyFnRef *>(f_userdata);
+    PythonPluginState *l_previous = s_active_plugin;
+    s_active_plugin = l_ref->plugin;
+
+    PyObject *l_fields = PyList_New(f_field_count);
+    for (int i = 0; i < f_field_count; i++) {
+        PyList_SetItem(l_fields, i, PyUnicode_FromStringAndSize(f_fields[i], Py_ssize_t(f_field_lengths[i])));
+    }
+    PyObject *l_header = PyUnicode_FromStringAndSize(f_header, Py_ssize_t(f_header_length));
+    PyObject *l_ret = PyObject_CallFunctionObjArgs(l_ref->callable, l_header, l_fields, nullptr);
+    Py_DECREF(l_header);
+    Py_DECREF(l_fields);
+    s_active_plugin = l_previous;
+
+    int l_verdict = 1;
+    if (!l_ret) {
+        PyErr_Print();
+        return 1; // an erroring interceptor lets the packet through
+    }
+    if (l_ret == Py_False) {
+        l_verdict = 0;
+    }
+    else if (PyList_Check(l_ret)) {
+        const Py_ssize_t l_count = PyList_Size(l_ret);
+        std::vector<QByteArray> l_storage;
+        std::vector<const char *> l_ptrs;
+        std::vector<size_t> l_lens;
+        l_storage.reserve(l_count);
+        for (Py_ssize_t i = 0; i < l_count; i++) {
+            Py_ssize_t l_len = 0;
+            const char *l_str = PyUnicode_AsUTF8AndSize(PyList_GetItem(l_ret, i), &l_len);
+            l_storage.emplace_back(l_str ? l_str : "", int(l_len));
+        }
+        for (const QByteArray &l_field : l_storage) {
+            l_ptrs.push_back(l_field.constData());
+            l_lens.push_back(size_t(l_field.size()));
+        }
+        s_ffi->packet_result_set(f_result, f_header, f_header_length, int(l_count),
+                                 l_ptrs.empty() ? nullptr : l_ptrs.data(),
+                                 l_lens.empty() ? nullptr : l_lens.data());
+    }
+    Py_DECREF(l_ret);
+    return l_verdict;
+}
+
+static PyObject *pyApiRegisterOutboundInterceptor(PyObject *, PyObject *f_args)
+{
+    PyObject *l_header_obj = nullptr, *l_handler = nullptr;
+    int l_order = 0;
+    if (!PyArg_ParseTuple(f_args, "OiO", &l_header_obj, &l_order, &l_handler)) {
+        return nullptr;
+    }
+    if (!PyCallable_Check(l_handler)) {
+        PyErr_SetString(PyExc_TypeError, "register_outbound_interceptor: last argument must be callable");
+        return nullptr;
+    }
+    const char *l_header = "";
+    Py_ssize_t l_header_length = 0;
+    if (l_header_obj != Py_None && !pyStringArg(l_header_obj, &l_header, &l_header_length)) {
+        return nullptr;
+    }
+    if (s_ffi->abi_version < 10) {
+        PyErr_SetString(PyExc_RuntimeError, "register_outbound_interceptor unavailable");
+        return nullptr;
+    }
+    PyFnRef *l_ref = takeFnRef(l_handler);
+    if (!l_ref) {
+        return nullptr;
+    }
+    return PyBool_FromLong(s_ffi->register_outbound_interceptor(l_header, size_t(l_header_length), l_order,
+                                                                pyInterceptorTrampoline, l_ref,
+                                                                l_ref->plugin->owner_id.constData(), size_t(l_ref->plugin->owner_id.size())));
+}
+
+// True when the active plugin can drive the discord verbs, else sets a
+// Python error and returns false.
+static bool pyDiscordReady(const char *f_verb)
+{
+    if (!s_active_plugin || s_ffi->abi_version < 7) {
+        PyErr_Format(PyExc_RuntimeError, "%s unavailable", f_verb);
+        return false;
+    }
+    return true;
+}
+
+static const char *pyOwner(size_t *f_length)
+{
+    *f_length = size_t(s_active_plugin->owner_id.size());
+    return s_active_plugin->owner_id.constData();
+}
+
+static PyObject *pyApiDiscordBegin(PyObject *, PyObject *)
+{
+    if (!pyDiscordReady("discord_begin")) {
+        return nullptr;
+    }
+    size_t l_owner_length = 0;
+    const char *l_owner = pyOwner(&l_owner_length);
+    s_ffi->discord_begin(l_owner, l_owner_length);
+    Py_RETURN_NONE;
+}
+
+static PyObject *pyApiDiscordSet(PyObject *, PyObject *f_args)
+{
+    const char *l_key = nullptr, *l_value = nullptr;
+    Py_ssize_t l_key_length = 0, l_value_length = 0;
+    if (!PyArg_ParseTuple(f_args, "s#s#", &l_key, &l_key_length, &l_value, &l_value_length)) {
+        return nullptr;
+    }
+    if (!pyDiscordReady("discord_set")) {
+        return nullptr;
+    }
+    size_t l_owner_length = 0;
+    const char *l_owner = pyOwner(&l_owner_length);
+    s_ffi->discord_set(l_owner, l_owner_length, l_key, size_t(l_key_length), l_value, size_t(l_value_length));
+    Py_RETURN_NONE;
+}
+
+static PyObject *pyApiDiscordEmbedBegin(PyObject *, PyObject *)
+{
+    if (!pyDiscordReady("discord_embed_begin")) {
+        return nullptr;
+    }
+    size_t l_owner_length = 0;
+    const char *l_owner = pyOwner(&l_owner_length);
+    s_ffi->discord_embed_begin(l_owner, l_owner_length);
+    Py_RETURN_NONE;
+}
+
+static PyObject *pyApiDiscordEmbedSet(PyObject *, PyObject *f_args)
+{
+    const char *l_key = nullptr, *l_value = nullptr;
+    Py_ssize_t l_key_length = 0, l_value_length = 0;
+    if (!PyArg_ParseTuple(f_args, "s#s#", &l_key, &l_key_length, &l_value, &l_value_length)) {
+        return nullptr;
+    }
+    if (!pyDiscordReady("discord_embed_set")) {
+        return nullptr;
+    }
+    size_t l_owner_length = 0;
+    const char *l_owner = pyOwner(&l_owner_length);
+    s_ffi->discord_embed_set(l_owner, l_owner_length, l_key, size_t(l_key_length), l_value, size_t(l_value_length));
+    Py_RETURN_NONE;
+}
+
+static PyObject *pyApiDiscordEmbedFooter(PyObject *, PyObject *f_args)
+{
+    const char *l_text = nullptr, *l_icon = "";
+    Py_ssize_t l_text_length = 0, l_icon_length = 0;
+    if (!PyArg_ParseTuple(f_args, "s#|s#", &l_text, &l_text_length, &l_icon, &l_icon_length)) {
+        return nullptr;
+    }
+    if (!pyDiscordReady("discord_embed_footer")) {
+        return nullptr;
+    }
+    size_t l_owner_length = 0;
+    const char *l_owner = pyOwner(&l_owner_length);
+    s_ffi->discord_embed_footer(l_owner, l_owner_length, l_text, size_t(l_text_length), l_icon, size_t(l_icon_length));
+    Py_RETURN_NONE;
+}
+
+static PyObject *pyApiDiscordEmbedAuthor(PyObject *, PyObject *f_args)
+{
+    const char *l_name = nullptr, *l_url = "", *l_icon = "";
+    Py_ssize_t l_name_length = 0, l_url_length = 0, l_icon_length = 0;
+    if (!PyArg_ParseTuple(f_args, "s#|s#s#", &l_name, &l_name_length, &l_url, &l_url_length, &l_icon, &l_icon_length)) {
+        return nullptr;
+    }
+    if (!pyDiscordReady("discord_embed_author")) {
+        return nullptr;
+    }
+    size_t l_owner_length = 0;
+    const char *l_owner = pyOwner(&l_owner_length);
+    s_ffi->discord_embed_author(l_owner, l_owner_length, l_name, size_t(l_name_length),
+                                l_url, size_t(l_url_length), l_icon, size_t(l_icon_length));
+    Py_RETURN_NONE;
+}
+
+static PyObject *pyApiDiscordEmbedField(PyObject *, PyObject *f_args)
+{
+    const char *l_name = nullptr, *l_value = nullptr;
+    Py_ssize_t l_name_length = 0, l_value_length = 0;
+    int l_inline = 0;
+    if (!PyArg_ParseTuple(f_args, "s#s#|p", &l_name, &l_name_length, &l_value, &l_value_length, &l_inline)) {
+        return nullptr;
+    }
+    if (!pyDiscordReady("discord_embed_field")) {
+        return nullptr;
+    }
+    size_t l_owner_length = 0;
+    const char *l_owner = pyOwner(&l_owner_length);
+    s_ffi->discord_embed_field(l_owner, l_owner_length, l_name, size_t(l_name_length),
+                               l_value, size_t(l_value_length), l_inline);
+    Py_RETURN_NONE;
+}
+
+static PyObject *pyApiDiscordEmbedEnd(PyObject *, PyObject *)
+{
+    if (!pyDiscordReady("discord_embed_end")) {
+        return nullptr;
+    }
+    size_t l_owner_length = 0;
+    const char *l_owner = pyOwner(&l_owner_length);
+    s_ffi->discord_embed_end(l_owner, l_owner_length);
+    Py_RETURN_NONE;
+}
+
+static PyObject *pyApiDiscordPost(PyObject *, PyObject *f_args)
+{
+    const char *l_url = nullptr;
+    Py_ssize_t l_url_length = 0;
+    if (!PyArg_ParseTuple(f_args, "s#", &l_url, &l_url_length)) {
+        return nullptr;
+    }
+    if (!pyDiscordReady("discord_post")) {
+        return nullptr;
+    }
+    size_t l_owner_length = 0;
+    const char *l_owner = pyOwner(&l_owner_length);
+    return PyBool_FromLong(s_ffi->discord_post(l_owner, l_owner_length, l_url, size_t(l_url_length)));
+}
+
 static AkashiCommandContext *pyContextArg(PyObject *f_capsule)
 {
     return static_cast<AkashiCommandContext *>(PyCapsule_GetPointer(f_capsule, "akashi.context"));
@@ -751,6 +1427,34 @@ static PyMethodDef s_akashi_methods[] = {
     {"subscribe_event", pyApiSubscribeEvent, METH_VARARGS, "subscribe_event(name, handler); the handler receives the payload dict."},
     {"publish_event", pyApiPublishEvent, METH_VARARGS, "publish_event(name, payload_dict)."},
     {"config_get", pyApiConfigGet, METH_VARARGS, "config_get(key, fallback='') from the plugin's config file."},
+    {"config_set", pyApiConfigSet, METH_VARARGS, "config_set(key, value) into the plugin's config file."},
+    {"config_declare", pyApiConfigDeclare, METH_VARARGS, "config_declare(key, type, default='', description=''): typed, validated setting."},
+    {"fs_read", pyApiFsRead, METH_VARARGS, "fs_read(path) -> bytes, from the plugin's own data folder."},
+    {"fs_write", pyApiFsWrite, METH_VARARGS, "fs_write(path, data: bytes) -> bool, into the plugin's data folder."},
+    {"fs_exists", pyApiFsExists, METH_VARARGS, "fs_exists(path) -> bool, within the plugin's data folder."},
+    {"sql_exec", pyApiSqlExec, METH_VARARGS, "sql_exec(sql, params=()) -> affected rows, on the plugin's database."},
+    {"sql_query", pyApiSqlQuery, METH_VARARGS, "sql_query(sql, row_fn, params=()) -> row count; row_fn receives a dict per row."},
+    {"sql_migrate", pyApiSqlMigrate, METH_VARARGS, "sql_migrate(version, fn) -> bool; runs fn once to reach the schema version."},
+    {"sql_read", pyApiSqlRead, METH_VARARGS, "sql_read(source, sql, row_fn, params=()) -> row count; read-only query of 'main' or a plugin id."},
+    {"schedule_repeating", pyApiScheduleRepeating, METH_VARARGS, "schedule_repeating(job_id, day, time, fn): day is 'daily' or a weekday, time is 'HH:MM'."},
+    {"schedule_once", pyApiScheduleOnce, METH_VARARGS, "schedule_once(job_id, when, fn): when is a duration '1d12h', a weekday, or a date."},
+    {"schedule_cancel", pyApiScheduleCancel, METH_VARARGS, "schedule_cancel(job_id)."},
+    {"schedule_next_run", pyApiScheduleNextRun, METH_VARARGS, "schedule_next_run(job_id) -> 'yyyy-MM-dd hh:mm' or ''."},
+    {"area_get", pyApiAreaGet, METH_VARARGS, "area_get(area_id, key) -> str; read an area property."},
+    {"area_set", pyApiAreaSet, METH_VARARGS, "area_set(area_id, key, value) -> bool; set a bounded area property."},
+    {"floor_get", pyApiFloorGet, METH_VARARGS, "floor_get(floor_id, key) -> str."},
+    {"world_area_count", pyApiWorldAreaCount, METH_NOARGS, "world_area_count() -> int."},
+    {"world_floor_count", pyApiWorldFloorCount, METH_NOARGS, "world_floor_count() -> int."},
+    {"register_outbound_interceptor", pyApiRegisterOutboundInterceptor, METH_VARARGS, "register_outbound_interceptor(header, order, fn): fn(header, fields) -> False|list|None."},
+    {"discord_begin", pyApiDiscordBegin, METH_NOARGS, "discord_begin() starts a Discord message draft."},
+    {"discord_set", pyApiDiscordSet, METH_VARARGS, "discord_set(key, value): content/username/avatar_url/tts."},
+    {"discord_embed_begin", pyApiDiscordEmbedBegin, METH_NOARGS, "discord_embed_begin() opens an embed."},
+    {"discord_embed_set", pyApiDiscordEmbedSet, METH_VARARGS, "discord_embed_set(key, value): title/description/url/color/timestamp/image/thumbnail."},
+    {"discord_embed_footer", pyApiDiscordEmbedFooter, METH_VARARGS, "discord_embed_footer(text, icon_url='')."},
+    {"discord_embed_author", pyApiDiscordEmbedAuthor, METH_VARARGS, "discord_embed_author(name, url='', icon_url='')."},
+    {"discord_embed_field", pyApiDiscordEmbedField, METH_VARARGS, "discord_embed_field(name, value, inline=False)."},
+    {"discord_embed_end", pyApiDiscordEmbedEnd, METH_NOARGS, "discord_embed_end() closes the embed."},
+    {"discord_post", pyApiDiscordPost, METH_VARARGS, "discord_post(url) -> bool, sends the draft through the core hook."},
     {"reply", pyApiReply, METH_VARARGS, "Replies to the invoker of the running command."},
     {"reply_to_area", pyApiReplyToArea, METH_VARARGS, "Replies to everyone in the invoker's area."},
     {"client_id", pyApiClientId, METH_VARARGS, "The invoker's client id."},
@@ -788,10 +1492,14 @@ class PythonScriptHost : public akashi::IScriptPluginHost
 
     // A Python plugin is one .py file whose declaration header carries the
     // manifest; finding them is this host's business, not the manager's.
+    // Scripts live in the host's own subfolder, created on first run -
+    // only files in there are this host's to load.
     QList<akashi::PluginInfo> discoverScriptPlugins(const QString &f_plugin_dir) override
     {
         QList<akashi::PluginInfo> l_manifests;
-        const QDir l_dir(f_plugin_dir);
+        const QString l_script_dir = f_plugin_dir + QStringLiteral("/python");
+        QDir().mkpath(l_script_dir);
+        const QDir l_dir(l_script_dir);
         const QStringList l_files = l_dir.entryList({QStringLiteral("*.py")}, QDir::Files, QDir::Name);
         for (const QString &l_file : l_files) {
             const auto l_info = akashi::PluginManager::parseScriptHeader(l_dir.absoluteFilePath(l_file));

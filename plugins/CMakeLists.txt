@@ -8,12 +8,11 @@
 option(AKASHI_BUILD_PLUGINS "Build the bundled plugins" ON)
 
 # One folder per plugin, one AKASHI_PLUGIN_* option per folder
-# (hello-world becomes AKASHI_PLUGIN_HELLO_WORLD).
+# (lua-host becomes AKASHI_PLUGIN_LUA_HOST). The samples folder and the
+# per-host sample scripts are reference material, never built or deployed.
 set(AKASHI_BUNDLED_PLUGINS
     discord-integration
-    hello-world
     lua-host
-    medieval-speak
     python-host
     scripting-ffi
     sql-logger
@@ -55,23 +54,4 @@ if(_enabled_plugins)
     message(STATUS "Bundled plugins: ${_enabled_pretty}")
 else()
     message(STATUS "Bundled plugins: none")
-endif()
-
-# Each enabled script host ships its sample scripts next to the built
-# plugin libraries.
-set(_script_samples "")
-if("lua-host" IN_LIST _enabled_plugins)
-    list(APPEND _script_samples
-        ${CMAKE_CURRENT_SOURCE_DIR}/script-samples/hello-lua.lua
-        ${CMAKE_CURRENT_SOURCE_DIR}/script-samples/showcase-lua.lua)
-endif()
-if("python-host" IN_LIST _enabled_plugins)
-    list(APPEND _script_samples
-        ${CMAKE_CURRENT_SOURCE_DIR}/script-samples/hello-python.py
-        ${CMAKE_CURRENT_SOURCE_DIR}/script-samples/showcase-python.py)
-endif()
-if(_script_samples)
-    add_custom_target(script_samples ALL
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_SOURCE_DIR}/bin/plugins
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${_script_samples} ${CMAKE_SOURCE_DIR}/bin/plugins)
 endif()

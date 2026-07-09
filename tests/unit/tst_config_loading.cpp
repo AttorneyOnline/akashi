@@ -4,6 +4,7 @@
 #include "world/config_loading.h"
 
 #include <QFile>
+#include <QRegularExpression>
 #include <QString>
 #include <QTemporaryDir>
 #include <QTest>
@@ -28,6 +29,10 @@ class tst_ConfigLoading : public QObject
     void iprangeBans();
     void areaRules();
     void areaRulesSkipNameless();
+    void areaRulesReadTransformBuckets();
+    void deprecatedSettingNamesRemapOrRefuse();
+    void malformedAreaRulesFilesLoadNothing();
+    void malformedMusicListLoadsNothing();
 
   private:
     akashi::ConfigStore *m_store = nullptr;
@@ -196,10 +201,134 @@ void tst_ConfigLoading::areaRulesSkipNameless()
         }
     })");
 
+    // The skip announces itself so a typo does not vanish silently.
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression("names no action and was skipped"));
     const akashi::config::AreaRulesConfig l_config = akashi::config::loadAreaRules(l_path);
     const auto l_rules = l_config.floor_rules.value("Lobby");
     QCOMPARE(l_rules.size(), 1);
     QCOMPARE(l_rules[0].action, QString("block"));
+}
+
+void tst_ConfigLoading::areaRulesReadTransformBuckets()
+{
+    QTemporaryDir l_dir;
+    const QString l_path = writeAreasFile(l_dir, R"({
+        "floors": {
+            "Tavern": {
+                "rules": {
+                    "ic_message_sent": {
+                        "transform": [{"action": "apply_filter", "filter": "medieval"}]
+                    }
+                }
+            }
+        }
+    })");
+
+    const akashi::config::AreaRulesConfig l_config = akashi::config::loadAreaRules(l_path);
+    const auto l_rules = l_config.floor_rules.value("Tavern");
+    QCOMPARE(l_rules.size(), 1);
+    QCOMPARE(l_rules[0].phase, akashi::RulePhase::Transform);
+    QCOMPARE(l_rules[0].action, QString("apply_filter"));
+    QCOMPARE(l_rules[0].args.value("filter").toString(), QString("medieval"));
+}
+
+void tst_ConfigLoading::deprecatedSettingNamesRemapOrRefuse()
+{
+    QTemporaryDir l_dir;
+    const QString l_path = writeAreasFile(l_dir, R"({
+        "floors": {
+            "Legacy": {
+                "rules": {
+                    "music_changed": {
+                        "before": [{"action": "check_setting", "setting": "music", "bypass": "gamemaster"}]
+                    },
+                    "ic_message_sent": {
+                        "before": [
+                            {"action": "check_setting", "setting": "blankposting"},
+                            {"action": "check_setting", "setting": "iniswap"},
+                            {"action": "check_setting", "setting": "shouts"},
+                            {"action": "check_setting", "setting": "shownames"},
+                            {"action": "check_setting", "setting": "ic_messages"}
+                        ]
+                    },
+                    "wtce_used": {
+                        "before": [{"action": "check_setting", "setting": "wtce"}]
+                    }
+                }
+            }
+        }
+    })");
+
+    // The remaps say where the name went; the refusals name the mechanism
+    // that replaced them.
+    QTest::ignoreMessage(QtInfoMsg, QRegularExpression("\"music\" is deprecated - remapped to \"music_allowed\""));
+    QTest::ignoreMessage(QtInfoMsg, QRegularExpression("\"blankposting\" is deprecated - remapped to the check_blankposting action"));
+    QTest::ignoreMessage(QtInfoMsg, QRegularExpression("\"iniswap\" is deprecated - remapped to the check_iniswap action"));
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression("no longer gates \"shouts\".*strip_shouts"));
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression("no longer gates \"shownames\".*check_showname"));
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression("no longer gates \"wtce\".*check_wtce"));
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression("no longer gates \"ic_messages\".*floodguard"));
+
+    const akashi::config::AreaRulesConfig l_config = akashi::config::loadAreaRules(l_path);
+    const auto l_rules = l_config.floor_rules.value("Legacy");
+
+    // "music" remaps to the property name and keeps its other arguments,
+    // so a save writes the rule back in its new form.
+    // "blankposting" and "iniswap" become their dedicated actions.
+    // "shouts", "shownames", "wtce" and "ic_messages" refuse outright.
+    QCOMPARE(l_rules.size(), 3);
+    for (const akashi::config::RuleDeclaration &l_rule : l_rules) {
+        if (l_rule.event == "music_changed") {
+            QCOMPARE(l_rule.action, QString("check_setting"));
+            QCOMPARE(l_rule.args.value("setting").toString(), QString("music_allowed"));
+            QCOMPARE(l_rule.args.value("bypass").toString(), QString("gamemaster"));
+        }
+        else {
+            QCOMPARE(l_rule.event, QString("ic_message_sent"));
+            QVERIFY(l_rule.action == "check_blankposting" || l_rule.action == "check_iniswap");
+            QVERIFY(!l_rule.args.contains("setting"));
+        }
+    }
+}
+
+void tst_ConfigLoading::malformedAreaRulesFilesLoadNothing()
+{
+    // Broken JSON: the loader warns and answers with an empty config.
+    QTemporaryDir l_dir;
+    const QString l_broken = writeAreasFile(l_dir, "{ this is not json");
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression("Unable to load area rules"));
+    const akashi::config::AreaRulesConfig l_config = akashi::config::loadAreaRules(l_broken);
+    QVERIFY(l_config.floor_rules.isEmpty());
+    QVERIFY(l_config.area_rules.isEmpty());
+
+    // Valid JSON that is not an object is refused the same way.
+    QTemporaryDir l_array_dir;
+    const QString l_array = writeAreasFile(l_array_dir, R"(["not", "an", "object"])");
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression("Unable to load area rules"));
+    const akashi::config::AreaRulesConfig l_array_config = akashi::config::loadAreaRules(l_array);
+    QVERIFY(l_array_config.floor_rules.isEmpty());
+    QVERIFY(l_array_config.area_rules.isEmpty());
+
+    // A file that does not exist loads nothing and stays quiet.
+    const akashi::config::AreaRulesConfig l_missing = akashi::config::loadAreaRules(l_dir.filePath("missing.json"));
+    QVERIFY(l_missing.floor_rules.isEmpty());
+    QVERIFY(l_missing.area_rules.isEmpty());
+}
+
+void tst_ConfigLoading::malformedMusicListLoadsNothing()
+{
+    QTemporaryDir l_dir;
+    const QString l_broken = writeAreasFile(l_dir, "{ this is not json");
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression("Unable to load musiclist"));
+    const akashi::config::MusicCatalog l_catalog = akashi::config::loadMusicList(l_broken);
+    QVERIFY(l_catalog.songs.isEmpty());
+    QVERIFY(l_catalog.ordered.isEmpty());
+
+    // A missing file warns that it cannot open and loads nothing.
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression("Unable to open musiclist"));
+    const akashi::config::MusicCatalog l_missing = akashi::config::loadMusicList(l_dir.filePath("missing.json"));
+    QVERIFY(l_missing.songs.isEmpty());
+    QVERIFY(l_missing.ordered.isEmpty());
 }
 
 }

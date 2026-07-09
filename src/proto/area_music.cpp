@@ -1,12 +1,11 @@
 #include "proto/area_music.h"
 
 #include "akashi/area_rule.h"
+#include "akashi/permissions.h"
 #include "proto/ao2_protocol.h"
 #include "proto/area_music_messages.h"
 #include "proto/packet_codec.h"
 #include "proto/packet_registry.h"
-
-#include <QRegularExpression>
 
 namespace akashi {
 
@@ -26,14 +25,6 @@ class MusicChangeCodec : public Codec
         }
         return l_message;
     }
-
-    Packet encode(const Message &f_message) const override
-    {
-        const auto &l_music = static_cast<const MusicChangeMessage &>(f_message);
-        return Packet(ao2::HEADER_MC, {l_music.argument, l_music.char_id, l_music.showname,
-                                       l_music.looping ? "1" : "0", QString::number(l_music.channel),
-                                       l_music.effects});
-    }
 };
 
 class JudgeSplashCodec : public Codec
@@ -48,16 +39,6 @@ class JudgeSplashCodec : public Codec
             l_message->variant = f_packet.field(1);
         }
         return l_message;
-    }
-
-    Packet encode(const Message &f_message) const override
-    {
-        const auto &l_splash = static_cast<const JudgeSplashMessage &>(f_message);
-        QStringList l_fields = {l_splash.splash};
-        if (l_splash.has_variant) {
-            l_fields << l_splash.variant;
-        }
-        return Packet(ao2::HEADER_RT, l_fields);
     }
 };
 
@@ -91,7 +72,7 @@ class MusicChangeHandler : public PacketHandler
   public:
     void handle(const Message &f_message, IPacketContext &f_context) const override
     {
-        MusicChangeMessage l_music = static_cast<const MusicChangeMessage &>(f_message);
+        const auto &l_music = static_cast<const MusicChangeMessage &>(f_message);
 
         // The packet historically does two jobs: an argument that is no
         // song moves the client to the area of that name instead.
@@ -114,36 +95,13 @@ class MusicChangeHandler : public PacketHandler
             return;
         }
 
-        // The music-allowed area setting is enforced by a floor rule.
-        auto l_rule_block = f_context.checkBeforeRule(AreaEvents::MusicChanged, {{QStringLiteral("song"), l_music.argument}});
-        if (l_rule_block) {
-            f_context.sendServerMessage(*l_rule_block);
-            return;
+        // The verb owns everything from the rules on: jukebox interception,
+        // alias resolution, the mutation, the broadcast and the music log.
+        const auto l_refusal = f_context.playMusic(l_music.argument, MusicSource::List, l_music.char_id,
+                                                   l_music.has_effects ? l_music.effects : QStringLiteral("0"));
+        if (l_refusal) {
+            f_context.sendServerMessage(*l_refusal);
         }
-
-        if (!l_music.has_effects) {
-            l_music.effects = "0";
-        }
-
-        // A category has no file extension; picking one stops the music.
-        if (!l_music.argument.contains(".")) {
-            l_music.argument = ao2::STOP_MUSIC;
-        }
-
-        // The jukebox intercepts direct playing.
-        if (f_context.isJukeboxEnabled()) {
-            f_context.sendServerMessage(f_context.queueJukeboxSong(l_music.argument));
-            return;
-        }
-
-        if (l_music.argument != ao2::STOP_MUSIC) {
-            l_music.argument = f_context.resolveSongAlias(l_music.argument);
-        }
-        l_music.showname = f_context.characterName();
-
-        f_context.broadcastArea(MusicChangeCodec().encode(l_music));
-        f_context.recordMusicChange(l_music.argument);
-        f_context.runAfterRule(AreaEvents::MusicChanged, {{QStringLiteral("song"), l_music.argument}});
     }
 };
 
@@ -162,16 +120,16 @@ class JudgeSplashHandler : public PacketHandler
             f_context.sendServerMessage("You are blocked from using the judge controls.");
             return;
         }
-        if (!f_context.isWtceAllowed()) {
-            f_context.sendServerMessage("WTCE animations have been disabled in this area.");
-            return;
-        }
+        // Still cooling down; dropped silently.
         if (!f_context.startWtceCooldown()) {
             return;
         }
 
-        f_context.broadcastArea(JudgeSplashCodec().encode(l_splash));
-        f_context.logJudgeAction("WT/CE");
+        // The verb owns the wtce_used rules, the broadcast and the log.
+        const auto l_refusal = f_context.useWtce(l_splash.splash, l_splash.has_variant ? std::optional<QString>(l_splash.variant) : std::nullopt);
+        if (l_refusal) {
+            f_context.sendServerMessage(*l_refusal);
+        }
     }
 };
 
@@ -189,16 +147,8 @@ class EvidenceAddHandler : public PacketHandler
             return;
         }
 
-        // Evidence added without an owner tag in a hidden-CM area is
-        // visible to everyone.
-        QString l_description = l_evidence.description;
-        if (f_context.isEvidenceHiddenCm()) {
-            static const QRegularExpression l_owner_tag("<owner=(.*?)>");
-            if (!l_owner_tag.match(l_description).hasMatch()) {
-                l_description = "<owner=all>\n" + l_description;
-            }
-        }
-        f_context.addEvidence(l_evidence.name, l_description, l_evidence.image);
+        // The hidden-CM owner tagging happens inside the evidence path.
+        f_context.addEvidence(l_evidence.name, l_evidence.description, l_evidence.image);
         f_context.runAfterRule(AreaEvents::EvidenceAdded, {{QStringLiteral("name"), l_evidence.name}});
     }
 };
@@ -219,13 +169,12 @@ class PenaltyHandler : public PacketHandler
             return;
         }
 
-        // An unknown bar changes nothing, but the bars still echo.
-        if (l_penalty.bar == 1 || l_penalty.bar == 2) {
-            f_context.setPenalty(l_penalty.bar, l_penalty.value);
+        // The verb owns the wtce_used rules, the mutation, both HP
+        // broadcasts and the log.
+        const auto l_refusal = f_context.changePenalty(l_penalty.bar, l_penalty.value);
+        if (l_refusal) {
+            f_context.sendServerMessage(*l_refusal);
         }
-        f_context.broadcastArea(Packet(ao2::HEADER_HP, {"1", QString::number(f_context.penalty(1))}));
-        f_context.broadcastArea(Packet(ao2::HEADER_HP, {"2", QString::number(f_context.penalty(2))}));
-        f_context.logJudgeAction("updated the penalties");
     }
 };
 
@@ -235,10 +184,10 @@ void registerAreaMusicPackets(PacketRegistry &f_handlers, PacketCodecRegistry &f
 {
     const QString l_owner = QStringLiteral("core");
 
-    f_handlers.registerHandler({ao2::HEADER_MC, 2, {}}, std::make_shared<MusicChangeHandler>(), l_owner);
-    f_handlers.registerHandler({ao2::HEADER_RT, 1, {}}, std::make_shared<JudgeSplashHandler>(), l_owner);
-    f_handlers.registerHandler({ao2::HEADER_PE, 3, {}}, std::make_shared<EvidenceAddHandler>(), l_owner);
-    f_handlers.registerHandler({ao2::HEADER_HP, 2, {}}, std::make_shared<PenaltyHandler>(), l_owner);
+    f_handlers.registerHandler({ao2::HEADER_MC, 2, permission::user}, std::make_shared<MusicChangeHandler>(), l_owner);
+    f_handlers.registerHandler({ao2::HEADER_RT, 1, permission::user}, std::make_shared<JudgeSplashHandler>(), l_owner);
+    f_handlers.registerHandler({ao2::HEADER_PE, 3, permission::user}, std::make_shared<EvidenceAddHandler>(), l_owner);
+    f_handlers.registerHandler({ao2::HEADER_HP, 2, permission::user}, std::make_shared<PenaltyHandler>(), l_owner);
 
     f_codecs.registerCodec(ao2::HEADER_MC, always(), 0, std::make_shared<MusicChangeCodec>(), l_owner);
     f_codecs.registerCodec(ao2::HEADER_RT, always(), 0, std::make_shared<JudgeSplashCodec>(), l_owner);

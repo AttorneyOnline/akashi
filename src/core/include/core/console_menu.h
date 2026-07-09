@@ -4,12 +4,14 @@
 #include "akashi_core_export.h"
 
 #include <QByteArray>
+#include <QDateTime>
 #include <QList>
 #include <QObject>
 #include <QString>
 #include <QVector>
 
 #include <functional>
+#include <optional>
 
 class ServerContext;
 
@@ -56,6 +58,14 @@ class AKASHI_CORE_EXPORT ConsoleMenu : public QObject, public IService
     bool registerAction(const QString &f_title, std::function<void()> f_action,
                         const QString &f_owner_id = {});
 
+    // Adds a scheduled job to the tasks view. The entry shows when the job
+    // next fires - or that it is not scheduled - and selecting it runs the
+    // job right away either way.
+    bool registerScheduledAction(const QString &f_title,
+                                 std::function<std::optional<QDateTime>()> f_next_run,
+                                 std::function<void()> f_action,
+                                 const QString &f_owner_id = {});
+
     void unregisterAll(const QString &f_owner_id);
 
     // Prints a line above the menu of this session's operator.
@@ -85,8 +95,19 @@ class AKASHI_CORE_EXPORT ConsoleMenu : public QObject, public IService
         QString owner_id;
     };
 
+    struct ScheduledEntry
+    {
+        QString title;
+        std::function<std::optional<QDateTime>()> next_run;
+        std::function<void()> action;
+        QString owner_id;
+    };
+
+    static QString describeNextRun(const std::optional<QDateTime> &f_when);
+
     void render();
     void writeOut(const QByteArray &f_bytes);
+    void clearScreen();
     void activate(int f_index);
     void goBack();
 
@@ -129,6 +150,7 @@ class AKASHI_CORE_EXPORT ConsoleMenu : public QObject, public IService
     std::function<void(const QString &)> m_text_submit;
 
     QList<ActionEntry> m_actions;
+    QList<ScheduledEntry> m_scheduled;
 
     static ConsoleMenu *s_active_session;
 };

@@ -23,6 +23,7 @@ class tst_ConfigStore : public QObject
     void badValueFailsDeclare();
     void failedCheckFailsDeclare();
     void combinedChecksApplyAll();
+    void urlChecksAcceptOnlyWebUrls();
     void unknownKeyWarns();
     void reloadSignalsChangedValues();
     void pluginDeclarationsWork();
@@ -109,6 +110,23 @@ void tst_ConfigStore::combinedChecksApplyAll()
     writeFile(l_dir.path() + "/config.json", R"({"Options": {"port": 8080}})");
     ConfigStore l_second_store(l_dir.path());
     QVERIFY(l_second_store.declare("config", {{"Options/port", 27016, "The port.", l_check}}));
+}
+
+void tst_ConfigStore::urlChecksAcceptOnlyWebUrls()
+{
+    const ConfigEntry::Check l_url = url();
+    QVERIFY(l_url(QStringLiteral("https://discord.com/api/webhooks/1/token")));
+    QVERIFY(l_url(QStringLiteral("http://example.com")));
+    QVERIFY(!l_url(QStringLiteral("discord.com/no-scheme")));
+    QVERIFY(!l_url(QStringLiteral("file:///etc/passwd")));
+    QVERIFY(!l_url(QStringLiteral("https://")));
+    QVERIFY(!l_url(QString()));
+
+    // emptyOr lets a setting stay blank without weakening its check.
+    const ConfigEntry::Check l_optional = emptyOr(url());
+    QVERIFY(l_optional(QString()));
+    QVERIFY(l_optional(QStringLiteral("http://example.com")));
+    QVERIFY(!l_optional(QStringLiteral("nope")));
 }
 
 void tst_ConfigStore::unknownKeyWarns()

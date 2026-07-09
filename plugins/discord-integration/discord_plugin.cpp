@@ -3,11 +3,10 @@
 #include "akashi/config_store.h"
 #include "akashi/event.h"
 #include "akashi/logging_categories.h"
-#include "akashi/network_service.h"
 #include "akashi/service_registry.h"
-#include "core/event_bus.h"
+#include "core/discord_hook.h"
 #include "core/log_service.h"
-#include "webhook_sender.h"
+#include "world/rule_registry.h"
 
 #include <QDebug>
 
@@ -17,12 +16,12 @@ akashi::ServiceVersion DiscordPlugin::pluginVersion() const { return {1, 0, 0}; 
 bool DiscordPlugin::load(akashi::ServiceRegistry &services)
 {
     auto l_config = services.resolve<akashi::ConfigStore>(QStringLiteral("akashi.config"));
-    auto l_events = services.resolve<akashi::EventBus>(QStringLiteral("akashi.events"));
-    auto l_network = services.resolve<akashi::NetworkService>(QStringLiteral("akashi.network"));
+    auto l_rules = services.resolve<akashi::RuleRegistry>(QStringLiteral("akashi.rules"));
+    auto l_hook = services.resolve<akashi::DiscordHook>(QStringLiteral("akashi.discordhook"));
     auto l_log = services.resolve<akashi::LogService>(QStringLiteral("akashi.log"));
 
-    if (!l_config || !l_events || !l_network) {
-        qCWarning(akashiPlugins) << "discord: required services not available";
+    if (!l_config || !l_rules || !l_hook) {
+        qCWarning(akashiDiscord) << "discord: required services not available";
         return false;
     }
 
@@ -33,7 +32,7 @@ bool DiscordPlugin::load(akashi::ServiceRegistry &services)
                                       akashi::ConfigEntry(QStringLiteral("webhook_modcall_enabled"), false,
                                                           QStringLiteral("Whether modcalls are sent to a webhook.")),
                                       akashi::ConfigEntry(QStringLiteral("webhook_modcall_url"), QString(),
-                                                          QStringLiteral("The webhook URL for modcalls.")),
+                                                          QStringLiteral("The webhook URL for modcalls."), akashi::emptyOr(akashi::url())),
                                       akashi::ConfigEntry(QStringLiteral("webhook_modcall_content"), QString(),
                                                           QStringLiteral("Extra text sent with a modcall, for example a role ping.")),
                                       akashi::ConfigEntry(QStringLiteral("webhook_modcall_sendfile"), false,
@@ -41,68 +40,80 @@ bool DiscordPlugin::load(akashi::ServiceRegistry &services)
                                       akashi::ConfigEntry(QStringLiteral("webhook_ban_enabled"), false,
                                                           QStringLiteral("Whether bans are sent to a webhook.")),
                                       akashi::ConfigEntry(QStringLiteral("webhook_ban_url"), QString(),
-                                                          QStringLiteral("The webhook URL for bans.")),
+                                                          QStringLiteral("The webhook URL for bans."), akashi::emptyOr(akashi::url())),
                                       akashi::ConfigEntry(QStringLiteral("webhook_color"), QStringLiteral("13312842"),
-                                                          QStringLiteral("The color of webhook messages.")),
+                                                          QStringLiteral("The color of webhook messages, as a decimal color code."), akashi::emptyOr(akashi::inRange(0, 16777215))),
                                   });
 
-    m_sender = std::make_unique<WebhookSender>(l_network->networkManager(), this);
-
-    auto applyConfig = [this, l_config, l_cfg]() {
-        m_sender->setModcallUrl(l_config->get<QString>(l_cfg, QStringLiteral("webhook_modcall_url")));
-        m_sender->setModcallContent(l_config->get<QString>(l_cfg, QStringLiteral("webhook_modcall_content")));
-        m_sender->setModcallSendfile(l_config->get<bool>(l_cfg, QStringLiteral("webhook_modcall_sendfile")));
-        m_sender->setBanUrl(l_config->get<QString>(l_cfg, QStringLiteral("webhook_ban_url")));
-        m_sender->setColor(l_config->get<QString>(l_cfg, QStringLiteral("webhook_color")));
-    };
-    applyConfig();
-
-    if (l_log) {
-        m_sender->setAreaLogFn([l_log](const QString &f_area) -> QString {
-            const auto l_events = l_log->recentEvents(f_area, 0);
-            QString l_text;
-            for (const auto &e : l_events)
-                l_text.append(l_log->formatEvent(e) + QStringLiteral("\n"));
-            return l_text;
-        });
-    }
-
-    l_events->subscribe<akashi::ModcallEvent>(
-        akashi::EventPhase::After, 0,
-        [this, l_config, l_cfg](akashi::ModcallEvent &e) {
+    // The payload keys are the event struct's fields; eventToMap put them
+    // there under the same names the typed subscription used to see.
+    l_rules->registerObserver(
+        akashi::ModcallEvent::id, 0,
+        [l_config, l_cfg, l_hook, l_log](const akashi::RuleContext &f_ctx) {
             if (!l_config->get<bool>(l_cfg, QStringLiteral("webhook_enabled")) ||
                 !l_config->get<bool>(l_cfg, QStringLiteral("webhook_modcall_enabled")))
                 return;
 
-            ModcallPayload l_payload;
-            l_payload.client_id = e.client_id;
-            l_payload.name = e.ooc_name.isEmpty() ? e.char_name : e.ooc_name;
-            l_payload.area_name = e.area_name;
-            l_payload.reason = e.reason;
-            m_sender->sendModcall(l_payload);
+            const QVariantMap &e = f_ctx.payload;
+            const QString l_ooc_name = e.value(QStringLiteral("ooc_name")).toString();
+            const QString l_area_name = e.value(QStringLiteral("area_name")).toString();
+
+            akashi::DiscordMessage l_message;
+            const QString l_content = l_config->get<QString>(l_cfg, QStringLiteral("webhook_modcall_content"));
+            if (!l_content.isEmpty())
+                l_message.setContent(l_content);
+            l_message.setRequestUrl(l_config->get<QString>(l_cfg, QStringLiteral("webhook_modcall_url")))
+                .beginEmbed()
+                .setEmbedColor(l_config->get<QString>(l_cfg, QStringLiteral("webhook_color")))
+                .setEmbedTitle(QStringLiteral("[%1]%2 filed a modcall in %3")
+                                   .arg(e.value(QStringLiteral("client_id")).toString(),
+                                        l_ooc_name.isEmpty() ? e.value(QStringLiteral("char_name")).toString() : l_ooc_name,
+                                        l_area_name))
+                .setEmbedDescription(e.value(QStringLiteral("reason")).toString())
+                .endEmbed();
+
+            // With sendfile on, the area log rides along in one multipart
+            // post; without it, the message goes out on its own.
+            if (l_config->get<bool>(l_cfg, QStringLiteral("webhook_modcall_sendfile")) && l_log) {
+                QString l_text;
+                const auto l_recent = l_log->recentEvents(l_area_name, 0);
+                for (const auto &l_event : l_recent)
+                    l_text.append(l_log->formatEvent(l_event) + QStringLiteral("\n"));
+
+                if (!l_text.isEmpty()) {
+                    akashi::DiscordMultipartMessage l_multipart;
+                    l_multipart.setRequestUrl(l_message.requestUrl())
+                        .addPart(l_text.toUtf8(), QStringLiteral("file"), QStringLiteral("log.txt"),
+                                 QStringLiteral("text/plain"), QStringLiteral("utf-8"))
+                        .setPayloadJson(l_message.toJson());
+                    l_hook->post(l_multipart);
+                    return;
+                }
+            }
+            l_hook->post(l_message);
         },
         id());
 
-    l_events->subscribe<akashi::BanIssuedEvent>(
-        akashi::EventPhase::After, 0,
-        [this, l_config, l_cfg](akashi::BanIssuedEvent &e) {
+    l_rules->registerObserver(
+        akashi::BanIssuedEvent::id, 0,
+        [l_config, l_cfg, l_hook](const akashi::RuleContext &f_ctx) {
             if (!l_config->get<bool>(l_cfg, QStringLiteral("webhook_enabled")) ||
                 !l_config->get<bool>(l_cfg, QStringLiteral("webhook_ban_enabled")))
                 return;
 
-            BanPayload l_payload;
-            l_payload.ban_id = e.ban_id;
-            l_payload.moderator = e.moderator;
-            l_payload.target_ipid = e.target_ipid;
-            l_payload.duration = e.duration;
-            l_payload.reason = e.reason;
-            m_sender->sendBan(l_payload);
+            const QVariantMap &e = f_ctx.payload;
+            akashi::DiscordMessage l_message;
+            l_message.setRequestUrl(l_config->get<QString>(l_cfg, QStringLiteral("webhook_ban_url")))
+                .beginEmbed()
+                .setEmbedColor(l_config->get<QString>(l_cfg, QStringLiteral("webhook_color")))
+                .setEmbedTitle(QStringLiteral("Ban issued by ") + e.value(QStringLiteral("moderator")).toString())
+                .addEmbedField(QStringLiteral("IPID"), e.value(QStringLiteral("target_ipid")).toString(), true)
+                .addEmbedField(QStringLiteral("Ban ID"), e.value(QStringLiteral("ban_id")).toString(), true)
+                .addEmbedField(QStringLiteral("Banned until"), e.value(QStringLiteral("duration")).toString(), true)
+                .addEmbedField(QStringLiteral("Reason"), e.value(QStringLiteral("reason")).toString())
+                .endEmbed();
+            l_hook->post(l_message);
         },
-        id());
-
-    l_events->subscribe<akashi::ConfigReloadedEvent>(
-        akashi::EventPhase::After, 0,
-        [applyConfig](akashi::ConfigReloadedEvent &) { applyConfig(); },
         id());
 
     return true;
@@ -110,9 +121,7 @@ bool DiscordPlugin::load(akashi::ServiceRegistry &services)
 
 void DiscordPlugin::shutdown(akashi::ServiceRegistry &services)
 {
-    auto l_events = services.resolve<akashi::EventBus>(QStringLiteral("akashi.events"));
-    if (l_events)
-        l_events->unsubscribeAll(id());
-
-    m_sender.reset();
+    auto l_rules = services.resolve<akashi::RuleRegistry>(QStringLiteral("akashi.rules"));
+    if (l_rules)
+        l_rules->unregisterObservers(id());
 }

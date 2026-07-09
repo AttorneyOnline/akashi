@@ -1449,12 +1449,15 @@ class CommandsDance : public QObject
             // -- /uncm variants: the own form and the remove_gamemaster form --
             {"/cm", "is now CM"},
             {"/uncm all", "All CMs except yourself"},
+            {"/cm " + l_tid, "is now CM"},
             {"/uncm", "no longer CM"},
+            // The target is still CM, so the non-CM caller gets the
+            // accurate refusal instead of a false success.
+            {"/uncm", "You are not a CM"},
+            {"/uncm " + l_tid, "successfully unCMed"},
 
-            // -- plugin unload sweeps its commands; reload restores them --
-            {"/plugin unload akashi.medieval-speak", "Plugin unloaded"},
-            {"/medieval " + l_tid, "Invalid command"},
-            {"/plugin load akashi.medieval-speak", "Plugin loaded"},
+            // -- medieval lives in core since the plugin was absorbed; the
+            // plugin-unload command sweep is covered by the scripting scene --
             {"/medieval " + l_tid, "It is done, sire"},
             {"/unmedieval " + l_tid, "Un-medieval"},
         };
@@ -1856,9 +1859,26 @@ class ScriptingDance : public QObject
         connect(m_client, &DanceClient::icReceived, this, &ScriptingDance::onIc);
         connect(m_client, &DanceClient::ready, this, [this] { m_client->sendOoc("/login"); });
         connect(m_client, &DanceClient::loggedIn, this, [this] {
-            m_logged_in = true;
-            runNext();
+            if (!m_logged_in) {
+                m_logged_in = true;
+                runNext();
+                return;
+            }
+            // A mid-scene re-login: AUTH#1 is the success signal (modern
+            // clients get no OOC line), so it answers the modpass step.
+            if (m_queue_index < m_queue.size() && m_queue[m_queue_index].send == m_modpass) {
+                say("OK: " + m_queue[m_queue_index].send);
+                m_queue_index++;
+                QTimer::singleShot(200, this, &ScriptingDance::runNext);
+            }
         });
+
+        // The queue is a static initializer; patch the modpass in at runtime.
+        for (Step &l_step : m_queue) {
+            if (l_step.send == QStringLiteral("<modpass>")) {
+                l_step.send = m_modpass;
+            }
+        }
     }
 
   private:
@@ -1989,12 +2009,17 @@ class ScriptingDance : public QObject
 
         // Script rule actions attached to the live area: the Lua before
         // rule blocks by content, the Python after rule tallies what
-        // actually happened - a blocked message never reaches it.
+        // actually happened - a blocked message never reaches it. Rules
+        // only gate ordinary players (a moderator holds bypass_rules), so
+        // the moderator steps aside while the gate is under test.
         {Step::Command, "/addrule ic_message_sent lua.no_word word=banana", "Added lua.no_word"},
         {Step::Command, "/addrule ic_message_sent py.tally", "Added py.tally"},
+        {Step::Command, "/logout", "Logged out."},
         {Step::IcBlocked, "banana bread for everyone", "banned in this area"},
         {Step::Ic, "apple bread for everyone", "apple bread"},
         {Step::Command, "/pytally", "ic messages tallied: 1"},
+        {Step::Command, "/login", "Entering login prompt"},
+        {Step::Command, "<modpass>", "AUTH 1"},
 
         // A script plugin is a first-class plugin: it unloads alone, its
         // sibling keeps running, and it comes back with /plugin load.

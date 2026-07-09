@@ -50,6 +50,10 @@ class ConsolePanelSession : public QObject
   public:
     ConsolePanelSession(QLocalSocket *f_socket, ConsoleMenu *f_menu_service, QObject *parent = nullptr);
 
+  private Q_SLOTS:
+    // Turns a lone escape into KeyBack once no arrow sequence followed it.
+    void onEscapeTimeout();
+
   private:
     enum class Mode
     {
@@ -61,6 +65,8 @@ class ConsolePanelSession : public QObject
     void readSocket();
     void processKeys();
     void processLines();
+    // The session's console sink: rendered menu bytes go to the pipe socket.
+    void writeToSocket(const QByteArray &f_bytes);
     void sendCharacters(const QByteArray &f_bytes);
 
     QLocalSocket *m_socket;

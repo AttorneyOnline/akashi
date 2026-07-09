@@ -20,12 +20,23 @@ class AKASHI_CORE_EXPORT TextFilterRegistry : public IService
     QString serviceId() const override;
     ServiceVersion serviceVersion() const override;
 
+    // A filter runs only on the channels it registers for; the default
+    // keeps every existing filter IC-only. An id registers once - a
+    // second registration is refused with a warning and the first owner
+    // keeps the filter.
     void registerFilter(const QString &f_id, int f_order, TextFilterFn f_filter,
-                        bool f_always_active, const QString &f_owner = {});
+                        bool f_always_active, const QString &f_owner = {},
+                        const QSet<TextChannel> &f_channels = {TextChannel::Ic});
 
     void unregisterAll(const QString &f_owner);
 
-    std::optional<QString> apply(const QString &f_text, const QSet<QString> &f_active_ids) const;
+    std::optional<QString> apply(const QString &f_text, const QSet<QString> &f_active_ids,
+                                 TextChannel f_channel = TextChannel::Ic) const;
+
+    // Runs one named filter alone, ignoring channels and active sets; the
+    // apply_filter rule action reaches single filters through this. An
+    // unknown id leaves the text unchanged.
+    std::optional<QString> applyFilter(const QString &f_id, const QString &f_text) const;
 
     bool hasFilter(const QString &f_id) const;
 
@@ -38,6 +49,7 @@ class AKASHI_CORE_EXPORT TextFilterRegistry : public IService
         TextFilterFn filter;
         bool always_active;
         QString owner;
+        QSet<TextChannel> channels;
     };
 
     QList<Entry> m_entries;

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "akashi_core_export.h"
+
 #include <QObject>
 #include <QString>
 #include <QVector>
@@ -11,7 +13,7 @@ enum MatchResult
     MATCHES_PLURAL
 };
 
-class MedievalParser
+class AKASHI_CORE_EXPORT MedievalParser
 {
   public:
     explicit MedievalParser(const QString &f_config_path);

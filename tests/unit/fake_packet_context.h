@@ -11,7 +11,8 @@ class FakeContext : public akashi::IPacketContext
 {
   public:
     QList<akashi::Packet> sent;
-    QStringList calls;
+    // Mutable so const context reads (like applyTextFilters) record too.
+    mutable QStringList calls;
     bool closed = false;
 
     int client_id = 5;
@@ -35,7 +36,9 @@ class FakeContext : public akashi::IPacketContext
     QStringList commands_run;
     QStringList ooc_broadcasts;
 
-    bool evidence_hidden_cm = false;
+    // A false makes selectCharacter refuse like a taken character does.
+    bool select_character_result = true;
+
     int evidence_total = 0;
     QList<int> deleted_evidence;
     QStringList replaced_evidence;
@@ -100,7 +103,7 @@ class FakeContext : public akashi::IPacketContext
     {
         selected_char_id = f_char_id;
         calls.append("selectCharacter");
-        return true;
+        return select_character_result;
     }
 
     bool canUseOocChat() const override { return ooc_chat_allowed; }
@@ -132,7 +135,6 @@ class FakeContext : public akashi::IPacketContext
         calls.append("broadcastOoc");
     }
 
-    bool isEvidenceHiddenCm() const override { return evidence_hidden_cm; }
     int evidenceCount() const override { return evidence_total; }
 
     void deleteEvidence(int f_index) override
@@ -169,13 +171,12 @@ class FakeContext : public akashi::IPacketContext
     akashi::TextFilterRegistry *text_filter_registry = nullptr;
     bool ic_message_allowed = true;
     bool area_act_allowed = true;
-    bool shout_allowed = true;
-    bool showname_allowed = true;
     bool immediate_forced = false;
     QString area_side;
     QStringList last_area_message;
     akashi::PairInfo pair;
     int pair_request = -100;
+    int paired_with = -100;
     QStringList broadcast_ic_fields;
     int broadcast_ic_evidence = -100;
 
@@ -205,20 +206,25 @@ class FakeContext : public akashi::IPacketContext
         calls.append("updatePosition");
     }
 
-    std::optional<QString> applyTextFilters(const QString &f_text) const override
+    std::optional<QString> applyTextFilters(const QString &f_text, akashi::TextChannel f_channel) const override
     {
+        calls.append(QString("applyTextFilters:") + (f_channel == akashi::TextChannel::Ooc ? "ooc" : "ic"));
         if (text_filter_registry) {
-            return text_filter_registry->apply(f_text, active_filter_ids);
+            return text_filter_registry->apply(f_text, active_filter_ids, f_channel);
         }
         return f_text;
     }
     bool isIcMessageAllowed() const override { return ic_message_allowed; }
     bool canActInArea() override { return area_act_allowed; }
-    bool isShoutAllowed() const override { return shout_allowed; }
-    bool isShownameAllowed() const override { return showname_allowed; }
     bool isImmediateForced() const override { return immediate_forced; }
     QString areaSide() const override { return area_side; }
     QStringList lastAreaMessage() const override { return last_area_message; }
+
+    void setPairingWith(int f_char_id) override
+    {
+        paired_with = f_char_id;
+        calls.append("setPairingWith");
+    }
 
     akashi::PairInfo resolvePair(int f_pair_id) override
     {
@@ -241,15 +247,12 @@ class FakeContext : public akashi::IPacketContext
     }
 
     bool dj_blocked = false;
-    bool jukebox_enabled = false;
-    QString jukebox_reply = "Song added to the jukebox.";
-    QString queued_jukebox_song;
-    QHash<QString, QString> song_aliases;
-    QString recorded_music;
     bool wtce_blocked = false;
-    bool wtce_allowed = true;
     bool wtce_ready = true;
-    QStringList judge_actions;
+    // A set refusal makes the matching verb refuse like a rule block.
+    QString music_refusal;
+    QString wtce_refusal;
+    QString penalty_refusal;
     QList<akashi::Packet> area_broadcasts;
     QStringList added_evidence;
     int changed_area = -100;
@@ -264,35 +267,37 @@ class FakeContext : public akashi::IPacketContext
 
     bool hasSong(const QString &f_name) const override { return music_name_list.contains(f_name); }
     bool isDjBlocked() const override { return dj_blocked; }
-    bool isJukeboxEnabled() const override { return jukebox_enabled; }
 
-    QString queueJukeboxSong(const QString &f_song) override
+    std::optional<QString> playMusic(const QString &f_song, akashi::MusicSource f_source, const QString &f_char_id, const QString &f_effects) override
     {
-        queued_jukebox_song = f_song;
-        calls.append("queueJukeboxSong");
-        return jukebox_reply;
-    }
-
-    QString resolveSongAlias(const QString &f_song) override
-    {
-        calls.append("resolveSongAlias");
-        return song_aliases.value(f_song, f_song);
-    }
-
-    void recordMusicChange(const QString &f_song) override
-    {
-        recorded_music = f_song;
-        calls.append("recordMusicChange");
+        calls.append("playMusic:" + f_song + "|" + akashi::musicSourceName(f_source) + "|" + f_char_id + "|" + f_effects);
+        if (!music_refusal.isEmpty())
+            return music_refusal;
+        return std::nullopt;
     }
 
     bool isWtceBlocked() const override { return wtce_blocked; }
-    bool isWtceAllowed() const override { return wtce_allowed; }
-    bool startWtceCooldown() override { return wtce_ready; }
 
-    void logJudgeAction(const QString &f_action) override
+    bool startWtceCooldown() override
     {
-        judge_actions.append(f_action);
-        calls.append("logJudgeAction");
+        calls.append("startWtceCooldown");
+        return wtce_ready;
+    }
+
+    std::optional<QString> useWtce(const QString &f_splash, const std::optional<QString> &f_variant) override
+    {
+        calls.append("useWtce:" + f_splash + (f_variant ? "|" + *f_variant : QString()));
+        if (!wtce_refusal.isEmpty())
+            return wtce_refusal;
+        return std::nullopt;
+    }
+
+    std::optional<QString> changePenalty(int f_bar, int f_value) override
+    {
+        calls.append("changePenalty:" + QString::number(f_bar) + "|" + QString::number(f_value));
+        if (!penalty_refusal.isEmpty())
+            return penalty_refusal;
+        return std::nullopt;
     }
 
     void changeArea(int f_area_index) override
@@ -306,12 +311,29 @@ class FakeContext : public akashi::IPacketContext
     QStringList floorAreaNames() const override { return floor_area_names.isEmpty() ? area_name_list : floor_area_names; }
     int floorAreaToGlobal(int f_local_index) const override { return f_local_index; }
     QString before_rule_block;
-    std::optional<QString> checkBeforeRule(const QString &f_event, const QVariantMap &) override
+    // When set, only that event blocks; empty scopes the block to every event.
+    QString before_rule_block_event;
+    QVariantMap last_before_payload;
+    std::optional<QString> checkBeforeRule(const QString &f_event, const QVariantMap &f_payload) override
     {
         calls.append("checkBeforeRule:" + f_event);
-        if (!before_rule_block.isEmpty())
+        last_before_payload = f_payload;
+        if (!before_rule_block.isEmpty() && (before_rule_block_event.isEmpty() || before_rule_block_event == f_event))
             return before_rule_block;
         return std::nullopt;
+    }
+    // The keys a scripted transform rewrites; they overlay the payload the
+    // way runTransforms merges changed keys.
+    QVariantMap transform_result;
+    QVariantMap last_transform_payload;
+    QVariantMap runTransformRules(const QString &f_event, const QVariantMap &f_payload) override
+    {
+        calls.append("runTransformRules:" + f_event);
+        last_transform_payload = f_payload;
+        QVariantMap l_result = f_payload;
+        for (auto it = transform_result.constBegin(); it != transform_result.constEnd(); ++it)
+            l_result.insert(it.key(), it.value());
+        return l_result;
     }
     void runAfterRule(const QString &f_event, const QVariantMap &) override { calls.append("runAfterRule:" + f_event); }
 
@@ -336,7 +358,6 @@ class FakeContext : public akashi::IPacketContext
         calls.append("broadcastArea:" + f_packet.header());
     }
 
-    QHash<int, int> penalties = {{1, 10}, {2, 10}};
     QList<bool> case_alert_needs;
     QList<akashi::Packet> case_alerts;
     QString character_password;
@@ -348,14 +369,6 @@ class FakeContext : public akashi::IPacketContext
     QString webhook_reason;
     QStringList kicks;
     QStringList bans;
-
-    void setPenalty(int f_bar, int f_value) override
-    {
-        penalties[f_bar] = f_value;
-        calls.append("setPenalty");
-    }
-
-    int penalty(int f_bar) const override { return penalties.value(f_bar); }
 
     void broadcastCaseAlert(const QList<bool> &f_needs, const akashi::Packet &f_packet) override
     {
@@ -408,7 +421,6 @@ class FakeContext : public akashi::IPacketContext
 
     QString server_nickname = "Server";
     int max_message_length = 256;
-    QStringList word_filters;
     bool webao_enabled = true;
     int max_player_count = 100;
     QString server_description = "A test server.";
@@ -416,7 +428,6 @@ class FakeContext : public akashi::IPacketContext
     QString server_motd = "MOTD is not set.";
     QString serverNickname() const override { return server_nickname; }
     int maxMessageLength() const override { return max_message_length; }
-    QStringList wordFilters() const override { return word_filters; }
     bool webaoEnabled() const override { return webao_enabled; }
     int maxPlayerCount() const override { return max_player_count; }
     QString serverDescription() const override { return server_description; }

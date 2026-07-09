@@ -35,7 +35,7 @@ static PluginManager *resolveManager(CommandContext &f_ctx)
     return l_mgr.get();
 }
 
-static void handlePluginList(CommandContext &f_ctx)
+static void listSubcommand(CommandContext &f_ctx)
 {
     PluginManager *l_mgr = resolveManager(f_ctx);
     if (!l_mgr)
@@ -61,7 +61,7 @@ static void handlePluginList(CommandContext &f_ctx)
     f_ctx.reply(l_lines.join(QStringLiteral("\n")));
 }
 
-static void handlePluginLoad(CommandContext &f_ctx)
+static void loadSubcommand(CommandContext &f_ctx)
 {
     PluginManager *l_mgr = resolveManager(f_ctx);
     if (!l_mgr)
@@ -77,7 +77,7 @@ static void handlePluginLoad(CommandContext &f_ctx)
     }
 }
 
-static void handlePluginUnload(CommandContext &f_ctx)
+static void unloadSubcommand(CommandContext &f_ctx)
 {
     PluginManager *l_mgr = resolveManager(f_ctx);
     if (!l_mgr)
@@ -92,7 +92,7 @@ static void handlePluginUnload(CommandContext &f_ctx)
         f_ctx.reply(QStringLiteral("Failed to unload plugin: ") + l_id + QStringLiteral(". Other plugins may depend on it (use --cascade)."));
 }
 
-static void handlePluginReload(CommandContext &f_ctx)
+static void reloadSubcommand(CommandContext &f_ctx)
 {
     PluginManager *l_mgr = resolveManager(f_ctx);
     if (!l_mgr)
@@ -108,24 +108,24 @@ static void handlePluginReload(CommandContext &f_ctx)
     }
 }
 
-static void handlePlugin(CommandContext &f_ctx)
+void cmdPlugin(CommandContext &f_context)
 {
-    if (f_ctx.argc() < 1) {
-        f_ctx.reply(QStringLiteral("Usage: /plugin <list|load|unload|reload> [id] [--cascade]"));
+    if (f_context.argc() < 1) {
+        f_context.reply(QStringLiteral("Usage: /plugin <list|load|unload|reload> [id] [--cascade]"));
         return;
     }
 
-    const QString l_sub = f_ctx.argument(0);
+    const QString l_sub = f_context.argument(0);
     if (l_sub == QStringLiteral("list"))
-        handlePluginList(f_ctx);
+        listSubcommand(f_context);
     else if (l_sub == QStringLiteral("load"))
-        handlePluginLoad(f_ctx);
+        loadSubcommand(f_context);
     else if (l_sub == QStringLiteral("unload"))
-        handlePluginUnload(f_ctx);
+        unloadSubcommand(f_context);
     else if (l_sub == QStringLiteral("reload"))
-        handlePluginReload(f_ctx);
+        reloadSubcommand(f_context);
     else
-        f_ctx.reply(QStringLiteral("Unknown subcommand: ") + l_sub + QStringLiteral(". Use list, load, unload, or reload."));
+        f_context.reply(QStringLiteral("Unknown subcommand: ") + l_sub + QStringLiteral(". Use list, load, unload, or reload."));
 }
 
 void registerPluginCommands(CommandRegistry &f_registry)
@@ -137,7 +137,7 @@ void registerPluginCommands(CommandRegistry &f_registry)
     l_spec.usage = QStringLiteral("/plugin <list|load|unload|reload> [id] [--cascade]");
     l_spec.description = QStringLiteral("Manage server plugins.");
 
-    f_registry.registerCommand(l_spec, handlePlugin, QStringLiteral("core"));
+    f_registry.registerCommand(l_spec, cmdPlugin, QStringLiteral("core"));
 }
 
 } // namespace akashi::commands

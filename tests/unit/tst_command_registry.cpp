@@ -21,7 +21,9 @@ class tst_CommandRegistry : public QObject
     void lookupByAlias();
     void caseInsensitiveLookup();
     void duplicateRegistrationFails();
+    void collidingAliasRegistrationFails();
     void unregisterByOwner();
+    void unregisterUnknownOwnerIsANoOp();
     void containsCheck();
     void commandNamesList();
 
@@ -34,7 +36,11 @@ class tst_CommandRegistry : public QObject
     void resolverGrantedShortCircuits();
     void resolverDeniedShortCircuits();
     void resolverAllNoOpinionDenies();
+    void resolveWithNoResolversDenies();
+    void duplicateResolverIdKeepsTheFirst();
+    void equalPriorityResolversRunOldestFirst();
     void resolverUnregisterByOwner();
+    void resolverUnregisterUnknownOwnerIsANoOp();
     void pluginResolverAtCustomPriority();
 
     void aclRoleStringCanPerform();
@@ -48,10 +54,14 @@ class tst_CommandRegistry : public QObject
     void applyExtensionsMissingFileIsNoop();
     void applyExtensionsSilentlySkipsSameCommandAlias();
 
+    void canUseMirrorsTheDispatchGate();
+    void canUseChecksEveryVariantForm();
+
     void variantMatchPicksByArgCount();
     void registerCommandValidatesVariants();
     void registerVariantAppendsGatedForm();
     void registerVariantRefusals();
+    void registerVariantRejectsMalformedForms();
     void unregisterAllSweepsAddedVariants();
     void applyExtensionsOverridesVariantPermissions();
 };
@@ -121,6 +131,25 @@ void tst_CommandRegistry::duplicateRegistrationFails()
     QVERIFY(!l_registry.registerCommand(l_spec, [](akashi::CommandContext &) {}));
 }
 
+void tst_CommandRegistry::collidingAliasRegistrationFails()
+{
+    akashi::CommandRegistry l_registry;
+    akashi::CommandSpec l_first{QStringLiteral("kick"), {QStringLiteral("k")}, {}, 0, {}, {}};
+    QVERIFY(l_registry.registerCommand(l_first, [](akashi::CommandContext &) {}));
+
+    // A new command whose name shadows an existing alias is refused.
+    akashi::CommandSpec l_name_clash{QStringLiteral("k"), {}, {}, 0, {}, {}};
+    QVERIFY(!l_registry.registerCommand(l_name_clash, [](akashi::CommandContext &) {}));
+
+    // So is one whose alias shadows an existing command name.
+    akashi::CommandSpec l_alias_clash{QStringLiteral("boot"), {QStringLiteral("kick")}, {}, 0, {}, {}};
+    QVERIFY(!l_registry.registerCommand(l_alias_clash, [](akashi::CommandContext &) {}));
+
+    // The refusal leaves nothing behind - not even the fresh name.
+    QVERIFY(!l_registry.contains("boot"));
+    QCOMPARE(l_registry.spec("k")->name, QStringLiteral("kick"));
+}
+
 void tst_CommandRegistry::unregisterByOwner()
 {
     akashi::CommandRegistry l_registry;
@@ -133,6 +162,21 @@ void tst_CommandRegistry::unregisterByOwner()
     l_registry.unregisterAll(QStringLiteral("plugin_a"));
     QVERIFY(!l_registry.contains("test"));
     QVERIFY(!l_registry.contains("t"));
+}
+
+void tst_CommandRegistry::unregisterUnknownOwnerIsANoOp()
+{
+    akashi::CommandRegistry l_registry;
+    akashi::CommandSpec l_spec{QStringLiteral("test"), {QStringLiteral("t")}, {}, 0, {}, {}};
+    QVERIFY(l_registry.registerCommand(
+        l_spec, [](akashi::CommandContext &) {}, QStringLiteral("plugin_a")));
+    QVERIFY(l_registry.registerCommand(makeVariantSpec(QStringLiteral("listperms")), QStringLiteral("plugin_a")));
+
+    l_registry.unregisterAll(QStringLiteral("nobody"));
+
+    QVERIFY(l_registry.contains("test"));
+    QVERIFY(l_registry.contains("t"));
+    QCOMPARE(l_registry.spec("listperms")->variants.size(), 2);
 }
 
 void tst_CommandRegistry::containsCheck()
@@ -273,6 +317,57 @@ void tst_CommandRegistry::resolverAllNoOpinionDenies()
     QVERIFY(!l_registry.resolve(l_query));
 }
 
+void tst_CommandRegistry::resolveWithNoResolversDenies()
+{
+    // An empty chain denies everything - including the empty permission
+    // string. The grant for empty/"none" lives in the core's none_check
+    // resolver, not in the registry itself.
+    akashi::PermissionRegistry l_registry;
+
+    akashi::PermissionQuery l_query;
+    l_query.permission = QStringLiteral("kick");
+    QVERIFY(!l_registry.resolve(l_query));
+
+    l_query.permission = QString();
+    QVERIFY(!l_registry.resolve(l_query));
+}
+
+void tst_CommandRegistry::duplicateResolverIdKeepsTheFirst()
+{
+    akashi::PermissionRegistry l_registry;
+    QVERIFY(l_registry.registerResolver(QStringLiteral("gate"), 100, [](const akashi::PermissionQuery &) {
+        return akashi::PermissionVerdict::Granted;
+    }));
+
+    // A second resolver under the same id is refused, even at another
+    // priority - the first keeps deciding.
+    QVERIFY(!l_registry.registerResolver(QStringLiteral("gate"), 50, [](const akashi::PermissionQuery &) {
+        return akashi::PermissionVerdict::Denied;
+    }));
+
+    akashi::PermissionQuery l_query;
+    l_query.permission = QStringLiteral("kick");
+    QVERIFY(l_registry.resolve(l_query));
+}
+
+void tst_CommandRegistry::equalPriorityResolversRunOldestFirst()
+{
+    // Equal priorities keep registration order - the same tiebreak the
+    // text filter registry uses - so a plugin registering at a core
+    // priority can never preempt the core resolver.
+    akashi::PermissionRegistry l_registry;
+    l_registry.registerResolver(QStringLiteral("older"), 100, [](const akashi::PermissionQuery &) {
+        return akashi::PermissionVerdict::Denied;
+    });
+    l_registry.registerResolver(QStringLiteral("newer"), 100, [](const akashi::PermissionQuery &) {
+        return akashi::PermissionVerdict::Granted;
+    });
+
+    akashi::PermissionQuery l_query;
+    l_query.permission = QStringLiteral("kick");
+    QVERIFY(!l_registry.resolve(l_query));
+}
+
 void tst_CommandRegistry::resolverUnregisterByOwner()
 {
     akashi::PermissionRegistry l_registry;
@@ -285,6 +380,19 @@ void tst_CommandRegistry::resolverUnregisterByOwner()
 
     l_registry.unregisterAllResolvers(QStringLiteral("plugin_x"));
     QVERIFY(!l_registry.resolve(l_query));
+}
+
+void tst_CommandRegistry::resolverUnregisterUnknownOwnerIsANoOp()
+{
+    akashi::PermissionRegistry l_registry;
+    l_registry.registerResolver(
+        QStringLiteral("granter"), 100, [](const akashi::PermissionQuery &) { return akashi::PermissionVerdict::Granted; }, QStringLiteral("plugin_x"));
+
+    l_registry.unregisterAllResolvers(QStringLiteral("plugin_y"));
+
+    akashi::PermissionQuery l_query;
+    l_query.permission = QStringLiteral("kick");
+    QVERIFY(l_registry.resolve(l_query));
 }
 
 void tst_CommandRegistry::pluginResolverAtCustomPriority()
@@ -459,6 +567,47 @@ void tst_CommandRegistry::applyExtensionsSilentlySkipsSameCommandAlias()
     QCOMPARE(l_registry.spec("dice")->name, QStringLiteral("roll"));
 }
 
+void tst_CommandRegistry::canUseMirrorsTheDispatchGate()
+{
+    akashi::CommandRegistry l_registry;
+    akashi::CommandSpec l_open{QStringLiteral("about"), {}, {}, 0, {}, {}};
+    akashi::CommandSpec l_gated{QStringLiteral("ban"), {QStringLiteral("b")}, {QStringLiteral("ban")}, 3, {}, {}};
+    QVERIFY(l_registry.registerCommand(l_open, [](akashi::CommandContext &) {}));
+    QVERIFY(l_registry.registerCommand(l_gated, [](akashi::CommandContext &) {}));
+
+    const auto l_none = [](const QString &) { return false; };
+    const auto l_mod = [](const QString &f_permission) { return f_permission == QStringLiteral("ban"); };
+
+    // An empty permission list is open, exactly like the dispatch gate.
+    QVERIFY(l_registry.canUse("about", l_none));
+    QVERIFY(!l_registry.canUse("ban", l_none));
+    QVERIFY(l_registry.canUse("ban", l_mod));
+    // Aliases resolve like every other lookup; unknown commands never pass.
+    QVERIFY(l_registry.canUse("b", l_mod));
+    QVERIFY(!l_registry.canUse("nosuch", l_mod));
+}
+
+void tst_CommandRegistry::canUseChecksEveryVariantForm()
+{
+    akashi::CommandRegistry l_registry;
+    QVERIFY(l_registry.registerCommand(makeVariantSpec(QStringLiteral("listperms")), QStringLiteral("core")));
+
+    // The free self form opens the command even without modify_users.
+    QVERIFY(l_registry.canUse("listperms", [](const QString &) { return false; }));
+
+    akashi::CommandSpec l_all_gated;
+    l_all_gated.name = QStringLiteral("uncm");
+    l_all_gated.variants = {
+        {QStringLiteral("own"), 0, 0, {QStringLiteral("gamemaster")}, {}, {}, [](akashi::CommandContext &) {}},
+        {QStringLiteral("other"), 1, -1, {QStringLiteral("remove_gamemaster")}, {}, {}, [](akashi::CommandContext &) {}},
+    };
+    QVERIFY(l_registry.registerCommand(l_all_gated, QStringLiteral("core")));
+
+    QVERIFY(!l_registry.canUse("uncm", [](const QString &) { return false; }));
+    // Any one passing form is enough.
+    QVERIFY(l_registry.canUse("uncm", [](const QString &f_permission) { return f_permission == QStringLiteral("remove_gamemaster"); }));
+}
+
 void tst_CommandRegistry::variantMatchPicksByArgCount()
 {
     const akashi::CommandSpec l_spec = makeVariantSpec(QStringLiteral("listperms"));
@@ -541,6 +690,24 @@ void tst_CommandRegistry::registerVariantRefusals()
 
     // The unbounded "user" form already covers two arguments.
     QVERIFY(!l_registry.registerVariant(QStringLiteral("listperms"), {QStringLiteral("two"), 2, 2, {}, {}, {}, l_handler}));
+
+    QCOMPARE(l_registry.spec("listperms")->variants.size(), 2);
+}
+
+void tst_CommandRegistry::registerVariantRejectsMalformedForms()
+{
+    akashi::CommandRegistry l_registry;
+    QVERIFY(l_registry.registerCommand(makeVariantSpec(QStringLiteral("listperms")), QStringLiteral("core")));
+
+    const auto l_handler = [](akashi::CommandContext &) {};
+
+    // A form without an id or without a handler is refused.
+    QVERIFY(!l_registry.registerVariant(QStringLiteral("listperms"), {QString(), 2, 2, {}, {}, {}, l_handler}));
+    QVERIFY(!l_registry.registerVariant(QStringLiteral("listperms"), {QStringLiteral("mute"), 2, 2, {}, {}, {}, {}}));
+
+    // An unbounded window swallows every count above it, so nothing can
+    // sit beside the open-ended "user" form - not even far above it.
+    QVERIFY(!l_registry.registerVariant(QStringLiteral("listperms"), {QStringLiteral("many"), 5, -1, {}, {}, {}, l_handler}));
 
     QCOMPARE(l_registry.spec("listperms")->variants.size(), 2);
 }

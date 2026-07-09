@@ -16,6 +16,7 @@ class tst_DBManager : public QObject
   private Q_SLOTS:
     void olderActiveBanStillCounts();
     void lookupsAreIndexed();
+    void sanctionsStoreAndExpire();
 };
 
 void tst_DBManager::olderActiveBanStillCounts()
@@ -66,6 +67,39 @@ void tst_DBManager::lookupsAreIndexed()
     QVERIFY(l_indexes.contains("bans_hdid_time"));
     QVERIFY(l_indexes.contains("bans_ip"));
     QVERIFY(l_indexes.contains("users_username"));
+}
+
+void tst_DBManager::sanctionsStoreAndExpire()
+{
+    QSqlDatabase l_database = QSqlDatabase::addDatabase("QSQLITE", "test_db_sanctions");
+    l_database.setDatabaseName(":memory:");
+    QVERIFY(l_database.open());
+    DBManager l_manager(l_database);
+
+    const qint64 l_now = QDateTime::currentSecsSinceEpoch();
+    l_manager.upsertSanction({"1234", "muted", "moderator", l_now, l_now + 600});
+    l_manager.upsertSanction({"1234", "gimped", "moderator", l_now, l_now - 5});
+    l_manager.upsertSanction({"5678", "muted", "moderator", l_now, l_now + 600});
+
+    // Only the still-active sanctions of the asked-for IPID come back.
+    QList<DBManager::SanctionInfo> l_active = l_manager.sanctionsFor("1234", l_now);
+    QCOMPARE(l_active.size(), 1);
+    QCOMPARE(l_active.first().sanction, QStringLiteral("muted"));
+    QCOMPARE(l_active.first().expires, l_now + 600);
+
+    // Storing the same pair again replaces instead of stacking.
+    l_manager.upsertSanction({"1234", "muted", "another moderator", l_now, l_now + 1200});
+    l_active = l_manager.sanctionsFor("1234", l_now);
+    QCOMPARE(l_active.size(), 1);
+    QCOMPARE(l_active.first().expires, l_now + 1200);
+    QCOMPARE(l_active.first().moderator, QStringLiteral("another moderator"));
+
+    // The boot pass sees everything, the expired row included.
+    QCOMPARE(l_manager.allSanctions().size(), 3);
+
+    l_manager.removeSanction("1234", "muted");
+    QCOMPARE(l_manager.sanctionsFor("1234", l_now).size(), 0);
+    QCOMPARE(l_manager.allSanctions().size(), 2);
 }
 
 }

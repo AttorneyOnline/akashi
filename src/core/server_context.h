@@ -24,6 +24,7 @@
 #include "core/player_state_observer.h"
 #include "core/server_settings.h"
 #include "proto/packet.h"
+#include "world/floodguard.h"
 #include "world/floor.h"
 
 #include <QCoreApplication>
@@ -37,6 +38,7 @@
 #include <QTimer>
 #include <QUrl>
 
+#include <functional>
 #include <memory>
 #include <optional>
 
@@ -44,6 +46,10 @@ namespace akashi {
 class Area;
 class World;
 class ITransport;
+enum class DisconnectKind;
+struct JukeboxSong;
+struct PermissionQuery;
+enum class PermissionVerdict;
 class WebSocketReceiver;
 class PluginManager;
 class ConsoleMenu;
@@ -52,11 +58,12 @@ class AuthThrottle;
 class CommandRegistry;
 class ConfigStore;
 class DatabaseService;
-class EventBus;
 class FileSystemService;
 class LogService;
+class DiscordHook;
 class PacketService;
 class RuleRegistry;
+class Scheduler;
 class TextFilterRegistry;
 class WriterText;
 class PermissionRegistry;
@@ -69,6 +76,7 @@ class ACLRolesHandler;
 class ClientSession;
 }
 class DBManager;
+class MedievalParser;
 /**
  * @brief The server: its lifecycle, its world, its people and its doors.
  */
@@ -210,13 +218,48 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
     void broadcast(const akashi::Packet &packet, int area_index);
 
     /**
-     * @brief Sends one finished IC message to an area.
+     * @brief Sends one finished IC message to an area. The one place an
+     * outgoing MS packet is built.
      *
      * @param f_fields The classic positional MS fields.
      *
      * @param f_area_id The area whose clients receive the message.
+     *
+     * @param f_viewer_fields When set, resolves the fields each viewer
+     * sees (the hidden-CM evidence index remap); otherwise everyone gets
+     * f_fields.
      */
-    void broadcastIc(const QStringList &f_fields, int f_area_id);
+    void broadcastIc(const QStringList &f_fields, int f_area_id, const std::function<QStringList(akashi::ClientSession *)> &f_viewer_fields = {});
+
+    /**
+     * @brief The kick verb: every listed client is told the reason with a
+     * KK packet and dropped, and one log entry records the act. The doors
+     * (/kick, /kick_uid and the MA packet) resolve their targets and
+     * phrase their own replies.
+     */
+    void kickClients(const QList<akashi::ClientSession *> &f_targets, const QString &f_target_ipid, const QString &f_reason, const QString &f_moderator);
+
+    struct BanResult
+    {
+        int ban_id = -1;
+        int clients_kicked = 0;
+    };
+
+    /**
+     * @brief The ban verb: writes one ban row per distinct hardware id
+     * among the online clients with the IPID (or a bare row when nobody
+     * is online), sends each client the door's KB notice, logs once and
+     * publishes the one BanIssuedEvent.
+     *
+     * @param f_duration_secs Ban length in seconds; -2 is permanent.
+     *
+     * @param f_perma_text The door's own spelling of "forever" for the
+     * log, the event and the notice.
+     *
+     * @param f_notice Builds the KB text from the ban id and the until
+     * text; empty means the bare reason.
+     */
+    BanResult banPlayers(const QString &f_ipid, long long f_duration_secs, const QString &f_reason, const QString &f_moderator, const QString &f_perma_text, const std::function<QString(int f_ban_id, const QString &f_until)> &f_notice = {});
 
     /**
      * @brief Sends a packet to all clients in the server.
@@ -295,7 +338,13 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
      */
 
     akashi::LogService *logService();
-    akashi::EventBus *eventBus();
+
+    /**
+     * @brief Publishes a placeless event straight to the global observers:
+     * a serverwide fact with no area, so no rule phase dispatches.
+     */
+    void publishEvent(const QString &f_id, const QVariantMap &f_payload, int f_player_id = -1);
+
     void flushModcallLog(const QString &f_area_name);
 
     /**
@@ -485,12 +534,25 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
     void setAuthType(AuthType f_auth);
 
     QStringList gimpList() const;
-    QStringList filterList() const;
     QStringList cdnList() const;
     QStringList praiseList() const;
     QStringList reprimandsList() const;
     QStringList magic8BallAnswers() const;
     QStringList diceFaces(const QString &f_name) const;
+
+    /**
+     * @brief Applies a sanction that outlives the session: the flag on
+     * every online client with the IPID, a row in the database, and a
+     * scheduled lift.
+     */
+    void applyTimedSanction(const QString &f_ipid, const QString &f_sanction, const QDateTime &f_until, const QString &f_moderator);
+
+    /**
+     * @brief Drops the stored row and the pending lift of a sanction, for
+     * when a moderator lifts it by hand or makes it permanent. Session
+     * flags stay with the caller.
+     */
+    void clearStoredSanction(const QString &f_ipid, const QString &f_sanction);
 
   public Q_SLOTS:
     /**
@@ -532,6 +594,8 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
     akashi::WebSocketReceiver *m_receiver = nullptr;
 
     akashi::DatabaseService *m_database_service = nullptr;
+    akashi::Scheduler *m_scheduler = nullptr;
+    akashi::DiscordHook *m_discord_hook = nullptr;
     akashi::PluginManager *m_plugin_manager = nullptr;
     Stage m_stage = Stage::Configuring;
 
@@ -544,10 +608,75 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
     void buildCore();
 
     /**
+     * @brief Puts the core's own entries on the console menu's tasks view:
+     * the scheduled maintenance and backup jobs plus common operator tasks.
+     */
+    void registerConsoleTasks();
+
+    // The scheduled database jobs; the postpone check is bound to the
+    // configured player ceiling.
+    void runDatabaseMaintenance();
+    void runDatabaseBackups();
+    bool isMaintenanceBusy(int f_max_players);
+
+    // The console tasks view: when a job next fires, and the operator's
+    // run-now and inspection tasks.
+    std::optional<QDateTime> nextScheduledRun(const QString &f_job_id) const;
+    void runMaintenanceAndReport();
+    void runBackupsAndReport();
+    void showRecentBans();
+    void showDatabaseOverview();
+
+    /**
+     * @brief Arms a lift job for every stored sanction at boot; overdue
+     * ones fire on the first tick and clean their rows up.
+     */
+    void armStoredSanctions();
+
+    /**
+     * @brief Applies the stored sanctions of a connecting client's IPID.
+     */
+    void applyStoredSanctions(akashi::ClientSession *f_client);
+
+    /**
+     * @brief Schedules the lift moment of a stored sanction.
+     */
+    void scheduleSanctionLift(const QString &f_ipid, const QString &f_sanction, const QDateTime &f_until);
+
+    /**
+     * @brief Drops a sanction's row and session flags once its moment
+     * passes; the scheduler runs it bound to the ipid and sanction.
+     */
+    void liftSanction(const QString &f_ipid, const QString &f_sanction);
+
+    /**
      * @brief Opens the receiver and assembles everything that needs a
      * listening server: the publisher, the world, the ban lists.
      */
     ExitCode startListening();
+
+    // The built-in permission resolver chain.
+    static akashi::PermissionVerdict resolveNoneCheck(const akashi::PermissionQuery &f_query);
+    akashi::PermissionVerdict resolveJoinedUser(const akashi::PermissionQuery &f_query);
+    akashi::PermissionVerdict resolveAreaOwner(const akashi::PermissionQuery &f_query);
+    static akashi::PermissionVerdict resolveAuthentication(const akashi::PermissionQuery &f_query);
+    akashi::PermissionVerdict resolveRoleCheck(const akashi::PermissionQuery &f_query);
+
+    // The core text filters.
+    std::optional<QString> applyWordFilter(const QString &f_text) const;
+    std::optional<QString> applyGimpFilter(const QString &f_text) const;
+    std::optional<QString> applyMedievalFilter(const QString &f_text) const;
+    static std::optional<QString> applyShakeFilter(const QString &f_text);
+    static std::optional<QString> applyDisemvowelFilter(const QString &f_text);
+
+    // Resolves an area owner to "[id] character" for the ARUP CM column.
+    QString formatAreaOwner(int f_owner_id);
+
+    // Signal reactions bound to their subject at connect time, so their
+    // signatures carry more than the signal's arguments.
+    void onClientTransportClosed(akashi::ClientSession *f_client, akashi::DisconnectKind f_kind);
+    void onJukeboxMusicListChanged(int f_area_id, akashi::Area *f_area);
+    void onJukeboxSongStarted(akashi::Area *f_area, const akashi::JukeboxSong &f_song);
 
     /**
      * @brief Handles HTTP server advertising.
@@ -555,13 +684,12 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
     ServerPublisher *server_publisher;
 
     akashi::LogService *m_log_service = nullptr;
-    akashi::EventBus *m_event_bus = nullptr;
     std::shared_ptr<akashi::WriterText> m_text_writer;
+    std::unique_ptr<MedievalParser> m_medieval_parser;
 
     akashi::ConfigStore *m_config_store = nullptr;
     ServerSettings *m_server_settings = nullptr;
     QSettings *m_areas_ini = nullptr;
-    QSettings *m_ambience_ini = nullptr;
 
     struct TextData
     {
@@ -620,14 +748,9 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
     akashi::MmdbReader m_asn_reader;
 
     /**
-     * @brief Timer until the next IC message can be sent.
+     * @brief The server-wide IC rate gate; areas each hold their own.
      */
-    QTimer *m_message_floodguard_timer;
-
-    /**
-     * @brief If false, IC messages will be rejected.
-     */
-    bool m_can_send_ic_messages = true;
+    akashi::Floodguard m_message_floodguard;
 
     /**
      * @brief The database manager on the server, used to store users' bans and authorisation details.
@@ -668,6 +791,14 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
     void reloadTextData();
     void reloadMusicFloor();
     void reloadBanLists();
+    void reloadAclRoles();
+    void reloadAuthLimits();
+
+    /**
+     * @brief Tells the global observers the config reloaded, after core
+     * re-read everything.
+     */
+    void publishConfigReloaded();
 
     /**
      * @brief Sends a fresh area list and full ARUP to everyone on a floor.
@@ -686,6 +817,17 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
     akashi::World *m_world = nullptr;
 
   private Q_SLOTS:
+    /**
+     * @brief Re-applies the command extensions once a runtime-loaded
+     * plugin has registered its commands.
+     */
+    void onPluginLoaded();
+
+    /**
+     * @brief Sends one ARUP packet to every area on the floor.
+     */
+    void onArupFloorBroadcast(const akashi::Packet &f_packet, int f_floor_id);
+
     /**
      * @brief Wires a newly built area: its jukebox packets and the
      * area-update broadcaster.
@@ -708,9 +850,4 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
      * @param f_client_id The client id of the client to check.
      */
     void decreasePlayerCount();
-
-    /**
-     * @brief Allow game messages to be broadcasted.
-     */
-    void allowMessage();
 };

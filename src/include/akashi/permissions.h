@@ -29,4 +29,6 @@ inline const QString jukebox = QStringLiteral("jukebox");
 inline const QString modify_rules = QStringLiteral("modify_rules");
 inline const QString modify_floors = QStringLiteral("modify_floors");
 inline const QString super = QStringLiteral("super");
+inline const QString user = QStringLiteral("user");
+inline const QString bypass_rules = QStringLiteral("bypass_rules");
 } // namespace akashi::permission

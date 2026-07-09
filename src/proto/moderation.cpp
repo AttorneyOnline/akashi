@@ -105,8 +105,8 @@ void registerModerationPackets(PacketRegistry &f_handlers, PacketCodecRegistry &
 {
     const QString l_owner = QStringLiteral("core");
 
-    f_handlers.registerHandler({ao2::HEADER_ZZ, 2, {}}, std::make_shared<ModcallHandler>(), l_owner);
-    f_handlers.registerHandler({ao2::HEADER_MA, 3, {}}, std::make_shared<ModActionHandler>(), l_owner);
+    f_handlers.registerHandler({ao2::HEADER_ZZ, 2, permission::user}, std::make_shared<ModcallHandler>(), l_owner);
+    f_handlers.registerHandler({ao2::HEADER_MA, 3, permission::user}, std::make_shared<ModActionHandler>(), l_owner);
 
     f_codecs.registerCodec(ao2::HEADER_ZZ, always(), 0, std::make_shared<ModcallCodec>(), l_owner);
     f_codecs.registerCodec(ao2::HEADER_MA, always(), 0, std::make_shared<ModActionCodec>(), l_owner);

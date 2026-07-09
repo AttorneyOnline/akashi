@@ -14,4 +14,6 @@ inline const QString gimped = QStringLiteral("gimped");
 inline const QString disemvoweled = QStringLiteral("disemvoweled");
 inline const QString shaken = QStringLiteral("shaken");
 inline const QString medieval = QStringLiteral("medieval");
+// Restricts character choice to a moderator-picked list.
+inline const QString charcurse = QStringLiteral("charcurse");
 } // namespace akashi::sanction

@@ -22,4 +22,9 @@ PacketCodecRegistry &PacketService::codecs()
     return m_codecs;
 }
 
+PacketInterceptors &PacketService::outboundInterceptors()
+{
+    return m_outbound_interceptors;
+}
+
 } // namespace akashi

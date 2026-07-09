@@ -2,6 +2,7 @@
 
 Q_LOGGING_CATEGORY(akashiServer, "akashi.server")
 Q_LOGGING_CATEGORY(akashiNet, "akashi.net")
+Q_LOGGING_CATEGORY(akashiDiscord, "akashi.discord")
 Q_LOGGING_CATEGORY(akashiConfig, "akashi.config")
 Q_LOGGING_CATEGORY(akashiCommands, "akashi.commands")
 Q_LOGGING_CATEGORY(akashiDb, "akashi.db")

@@ -20,6 +20,7 @@ class tst_Moderation : public QObject
 
     void modcallAlertsTheModerators();
     void modcallNamesItsTarget();
+    void modcallHandlerLeavesPreJoinGatingToTheDispatcher();
     void modActionNeedsLoginAndPermission();
     void modActionKicksAndBans();
 
@@ -72,6 +73,21 @@ void tst_Moderation::modcallNamesItsTarget()
     FakeContext l_unknown;
     run(Packet("ZZ", {"Spam", "9"}), l_unknown);
     QVERIFY(!l_unknown.moderator_broadcasts.first().field(0).contains("Regarding:"));
+}
+
+// The pre-join ZZ hole is closed by the packet spec's user permission at
+// dispatch (ClientSession::handleRegisteredPacket), not by the handler -
+// the handler itself has no session-state gate. This pins that split so a
+// gate quietly moving in here gets noticed; the wire-level drop is what
+// tst_protocol's preJoinPacketsAreDropped proves.
+void tst_Moderation::modcallHandlerLeavesPreJoinGatingToTheDispatcher()
+{
+    FakeContext l_context;
+    l_context.identified = false;
+    l_context.joined = false;
+    run(Packet("ZZ", {"Trouble!", "-1"}), l_context);
+    QCOMPARE(l_context.moderator_broadcasts.size(), 1);
+    QVERIFY(l_context.calls.contains("recordModcall"));
 }
 
 void tst_Moderation::modActionNeedsLoginAndPermission()

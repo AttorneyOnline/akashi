@@ -45,8 +45,6 @@ configure_file(src/core/softwareinformation.h.in softwareinformation.h)
 # carries its own include/ directory. Everything else in src/ is private
 # to the core build.
 set(AKASHI_SOURCES
-  src/core/event_bus.cpp
-  src/core/include/core/event_bus.h
   src/core/log_service.cpp
   src/core/include/core/log_service.h
   src/core/writer_text.cpp
@@ -82,6 +80,8 @@ set(AKASHI_SOURCES
   src/core/database_service.cpp
   src/core/exit_code.h
   src/core/network_service.cpp
+  src/core/scheduler.cpp
+  src/include/akashi/scheduler.h
   src/core/service.cpp
   src/core/service_registry.cpp
   src/core/filesystem_service.cpp
@@ -102,6 +102,8 @@ set(AKASHI_SOURCES
   src/core/include/core/plugin_manager.h
   src/core/text_filter_registry.cpp
   src/core/include/core/text_filter_registry.h
+  src/core/medieval_parser.cpp
+  src/core/medieval_parser.h
   src/core/mmdb_reader.cpp
   src/core/mmdb_reader.h
   src/core/player_state.cpp
@@ -112,6 +114,9 @@ set(AKASHI_SOURCES
   src/core/server_context.h
   src/core/websocket_receiver.cpp
   src/core/websocket_receiver.h
+  src/core/discord_hook.cpp
+  src/core/include/core/discord_hook.h
+  src/core/include/core/discord_message.h
   src/include/akashi/client_receiver.h
   src/commands/area_commands.cpp
   src/commands/area_commands.h

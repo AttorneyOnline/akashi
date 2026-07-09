@@ -4,6 +4,7 @@
 #include "akashi_core_export.h"
 #include "world/area_settings.h"
 #include "world/evidence_store.h"
+#include "world/floodguard.h"
 #include "world/testimony_recorder.h"
 
 #include <QList>
@@ -13,12 +14,15 @@
 #include <QString>
 #include <QVector>
 
+#include <optional>
+
 class QSettings;
 class QTimer;
 
 namespace akashi {
 
 class Jukebox;
+struct JukeboxSong;
 
 // One area of the world: identity, its place on the map, who is in it, the
 // moderation state the area list shows, and the pieces a scene is made of -
@@ -53,7 +57,23 @@ class AKASHI_CORE_EXPORT Area : public QObject
     // The server's constructor: the group is the "N:Name" section of the
     // settings file the area reads itself from.
     Area(const QString &f_settings_group, int f_id, int f_floor_id, int f_x,
-         QSettings *f_areas_ini, QSettings *f_ambience_ini, QObject *parent = nullptr);
+         QSettings *f_areas_ini, QObject *parent = nullptr);
+
+    // Introspectable area state. Anything a plugin (native or scripted) may
+    // read or tune is a property here - adding one exposes it everywhere with
+    // no code elsewhere, and only the WRITE ones can be set from a plugin.
+    Q_PROPERTY(QString name READ name)
+    Q_PROPERTY(int player_count READ playerCount)
+    Q_PROPERTY(QString background READ background)
+    Q_PROPERTY(bool is_protected READ isProtected)
+    Q_PROPERTY(QString evidence_mod READ evidenceModName)
+    Q_PROPERTY(QString status READ status WRITE setStatus)
+    Q_PROPERTY(QString lock_state READ lockStateName WRITE setLockStateName)
+    Q_PROPERTY(bool music_allowed READ isMusicAllowed WRITE setMusicAllowed)
+    Q_PROPERTY(bool shouts_allowed READ isShoutAllowed WRITE setShoutAllowed)
+    Q_PROPERTY(bool wtce_allowed READ isWtceAllowed WRITE setWtceAllowed)
+    Q_PROPERTY(bool blankposting_allowed READ isBlankpostingAllowed WRITE setBlankpostingAllowed)
+    Q_PROPERTY(bool iniswap_allowed READ isIniswapAllowed WRITE setIniswapAllowed)
 
     // --- Identity and place on the map ---
 
@@ -108,9 +128,18 @@ class AKASHI_CORE_EXPORT Area : public QObject
     // Becoming an owner includes the invitation.
     void addOwner(int f_player_id);
 
-    // An owner gives up the spot (invitation included); returns true when
-    // the area unlocked itself because its last owner left.
-    bool removeOwner(int f_player_id);
+    // How removeOwner answered: a non-owner id is refused and changes
+    // nothing; RemovedAndUnlocked means the area also freed itself because
+    // its last owner left.
+    enum class OwnerRemoval
+    {
+        NotAnOwner,
+        Removed,
+        RemovedAndUnlocked,
+    };
+
+    // An owner gives up the spot, invitation included.
+    OwnerRemoval removeOwner(int f_player_id);
 
     QList<int> invited() const { return m_invited; }
     bool invite(int f_player_id);
@@ -130,8 +159,13 @@ class AKASHI_CORE_EXPORT Area : public QObject
     QString status() const { return m_status; }
     void setStatus(const QString &f_status);
 
-    // The command surface: validates the known status names and stores
-    // their old spellings. False when the name is unknown.
+    // The stored spelling of a known status name, or nothing when the name
+    // is unknown. The validation query the status verb checks before it
+    // dispatches rules and commits.
+    static std::optional<QString> canonicalStatus(const QString &f_name);
+
+    // Validates through canonicalStatus and stores the old spelling.
+    // False when the name is unknown.
     bool changeStatus(const QString &f_name);
 
     // --- Evidence ---
@@ -147,6 +181,7 @@ class AKASHI_CORE_EXPORT Area : public QObject
     int evidenceIndexByVisibleIndex(int f_visible_index, const QString &f_client_pos, bool f_is_cm) const;
     int visibleIndexByEvidenceIndex(int f_evidence_index, const QString &f_client_pos, bool f_is_cm) const;
     QList<Evidence> visibleEvidence(bool f_can_see_hidden, const QString &f_side) const;
+    QString taggedEvidenceDescription(const QString &f_description) const { return m_evidence_store.taggedDescription(f_description); }
 
     // --- Testimony ---
 
@@ -166,8 +201,8 @@ class AKASHI_CORE_EXPORT Area : public QObject
     // --- Timers and the IC floodguard ---
 
     QList<QTimer *> timers() const { return m_timers; }
-    bool isMessageAllowed() const { return m_can_send_ic_messages; }
-    void startMessageFloodguard(int f_duration);
+    bool isMessageAllowed() const { return m_floodguard.isMessageAllowed(); }
+    void startMessageFloodguard(int f_duration) { m_floodguard.start(f_duration); }
 
     // --- The courtroom scene ---
 
@@ -182,7 +217,7 @@ class AKASHI_CORE_EXPORT Area : public QObject
     void setSide(const QString &f_side) { m_side = f_side; }
 
     QString background() const { return m_settings.background; }
-    void setBackground(const QString &f_background);
+    void setBackground(const QString &f_background) { m_settings.background = f_background; }
 
     QStringList judgelog() const { return m_judgelog; }
     void appendJudgelog(const QString &f_new_log);
@@ -224,12 +259,62 @@ class AKASHI_CORE_EXPORT Area : public QObject
     bool sendAreaMessageOnJoin() const { return m_settings.send_area_message_on_join; }
     void toggleAreaMessageJoin() { m_settings.send_area_message_on_join = !m_settings.send_area_message_on_join; }
 
+    // --- Property adapters ---
+    // Plain void setters and string views of the enum settings, so the
+    // Q_PROPERTY block above can expose the whole tunable surface uniformly.
+
+    void setMusicAllowed(bool f_on) { m_settings.music_allowed = f_on; }
+    void setShoutAllowed(bool f_on) { m_settings.shouts_allowed = f_on; }
+    void setWtceAllowed(bool f_on) { m_settings.wtce_allowed = f_on; }
+    void setBlankpostingAllowed(bool f_on) { m_settings.blankposting_allowed = f_on; }
+    void setIniswapAllowed(bool f_on) { m_settings.iniswap_allowed = f_on; }
+
+    QString evidenceModName() const
+    {
+        switch (m_evidence_store.access()) {
+        case EvidenceStore::Access::FreeForAll:
+            return QStringLiteral("ffa");
+        case EvidenceStore::Access::Mod:
+            return QStringLiteral("mod");
+        case EvidenceStore::Access::Cm:
+            return QStringLiteral("cm");
+        case EvidenceStore::Access::HiddenCm:
+            return QStringLiteral("hidden_cm");
+        }
+        return QStringLiteral("ffa");
+    }
+
+    QString lockStateName() const
+    {
+        switch (m_lock_state) {
+        case LockState::Free:
+            return QStringLiteral("free");
+        case LockState::Spectatable:
+            return QStringLiteral("spectatable");
+        case LockState::Locked:
+            return QStringLiteral("locked");
+        }
+        return QStringLiteral("free");
+    }
+
+    void setLockStateName(const QString &f_name)
+    {
+        if (f_name == QStringLiteral("locked"))
+            setLockState(LockState::Locked);
+        else if (f_name == QStringLiteral("spectatable"))
+            setLockState(LockState::Spectatable);
+        else
+            setLockState(LockState::Free);
+    }
+
     // --- Rules applied to this area ---
 
     QVector<BeforeRuleEntry> &beforeRules() { return m_before_rules; }
     QVector<AfterRuleEntry> &afterRules() { return m_after_rules; }
+    QVector<TransformRuleEntry> &transformRules() { return m_transform_rules; }
     const QVector<BeforeRuleEntry> &beforeRules() const { return m_before_rules; }
     const QVector<AfterRuleEntry> &afterRules() const { return m_after_rules; }
+    const QVector<TransformRuleEntry> &transformRules() const { return m_transform_rules; }
 
   Q_SIGNALS:
     // One signal per area-update type the protocol knows; the broadcaster
@@ -240,7 +325,8 @@ class AKASHI_CORE_EXPORT Area : public QObject
     void lockStateChanged(LockState f_state);
 
   private Q_SLOTS:
-    void allowMessage() { m_can_send_ic_messages = true; }
+    // A song the jukebox starts on its own becomes the area's current music.
+    void onJukeboxSongStarted(const JukeboxSong &f_song);
 
   private:
     void setupComponents();
@@ -261,11 +347,9 @@ class AKASHI_CORE_EXPORT Area : public QObject
     EvidenceStore m_evidence_store;
     TestimonyRecorder m_testimony_recorder;
     Jukebox *m_jukebox = nullptr;
-    QSettings *m_ambience_ini = nullptr;
 
     QList<QTimer *> m_timers;
-    QTimer *m_message_floodguard_timer = nullptr;
-    bool m_can_send_ic_messages = true;
+    Floodguard m_floodguard;
 
     QString m_side;
     QString m_document = QStringLiteral("No document.");
@@ -277,6 +361,7 @@ class AKASHI_CORE_EXPORT Area : public QObject
 
     QVector<BeforeRuleEntry> m_before_rules;
     QVector<AfterRuleEntry> m_after_rules;
+    QVector<TransformRuleEntry> m_transform_rules;
 };
 
 } // namespace akashi

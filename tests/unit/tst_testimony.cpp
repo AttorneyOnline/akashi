@@ -30,6 +30,7 @@ class tst_Testimony : public QObject
     void editsIgnorePositionsThatDoNotExist();
     void jumpNeedsAtLeastOneStatement();
     void jumpLoopsPastTheEndAndStaysAtTheFirst();
+    void stateTransitionsCarryNoGuards();
     void clearForgetsEverything();
     void savedLineRoundTripsThroughTheIcParser();
     void savedLineKeepsThePairBlock();
@@ -169,6 +170,33 @@ void tst_Testimony::jumpLoopsPastTheEndAndStaysAtTheFirst()
     l_jump = l_recorder.jumpTo(0);
     QCOMPARE(l_jump->first.message(), "first");
     QCOMPARE(l_jump->second, TestimonyRecorder::Playback::StayedAtFirst);
+
+    // A negative target stays at the first statement too.
+    l_jump = l_recorder.jumpTo(-3);
+    QCOMPARE(l_jump->first.message(), "first");
+    QCOMPARE(l_jump->second, TestimonyRecorder::Playback::StayedAtFirst);
+    QCOMPARE(l_recorder.statementIndex(), 1);
+}
+
+void tst_Testimony::stateTransitionsCarryNoGuards()
+{
+    // The state field is a bare setter: any jump goes through, and no
+    // state gates the recording calls - the commands own the choreography.
+    TestimonyRecorder l_recorder;
+    l_recorder.setState(TestimonyRecorder::State::Playback);
+    QCOMPARE(l_recorder.state(), TestimonyRecorder::State::Playback);
+
+    // Recording appends even outside the Recording state.
+    l_recorder.record(Statement(baseFields("title")));
+    QCOMPARE(l_recorder.statementCount(), 1);
+
+    // restart() enters playback whether or not there is anything to play;
+    // jumpTo() is the guard that still refuses the empty testimony.
+    l_recorder.clear();
+    l_recorder.restart();
+    QCOMPARE(l_recorder.state(), TestimonyRecorder::State::Playback);
+    QCOMPARE(l_recorder.statementIndex(), 0);
+    QVERIFY(!l_recorder.jumpTo(1));
 }
 
 void tst_Testimony::clearForgetsEverything()

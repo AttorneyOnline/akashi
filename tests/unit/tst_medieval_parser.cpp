@@ -1,5 +1,5 @@
 // AI-generated: written by Claude.
-#include "medieval_parser.h"
+#include "core/medieval_parser.h"
 
 #include <QTest>
 

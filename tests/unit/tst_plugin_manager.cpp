@@ -1,8 +1,8 @@
 // AI-generated: written by Claude.
 #include "akashi/plugin.h"
+#include "akashi/script_plugin_host.h"
 #include "akashi/service_registry.h"
 #include "core/command_registry.h"
-#include "core/event_bus.h"
 #include "core/plugin_manager.h"
 
 #include <QTemporaryDir>
@@ -61,6 +61,38 @@ QStringList StubPlugin::init_order;
 QStringList StubPlugin::started_order;
 QStringList StubPlugin::shutdown_order;
 
+// A script host that reports whatever manifests a test hands it, so the
+// manager's dependency handling runs without any real interpreter.
+class StubScriptHost : public akashi::IScriptPluginHost
+{
+  public:
+    QString serviceId() const override { return QStringLiteral("akashi.script-host.stub"); }
+    akashi::ServiceVersion serviceVersion() const override { return {1, 0, 0}; }
+    QString runtime() const override { return QStringLiteral("stub"); }
+
+    QList<akashi::PluginInfo> discoverScriptPlugins(const QString &) override { return manifests; }
+    bool loadScriptPlugin(const QString &f_plugin_id, const QString &) override
+    {
+        loaded.append(f_plugin_id);
+        return true;
+    }
+    void unloadScriptPlugin(const QString &f_plugin_id) override { unloaded.append(f_plugin_id); }
+
+    QList<akashi::PluginInfo> manifests;
+    QStringList loaded;
+    QStringList unloaded;
+};
+
+static akashi::PluginInfo makeManifest(const QString &f_id, const QStringList &f_dependencies)
+{
+    akashi::PluginInfo l_info;
+    l_info.id = f_id;
+    l_info.runtime = QStringLiteral("stub");
+    l_info.entry_path = f_id + QStringLiteral(".stub");
+    l_info.dependencies = f_dependencies;
+    return l_info;
+}
+
 class tst_PluginManager : public QObject
 {
     Q_OBJECT
@@ -72,7 +104,9 @@ class tst_PluginManager : public QObject
     void emptyDirectorySucceeds();
     void nonexistentDirectorySucceeds();
     void pluginInfoForUnknownReturnsNullopt();
-    void dependentsBlockUnload();
+    void unloadUnknownPluginRefuses();
+    void dependentsBlockUnloadWithoutCascade();
+    void scriptDependencyCyclesNeverLoad();
     void cleanupRemovesRegistrations();
 
     void headerParsesFullManifest();
@@ -138,12 +172,67 @@ void tst_PluginManager::pluginInfoForUnknownReturnsNullopt()
     QVERIFY(!l_mgr.pluginInfo(QStringLiteral("nonexistent")).has_value());
 }
 
-void tst_PluginManager::dependentsBlockUnload()
+void tst_PluginManager::unloadUnknownPluginRefuses()
 {
     QTemporaryDir l_tmp;
     akashi::PluginManager l_mgr(&m_services, l_tmp.path());
     l_mgr.startPlugins();
     QVERIFY(!l_mgr.unloadPlugin(QStringLiteral("nonexistent")));
+}
+
+void tst_PluginManager::dependentsBlockUnloadWithoutCascade()
+{
+    QTemporaryDir l_tmp;
+    akashi::ServiceRegistry l_services;
+    auto l_host = std::make_shared<StubScriptHost>();
+    l_host->manifests = {makeManifest(QStringLiteral("akashi.base"), {}),
+                         makeManifest(QStringLiteral("akashi.child"), {QStringLiteral("akashi.base")})};
+    QVERIFY(l_services.registerService(l_host));
+
+    akashi::PluginManager l_mgr(&l_services, l_tmp.path());
+    QVERIFY(l_mgr.startPlugins());
+    QCOMPARE(l_mgr.pluginInfo(QStringLiteral("akashi.base"))->state, akashi::PluginInfo::State::Started);
+    QCOMPARE(l_mgr.pluginInfo(QStringLiteral("akashi.child"))->state, akashi::PluginInfo::State::Started);
+
+    // The child still depends on the base, so the base refuses to go alone
+    // and nothing is torn down.
+    QVERIFY(!l_mgr.unloadPlugin(QStringLiteral("akashi.base")));
+    QCOMPARE(l_mgr.pluginInfo(QStringLiteral("akashi.base"))->state, akashi::PluginInfo::State::Started);
+    QVERIFY(l_host->unloaded.isEmpty());
+
+    // Cascading takes the child down first, then the base.
+    QVERIFY(l_mgr.unloadPlugin(QStringLiteral("akashi.base"), true));
+    QCOMPARE(l_host->unloaded, QStringList({QStringLiteral("akashi.child"), QStringLiteral("akashi.base")}));
+    QCOMPARE(l_mgr.pluginInfo(QStringLiteral("akashi.base"))->state, akashi::PluginInfo::State::Discovered);
+    QCOMPARE(l_mgr.pluginInfo(QStringLiteral("akashi.child"))->state, akashi::PluginInfo::State::Discovered);
+}
+
+void tst_PluginManager::scriptDependencyCyclesNeverLoad()
+{
+    QTemporaryDir l_tmp;
+    akashi::ServiceRegistry l_services;
+    auto l_host = std::make_shared<StubScriptHost>();
+    l_host->manifests = {makeManifest(QStringLiteral("akashi.self"), {QStringLiteral("akashi.self")}),
+                         makeManifest(QStringLiteral("akashi.egg"), {QStringLiteral("akashi.chicken")}),
+                         makeManifest(QStringLiteral("akashi.chicken"), {QStringLiteral("akashi.egg")})};
+    QVERIFY(l_services.registerService(l_host));
+
+    // A self-dependency or a cycle can never become ready: the load pass
+    // stops when nothing moves, warns about each one, and startPlugins
+    // still finishes instead of spinning.
+    akashi::PluginManager l_mgr(&l_services, l_tmp.path());
+    for (int i = 0; i < 3; i++) {
+        QTest::ignoreMessage(QtWarningMsg, QRegularExpression("not started"));
+    }
+    QVERIFY(l_mgr.startPlugins());
+
+    QVERIFY(l_host->loaded.isEmpty());
+    QCOMPARE(l_mgr.pluginInfo(QStringLiteral("akashi.self"))->state, akashi::PluginInfo::State::Discovered);
+    QCOMPARE(l_mgr.pluginInfo(QStringLiteral("akashi.egg"))->state, akashi::PluginInfo::State::Discovered);
+    QCOMPARE(l_mgr.pluginInfo(QStringLiteral("akashi.chicken"))->state, akashi::PluginInfo::State::Discovered);
+
+    // A cycle member also refuses a direct load while its partner is stuck.
+    QVERIFY(!l_mgr.loadPlugin(QStringLiteral("akashi.egg")));
 }
 
 void tst_PluginManager::cleanupRemovesRegistrations()

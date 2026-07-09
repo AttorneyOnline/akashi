@@ -43,6 +43,11 @@ class AKASHI_CORE_EXPORT EvidenceStore
     // Rewrites the item's owner tag to <owner=all>, revealing it to everyone.
     void revealToAll(int f_index);
 
+    // In hidden mode a description saved without an owner tag gets the
+    // <owner=all> tag written in, so the item stays visible to everyone.
+    // Outside hidden mode (or with a tag present) it passes unchanged.
+    QString taggedDescription(const QString &f_description) const;
+
     // The items as one viewer sees them: everything, unless hidden mode is
     // on and the viewer cannot see hidden items - then only the items owned
     // by their side (or by all).

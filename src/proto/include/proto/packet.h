@@ -23,6 +23,11 @@ class AKASHI_CORE_EXPORT Packet
     QString field(int f_index) const;
     int fieldCount() const;
     void setField(int f_index, const QString &f_value);
+    // Interceptors rewrite packets in flight; appended fields can turn a
+    // packet into a richer variant of itself - codecs decode by count.
+    void setHeader(const QString &f_header);
+    void setFields(const QStringList &f_fields);
+    void appendField(const QString &f_value);
 
     // The escaped protocol form, ending with the packet terminator.
     QString serialize() const;

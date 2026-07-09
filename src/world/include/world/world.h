@@ -1,5 +1,6 @@
 #pragma once
 
+#include "akashi/service.h"
 #include "akashi_core_export.h"
 #include "world/area.h"
 #include "world/floor.h"
@@ -23,13 +24,17 @@ class ServiceRegistry;
 // saved back to it, and reshaped at runtime. Purely structural - clients,
 // packets and area-update broadcasts are the server's business; it listens
 // to areaBuilt() and applies the id mappings the reshaping methods return.
-class AKASHI_CORE_EXPORT World : public QObject
+// Registered as "akashi.world" so plugins can read and tune area state.
+class AKASHI_CORE_EXPORT World : public QObject, public IService
 {
     Q_OBJECT
 
   public:
     World(RuleRegistry *f_rules, ServiceRegistry *f_services, FileSystemService *f_filesystem,
-          QSettings *f_areas_ini, QSettings *f_ambience_ini, QObject *parent = nullptr);
+          QSettings *f_areas_ini, QObject *parent = nullptr);
+
+    QString serviceId() const override;
+    ServiceVersion serviceVersion() const override;
 
     // --- Access ---
 
@@ -105,7 +110,6 @@ class AKASHI_CORE_EXPORT World : public QObject
     ServiceRegistry *m_services;
     FileSystemService *m_filesystem;
     QSettings *m_areas_ini;
-    QSettings *m_ambience_ini;
 
     QVector<Area *> m_areas;
     QStringList m_area_names;

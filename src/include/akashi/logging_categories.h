@@ -12,6 +12,7 @@
 // reserved for code that cannot see this header.
 AKASHI_CORE_EXPORT const QLoggingCategory &akashiServer();
 AKASHI_CORE_EXPORT const QLoggingCategory &akashiNet();
+AKASHI_CORE_EXPORT const QLoggingCategory &akashiDiscord();
 AKASHI_CORE_EXPORT const QLoggingCategory &akashiConfig();
 AKASHI_CORE_EXPORT const QLoggingCategory &akashiCommands();
 AKASHI_CORE_EXPORT const QLoggingCategory &akashiDb();

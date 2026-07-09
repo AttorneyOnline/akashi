@@ -5,6 +5,10 @@
 #include <QObject>
 #include <QtPlugin>
 
+namespace akashi {
+class CommandContext;
+}
+
 class HelloWorldPlugin : public QObject, public akashi::IPlugin
 {
     Q_OBJECT
@@ -17,4 +21,7 @@ class HelloWorldPlugin : public QObject, public akashi::IPlugin
 
     bool load(akashi::ServiceRegistry &services) override;
     void shutdown(akashi::ServiceRegistry &services) override;
+
+    // The command handler this plugin exports to the registry.
+    static void cmdHello(akashi::CommandContext &f_context);
 };

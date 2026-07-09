@@ -1,6 +1,7 @@
 #include "proto/ic.h"
 
 #include "akashi/area_rule.h"
+#include "akashi/permissions.h"
 #include "proto/ao2_protocol.h"
 #include "proto/packet_registry.h"
 #include "proto/text_utils.h"
@@ -131,7 +132,7 @@ class IcHandler : public PacketHandler
         }
 
         // Validation, in the exact order the old validateIcPacket used.
-        if (f_context.isSpectator() || f_context.character().isEmpty() || !f_context.isJoined()) {
+        if (f_context.isSpectator() || f_context.character().isEmpty()) {
             // Spectators cannot use IC.
             return;
         }
@@ -142,7 +143,10 @@ class IcHandler : public PacketHandler
 
         const auto l_rule_block = f_context.checkBeforeRule(AreaEvents::IcMessageSent,
                                                             {{QStringLiteral("message"), l_ic.message_text},
-                                                             {QStringLiteral("char_name"), l_ic.char_name}});
+                                                             {QStringLiteral("char_name"), l_ic.char_name},
+                                                             {QStringLiteral("objection_mod"), l_ic.objection_mod},
+                                                             {QStringLiteral("showname"), l_ic.showname},
+                                                             {QStringLiteral("evidence"), l_ic.evidence}});
         if (l_rule_block) {
             f_context.sendServerMessage(*l_rule_block);
             return;
@@ -157,15 +161,11 @@ class IcHandler : public PacketHandler
             l_ic.desk_mod = "1";
         }
 
-        // A character-name mismatch means an iniswap; the check_iniswap
-        // floor rule gates it above.
-        f_context.setIniswap(l_ic.char_name);
-
-        // Emote; first-person users show none to others.
+        // Emote; first-person users show none to others. The iniswap and
+        // emote commits wait for the commit block below.
         if (f_context.isFirstPerson()) {
             l_ic.emote = "";
         }
-        f_context.setEmote(l_ic.emote);
 
         // Message text.
         if (l_ic.message_text.size() > f_context.maxMessageLength()) {
@@ -174,23 +174,24 @@ class IcHandler : public PacketHandler
         QString l_text = stripZalgo(l_ic.message_text.trimmed());
         const bool l_is_testimony_command = testimonyJumpCommand(Packet::unescape(l_text)).hasMatch() || l_text == ">" || l_text == "<";
         if (!f_context.lastIcMessage().isEmpty() && l_text == f_context.lastIcMessage() && !l_is_testimony_command) {
-            // No doubleposting.
+            // No doubleposting. The memory itself only commits after every
+            // check passed, so a refused message never swallows its own
+            // corrected resend.
             return;
         }
-        f_context.setLastIcMessage(l_text);
 
-        auto l_filtered = f_context.applyTextFilters(l_text);
+        auto l_filtered = f_context.applyTextFilters(l_text, TextChannel::Ic);
         if (!l_filtered)
             return;
         l_ic.message_text = *l_filtered;
 
-        // Side; the area's own side wins when it has one.
+        // Side; the area's own side wins when it has one. The position
+        // commit waits until the whole message validated.
         const QString l_requested_side = l_ic.side;
         const QString l_area_side = f_context.areaSide();
         if (!l_area_side.isEmpty()) {
             l_ic.side = l_area_side;
         }
-        f_context.updatePosition(l_requested_side);
 
         // Emote modifier. A 4 crashes clients, so it has always been bent to 6.
         if (l_ic.emote_mod == 4) {
@@ -205,33 +206,44 @@ class IcHandler : public PacketHandler
             return;
         }
 
-        // Objection modifier; a custom shout carries text metadata.
-        if (f_context.isShoutAllowed()) {
-            if (!l_ic.objection_mod.contains("4")) {
-                const int l_objection = l_ic.objection_mod.toInt();
-                if (l_objection < 0 || l_objection > 4) {
-                    return;
-                }
-                l_ic.objection_mod = QString::number(l_objection);
+        // Objection modifier hygiene; a custom shout carries text metadata.
+        if (!l_ic.objection_mod.contains("4")) {
+            const int l_objection = l_ic.objection_mod.toInt();
+            if (l_objection < 0 || l_objection > 4) {
+                return;
             }
+            l_ic.objection_mod = QString::number(l_objection);
         }
-        else {
-            if (l_ic.objection_mod != "0") {
-                f_context.sendServerMessage("Shouts have been disabled in this area.");
-            }
-            l_ic.objection_mod = "0";
-        }
+
+        // The transform rules rewrite the payload between gate and commit:
+        // strip_shouts downgrades the shout, apply_medieval reworks the
+        // text. bypass_rules does not skip them - transforms are area
+        // flavor, not gates, so a moderator's message is transformed too.
+        const QVariantMap l_transformed = f_context.runTransformRules(AreaEvents::IcMessageSent,
+                                                                      {{QStringLiteral("message"), l_ic.message_text},
+                                                                       {QStringLiteral("char_name"), l_ic.char_name},
+                                                                       {QStringLiteral("objection_mod"), l_ic.objection_mod},
+                                                                       {QStringLiteral("showname"), l_ic.showname},
+                                                                       {QStringLiteral("evidence"), l_ic.evidence}});
+        l_ic.message_text = l_transformed.value(QStringLiteral("message")).toString();
+        l_ic.objection_mod = l_transformed.value(QStringLiteral("objection_mod")).toString();
 
         // Evidence.
         if (l_ic.evidence > f_context.evidenceCount()) {
             return;
+        }
+        // Blocking the event refuses the presentation, not the message.
+        if (l_ic.evidence > 0) {
+            if (const auto l_evidence_block = f_context.checkBeforeRule(AreaEvents::EvidencePresented, {{QStringLiteral("index"), l_ic.evidence}})) {
+                l_ic.evidence = 0;
+                f_context.sendServerMessage(*l_evidence_block);
+            }
         }
 
         // Flipping, realization and text color.
         if (l_ic.flip != 0 && l_ic.flip != 1) {
             return;
         }
-        f_context.setFlipping(QString::number(l_ic.flip));
         if (l_ic.realization != 0 && l_ic.realization != 1) {
             return;
         }
@@ -250,22 +262,53 @@ class IcHandler : public PacketHandler
             }
         }
 
+        // Nothing refuses the message past this point, so only now does it
+        // touch session state: a refused message leaves the doublepost
+        // memory, position, iniswap, emote, flip, showname, pair offset and
+        // pair request exactly as they were.
+        f_context.setLastIcMessage(l_text);
+        // A character-name mismatch means an iniswap; the check_iniswap
+        // floor rule gated it at the top.
+        f_context.setIniswap(l_ic.char_name);
+        f_context.setEmote(l_ic.emote);
+        f_context.setFlipping(QString::number(l_ic.flip));
+        f_context.updatePosition(l_requested_side);
+        if (l_ic.has_pair_data) {
+            f_context.setCharacterName(l_ic.showname);
+            // The full offset; old clients only get a trimmed one on the
+            // wire, in resolvePairFields below.
+            f_context.setOffset(l_ic.self_offset);
+            f_context.setPairingWith(l_ic.pair_requested);
+        }
+
+        // Pair resolution is enrichment, not validation: it reads the
+        // committed state, so a same-packet side change pairs at the new
+        // position, and it cannot refuse the message.
+        if (l_ic.has_pair_data) {
+            resolvePairFields(l_ic, f_context);
+        }
+
         // Serialize, run the testimony recorder over the result, and send it out.
         QStringList l_fields = Ao2IcCodec().encode(l_ic).fields();
         l_fields = f_context.applyTestimony(l_fields);
         f_context.broadcastIc(l_fields, l_ic.evidence);
         f_context.runAfterRule(AreaEvents::IcMessageSent, {{QStringLiteral("message"), l_ic.message_text}});
+        if (l_ic.evidence > 0) {
+            f_context.runAfterRule(AreaEvents::EvidencePresented, {{QStringLiteral("index"), l_ic.evidence}});
+        }
     }
 
   private:
+    // Checks and rewrites the pair block on the message only; the session
+    // commits (showname, pair offset, pair request) stay with the caller
+    // until every validation passed, so a refused message leaves no state
+    // behind. The partner lookup lives in resolvePairFields.
     bool validatePairData(ICMessage &f_ic, IPacketContext &f_context) const
     {
-        // Showname.
+        // Showname. The area's showname policy is the check_showname
+        // before-rule; only length and whitespace hygiene stay here, and
+        // the length check runs before anything else.
         QString l_showname = stripZalgo(f_ic.showname.trimmed());
-        if (!(l_showname == f_context.character() || l_showname.isEmpty()) && !f_context.isShownameAllowed()) {
-            f_context.sendServerMessage("Shownames are not allowed in this area!");
-            return false;
-        }
         if (l_showname.length() > 30) {
             f_context.sendServerMessage("Your showname is too long! Please limit it to under 30 characters");
             return false;
@@ -275,28 +318,6 @@ class IcHandler : public PacketHandler
             l_showname = " ";
         }
         f_ic.showname = l_showname;
-        f_context.setCharacterName(l_showname);
-
-        // Pairing only works when both sides chose each other on the same spot.
-        const PairInfo l_pair = f_context.resolvePair(f_ic.pair_requested);
-        f_ic.other_char_id = l_pair.paired ? f_ic.pair_requested : -1;
-        if (!l_pair.paired) {
-            f_ic.pair_front_back = "";
-        }
-        f_ic.other_name = l_pair.name;
-        f_ic.other_emote = l_pair.emote;
-        f_ic.other_flip = l_pair.flip;
-
-        // Versions 2.6 through 2.8 cannot handle a y offset, so they get x alone.
-        f_context.setOffset(f_ic.self_offset);
-        const ClientVersion l_version = f_context.profile().version;
-        if (l_version.release == 2 && (l_version.major == 6 || l_version.major == 7 || l_version.major == 8)) {
-            f_ic.self_offset = f_ic.self_offset.split("&")[0];
-            f_ic.other_offset = l_pair.offset.split("&")[0];
-        }
-        else {
-            f_ic.other_offset = l_pair.offset;
-        }
 
         // Immediate text, with the area's forced setting applied.
         if (f_context.isImmediateForced()) {
@@ -313,6 +334,30 @@ class IcHandler : public PacketHandler
             return false;
         }
         return true;
+    }
+
+    // Fills the partner's fields into the message after the commit block.
+    // Pairing only works when both sides chose each other on the same spot.
+    void resolvePairFields(ICMessage &f_ic, IPacketContext &f_context) const
+    {
+        const PairInfo l_pair = f_context.resolvePair(f_ic.pair_requested);
+        f_ic.other_char_id = l_pair.paired ? f_ic.pair_requested : -1;
+        if (!l_pair.paired) {
+            f_ic.pair_front_back = "";
+        }
+        f_ic.other_name = l_pair.name;
+        f_ic.other_emote = l_pair.emote;
+        f_ic.other_flip = l_pair.flip;
+
+        // Versions 2.6 through 2.8 cannot handle a y offset, so they get x alone.
+        const ClientVersion l_version = f_context.profile().version;
+        if (l_version.release == 2 && (l_version.major == 6 || l_version.major == 7 || l_version.major == 8)) {
+            f_ic.self_offset = f_ic.self_offset.split("&")[0];
+            f_ic.other_offset = l_pair.offset.split("&")[0];
+        }
+        else {
+            f_ic.other_offset = l_pair.offset;
+        }
     }
 
     bool validateEffectData(ICMessage &f_ic, IPacketContext &f_context) const
@@ -404,7 +449,7 @@ void registerIcPackets(PacketRegistry &f_handlers, PacketCodecRegistry &f_codecs
     const QString l_owner = QStringLiteral("core");
 
     // The codec checks the field shape itself, so the spec only needs one field.
-    f_handlers.registerHandler({ao2::HEADER_MS, 1, {}}, std::make_shared<IcHandler>(), l_owner);
+    f_handlers.registerHandler({ao2::HEADER_MS, 1, permission::user}, std::make_shared<IcHandler>(), l_owner);
 
     f_codecs.registerCodec(ao2::HEADER_MS, always(), 0, std::make_shared<Ao2IcCodec>(), l_owner);
 }

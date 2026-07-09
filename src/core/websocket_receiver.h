@@ -88,6 +88,11 @@ class AKASHI_CORE_EXPORT WebSocketTransport : public ITransport
     void handleMessage(QString f_data);
 
     /**
+     * @brief A pong came back, so the peer is alive.
+     */
+    void onPong();
+
+    /**
      * @brief Classifies how the WebSocket ended and reports it.
      */
     void onSocketDisconnected();

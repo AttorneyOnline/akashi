@@ -159,8 +159,14 @@ class ProtocolTest : public QObject
 
     void handshakeSequence();
     void joinBurst();
+    void preJoinPacketsAreDropped();
     void configRuleBlocksIc();
+    void pairRequestsClearOnCharacterAndAreaChanges();
+    void testimonyPlaybackJumpRefreshesTheEvidenceList();
+    void forcedPositionSanitizesAndRefreshesTheTarget();
     void ruleCommandsGovernIc();
+    void ruleMutationRefusals();
+    void timedSanctionLiftsItself();
     void dynamicFloorsAndAreas();
     void defaultFloorGatesEnforceAreaPolicy();
     void savedWorldSurvivesAReload();
@@ -177,6 +183,10 @@ class ProtocolTest : public QObject
     void joinServer(TestClient &client, int expectedPlayers = 0);
     // Takes a character and logs in with the fixture modpass.
     void loginAsModerator(TestClient &client);
+    // Sends a pair-carrying IC message on def and answers with the pair
+    // field of the sender's own MS echo: the partner's char id when the
+    // mutual match held, -1 when nobody pointed back.
+    QString pairEcho(TestClient &client, const QString &charName, int charId, int pairWith, const QString &text);
 
     QTemporaryDir *m_workdir = nullptr;
     QProcess *m_server = nullptr;
@@ -287,7 +297,7 @@ void ProtocolTest::joinBurst()
     // Join packets in send order: the player_joined after-rules deliver the
     // area state first, then the handler closes the loading screen.
     QCOMPARE(client.takeNext(), QStringLiteral("CharsCheck#0#0#0#%"));
-    QCOMPARE(client.takeNext(), QStringLiteral("LE##%"));
+    QCOMPARE(client.takeNext(), QStringLiteral("LE#%"));
     QCOMPARE(client.takeNext(), QStringLiteral("HP#1#10#%"));
     QCOMPARE(client.takeNext(), QStringLiteral("HP#2#10#%"));
     QCOMPARE(client.takeNext(), QStringLiteral("BN#gs4##%"));
@@ -314,7 +324,7 @@ void ProtocolTest::joinBurst()
 
     // The stopped global timer, then the end of the loading screen.
     QCOMPARE(client.takeNext(), QStringLiteral("TI#0#3#%"));
-    QCOMPARE(client.takeNext(), QStringLiteral("DONE##%"));
+    QCOMPARE(client.takeNext(), QStringLiteral("DONE#%"));
 
     const QString motd = client.takeNext();
     QVERIFY2(motd.startsWith(QStringLiteral("CT#")) && motd.contains(QStringLiteral("MOTD")),
@@ -337,6 +347,28 @@ void ProtocolTest::joinBurst()
     }
     // The updated player count must arrive after addClient.
     QVERIFY(sawJoinArup);
+}
+
+void ProtocolTest::preJoinPacketsAreDropped()
+{
+    TestClient client;
+    performHandshake(client);
+
+    // Past HI/ID but never RD: the user tier is not held yet, so the play
+    // surface answers with nothing at all - no OOC echo, no error, and no
+    // modcall reaching anyone.
+    client.send(QStringLiteral("CT#Tester#hello before joining#%"));
+    client.send(QStringLiteral("ZZ#pre-join modcall#-1#%"));
+    QVERIFY(client.waitForIdle());
+    QCOMPARE(client.pendingCount(), 0);
+
+    // The drops leave the session intact: RD still joins cleanly.
+    client.send(QStringLiteral("RD#%"));
+    QVERIFY(client.waitForIdle());
+    bool sawDone = false;
+    while (client.pendingCount() > 0)
+        sawDone |= client.takeNext() == QStringLiteral("DONE#%");
+    QVERIFY(sawDone);
 }
 
 void ProtocolTest::configRuleBlocksIc()
@@ -397,6 +429,186 @@ void ProtocolTest::loginAsModerator(TestClient &client)
     QVERIFY(loggedIn);
 }
 
+QString ProtocolTest::pairEcho(TestClient &client, const QString &charName, int charId, int pairWith, const QString &text)
+{
+    // 19 fields: the classic base set plus showname, pair request, offset
+    // and immediate. Field 16 of the echo carries the resolved partner.
+    client.send(QStringLiteral("MS#chat#-#%1#normal#%2#def#1#0#%3#0#0#0#0#0#0##%4#0#0#%")
+                    .arg(charName, text, QString::number(charId), QString::number(pairWith)));
+    client.waitForIdle();
+    QString echo;
+    while (client.pendingCount() > 0) {
+        const QString packet = client.takeNext();
+        if (packet.startsWith(QStringLiteral("MS#")))
+            echo = packet;
+    }
+    // Splitting keeps empty fields, so the indexes stay aligned.
+    return echo.split(QLatin1Char('#')).value(17);
+}
+
+void ProtocolTest::pairRequestsClearOnCharacterAndAreaChanges()
+{
+    TestClient partner;
+    joinServer(partner);
+    TestClient mover;
+    joinServer(mover, 1);
+
+    const auto drain = [](TestClient &client) {
+        client.waitForIdle();
+        while (client.pendingCount() > 0)
+            client.takeNext();
+    };
+
+    // The partner plays Phoenix (1) and stays put; the mover plays
+    // Edgeworth (2) and does the moving.
+    partner.send(QStringLiteral("CC#0#1#TESTHWID#%"));
+    mover.send(QStringLiteral("CC#0#2#TESTHWID#%"));
+    drain(partner);
+    drain(mover);
+
+    // The mover asks for the pair first; nobody points back yet.
+    QCOMPARE(pairEcho(mover, QStringLiteral("Edgeworth"), 2, 1, QStringLiteral("care to join me")), QStringLiteral("-1"));
+    drain(partner);
+
+    // The partner points back: both requests stand on def, so they pair.
+    QCOMPARE(pairEcho(partner, QStringLiteral("Phoenix"), 1, 2, QStringLiteral("gladly")), QStringLiteral("2"));
+    drain(mover);
+
+    // The mover steps out and back in. The walk clears its pair request,
+    // so the stale request no longer matches silently on the return.
+    mover.send(QStringLiteral("MC#Courtroom 1#2#%"));
+    drain(mover);
+    drain(partner);
+    mover.send(QStringLiteral("MC#Basement#2#%"));
+    drain(mover);
+    drain(partner);
+    QCOMPARE(pairEcho(partner, QStringLiteral("Phoenix"), 1, 2, QStringLiteral("still with me")), QStringLiteral("-1"));
+    drain(mover);
+
+    // A fresh request after the return resumes the mutual match.
+    QCOMPARE(pairEcho(mover, QStringLiteral("Edgeworth"), 2, 1, QStringLiteral("asking again")), QStringLiteral("1"));
+    drain(partner);
+
+    // Changing character clears the request too. The mover re-commits its
+    // position with a plain message, which never touches a pair request,
+    // and the partner still finds nobody pointing back.
+    mover.send(QStringLiteral("CC#0#0#TESTHWID#%"));
+    drain(mover);
+    drain(partner);
+    mover.send(QStringLiteral("MS#chat#-#Franziska#normal#back on the stand#def#1#0#0#0#0#0#0#0#0#%"));
+    drain(mover);
+    drain(partner);
+    QCOMPARE(pairEcho(partner, QStringLiteral("Phoenix"), 1, 0, QStringLiteral("who are you")), QStringLiteral("-1"));
+}
+
+void ProtocolTest::testimonyPlaybackJumpRefreshesTheEvidenceList()
+{
+    TestClient client;
+    joinServer(client);
+
+    QStringList received;
+    const auto drainInto = [&client, &received]() {
+        received.clear();
+        client.waitForIdle();
+        while (client.pendingCount() > 0)
+            received.append(client.takeNext());
+    };
+    const auto command = [&client, &drainInto](const QString &text) {
+        client.send(QStringLiteral("CT#Tester#%1#%").arg(text));
+        drainInto();
+    };
+    const auto sendIc = [&client, &drainInto](const QString &side, const QString &text) {
+        client.send(QStringLiteral("MS#chat#-#Phoenix#normal#%1#%2#1#0#1#0#0#0#0#0#0#%").arg(text, side));
+        drainInto();
+    };
+
+    loginAsModerator(client);
+
+    // Record a title on def and one statement given from wit; speaking
+    // from wit moves the recorder there, like any position change.
+    command(QStringLiteral("/testify"));
+    QVERIFY(!received.filter(QStringLiteral("Started testimony recording")).isEmpty());
+    sendIc(QStringLiteral("def"), QStringLiteral("The Turnabout"));
+    sendIc(QStringLiteral("wit"), QStringLiteral("The witness saw it all"));
+    command(QStringLiteral("/pause"));
+
+    // Step back to def before the examination; this ordinary position
+    // change sends its own evidence refresh, drained here.
+    sendIc(QStringLiteral("def"), QStringLiteral("back at the bench"));
+    command(QStringLiteral("/examine"));
+
+    // The > jump replays the statement recorded on wit: the jumper follows
+    // it there, so the side-dependent evidence list refreshes before the
+    // replayed message arrives - exactly like any other position change.
+    client.send(QStringLiteral("MS#chat#-#Phoenix#normal#>#def#1#0#1#0#0#0#0#0#0#%"));
+    drainInto();
+    int evidenceAt = -1;
+    int replayAt = -1;
+    for (int i = 0; i < received.size(); i++) {
+        if (evidenceAt == -1 && received.at(i).startsWith(QStringLiteral("LE#")))
+            evidenceAt = i;
+        if (received.at(i).startsWith(QStringLiteral("MS#")) && received.at(i).contains(QStringLiteral("The witness saw it all")))
+            replayAt = i;
+    }
+    QVERIFY2(evidenceAt != -1, "the playback jump onto wit sent no evidence refresh");
+    QVERIFY2(replayAt != -1, "the playback jump never replayed the statement");
+    QVERIFY2(evidenceAt < replayAt, "the evidence refresh must precede the replayed statement");
+}
+
+void ProtocolTest::forcedPositionSanitizesAndRefreshesTheTarget()
+{
+    TestClient moderator;
+    joinServer(moderator);
+    TestClient target;
+    joinServer(target, 1);
+
+    const auto drain = [](TestClient &client) {
+        client.waitForIdle();
+        while (client.pendingCount() > 0)
+            client.takeNext();
+    };
+
+    loginAsModerator(moderator);
+    drain(target);
+
+    // The moderator force-moves the second client with a traversal-prefixed
+    // side. The commit site strips it, so the target lands on wit, is told
+    // the stored position, and gets the evidence list for its new side.
+    moderator.send(QStringLiteral("CT#Tester#/forcepos ../wit 1#%"));
+    drain(moderator);
+    target.waitForIdle();
+
+    bool sawNotice = false;
+    bool sawEvidence = false;
+    bool sawSanitizedSp = false;
+    while (target.pendingCount() > 0) {
+        const QString packet = target.takeNext();
+        sawNotice |= packet.contains(QStringLiteral("Position forcibly changed by CM."));
+        sawEvidence |= packet.startsWith(QStringLiteral("LE#"));
+        sawSanitizedSp |= packet == QStringLiteral("SP#wit#%");
+    }
+    QVERIFY2(sawNotice, "the force-moved target never heard about the move");
+    QVERIFY2(sawEvidence, "the force-moved target got no evidence refresh for its new side");
+    QVERIFY2(sawSanitizedSp, "the target's SP must carry the sanitized position");
+
+    // Forcing the same side again with a traversal prefix commits nothing:
+    // the sanitizer runs before the comparison, so the target gets the
+    // notice and SP but no redundant evidence refresh.
+    moderator.send(QStringLiteral("CT#Tester#/forcepos ../wit 1#%"));
+    drain(moderator);
+    target.waitForIdle();
+
+    bool sawRepeatSp = false;
+    bool sawRepeatEvidence = false;
+    while (target.pendingCount() > 0) {
+        const QString packet = target.takeNext();
+        sawRepeatSp |= packet == QStringLiteral("SP#wit#%");
+        sawRepeatEvidence |= packet.startsWith(QStringLiteral("LE#"));
+    }
+    QVERIFY2(sawRepeatSp, "the unconditional SP must still arrive on a same-side force");
+    QVERIFY2(!sawRepeatEvidence, "a same-side force must not fire a redundant evidence refresh");
+}
+
 void ProtocolTest::ruleCommandsGovernIc()
 {
     TestClient client;
@@ -419,10 +631,28 @@ void ProtocolTest::ruleCommandsGovernIc()
     };
 
     loginAsModerator(client);
+    const auto logout = [&client, &drain]() {
+        client.send(QStringLiteral("CT#Tester#/logout#%"));
+        drain();
+    };
+    const auto login = [&client, &drain]() {
+        client.send(QStringLiteral("CT#Tester#/login#%"));
+        drain();
+        client.send(QStringLiteral("CT#Tester#changeme#%"));
+        drain();
+    };
 
     // An area rule added at runtime blocks IC on the spot.
     client.send(QStringLiteral("CT#Tester#/addrule ic_message_sent block message=The judge calls for order.#%"));
     drain();
+
+    // A logged-in moderator holds bypass_rules; no rule may gate them.
+    sendIc(QStringLiteral("order in the court"));
+    QVERIFY(client.waitForIdle());
+    QVERIFY(icEchoed());
+
+    // An ordinary player is gated.
+    logout();
     sendIc(QStringLiteral("held in contempt"));
     QVERIFY(client.waitForIdle());
     bool sawIc = false;
@@ -446,21 +676,99 @@ void ProtocolTest::ruleCommandsGovernIc()
     QVERIFY(listed);
 
     // Removing it frees the court again.
+    login();
     client.send(QStringLiteral("CT#Tester#/removerule ic_message_sent block#%"));
     drain();
+    logout();
     sendIc(QStringLiteral("objection sustained"));
     QVERIFY(client.waitForIdle());
     QVERIFY(icEchoed());
 
     // The same round trip works floor-wide.
+    login();
     client.send(QStringLiteral("CT#Tester#/floorrule add ic_message_sent block message=The floor is sealed.#%"));
     drain();
+    logout();
     sendIc(QStringLiteral("sealed away"));
     QVERIFY(client.waitForIdle());
     QVERIFY(!icEchoed());
+    login();
     client.send(QStringLiteral("CT#Tester#/floorrule remove ic_message_sent block#%"));
     drain();
+    logout();
     sendIc(QStringLiteral("free again"));
+    QVERIFY(client.waitForIdle());
+    QVERIFY(icEchoed());
+}
+
+void ProtocolTest::ruleMutationRefusals()
+{
+    TestClient client;
+    joinServer(client);
+
+    QStringList received;
+    const auto command = [&client, &received](const QString &text) {
+        client.send(QStringLiteral("CT#Tester#%1#%").arg(text));
+        received.clear();
+        client.waitForIdle();
+        while (client.pendingCount() > 0)
+            received.append(client.takeNext());
+    };
+
+    // Reading the rules is open to every joined player...
+    command(QStringLiteral("/rules"));
+    QVERIFY(!received.filter(QStringLiteral("=== Rules in Basement ===")).isEmpty());
+
+    // ... but attaching one needs modify_rules, and the refusal changed nothing.
+    command(QStringLiteral("/addrule ic_message_sent block"));
+    QVERIFY(!received.filter(QStringLiteral("You do not have permission to use that command.")).isEmpty());
+    command(QStringLiteral("/rules"));
+    QVERIFY(received.filter(QStringLiteral("ic_message_sent [before] block (area, command)")).isEmpty());
+
+    // A moderator holds the permission, but the catalog still validates:
+    // a placeless event dispatches no rule phases, and the action name
+    // must exist.
+    loginAsModerator(client);
+    command(QStringLiteral("/addrule ban_issued block"));
+    QVERIFY(!received.filter(QStringLiteral("block is a before action, but ban_issued does not dispatch before rules.")).isEmpty());
+    command(QStringLiteral("/addrule ic_message_sent explode"));
+    QVERIFY(!received.filter(QStringLiteral("There is no rule action named explode. See /ruleactions.")).isEmpty());
+}
+
+void ProtocolTest::timedSanctionLiftsItself()
+{
+    TestClient client;
+    joinServer(client);
+
+    const auto drain = [&client]() {
+        client.waitForIdle();
+        while (client.pendingCount() > 0)
+            client.takeNext();
+    };
+    const auto sendIc = [&client](const QString &text) {
+        client.send(QStringLiteral("MS#chat#-#Phoenix#normal#%1#def#1#0#1#0#0#0#0#0#0#%").arg(text));
+    };
+    const auto icEchoed = [&client]() {
+        bool sawIc = false;
+        while (client.pendingCount() > 0)
+            sawIc |= client.takeNext().startsWith(QStringLiteral("MS#"));
+        return sawIc;
+    };
+
+    loginAsModerator(client);
+
+    // A two-second mute goes through the whole machinery: command parse,
+    // sanction flag, database row, scheduled lift.
+    client.send(QStringLiteral("CT#Tester#/mute 0 2s#%"));
+    drain();
+    sendIc(QStringLiteral("silenced"));
+    QVERIFY(client.waitForIdle());
+    QVERIFY(!icEchoed());
+
+    // The scheduler lifts the sanction on its own.
+    QTest::qWait(2600);
+    drain();
+    sendIc(QStringLiteral("speech returns"));
     QVERIFY(client.waitForIdle());
     QVERIFY(icEchoed());
 }
@@ -593,9 +901,12 @@ void ProtocolTest::defaultFloorGatesEnforceAreaPolicy()
     drainInto();
     QVERIFY(!received.filter(QRegularExpression(QStringLiteral("^MS#"))).isEmpty());
 
-    // Turning blankposting off arms the check_blankposting floor rule.
+    // Turning blankposting off arms the check_blankposting floor rule. The
+    // moderator itself holds bypass_rules, so it logs out to be gated.
     loginAsModerator(client);
     client.send(QStringLiteral("CT#Tester#/allow_blankposting#%"));
+    drainInto();
+    client.send(QStringLiteral("CT#Tester#/logout#%"));
     drainInto();
     client.send(QStringLiteral("MS#chat#-#Phoenix#normal##def#1#0#1#0#0#0#0#0#0#%"));
     drainInto();
@@ -640,9 +951,11 @@ void ProtocolTest::savedWorldSurvivesAReload()
     QVERIFY(!received.filter(QStringLiteral("Tower: Unnamed Area")).isEmpty());
     QVERIFY(!received.filter(QStringLiteral("Lounge")).isEmpty());
 
-    // The saved floor rule came back as a config rule and still bites.
+    // The saved floor rule came back as a config rule and still bites - for
+    // an ordinary player, so the moderator logs out first.
     command(QStringLiteral("/rules"));
     QVERIFY(!received.filter(QStringLiteral("ic_message_sent [before] block (floor, config)")).isEmpty());
+    command(QStringLiteral("/logout"));
     client.send(QStringLiteral("MS#chat#-#Phoenix#normal#silence#def#1#0#1#0#0#0#0#0#0#%"));
     drainInto();
     QVERIFY(received.filter(QRegularExpression(QStringLiteral("^MS#"))).isEmpty());
@@ -682,9 +995,11 @@ void ProtocolTest::floorFileRoundTrip()
     command(QStringLiteral("/floors"));
     QVERIFY(!received.filter(QStringLiteral("Tower: Belfry")).isEmpty());
 
-    // The client landed back on the restored floor; the file's rule bites.
+    // The client landed back on the restored floor; the file's rule bites -
+    // for an ordinary player, so the moderator logs out first.
     command(QStringLiteral("/rules"));
     QVERIFY(!received.filter(QStringLiteral("ic_message_sent [before] block (floor, config)")).isEmpty());
+    command(QStringLiteral("/logout"));
     client.send(QStringLiteral("MS#chat#-#Phoenix#normal#quiet#def#1#0#1#0#0#0#0#0#0#%"));
     received.clear();
     client.waitForIdle();

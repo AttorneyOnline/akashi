@@ -18,17 +18,14 @@ class tst_AreaMusic : public QObject
   private Q_SLOTS:
     void initTestCase();
 
-    void musicChangePlaysTheSong();
-    void categorySelectionStopsTheMusic();
-    void aliasedSongResolvesBeforeTheBroadcast();
+    void musicChangeCallsTheVerb();
     void musicChangeRespectsTheBlocks();
-    void jukeboxInterceptsTheSong();
     void unknownArgumentMovesToTheNamedArea();
-    void judgeSplashReachesTheRoom();
+    void judgeSplashCallsTheVerb();
     void judgeSplashRespectsBlocksAndCooldown();
     void evidenceIsAddedWithAccess();
-    void hiddenCmAreaTagsNewEvidence();
-    void penaltyUpdatesAndEchoesBothBars();
+    void evidenceDescriptionPassesThrough();
+    void penaltyCallsTheVerb();
     void penaltyRespectsJudgeBlocks();
 
   private:
@@ -58,50 +55,33 @@ void tst_AreaMusic::run(const Packet &f_packet, FakeContext &f_context)
     m_handlers.handler(f_packet.header())->handle(*l_message, f_context);
 }
 
-void tst_AreaMusic::musicChangePlaysTheSong()
+void tst_AreaMusic::musicChangeCallsTheVerb()
 {
+    // The verb receives the raw list argument, the client's claimed
+    // character id, and a defaulted effects field.
     FakeContext l_context;
-    l_context.current_character_name = "Nick";
     run(Packet("MC", {"song1.opus", "2"}), l_context);
+    QCOMPARE(l_context.calls, QStringList({"playMusic:song1.opus|list|2|0"}));
 
-    QCOMPARE(l_context.area_broadcasts.size(), 1);
-    const QStringList l_expected = {"song1.opus", "2", "Nick", "1", "0", "0"};
-    QCOMPARE(l_context.area_broadcasts.first().fields(), l_expected);
-    QCOMPARE(l_context.recorded_music, QString("song1.opus"));
     // The effects field passes through when the client sends one.
     FakeContext l_effects;
     run(Packet("MC", {"song1.opus", "2", "", "5"}), l_effects);
-    QCOMPARE(l_effects.area_broadcasts.first().field(5), QString("5"));
-}
+    QCOMPARE(l_effects.calls, QStringList({"playMusic:song1.opus|list|2|5"}));
 
-void tst_AreaMusic::categorySelectionStopsTheMusic()
-{
-    FakeContext l_context;
-    l_context.music_name_list << "== Music ==";
-    run(Packet("MC", {"== Music ==", "0"}), l_context);
-
-    QCOMPARE(l_context.area_broadcasts.first().field(0), QString("~stop.mp3"));
-    // The dummy track is not a real song, so no alias lookup happens.
-    QVERIFY(!l_context.calls.contains("resolveSongAlias"));
-}
-
-void tst_AreaMusic::aliasedSongResolvesBeforeTheBroadcast()
-{
-    FakeContext l_context;
-    l_context.music_name_list << "Objection.opus";
-    l_context.song_aliases.insert("Objection.opus", "Ace Attorney/Objection.opus");
-    run(Packet("MC", {"Objection.opus", "0"}), l_context);
-
-    QCOMPARE(l_context.area_broadcasts.first().field(0), QString("Ace Attorney/Objection.opus"));
-    QCOMPARE(l_context.recorded_music, QString("Ace Attorney/Objection.opus"));
+    // A category pick reaches the verb unnormalized; stopping the music
+    // is the verb's job now.
+    FakeContext l_category;
+    l_category.music_name_list << "== Music ==";
+    run(Packet("MC", {"== Music ==", "0"}), l_category);
+    QCOMPARE(l_category.calls, QStringList({"playMusic:== Music ==|list|0|0"}));
 }
 
 void tst_AreaMusic::musicChangeRespectsTheBlocks()
 {
+    // The session and person gates refuse before the verb runs.
     FakeContext l_spectator;
     l_spectator.spectator = true;
     run(Packet("MC", {"song1.opus", "0"}), l_spectator);
-    QVERIFY(l_spectator.area_broadcasts.isEmpty());
     QCOMPARE(l_spectator.calls, QStringList({"message:Spectators are blocked from changing the music."}));
 
     FakeContext l_locked;
@@ -114,23 +94,12 @@ void tst_AreaMusic::musicChangeRespectsTheBlocks()
     run(Packet("MC", {"song1.opus", "0"}), l_dj);
     QCOMPARE(l_dj.calls, QStringList({"message:You are blocked from changing the music."}));
 
-    // The music-allowed area setting is a floor rule now; a rule block
-    // stops the change with its reason.
+    // The music rules live in the verb; its refusal comes back to the
+    // sender as a server message.
     FakeContext l_disabled;
-    l_disabled.before_rule_block = "Music is disabled in this area.";
+    l_disabled.music_refusal = "Music is disabled in this area.";
     run(Packet("MC", {"song1.opus", "0"}), l_disabled);
-    QCOMPARE(l_disabled.calls, QStringList({"checkBeforeRule:music_changed", "message:Music is disabled in this area."}));
-}
-
-void tst_AreaMusic::jukeboxInterceptsTheSong()
-{
-    FakeContext l_context;
-    l_context.jukebox_enabled = true;
-    run(Packet("MC", {"song1.opus", "0"}), l_context);
-
-    QCOMPARE(l_context.queued_jukebox_song, QString("song1.opus"));
-    QVERIFY(l_context.calls.contains("message:Song added to the jukebox."));
-    QVERIFY(l_context.area_broadcasts.isEmpty());
+    QCOMPARE(l_disabled.calls, QStringList({"playMusic:song1.opus|list|0|0", "message:Music is disabled in this area."}));
 }
 
 void tst_AreaMusic::unknownArgumentMovesToTheNamedArea()
@@ -140,23 +109,26 @@ void tst_AreaMusic::unknownArgumentMovesToTheNamedArea()
     QCOMPARE(l_context.changed_area, 1);
     QVERIFY(l_context.area_broadcasts.isEmpty());
 
-    // No area of that name either; nothing happens.
+    // No area of that name either; nothing happens - no move, no verb,
+    // no message back.
     FakeContext l_nowhere;
     run(Packet("MC", {"The Moon", "0"}), l_nowhere);
     QVERIFY(l_nowhere.calls.isEmpty());
+    QCOMPARE(l_nowhere.changed_area, -100);
 }
 
-void tst_AreaMusic::judgeSplashReachesTheRoom()
+void tst_AreaMusic::judgeSplashCallsTheVerb()
 {
+    // The cooldown gates in the handler; the verb owns the rules, the
+    // broadcast and the judge log.
     FakeContext l_context;
     run(Packet("RT", {"testimony1"}), l_context);
-    QCOMPARE(l_context.area_broadcasts.first().fields(), QStringList({"testimony1"}));
-    QCOMPARE(l_context.judge_actions, QStringList({"WT/CE"}));
+    QCOMPARE(l_context.calls, QStringList({"startWtceCooldown", "useWtce:testimony1"}));
 
     // A ruling keeps which verdict was picked.
     FakeContext l_ruling;
     run(Packet("RT", {"judgeruling", "1"}), l_ruling);
-    QCOMPARE(l_ruling.area_broadcasts.first().fields(), QStringList({"judgeruling", "1"}));
+    QCOMPARE(l_ruling.calls, QStringList({"startWtceCooldown", "useWtce:judgeruling|1"}));
 }
 
 void tst_AreaMusic::judgeSplashRespectsBlocksAndCooldown()
@@ -171,16 +143,18 @@ void tst_AreaMusic::judgeSplashRespectsBlocksAndCooldown()
     run(Packet("RT", {"testimony1"}), l_blocked);
     QCOMPARE(l_blocked.calls, QStringList({"message:You are blocked from using the judge controls."}));
 
-    FakeContext l_disabled;
-    l_disabled.wtce_allowed = false;
-    run(Packet("RT", {"testimony1"}), l_disabled);
-    QCOMPARE(l_disabled.calls, QStringList({"message:WTCE animations have been disabled in this area."}));
-
-    // Still cooling down; dropped without a message.
+    // Still cooling down; dropped without a message, before the verb runs.
     FakeContext l_cooling;
     l_cooling.wtce_ready = false;
     run(Packet("RT", {"testimony1"}), l_cooling);
-    QVERIFY(l_cooling.calls.isEmpty());
+    QCOMPARE(l_cooling.calls, QStringList({"startWtceCooldown"}));
+
+    // The wtce rules live in the verb; its refusal comes back to the
+    // sender as a server message.
+    FakeContext l_disabled;
+    l_disabled.wtce_refusal = "WTCE animations have been disabled in this area.";
+    run(Packet("RT", {"testimony1"}), l_disabled);
+    QCOMPARE(l_disabled.calls, QStringList({"startWtceCooldown", "useWtce:testimony1", "message:WTCE animations have been disabled in this area."}));
 }
 
 void tst_AreaMusic::evidenceIsAddedWithAccess()
@@ -197,36 +171,27 @@ void tst_AreaMusic::evidenceIsAddedWithAccess()
     QCOMPARE(l_denied.calls, QStringList({"checkBeforeRule:evidence_added", "message:You are not allowed to modify the evidence here."}));
 }
 
-void tst_AreaMusic::hiddenCmAreaTagsNewEvidence()
+void tst_AreaMusic::evidenceDescriptionPassesThrough()
 {
+    // The hidden-CM owner tagging lives in the session's evidence path
+    // (EvidenceStore::taggedDescription, covered by tst_area); the handler
+    // forwards the description verbatim.
     FakeContext l_context;
-    l_context.evidence_hidden_cm = true;
-    run(Packet("PE", {"Knife", "A bloody knife.", "knife.png"}), l_context);
-    QCOMPARE(l_context.added_evidence.at(1), QString("<owner=all>\nA bloody knife."));
-
-    // An explicit owner tag is kept as sent.
-    FakeContext l_tagged;
-    l_tagged.evidence_hidden_cm = true;
-    run(Packet("PE", {"Knife", "<owner=def>\nA bloody knife.", "knife.png"}), l_tagged);
-    QCOMPARE(l_tagged.added_evidence.at(1), QString("<owner=def>\nA bloody knife."));
+    run(Packet("PE", {"Knife", "<owner=def>\nA bloody knife.", "knife.png"}), l_context);
+    QCOMPARE(l_context.added_evidence.at(1), QString("<owner=def>\nA bloody knife."));
 }
 
-void tst_AreaMusic::penaltyUpdatesAndEchoesBothBars()
+void tst_AreaMusic::penaltyCallsTheVerb()
 {
     FakeContext l_context;
     run(Packet("HP", {"1", "5"}), l_context);
+    QCOMPARE(l_context.calls, QStringList({"changePenalty:1|5"}));
 
-    QCOMPARE(l_context.penalties.value(1), 5);
-    QCOMPARE(l_context.area_broadcasts.size(), 2);
-    QCOMPARE(l_context.area_broadcasts.at(0).fields(), QStringList({"1", "5"}));
-    QCOMPARE(l_context.area_broadcasts.at(1).fields(), QStringList({"2", "10"}));
-    QCOMPARE(l_context.judge_actions, QStringList({"updated the penalties"}));
-
-    // An unknown bar changes nothing but still echoes both bars.
+    // An unknown bar still reaches the verb; ignoring it while echoing
+    // both bars is the verb's job now.
     FakeContext l_unknown;
     run(Packet("HP", {"3", "5"}), l_unknown);
-    QVERIFY(!l_unknown.calls.contains("setPenalty"));
-    QCOMPARE(l_unknown.area_broadcasts.size(), 2);
+    QCOMPARE(l_unknown.calls, QStringList({"changePenalty:3|5"}));
 }
 
 void tst_AreaMusic::penaltyRespectsJudgeBlocks()
@@ -240,7 +205,12 @@ void tst_AreaMusic::penaltyRespectsJudgeBlocks()
     l_blocked.wtce_blocked = true;
     run(Packet("HP", {"1", "5"}), l_blocked);
     QCOMPARE(l_blocked.calls, QStringList({"message:You are blocked from using the judge controls."}));
-    QCOMPARE(l_blocked.penalties.value(1), 10);
+
+    // A rule refusal from the verb comes back as a server message.
+    FakeContext l_refused;
+    l_refused.penalty_refusal = "No penalties here.";
+    run(Packet("HP", {"1", "5"}), l_refused);
+    QCOMPARE(l_refused.calls, QStringList({"changePenalty:1|5", "message:No penalties here."}));
 }
 
 }

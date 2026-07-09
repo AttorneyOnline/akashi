@@ -17,14 +17,23 @@
 namespace akashi {
 
 World::World(RuleRegistry *f_rules, ServiceRegistry *f_services, FileSystemService *f_filesystem,
-             QSettings *f_areas_ini, QSettings *f_ambience_ini, QObject *parent) :
+             QSettings *f_areas_ini, QObject *parent) :
     QObject(parent),
     m_rules(f_rules),
     m_services(f_services),
     m_filesystem(f_filesystem),
-    m_areas_ini(f_areas_ini),
-    m_ambience_ini(f_ambience_ini)
+    m_areas_ini(f_areas_ini)
 {
+}
+
+QString World::serviceId() const
+{
+    return QStringLiteral("akashi.world");
+}
+
+ServiceVersion World::serviceVersion() const
+{
+    return {1, 0, 0};
 }
 
 // --- Access ---
@@ -99,7 +108,7 @@ Area *World::buildArea(int f_area_id, const QString &f_name, int f_floor_id, QSe
     // Floor files number their sections locally, so their group name is
     // not the area's global id.
     const QString l_group = f_settings_group.isEmpty() ? QString::number(f_area_id) + ":" + f_name : f_settings_group;
-    Area *l_area = new Area(l_group, f_area_id, f_floor_id, l_x_on_floor, f_settings ? f_settings : m_areas_ini, m_ambience_ini, this);
+    Area *l_area = new Area(l_group, f_area_id, f_floor_id, l_x_on_floor, f_settings ? f_settings : m_areas_ini, this);
     m_areas.insert(f_area_id, l_area);
     l_area->jukebox()->setFloorCatalog(&m_default_floor);
 
@@ -120,15 +129,34 @@ void World::applyDefaultFloorRules(Floor &f_floor)
         {AreaEvents::PlayerJoined, QStringLiteral("check_lock"), {}},
         {AreaEvents::IcMessageSent, QStringLiteral("check_blankposting"), {}},
         {AreaEvents::IcMessageSent, QStringLiteral("check_iniswap"), {}},
-        {AreaEvents::MusicChanged, QStringLiteral("check_setting"), {{QStringLiteral("setting"), QStringLiteral("music")}, {QStringLiteral("bypass"), permission::gamemaster}, {QStringLiteral("message"), QStringLiteral("Music is disabled in this area.")}}},
+        {AreaEvents::IcMessageSent, QStringLiteral("check_showname"), {}},
+        {AreaEvents::MusicChanged, QStringLiteral("check_setting"), {{QStringLiteral("setting"), QStringLiteral("music_allowed")}, {QStringLiteral("bypass"), permission::gamemaster}, {QStringLiteral("message"), QStringLiteral("Music is disabled in this area.")}}},
+        {AreaEvents::MusicChanged, QStringLiteral("check_free_play"), {{QStringLiteral("bypass"), permission::gamemaster}, {QStringLiteral("message"), QStringLiteral("Free music play is disabled in this area.")}}},
+        {AreaEvents::AmbienceChanged, QStringLiteral("check_free_play"), {{QStringLiteral("bypass"), permission::gamemaster}, {QStringLiteral("message"), QStringLiteral("Free ambience play is disabled in this area.")}}},
         {AreaEvents::EvidenceAdded, QStringLiteral("check_evidence_access"), {}},
         {AreaEvents::EvidenceRemoved, QStringLiteral("check_evidence_access"), {}},
         {AreaEvents::EvidenceEdited, QStringLiteral("check_evidence_access"), {}},
         {AreaEvents::BackgroundChanged, QStringLiteral("check_background"), {}},
+        // No message: the mechanism's refusal to hand out a taken character
+        // was always silent, so the mirroring default rule stays silent too.
+        {AreaEvents::CharacterChanged, QStringLiteral("check_character"), {{QStringLiteral("policy"), QStringLiteral("unique_per_area")}}},
+        {AreaEvents::WtceUsed, QStringLiteral("check_wtce"), {{QStringLiteral("message"), QStringLiteral("WTCE animations have been disabled in this area.")}}},
     };
     for (const GateDefault &l_gate : l_gate_defaults) {
         if (auto l_function = m_rules->buildBefore(l_gate.action, *m_services, l_gate.args)) {
             f_floor.before_rules.append({l_gate.event, l_gate.action, *l_function, QStringLiteral("core"), l_gate.args});
+        }
+    }
+
+    // The transforms every floor runs between gate and commit: the shout
+    // downgrade and the medieval flavor, both reading their area knobs.
+    const QVector<GateDefault> l_transform_defaults = {
+        {AreaEvents::IcMessageSent, QStringLiteral("strip_shouts"), {}},
+        {AreaEvents::IcMessageSent, QStringLiteral("apply_medieval"), {}},
+    };
+    for (const GateDefault &l_transform : l_transform_defaults) {
+        if (auto l_function = m_rules->buildTransform(l_transform.action, *m_services, l_transform.args)) {
+            f_floor.transform_rules.append({l_transform.event, l_transform.action, *l_function, QStringLiteral("core"), l_transform.args});
         }
     }
 
@@ -214,19 +242,28 @@ void World::applyConfigRules(const QString &f_path)
     for (Floor &l_floor : m_floors) {
         l_sweep(l_floor.before_rules);
         l_sweep(l_floor.after_rules);
+        l_sweep(l_floor.transform_rules);
     }
     for (Area *l_area : qAsConst(m_areas)) {
         l_sweep(l_area->beforeRules());
         l_sweep(l_area->afterRules());
+        l_sweep(l_area->transformRules());
     }
 
     const config::AreaRulesConfig l_config = config::loadAreaRules(f_path);
 
     auto l_apply = [this](const config::RuleDeclaration &f_declaration,
-                          QVector<BeforeRuleEntry> &f_before, QVector<AfterRuleEntry> &f_after) {
+                          QVector<BeforeRuleEntry> &f_before, QVector<AfterRuleEntry> &f_after,
+                          QVector<TransformRuleEntry> &f_transforms) {
         if (f_declaration.phase == RulePhase::Before) {
             if (auto l_function = m_rules->buildBefore(f_declaration.action, *m_services, f_declaration.args)) {
                 f_before.append({f_declaration.event, f_declaration.action, *l_function, QStringLiteral("config"), f_declaration.args});
+                return;
+            }
+        }
+        else if (f_declaration.phase == RulePhase::Transform) {
+            if (auto l_function = m_rules->buildTransform(f_declaration.action, *m_services, f_declaration.args)) {
+                f_transforms.append({f_declaration.event, f_declaration.action, *l_function, QStringLiteral("config"), f_declaration.args});
                 return;
             }
         }
@@ -249,7 +286,7 @@ void World::applyConfigRules(const QString &f_path)
             continue;
         }
         for (const config::RuleDeclaration &l_declaration : it.value())
-            l_apply(l_declaration, l_floor->before_rules, l_floor->after_rules);
+            l_apply(l_declaration, l_floor->before_rules, l_floor->after_rules, l_floor->transform_rules);
     }
 
     for (auto it = l_config.area_rules.constBegin(); it != l_config.area_rules.constEnd(); ++it) {
@@ -259,7 +296,7 @@ void World::applyConfigRules(const QString &f_path)
             continue;
         }
         for (const config::RuleDeclaration &l_declaration : it.value())
-            l_apply(l_declaration, l_area->beforeRules(), l_area->afterRules());
+            l_apply(l_declaration, l_area->beforeRules(), l_area->afterRules(), l_area->transformRules());
     }
 }
 
@@ -267,7 +304,8 @@ void World::applyConfigRules(const QString &f_path)
 
 // The rules an area or floor carries that belong in the config file: the
 // ones config put there and the ones added by command.
-static QJsonObject rulesToJson(const QVector<BeforeRuleEntry> &f_before, const QVector<AfterRuleEntry> &f_after)
+static QJsonObject rulesToJson(const QVector<BeforeRuleEntry> &f_before, const QVector<AfterRuleEntry> &f_after,
+                               const QVector<TransformRuleEntry> &f_transforms)
 {
     QJsonObject l_result;
     const auto l_add = [&l_result](const QString &f_event, const QString &f_bucket, const QString &f_action, const QVariantMap &f_args) {
@@ -288,6 +326,10 @@ static QJsonObject rulesToJson(const QVector<BeforeRuleEntry> &f_before, const Q
     for (const BeforeRuleEntry &l_entry : f_before) {
         if (l_saved(l_entry.owner_id))
             l_add(l_entry.event, QStringLiteral("before"), l_entry.action, l_entry.args);
+    }
+    for (const TransformRuleEntry &l_entry : f_transforms) {
+        if (l_saved(l_entry.owner_id))
+            l_add(l_entry.event, QStringLiteral("transform"), l_entry.action, l_entry.args);
     }
     for (const AfterRuleEntry &l_entry : f_after) {
         if (l_saved(l_entry.owner_id))
@@ -334,7 +376,7 @@ static QJsonObject areaToJson(Area *f_area, const QString &f_floor_name)
         l_entry[QStringLiteral("area_message")] = f_area->areaMessage();
         l_entry[QStringLiteral("send_area_message_on_join")] = l_bool(f_area->sendAreaMessageOnJoin());
     }
-    const QJsonObject l_rules = rulesToJson(f_area->beforeRules(), f_area->afterRules());
+    const QJsonObject l_rules = rulesToJson(f_area->beforeRules(), f_area->afterRules(), f_area->transformRules());
     if (!l_rules.isEmpty()) {
         l_entry[QStringLiteral("rules")] = l_rules;
     }
@@ -347,7 +389,7 @@ std::optional<QString> World::save(const QString &f_path)
 
     QJsonObject l_floors;
     for (const Floor &l_floor : qAsConst(m_floors)) {
-        const QJsonObject l_rules = rulesToJson(l_floor.before_rules, l_floor.after_rules);
+        const QJsonObject l_rules = rulesToJson(l_floor.before_rules, l_floor.after_rules, l_floor.transform_rules);
         if (!l_rules.isEmpty()) {
             QJsonObject l_entry;
             l_entry[QStringLiteral("rules")] = l_rules;
@@ -375,7 +417,7 @@ std::optional<QString> World::saveFloor(int f_floor_id, const QString &f_path)
     QJsonObject l_root;
     QJsonObject l_floors;
     QJsonObject l_floor_entry;
-    const QJsonObject l_floor_rules = rulesToJson(l_floor->before_rules, l_floor->after_rules);
+    const QJsonObject l_floor_rules = rulesToJson(l_floor->before_rules, l_floor->after_rules, l_floor->transform_rules);
     if (!l_floor_rules.isEmpty()) {
         l_floor_entry[QStringLiteral("rules")] = l_floor_rules;
     }
@@ -564,6 +606,7 @@ std::optional<QString> World::loadFloorFile(const QString &f_name, const QString
         f_mapping = compactAreas(m_floors[f_floor_id].area_ids);
         m_floors[f_floor_id].before_rules.clear();
         m_floors[f_floor_id].after_rules.clear();
+        m_floors[f_floor_id].transform_rules.clear();
         applyDefaultFloorRules(m_floors[f_floor_id]);
     }
     else {
@@ -578,11 +621,18 @@ std::optional<QString> World::loadFloorFile(const QString &f_name, const QString
 
     // The file's floor rules layer on the defaults, owner "config".
     const auto l_apply_rules = [this](const QVector<config::RuleDeclaration> &f_declarations,
-                                      QVector<BeforeRuleEntry> &f_before, QVector<AfterRuleEntry> &f_after) {
+                                      QVector<BeforeRuleEntry> &f_before, QVector<AfterRuleEntry> &f_after,
+                                      QVector<TransformRuleEntry> &f_transforms) {
         for (const config::RuleDeclaration &l_declaration : f_declarations) {
             if (l_declaration.phase == RulePhase::Before) {
                 if (auto l_function = m_rules->buildBefore(l_declaration.action, *m_services, l_declaration.args)) {
                     f_before.append({l_declaration.event, l_declaration.action, *l_function, QStringLiteral("config"), l_declaration.args});
+                    continue;
+                }
+            }
+            else if (l_declaration.phase == RulePhase::Transform) {
+                if (auto l_function = m_rules->buildTransform(l_declaration.action, *m_services, l_declaration.args)) {
+                    f_transforms.append({l_declaration.event, l_declaration.action, *l_function, QStringLiteral("config"), l_declaration.args});
                     continue;
                 }
             }
@@ -595,7 +645,7 @@ std::optional<QString> World::loadFloorFile(const QString &f_name, const QString
         }
     };
     for (auto it = l_rule_config.floor_rules.constBegin(); it != l_rule_config.floor_rules.constEnd(); ++it) {
-        l_apply_rules(it.value(), m_floors[f_floor_id].before_rules, m_floors[f_floor_id].after_rules);
+        l_apply_rules(it.value(), m_floors[f_floor_id].before_rules, m_floors[f_floor_id].after_rules, m_floors[f_floor_id].transform_rules);
     }
 
     for (const QString &l_raw : qAsConst(l_raw_names)) {
@@ -606,7 +656,7 @@ std::optional<QString> World::loadFloorFile(const QString &f_name, const QString
         const int l_area_id = m_areas.size();
         m_area_names.append(l_area_name);
         Area *l_area = buildArea(l_area_id, l_area_name, f_floor_id, &l_file_settings, l_raw);
-        l_apply_rules(l_rule_config.area_rules.value(l_local_index), l_area->beforeRules(), l_area->afterRules());
+        l_apply_rules(l_rule_config.area_rules.value(l_local_index), l_area->beforeRules(), l_area->afterRules(), l_area->transformRules());
     }
     return std::nullopt;
 }

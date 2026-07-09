@@ -14,6 +14,8 @@ DBManager::DBManager(QSqlDatabase f_database) :
     create_ban_table.exec("CREATE TABLE IF NOT EXISTS bans ('ID' INTEGER, 'IPID' TEXT, 'HDID' TEXT, 'IP' TEXT, 'TIME' INTEGER, 'REASON' TEXT, 'DURATION' INTEGER, 'MODERATOR' TEXT, PRIMARY KEY('ID' AUTOINCREMENT))");
     QSqlQuery create_user_table(db);
     create_user_table.exec("CREATE TABLE IF NOT EXISTS users ('ID' INTEGER, 'USERNAME' TEXT, 'SALT' TEXT, 'PASSWORD' TEXT, 'ACL' TEXT, PRIMARY KEY('ID' AUTOINCREMENT))");
+    QSqlQuery create_sanction_table(db);
+    create_sanction_table.exec("CREATE TABLE IF NOT EXISTS sanctions ('ID' INTEGER, 'IPID' TEXT NOT NULL, 'SANCTION' TEXT NOT NULL, 'MODERATOR' TEXT, 'ISSUED' INTEGER, 'EXPIRES' INTEGER NOT NULL, PRIMARY KEY('ID' AUTOINCREMENT), UNIQUE('IPID', 'SANCTION'))");
     // The lookup indexes are part of the current schema; they carry the
     // same names migration 3 uses, so nothing double-creates.
     QSqlQuery(db).exec("CREATE INDEX IF NOT EXISTS bans_ipid_time ON bans(IPID, TIME)");
@@ -399,8 +401,72 @@ void DBManager::updateDB(int current_version)
                    QSqlQuery(f_db).exec("CREATE INDEX IF NOT EXISTS bans_ip ON bans(IP)") &&
                    QSqlQuery(f_db).exec("CREATE INDEX IF NOT EXISTS users_username ON users(USERNAME)");
         });
+        Q_FALLTHROUGH();
+    case 3:
+        // Timed sanctions outlive sessions: stored here, applied on
+        // connect, lifted by the scheduler.
+        akashi::DatabaseService::applyMigration(db, 4, [](QSqlDatabase &f_db) {
+            return QSqlQuery(f_db).exec("CREATE TABLE IF NOT EXISTS sanctions ('ID' INTEGER, 'IPID' TEXT NOT NULL, 'SANCTION' TEXT NOT NULL, 'MODERATOR' TEXT, 'ISSUED' INTEGER, 'EXPIRES' INTEGER NOT NULL, PRIMARY KEY('ID' AUTOINCREMENT), UNIQUE('IPID', 'SANCTION'))");
+        });
         break;
     }
+}
+
+void DBManager::upsertSanction(const SanctionInfo &f_sanction)
+{
+    QSqlQuery query(db);
+    query.prepare("INSERT INTO sanctions(IPID, SANCTION, MODERATOR, ISSUED, EXPIRES) VALUES(?, ?, ?, ?, ?) "
+                  "ON CONFLICT(IPID, SANCTION) DO UPDATE SET MODERATOR = excluded.MODERATOR, ISSUED = excluded.ISSUED, EXPIRES = excluded.EXPIRES");
+    query.addBindValue(f_sanction.ipid);
+    query.addBindValue(f_sanction.sanction);
+    query.addBindValue(f_sanction.moderator);
+    query.addBindValue(f_sanction.issued);
+    query.addBindValue(f_sanction.expires);
+    if (!query.exec()) {
+        qCWarning(akashiDb) << "Could not store sanction:" << query.lastError().text();
+    }
+}
+
+void DBManager::removeSanction(const QString &f_ipid, const QString &f_sanction)
+{
+    QSqlQuery query(db);
+    query.prepare("DELETE FROM sanctions WHERE IPID = ? AND SANCTION = ?");
+    query.addBindValue(f_ipid);
+    query.addBindValue(f_sanction);
+    query.exec();
+}
+
+static QList<DBManager::SanctionInfo> readSanctions(QSqlQuery &query)
+{
+    QList<DBManager::SanctionInfo> sanctions;
+    while (query.next()) {
+        DBManager::SanctionInfo sanction;
+        sanction.ipid = query.value(0).toString();
+        sanction.sanction = query.value(1).toString();
+        sanction.moderator = query.value(2).toString();
+        sanction.issued = query.value(3).toLongLong();
+        sanction.expires = query.value(4).toLongLong();
+        sanctions.append(sanction);
+    }
+    return sanctions;
+}
+
+QList<DBManager::SanctionInfo> DBManager::sanctionsFor(const QString &f_ipid, qint64 f_now)
+{
+    QSqlQuery query(db);
+    query.prepare("SELECT IPID, SANCTION, MODERATOR, ISSUED, EXPIRES FROM sanctions WHERE IPID = ? AND EXPIRES > ?");
+    query.addBindValue(f_ipid);
+    query.addBindValue(f_now);
+    query.exec();
+    return readSanctions(query);
+}
+
+QList<DBManager::SanctionInfo> DBManager::allSanctions()
+{
+    QSqlQuery query(db);
+    query.prepare("SELECT IPID, SANCTION, MODERATOR, ISSUED, EXPIRES FROM sanctions");
+    query.exec();
+    return readSanctions(query);
 }
 
 DBManager::~DBManager()

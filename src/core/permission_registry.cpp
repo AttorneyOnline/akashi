@@ -97,7 +97,10 @@ bool PermissionRegistry::registerResolver(const QString &f_resolver_id, int f_pr
         }
     }
     ResolverEntry l_entry{f_resolver_id, f_priority, std::move(f_resolver), f_owner_id};
-    auto l_pos = std::lower_bound(m_resolvers.begin(), m_resolvers.end(), l_entry,
+    // Insert after any equal priorities, so ties keep registration order
+    // and a later resolver can never preempt an earlier one at the same
+    // priority - the same tiebreak the text filter registry uses.
+    auto l_pos = std::upper_bound(m_resolvers.begin(), m_resolvers.end(), l_entry,
                                   [](const ResolverEntry &a, const ResolverEntry &b) {
                                       return a.priority < b.priority;
                                   });

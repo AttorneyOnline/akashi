@@ -49,6 +49,14 @@ void EvidenceStore::revealToAll(int f_index)
     }
 }
 
+QString EvidenceStore::taggedDescription(const QString &f_description) const
+{
+    if (m_access != Access::HiddenCm || OWNER_TAG.match(f_description).hasMatch()) {
+        return f_description;
+    }
+    return "<owner=all>\n" + f_description;
+}
+
 bool EvidenceStore::isVisible(const Evidence &f_item, bool f_can_see_hidden, const QString &f_side) const
 {
     if (f_can_see_hidden || m_access != Access::HiddenCm) {

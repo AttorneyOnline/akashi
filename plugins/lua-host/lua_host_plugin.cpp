@@ -396,6 +396,492 @@ static int luaApiConfigGet(lua_State *L)
     return 1;
 }
 
+static int luaApiConfigSet(lua_State *L)
+{
+    size_t l_key_length = 0, l_value_length = 0;
+    const char *l_key = luaL_checklstring(L, 1, &l_key_length);
+    const char *l_value = luaL_checklstring(L, 2, &l_value_length);
+
+    LuaPluginState *l_plugin = pluginOf(L);
+    if (!l_plugin || s_ffi->abi_version < 6) {
+        return luaL_error(L, "config_set: unavailable");
+    }
+    lua_pushboolean(L, s_ffi->config_set(l_plugin->owner_id.constData(), size_t(l_plugin->owner_id.size()),
+                                         l_key, l_key_length, l_value, l_value_length));
+    return 1;
+}
+
+static int luaApiConfigDeclare(lua_State *L)
+{
+    size_t l_key_length = 0, l_type_length = 0, l_default_length = 0, l_desc_length = 0;
+    const char *l_key = luaL_checklstring(L, 1, &l_key_length);
+    const char *l_type = luaL_checklstring(L, 2, &l_type_length);
+    const char *l_default = luaL_optlstring(L, 3, "", &l_default_length);
+    const char *l_desc = luaL_optlstring(L, 4, "", &l_desc_length);
+    LuaPluginState *l_plugin = pluginOf(L);
+    if (!l_plugin || s_ffi->abi_version < 8) {
+        return luaL_error(L, "config_declare: unavailable");
+    }
+    lua_pushboolean(L, s_ffi->config_declare(l_plugin->owner_id.constData(), size_t(l_plugin->owner_id.size()),
+                                             l_key, l_key_length, l_type, l_type_length,
+                                             l_default, l_default_length, l_desc, l_desc_length));
+    return 1;
+}
+
+static int luaApiFsRead(lua_State *L)
+{
+    size_t l_path_length = 0;
+    const char *l_path = luaL_checklstring(L, 1, &l_path_length);
+    LuaPluginState *l_plugin = pluginOf(L);
+    if (!l_plugin || s_ffi->abi_version < 6) {
+        return luaL_error(L, "fs_read: unavailable");
+    }
+    size_t l_out_length = 0;
+    const char *l_data = s_ffi->fs_read(l_plugin->owner_id.constData(), size_t(l_plugin->owner_id.size()),
+                                        l_path, l_path_length, &l_out_length);
+    lua_pushlstring(L, l_data, l_out_length);
+    return 1;
+}
+
+static int luaApiFsWrite(lua_State *L)
+{
+    size_t l_path_length = 0, l_data_length = 0;
+    const char *l_path = luaL_checklstring(L, 1, &l_path_length);
+    const char *l_data = luaL_checklstring(L, 2, &l_data_length);
+    LuaPluginState *l_plugin = pluginOf(L);
+    if (!l_plugin || s_ffi->abi_version < 6) {
+        return luaL_error(L, "fs_write: unavailable");
+    }
+    lua_pushboolean(L, s_ffi->fs_write(l_plugin->owner_id.constData(), size_t(l_plugin->owner_id.size()),
+                                       l_path, l_path_length, l_data, l_data_length));
+    return 1;
+}
+
+static int luaApiFsExists(lua_State *L)
+{
+    size_t l_path_length = 0;
+    const char *l_path = luaL_checklstring(L, 1, &l_path_length);
+    LuaPluginState *l_plugin = pluginOf(L);
+    if (!l_plugin || s_ffi->abi_version < 6) {
+        return luaL_error(L, "fs_exists: unavailable");
+    }
+    lua_pushboolean(L, s_ffi->fs_exists(l_plugin->owner_id.constData(), size_t(l_plugin->owner_id.size()),
+                                        l_path, l_path_length));
+    return 1;
+}
+
+// The plugin's owner id, or a Lua error - shared by the discord verbs.
+static LuaPluginState *luaDiscordOwner(lua_State *L, const char *f_verb)
+{
+    LuaPluginState *l_plugin = pluginOf(L);
+    if (!l_plugin || s_ffi->abi_version < 7) {
+        luaL_error(L, "%s: unavailable", f_verb);
+        return nullptr;
+    }
+    return l_plugin;
+}
+
+static int luaApiDiscordBegin(lua_State *L)
+{
+    LuaPluginState *l_plugin = luaDiscordOwner(L, "discord_begin");
+    s_ffi->discord_begin(l_plugin->owner_id.constData(), size_t(l_plugin->owner_id.size()));
+    return 0;
+}
+
+static int luaApiDiscordSet(lua_State *L)
+{
+    size_t l_key_length = 0, l_value_length = 0;
+    const char *l_key = luaL_checklstring(L, 1, &l_key_length);
+    const char *l_value = luaL_checklstring(L, 2, &l_value_length);
+    LuaPluginState *l_plugin = luaDiscordOwner(L, "discord_set");
+    s_ffi->discord_set(l_plugin->owner_id.constData(), size_t(l_plugin->owner_id.size()),
+                       l_key, l_key_length, l_value, l_value_length);
+    return 0;
+}
+
+static int luaApiDiscordEmbedBegin(lua_State *L)
+{
+    LuaPluginState *l_plugin = luaDiscordOwner(L, "discord_embed_begin");
+    s_ffi->discord_embed_begin(l_plugin->owner_id.constData(), size_t(l_plugin->owner_id.size()));
+    return 0;
+}
+
+static int luaApiDiscordEmbedSet(lua_State *L)
+{
+    size_t l_key_length = 0, l_value_length = 0;
+    const char *l_key = luaL_checklstring(L, 1, &l_key_length);
+    const char *l_value = luaL_checklstring(L, 2, &l_value_length);
+    LuaPluginState *l_plugin = luaDiscordOwner(L, "discord_embed_set");
+    s_ffi->discord_embed_set(l_plugin->owner_id.constData(), size_t(l_plugin->owner_id.size()),
+                             l_key, l_key_length, l_value, l_value_length);
+    return 0;
+}
+
+static int luaApiDiscordEmbedFooter(lua_State *L)
+{
+    size_t l_text_length = 0, l_icon_length = 0;
+    const char *l_text = luaL_checklstring(L, 1, &l_text_length);
+    const char *l_icon = luaL_optlstring(L, 2, "", &l_icon_length);
+    LuaPluginState *l_plugin = luaDiscordOwner(L, "discord_embed_footer");
+    s_ffi->discord_embed_footer(l_plugin->owner_id.constData(), size_t(l_plugin->owner_id.size()),
+                                l_text, l_text_length, l_icon, l_icon_length);
+    return 0;
+}
+
+static int luaApiDiscordEmbedAuthor(lua_State *L)
+{
+    size_t l_name_length = 0, l_url_length = 0, l_icon_length = 0;
+    const char *l_name = luaL_checklstring(L, 1, &l_name_length);
+    const char *l_url = luaL_optlstring(L, 2, "", &l_url_length);
+    const char *l_icon = luaL_optlstring(L, 3, "", &l_icon_length);
+    LuaPluginState *l_plugin = luaDiscordOwner(L, "discord_embed_author");
+    s_ffi->discord_embed_author(l_plugin->owner_id.constData(), size_t(l_plugin->owner_id.size()),
+                                l_name, l_name_length, l_url, l_url_length, l_icon, l_icon_length);
+    return 0;
+}
+
+static int luaApiDiscordEmbedField(lua_State *L)
+{
+    size_t l_name_length = 0, l_value_length = 0;
+    const char *l_name = luaL_checklstring(L, 1, &l_name_length);
+    const char *l_value = luaL_checklstring(L, 2, &l_value_length);
+    const int l_inline = lua_toboolean(L, 3);
+    LuaPluginState *l_plugin = luaDiscordOwner(L, "discord_embed_field");
+    s_ffi->discord_embed_field(l_plugin->owner_id.constData(), size_t(l_plugin->owner_id.size()),
+                               l_name, l_name_length, l_value, l_value_length, l_inline);
+    return 0;
+}
+
+static int luaApiDiscordEmbedEnd(lua_State *L)
+{
+    LuaPluginState *l_plugin = luaDiscordOwner(L, "discord_embed_end");
+    s_ffi->discord_embed_end(l_plugin->owner_id.constData(), size_t(l_plugin->owner_id.size()));
+    return 0;
+}
+
+static int luaApiDiscordPost(lua_State *L)
+{
+    size_t l_url_length = 0;
+    const char *l_url = luaL_checklstring(L, 1, &l_url_length);
+    LuaPluginState *l_plugin = luaDiscordOwner(L, "discord_post");
+    lua_pushboolean(L, s_ffi->discord_post(l_plugin->owner_id.constData(), size_t(l_plugin->owner_id.size()),
+                                           l_url, l_url_length));
+    return 1;
+}
+
+// Reads an optional Lua table at stack index f_index into parallel arrays
+// of string pointers and lengths, kept alive by f_storage.
+static void luaCollectParams(lua_State *L, int f_index, QList<QByteArray> &f_storage,
+                             std::vector<const char *> &f_ptrs, std::vector<size_t> &f_lengths)
+{
+    if (lua_type(L, f_index) != LUA_TTABLE) {
+        return;
+    }
+    const int l_count = int(lua_rawlen(L, f_index));
+    for (int i = 1; i <= l_count; i++) {
+        lua_rawgeti(L, f_index, i);
+        size_t l_length = 0;
+        const char *l_value = lua_tolstring(L, -1, &l_length);
+        f_storage.append(QByteArray(l_value ? l_value : "", int(l_length)));
+        lua_pop(L, 1);
+    }
+    for (const QByteArray &l_param : f_storage) {
+        f_ptrs.push_back(l_param.constData());
+        f_lengths.push_back(size_t(l_param.size()));
+    }
+}
+
+static int luaApiSqlExec(lua_State *L)
+{
+    size_t l_sql_length = 0;
+    const char *l_sql = luaL_checklstring(L, 1, &l_sql_length);
+    LuaPluginState *l_plugin = pluginOf(L);
+    if (!l_plugin || s_ffi->abi_version < 6) {
+        return luaL_error(L, "sql_exec: unavailable");
+    }
+    QList<QByteArray> l_storage;
+    std::vector<const char *> l_ptrs;
+    std::vector<size_t> l_lengths;
+    luaCollectParams(L, 2, l_storage, l_ptrs, l_lengths);
+    const int l_affected = s_ffi->sql_exec(l_plugin->owner_id.constData(), size_t(l_plugin->owner_id.size()),
+                                           l_sql, l_sql_length, int(l_ptrs.size()),
+                                           l_ptrs.empty() ? nullptr : l_ptrs.data(),
+                                           l_lengths.empty() ? nullptr : l_lengths.data());
+    lua_pushinteger(L, l_affected);
+    return 1;
+}
+
+// Hands a query row to a Lua callback as a { column = value } table.
+static void luaSqlRowTrampoline(void *f_userdata, int f_count,
+                                const char *const *f_columns, const char *const *f_values)
+{
+    lua_State *L = static_cast<lua_State *>(f_userdata);
+    lua_pushvalue(L, 3); // the callback, kept at a fixed stack slot
+    lua_newtable(L);
+    for (int i = 0; i < f_count; i++) {
+        lua_pushstring(L, f_values[i]);
+        lua_setfield(L, -2, f_columns[i]);
+    }
+    if (lua_pcall(L, 1, 0, 0) != LUA_OK) {
+        s_ffi->log_info(lua_tostring(L, -1), strlen(lua_tostring(L, -1)));
+        lua_pop(L, 1);
+    }
+}
+
+static int luaApiSqlQuery(lua_State *L)
+{
+    size_t l_sql_length = 0;
+    const char *l_sql = luaL_checklstring(L, 1, &l_sql_length);
+    luaL_checktype(L, 3, LUA_TFUNCTION);
+    LuaPluginState *l_plugin = pluginOf(L);
+    if (!l_plugin || s_ffi->abi_version < 6) {
+        return luaL_error(L, "sql_query: unavailable");
+    }
+    QList<QByteArray> l_storage;
+    std::vector<const char *> l_ptrs;
+    std::vector<size_t> l_lengths;
+    luaCollectParams(L, 2, l_storage, l_ptrs, l_lengths);
+    const int l_rows = s_ffi->sql_query(l_plugin->owner_id.constData(), size_t(l_plugin->owner_id.size()),
+                                        l_sql, l_sql_length, int(l_ptrs.size()),
+                                        l_ptrs.empty() ? nullptr : l_ptrs.data(),
+                                        l_lengths.empty() ? nullptr : l_lengths.data(),
+                                        luaSqlRowTrampoline, L);
+    lua_pushinteger(L, l_rows);
+    return 1;
+}
+
+// Runs the migration body: the Lua function kept at stack slot 2.
+static int luaMigrationTrampoline(void *f_userdata)
+{
+    lua_State *L = static_cast<lua_State *>(f_userdata);
+    lua_pushvalue(L, 2);
+    if (lua_pcall(L, 0, 1, 0) != LUA_OK) {
+        s_ffi->log_info(lua_tostring(L, -1), strlen(lua_tostring(L, -1)));
+        lua_pop(L, 1);
+        return 0;
+    }
+    const int l_ok = lua_toboolean(L, -1);
+    lua_pop(L, 1);
+    return l_ok;
+}
+
+static int luaApiSqlMigrate(lua_State *L)
+{
+    const int l_version = int(luaL_checkinteger(L, 1));
+    luaL_checktype(L, 2, LUA_TFUNCTION);
+    LuaPluginState *l_plugin = pluginOf(L);
+    if (!l_plugin || s_ffi->abi_version < 8) {
+        return luaL_error(L, "sql_migrate: unavailable");
+    }
+    lua_pushboolean(L, s_ffi->sql_migrate(l_plugin->owner_id.constData(), size_t(l_plugin->owner_id.size()),
+                                          l_version, luaMigrationTrampoline, L));
+    return 1;
+}
+
+static int luaApiSqlRead(lua_State *L)
+{
+    size_t l_source_length = 0, l_sql_length = 0;
+    const char *l_source = luaL_checklstring(L, 1, &l_source_length);
+    const char *l_sql = luaL_checklstring(L, 2, &l_sql_length);
+    luaL_checktype(L, 3, LUA_TFUNCTION);
+    if (s_ffi->abi_version < 8) {
+        return luaL_error(L, "sql_read: unavailable");
+    }
+    QList<QByteArray> l_storage;
+    std::vector<const char *> l_ptrs;
+    std::vector<size_t> l_lengths;
+    luaCollectParams(L, 4, l_storage, l_ptrs, l_lengths);
+    // The row callback sits at slot 3, where luaSqlRowTrampoline reads it.
+    const int l_rows = s_ffi->sql_read(l_source, l_source_length, l_sql, l_sql_length, int(l_ptrs.size()),
+                                       l_ptrs.empty() ? nullptr : l_ptrs.data(),
+                                       l_lengths.empty() ? nullptr : l_lengths.data(),
+                                       luaSqlRowTrampoline, L);
+    lua_pushinteger(L, l_rows);
+    return 1;
+}
+
+static int luaApiScheduleRepeating(lua_State *L)
+{
+    size_t l_job_length = 0, l_day_length = 0, l_time_length = 0;
+    const char *l_job = luaL_checklstring(L, 1, &l_job_length);
+    const char *l_day = luaL_checklstring(L, 2, &l_day_length);
+    const char *l_time = luaL_checklstring(L, 3, &l_time_length);
+    luaL_checktype(L, 4, LUA_TFUNCTION);
+    LuaPluginState *l_plugin = pluginOf(L);
+    LuaFnRef *l_ref = takeFnRef(L, 4);
+    if (!l_plugin || !l_ref || s_ffi->abi_version < 9) {
+        return luaL_error(L, "schedule_repeating: unavailable");
+    }
+    lua_pushboolean(L, s_ffi->schedule_repeating(l_plugin->owner_id.constData(), size_t(l_plugin->owner_id.size()),
+                                                 l_job, l_job_length, l_day, l_day_length, l_time, l_time_length,
+                                                 luaConsoleTrampoline, l_ref));
+    return 1;
+}
+
+static int luaApiScheduleOnce(lua_State *L)
+{
+    size_t l_job_length = 0, l_when_length = 0;
+    const char *l_job = luaL_checklstring(L, 1, &l_job_length);
+    const char *l_when = luaL_checklstring(L, 2, &l_when_length);
+    luaL_checktype(L, 3, LUA_TFUNCTION);
+    LuaPluginState *l_plugin = pluginOf(L);
+    LuaFnRef *l_ref = takeFnRef(L, 3);
+    if (!l_plugin || !l_ref || s_ffi->abi_version < 9) {
+        return luaL_error(L, "schedule_once: unavailable");
+    }
+    lua_pushboolean(L, s_ffi->schedule_once(l_plugin->owner_id.constData(), size_t(l_plugin->owner_id.size()),
+                                            l_job, l_job_length, l_when, l_when_length,
+                                            luaConsoleTrampoline, l_ref));
+    return 1;
+}
+
+static int luaApiScheduleCancel(lua_State *L)
+{
+    size_t l_job_length = 0;
+    const char *l_job = luaL_checklstring(L, 1, &l_job_length);
+    LuaPluginState *l_plugin = pluginOf(L);
+    if (!l_plugin || s_ffi->abi_version < 9) {
+        return luaL_error(L, "schedule_cancel: unavailable");
+    }
+    s_ffi->schedule_cancel(l_plugin->owner_id.constData(), size_t(l_plugin->owner_id.size()), l_job, l_job_length);
+    return 0;
+}
+
+static int luaApiScheduleNextRun(lua_State *L)
+{
+    size_t l_job_length = 0;
+    const char *l_job = luaL_checklstring(L, 1, &l_job_length);
+    LuaPluginState *l_plugin = pluginOf(L);
+    if (!l_plugin || s_ffi->abi_version < 9) {
+        return luaL_error(L, "schedule_next_run: unavailable");
+    }
+    size_t l_out_length = 0;
+    const char *l_next = s_ffi->schedule_next_run(l_plugin->owner_id.constData(), size_t(l_plugin->owner_id.size()),
+                                                  l_job, l_job_length, &l_out_length);
+    lua_pushlstring(L, l_next, l_out_length);
+    return 1;
+}
+
+static int luaApiAreaGet(lua_State *L)
+{
+    const int l_area_id = int(luaL_checkinteger(L, 1));
+    size_t l_key_length = 0;
+    const char *l_key = luaL_checklstring(L, 2, &l_key_length);
+    if (s_ffi->abi_version < 10) {
+        return luaL_error(L, "area_get: unavailable");
+    }
+    size_t l_out_length = 0;
+    const char *l_value = s_ffi->area_get(l_area_id, l_key, l_key_length, &l_out_length);
+    lua_pushlstring(L, l_value, l_out_length);
+    return 1;
+}
+
+static int luaApiAreaSet(lua_State *L)
+{
+    const int l_area_id = int(luaL_checkinteger(L, 1));
+    size_t l_key_length = 0, l_value_length = 0;
+    const char *l_key = luaL_checklstring(L, 2, &l_key_length);
+    const char *l_value = luaL_checklstring(L, 3, &l_value_length);
+    if (s_ffi->abi_version < 10) {
+        return luaL_error(L, "area_set: unavailable");
+    }
+    lua_pushboolean(L, s_ffi->area_set(l_area_id, l_key, l_key_length, l_value, l_value_length));
+    return 1;
+}
+
+static int luaApiFloorGet(lua_State *L)
+{
+    const int l_floor_id = int(luaL_checkinteger(L, 1));
+    size_t l_key_length = 0;
+    const char *l_key = luaL_checklstring(L, 2, &l_key_length);
+    if (s_ffi->abi_version < 10) {
+        return luaL_error(L, "floor_get: unavailable");
+    }
+    size_t l_out_length = 0;
+    const char *l_value = s_ffi->floor_get(l_floor_id, l_key, l_key_length, &l_out_length);
+    lua_pushlstring(L, l_value, l_out_length);
+    return 1;
+}
+
+static int luaApiWorldAreaCount(lua_State *L)
+{
+    lua_pushinteger(L, s_ffi->abi_version < 10 ? 0 : s_ffi->world_area_count());
+    return 1;
+}
+
+static int luaApiWorldFloorCount(lua_State *L)
+{
+    lua_pushinteger(L, s_ffi->abi_version < 10 ? 0 : s_ffi->world_floor_count());
+    return 1;
+}
+
+// Hands an outbound packet to a Lua interceptor as (header, fields-table).
+// The return decides its fate: false drops it, an array table replaces the
+// fields, anything else lets it pass unchanged.
+static int luaInterceptorTrampoline(void *f_userdata,
+                                    const char *f_header, size_t f_header_length,
+                                    int f_field_count, const char *const *f_fields, const size_t *f_field_lengths,
+                                    AkashiPacketResult *f_result)
+{
+    LuaFnRef *l_ref = static_cast<LuaFnRef *>(f_userdata);
+    lua_State *L = l_ref->state;
+    lua_rawgeti(L, LUA_REGISTRYINDEX, l_ref->function_ref);
+    lua_pushlstring(L, f_header, f_header_length);
+    lua_createtable(L, f_field_count, 0);
+    for (int i = 0; i < f_field_count; i++) {
+        lua_pushlstring(L, f_fields[i], f_field_lengths[i]);
+        lua_rawseti(L, -2, i + 1);
+    }
+    if (lua_pcall(L, 2, 1, 0) != LUA_OK) {
+        qCWarning(akashiScripting).noquote() << "lua-host: interceptor error:" << lua_tostring(L, -1);
+        lua_pop(L, 1);
+        return 1; // an erroring interceptor lets the packet through unchanged
+    }
+
+    int l_verdict = 1;
+    if (lua_isboolean(L, -1) && !lua_toboolean(L, -1)) {
+        l_verdict = 0; // false -> drop
+    }
+    else if (lua_istable(L, -1)) {
+        // An array of fields replaces the packet's fields; header stays.
+        const int l_count = int(lua_rawlen(L, -1));
+        QList<QByteArray> l_storage;
+        QVarLengthArray<const char *> l_ptrs(l_count);
+        QVarLengthArray<size_t> l_lens(l_count);
+        for (int i = 0; i < l_count; i++) {
+            lua_rawgeti(L, -1, i + 1);
+            size_t l_len = 0;
+            const char *l_str = lua_tolstring(L, -1, &l_len);
+            l_storage.append(QByteArray(l_str ? l_str : "", int(l_len)));
+            lua_pop(L, 1);
+        }
+        for (int i = 0; i < l_count; i++) {
+            l_ptrs[i] = l_storage[i].constData();
+            l_lens[i] = size_t(l_storage[i].size());
+        }
+        s_ffi->packet_result_set(f_result, f_header, f_header_length, l_count, l_ptrs.data(), l_lens.data());
+    }
+    lua_pop(L, 1);
+    return l_verdict;
+}
+
+static int luaApiRegisterOutboundInterceptor(lua_State *L)
+{
+    size_t l_header_length = 0;
+    const char *l_header = luaL_optlstring(L, 1, "", &l_header_length);
+    const int l_order = int(luaL_checkinteger(L, 2));
+    luaL_checktype(L, 3, LUA_TFUNCTION);
+    LuaPluginState *l_plugin = pluginOf(L);
+    LuaFnRef *l_ref = takeFnRef(L, 3);
+    if (!l_plugin || !l_ref || s_ffi->abi_version < 10) {
+        return luaL_error(L, "register_outbound_interceptor: unavailable");
+    }
+    lua_pushboolean(L, s_ffi->register_outbound_interceptor(l_header, l_header_length, l_order,
+                                                            luaInterceptorTrampoline, l_ref,
+                                                            l_plugin->owner_id.constData(), size_t(l_plugin->owner_id.size())));
+    return 1;
+}
+
 static AkashiCommandContext *checkContext(lua_State *L)
 {
     luaL_argcheck(L, lua_islightuserdata(L, 1), 1, "command context expected");
@@ -532,6 +1018,34 @@ static const luaL_Reg s_akashi_api[] = {
     {"subscribe_event", luaApiSubscribeEvent},
     {"publish_event", luaApiPublishEvent},
     {"config_get", luaApiConfigGet},
+    {"config_set", luaApiConfigSet},
+    {"config_declare", luaApiConfigDeclare},
+    {"fs_read", luaApiFsRead},
+    {"fs_write", luaApiFsWrite},
+    {"fs_exists", luaApiFsExists},
+    {"sql_exec", luaApiSqlExec},
+    {"sql_query", luaApiSqlQuery},
+    {"sql_migrate", luaApiSqlMigrate},
+    {"sql_read", luaApiSqlRead},
+    {"schedule_repeating", luaApiScheduleRepeating},
+    {"schedule_once", luaApiScheduleOnce},
+    {"schedule_cancel", luaApiScheduleCancel},
+    {"schedule_next_run", luaApiScheduleNextRun},
+    {"area_get", luaApiAreaGet},
+    {"area_set", luaApiAreaSet},
+    {"floor_get", luaApiFloorGet},
+    {"world_area_count", luaApiWorldAreaCount},
+    {"world_floor_count", luaApiWorldFloorCount},
+    {"register_outbound_interceptor", luaApiRegisterOutboundInterceptor},
+    {"discord_begin", luaApiDiscordBegin},
+    {"discord_set", luaApiDiscordSet},
+    {"discord_embed_begin", luaApiDiscordEmbedBegin},
+    {"discord_embed_set", luaApiDiscordEmbedSet},
+    {"discord_embed_footer", luaApiDiscordEmbedFooter},
+    {"discord_embed_author", luaApiDiscordEmbedAuthor},
+    {"discord_embed_field", luaApiDiscordEmbedField},
+    {"discord_embed_end", luaApiDiscordEmbedEnd},
+    {"discord_post", luaApiDiscordPost},
     {"reply", luaApiReply},
     {"reply_to_area", luaApiReplyToArea},
     {"client_id", luaApiClientId},
@@ -559,10 +1073,14 @@ class LuaScriptHost : public akashi::IScriptPluginHost
 
     // A Lua plugin is one .lua file whose declaration header carries the
     // manifest; finding them is this host's business, not the manager's.
+    // Scripts live in the host's own subfolder, created on first run -
+    // only files in there are this host's to load.
     QList<akashi::PluginInfo> discoverScriptPlugins(const QString &f_plugin_dir) override
     {
         QList<akashi::PluginInfo> l_manifests;
-        const QDir l_dir(f_plugin_dir);
+        const QString l_script_dir = f_plugin_dir + QStringLiteral("/lua");
+        QDir().mkpath(l_script_dir);
+        const QDir l_dir(l_script_dir);
         const QStringList l_files = l_dir.entryList({QStringLiteral("*.lua")}, QDir::Files, QDir::Name);
         for (const QString &l_file : l_files) {
             const auto l_info = akashi::PluginManager::parseScriptHeader(l_dir.absoluteFilePath(l_file));

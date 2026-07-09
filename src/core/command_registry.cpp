@@ -157,6 +157,37 @@ bool CommandRegistry::contains(const QString &f_command_name) const
     return !resolve(f_command_name).isEmpty();
 }
 
+bool CommandRegistry::passesAnyOf(const QStringList &f_permissions, const std::function<bool(const QString &)> &f_can_perform)
+{
+    if (f_permissions.isEmpty()) {
+        return true;
+    }
+    for (const QString &l_permission : f_permissions) {
+        if (f_can_perform(l_permission)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool CommandRegistry::canUse(const QString &f_command, const std::function<bool(const QString &)> &f_can_perform) const
+{
+    AKASHI_ASSERT_OWNER_THREAD();
+    const auto l_spec = spec(f_command);
+    if (!l_spec) {
+        return false;
+    }
+    if (l_spec->variants.isEmpty()) {
+        return passesAnyOf(l_spec->permissions, f_can_perform);
+    }
+    for (const CommandVariant &l_variant : l_spec->variants) {
+        if (passesAnyOf(l_variant.permissions, f_can_perform)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void CommandRegistry::applyExtensions(const QString &f_path)
 {
     AKASHI_ASSERT_OWNER_THREAD();

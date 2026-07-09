@@ -9,6 +9,7 @@ add_library(akashi_world STATIC
     include/world/area_settings.h
     include/world/config_loading.h
     include/world/evidence_store.h
+    include/world/floodguard.h
     include/world/floor.h
     include/world/jukebox.h
     include/world/rule_registry.h
@@ -17,6 +18,7 @@ add_library(akashi_world STATIC
     area.cpp
     config_loading.cpp
     evidence_store.cpp
+    floodguard.cpp
     jukebox.cpp
     rule_registry.cpp
     testimony_recorder.cpp

@@ -1,6 +1,7 @@
 #include "akashi/config_entry.h"
 
 #include <QTime>
+#include <QUrl>
 
 namespace akashi {
 
@@ -81,6 +82,22 @@ ConfigEntry::Check emptyOrTime()
 {
     return [](const QVariant &f_value) {
         return f_value.toString().isEmpty() || f_value.toTime().isValid();
+    };
+}
+
+ConfigEntry::Check url()
+{
+    return [](const QVariant &f_value) {
+        const QUrl l_url(f_value.toString(), QUrl::StrictMode);
+        return l_url.isValid() && !l_url.host().isEmpty() &&
+               (l_url.scheme() == QStringLiteral("http") || l_url.scheme() == QStringLiteral("https"));
+    };
+}
+
+ConfigEntry::Check emptyOr(ConfigEntry::Check f_check)
+{
+    return [f_check = std::move(f_check)](const QVariant &f_value) {
+        return f_value.toString().isEmpty() || !f_check || f_check(f_value);
     };
 }
 

@@ -36,8 +36,12 @@ class AKASHI_CORE_EXPORT LogService : public QObject, public IService
 
     QList<LogEvent> recentEvents(const QString &f_area, int f_count) const;
 
+    // Renders an event through its type's template. Callable from any
+    // thread - writers render on the worker.
     QString formatEvent(const LogEvent &f_event) const;
 
+    // A writerId registers once; a second registration is refused with a
+    // warning and the first owner keeps the writer.
     void registerWriter(std::shared_ptr<ILogWriter> f_writer, const QString &f_owner_id = {});
     void unregisterAll(const QString &f_owner_id);
 
@@ -54,6 +58,7 @@ class AKASHI_CORE_EXPORT LogService : public QObject, public IService
     QString applyTemplate(const QString &f_tmpl, const LogEvent &f_event) const;
     void loadTemplates();
     static QString migratePositionalTemplate(const QString &f_key, const QString &f_tmpl);
+    static void warnUnknownPlaceholders(const QString &f_key, const QString &f_tmpl);
 
     ConfigStore *m_config_store;
     int m_buffer_limit;
@@ -67,7 +72,7 @@ class AKASHI_CORE_EXPORT LogService : public QObject, public IService
         QString owner;
     };
 
-    QMutex m_mutex;
+    mutable QMutex m_mutex;
     QWaitCondition m_condition;
     QQueue<LogEvent> m_queue;
     QList<WriterEntry> m_writers;

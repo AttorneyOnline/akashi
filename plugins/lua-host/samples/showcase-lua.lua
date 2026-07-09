@@ -42,14 +42,15 @@ akashi.register_rule_action("lua.no_word", "before", function(info)
 end)
 
 -- Core server events, delivered as key/value payloads after they happen.
+-- The payload is what the area rules see, plus player_id/area_id/floor_id.
 local last_join = "nobody yet"
 akashi.subscribe_event("player_joined_area", function(payload)
-    last_join = payload.char_name .. " (area " .. payload.area_id .. ")"
+    last_join = "player " .. payload.player_id .. " (area " .. payload.area_id .. ")"
 end)
 
 local last_track = "silence"
 akashi.subscribe_event("music_changed", function(payload)
-    last_track = payload.track_name
+    last_track = payload.song
 end)
 
 -- A permission-gated command using the target verbs: resolve the argument,

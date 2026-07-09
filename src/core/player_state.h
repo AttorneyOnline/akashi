@@ -57,6 +57,8 @@ class AKASHI_CORE_EXPORT PlayerState : public QObject
     QString offset;
     QString flipping;
     QString emote;
+    // The last pair request that went out with a valid message; cleared
+    // when the sender changes character or area.
     int pairing_with = -1;
     bool first_person = false;
 

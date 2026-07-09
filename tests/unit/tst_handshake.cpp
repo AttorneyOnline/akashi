@@ -23,6 +23,7 @@ class tst_Handshake : public QObject
     void helloTurnsAwayBannedHardware();
     void identifyAcceptsAo2AndDescribesServer();
     void identifyRefusesDoubleAndUnparseableVersions();
+    void identifyRefusesWebaoWhenDisabled();
     void resourceCountsMatchTheLists();
     void characterAndMusicListsAreSent();
     void joinRunsJoinRulesBeforeDone();
@@ -83,6 +84,9 @@ void tst_Handshake::helloRefusesEmptyAndDoubleHwid()
     run(Packet("HI", {"hwid123"}), l_double);
     QVERIFY(l_double.closed);
     QCOMPARE(l_double.stored_hwid, QString("already-set"));
+    // The double send is a protocol error, not a silent close.
+    QCOMPARE(l_double.sent.at(0).header(), QString("BD"));
+    QCOMPARE(l_double.sent.at(0).field(0), QString("A protocol error has been encountered. Packet : HI"));
 }
 
 void tst_Handshake::helloTurnsAwayBannedHardware()
@@ -138,6 +142,26 @@ void tst_Handshake::identifyRefusesDoubleAndUnparseableVersions()
     run(Packet("ID", {"AO2", "banana"}), l_garbage);
     QVERIFY(l_garbage.closed);
     QVERIFY(!l_garbage.identified);
+    QCOMPARE(l_garbage.sent.at(0).header(), QString("BD"));
+    QCOMPARE(l_garbage.sent.at(0).field(0), QString("A protocol error has been encountered. Packet : ID\nVersion not recognised."));
+}
+
+void tst_Handshake::identifyRefusesWebaoWhenDisabled()
+{
+    FakeContext l_webao;
+    l_webao.webao_enabled = false;
+    run(Packet("ID", {"webAO", "2.10.1"}), l_webao);
+    QVERIFY(l_webao.closed);
+    QVERIFY(!l_webao.identified);
+    QCOMPARE(l_webao.sent.at(0).header(), QString("BD"));
+    QCOMPARE(l_webao.sent.at(0).field(0), QString("WebAO is disabled on this server."));
+
+    // The switch only turns away the webAO arch; desktop clients pass.
+    FakeContext l_desktop;
+    l_desktop.webao_enabled = false;
+    run(Packet("ID", {"AO2", "2.10.1"}), l_desktop);
+    QVERIFY(!l_desktop.closed);
+    QVERIFY(l_desktop.identified);
 }
 
 void tst_Handshake::resourceCountsMatchTheLists()
@@ -220,30 +244,42 @@ void tst_Handshake::joinNeedsAHwidAndHappensOnce()
     QCOMPARE(l_again.calls, QStringList());
 }
 
+// Pre-join CC is refused by the spec's user permission at dispatch, so the
+// handler itself no longer reads the joined flag.
 void tst_Handshake::characterSelectFollowsTheOldRules()
 {
     FakeContext l_context;
-    l_context.joined = true;
     run(Packet("CC", {"0", "1", "pass"}), l_context);
     QCOMPARE(l_context.selected_char_id, 1);
     QVERIFY(!l_context.closed);
 
     // A non-numeric choice means spectating.
     FakeContext l_spectator;
-    l_spectator.joined = true;
     run(Packet("CC", {"0", "what", "pass"}), l_spectator);
     QCOMPARE(l_spectator.selected_char_id, -1);
 
     // Out of range closes, but the selection still runs, like it always has.
     FakeContext l_out_of_range;
-    l_out_of_range.joined = true;
     run(Packet("CC", {"0", "12", "pass"}), l_out_of_range);
     QVERIFY(l_out_of_range.closed);
     QCOMPARE(l_out_of_range.selected_char_id, 12);
+    QCOMPARE(l_out_of_range.sent.at(0).header(), QString("KK"));
 
-    FakeContext l_not_joined;
-    run(Packet("CC", {"0", "1", "pass"}), l_not_joined);
-    QCOMPARE(l_not_joined.selected_char_id, -100);
+    // The hostile below-minus-one path gets the same KK and close; the
+    // selection seam still sees the raw id (the verb refuses it inside).
+    FakeContext l_negative;
+    run(Packet("CC", {"0", "-5", "pass"}), l_negative);
+    QVERIFY(l_negative.closed);
+    QCOMPARE(l_negative.sent.at(0).header(), QString("KK"));
+    QCOMPARE(l_negative.selected_char_id, -5);
+
+    // An in-range pick the verb refuses (a taken character) ends quietly:
+    // no KK, no close, no message - the client just keeps its select screen.
+    FakeContext l_taken;
+    l_taken.select_character_result = false;
+    run(Packet("CC", {"0", "1", "pass"}), l_taken);
+    QVERIFY(!l_taken.closed);
+    QCOMPARE(l_taken.calls, QStringList({"selectCharacter"}));
 }
 
 void tst_Handshake::keepaliveAnswersWithCheck()

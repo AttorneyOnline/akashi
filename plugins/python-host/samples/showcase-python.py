@@ -34,7 +34,7 @@ modcalls_witnessed = 0
 
 
 # A custom event published by the LUA showcase plugin - script plugins
-# compose across languages through the event bus.
+# compose across languages through the event system.
 def on_roll(payload):
     global rolls_witnessed
     rolls_witnessed += 1

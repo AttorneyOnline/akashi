@@ -22,9 +22,11 @@ add_library(akashi_proto STATIC
     include/proto/packet_codec.h
     include/proto/packet_context.h
     include/proto/packet_handler.h
+    include/proto/packet_interceptors.h
     include/proto/packet_registry.h
     include/proto/packet_service.h
     include/proto/text_utils.h
+    include/proto/timer_packets.h
     include/proto/transport.h
     area_music.cpp
     chat.cpp
@@ -34,6 +36,7 @@ add_library(akashi_proto STATIC
     moderation.cpp
     packet.cpp
     packet_codec.cpp
+    packet_interceptors.cpp
     packet_registry.cpp
     packet_service.cpp
     text_utils.cpp
