@@ -64,6 +64,7 @@ class tst_MedievalParser : public QObject
     void pluralUsesPluralList();
     void pluralFallsBackToSingular();
     void neitherReplacementListLeavesWordAlone();
+    void emptyReplacementDropsWord();
 
     // Positive: prepends.
     void prependIsAdded();
@@ -262,6 +263,20 @@ void tst_MedievalParser::neitherReplacementListLeavesWordAlone()
     MedievalParser l_parser(dataWith(QString(R"({"word":["ox"],"word_plural":["oxen"]})")));
     QCOMPARE(l_parser.degrootify(QStringLiteral("-oxen")), QString("oxen"));
     QCOMPARE(l_parser.degrootify(QStringLiteral("-ox")), QString("ox"));
+}
+
+void tst_MedievalParser::emptyReplacementDropsWord()
+{
+    // An entry may offer "" in its replacement pool (the sample autorp.json
+    // does for "go"), meaning the word sometimes vanishes. The first-letter
+    // case fix-up used to run on that empty result and write through
+    // stored_word[0] - out of bounds, a segfault on release servers. The
+    // word must simply disappear instead.
+    MedievalParser l_parser(dataWith(QString(R"({"word":["go"],"replacement":[""],"chance":1})")));
+    for (int i = 0; i < 50; i++) {
+        QVERIFY(!l_parser.degrootify(QStringLiteral("-go")).contains(QStringLiteral("go"), Qt::CaseInsensitive));
+        QVERIFY(!l_parser.degrootify(QStringLiteral("-Go went")).contains(QStringLiteral("go"), Qt::CaseInsensitive));
+    }
 }
 
 void tst_MedievalParser::prependIsAdded()

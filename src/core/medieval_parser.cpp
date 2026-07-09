@@ -418,11 +418,15 @@ QString MedievalParser::modifySpeech(QString text, bool generate_pre_and_post, b
             if (changed) {
                 stored_word = current_word;
 
-                if (text[current_word_cur] >= 'A' && text[current_word_cur] <= 'Z') {
-                    stored_word[0] = stored_word[0].toUpper();
-                }
-                else if (text[current_word_cur] >= 'a' && text[current_word_cur] <= 'z') {
-                    stored_word[0] = stored_word[0].toLower();
+                // An empty replacement drops the word entirely, leaving no
+                // first letter whose case could be matched.
+                if (!stored_word.isEmpty()) {
+                    if (text[current_word_cur] >= 'A' && text[current_word_cur] <= 'Z') {
+                        stored_word[0] = stored_word[0].toUpper();
+                    }
+                    else if (text[current_word_cur] >= 'a' && text[current_word_cur] <= 'z') {
+                        stored_word[0] = stored_word[0].toLower();
+                    }
                 }
             }
             else {
