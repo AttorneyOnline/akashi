@@ -1999,6 +1999,9 @@ class ScriptingDance : public QObject
         {Step::Command, "/note remember the milk", "Noted"},
         {Step::Command, "/notes", "remember the milk"},
         {Step::Command, "/luainfo", "playing Phoenix"},
+        // The join observer saw the stamped actor ids; a missing key
+        // would have errored the Lua handler and left "nobody yet".
+        {Step::Command, "/lualast", "of client"},
 
         // A permission-gated script command toggling a script text filter
         // on a target, watched live through the IC transform.

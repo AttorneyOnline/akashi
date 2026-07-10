@@ -44,9 +44,22 @@ enum class RulePhase
 };
 
 // What a rule gets to look at when its event fires.
+//
+// Renamed and widened 2.1: player_id became player_state_id and
+// client_session_id was inserted behind it, deliberately mid-struct so
+// stale field reads and positional initializers fail to compile instead
+// of silently shifting. Compiled plugins rebuild against this.
 struct RuleContext
 {
-    int player_id = -1;
+    // The user slot that acted, -1 when nothing acted. One client may
+    // hold several slots - extra windows of the same person - and a
+    // session's first slot reuses the session id, so today this equals
+    // client_session_id.
+    int player_state_id = -1;
+    // The client session behind the acting slot, -1 when nothing acted.
+    // Rules about the person - permissions, owners, invites, sanctions -
+    // read this one; player_state_id names the slot.
+    int client_session_id = -1;
     int area_id = -1;
     int floor_id = -1;
     QVariantMap payload;

@@ -16,6 +16,7 @@
 #include <QSet>
 #include <QString>
 #include <QTimer>
+#include <QVariantMap>
 
 #include <memory>
 #include <optional>
@@ -28,8 +29,14 @@ class TextFilterRegistry;
 struct AuthOutcome;
 struct PacketSpec;
 
+// Stamps the acting identity onto a placed event payload. Site-provided
+// keys win: a key already in the payload is never overwritten (the IC
+// payload's wire-derived char_name must survive).
+AKASHI_CORE_EXPORT void stampActorIdentity(QVariantMap &f_payload, int f_client_session_id, int f_player_state_id,
+                                           const QString &f_char_name, const QString &f_ooc_name);
+
 // One connection - the person behind it. A session owns 1..N PlayerStates
-// (characters) and everything per-person: the transport, identity, auth,
+// (user slots) and everything per-person: the transport, identity, auth,
 // the rate limiter, receive-preferences, and the moderation sanctions. It
 // is also the IPacketContext the packet handlers talk to, and it carries
 // the game verbs a person performs: joining areas, chatting, presenting
@@ -403,6 +410,10 @@ class AKASHI_CORE_EXPORT ClientSession : public QObject, public IPacketContext
     // The session's active character - the one the classic protocol
     // addresses.
     PlayerState *player() const { return active_player; }
+
+    // The actor stamp every placed payload gets: this session and its
+    // acting slot, character folder and OOC name. Site keys win.
+    QVariantMap withActorIdentity(QVariantMap f_payload) const;
 
     ServerContext *m_server;
 

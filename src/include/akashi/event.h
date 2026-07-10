@@ -20,151 +20,67 @@ struct Event
     Q_GADGET_EXPORT(AKASHI_CORE_EXPORT)
 };
 
-struct PlayerJoinedAreaEvent : Event
-{
-    Q_GADGET_EXPORT(AKASHI_CORE_EXPORT)
-    Q_PROPERTY(int client_id MEMBER client_id)
-    Q_PROPERTY(int area_id MEMBER area_id)
-    Q_PROPERTY(int floor_id MEMBER floor_id)
-    Q_PROPERTY(QString char_name MEMBER char_name)
-    Q_PROPERTY(QString ipid MEMBER ipid)
+// Placed events dispatch as QVariantMap payloads through the rule-phase
+// wrappers, never as typed structs; the markers below survive as the id
+// constants, with each event's real observer payload documented. Every
+// player-driven placed payload additionally carries the stamped actor
+// keys - client_session_id (the session), player_state_id (the acting
+// user slot), char_name (the character folder), ooc_name - unless the
+// firing site provided the key itself. Events fired before a character
+// exists (like server_joined) stamp empty names.
 
-  public:
+// Observer payload: from_area, from_floor, character_taken + actor keys.
+// The before phase instead carries lock_status, is_invited, bypass_locks,
+// area_name, character_id + actor keys.
+struct PlayerJoinedAreaEvent
+{
     static inline const QString id = QStringLiteral("player_joined");
-
-    int client_id = -1;
-    int area_id = -1;
-    int floor_id = -1;
-    QString char_name;
-    QString ipid;
 };
 
-struct PlayerLeftAreaEvent : Event
+// Observer payload: the actor keys only.
+struct PlayerLeftAreaEvent
 {
-    Q_GADGET_EXPORT(AKASHI_CORE_EXPORT)
-    Q_PROPERTY(int client_id MEMBER client_id)
-    Q_PROPERTY(int area_id MEMBER area_id)
-    Q_PROPERTY(int floor_id MEMBER floor_id)
-    Q_PROPERTY(QString char_name MEMBER char_name)
-
-  public:
     static inline const QString id = QStringLiteral("player_left");
-
-    int client_id = -1;
-    int area_id = -1;
-    int floor_id = -1;
-    QString char_name;
 };
 
-struct AreaChangedEvent : Event
+// Reserved id: nothing fires this event today.
+struct AreaChangedEvent
 {
-    Q_GADGET_EXPORT(AKASHI_CORE_EXPORT)
-    Q_PROPERTY(int client_id MEMBER client_id)
-    Q_PROPERTY(int from_area MEMBER from_area)
-    Q_PROPERTY(int to_area MEMBER to_area)
-    Q_PROPERTY(QString char_name MEMBER char_name)
-
-  public:
     static inline const QString id = QStringLiteral("area_changed");
-
-    int client_id = -1;
-    int from_area = -1;
-    int to_area = -1;
-    QString char_name;
 };
 
-struct ICMessageEvent : Event
+// Observer payload: message + actor keys; char_name is the wire value the
+// packet carried. The before/transform phases additionally see
+// objection_mod, showname, evidence.
+struct ICMessageEvent
 {
-    Q_GADGET_EXPORT(AKASHI_CORE_EXPORT)
-    Q_PROPERTY(int client_id MEMBER client_id)
-    Q_PROPERTY(int area_id MEMBER area_id)
-    Q_PROPERTY(int floor_id MEMBER floor_id)
-    Q_PROPERTY(QString area_name MEMBER area_name)
-    Q_PROPERTY(QString char_name MEMBER char_name)
-    Q_PROPERTY(QString ooc_name MEMBER ooc_name)
-    Q_PROPERTY(QString ipid MEMBER ipid)
-    Q_PROPERTY(QString message MEMBER message)
-
-  public:
     static inline const QString id = QStringLiteral("ic_message_sent");
-
-    int client_id = -1;
-    int area_id = -1;
-    int floor_id = -1;
-    QString area_name;
-    QString char_name;
-    QString ooc_name;
-    QString ipid;
-    QString message;
 };
 
-struct OOCMessageEvent : Event
+// Observer payload: message + actor keys.
+struct OOCMessageEvent
 {
-    Q_GADGET_EXPORT(AKASHI_CORE_EXPORT)
-    Q_PROPERTY(int client_id MEMBER client_id)
-    Q_PROPERTY(int area_id MEMBER area_id)
-    Q_PROPERTY(QString area_name MEMBER area_name)
-    Q_PROPERTY(QString char_name MEMBER char_name)
-    Q_PROPERTY(QString ooc_name MEMBER ooc_name)
-    Q_PROPERTY(QString ipid MEMBER ipid)
-    Q_PROPERTY(QString message MEMBER message)
-
-  public:
     static inline const QString id = QStringLiteral("ooc_message_sent");
-
-    int client_id = -1;
-    int area_id = -1;
-    QString area_name;
-    QString char_name;
-    QString ooc_name;
-    QString ipid;
-    QString message;
 };
 
-struct MusicChangedEvent : Event
+// Observer payload: song, source + actor keys. The jukebox fires it with
+// no actor keys and both context ids -1.
+struct MusicChangedEvent
 {
-    Q_GADGET_EXPORT(AKASHI_CORE_EXPORT)
-    Q_PROPERTY(int client_id MEMBER client_id)
-    Q_PROPERTY(int area_id MEMBER area_id)
-    Q_PROPERTY(int floor_id MEMBER floor_id)
-    Q_PROPERTY(QString area_name MEMBER area_name)
-    Q_PROPERTY(QString char_name MEMBER char_name)
-    Q_PROPERTY(QString track_name MEMBER track_name)
-
-  public:
     static inline const QString id = QStringLiteral("music_changed");
-
-    int client_id = -1;
-    int area_id = -1;
-    int floor_id = -1;
-    QString area_name;
-    QString char_name;
-    QString track_name;
 };
 
-struct EvidencePresentedEvent : Event
+// Observer payload: index + actor keys.
+struct EvidencePresentedEvent
 {
-    Q_GADGET_EXPORT(AKASHI_CORE_EXPORT)
-    Q_PROPERTY(int client_id MEMBER client_id)
-    Q_PROPERTY(int area_id MEMBER area_id)
-    Q_PROPERTY(int floor_id MEMBER floor_id)
-    Q_PROPERTY(QString char_name MEMBER char_name)
-    Q_PROPERTY(QString evidence_name MEMBER evidence_name)
-
-  public:
     static inline const QString id = QStringLiteral("evidence_presented");
-
-    int client_id = -1;
-    int area_id = -1;
-    int floor_id = -1;
-    QString char_name;
-    QString evidence_name;
 };
 
 struct ModcallEvent : Event
 {
     Q_GADGET_EXPORT(AKASHI_CORE_EXPORT)
-    Q_PROPERTY(int client_id MEMBER client_id)
+    Q_PROPERTY(int client_session_id MEMBER client_session_id)
+    Q_PROPERTY(int player_state_id MEMBER player_state_id)
     Q_PROPERTY(int area_id MEMBER area_id)
     Q_PROPERTY(QString area_name MEMBER area_name)
     Q_PROPERTY(QString char_name MEMBER char_name)
@@ -175,7 +91,10 @@ struct ModcallEvent : Event
   public:
     static inline const QString id = QStringLiteral("modcall");
 
-    int client_id = -1;
+    int client_session_id = -1;
+    // The user slot that filed the call; equals client_session_id while a
+    // session holds one slot.
+    int player_state_id = -1;
     int area_id = -1;
     QString area_name;
     QString char_name;
@@ -223,7 +142,8 @@ struct KickIssuedEvent : Event
 struct PlayerDisconnectedEvent : Event
 {
     Q_GADGET_EXPORT(AKASHI_CORE_EXPORT)
-    Q_PROPERTY(int client_id MEMBER client_id)
+    Q_PROPERTY(int client_session_id MEMBER client_session_id)
+    Q_PROPERTY(int player_state_id MEMBER player_state_id)
     Q_PROPERTY(bool was_joined MEMBER was_joined)
     Q_PROPERTY(QString ipid MEMBER ipid)
     Q_PROPERTY(QString hwid MEMBER hwid)
@@ -233,7 +153,9 @@ struct PlayerDisconnectedEvent : Event
   public:
     static inline const QString id = QStringLiteral("player_disconnected");
 
-    int client_id = -1;
+    int client_session_id = -1;
+    // The session's active user slot at removal time.
+    int player_state_id = -1;
     bool was_joined = false;
     QString ipid;
     QString hwid;
@@ -265,13 +187,6 @@ QVariantMap eventToMap(const T &f_event)
 
 } // namespace akashi
 
-Q_DECLARE_METATYPE(akashi::PlayerJoinedAreaEvent)
-Q_DECLARE_METATYPE(akashi::PlayerLeftAreaEvent)
-Q_DECLARE_METATYPE(akashi::AreaChangedEvent)
-Q_DECLARE_METATYPE(akashi::ICMessageEvent)
-Q_DECLARE_METATYPE(akashi::OOCMessageEvent)
-Q_DECLARE_METATYPE(akashi::MusicChangedEvent)
-Q_DECLARE_METATYPE(akashi::EvidencePresentedEvent)
 Q_DECLARE_METATYPE(akashi::ModcallEvent)
 Q_DECLARE_METATYPE(akashi::BanIssuedEvent)
 Q_DECLARE_METATYPE(akashi::KickIssuedEvent)

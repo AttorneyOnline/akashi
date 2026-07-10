@@ -239,11 +239,12 @@ void ClientSession::changeArea(int new_area)
 
     akashi::Area *l_target = m_server->areaById(new_area);
     akashi::RuleContext l_ctx;
-    l_ctx.player_id = clientId();
+    l_ctx.player_state_id = player()->id();
+    l_ctx.client_session_id = clientId();
     l_ctx.area_id = new_area;
     l_ctx.floor_id = l_new_floor;
     l_ctx.services = m_server->services();
-    l_ctx.payload = {
+    l_ctx.payload = withActorIdentity({
         {QStringLiteral("lock_status"),
          l_target->lockState() == akashi::Area::LockState::Locked ? QStringLiteral("locked") : l_target->lockState() == akashi::Area::LockState::Spectatable ? QStringLiteral("spectatable")
                                                                                                                                                              : QStringLiteral("free")},
@@ -251,7 +252,7 @@ void ClientSession::changeArea(int new_area)
         {QStringLiteral("bypass_locks"), canPerform(permission::bypass_locks)},
         {QStringLiteral("area_name"), m_server->areaName(new_area)},
         {QStringLiteral("character_id"), m_server->characterId(character())},
-    };
+    });
 
     // Same floor as checkBeforeRule: bypass_rules holders pass every
     // before-rule, including the target area's join gate.
@@ -329,6 +330,29 @@ int ClientSession::floorAreaToGlobal(int f_local_index) const
     return l_floor->area_ids[f_local_index];
 }
 
+void stampActorIdentity(QVariantMap &f_payload, int f_client_session_id, int f_player_state_id,
+                        const QString &f_char_name, const QString &f_ooc_name)
+{
+    if (!f_payload.contains(QStringLiteral("client_session_id"))) {
+        f_payload.insert(QStringLiteral("client_session_id"), f_client_session_id);
+    }
+    if (!f_payload.contains(QStringLiteral("player_state_id"))) {
+        f_payload.insert(QStringLiteral("player_state_id"), f_player_state_id);
+    }
+    if (!f_payload.contains(QStringLiteral("char_name"))) {
+        f_payload.insert(QStringLiteral("char_name"), f_char_name);
+    }
+    if (!f_payload.contains(QStringLiteral("ooc_name"))) {
+        f_payload.insert(QStringLiteral("ooc_name"), f_ooc_name);
+    }
+}
+
+QVariantMap ClientSession::withActorIdentity(QVariantMap f_payload) const
+{
+    stampActorIdentity(f_payload, clientId(), player()->id(), player()->character(), player()->oocName());
+    return f_payload;
+}
+
 std::optional<QString> ClientSession::checkBeforeRule(const QString &f_event, const QVariantMap &f_payload)
 {
     // Rules only tighten for ordinary players; a bypass_rules holder is
@@ -338,11 +362,12 @@ std::optional<QString> ClientSession::checkBeforeRule(const QString &f_event, co
     }
 
     akashi::RuleContext l_ctx;
-    l_ctx.player_id = clientId();
+    l_ctx.player_state_id = player()->id();
+    l_ctx.client_session_id = clientId();
     l_ctx.area_id = areaId();
     l_ctx.floor_id = m_server->floorIdForArea(areaId());
     l_ctx.services = m_server->services();
-    l_ctx.payload = f_payload;
+    l_ctx.payload = withActorIdentity(f_payload);
     akashi::Area *l_area = m_server->areaById(areaId());
     const akashi::Floor *l_floor = m_server->floorById(l_ctx.floor_id);
     akashi::RuleVerdict l_verdict = akashi::RuleRegistry::checkBefore(f_event, l_ctx,
@@ -358,11 +383,12 @@ QVariantMap ClientSession::runTransformRules(const QString &f_event, const QVari
     // No bypass_rules floor here: transforms are area flavor, not gates -
     // a moderator's message still gets medieval-ized.
     akashi::RuleContext l_ctx;
-    l_ctx.player_id = clientId();
+    l_ctx.player_state_id = player()->id();
+    l_ctx.client_session_id = clientId();
     l_ctx.area_id = areaId();
     l_ctx.floor_id = m_server->floorIdForArea(areaId());
     l_ctx.services = m_server->services();
-    l_ctx.payload = f_payload;
+    l_ctx.payload = withActorIdentity(f_payload);
     akashi::Area *l_area = m_server->areaById(areaId());
     const akashi::Floor *l_floor = m_server->floorById(l_ctx.floor_id);
     return akashi::RuleRegistry::runTransforms(f_event, l_ctx,
@@ -373,11 +399,12 @@ QVariantMap ClientSession::runTransformRules(const QString &f_event, const QVari
 void ClientSession::runAfterRule(const QString &f_event, const QVariantMap &f_payload)
 {
     akashi::RuleContext l_ctx;
-    l_ctx.player_id = clientId();
+    l_ctx.player_state_id = player()->id();
+    l_ctx.client_session_id = clientId();
     l_ctx.area_id = areaId();
     l_ctx.floor_id = m_server->floorIdForArea(areaId());
     l_ctx.services = m_server->services();
-    l_ctx.payload = f_payload;
+    l_ctx.payload = withActorIdentity(f_payload);
     akashi::Area *l_area = m_server->areaById(areaId());
     const akashi::Floor *l_floor = m_server->floorById(l_ctx.floor_id);
     akashi::RuleRegistry::runAfter(f_event, l_ctx,
@@ -1776,14 +1803,15 @@ void ClientSession::recordModcall(const QString &f_reason)
     m_server->flushModcallLog(l_area_name);
 
     const akashi::ModcallEvent l_event{
-        .client_id = clientId(),
+        .client_session_id = clientId(),
+        .player_state_id = player()->id(),
         .area_id = areaId(),
         .area_name = l_area_name,
         .char_name = character(),
         .ooc_name = name(),
         .ipid = session_ipid,
         .reason = f_reason};
-    m_server->publishEvent(akashi::ModcallEvent::id, akashi::eventToMap(l_event), clientId());
+    m_server->publishEvent(akashi::ModcallEvent::id, akashi::eventToMap(l_event), player()->id(), clientId());
 }
 
 // The MA packet's kick door: resolves the target and phrases the reply;

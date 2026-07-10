@@ -24,11 +24,13 @@ namespace akashi {
 
 namespace {
 
-// Every action resolves the acting client the same way; a null client means
-// the event fired without a player attached, so gates pass and sends no-op.
+// Every action resolves the acting client the same way - by the session,
+// since gates and reactions are about the person, not the user slot; a
+// null client means the event fired without anyone attached, so gates
+// pass and sends no-op.
 akashi::ClientSession *clientFor(ServerContext *f_server, const RuleContext &f_context)
 {
-    return f_server->clientById(f_context.player_id);
+    return f_server->clientById(f_context.client_session_id);
 }
 
 akashi::Area *areaFor(ServerContext *f_server, const RuleContext &f_context)
@@ -244,7 +246,7 @@ BeforeRuleFunction checkFreePlay(ServerContext *f_server, ServiceRegistry &, con
         akashi::Area *l_area = areaFor(f_server, f_ctx);
         if (!l_area || l_area->isPlayEnabled())
             return {};
-        if (l_area->owners().contains(f_ctx.player_id))
+        if (l_area->owners().contains(f_ctx.client_session_id))
             return {};
         akashi::ClientSession *l_client = clientFor(f_server, f_ctx);
         if (!l_bypass.isEmpty() && l_client && l_client->canPerform(l_bypass))
@@ -444,8 +446,8 @@ AfterRuleFunction revokeInvite(ServerContext *f_server, ServiceRegistry &, const
     return [f_server](const RuleContext &f_ctx) {
         const int l_from = f_ctx.payload.value(QStringLiteral("from_area"), -1).toInt();
         akashi::Area *l_area = f_server->areaById(l_from);
-        if (l_area && !l_area->owners().contains(f_ctx.player_id))
-            l_area->uninvite(f_ctx.player_id);
+        if (l_area && !l_area->owners().contains(f_ctx.client_session_id))
+            l_area->uninvite(f_ctx.client_session_id);
     };
 }
 

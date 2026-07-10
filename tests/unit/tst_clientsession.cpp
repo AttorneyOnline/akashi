@@ -26,6 +26,8 @@ class tst_ClientSession : public QObject
     void addsOnePlayerAndEnforcesTheCap();
     void reportsTimeoutWhenNobodyReconnects();
     void bindingANewTransportCancelsTheWait();
+    void actorStampAddsIdentityAndSiteKeysWin();
+    void connectFeaturesSeedTheProfileAndSurviveIdentify();
 };
 
 void tst_ClientSession::writesThroughOpenTransport()
@@ -229,6 +231,46 @@ void tst_ClientSession::bindingANewTransportCancelsTheWait()
     QVERIFY(!l_session.reconnect_timer->isActive());
     QCOMPARE(l_timed_out.size(), 0);
     QCOMPARE(l_replacement->written.size(), 1);
+}
+
+void tst_ClientSession::actorStampAddsIdentityAndSiteKeysWin()
+{
+    // A key the firing site provided is never overwritten - the IC
+    // payload's wire-derived char_name must survive the stamp.
+    QVariantMap l_payload{{QStringLiteral("char_name"), QStringLiteral("wire-name")}};
+    akashi::stampActorIdentity(l_payload, 5, 5, QStringLiteral("Phoenix"), QStringLiteral("nick"));
+    QCOMPARE(l_payload.value(QStringLiteral("char_name")).toString(), QStringLiteral("wire-name"));
+    QCOMPARE(l_payload.value(QStringLiteral("client_session_id")).toInt(), 5);
+    QCOMPARE(l_payload.value(QStringLiteral("player_state_id")).toInt(), 5);
+    QCOMPARE(l_payload.value(QStringLiteral("ooc_name")).toString(), QStringLiteral("nick"));
+
+    // An empty payload gets all four keys.
+    QVariantMap l_empty;
+    akashi::stampActorIdentity(l_empty, 3, 7, QStringLiteral("Edgeworth"), QString());
+    QCOMPARE(l_empty.size(), 4);
+    QCOMPARE(l_empty.value(QStringLiteral("client_session_id")).toInt(), 3);
+    QCOMPARE(l_empty.value(QStringLiteral("player_state_id")).toInt(), 7);
+    QCOMPARE(l_empty.value(QStringLiteral("char_name")).toString(), QStringLiteral("Edgeworth"));
+    QVERIFY(l_empty.value(QStringLiteral("ooc_name")).toString().isEmpty());
+}
+
+void tst_ClientSession::connectFeaturesSeedTheProfileAndSurviveIdentify()
+{
+    // The transport carries what the client announced while connecting;
+    // binding it seeds the profile, and the ID packet must not wipe it.
+    FakeTransport *l_transport = new FakeTransport(true);
+    l_transport->connect_features = {"auth_password", "ao_ms_2.11.1"};
+    akashi::ClientSession l_session(nullptr, l_transport, 1);
+
+    QVERIFY(l_session.profile().hasFeature("auth_password"));
+    QVERIFY(l_session.profile().hasFeature("ao_ms_2.11.1"));
+
+    akashi::ClientProfile l_identified;
+    l_identified.arch = "AO2";
+    l_session.identify(l_identified);
+
+    QCOMPARE(l_session.profile().arch, QString("AO2"));
+    QVERIFY(l_session.profile().hasFeature("ao_ms_2.11.1"));
 }
 
 QTEST_MAIN(tst_ClientSession)

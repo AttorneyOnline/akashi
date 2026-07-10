@@ -9,23 +9,24 @@ namespace akashi {
 
 class ClientSession;
 
-// One playable character within a connection. A legacy-protocol
-// session always owns exactly one of these; a richer protocol may own
-// several, letting one person voice multiple characters at once. Everything
-// here is per-character - the connection, identity, auth, sanctions and
-// receive-preferences live on ClientSession, which owns the PlayerState(s).
+// One user slot of a connection: another player-list presence of the same
+// client, like a second window of the same person, wearing whatever
+// character it likes. A legacy-protocol session always owns exactly one;
+// a richer protocol may own several. Everything here is per-slot -
+// the connection, identity, auth, sanctions and receive-preferences live
+// on ClientSession, which owns the PlayerState(s).
 //
 // This is the unit the player list knows: PR/PU packets are keyed by id(),
 // and the fields they carry are observable through the signals below - so
-// each character a person plays is its own entry in everyone's player list.
+// each slot a person holds is its own entry in everyone's player list.
 class AKASHI_CORE_EXPORT PlayerState : public QObject
 {
     Q_OBJECT
 
   public:
-    // The id is the player-list key. The session's first character reuses the
-    // session id, which keeps the network traffic identical for one-character clients;
-    // extra characters get their own ids when multi-character support lands.
+    // The id is the player-list key. The session's first slot reuses the
+    // session id, which keeps the network traffic identical for one-slot
+    // clients; extra slots get their own ids when multi-slot support lands.
     PlayerState(int f_id, ClientSession *f_session);
 
     int id() const { return m_id; }

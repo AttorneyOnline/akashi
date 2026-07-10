@@ -345,9 +345,11 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
 
     /**
      * @brief Publishes a placeless event straight to the global observers:
-     * a serverwide fact with no area, so no rule phase dispatches.
+     * a serverwide fact with no area, so no rule phase dispatches. The two
+     * ids name the acting user slot and the session behind it; both stay
+     * -1 for actor-less facts like config reloads.
      */
-    void publishEvent(const QString &f_id, const QVariantMap &f_payload, int f_player_id = -1);
+    void publishEvent(const QString &f_id, const QVariantMap &f_payload, int f_player_state_id = -1, int f_client_session_id = -1);
 
     void flushModcallLog(const QString &f_area_name);
 

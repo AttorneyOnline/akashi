@@ -51,10 +51,13 @@ extern "C"
 
     /* A rule action, fired when an area event it is attached to happens. The
      * event's payload and the arguments the rule was attached with arrive as
-     * key/value string pairs. f_result is non-null for a before-action; calling
+     * key/value string pairs. f_player_state_id names the acting user slot -
+     * a client may hold several, and a session's first slot reuses the
+     * session id; the payload's client_session_id key names the session
+     * behind it. f_result is non-null for a before-action; calling
      * rule_result_block on it refuses the event. After-actions get null. */
     typedef void (*AkashiRuleFn)(void *f_userdata,
-                                 int f_player_id, int f_area_id, int f_floor_id,
+                                 int f_player_state_id, int f_area_id, int f_floor_id,
                                  int f_payload_count, const char *const *f_payload_keys, const char *const *f_payload_values,
                                  int f_argument_count, const char *const *f_argument_keys, const char *const *f_argument_values,
                                  AkashiRuleResult *f_result);
@@ -159,7 +162,9 @@ extern "C"
          * their catalog ids), a placeless event (modcall, ban_issued,
          * kick_issued, player_disconnected, config_reloaded), or any custom
          * name published by a plugin. Handlers run after the event committed.
-         * Returns 1 on success. */
+         * Payloads arrive with the context ids player_state_id,
+         * client_session_id, area_id and floor_id injected; a key the event
+         * itself carried wins over the injected value. Returns 1 on success. */
         int (*subscribe_event)(const char *f_name, size_t f_name_length,
                                AkashiEventFn f_handler, void *f_userdata,
                                const char *f_owner_id, size_t f_owner_id_length);

@@ -115,7 +115,7 @@ static int luaFilterTrampoline(void *f_userdata, const char *f_text, size_t f_te
 // the attached arguments. A returned string blocks with that reason; false
 // blocks with the stock reason; anything else allows.
 static void luaRuleTrampoline(void *f_userdata,
-                              int f_player_id, int f_area_id, int f_floor_id,
+                              int f_player_state_id, int f_area_id, int f_floor_id,
                               int f_payload_count, const char *const *f_payload_keys, const char *const *f_payload_values,
                               int f_argument_count, const char *const *f_argument_keys, const char *const *f_argument_values,
                               AkashiRuleResult *f_result)
@@ -124,8 +124,8 @@ static void luaRuleTrampoline(void *f_userdata,
     lua_State *L = l_ref->state;
     lua_rawgeti(L, LUA_REGISTRYINDEX, l_ref->function_ref);
     lua_createtable(L, 0, 5);
-    lua_pushinteger(L, f_player_id);
-    lua_setfield(L, -2, "player_id");
+    lua_pushinteger(L, f_player_state_id);
+    lua_setfield(L, -2, "player_state_id");
     lua_pushinteger(L, f_area_id);
     lua_setfield(L, -2, "area_id");
     lua_pushinteger(L, f_floor_id);

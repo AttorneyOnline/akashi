@@ -166,23 +166,23 @@ void tst_World::rulesApplyToTheirScopeOnly()
     QVector<akashi::BeforeRuleEntry> l_empty;
 
     // Area 2 blocks IC.
-    QVERIFY(!akashi::RuleRegistry::checkBefore(akashi::AreaEvents::IcMessageSent, {4, 2, 0, {}, nullptr},
+    QVERIFY(!akashi::RuleRegistry::checkBefore(akashi::AreaEvents::IcMessageSent, {.player_state_id = 4, .client_session_id = 4, .area_id = 2, .floor_id = 0, .payload = {}, .services = nullptr},
                                                l_area2_rules, l_empty)
                  .allowed);
     // Area 3 has no rules — IC allowed.
-    QVERIFY(akashi::RuleRegistry::checkBefore(akashi::AreaEvents::IcMessageSent, {4, 3, 0, {}, nullptr},
+    QVERIFY(akashi::RuleRegistry::checkBefore(akashi::AreaEvents::IcMessageSent, {.player_state_id = 4, .client_session_id = 4, .area_id = 3, .floor_id = 0, .payload = {}, .services = nullptr},
                                               l_empty, l_empty)
                 .allowed);
     // Floor 1 blocks evidence.
-    QVERIFY(!akashi::RuleRegistry::checkBefore(akashi::AreaEvents::EvidencePresented, {4, 9, 1, {}, nullptr},
+    QVERIFY(!akashi::RuleRegistry::checkBefore(akashi::AreaEvents::EvidencePresented, {.player_state_id = 4, .client_session_id = 4, .area_id = 9, .floor_id = 1, .payload = {}, .services = nullptr},
                                                l_empty, l_floor1_rules)
                  .allowed);
     // Floor 0 has no rules — evidence allowed.
-    QVERIFY(akashi::RuleRegistry::checkBefore(akashi::AreaEvents::EvidencePresented, {4, 9, 0, {}, nullptr},
+    QVERIFY(akashi::RuleRegistry::checkBefore(akashi::AreaEvents::EvidencePresented, {.player_state_id = 4, .client_session_id = 4, .area_id = 9, .floor_id = 0, .payload = {}, .services = nullptr},
                                               l_empty, l_empty)
                 .allowed);
     // PlayerJoined has no rules anywhere — allowed.
-    QVERIFY(akashi::RuleRegistry::checkBefore(akashi::AreaEvents::PlayerJoined, {4, 2, 0, {}, nullptr},
+    QVERIFY(akashi::RuleRegistry::checkBefore(akashi::AreaEvents::PlayerJoined, {.player_state_id = 4, .client_session_id = 4, .area_id = 2, .floor_id = 0, .payload = {}, .services = nullptr},
                                               l_area2_rules, l_empty)
                 .allowed);
 }
@@ -200,7 +200,7 @@ void tst_World::firstBlockingRuleWins()
          "test"},
     };
 
-    const auto l_verdict = akashi::RuleRegistry::checkBefore(akashi::AreaEvents::PlayerJoined, {4, 0, 0, {}, nullptr},
+    const auto l_verdict = akashi::RuleRegistry::checkBefore(akashi::AreaEvents::PlayerJoined, {.player_state_id = 4, .client_session_id = 4, .area_id = 0, .floor_id = 0, .payload = {}, .services = nullptr},
                                                              l_area_rules, l_floor_rules);
     QVERIFY(!l_verdict.allowed);
     QCOMPARE(l_verdict.reason, QString("the area says no"));
@@ -223,12 +223,12 @@ void tst_World::areaRulesOverrideFloorRulesOfSameAction()
     };
 
     // Area overrides check_evidence (allows), floor check_permission still runs (allows).
-    QVERIFY(akashi::RuleRegistry::checkBefore(akashi::AreaEvents::EvidencePresented, {4, 2, 0, {}, nullptr},
+    QVERIFY(akashi::RuleRegistry::checkBefore(akashi::AreaEvents::EvidencePresented, {.player_state_id = 4, .client_session_id = 4, .area_id = 2, .floor_id = 0, .payload = {}, .services = nullptr},
                                               l_area_rules, l_floor_rules)
                 .allowed);
     // Without area rules, floor check_evidence blocks.
     QVector<akashi::BeforeRuleEntry> l_empty;
-    QVERIFY(!akashi::RuleRegistry::checkBefore(akashi::AreaEvents::EvidencePresented, {4, 3, 0, {}, nullptr},
+    QVERIFY(!akashi::RuleRegistry::checkBefore(akashi::AreaEvents::EvidencePresented, {.player_state_id = 4, .client_session_id = 4, .area_id = 3, .floor_id = 0, .payload = {}, .services = nullptr},
                                                l_empty, l_floor_rules)
                  .allowed);
 
@@ -242,7 +242,7 @@ void tst_World::areaRulesOverrideFloorRulesOfSameAction()
          "test"},
     };
 
-    const auto l_verdict = akashi::RuleRegistry::checkBefore(akashi::AreaEvents::EvidencePresented, {4, 2, 0, {}, nullptr},
+    const auto l_verdict = akashi::RuleRegistry::checkBefore(akashi::AreaEvents::EvidencePresented, {.player_state_id = 4, .client_session_id = 4, .area_id = 2, .floor_id = 0, .payload = {}, .services = nullptr},
                                                              l_area_rules, l_floor_rules2);
     QVERIFY(!l_verdict.allowed);
     QCOMPARE(l_verdict.reason, QString("no permission"));
@@ -294,7 +294,7 @@ void tst_World::beforeRulesGateWithoutTouchingAfterRules()
     };
 
     const akashi::RuleVerdict l_verdict = akashi::RuleRegistry::checkBefore(
-        akashi::AreaEvents::PlayerJoined, {4, 0, 0, {}, nullptr},
+        akashi::AreaEvents::PlayerJoined, {.player_state_id = 4, .client_session_id = 4, .area_id = 0, .floor_id = 0, .payload = {}, .services = nullptr},
         l_before, {});
 
     QVERIFY(!l_verdict.allowed);
@@ -317,7 +317,7 @@ void tst_World::afterRulesActOnTheWorld()
     };
 
     akashi::RuleRegistry::runAfter(akashi::AreaEvents::IcMessageSent,
-                                   {4, 1, 0, {{QStringLiteral("message"), QStringLiteral("open sesame")}}, nullptr},
+                                   {.player_state_id = 4, .client_session_id = 4, .area_id = 1, .floor_id = 0, .payload = {{QStringLiteral("message"), QStringLiteral("open sesame")}}, .services = nullptr},
                                    l_area_after, {});
 
     QCOMPARE(l_vault.lockState(), akashi::Area::LockState::Free);
@@ -348,11 +348,11 @@ void tst_World::pluginBeforeRuleObjectsRegisterAndReleaseOnUnload()
 
     QVERIFY(!l_alive.expired());
     QVERIFY(!akashi::RuleRegistry::checkBefore(akashi::AreaEvents::EvidencePresented,
-                                               {4, 0, 0, {{QStringLiteral("evidence_name"), QStringLiteral("Rusty Crowbar")}}, nullptr},
+                                               {.player_state_id = 4, .client_session_id = 4, .area_id = 0, .floor_id = 0, .payload = {{QStringLiteral("evidence_name"), QStringLiteral("Rusty Crowbar")}}, .services = nullptr},
                                                l_area_rules, {})
                  .allowed);
     QVERIFY(akashi::RuleRegistry::checkBefore(akashi::AreaEvents::EvidencePresented,
-                                              {4, 0, 0, {{QStringLiteral("evidence_name"), QStringLiteral("Cursed Key")}}, nullptr},
+                                              {.player_state_id = 4, .client_session_id = 4, .area_id = 0, .floor_id = 0, .payload = {{QStringLiteral("evidence_name"), QStringLiteral("Cursed Key")}}, .services = nullptr},
                                               l_area_rules, {})
                 .allowed);
 
@@ -386,7 +386,7 @@ void tst_World::unregisteringAnOwnerRemovesItsRules()
     l_remove(l_floor.after_rules, QStringLiteral("plugin-a"));
 
     QCOMPARE(l_floor.before_rules.size() + l_floor.after_rules.size(), 1);
-    QCOMPARE(akashi::RuleRegistry::checkBefore(akashi::AreaEvents::PlayerJoined, {4, 0, 0, {}, nullptr},
+    QCOMPARE(akashi::RuleRegistry::checkBefore(akashi::AreaEvents::PlayerJoined, {.player_state_id = 4, .client_session_id = 4, .area_id = 0, .floor_id = 0, .payload = {}, .services = nullptr},
                                                {}, l_floor.before_rules)
                  .reason,
              QString("still no"));
@@ -474,7 +474,7 @@ void tst_World::transformsMergeChangedKeysInSequence()
 
     const QVariantMap l_result = akashi::RuleRegistry::runTransforms(
         akashi::AreaEvents::IcMessageSent,
-        {4, 1, 0, {{QStringLiteral("message"), QStringLiteral("HELLO")}, {QStringLiteral("char_name"), QStringLiteral("Phoenix")}}, nullptr},
+        {.player_state_id = 4, .client_session_id = 4, .area_id = 1, .floor_id = 0, .payload = {{QStringLiteral("message"), QStringLiteral("HELLO")}, {QStringLiteral("char_name"), QStringLiteral("Phoenix")}}, .services = nullptr},
         {}, l_floor_rules);
 
     // The second transform saw the first one's rewrite.
@@ -507,7 +507,7 @@ void tst_World::areaTransformsSuppressFloorTransformsOfSameAction()
 
     const QVariantMap l_result = akashi::RuleRegistry::runTransforms(
         akashi::AreaEvents::IcMessageSent,
-        {4, 2, 0, {{QStringLiteral("message"), QStringLiteral("original")}}, nullptr},
+        {.player_state_id = 4, .client_session_id = 4, .area_id = 2, .floor_id = 0, .payload = {{QStringLiteral("message"), QStringLiteral("original")}}, .services = nullptr},
         l_area_rules, l_floor_rules);
 
     // The area's censor ran and suppressed the floor's; the floor's tag
@@ -517,7 +517,7 @@ void tst_World::areaTransformsSuppressFloorTransformsOfSameAction()
     // Without area rules, the floor's own censor applies.
     const QVariantMap l_floor_only = akashi::RuleRegistry::runTransforms(
         akashi::AreaEvents::IcMessageSent,
-        {4, 3, 0, {{QStringLiteral("message"), QStringLiteral("original")}}, nullptr},
+        {.player_state_id = 4, .client_session_id = 4, .area_id = 3, .floor_id = 0, .payload = {{QStringLiteral("message"), QStringLiteral("original")}}, .services = nullptr},
         {}, l_floor_rules);
     QCOMPARE(l_floor_only.value("message").toString(), QString("floor censored [tagged]"));
 }
@@ -543,7 +543,7 @@ void tst_World::emptyTransformResultLeavesThePayloadAlone()
     const QVariantMap l_payload = {{QStringLiteral("message"), QStringLiteral("untouched")},
                                    {QStringLiteral("char_name"), QStringLiteral("Edgeworth")}};
     const QVariantMap l_result = akashi::RuleRegistry::runTransforms(
-        akashi::AreaEvents::OocMessageSent, {4, 1, 0, l_payload, nullptr}, {}, l_floor_rules);
+        akashi::AreaEvents::OocMessageSent, {.player_state_id = 4, .client_session_id = 4, .area_id = 1, .floor_id = 0, .payload = l_payload, .services = nullptr}, {}, l_floor_rules);
 
     QVERIFY(l_ran);
     QCOMPARE(l_result, l_payload);
@@ -576,7 +576,7 @@ void tst_World::transformActionsRegisterBuildAndReport()
     const auto l_fn = l_registry.buildTransform(QStringLiteral("uppercase"), l_services,
                                                 {{QStringLiteral("key"), QStringLiteral("message")}});
     QVERIFY(l_fn.has_value());
-    const QVariantMap l_changes = (*l_fn)({4, 0, 0, {{QStringLiteral("message"), QStringLiteral("objection")}}, nullptr});
+    const QVariantMap l_changes = (*l_fn)({.player_state_id = 4, .client_session_id = 4, .area_id = 0, .floor_id = 0, .payload = {{QStringLiteral("message"), QStringLiteral("objection")}}, .services = nullptr});
     QCOMPARE(l_changes.value("message").toString(), QString("OBJECTION"));
 
     // Phase mismatches and unknown names build nothing.
@@ -703,25 +703,25 @@ void tst_World::checkCharacterHoldsAClaimPerArea()
 
     // Taken in the acting client's own area: blocked, and silently - the
     // default rule mirrors the mechanism's wordless refusal.
-    const akashi::RuleVerdict l_verdict = (*l_rule)({4, 0, 0, {{QStringLiteral("character_id"), 2}}, &l_services});
+    const akashi::RuleVerdict l_verdict = (*l_rule)({.player_state_id = 4, .client_session_id = 4, .area_id = 0, .floor_id = 0, .payload = {{QStringLiteral("character_id"), 2}}, .services = &l_services});
     QVERIFY(!l_verdict.allowed);
     QVERIFY(l_verdict.reason.isEmpty());
 
     // Free next door, and a spectator switch claims nothing anywhere.
-    QVERIFY((*l_rule)({4, 1, 0, {{QStringLiteral("character_id"), 2}}, &l_services}).allowed);
-    QVERIFY((*l_rule)({4, 0, 0, {{QStringLiteral("character_id"), -1}}, &l_services}).allowed);
-    QVERIFY((*l_rule)({4, 0, 0, {}, &l_services}).allowed);
+    QVERIFY((*l_rule)({.player_state_id = 4, .client_session_id = 4, .area_id = 1, .floor_id = 0, .payload = {{QStringLiteral("character_id"), 2}}, .services = &l_services}).allowed);
+    QVERIFY((*l_rule)({.player_state_id = 4, .client_session_id = 4, .area_id = 0, .floor_id = 0, .payload = {{QStringLiteral("character_id"), -1}}, .services = &l_services}).allowed);
+    QVERIFY((*l_rule)({.player_state_id = 4, .client_session_id = 4, .area_id = 0, .floor_id = 0, .payload = {}, .services = &l_services}).allowed);
 
     // A message argument gives the refusal a voice.
     const auto l_spoken = l_registry.buildBefore(QStringLiteral("check_character"), l_services,
                                                  {{QStringLiteral("policy"), QStringLiteral("unique_per_area")},
                                                   {QStringLiteral("message"), QStringLiteral("Someone is already playing that role.")}});
-    QCOMPARE((*l_spoken)({4, 0, 0, {{QStringLiteral("character_id"), 2}}, &l_services}).reason,
+    QCOMPARE((*l_spoken)({.player_state_id = 4, .client_session_id = 4, .area_id = 0, .floor_id = 0, .payload = {{QStringLiteral("character_id"), 2}}, .services = &l_services}).reason,
              QString("Someone is already playing that role."));
 
     // The legacy player_joined shape keeps its spoken area default.
     const auto l_legacy = l_registry.buildBefore(QStringLiteral("check_character"), l_services, {});
-    const akashi::RuleVerdict l_legacy_verdict = (*l_legacy)({4, 0, 0, {{QStringLiteral("character_id"), 2}}, &l_services});
+    const akashi::RuleVerdict l_legacy_verdict = (*l_legacy)({.player_state_id = 4, .client_session_id = 4, .area_id = 0, .floor_id = 0, .payload = {{QStringLiteral("character_id"), 2}}, .services = &l_services});
     QVERIFY(!l_legacy_verdict.allowed);
     QCOMPARE(l_legacy_verdict.reason, QString("That character is already taken in Gate."));
 }
@@ -739,17 +739,17 @@ void tst_World::checkCharacterHoldsAClaimPerFloor()
     QVERIFY(l_rule.has_value());
 
     // Taken anywhere on the floor blocks, even from the other area.
-    const akashi::RuleVerdict l_verdict = (*l_rule)({4, 1, 0, {{QStringLiteral("character_id"), 2}}, &l_services});
+    const akashi::RuleVerdict l_verdict = (*l_rule)({.player_state_id = 4, .client_session_id = 4, .area_id = 1, .floor_id = 0, .payload = {{QStringLiteral("character_id"), 2}}, .services = &l_services});
     QVERIFY(!l_verdict.allowed);
     QCOMPARE(l_verdict.reason, QString("One Phoenix per floor."));
 
     // The claim does not reach the other floor, other characters stay
     // free, and without a message the floor-wide refusal is silent too.
-    QVERIFY((*l_rule)({4, 2, 1, {{QStringLiteral("character_id"), 2}}, &l_services}).allowed);
-    QVERIFY((*l_rule)({4, 1, 0, {{QStringLiteral("character_id"), 3}}, &l_services}).allowed);
+    QVERIFY((*l_rule)({.player_state_id = 4, .client_session_id = 4, .area_id = 2, .floor_id = 1, .payload = {{QStringLiteral("character_id"), 2}}, .services = &l_services}).allowed);
+    QVERIFY((*l_rule)({.player_state_id = 4, .client_session_id = 4, .area_id = 1, .floor_id = 0, .payload = {{QStringLiteral("character_id"), 3}}, .services = &l_services}).allowed);
     const auto l_silent = l_registry.buildBefore(QStringLiteral("check_character"), l_services,
                                                  {{QStringLiteral("policy"), QStringLiteral("unique_on_floor")}});
-    const akashi::RuleVerdict l_silent_verdict = (*l_silent)({4, 1, 0, {{QStringLiteral("character_id"), 2}}, &l_services});
+    const akashi::RuleVerdict l_silent_verdict = (*l_silent)({.player_state_id = 4, .client_session_id = 4, .area_id = 1, .floor_id = 0, .payload = {{QStringLiteral("character_id"), 2}}, .services = &l_services});
     QVERIFY(!l_silent_verdict.allowed);
     QVERIFY(l_silent_verdict.reason.isEmpty());
 }
@@ -816,7 +816,7 @@ void tst_World::duplicateActionNamesAreRefused()
 
     const auto l_function = l_registry.buildBefore(QStringLiteral("gate"), l_services, {});
     QVERIFY(l_function.has_value());
-    QCOMPARE((*l_function)({4, 0, 0, {}, nullptr}).reason, QString("first owner"));
+    QCOMPARE((*l_function)({.player_state_id = 4, .client_session_id = 4, .area_id = 0, .floor_id = 0, .payload = {}, .services = nullptr}).reason, QString("first owner"));
     QCOMPARE(l_registry.actionsOwnedBy(QStringLiteral("plugin-a")), QStringList({QStringLiteral("gate")}));
     QVERIFY(l_registry.actionsOwnedBy(QStringLiteral("plugin-b")).isEmpty());
 
@@ -898,7 +898,7 @@ void tst_World::dispatchSkipsEventsNothingMatches()
     // answers the allowing default, the payload comes back untouched and
     // no reaction fires - on the area entries and the floor entries alike.
     const QVariantMap l_payload = {{QStringLiteral("message"), QStringLiteral("hello")}};
-    const akashi::RuleContext l_context = {4, 0, 0, l_payload, nullptr};
+    const akashi::RuleContext l_context = {.player_state_id = 4, .client_session_id = 4, .area_id = 0, .floor_id = 0, .payload = l_payload, .services = nullptr};
 
     const akashi::RuleVerdict l_verdict = akashi::RuleRegistry::checkBefore(
         akashi::AreaEvents::MusicChanged, l_context, l_before, l_before);
@@ -925,7 +925,7 @@ void tst_World::transformsMayIntroduceKeysThePayloadNeverHad()
 
     const QVariantMap l_result = akashi::RuleRegistry::runTransforms(
         akashi::AreaEvents::IcMessageSent,
-        {4, 1, 0, {{QStringLiteral("message"), QStringLiteral("hi")}}, nullptr},
+        {.player_state_id = 4, .client_session_id = 4, .area_id = 1, .floor_id = 0, .payload = {{QStringLiteral("message"), QStringLiteral("hi")}}, .services = nullptr},
         {}, l_floor_rules);
 
     // A key the payload never carried is merged in, not dropped. The verb

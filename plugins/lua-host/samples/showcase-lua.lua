@@ -42,10 +42,11 @@ akashi.register_rule_action("lua.no_word", "before", function(info)
 end)
 
 -- Core server events, delivered as key/value payloads after they happen.
--- The payload is what the area rules see, plus player_id/area_id/floor_id.
+-- The payload is what the area rules see, plus the injected context ids
+-- player_state_id/client_session_id/area_id/floor_id.
 local last_join = "nobody yet"
 akashi.subscribe_event("player_joined_area", function(payload)
-    last_join = "player " .. payload.player_id .. " (area " .. payload.area_id .. ")"
+    last_join = "player " .. payload.player_state_id .. " of client " .. payload.client_session_id .. " (area " .. payload.area_id .. ")"
 end)
 
 local last_track = "silence"

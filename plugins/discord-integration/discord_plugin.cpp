@@ -66,7 +66,7 @@ bool DiscordPlugin::load(akashi::ServiceRegistry &services)
                 .beginEmbed()
                 .setEmbedColor(l_config->get<QString>(l_cfg, QStringLiteral("webhook_color")))
                 .setEmbedTitle(QStringLiteral("[%1]%2 filed a modcall in %3")
-                                   .arg(e.value(QStringLiteral("client_id")).toString(),
+                                   .arg(e.value(QStringLiteral("client_session_id")).toString(),
                                         l_ooc_name.isEmpty() ? e.value(QStringLiteral("char_name")).toString() : l_ooc_name,
                                         l_area_name))
                 .setEmbedDescription(e.value(QStringLiteral("reason")).toString())

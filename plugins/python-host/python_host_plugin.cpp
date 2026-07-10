@@ -114,15 +114,15 @@ static int pyFilterTrampoline(void *f_userdata, const char *f_text, size_t f_tex
 // the attached arguments. A returned str blocks with that reason; False
 // blocks with the stock reason; anything else allows.
 static void pyRuleTrampoline(void *f_userdata,
-                             int f_player_id, int f_area_id, int f_floor_id,
+                             int f_player_state_id, int f_area_id, int f_floor_id,
                              int f_payload_count, const char *const *f_payload_keys, const char *const *f_payload_values,
                              int f_argument_count, const char *const *f_argument_keys, const char *const *f_argument_values,
                              AkashiRuleResult *f_result)
 {
     PyFnRef *l_ref = static_cast<PyFnRef *>(f_userdata);
     PyObject *l_info = PyDict_New();
-    PyObject *l_number = PyLong_FromLong(f_player_id);
-    PyDict_SetItemString(l_info, "player_id", l_number);
+    PyObject *l_number = PyLong_FromLong(f_player_state_id);
+    PyDict_SetItemString(l_info, "player_state_id", l_number);
     Py_DECREF(l_number);
     l_number = PyLong_FromLong(f_area_id);
     PyDict_SetItemString(l_info, "area_id", l_number);

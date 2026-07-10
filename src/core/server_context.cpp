@@ -1408,10 +1408,11 @@ akashi::LogService *ServerContext::logService()
     return m_log_service;
 }
 
-void ServerContext::publishEvent(const QString &f_id, const QVariantMap &f_payload, int f_player_id)
+void ServerContext::publishEvent(const QString &f_id, const QVariantMap &f_payload, int f_player_state_id, int f_client_session_id)
 {
     akashi::RuleContext l_ctx;
-    l_ctx.player_id = f_player_id;
+    l_ctx.player_state_id = f_player_state_id;
+    l_ctx.client_session_id = f_client_session_id;
     l_ctx.area_id = -1;
     l_ctx.floor_id = -1;
     l_ctx.services = m_services;
@@ -1498,7 +1499,8 @@ akashi::ACLRolesHandler *ServerContext::aclRolesHandler()
 void ServerContext::removeClient(akashi::ClientSession *f_client)
 {
     akashi::PlayerDisconnectedEvent l_event;
-    l_event.client_id = f_client->clientId();
+    l_event.client_session_id = f_client->clientId();
+    l_event.player_state_id = f_client->active_player->id();
     l_event.was_joined = f_client->isJoined();
     l_event.ipid = f_client->ipid();
     l_event.hwid = f_client->hwid();
@@ -1521,7 +1523,7 @@ void ServerContext::removeClient(akashi::ClientSession *f_client)
     f_client->deleteLater();
 
     // The player is fully gone; plugins clean up whatever they keyed on them.
-    publishEvent(akashi::PlayerDisconnectedEvent::id, akashi::eventToMap(l_event), l_event.client_id);
+    publishEvent(akashi::PlayerDisconnectedEvent::id, akashi::eventToMap(l_event), l_event.player_state_id, l_event.client_session_id);
 }
 
 void ServerContext::increasePlayerCount()
@@ -1928,10 +1930,12 @@ void ServerContext::onJukeboxSongStarted(akashi::Area *f_area, const akashi::Juk
 {
     broadcast(akashi::Packet("MC", {f_song.real_name, QString::number(-1)}), f_area->id());
 
-    // A jukebox-driven change has no acting player; the music_changed
-    // after rules still run so reactions fire, under the null player.
+    // A jukebox-driven change has no acting slot or session; the
+    // music_changed after rules still run so reactions fire, under the
+    // null actor, and no actor keys are stamped into this payload.
     akashi::RuleContext l_ctx;
-    l_ctx.player_id = -1;
+    l_ctx.player_state_id = -1;
+    l_ctx.client_session_id = -1;
     l_ctx.area_id = f_area->id();
     l_ctx.floor_id = f_area->floorId();
     l_ctx.services = services();

@@ -364,8 +364,10 @@ static int ffiSubscribeEvent(const char *f_name, size_t f_name_length,
             // Scripts get one flat map: the payload plus the context ids,
             // named like a rule action sees them. Payload keys win.
             QVariantMap l_payload = f_context.payload;
-            if (!l_payload.contains(QStringLiteral("player_id")))
-                l_payload.insert(QStringLiteral("player_id"), f_context.player_id);
+            if (!l_payload.contains(QStringLiteral("player_state_id")))
+                l_payload.insert(QStringLiteral("player_state_id"), f_context.player_state_id);
+            if (!l_payload.contains(QStringLiteral("client_session_id")))
+                l_payload.insert(QStringLiteral("client_session_id"), f_context.client_session_id);
             if (!l_payload.contains(QStringLiteral("area_id")))
                 l_payload.insert(QStringLiteral("area_id"), f_context.area_id);
             if (!l_payload.contains(QStringLiteral("floor_id")))
@@ -427,7 +429,7 @@ static void callRuleAction(AkashiRuleFn f_action, void *f_userdata,
         l_ak.push_back(l_arg_keys.last().constData());
         l_av.push_back(l_arg_values.last().constData());
     }
-    f_action(f_userdata, f_context.player_id, f_context.area_id, f_context.floor_id,
+    f_action(f_userdata, f_context.player_state_id, f_context.area_id, f_context.floor_id,
              int(l_pk.size()), l_pk.data(), l_pv.data(),
              int(l_ak.size()), l_ak.data(), l_av.data(), f_result);
 }
