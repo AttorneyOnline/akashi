@@ -38,10 +38,10 @@ jobs:
           arch: 'gcc_64'
           cache: true
           cache-key-prefix: install-qt-action
-          modules: 'qtwebsockets'
+          modules: 'qtwebsockets qthttpserver'
 
       - name: Configure
-        run: cmake -B build -D CMAKE_BUILD_TYPE=Release
+        run: cmake -B build -D CMAKE_BUILD_TYPE=Release -D BUILD_TESTING=ON
 
       - name: Build
         run: cmake --build build --config Release
@@ -72,10 +72,10 @@ jobs:
           arch: win64_msvc2019_64
           cache: true
           cache-key-prefix: install-qt-action
-          modules: 'qtwebsockets'
+          modules: 'qtwebsockets qthttpserver'
 
       - name: Configure
-        run: cmake -B build -D CMAKE_BUILD_TYPE=Release
+        run: cmake -B build -D CMAKE_BUILD_TYPE=Release -D BUILD_TESTING=ON
 
       - name: Build
         run: cmake --build build --config Release

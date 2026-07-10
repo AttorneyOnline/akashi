@@ -1,9 +1,11 @@
 // AI-generated: written by Claude.
 #include "core/client_session.h"
 #include "core/player_directory.h"
-#include "fake_transport.h"
+#include "testtools/fake_transport.h"
 
 #include <QTest>
+
+using akashi::FakeTransport;
 
 namespace tests {
 namespace unittests {

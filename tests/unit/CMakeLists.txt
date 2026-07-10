@@ -44,9 +44,16 @@ set(UNIT_TESTS
     plugin_manager
 )
 
+# The webhook tests drive real HTTP against the webhook receiver test tool.
+if(TARGET Qt6::HttpServer)
+    list(APPEND UNIT_TESTS webhook_receiver discord_hook)
+else()
+    message(STATUS "Qt6 HttpServer not found - skipping the webhook tests")
+endif()
+
 foreach(name ${UNIT_TESTS})
     qt_add_executable(tst_${name} tst_${name}.cpp)
-    target_link_libraries(tst_${name} PRIVATE akashi_core Qt6::Test)
+    target_link_libraries(tst_${name} PRIVATE akashi_core akashi::testtools Qt6::Test)
     # Unit tests are white-box: they may use the core's private headers.
     target_include_directories(tst_${name} PRIVATE ${CMAKE_SOURCE_DIR}/src)
     file(COPY fixtures/config DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/run_${name})

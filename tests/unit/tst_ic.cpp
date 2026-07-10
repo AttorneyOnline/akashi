@@ -1,6 +1,6 @@
 // AI-generated: written by Claude.
 #include "core/text_filter_registry.h"
-#include "fake_packet_context.h"
+#include "testtools/fake_packet_context.h"
 #include "proto/ic.h"
 #include "proto/packet_registry.h"
 

@@ -15,6 +15,11 @@ if(BUILD_TESTING)
   list(APPEND _qt_components Test)
 endif()
 find_package(Qt6 6.4 REQUIRED COMPONENTS ${_qt_components})
+if(BUILD_TESTING)
+  # The webhook receiver test tool wants the HttpServer add-on; tests
+  # that need it are skipped when the module is missing.
+  find_package(Qt6 6.4 QUIET COMPONENTS HttpServer)
+endif()
 
 qt_standard_project_setup()
 

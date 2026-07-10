@@ -1,11 +1,13 @@
 // AI-generated: written by Claude.
 #include "core/client_session.h"
 #include "core/player_state.h"
-#include "fake_transport.h"
 #include "proto/packet.h"
+#include "testtools/fake_transport.h"
 
 #include <QSignalSpy>
 #include <QTest>
+
+using akashi::FakeTransport;
 
 class tst_ClientSession : public QObject
 {

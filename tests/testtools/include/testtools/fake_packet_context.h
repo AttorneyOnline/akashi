@@ -6,6 +6,8 @@
 
 #include <QHash>
 
+namespace akashi {
+
 // Records everything a handler does, so tests can check calls and order.
 class FakeContext : public akashi::IPacketContext
 {
@@ -447,3 +449,5 @@ class FakeContext : public akashi::IPacketContext
     QUrl assetUrl() const override { return asset_url; }
     QString motd() const override { return server_motd; }
 };
+
+} // namespace akashi

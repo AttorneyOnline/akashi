@@ -7,6 +7,8 @@
 #include <QHostAddress>
 #include <QList>
 
+namespace akashi {
+
 // A scriptable in-memory transport, standing in for a real socket.
 class FakeTransport : public akashi::ITransport
 {
@@ -56,3 +58,5 @@ class FakeTransport : public akashi::ITransport
   private:
     bool m_open;
 };
+
+} // namespace akashi
