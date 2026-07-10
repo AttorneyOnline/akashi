@@ -425,6 +425,7 @@ void ServerContext::buildCore()
 
     m_world = new akashi::World(m_rule_registry, m_services, m_filesystem, m_areas_ini, this);
     m_services->registerService(std::shared_ptr<akashi::World>(m_world, [](auto *) {}));
+    m_services->registerService(std::shared_ptr<akashi::PlayerDirectory>(&m_player_directory, [](auto *) {}));
     connect(m_world, &akashi::World::areaBuilt, this, &ServerContext::onAreaBuilt);
     connect(m_world, &akashi::World::areaAboutToBeRemoved, this, &ServerContext::onAreaAboutToBeRemoved);
 
@@ -866,8 +867,8 @@ void ServerContext::onArupFloorBroadcast(const akashi::Packet &f_packet, int f_f
 void ServerContext::applyIdAssignment()
 {
     m_player_directory.setIdAssignment(m_server_settings->id_assignment() == "lowest"
-                                           ? PlayerDirectory::IdAssignment::Lowest
-                                           : PlayerDirectory::IdAssignment::LastFreed);
+                                           ? akashi::PlayerDirectory::IdAssignment::Lowest
+                                           : akashi::PlayerDirectory::IdAssignment::LastFreed);
 }
 
 QVector<akashi::ClientSession *> ServerContext::clients()

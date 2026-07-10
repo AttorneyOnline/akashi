@@ -1,11 +1,15 @@
 // AI-generated: written by Claude.
+#include "akashi/service_registry.h"
 #include "core/client_session.h"
+#include "core/command_context.h"
 #include "core/player_directory.h"
+#include "core/player_state.h"
 #include "testtools/fake_transport.h"
 
 #include <QTest>
 
 using akashi::FakeTransport;
+using akashi::PlayerDirectory;
 
 namespace tests {
 namespace unittests {
@@ -22,6 +26,7 @@ class tst_PlayerDirectory : public QObject
     void looksUpClientsNullSafely();
     void removingAClientFreesItsId();
     void listsClientsOldestFirst();
+    void resolvesAsAServiceFromTheRegistry();
 
   private:
     akashi::ClientSession *makeClient(int f_id);
@@ -148,6 +153,35 @@ void tst_PlayerDirectory::listsClientsOldestFirst()
 
     delete l_first;
     delete l_second;
+}
+
+void tst_PlayerDirectory::resolvesAsAServiceFromTheRegistry()
+{
+    // The directory is a member of the server, so it registers with the
+    // non-owning deleter and plugins resolve it as akashi.players.
+    PlayerDirectory l_directory;
+    l_directory.setCapacity(2);
+    akashi::ClientSession *l_client = makeClient(l_directory.takeId());
+    l_directory.addClient(0, l_client);
+
+    akashi::ServiceRegistry l_registry;
+    QVERIFY(l_registry.registerService(std::shared_ptr<PlayerDirectory>(&l_directory, [](auto *) {})));
+
+    auto l_resolved = l_registry.resolve<PlayerDirectory>(QStringLiteral("akashi.players"));
+    QVERIFY(l_resolved);
+    QCOMPARE(l_resolved.get(), &l_directory);
+    QCOMPARE(l_resolved->clients(), QVector<akashi::ClientSession *>({l_client}));
+    QVERIFY(l_resolved->serviceVersion().satisfies(QStringLiteral("^1.0.0")));
+
+    // The plugin-side walk: wrap the opaque session in a TargetPlayer and
+    // read names through its characters.
+    akashi::TargetPlayer l_player(l_resolved->clients().first());
+    QCOMPARE(l_player.players().size(), 1);
+    QCOMPARE(l_player.activePlayer(), l_player.players().first());
+    l_player.activePlayer()->setOocName(QStringLiteral("Phoenix"));
+    QCOMPARE(l_player.players().first()->oocName(), QStringLiteral("Phoenix"));
+
+    delete l_client;
 }
 
 }

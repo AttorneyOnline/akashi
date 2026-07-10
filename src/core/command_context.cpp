@@ -60,6 +60,8 @@ QString TargetPlayer::hwid() const { return m_client->hwid(); }
 QString TargetPlayer::characterName() const { return m_client->characterName(); }
 bool TargetPlayer::isPmMuted() const { return m_client->isPmMuted(); }
 void TargetPlayer::setTestimonySaving(bool f_state) { m_client->setTestimonySaving(f_state); }
+QList<PlayerState *> TargetPlayer::players() const { return m_client->players; }
+PlayerState *TargetPlayer::activePlayer() const { return m_client->active_player; }
 
 // -- CommandContext --
 

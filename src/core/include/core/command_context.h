@@ -3,6 +3,7 @@
 #include "akashi_core_export.h"
 
 #include <QHostAddress>
+#include <QList>
 #include <QString>
 #include <QStringList>
 
@@ -10,6 +11,7 @@
 
 namespace akashi {
 class ClientSession;
+class PlayerState;
 }
 class ServerContext;
 
@@ -47,6 +49,14 @@ class AKASHI_CORE_EXPORT TargetPlayer
     QString characterName() const;
     bool isPmMuted() const;
     void setTestimonySaving(bool f_state);
+
+    // The characters this person plays (core/player_state.h), oldest first.
+    // A session has exactly one today; a richer protocol may
+    // voice several. The states live and die with the session: read them
+    // right away, never store them.
+    QList<PlayerState *> players() const;
+    // The character the session currently speaks through.
+    PlayerState *activePlayer() const;
 
   private:
     akashi::ClientSession *m_client;

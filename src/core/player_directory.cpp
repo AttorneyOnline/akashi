@@ -3,6 +3,18 @@
 #include <algorithm>
 #include <functional>
 
+namespace akashi {
+
+QString PlayerDirectory::serviceId() const
+{
+    return QStringLiteral("akashi.players");
+}
+
+ServiceVersion PlayerDirectory::serviceVersion() const
+{
+    return {1, 0, 0};
+}
+
 void PlayerDirectory::setCapacity(int f_capacity)
 {
     clear();
@@ -85,3 +97,5 @@ void PlayerDirectory::clear()
     m_clients_by_id.clear();
     m_free_ids.clear();
 }
+
+} // namespace akashi

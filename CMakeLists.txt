@@ -71,7 +71,7 @@ set(AKASHI_SOURCES
   src/core/db_manager.cpp
   src/core/db_manager.h
   src/core/player_directory.cpp
-  src/core/player_directory.h
+  src/core/include/core/player_directory.h
   src/core/player_state_observer.cpp
   src/core/player_state_observer.h
   src/core/server_publisher.cpp
@@ -117,7 +117,7 @@ set(AKASHI_SOURCES
   src/core/mmdb_reader.cpp
   src/core/mmdb_reader.h
   src/core/player_state.cpp
-  src/core/player_state.h
+  src/core/include/core/player_state.h
   src/core/server_settings.h
   src/core/settings.cpp
   src/core/server_context.cpp

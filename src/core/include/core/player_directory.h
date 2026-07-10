@@ -1,13 +1,14 @@
 #pragma once
 
+#include "akashi/service.h"
 #include "akashi_core_export.h"
 
 #include <QHash>
 #include <QVector>
 
 namespace akashi {
+
 class ClientSession;
-}
 
 // The one place that knows who is connected under which ID. It owns the ID
 // pool and the client list together, so they can never disagree - the old
@@ -15,9 +16,19 @@ class ClientSession;
 // as a null pointer in a pre-filled map. Lookups here are null-safe by
 // construction: a free or unknown ID gives nullptr, never a stale pointer,
 // and the client list never contains nulls.
-class AKASHI_CORE_EXPORT PlayerDirectory
+//
+// Registered as the "akashi.players" service. ClientSession itself is not
+// part of the plugin API; a plugin wraps each pointer in a TargetPlayer
+// (core/command_context.h) to read names or send messages, and walks a
+// session's characters through TargetPlayer::players(). The directory
+// lives on the main thread and the sessions in it die on disconnect, so:
+// query on the main thread, use the result right away, never store it.
+class AKASHI_CORE_EXPORT PlayerDirectory : public IService
 {
   public:
+    QString serviceId() const override;
+    ServiceVersion serviceVersion() const override;
+
     // How a free ID is picked for a new arrival. LastFreed hands out the
     // most recently freed ID; Lowest always picks the lowest free number.
     // Both give 0, 1, 2, ... on a fresh server.
@@ -73,3 +84,5 @@ class AKASHI_CORE_EXPORT PlayerDirectory
     // The selected pick function; setIdAssignment replaces it.
     int (PlayerDirectory::*m_take_free_id)() = &PlayerDirectory::takeLastFreedId;
 };
+
+} // namespace akashi

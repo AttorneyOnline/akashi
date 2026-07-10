@@ -726,7 +726,7 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
      * can never disagree. When no ID is free the server rejects new
      * connection attempts.
      */
-    PlayerDirectory m_player_directory;
+    akashi::PlayerDirectory m_player_directory;
 
     akashi::ArupBroadcaster *m_arup_broadcaster = nullptr;
     akashi::CommandRegistry *m_command_registry = nullptr;
