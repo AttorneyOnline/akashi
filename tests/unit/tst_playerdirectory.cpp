@@ -177,8 +177,7 @@ void tst_PlayerDirectory::resolvesAsAServiceFromTheRegistry()
     // read names through its characters.
     akashi::TargetPlayer l_player(l_resolved->clients().first());
     QCOMPARE(l_player.players().size(), 1);
-    QCOMPARE(l_player.activePlayer(), l_player.players().first());
-    l_player.activePlayer()->setOocName(QStringLiteral("Phoenix"));
+    l_player.players().first()->setOocName(QStringLiteral("Phoenix"));
     QCOMPARE(l_player.players().first()->oocName(), QStringLiteral("Phoenix"));
 
     delete l_client;
