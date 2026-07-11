@@ -41,15 +41,15 @@ bool passwordMeetsRequirements(ServerSettings *f_settings, const QString &f_user
     }
 
     if (f_settings->pass_required_numbers()) {
-        QRegularExpression l_regex(QStringLiteral("[0123456789]"));
-        QRegularExpressionMatch l_match = l_regex.match(f_password);
+        static const QRegularExpression s_numbers(QStringLiteral("[0123456789]"));
+        QRegularExpressionMatch l_match = s_numbers.match(f_password);
         if (!l_match.hasMatch())
             return false;
     }
 
     if (f_settings->pass_required_special()) {
-        QRegularExpression l_regex(QStringLiteral("[~!@#$%^&*_\\-+=`|\\\\(){}\\[\\]:;\"'<>,.?/]"));
-        QRegularExpressionMatch l_match = l_regex.match(f_password);
+        static const QRegularExpression s_special(QStringLiteral("[~!@#$%^&*_\\-+=`|\\\\(){}\\[\\]:;\"'<>,.?/]"));
+        QRegularExpressionMatch l_match = s_special.match(f_password);
         if (!l_match.hasMatch())
             return false;
     }

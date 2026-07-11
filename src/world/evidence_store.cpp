@@ -6,7 +6,11 @@ namespace akashi {
 
 // The owner tag a case manager puts into a description to hide an item
 // from everyone but the listed sides.
-static const QRegularExpression OWNER_TAG("<owner=(.*?)>");
+static const QRegularExpression &ownerTag()
+{
+    static const QRegularExpression s_owner_tag("<owner=(.*?)>");
+    return s_owner_tag;
+}
 
 void EvidenceStore::append(const Evidence &f_item)
 {
@@ -41,8 +45,8 @@ void EvidenceStore::revealToAll(int f_index)
     }
 
     Evidence &l_item = m_items[f_index];
-    if (OWNER_TAG.match(l_item.description).hasMatch()) {
-        l_item.description.replace(OWNER_TAG, "<owner=all>");
+    if (ownerTag().match(l_item.description).hasMatch()) {
+        l_item.description.replace(ownerTag(), "<owner=all>");
     }
     else {
         l_item.description = "<owner=all>\n" + l_item.description;
@@ -51,7 +55,7 @@ void EvidenceStore::revealToAll(int f_index)
 
 QString EvidenceStore::taggedDescription(const QString &f_description) const
 {
-    if (m_access != Access::HiddenCm || OWNER_TAG.match(f_description).hasMatch()) {
+    if (m_access != Access::HiddenCm || ownerTag().match(f_description).hasMatch()) {
         return f_description;
     }
     return "<owner=all>\n" + f_description;
@@ -62,7 +66,7 @@ bool EvidenceStore::isVisible(const Evidence &f_item, bool f_can_see_hidden, con
     if (f_can_see_hidden || m_access != Access::HiddenCm) {
         return true;
     }
-    const QRegularExpressionMatch l_match = OWNER_TAG.match(f_item.description);
+    const QRegularExpressionMatch l_match = ownerTag().match(f_item.description);
     if (!l_match.hasMatch()) {
         // No owner tag means everyone sees it.
         return true;

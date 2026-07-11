@@ -82,10 +82,10 @@ class AKASHI_CORE_EXPORT ITransport : public QObject
   Q_SIGNALS:
     // One packet parsed from incoming data, including null packets from unreadable
     // data so the receiver can still rate-limit them.
-    void packetReceived(const Packet &f_packet);
+    void packetReceived(const akashi::Packet &f_packet);
 
     // The connection has closed. Emitted exactly once per connection.
-    void clientDisconnected(DisconnectKind f_kind);
+    void clientDisconnected(akashi::DisconnectKind f_kind);
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(ITransport::Capabilities)

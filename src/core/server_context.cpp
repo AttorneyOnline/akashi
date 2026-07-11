@@ -80,6 +80,8 @@
 #include <QRegularExpression>
 #include <QTextStream>
 
+#include <utility>
+
 static bool fileExists(const QFileInfo &f) { return f.exists() && f.isFile(); }
 static bool dirExists(const QFileInfo &f) { return f.exists() && f.isDir(); }
 
@@ -996,7 +998,7 @@ void ServerContext::onClientTransportClosed(akashi::ClientSession *f_client, aka
 void ServerContext::updateCharsTaken(akashi::Area *area)
 {
     QStringList chars_taken;
-    for (const QString &cur_char : qAsConst(m_characters)) {
+    for (const QString &cur_char : std::as_const(m_characters)) {
         chars_taken.append(area->charactersTaken().contains(characterId(cur_char))
                                ? QStringLiteral("-1")
                                : QStringLiteral("0"));
@@ -1174,7 +1176,7 @@ void ServerContext::broadcast(const akashi::Packet &packet, int area_index)
         return;
     }
     QVector<int> l_client_ids = l_bc_area->players();
-    for (const int l_client_id : qAsConst(l_client_ids)) {
+    for (const int l_client_id : std::as_const(l_client_ids)) {
         akashi::ClientSession *l_client = clientById(l_client_id);
         if (l_client) {
             l_client->sendPacket(packet);
@@ -1540,7 +1542,7 @@ void ServerContext::decreasePlayerCount()
 
 bool ServerContext::isIPBanned(QHostAddress f_remote_IP)
 {
-    for (const QString &l_ipban : qAsConst(m_ipban_list)) {
+    for (const QString &l_ipban : std::as_const(m_ipban_list)) {
         if (f_remote_IP.isInSubnet(QHostAddress::parseSubnet(l_ipban))) {
             return true;
         }
@@ -1773,9 +1775,9 @@ std::optional<QString> ServerContext::loadFloor(const QString &f_name)
     applyAreaMapping(l_mapping);
 
     const akashi::Floor *l_floor = m_world->floorById(l_floor_id);
-    for (const Placement &l_placement : qAsConst(l_placements)) {
+    for (const Placement &l_placement : std::as_const(l_placements)) {
         int l_area_id = l_floor->area_ids.first();
-        for (int l_candidate : qAsConst(l_floor->area_ids)) {
+        for (int l_candidate : std::as_const(l_floor->area_ids)) {
             if (m_world->areaName(l_candidate) == l_placement.area_name) {
                 l_area_id = l_candidate;
             }
@@ -1786,7 +1788,7 @@ std::optional<QString> ServerContext::loadFloor(const QString &f_name)
         l_client->runAfterRule(akashi::AreaEvents::PlayerJoined,
                                {{QStringLiteral("from_area"), -1}, {QStringLiteral("from_floor"), -1}});
     }
-    for (int l_area_id : qAsConst(l_floor->area_ids)) {
+    for (int l_area_id : std::as_const(l_floor->area_ids)) {
         updateCharsTaken(m_world->areaById(l_area_id));
     }
     return std::nullopt;
@@ -1824,7 +1826,7 @@ std::optional<QString> ServerContext::reloadWorld()
     m_arup_broadcaster->clear();
     m_world->rebuild(QFileInfo(configPath("areas.json")).absoluteFilePath());
 
-    for (const Placement &l_placement : qAsConst(l_placements)) {
+    for (const Placement &l_placement : std::as_const(l_placements)) {
         int l_area_id = m_world->areaNames().indexOf(l_placement.area_name);
         if (l_area_id < 0) {
             l_area_id = 0;

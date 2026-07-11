@@ -8,6 +8,7 @@
 #include <QSettings>
 
 #include <algorithm>
+#include <utility>
 
 namespace akashi {
 
@@ -38,15 +39,9 @@ bool PermissionRegistry::registerPermission(const PermissionInfo &f_info, const 
 void PermissionRegistry::unregisterAllPermissions(const QString &f_owner_id)
 {
     AKASHI_ASSERT_OWNER_THREAD();
-    auto it = m_permissions.begin();
-    while (it != m_permissions.end()) {
-        if (it->owner_id == f_owner_id) {
-            it = m_permissions.erase(it);
-        }
-        else {
-            ++it;
-        }
-    }
+    m_permissions.removeIf([&f_owner_id](std::pair<const QString &, PermissionEntry &> f_item) {
+        return f_item.second.owner_id == f_owner_id;
+    });
 }
 
 bool PermissionRegistry::isRegistered(const QString &f_permission_id) const
@@ -100,7 +95,7 @@ bool PermissionRegistry::registerResolver(const QString &f_resolver_id, int f_pr
     // Insert after any equal priorities, so ties keep registration order
     // and a later resolver can never preempt an earlier one at the same
     // priority - the same tiebreak the text filter registry uses.
-    auto l_pos = std::upper_bound(m_resolvers.begin(), m_resolvers.end(), l_entry,
+    auto l_pos = std::upper_bound(m_resolvers.cbegin(), m_resolvers.cend(), l_entry,
                                   [](const ResolverEntry &a, const ResolverEntry &b) {
                                       return a.priority < b.priority;
                                   });

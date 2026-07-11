@@ -121,10 +121,10 @@ void tst_ArupBroadcaster::sendFullArupUnicasts()
     const auto p1 = spy.at(1).at(0).value<akashi::Packet>();
     const auto p2 = spy.at(2).at(0).value<akashi::Packet>();
     const auto p3 = spy.at(3).at(0).value<akashi::Packet>();
-    QCOMPARE(p0.fields().first(), QStringLiteral("0"));
-    QCOMPARE(p1.fields().first(), QStringLiteral("1"));
-    QCOMPARE(p2.fields().first(), QStringLiteral("2"));
-    QCOMPARE(p3.fields().first(), QStringLiteral("3"));
+    QCOMPARE(p0.fields().constFirst(), QStringLiteral("0"));
+    QCOMPARE(p1.fields().constFirst(), QStringLiteral("1"));
+    QCOMPARE(p2.fields().constFirst(), QStringLiteral("2"));
+    QCOMPARE(p3.fields().constFirst(), QStringLiteral("3"));
 }
 
 void tst_ArupBroadcaster::broadcastNowSendsImmediately()
@@ -180,9 +180,9 @@ void tst_ArupBroadcaster::multipleTypesDirtyFlushOnce()
     const auto p0 = spy.at(0).at(0).value<akashi::Packet>();
     const auto p1 = spy.at(1).at(0).value<akashi::Packet>();
     const auto p2 = spy.at(2).at(0).value<akashi::Packet>();
-    QCOMPARE(p0.fields().first(), QStringLiteral("0"));
-    QCOMPARE(p1.fields().first(), QStringLiteral("1"));
-    QCOMPARE(p2.fields().first(), QStringLiteral("3"));
+    QCOMPARE(p0.fields().constFirst(), QStringLiteral("0"));
+    QCOMPARE(p1.fields().constFirst(), QStringLiteral("1"));
+    QCOMPARE(p2.fields().constFirst(), QStringLiteral("3"));
 }
 
 void tst_ArupBroadcaster::ownerFormatterCalledPerOwner()

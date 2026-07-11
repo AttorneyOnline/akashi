@@ -65,12 +65,9 @@ void RuleRegistry::registerTransformAction(const QString &f_name, TransformActio
 
 void RuleRegistry::unregisterActions(const QString &f_owner)
 {
-    for (auto it = m_actions.begin(); it != m_actions.end();) {
-        if (it->owner == f_owner)
-            it = m_actions.erase(it);
-        else
-            ++it;
-    }
+    m_actions.removeIf([&f_owner](std::pair<const QString &, ActionFactory &> f_item) {
+        return f_item.second.owner == f_owner;
+    });
 }
 
 std::optional<BeforeRuleFunction> RuleRegistry::buildBefore(const QString &f_name, ServiceRegistry &f_services, const QVariantMap &f_args) const
@@ -269,7 +266,7 @@ void RuleRegistry::registerObserver(const QString &f_event, int f_order, Observe
 {
     AKASHI_ASSERT_OWNER_THREAD();
     // Insert after any equal orders, so ties keep registration order.
-    auto l_it = std::upper_bound(m_observers.begin(), m_observers.end(), f_order,
+    auto l_it = std::upper_bound(m_observers.cbegin(), m_observers.cend(), f_order,
                                  [](int f_value, const ObserverEntry &f_entry) { return f_value < f_entry.order; });
     m_observers.insert(l_it, {f_event, f_order, std::move(f_fn), f_owner});
 }

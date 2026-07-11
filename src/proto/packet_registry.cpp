@@ -2,6 +2,8 @@
 
 #include "akashi/thread_assert.h"
 
+#include <utility>
+
 namespace akashi {
 
 PacketRegistry::PacketRegistry() :
@@ -22,14 +24,9 @@ bool PacketRegistry::registerHandler(const PacketSpec &f_spec, std::shared_ptr<P
 void PacketRegistry::unregisterAll(const QString &f_owner_id)
 {
     AKASHI_ASSERT_OWNER_THREAD();
-    for (auto l_iterator = m_entries.begin(); l_iterator != m_entries.end();) {
-        if (l_iterator.value().owner == f_owner_id) {
-            l_iterator = m_entries.erase(l_iterator);
-        }
-        else {
-            ++l_iterator;
-        }
-    }
+    m_entries.removeIf([&f_owner_id](std::pair<const QString &, Entry &> f_item) {
+        return f_item.second.owner == f_owner_id;
+    });
 }
 
 std::optional<PacketSpec> PacketRegistry::spec(const QString &f_header) const

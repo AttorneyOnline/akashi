@@ -1,8 +1,8 @@
 // AI-generated: written by Claude.
 #include "core/text_filter_registry.h"
-#include "testtools/fake_packet_context.h"
 #include "proto/ic.h"
 #include "proto/packet_registry.h"
+#include "testtools/fake_packet_context.h"
 
 #include <QTest>
 
@@ -490,7 +490,9 @@ void tst_Ic::textFiltersApplyInOrder()
     l_registry.registerFilter(
         "medieval", 300, [](const QString &f_text) -> std::optional<QString> { return "Ye olde " + f_text; }, false, "test");
     l_registry.registerFilter(
-        "disemvoweled", 500, [](const QString &f_text) -> std::optional<QString> { return QString(f_text).remove(QRegularExpression("[AEIOUaeiou]")); }, false, "test");
+        "disemvoweled", 500, [](const QString &f_text) -> std::optional<QString> {
+            static const QRegularExpression s_vowels("[AEIOUaeiou]");
+            return QString(f_text).remove(s_vowels); }, false, "test");
 
     SpeakerContext l_context;
     l_context.text_filter_registry = &l_registry;

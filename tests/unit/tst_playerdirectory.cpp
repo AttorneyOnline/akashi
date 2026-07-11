@@ -175,10 +175,10 @@ void tst_PlayerDirectory::resolvesAsAServiceFromTheRegistry()
 
     // The plugin-side walk: wrap the opaque session in a TargetPlayer and
     // read names through its characters.
-    akashi::TargetPlayer l_player(l_resolved->clients().first());
+    akashi::TargetPlayer l_player(l_resolved->clients().constFirst());
     QCOMPARE(l_player.players().size(), 1);
-    l_player.players().first()->setOocName(QStringLiteral("Phoenix"));
-    QCOMPARE(l_player.players().first()->oocName(), QStringLiteral("Phoenix"));
+    l_player.players().constFirst()->setOocName(QStringLiteral("Phoenix"));
+    QCOMPARE(l_player.players().constFirst()->oocName(), QStringLiteral("Phoenix"));
 
     delete l_client;
 }

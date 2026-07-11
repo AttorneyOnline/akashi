@@ -86,10 +86,10 @@ void WriterText::archiveOldLogs()
         return;
     }
 
-    const QRegularExpression l_date_pattern(QStringLiteral("(\\d{4}-\\d{2}-\\d{2})\\.log$"));
+    static const QRegularExpression s_date_pattern(QStringLiteral("(\\d{4}-\\d{2}-\\d{2})\\.log$"));
     QStringList l_to_archive;
     for (const QString &l_file : l_files) {
-        QRegularExpressionMatch l_match = l_date_pattern.match(l_file);
+        QRegularExpressionMatch l_match = s_date_pattern.match(l_file);
         if (!l_match.hasMatch()) {
             continue;
         }

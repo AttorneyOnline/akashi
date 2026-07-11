@@ -1266,8 +1266,8 @@ QStringList ClientSession::applyTestimony(const QStringList &f_fields)
         std::optional<QPair<akashi::Statement, akashi::TestimonyRecorder::Playback>> l_jump;
         bool l_navigating = false;
 
-        const QRegularExpression jump("(?<arrow>>|<)(?<int>\\d+)");
-        const QRegularExpressionMatch match = jump.match(l_args[4]);
+        static const QRegularExpression s_jump("(?<arrow>>|<)(?<int>\\d+)");
+        const QRegularExpressionMatch match = s_jump.match(l_args[4]);
 
         if (l_args[4] == ">") {
             l_navigating = true;

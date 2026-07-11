@@ -62,8 +62,6 @@ class QueuePolicy : public JukeboxPolicy
     QVector<JukeboxSong> m_queue;
 };
 
-static const QStringList ALLOWED_EXTENSIONS = {".opus", ".ogg", ".mp3", ".wav"};
-
 } // namespace
 
 Jukebox::Jukebox(QObject *parent) :
@@ -260,7 +258,8 @@ bool Jukebox::validateSong(const QString &f_name, const QStringList &f_cdns)
         l_path = l_url.path();
     }
 
-    for (const QString &l_ext : ALLOWED_EXTENSIONS) {
+    static const QStringList s_allowed_extensions = {".opus", ".ogg", ".mp3", ".wav"};
+    for (const QString &l_ext : s_allowed_extensions) {
         if (l_path.endsWith(l_ext, Qt::CaseInsensitive)) {
             return true;
         }

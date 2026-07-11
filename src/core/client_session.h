@@ -165,22 +165,22 @@ class AKASHI_CORE_EXPORT ClientSession : public QObject, public IPacketContext
 
     // Moves the lifecycle forward; a lower or equal stage is a no-op.
     void advanceStage(SessionStage f_stage);
-    bool isJoined() const;
+    bool isJoined() const override;
     bool isAuthenticated() const override;
     void calculateIpid();
     ServerContext *server();
-    int clientId() const;
+    int clientId() const override;
 
     QString name() const;
     void setName(const QString &f_name);
-    QString character() const;
+    QString character() const override;
     void setCharacter(const QString &f_character);
-    QString characterName() const;
-    void setCharacterName(const QString &f_showname);
+    QString characterName() const override;
+    void setCharacterName(const QString &f_showname) override;
     int areaId() const;
     void setAreaId(const int f_area_id);
 
-    bool isSpectator() const;
+    bool isSpectator() const override;
     void setSpectator(bool f_spectator);
 
     // --- Game verbs ---
@@ -372,14 +372,14 @@ class AKASHI_CORE_EXPORT ClientSession : public QObject, public IPacketContext
 
   public Q_SLOTS:
     // Handles an incoming packet, checking authorisation and argument count.
-    void handlePacket(const Packet &packet);
+    void handlePacket(const akashi::Packet &packet);
 
     // Withdraws the person's presence from the server: area roster, ARUP
     // counts, invites and CM spots. Idempotent, and runs while the session
     // is alive - never from the destructor doing real work.
     void leave();
 
-    void sendPacket(const Packet &packet) override;
+    void sendPacket(const akashi::Packet &packet) override;
     void sendPacket(QString header, QStringList contents);
     void sendPacket(QString header);
 
@@ -390,8 +390,8 @@ class AKASHI_CORE_EXPORT ClientSession : public QObject, public IPacketContext
     void joined();
 
     // Forwarded from the owned transport, so receivers never touch the socket.
-    void packetReceived(const Packet &f_packet);
-    void transportClosed(DisconnectKind f_kind);
+    void packetReceived(const akashi::Packet &f_packet);
+    void transportClosed(akashi::DisconnectKind f_kind);
 
     // The reconnect wait ran out with nobody coming back; the server
     // deletes the session on this.

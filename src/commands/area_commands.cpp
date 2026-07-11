@@ -469,7 +469,8 @@ void cmdJudgeLog(CommandContext &f_context)
         f_context.reply(l_message);
     }
     else {
-        QString filteredmessage = l_message.remove(QRegularExpression("[(].*[)]"));
+        static const QRegularExpression s_parenthetical("[(].*[)]");
+        QString filteredmessage = l_message.remove(s_parenthetical);
         f_context.reply(filteredmessage);
     }
 }

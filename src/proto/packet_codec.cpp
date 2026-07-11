@@ -91,11 +91,8 @@ void PacketCodecRegistry::registerCodec(const QString &f_header, CodecRule f_rul
 void PacketCodecRegistry::unregisterAll(const QString &f_owner_id)
 {
     AKASHI_ASSERT_OWNER_THREAD();
-    for (auto l_iterator = m_entries.begin(); l_iterator != m_entries.end(); ++l_iterator) {
-        QList<Entry> &l_entries = l_iterator.value();
-        l_entries.erase(std::remove_if(l_entries.begin(), l_entries.end(),
-                                       [&f_owner_id](const Entry &f_entry) { return f_entry.owner == f_owner_id; }),
-                        l_entries.end());
+    for (QList<Entry> &l_entries : m_entries) {
+        l_entries.removeIf([&f_owner_id](const Entry &f_entry) { return f_entry.owner == f_owner_id; });
     }
 }
 

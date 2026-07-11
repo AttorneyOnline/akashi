@@ -1087,7 +1087,7 @@ void ProtocolTest::advancedBootCreatesARootAccount()
     // output; the password is extracted straight from it.
     QByteArray output;
     QRegularExpressionMatch match;
-    const QRegularExpression passwordLine(QStringLiteral("Password: ([0-9a-f]+)"));
+    static const QRegularExpression passwordLine(QStringLiteral("Password: ([0-9a-f]+)"));
     QDeadlineTimer deadline(15000);
     while (!deadline.hasExpired()) {
         m_server->waitForReadyRead(250);
@@ -1169,7 +1169,7 @@ void ProtocolTest::emptyModpassBootGeneratesOne()
 
     QByteArray output;
     QRegularExpressionMatch match;
-    const QRegularExpression modpassLine(QStringLiteral("Modpass: ([0-9a-f]+)"));
+    static const QRegularExpression modpassLine(QStringLiteral("Modpass: ([0-9a-f]+)"));
     QDeadlineTimer deadline(15000);
     while (!deadline.hasExpired()) {
         m_server->waitForReadyRead(250);

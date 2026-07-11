@@ -40,7 +40,7 @@ void TextFilterRegistry::registerFilter(const QString &f_id, int f_order, TextFi
     }
     Entry l_entry{f_id, f_order, m_counter++, std::move(f_filter), f_always_active, f_owner, f_channels};
 
-    auto l_it = std::lower_bound(m_entries.begin(), m_entries.end(), l_entry,
+    auto l_it = std::lower_bound(m_entries.cbegin(), m_entries.cend(), l_entry,
                                  [](const Entry &a, const Entry &b) {
                                      if (a.order != b.order)
                                          return a.order < b.order;

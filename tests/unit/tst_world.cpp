@@ -297,6 +297,13 @@ void tst_World::beforeRulesGateWithoutTouchingAfterRules()
         akashi::AreaEvents::PlayerJoined, {.player_state_id = 4, .client_session_id = 4, .area_id = 0, .floor_id = 0, .payload = {}, .services = nullptr},
         l_before, {});
 
+    // The caller's contract: after-rules only run when the gate allows.
+    if (l_verdict.allowed) {
+        akashi::RuleRegistry::runAfter(
+            akashi::AreaEvents::PlayerJoined, {.player_state_id = 4, .client_session_id = 4, .area_id = 0, .floor_id = 0, .payload = {}, .services = nullptr},
+            l_after, {});
+    }
+
     QVERIFY(!l_verdict.allowed);
     QCOMPARE(l_verdict.reason, QString("Only one character selection allowed."));
     QVERIFY(!l_after_ran);

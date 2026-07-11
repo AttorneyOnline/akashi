@@ -1,8 +1,8 @@
 // AI-generated: written by Claude.
-#include "testtools/fake_packet_context.h"
 #include "proto/chat.h"
 #include "proto/packet_codec.h"
 #include "proto/packet_registry.h"
+#include "testtools/fake_packet_context.h"
 
 #include <QRegularExpression>
 #include <QTest>
@@ -175,8 +175,9 @@ void tst_Chat::oocRunsTheOocFilterChain()
     akashi::TextFilterRegistry l_registry;
     l_registry.registerFilter(
         "word-filter", 100, [](const QString &f_text) -> std::optional<QString> {
+            static const QRegularExpression s_bad("bad", QRegularExpression::CaseInsensitiveOption);
             QString l_result = f_text;
-            l_result.replace(QRegularExpression("bad", QRegularExpression::CaseInsensitiveOption), QStringLiteral("❌"));
+            l_result.replace(s_bad, QStringLiteral("❌"));
             return l_result; }, true, "test", {akashi::TextChannel::Ic, akashi::TextChannel::Ooc});
     // Sanction filters stay IC-only and must never touch OOC.
     l_registry.registerFilter(

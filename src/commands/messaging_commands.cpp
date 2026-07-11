@@ -11,6 +11,8 @@
 #include "proto/text_utils.h"
 #include "world/area.h"
 
+#include <utility>
+
 namespace akashi::commands {
 
 static QString reprimand(ServerContext *f_server, bool f_positive = false)
@@ -346,7 +348,7 @@ void cmdCharCurse(CommandContext &f_context)
         QStringList l_char_names = l_argv.join(" ").split(",");
 
         l_target->clearCharCurse();
-        for (const QString &l_char_name : qAsConst(l_char_names)) {
+        for (const QString &l_char_name : std::as_const(l_char_names)) {
             int char_id = f_context.server()->characterId(l_char_name);
             if (char_id == -1) {
                 f_context.reply("Could not find character: " + l_char_name);

@@ -8,6 +8,8 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 
+#include <utility>
+
 namespace akashi {
 
 CommandRegistry::CommandRegistry() :
@@ -98,22 +100,20 @@ bool CommandRegistry::registerVariant(const QString &f_command_name, const Comma
 void CommandRegistry::unregisterAll(const QString &f_owner_id)
 {
     AKASHI_ASSERT_OWNER_THREAD();
-    auto it = m_entries.begin();
-    while (it != m_entries.end()) {
-        if (it->owner_id == f_owner_id) {
-            for (const QString &l_alias : it->spec.aliases) {
+    m_entries.removeIf([this, &f_owner_id](std::pair<const QString &, Entry &> f_item) {
+        Entry &l_entry = f_item.second;
+        if (l_entry.owner_id == f_owner_id) {
+            for (const QString &l_alias : l_entry.spec.aliases) {
                 m_aliases.remove(l_alias.toLower());
             }
-            it = m_entries.erase(it);
+            return true;
         }
-        else {
-            // A surviving command may still carry the owner's added variants.
-            it->spec.variants.removeIf([&f_owner_id](const CommandVariant &v) {
-                return v.owner_id == f_owner_id;
-            });
-            ++it;
-        }
-    }
+        // A surviving command may still carry the owner's added variants.
+        l_entry.spec.variants.removeIf([&f_owner_id](const CommandVariant &v) {
+            return v.owner_id == f_owner_id;
+        });
+        return false;
+    });
 }
 
 QString CommandRegistry::resolve(const QString &f_name) const

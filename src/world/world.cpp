@@ -13,6 +13,7 @@
 #include <QSettings>
 
 #include <algorithm>
+#include <utility>
 
 namespace akashi {
 
@@ -184,18 +185,17 @@ void World::buildFromConfig(const QString &f_rules_path)
     // Assembles the area list, reading an optional floor assignment per area.
     // Sections without a numeric prefix (like "floors") are not areas.
     QStringList l_raw_names = m_areas_ini->childGroups();
-    l_raw_names.erase(std::remove_if(l_raw_names.begin(), l_raw_names.end(), [](const QString &f_raw) {
-                          bool l_is_area = false;
-                          f_raw.split(":").first().toInt(&l_is_area);
-                          return !l_is_area;
-                      }),
-                      l_raw_names.end());
+    l_raw_names.removeIf([](const QString &f_raw) {
+        bool l_is_area = false;
+        f_raw.split(":").constFirst().toInt(&l_is_area);
+        return !l_is_area;
+    });
     std::sort(l_raw_names.begin(), l_raw_names.end(), [](const QString &a, const QString &b) { return a.split(":")[0].toInt() < b.split(":")[0].toInt(); });
 
     QMap<QString, int> l_floor_name_to_id;
     QStringList l_area_floor_names;
 
-    for (const QString &l_raw : qAsConst(l_raw_names)) {
+    for (const QString &l_raw : std::as_const(l_raw_names)) {
         QStringList l_parts = l_raw.split(":");
         l_parts.removeFirst();
         m_area_names.append(l_parts.join(":"));
@@ -244,7 +244,7 @@ void World::applyConfigRules(const QString &f_path)
         l_sweep(l_floor.after_rules);
         l_sweep(l_floor.transform_rules);
     }
-    for (Area *l_area : qAsConst(m_areas)) {
+    for (Area *l_area : std::as_const(m_areas)) {
         l_sweep(l_area->beforeRules());
         l_sweep(l_area->afterRules());
         l_sweep(l_area->transformRules());
@@ -388,7 +388,7 @@ std::optional<QString> World::save(const QString &f_path)
     QJsonObject l_root;
 
     QJsonObject l_floors;
-    for (const Floor &l_floor : qAsConst(m_floors)) {
+    for (const Floor &l_floor : std::as_const(m_floors)) {
         const QJsonObject l_rules = rulesToJson(l_floor.before_rules, l_floor.after_rules, l_floor.transform_rules);
         if (!l_rules.isEmpty()) {
             QJsonObject l_entry;
@@ -495,7 +495,7 @@ QVector<int> World::compactAreas(QVector<int> f_removed_ids)
     for (int l_old = 0; l_old < l_mapping.size(); ++l_old) {
         int l_shift = 0;
         bool l_removed = false;
-        for (int l_id : qAsConst(f_removed_ids)) {
+        for (int l_id : std::as_const(f_removed_ids)) {
             if (l_old == l_id) {
                 l_removed = true;
             }
@@ -506,7 +506,7 @@ QVector<int> World::compactAreas(QVector<int> f_removed_ids)
         l_mapping[l_old] = l_removed ? -1 : l_old - l_shift;
     }
 
-    for (int l_id : qAsConst(f_removed_ids)) {
+    for (int l_id : std::as_const(f_removed_ids)) {
         Area *l_area = m_areas[l_id];
         Q_EMIT areaAboutToBeRemoved(l_area);
         m_areas.removeAt(l_id);
@@ -517,7 +517,7 @@ QVector<int> World::compactAreas(QVector<int> f_removed_ids)
     // Rebuild the floors' area lists and each area's identity in one sweep.
     for (Floor &l_floor : m_floors) {
         QVector<int> l_survivors;
-        for (int l_old : qAsConst(l_floor.area_ids)) {
+        for (int l_old : std::as_const(l_floor.area_ids)) {
             if (l_mapping[l_old] >= 0)
                 l_survivors.append(l_mapping[l_old]);
         }
@@ -555,7 +555,7 @@ std::optional<QString> World::removeFloor(int f_floor_id, QVector<int> &f_mappin
     if (m_floors.size() <= 1) {
         return QStringLiteral("The last floor cannot be removed.");
     }
-    for (int l_area_id : qAsConst(l_floor->area_ids)) {
+    for (int l_area_id : std::as_const(l_floor->area_ids)) {
         if (m_areas[l_area_id]->playerCount() > 0) {
             return QStringLiteral("Not every area on that floor is empty.");
         }
@@ -583,12 +583,11 @@ std::optional<QString> World::loadFloorFile(const QString &f_name, const QString
     const config::AreaRulesConfig l_rule_config = config::loadAreaRules(f_path);
     QSettings l_file_settings(f_path, m_areas_ini->format());
     QStringList l_raw_names = l_file_settings.childGroups();
-    l_raw_names.erase(std::remove_if(l_raw_names.begin(), l_raw_names.end(), [](const QString &f_raw) {
-                          bool l_is_area = false;
-                          f_raw.split(":").first().toInt(&l_is_area);
-                          return !l_is_area;
-                      }),
-                      l_raw_names.end());
+    l_raw_names.removeIf([](const QString &f_raw) {
+        bool l_is_area = false;
+        f_raw.split(":").constFirst().toInt(&l_is_area);
+        return !l_is_area;
+    });
     std::sort(l_raw_names.begin(), l_raw_names.end(), [](const QString &a, const QString &b) { return a.split(":")[0].toInt() < b.split(":")[0].toInt(); });
     if (l_raw_names.isEmpty()) {
         return QStringLiteral("The floor file defines no areas.");
@@ -596,7 +595,7 @@ std::optional<QString> World::loadFloorFile(const QString &f_name, const QString
 
     // A floor of the same name is replaced; an unknown one is created.
     f_floor_id = -1;
-    for (const Floor &l_floor : qAsConst(m_floors)) {
+    for (const Floor &l_floor : std::as_const(m_floors)) {
         if (l_floor.name.compare(f_name, Qt::CaseInsensitive) == 0) {
             f_floor_id = l_floor.id;
         }
@@ -648,7 +647,7 @@ std::optional<QString> World::loadFloorFile(const QString &f_name, const QString
         l_apply_rules(it.value(), m_floors[f_floor_id].before_rules, m_floors[f_floor_id].after_rules, m_floors[f_floor_id].transform_rules);
     }
 
-    for (const QString &l_raw : qAsConst(l_raw_names)) {
+    for (const QString &l_raw : std::as_const(l_raw_names)) {
         QStringList l_parts = l_raw.split(":");
         const int l_local_index = l_parts.takeFirst().toInt();
         const QString l_area_name = l_parts.join(":");
@@ -663,7 +662,7 @@ std::optional<QString> World::loadFloorFile(const QString &f_name, const QString
 
 void World::rebuild(const QString &f_rules_path)
 {
-    for (Area *l_area : qAsConst(m_areas)) {
+    for (Area *l_area : std::as_const(m_areas)) {
         Q_EMIT areaAboutToBeRemoved(l_area);
         l_area->deleteLater();
     }

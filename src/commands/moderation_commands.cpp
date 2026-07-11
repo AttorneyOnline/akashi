@@ -16,13 +16,14 @@
 #include <QRegularExpression>
 
 #include <functional>
+#include <utility>
 
 namespace akashi::commands {
 
 static long long parseTime(const QString &f_input)
 {
-    QRegularExpression l_regex("(?:(?:(?<year>.*?)y)*(?:(?<week>.*?)w)*(?:(?<day>.*?)d)*(?:(?<hr>.*?)h)*(?:(?<min>.*?)m)*(?:(?<sec>.*?)s)*)");
-    QRegularExpressionMatch match = l_regex.match(f_input);
+    static const QRegularExpression s_duration("(?:(?:(?<year>.*?)y)*(?:(?<week>.*?)w)*(?:(?<day>.*?)d)*(?:(?<hr>.*?)h)*(?:(?<min>.*?)m)*(?:(?<sec>.*?)s)*)");
+    QRegularExpressionMatch match = s_duration.match(f_input);
     QString str_year, str_week, str_hour, str_day, str_minute, str_second;
     int year, week, day, hour, minute, second;
 
@@ -610,7 +611,7 @@ void cmdKickOther(CommandContext &f_context)
     const QList<akashi::ClientSession *> l_targets_hwid = f_context.server()->clientsByHwid(f_context.hwid());
     l_target_clients = f_context.server()->clientsByIpid(f_context.ipid());
 
-    for (akashi::ClientSession *l_target_candidate : qAsConst(l_targets_hwid)) {
+    for (akashi::ClientSession *l_target_candidate : std::as_const(l_targets_hwid)) {
         if (!l_target_clients.contains(l_target_candidate)) {
             l_target_clients.append(l_target_candidate);
         }
@@ -623,7 +624,7 @@ void cmdKickOther(CommandContext &f_context)
         }
     }
 
-    for (akashi::ClientSession *l_target_client : qAsConst(l_target_clients)) {
+    for (akashi::ClientSession *l_target_client : std::as_const(l_target_clients)) {
         l_target_client->closeSocket();
         l_kick_counter++;
     }

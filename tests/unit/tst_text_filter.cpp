@@ -251,7 +251,9 @@ void tst_TextFilter::disemvowelStripsVowels()
 {
     TextFilterRegistry l_registry;
     l_registry.registerFilter(
-        "disemvoweled", 500, [](const QString &t) -> std::optional<QString> { return QString(t).remove(QRegularExpression("[AEIOUaeiou]")); }, false, "test");
+        "disemvoweled", 500, [](const QString &t) -> std::optional<QString> {
+            static const QRegularExpression s_vowels("[AEIOUaeiou]");
+            return QString(t).remove(s_vowels); }, false, "test");
 
     auto l_result = l_registry.apply("Hello World", {"disemvoweled"});
     QCOMPARE(*l_result, QString("Hll Wrld"));
@@ -262,9 +264,9 @@ void tst_TextFilter::wordFilterRedactsMatches()
     TextFilterRegistry l_registry;
     l_registry.registerFilter(
         "word-filter", 100, [](const QString &t) -> std::optional<QString> {
+            static const QRegularExpression s_bad("bad", QRegularExpression::CaseInsensitiveOption);
             QString l_result = t;
-            l_result.replace(QRegularExpression("bad", QRegularExpression::CaseInsensitiveOption),
-                             QStringLiteral("❌"));
+            l_result.replace(s_bad, QStringLiteral("❌"));
             return l_result; }, true, "test");
 
     auto l_result = l_registry.apply("this is Bad word", {});

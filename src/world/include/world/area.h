@@ -62,12 +62,15 @@ class AKASHI_CORE_EXPORT Area : public QObject
     // Introspectable area state. Anything a plugin (native or scripted) may
     // read or tune is a property here - adding one exposes it everywhere with
     // no code elsewhere, and only the WRITE ones can be set from a plugin.
+    // Plugins read and write these synchronously through the property system;
+    // nothing binds to them, so only the properties whose change already has a
+    // semantic signal carry a NOTIFY. clazy:excludeall=qproperty-without-notify
     Q_PROPERTY(QString name READ name)
-    Q_PROPERTY(int player_count READ playerCount)
+    Q_PROPERTY(int player_count READ playerCount NOTIFY playerCountChanged)
     Q_PROPERTY(QString background READ background)
-    Q_PROPERTY(bool is_protected READ isProtected)
+    Q_PROPERTY(bool is_protected READ isProtected CONSTANT)
     Q_PROPERTY(QString evidence_mod READ evidenceModName)
-    Q_PROPERTY(QString status READ status WRITE setStatus)
+    Q_PROPERTY(QString status READ status WRITE setStatus NOTIFY statusChanged)
     Q_PROPERTY(QString lock_state READ lockStateName WRITE setLockStateName)
     Q_PROPERTY(bool music_allowed READ isMusicAllowed WRITE setMusicAllowed)
     Q_PROPERTY(bool shouts_allowed READ isShoutAllowed WRITE setShoutAllowed)
@@ -322,11 +325,11 @@ class AKASHI_CORE_EXPORT Area : public QObject
     void playerCountChanged(int f_count);
     void statusChanged(const QString &f_status);
     void ownersChanged();
-    void lockStateChanged(LockState f_state);
+    void lockStateChanged(akashi::Area::LockState f_state);
 
   private Q_SLOTS:
     // A song the jukebox starts on its own becomes the area's current music.
-    void onJukeboxSongStarted(const JukeboxSong &f_song);
+    void onJukeboxSongStarted(const akashi::JukeboxSong &f_song);
 
   private:
     void setupComponents();

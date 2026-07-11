@@ -14,17 +14,21 @@
 
 namespace akashi {
 
-static const QHash<QString, QString> DEFAULT_TEMPLATES = {
-    {"ic", QStringLiteral("[{timestamp}][{char_name}][IC][{area}({ipid})][{client_id}]{message}")},
-    {"ooc", QStringLiteral("[{timestamp}][{char_name}][OOC][{area}({ipid})][{client_id}]{message}")},
-    {"music", QStringLiteral("[{timestamp}][{char_name}][MUSIC][{ooc_name}({ipid})][{area}]{message}")},
-    {"login", QStringLiteral("[{timestamp}][LOGIN][{success}][{ipid}][{char_name}({ooc_name})]")},
-    {"cmd", QStringLiteral("[{timestamp}][{area}][CMD][{ipid}][{char_name}({ooc_name})]/{message} {args}")},
-    {"kick", QStringLiteral("[{timestamp}][{moderator}][KICK][{target_ipid}]: {message}")},
-    {"ban", QStringLiteral("[{timestamp}][{moderator}][BAN][{target_ipid}][{duration}]: {message}")},
-    {"modcall", QStringLiteral("[{timestamp}][{area}][MODCALL][{ipid}][{client_id}][{char_name}({ooc_name})]")},
-    {"connect", QStringLiteral("[{timestamp}][CONNECT][{ipid}][{target_ipid}][{hwid}]")},
-};
+static const QHash<QString, QString> &defaultTemplates()
+{
+    static const QHash<QString, QString> s_templates = {
+        {"ic", QStringLiteral("[{timestamp}][{char_name}][IC][{area}({ipid})][{client_id}]{message}")},
+        {"ooc", QStringLiteral("[{timestamp}][{char_name}][OOC][{area}({ipid})][{client_id}]{message}")},
+        {"music", QStringLiteral("[{timestamp}][{char_name}][MUSIC][{ooc_name}({ipid})][{area}]{message}")},
+        {"login", QStringLiteral("[{timestamp}][LOGIN][{success}][{ipid}][{char_name}({ooc_name})]")},
+        {"cmd", QStringLiteral("[{timestamp}][{area}][CMD][{ipid}][{char_name}({ooc_name})]/{message} {args}")},
+        {"kick", QStringLiteral("[{timestamp}][{moderator}][KICK][{target_ipid}]: {message}")},
+        {"ban", QStringLiteral("[{timestamp}][{moderator}][BAN][{target_ipid}][{duration}]: {message}")},
+        {"modcall", QStringLiteral("[{timestamp}][{area}][MODCALL][{ipid}][{client_id}][{char_name}({ooc_name})]")},
+        {"connect", QStringLiteral("[{timestamp}][CONNECT][{ipid}][{target_ipid}][{hwid}]")},
+    };
+    return s_templates;
+}
 
 // A template is legacy-positional if it uses any %N field, not just %1 -
 // an operator may well have dropped the leading timestamp field.
@@ -36,12 +40,16 @@ static bool isPositionalTemplate(const QString &f_tmpl)
 
 // Every placeholder applyTemplate substitutes; anything else in a template
 // lands in the log line as written, so loading warns about unknown tokens.
-static const QStringList KNOWN_PLACEHOLDERS = {
-    QStringLiteral("timestamp"), QStringLiteral("area"), QStringLiteral("char_name"),
-    QStringLiteral("ooc_name"), QStringLiteral("ipid"), QStringLiteral("client_id"),
-    QStringLiteral("message"), QStringLiteral("args"), QStringLiteral("moderator"),
-    QStringLiteral("target_ipid"), QStringLiteral("duration"), QStringLiteral("hwid"),
-    QStringLiteral("success")};
+static const QStringList &knownPlaceholders()
+{
+    static const QStringList s_placeholders = {
+        QStringLiteral("timestamp"), QStringLiteral("area"), QStringLiteral("char_name"),
+        QStringLiteral("ooc_name"), QStringLiteral("ipid"), QStringLiteral("client_id"),
+        QStringLiteral("message"), QStringLiteral("args"), QStringLiteral("moderator"),
+        QStringLiteral("target_ipid"), QStringLiteral("duration"), QStringLiteral("hwid"),
+        QStringLiteral("success")};
+    return s_placeholders;
+}
 
 // Two positional lineages exist in migrated configs: the 1.x logtext.ini
 // layout (its comments document the field meanings) and the later sample
@@ -54,24 +62,28 @@ struct PositionalLineage
     QStringList fields;
 };
 
-static const QHash<QString, QList<PositionalLineage>> POSITIONAL_MIGRATION = {
-    {"ic", {{6, {"{timestamp}", "{char_name}", "{ooc_name}", "{ipid}", "{area}", "{message}"}}, {7, {"{timestamp}", "{area}", "{ipid}", "{client_id}", "{char_name}", "{ooc_name}", "{message}"}}}},
-    {"ooc", {{6, {"{timestamp}", "{char_name}", "{ooc_name}", "{ipid}", "{area}", "{message}"}}, {7, {"{timestamp}", "{area}", "{ipid}", "{client_id}", "{char_name}", "{ooc_name}", "{message}"}}}},
-    {"music", {{6, {"{timestamp}", "{char_name}", "{ooc_name}", "{ipid}", "{area}", "{message}"}}}},
-    {"login", {{5, {"{timestamp}", "{success}", "{ipid}", "{char_name}", "{ooc_name}"}}}},
-    {"cmd", {{7, {"{timestamp}", "{area}", "{char_name}", "{ooc_name}", "{message}", "{args}", "{ipid}"}}}},
-    {"kick", {{4, {"{timestamp}", "{moderator}", "{target_ipid}", "{message}"}}}},
-    {"ban", {{5, {"{timestamp}", "{moderator}", "{target_ipid}", "{duration}", "{message}"}}}},
-    {"modcall", {{5, {"{timestamp}", "{area}", "{char_name}", "{ooc_name}", "{ipid}"}}, {6, {"{timestamp}", "{area}", "{ipid}", "{client_id}", "{char_name}", "{ooc_name}"}}}},
-    {"connect", {{4, {"{timestamp}", "{ipid}", "{target_ipid}", "{hwid}"}}}},
-};
+static const QHash<QString, QList<PositionalLineage>> &positionalMigration()
+{
+    static const QHash<QString, QList<PositionalLineage>> s_migration = {
+        {"ic", {{6, {"{timestamp}", "{char_name}", "{ooc_name}", "{ipid}", "{area}", "{message}"}}, {7, {"{timestamp}", "{area}", "{ipid}", "{client_id}", "{char_name}", "{ooc_name}", "{message}"}}}},
+        {"ooc", {{6, {"{timestamp}", "{char_name}", "{ooc_name}", "{ipid}", "{area}", "{message}"}}, {7, {"{timestamp}", "{area}", "{ipid}", "{client_id}", "{char_name}", "{ooc_name}", "{message}"}}}},
+        {"music", {{6, {"{timestamp}", "{char_name}", "{ooc_name}", "{ipid}", "{area}", "{message}"}}}},
+        {"login", {{5, {"{timestamp}", "{success}", "{ipid}", "{char_name}", "{ooc_name}"}}}},
+        {"cmd", {{7, {"{timestamp}", "{area}", "{char_name}", "{ooc_name}", "{message}", "{args}", "{ipid}"}}}},
+        {"kick", {{4, {"{timestamp}", "{moderator}", "{target_ipid}", "{message}"}}}},
+        {"ban", {{5, {"{timestamp}", "{moderator}", "{target_ipid}", "{duration}", "{message}"}}}},
+        {"modcall", {{5, {"{timestamp}", "{area}", "{char_name}", "{ooc_name}", "{ipid}"}}, {6, {"{timestamp}", "{area}", "{ipid}", "{client_id}", "{char_name}", "{ooc_name}"}}}},
+        {"connect", {{4, {"{timestamp}", "{ipid}", "{target_ipid}", "{hwid}"}}}},
+    };
+    return s_migration;
+}
 
 LogService::LogService(ConfigStore *f_config_store, int f_buffer_limit, QObject *parent) :
     QObject(parent),
     m_config_store(f_config_store),
     m_buffer_limit(f_buffer_limit)
 {
-    m_templates = DEFAULT_TEMPLATES;
+    m_templates = defaultTemplates();
     loadTemplates();
 
     m_worker = QThread::create([this]() { workerLoop(); });
@@ -188,7 +200,7 @@ void LogService::reloadTemplates()
     AKASHI_ASSERT_THREAD_AFFINITY();
     {
         QMutexLocker l_lock(&m_mutex);
-        m_templates = DEFAULT_TEMPLATES;
+        m_templates = defaultTemplates();
     }
     loadTemplates();
 }
@@ -288,7 +300,7 @@ void LogService::loadTemplates()
         return;
     }
 
-    for (auto l_it = DEFAULT_TEMPLATES.constBegin(); l_it != DEFAULT_TEMPLATES.constEnd(); ++l_it) {
+    for (auto l_it = defaultTemplates().constBegin(); l_it != defaultTemplates().constEnd(); ++l_it) {
         const QString l_value = l_settings->value(QStringLiteral("LogConfiguration/") + l_it.key()).toString();
         if (l_value.isEmpty()) {
             continue;
@@ -311,8 +323,8 @@ void LogService::loadTemplates()
 
 QString LogService::migratePositionalTemplate(const QString &f_key, const QString &f_tmpl)
 {
-    auto l_it = POSITIONAL_MIGRATION.constFind(f_key);
-    if (l_it == POSITIONAL_MIGRATION.constEnd()) {
+    auto l_it = positionalMigration().constFind(f_key);
+    if (l_it == positionalMigration().constEnd()) {
         return f_tmpl;
     }
 
@@ -350,10 +362,10 @@ void LogService::warnUnknownPlaceholders(const QString &f_key, const QString &f_
     auto l_matches = s_token.globalMatch(f_tmpl);
     while (l_matches.hasNext()) {
         const QString l_token = l_matches.next().captured(1);
-        if (!KNOWN_PLACEHOLDERS.contains(l_token)) {
+        if (!knownPlaceholders().contains(l_token)) {
             qCWarning(akashiLog).noquote() << "logtext: template" << f_key << "uses unknown placeholder {" + l_token + "}"
                                            << "- it will appear in log lines as written. Known placeholders:"
-                                           << KNOWN_PLACEHOLDERS.join(QStringLiteral(", "));
+                                           << knownPlaceholders().join(QStringLiteral(", "));
         }
     }
 
@@ -365,7 +377,7 @@ void LogService::warnUnknownPlaceholders(const QString &f_key, const QString &f_
         const QString l_token = l_angle_matches.next().captured(1);
         qCWarning(akashiLog).noquote() << "logtext: template" << f_key << "uses unknown placeholder <" + l_token + ">"
                                        << "- it will appear in log lines as written. Known placeholders:"
-                                       << KNOWN_PLACEHOLDERS.join(QStringLiteral(", "));
+                                       << knownPlaceholders().join(QStringLiteral(", "));
     }
 }
 

@@ -9,7 +9,11 @@
 namespace akashi {
 
 // The byte sequence that marks the start of the metadata section.
-static const QByteArray METADATA_MARKER = QByteArray("\xab\xcd\xef", 3) + "MaxMind.com";
+static const QByteArray &metadataMarker()
+{
+    static const QByteArray s_marker = QByteArray("\xab\xcd\xef", 3) + "MaxMind.com";
+    return s_marker;
+}
 
 bool MmdbReader::open(const QString &f_path)
 {
@@ -20,13 +24,13 @@ bool MmdbReader::open(const QString &f_path)
     m_data = l_file.readAll();
     m_cache.clear();
 
-    const qsizetype l_marker = m_data.lastIndexOf(METADATA_MARKER);
+    const qsizetype l_marker = m_data.lastIndexOf(metadataMarker());
     if (l_marker == -1) {
         qCCritical(akashiDb) << f_path << "is not a MaxMind database file.";
         return false;
     }
 
-    quint32 l_offset = l_marker + METADATA_MARKER.size();
+    quint32 l_offset = l_marker + metadataMarker().size();
     const QVariantMap l_metadata = readValue(l_offset).toMap();
     m_node_count = l_metadata.value("node_count").toUInt();
     m_record_size = l_metadata.value("record_size").toInt();
