@@ -1,6 +1,7 @@
 {
     "id": "akashi.hello-world",
     "version": "1.0.0",
+    "about": "The minimal native plugin, a starting point to copy.",
     "dependencies": [],
     "services": ["akashi.commands"]
 }

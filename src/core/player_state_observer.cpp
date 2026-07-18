@@ -49,6 +49,14 @@ void PlayerStateObserver::unregisterPlayer(akashi::PlayerState *f_player)
     sendToSessions(akashi::Packet("PR", {QString::number(f_player->id()), QString::number(ao2::PLAYER_LIST_REMOVE)}));
 }
 
+void PlayerStateObserver::clear()
+{
+    for (akashi::PlayerState *i_player : std::as_const(m_players)) {
+        disconnect(i_player, nullptr, this, nullptr);
+    }
+    m_players.clear();
+}
+
 void PlayerStateObserver::sendToSessions(const akashi::Packet &f_packet)
 {
     QSet<akashi::ClientSession *> l_sent;

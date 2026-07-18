@@ -1341,10 +1341,12 @@ class CommandsDance : public QObject
         m_queue = {
             // -- moderation_commands.cpp (27 commands) --
             {"/about", "akashi"},
+            {"/about akashi", "Thank you for using akashi"},
+            {"/about ghost-plugin", "Nothing is registered"},
             {"/motd", "MOTD"},
             {"/mods", "OOC name"},
             {"/commands", "Allowed commands"},
-            {"/help about", "server version"},
+            {"/help about", "made the server"},
             {"/help ga", "getarea"},
             {"/help blockdj", "block_dj"},
             {"/help all", "==Help=="},
@@ -1548,17 +1550,6 @@ class FiltersDance : public QObject
         m_watchdog->setSingleShot(true);
         connect(m_watchdog, &QTimer::timeout, this, [this] { fail("timed out waiting for: " + m_waiting_for); });
 
-        m_filters = {
-            {"gimp",       "/gimp",       "Gimped",       "/ungimp",       "Ungimped",
-             "Hello, how are you doing today?"},
-            {"disemvowel", "/disemvowel", "Disemvoweled", "/undisemvowel", "Undisemvoweled",
-             "The king is dead and the queen rules the land."},
-            {"shake",      "/shake",      "Shook",        "/unshake",      "Unshook",
-             "I think you should stop talking nonsense right now please."},
-            {"medieval",   "/medieval",   "It is done",   "/unmedieval",   "Un-medieval",
-             "Where is the blacksmith? I need my sword repaired."},
-        };
-
         setPhase(Phase::LeaderLogin, "the leader to join and log in");
         m_leader = new DanceClient("leader", "Phoenix", m_address, m_port, 0, this);
         connect(m_leader, &DanceClient::failed, this, [this](const QString &f_reason) { fail(f_reason); });
@@ -1703,8 +1694,199 @@ class FiltersDance : public QObject
     DanceClient *m_leader = nullptr;
     DanceClient *m_target = nullptr;
     Phase m_phase = Phase::LeaderLogin;
-    QList<FilterTest> m_filters;
+    QList<FilterTest> m_filters{
+        {"gimp",       "/gimp",       "Gimped",       "/ungimp",       "Ungimped",
+         "Hello, how are you doing today?"},
+        {"disemvowel", "/disemvowel", "Disemvoweled", "/undisemvowel", "Undisemvoweled",
+         "The king is dead and the queen rules the land."},
+        {"shake",      "/shake",      "Shook",        "/unshake",      "Unshook",
+         "I think you should stop talking nonsense right now please."},
+        {"medieval",   "/medieval",   "It is done",   "/unmedieval",   "Un-medieval",
+         "Where is the blacksmith? I need my sword repaired."},
+    };
     int m_filter_index = 0;
+};
+
+// The modbot scene: with the automated moderator enabled (a screen
+// pattern "sausage", default thresholds, and an acl_roles role "modbot"
+// granting mute), a target speaks cleanly, posts screened content nobody
+// hears, and spams until the bot warns and then mutes - watched by a
+// logged-in moderator who is exempt and receives the bot's reports.
+class ModbotDance : public QObject
+{
+    Q_OBJECT
+
+  public:
+    ModbotDance(const QString &f_address, int f_port, const QString &f_modpass, QObject *parent = nullptr) :
+        QObject(parent),
+        m_address(f_address),
+        m_port(f_port),
+        m_modpass(f_modpass)
+    {
+        m_watchdog = new QTimer(this);
+        m_watchdog->setSingleShot(true);
+        connect(m_watchdog, &QTimer::timeout, this, [this] { fail("timed out waiting for: " + m_waiting_for); });
+
+        setPhase(Phase::LeaderLogin, "the moderator to join and log in");
+        m_leader = new DanceClient("modwatch", "Phoenix", m_address, m_port, 0, this);
+        connect(m_leader, &DanceClient::failed, this, [this](const QString &f_reason) { fail(f_reason); });
+        connect(m_leader, &DanceClient::ready, this, [this] { m_leader->sendOoc("/login"); });
+        connect(m_leader, &DanceClient::oocReceived, this, &ModbotDance::onLeaderOoc);
+        connect(m_leader, &DanceClient::icReceived, this, &ModbotDance::onLeaderIc);
+        connect(m_leader, &DanceClient::loggedIn, this, [this] {
+            setPhase(Phase::TargetJoin, "the target to join");
+            m_target = new DanceClient("spammer", "", m_address, m_port, 0, this);
+            connect(m_target, &DanceClient::failed, this, [this](const QString &f_reason) { fail(f_reason); });
+            connect(m_target, &DanceClient::oocReceived, this, &ModbotDance::onTargetOoc);
+            connect(m_target, &DanceClient::ready, this, [this] {
+                setPhase(Phase::CleanIc, "an ordinary line to echo");
+                m_target->send(icMessage(m_target, "a perfectly ordinary line"));
+            });
+        });
+    }
+
+  private:
+    enum class Phase
+    {
+        LeaderLogin,
+        TargetJoin,
+        CleanIc,
+        ScreenedIc,
+        RepeatWarn,
+        QuietWait,
+        RepeatMute,
+        MutedIc,
+    };
+
+    AOPacket icMessage(DanceClient *f_speaker, const QString &f_text) const
+    {
+        return AOPacket("MS", {"chat", "-", f_speaker->character(), "normal", f_text, "def", "1", "0", QString::number(f_speaker->charId()), "0", "0", "0", "0", "0", "0"});
+    }
+
+    void onLeaderIc(const QStringList &f_fields)
+    {
+        const QString l_text = f_fields.value(4);
+        // Screened or muted content reaching anyone fails the scene outright.
+        if (l_text.contains("sausage")) {
+            fail("screened content reached the moderator: " + l_text);
+            return;
+        }
+        if (l_text.contains("you should not hear this")) {
+            fail("a muted player's line reached the moderator");
+            return;
+        }
+
+        if (m_phase == Phase::CleanIc && l_text.contains("a perfectly ordinary line")) {
+            say("OK: clean chat flows");
+            setPhase(Phase::ScreenedIc, "the marker after the screened line");
+            m_target->send(icMessage(m_target, "would you like a sausage"));
+            m_target->send(icMessage(m_target, "marker one"));
+        }
+        else if (m_phase == Phase::ScreenedIc && l_text.contains("marker one")) {
+            say("OK: the screened line never echoed");
+            setPhase(Phase::RepeatWarn, "the bot to warn the spammer");
+            for (int i = 0; i < 4; i++) {
+                m_target->sendOoc("buy my wares");
+            }
+        }
+    }
+
+    void onLeaderOoc(const QString &f_message)
+    {
+        if (m_phase == Phase::LeaderLogin && f_message.contains("Entering login prompt")) {
+            m_leader->sendOoc(m_modpass);
+        }
+        else if (m_phase == Phase::RepeatWarn && f_message.contains("[modbot] warned")) {
+            m_leader_saw_warn = true;
+            maybeFinishWarnPhase();
+        }
+        else if (m_phase == Phase::RepeatMute && f_message.contains("[modbot] muted")) {
+            m_leader_saw_mute = true;
+            maybeFinishMutePhase();
+        }
+        else if (m_phase == Phase::MutedIc && f_message.contains("done spamming honest")) {
+            // The muted line was rejected before this marker went through,
+            // so reaching here without the failure above proves the mute.
+            say("OK: the mute blocked the target's chat");
+            say("the automated moderator screened, warned and muted on cue");
+            qApp->exit(0);
+        }
+    }
+
+    void onTargetOoc(const QString &f_message)
+    {
+        if (m_phase == Phase::RepeatWarn && f_message.contains("warned by the automated moderator")) {
+            m_target_saw_warn = true;
+            maybeFinishWarnPhase();
+        }
+        else if (m_phase == Phase::RepeatMute && f_message.contains("muted for 5 minutes by the automated moderator")) {
+            m_target_saw_mute = true;
+            maybeFinishMutePhase();
+        }
+    }
+
+    void maybeFinishWarnPhase()
+    {
+        if (!m_leader_saw_warn || !m_target_saw_warn) {
+            return;
+        }
+        say("OK: first offense warned, moderator notified");
+        // The quiet period after a verdict must pass before the next
+        // burst counts; the analysis worker judges nothing in between.
+        setPhase(Phase::QuietWait, "the quiet period to pass");
+        QTimer::singleShot(6000, this, [this] {
+            setPhase(Phase::RepeatMute, "the bot to mute the repeat offender");
+            for (int i = 0; i < 4; i++) {
+                m_target->sendOoc("premium wares right here");
+            }
+        });
+    }
+
+    void maybeFinishMutePhase()
+    {
+        if (!m_leader_saw_mute || !m_target_saw_mute) {
+            return;
+        }
+        say("OK: repeat offense muted through the sanction store");
+        // A muted line, then an OOC marker: both ride the same ordered
+        // connection, so if the line had gone through it would reach the
+        // moderator before the marker does.
+        setPhase(Phase::MutedIc, "the marker after the muted line");
+        m_target->send(icMessage(m_target, "you should not hear this"));
+        m_target->sendOoc("done spamming honest");
+    }
+
+    void setPhase(Phase f_phase, const QString &f_waiting_for)
+    {
+        m_phase = f_phase;
+        m_waiting_for = f_waiting_for;
+        say("--- waiting for " + f_waiting_for + " ---");
+        m_watchdog->start(10000);
+    }
+
+    void say(const QString &f_text)
+    {
+        std::cout << f_text.toStdString() << std::endl;
+    }
+
+    void fail(const QString &f_reason)
+    {
+        say("FAILED: " + f_reason);
+        qApp->exit(1);
+    }
+
+    QString m_address;
+    int m_port;
+    QString m_modpass;
+    QTimer *m_watchdog;
+    QString m_waiting_for;
+    DanceClient *m_leader = nullptr;
+    DanceClient *m_target = nullptr;
+    Phase m_phase = Phase::LeaderLogin;
+    bool m_leader_saw_warn = false;
+    bool m_target_saw_warn = false;
+    bool m_leader_saw_mute = false;
+    bool m_target_saw_mute = false;
 };
 
 class FloorDance : public QObject
@@ -1861,6 +2043,11 @@ class ScriptingDance : public QObject
         connect(m_client, &DanceClient::loggedIn, this, [this] {
             if (!m_logged_in) {
                 m_logged_in = true;
+                // The target verbs need the id the server actually assigned,
+                // which may not be 0 when other clients came and went first.
+                for (Step &l_step : m_queue) {
+                    l_step.send.replace(QStringLiteral("<id>"), QString::number(m_client->clientId()));
+                }
                 runNext();
                 return;
             }
@@ -1883,7 +2070,7 @@ class ScriptingDance : public QObject
 
   private:
     struct Step {
-        enum Kind { Command, Ic, IcBlocked, Modcall } kind;
+        enum Kind : int { Command, Ic, IcBlocked, Modcall } kind;
         QString send;
         QString expected;
     };
@@ -1975,7 +2162,7 @@ class ScriptingDance : public QObject
     QTimer *m_watchdog;
     QString m_waiting_for;
     DanceClient *m_client = nullptr;
-    QList<Step> m_queue = {
+    QList<Step> m_queue{
         {Step::Command, "/luahello", "Hello from Lua!"},
         {Step::Command, "/luahello judge", "Hello from Lua, judge!"},
         {Step::Command, "/pyhello", "Hello from Python!"},
@@ -2003,11 +2190,17 @@ class ScriptingDance : public QObject
         // would have errored the Lua handler and left "nobody yet".
         {Step::Command, "/lualast", "of client"},
 
+        // Plugin abouts: the showcase's manifest-declared line lands in
+        // the assembled /about, and the host credits its embedded runtime
+        // when asked for its entry alone.
+        {Step::Command, "/about", "The Lua showcase"},
+        {Step::Command, "/about akashi.lua-host", "PUC-Rio"},
+
         // A permission-gated script command toggling a script text filter
         // on a target, watched live through the IC transform.
-        {Step::Command, "/uwu 0", "engaged"},
+        {Step::Command, "/uwu <id>", "engaged"},
         {Step::Ic, "hello little world", "hewwo wittwe wowwd"},
-        {Step::Command, "/uwu 0", "disengaged"},
+        {Step::Command, "/uwu <id>", "disengaged"},
         {Step::Ic, "hello little world again", "hello little world again"},
 
         // Script rule actions attached to the live area: the Lua before
@@ -2037,7 +2230,10 @@ class ScriptingDance : public QObject
         {Step::Command, "/plugin unload akashi.lua-host", "Failed to unload"},
         {Step::Command, "/plugin unload akashi.lua-host --cascade", "Plugin unloaded"},
         {Step::Command, "/luahello", "Invalid command"},
+        // An unloaded plugin's credit line leaves /about with it.
+        {Step::Command, "/about akashi.lua-host", "Nothing is registered"},
         {Step::Command, "/plugin load akashi.lua-host", "Plugin loaded"},
+        {Step::Command, "/about akashi.lua-host", "PUC-Rio"},
         {Step::Command, "/plugin load akashi.hello-lua", "Plugin loaded"},
         {Step::Command, "/luahello", "Hello from Lua!"},
 
@@ -2075,6 +2271,10 @@ int main(int argc, char *argv[])
         FiltersDance l_dance(l_address, l_port, l_modpass);
         return app.exec();
     }
+    if (l_mode == "modbot") {
+        ModbotDance l_dance(l_address, l_port, l_modpass);
+        return app.exec();
+    }
     if (l_mode == "floors") {
         FloorDance l_dance(l_address, l_port, l_modpass);
         return app.exec();
@@ -2084,7 +2284,7 @@ int main(int argc, char *argv[])
         return app.exec();
     }
     if (l_mode != "classic") {
-        std::cout << "unknown mode: " << l_mode.toStdString() << " (use classic, evidence, testimony, jukebox, commands, filters, floors or scripting)" << std::endl;
+        std::cout << "unknown mode: " << l_mode.toStdString() << " (use classic, evidence, testimony, jukebox, commands, filters, modbot, floors or scripting)" << std::endl;
         return 1;
     }
     MiniClient l_client(l_address, l_port, l_modpass);

@@ -24,6 +24,12 @@ class AKASHI_CORE_EXPORT PlayerStateObserver : public QObject
     void registerPlayer(akashi::PlayerState *f_player);
     void unregisterPlayer(akashi::PlayerState *f_player);
 
+    // Drops every tracked player without broadcasting a removal. Server
+    // shutdown deletes the sessions (and their PlayerState children) directly,
+    // so the observer must let go of those pointers first or it is left
+    // holding dangling references.
+    void clear();
+
   private:
     QList<akashi::PlayerState *> m_players;
 

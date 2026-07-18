@@ -30,6 +30,7 @@
 #include <QCoreApplication>
 #include <QDebug>
 #include <QFile>
+#include <QHostAddress>
 #include <QMap>
 #include <QPointer>
 #include <QRegularExpression>
@@ -42,6 +43,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <utility>
 
 namespace akashi {
 class Area;
@@ -132,18 +134,7 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
      *
      * @return A list of all clients currently in the server.
      */
-    QVector<akashi::ClientSession *> clients();
-
-    /**
-     * @brief Gets a pointer to a client by IPID.
-     *
-     * @param ipid The IPID to look for.
-     *
-     * @return A pointer to the client if found, a nullpointer if not.
-     *
-     * @see Server::clientsByIpid() to get all clients ran by the same user.
-     */
-    akashi::ClientSession *client(QString ipid);
+    QVector<akashi::ClientSession *> clients() const;
 
     /**
      * @brief Gets a list of pointers to all clients with the given IPID.
@@ -152,7 +143,7 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
      *
      * @return A list of clients whose IPID match. List may be empty.
      */
-    QList<akashi::ClientSession *> clientsByIpid(QString ipid);
+    QList<akashi::ClientSession *> clientsByIpid(QString ipid) const;
 
     /**
      * @brief Gets a list of pointers to all clients with the given HWID.
@@ -161,7 +152,7 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
      *
      * @return A list of clients whose HWID match. List may be empty.
      */
-    QList<akashi::ClientSession *> clientsByHwid(QString f_hwid);
+    QList<akashi::ClientSession *> clientsByHwid(QString f_hwid) const;
 
     /**
      * @brief Gets a pointer to a client by user ID.
@@ -170,28 +161,28 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
      *
      * @return A pointer to the client if found, a nullpointer if not.
      */
-    akashi::ClientSession *clientById(int id);
+    akashi::ClientSession *clientById(int id) const;
 
     /**
      * @brief Returns the overall player count in the server.
      *
      * @return The overall player count in the server.
      */
-    int playerCount();
+    int playerCount() const;
 
     /**
      * @brief Returns a list of the available characters on the server to use.
      *
      * @return A list of the available characters on the server to use.
      */
-    QStringList characters();
+    QStringList characters() const;
 
     /**
      * @brief Returns the count of available characters on the server to use.
      *
      * @return The count of available characters on the server to use.
      */
-    int characterCount();
+    int characterCount() const;
 
     /**
      * @brief Get the available character by index.
@@ -200,7 +191,7 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
      *
      * @return The character if it exist, otherwise an empty stirng.
      */
-    QString characterById(int f_chr_id);
+    QString characterById(int f_chr_id) const;
 
     /**
      * @brief Updates which characters are taken in the given area, and sends out an update packet to
@@ -309,7 +300,7 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
      *
      * @return The character ID if a character with that name exists in the character selection list, `-1` if not.
      */
-    int characterId(QString char_name);
+    int characterId(QString char_name) const;
 
     /**
      * @brief Checks if an IP is in a subnet of the IPBanlist.
@@ -321,12 +312,12 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
      *
      * @return A list of areas.
      */
-    QVector<akashi::Area *> areas();
+    QVector<akashi::Area *> areas() const;
 
     /**
      * @brief Returns the number of areas in the server.
      */
-    int areaCount();
+    int areaCount() const;
 
     /**
      * @brief Returns a pointer to the area associated with the index.
@@ -335,13 +326,13 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
      *
      * @return A pointer to the area or null.
      */
-    akashi::Area *areaById(int f_area_id);
+    akashi::Area *areaById(int f_area_id) const;
 
     /**
      * @brief Getter for an area specific buffer from the logger.
      */
 
-    akashi::LogService *logService();
+    akashi::LogService *logService() const;
 
     /**
      * @brief Publishes a placeless event straight to the global observers:
@@ -358,7 +349,7 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
      *
      * @return A list of names.
      */
-    QStringList areaNames();
+    QStringList areaNames() const;
 
     /**
      * @brief Returns the name of the area associated with the index.
@@ -367,7 +358,7 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
      *
      * @return The name of the area or empty.
      */
-    QString areaName(int f_area_id);
+    QString areaName(int f_area_id) const;
 
     int floorCount() const;
     const akashi::Floor *floorById(int f_floor_id) const;
@@ -445,48 +436,48 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
      */
     std::optional<QString> loadFloor(const QString &f_name);
 
-    QStringList musicList();
+    QStringList musicList() const;
 
     /**
      * @brief Returns the available backgrounds on the server.
      *
      * @return A list of backgrounds.
      */
-    QStringList backgrounds();
+    QStringList backgrounds() const;
 
     /**
      * @brief Returns a pointer to a database manager.
      *
      * @return A pointer to a database manager.
      */
-    DBManager *databaseManager();
+    DBManager *databaseManager() const;
 
     /**
      * @brief Returns the filesystem guard used for safe file access.
      */
-    akashi::FileSystemService *fileSystem();
+    akashi::FileSystemService *fileSystem() const;
 
     /**
      * @brief Returns the registry of shared services.
      */
-    akashi::ServiceRegistry *services();
+    akashi::ServiceRegistry *services() const;
 
     /**
      * @brief Returns the packet pipeline with its handlers and codecs.
      */
-    std::shared_ptr<akashi::PacketService> packets();
+    std::shared_ptr<akashi::PacketService> packets() const;
 
     /**
      * @brief Returns a pointer to ACL role handler.
      */
-    akashi::ACLRolesHandler *aclRolesHandler();
+    akashi::ACLRolesHandler *aclRolesHandler() const;
 
     /**
      * @brief The server-wide global timer.
      */
-    QTimer *timer;
+    QTimer *timer = nullptr;
 
-    QStringList cursedCharsTaken(akashi::ClientSession *client, QStringList chars_taken);
+    QStringList cursedCharsTaken(akashi::ClientSession *client, QStringList chars_taken) const;
 
     /**
      * @brief Returns whatever a game message may be broadcasted or not.
@@ -505,28 +496,28 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
     /**
      * @brief Attempts to parse a IPv6 mapped IPv4 to an IPv4.
      */
-    QHostAddress parseToIPv4(QHostAddress f_remote_ip);
+    QHostAddress parseToIPv4(QHostAddress f_remote_ip) const;
 
     /**
      * @brief Returns a raw-pointer of the curr
      */
     PlayerStateObserver *playerStateObserver();
 
-    akashi::ArupBroadcaster *arupBroadcaster();
+    akashi::ArupBroadcaster *arupBroadcaster() const;
 
-    akashi::ConsoleMenu *consoleMenu();
+    akashi::ConsoleMenu *consoleMenu() const;
 
-    akashi::CommandRegistry *commandRegistry();
+    akashi::CommandRegistry *commandRegistry() const;
 
-    akashi::PermissionRegistry *permissionRegistry();
+    akashi::PermissionRegistry *permissionRegistry() const;
 
-    akashi::TextFilterRegistry *textFilterRegistry();
+    akashi::TextFilterRegistry *textFilterRegistry() const;
 
-    akashi::RuleRegistry *ruleRegistry();
+    akashi::RuleRegistry *ruleRegistry() const;
 
     akashi::World *world() const;
 
-    akashi::AuthThrottle *authThrottle();
+    akashi::AuthThrottle *authThrottle() const;
 
     akashi::AuthenticatorRegistry *authenticatorRegistry();
 
@@ -540,8 +531,8 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
     // QPointer and never through an id lookup.
     void deliverAuthOutcome(QPointer<akashi::ClientSession> f_session, const akashi::AuthOutcome &f_outcome);
 
-    akashi::ConfigStore *configStore();
-    ServerSettings *serverSettings();
+    akashi::ConfigStore *configStore() const;
+    ServerSettings *serverSettings() const;
     QString configPath(const QString &f_file) const;
     QString serverNickname() const;
     QUrl assetUrl() const;
@@ -698,7 +689,7 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
     /**
      * @brief Handles HTTP server advertising.
      */
-    ServerPublisher *server_publisher;
+    ServerPublisher *server_publisher = nullptr;
 
     akashi::LogService *m_log_service = nullptr;
     std::shared_ptr<akashi::WriterText> m_text_writer;
@@ -721,7 +712,7 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
     };
     TextData m_text_data;
 
-    int m_port;
+    int m_port = 0;
 
     /**
      * @brief Every connected client and the ID pool, kept together so they
@@ -748,7 +739,7 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
     /**
      * @brief The overall player count in the server.
      */
-    int m_player_count;
+    int m_player_count = 0;
 
     /**
      * @brief The characters available on the server to use.
@@ -761,9 +752,9 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
     QStringList m_backgrounds;
 
     /**
-     * @brief Collection of all IPs that are banned.
+     * @brief The banned IP ranges, parsed once at (re)load - the check runs on every connection.
      */
-    QStringList m_ipban_list;
+    QList<std::pair<QHostAddress, int>> m_ipban_subnets;
 
     // The ASNs that are banned and the database to look up who announces an address.
     QList<quint32> m_banned_asns;
@@ -777,7 +768,7 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
     /**
      * @brief The database manager on the server, used to store users' bans and authorisation details.
      */
-    DBManager *db_manager;
+    DBManager *db_manager = nullptr;
 
     /**
      * @brief The filesystem guard, resolved from the service registry.
@@ -787,7 +778,7 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
     /**
      * @brief The registry of shared services, owned by the server context.
      */
-    akashi::ServiceRegistry *m_services;
+    akashi::ServiceRegistry *m_services = nullptr;
 
     /**
      * @brief The packet pipeline, resolved from the service registry.
@@ -797,7 +788,7 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
     /**
      * @see ACLRolesHandler
      */
-    akashi::ACLRolesHandler *acl_roles_handler;
+    akashi::ACLRolesHandler *acl_roles_handler = nullptr;
 
     /**
      * @brief Takes a client out of the server: player count, roster, its

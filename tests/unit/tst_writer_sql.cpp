@@ -3,6 +3,7 @@
 #include "writer_sql.h"
 
 #include <QDir>
+#include <QRegularExpression>
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QTemporaryDir>
@@ -32,6 +33,7 @@ class tst_WriterSql : public QObject
     void multipleFlushesAreIdempotent();
     void reopenPreservesData();
     void ipidIndexExists();
+    void failedInsertWarnsInsteadOfDroppingSilently();
 };
 
 static QSqlDatabase openReadOnly(const QString &f_path)
@@ -550,6 +552,38 @@ void tst_WriterSql::ipidIndexExists()
     }
 
     closeReadOnly(l_db);
+}
+
+void tst_WriterSql::failedInsertWarnsInsteadOfDroppingSilently()
+{
+    QTemporaryDir l_dir;
+    QString l_path = l_dir.path() + "/events.db";
+
+    akashi::WriterSql l_writer(l_path);
+    akashi::LogEvent l_event;
+    l_event.timestamp = 1000;
+    l_event.type = akashi::log_type::IC;
+    l_writer.write(l_event);
+    l_writer.flush();
+
+    // Breaking the schema out from under the writer makes the inserts fail.
+    {
+        QSqlDatabase l_db = openReadOnly(l_path);
+        QSqlQuery l_query(l_db);
+        QVERIFY(l_query.exec(QStringLiteral("DROP TABLE events")));
+        QVERIFY(l_query.exec(QStringLiteral("DROP TABLE connections")));
+        closeReadOnly(l_db);
+    }
+
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression(QStringLiteral("WriterSql: event row dropped")));
+    l_writer.write(l_event);
+
+    akashi::LogEvent l_connect;
+    l_connect.timestamp = 2000;
+    l_connect.type = akashi::log_type::Connect;
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression(QStringLiteral("WriterSql: connection row dropped")));
+    l_writer.write(l_connect);
+    l_writer.flush();
 }
 
 } // namespace unittests

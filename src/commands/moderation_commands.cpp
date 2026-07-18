@@ -2,11 +2,13 @@
 
 #include "akashi/permissions.h"
 #include "akashi/scheduler.h"
+#include "akashi/service_registry.h"
 #include "core/client_session.h"
 #include "core/command_context.h"
 #include "core/command_registry.h"
 #include "core/command_spec.h"
 #include "core/db_manager.h"
+#include "core/plugin_manager.h"
 #include "core/server_context.h"
 #include "core/server_settings.h"
 #include "world/area.h"
@@ -332,7 +334,28 @@ void cmdUnban(CommandContext &f_context)
 
 void cmdAbout(CommandContext &f_context)
 {
-    f_context.sendPacket("CT", {"The akashi dev team", "Thank you for using akashi! Made with love by scatterflower, with help from in1tiate, Salanto, and mangosarentliterature. akashi " + QCoreApplication::applicationVersion() + ". For documentation and reporting issues, see the source: https://github.com/AttorneyOnline/akashi"});
+    const QString l_akashi_about = "Thank you for using akashi! Made with love by scatterflower, with help from in1tiate, Salanto, and mangosarentliterature. akashi " + QCoreApplication::applicationVersion() + ". For documentation and reporting issues, see the source: https://github.com/AttorneyOnline/akashi";
+    auto l_plugins = f_context.services()->resolve<PluginManager>(QStringLiteral("akashi.plugins"));
+    const QMap<QString, QString> l_abouts = l_plugins ? l_plugins->abouts() : QMap<QString, QString>();
+
+    if (f_context.argc() >= 1) {
+        const QString l_name = f_context.argument(0);
+        if (l_name.compare(QStringLiteral("akashi"), Qt::CaseInsensitive) == 0)
+            f_context.sendPacket("CT", {"The akashi dev team", l_akashi_about});
+        else if (l_abouts.contains(l_name))
+            f_context.sendPacket("CT", {l_name, l_abouts.value(l_name)});
+        else {
+            QStringList l_names(QStringLiteral("akashi"));
+            l_names += l_abouts.keys();
+            f_context.reply("Nothing is registered under \"" + l_name + "\". Try one of: " + l_names.join(", ") + ".");
+        }
+        return;
+    }
+
+    QStringList l_sections(l_akashi_about);
+    for (auto it = l_abouts.cbegin(); it != l_abouts.cend(); ++it)
+        l_sections << it.key() + ": " + it.value();
+    f_context.sendPacket("CT", {"The akashi dev team", l_sections.join("\n\n")});
 }
 
 bool applySanctionSchedule(CommandContext &f_context, TargetPlayer &f_target, const QString &f_sanction_id)
@@ -670,7 +693,7 @@ void registerModerationCommands(CommandRegistry &f_registry)
         cmdUnban, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("about"), {}, {akashi::permission::user}, 0, QStringLiteral("/about"), QStringLiteral("Displays server version info.")},
+        {QStringLiteral("about"), {}, {akashi::permission::user}, 0, QStringLiteral("/about [plugin]"), QStringLiteral("Shows who made the server and its plugins; a plugin id shows that one alone.")},
         cmdAbout, QStringLiteral("core"));
 
     f_registry.registerCommand(

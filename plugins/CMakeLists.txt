@@ -13,6 +13,7 @@ option(AKASHI_BUILD_PLUGINS "Build the bundled plugins" ON)
 set(AKASHI_BUNDLED_PLUGINS
     discord-integration
     lua-host
+    modbot
     python-host
     scripting-ffi
     sql-logger

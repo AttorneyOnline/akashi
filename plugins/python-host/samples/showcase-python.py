@@ -2,12 +2,14 @@
 {
     "id": "akashi.showcase-python",
     "version": "1.0.0",
-    "dependencies": ["akashi.python-host"]
+    "dependencies": ["akashi.python-host"],
+    "about": "The Python showcase, by the akashi dev team."
 }
 """
 
 # Everything a Python plugin can do, in one file. The docstring above is
 # the manifest; dropping the file into bin/plugins is the entire install.
+# Its "about" is the credit line /about shows, next to the server's own.
 import akashi
 
 # Declared permissions show up in role files, so owners can grant them to

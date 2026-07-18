@@ -1151,7 +1151,7 @@ class LuaScriptHost : public akashi::IScriptPluginHost
 };
 
 QString LuaHostPlugin::id() const { return QStringLiteral("akashi.lua-host"); }
-akashi::ServiceVersion LuaHostPlugin::pluginVersion() const { return {1, 1, 0}; }
+akashi::ServiceVersion LuaHostPlugin::pluginVersion() const { return {1, 2, 0}; }
 
 bool LuaHostPlugin::load(akashi::ServiceRegistry &services)
 {
@@ -1168,6 +1168,13 @@ bool LuaHostPlugin::load(akashi::ServiceRegistry &services)
         s_ffi = nullptr;
         return false;
     }
+
+    // The manifest cannot know the vendored interpreter's version, so the
+    // credit line is composed here and overrides it.
+    if (auto l_plugins = services.resolve<akashi::PluginManager>(QStringLiteral("akashi.plugins"))) {
+        l_plugins->registerAbout(id(), QStringLiteral("Runs the server's .lua plugins. Embeds " LUA_RELEASE " by PUC-Rio (MIT license)."));
+    }
+
     qCInfo(akashiScripting).noquote() << "lua-host: providing" << m_host->serviceId() << "with" << LUA_RELEASE;
     return true;
 }

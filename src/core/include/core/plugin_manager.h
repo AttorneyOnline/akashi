@@ -5,6 +5,7 @@
 
 #include <QHash>
 #include <QList>
+#include <QMap>
 #include <QObject>
 #include <QString>
 #include <QStringList>
@@ -26,6 +27,10 @@ struct PluginInfo
     QStringList dependencies;
     QStringList services;
     QString file_path;
+
+    // The credit line /about shows while the plugin runs, declared in the
+    // manifest ("about" in plugin.json or the script header).
+    QString about;
 
     // Set for script plugins: the language runtime ("lua", "python") and
     // the entry script the matching host runs. Empty for native plugins.
@@ -69,6 +74,15 @@ class AKASHI_CORE_EXPORT PluginManager : public QObject, public IService
 
     QList<PluginInfo> plugins() const;
     std::optional<PluginInfo> pluginInfo(const QString &f_id) const;
+
+    // Overrides a running plugin's manifest-declared about line, for text
+    // only known at runtime (a host's embedded interpreter version).
+    // Unknown plugin ids are refused.
+    void registerAbout(const QString &f_plugin_id, const QString &f_text);
+
+    // The credit lines /about shows: every active plugin's about, keyed
+    // by plugin id. Plugins without one simply do not appear.
+    QMap<QString, QString> abouts() const;
 
     // Reads a script plugin's declaration header: the JSON object after the
     // "akashi-plugin" marker near the top of the file. Every field has a
@@ -122,7 +136,7 @@ class AKASHI_CORE_EXPORT PluginManager : public QObject, public IService
     QString m_plugin_dir;
     QStringList m_allowlist;
     QHash<QString, PluginEntry> m_plugins;
-    QList<QString> m_load_order;
+    QStringList m_load_order;
 };
 
 } // namespace akashi

@@ -100,14 +100,24 @@ void cmdRandomChar(CommandContext &f_context)
 {
     akashi::ClientSession *l_self = f_context.server()->clientById(f_context.clientId());
     akashi::Area *l_area = f_context.server()->areaById(f_context.areaId());
-    int l_selected_char_id;
-    bool l_taken = true;
-    while (l_taken) {
-        l_selected_char_id = CommandContext::genRand(0, f_context.server()->characterCount() - 1);
-        if (!l_area->charactersTaken().contains(l_selected_char_id)) {
-            l_taken = false;
+
+    // Collect the free characters in one pass. The old retry loop drew random
+    // ids until one was free, which never terminated once every character was
+    // taken - one command could hang the whole single-threaded server.
+    const QList<int> l_taken = l_area->charactersTaken();
+    QList<int> l_free;
+    const int l_count = f_context.server()->characterCount();
+    for (int i = 0; i < l_count; i++) {
+        if (!l_taken.contains(i)) {
+            l_free.append(i);
         }
     }
+    if (l_free.isEmpty()) {
+        f_context.reply("Every character in this area is already taken.");
+        return;
+    }
+
+    const int l_selected_char_id = l_free.at(CommandContext::genRand(0, l_free.size() - 1));
     if (auto l_refused = l_self->takeCharacter(l_selected_char_id); l_refused && !l_refused->isEmpty()) {
         f_context.reply(*l_refused);
     }
@@ -416,6 +426,12 @@ void cmdA(CommandContext &f_context)
     bool ok;
     int l_area_id = f_context.argument(0).toInt(&ok);
     if (!ok) {
+        f_context.reply("This does not look like a valid AreaID.");
+        return;
+    }
+    // areaById() returns nullptr for any id outside the range, so an
+    // out-of-range (or negative) id would crash on the owners() call below.
+    if (l_area_id < 0 || l_area_id >= f_context.server()->areaCount()) {
         f_context.reply("This does not look like a valid AreaID.");
         return;
     }

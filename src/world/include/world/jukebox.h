@@ -3,7 +3,7 @@
 #include "akashi/jukebox_policy.h"
 #include "akashi_core_export.h"
 
-#include <QMap>
+#include <QHash>
 #include <QObject>
 #include <QStringList>
 #include <QUrl>
@@ -98,7 +98,7 @@ class AKASHI_CORE_EXPORT Jukebox : public QObject
 
     // Per-area custom overrides
     QStringList m_custom_ordered;
-    QMap<QString, JukeboxSong> m_custom_songs;
+    QHash<QString, JukeboxSong> m_custom_songs;
 
     // Music state
     QString m_current_song;

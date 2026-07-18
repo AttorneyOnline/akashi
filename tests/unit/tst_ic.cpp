@@ -143,7 +143,7 @@ void tst_Ic::offsetsLoseTheirYForOldClients()
 
 void tst_Ic::rejectsBadValuesAndWrongCharacter()
 {
-    const QList<QPair<int, QString>> l_bad = {
+    const QList<std::pair<int, QString>> l_bad = {
         {0, "9"},   // unknown desk modifier
         {7, "3"},   // emote modifier outside the allowed set
         {8, "2"},   // a character the sender is not playing
@@ -416,8 +416,10 @@ void tst_Ic::transformsRunBetweenGateAndBroadcast()
 void tst_Ic::objectionModHygieneRunsBeforeTransforms()
 {
     // Out-of-range objection modifiers are protocol hygiene and drop the
-    // message regardless of any area rule.
-    for (const QString &l_bad : {QString("9"), QString("-1")}) {
+    // message regardless of any area rule. The values containing a 4 pin the
+    // fixed bypass: the old substring test skipped validation for any field
+    // with a 4 anywhere in it ("14", "e4il", "4x" all broadcast verbatim).
+    for (const QString &l_bad : {QString("9"), QString("-1"), QString("14"), QString("e4il"), QString("4x"), QString("44")}) {
         SpeakerContext l_context;
         QStringList l_fields = baseFields();
         l_fields[10] = l_bad;
@@ -432,6 +434,20 @@ void tst_Ic::objectionModHygieneRunsBeforeTransforms()
     l_fields[10] = "4&Gotcha";
     run(Packet("MS", l_fields), l_custom);
     QCOMPARE(l_custom.broadcast_ic_fields.at(10), QString("4&Gotcha"));
+
+    // A plain 4 is the custom shout without text; still a valid value.
+    SpeakerContext l_plain;
+    l_fields = baseFields();
+    l_fields[10] = "4";
+    run(Packet("MS", l_fields), l_plain);
+    QCOMPARE(l_plain.broadcast_ic_fields.at(10), QString("4"));
+
+    // Oversized custom-shout text is capped, not broadcast at full length.
+    SpeakerContext l_long;
+    l_fields = baseFields();
+    l_fields[10] = QStringLiteral("4&") + QString(5000, QLatin1Char('A'));
+    run(Packet("MS", l_fields), l_long);
+    QCOMPARE(l_long.broadcast_ic_fields.at(10).size(), 2 + 256);
 }
 
 void tst_Ic::transformCanStripTheShout()

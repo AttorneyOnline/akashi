@@ -1,5 +1,7 @@
 #include "core/websocket_receiver.h"
 
+#include "akashi/logging_categories.h"
+
 #include <QTimer>
 #include <QWebSocket>
 #include <QWebSocketServer>
@@ -13,13 +15,18 @@ static const int MAX_UNANSWERED_PINGS = 2;
 // How long a started close exchange may wait for the peer before we abort.
 static const int CLOSE_GRACE_MS = 10000;
 
+// The most UTF-8 bytes one inbound frame may carry.
+static const int FRAME_BYTE_LIMIT = 30720;
+
 namespace akashi {
 
 WebSocketReceiver::WebSocketReceiver(const QHostAddress &f_address, int f_port,
+                                     const TrustedProxyList &f_trusted_proxies,
                                      const QStringList &f_features, QObject *parent) :
     ClientReceiver(parent),
     m_address(f_address),
-    m_port(f_port)
+    m_port(f_port),
+    m_trusted_proxies(f_trusted_proxies)
 {
     m_server = new QWebSocketServer(QStringLiteral("Akashi"), QWebSocketServer::NonSecureMode, this);
 
@@ -53,10 +60,11 @@ int WebSocketReceiver::port() const
 void WebSocketReceiver::onNewConnection()
 {
     QWebSocket *l_socket = m_server->nextPendingConnection();
-    Q_EMIT inboundClient(new WebSocketTransport(l_socket));
+    Q_EMIT inboundClient(new WebSocketTransport(l_socket, m_trusted_proxies));
 }
 
-WebSocketTransport::WebSocketTransport(QWebSocket *f_socket, QObject *parent) :
+WebSocketTransport::WebSocketTransport(QWebSocket *f_socket, const TrustedProxyList &f_trusted_proxies,
+                                       QObject *parent) :
     ITransport(parent)
 {
     m_client_socket = f_socket;
@@ -69,23 +77,8 @@ WebSocketTransport::WebSocketTransport(QWebSocket *f_socket, QObject *parent) :
     connect(m_liveness_timer, &QTimer::timeout, this, &WebSocketTransport::checkLiveness);
     m_liveness_timer->start(PING_INTERVAL_MS);
 
-    bool l_is_local = (m_client_socket->peerAddress() == QHostAddress::LocalHost) ||
-                      (m_client_socket->peerAddress() == QHostAddress::LocalHostIPv6) ||
-                      (m_client_socket->peerAddress() == QHostAddress("::ffff:127.0.0.1"));
-    // TLDR : We check if the header comes trough a proxy/tunnel running locally.
-    // This is to ensure nobody can send those headers from the web.
-    QNetworkRequest l_request = m_client_socket->request();
-    if (l_request.hasRawHeader("x-real-ip") && l_is_local) {
-        m_socket_ip = QHostAddress(QString::fromUtf8(l_request.rawHeader("x-real-ip")));
-    }
-    else if (l_request.hasRawHeader("x-forwarded-for") && l_is_local) {
-        // x-forwarded-for is a comma-separated list; the original client is the first entry.
-        const QString l_forwarded = QString::fromUtf8(l_request.rawHeader("x-forwarded-for"));
-        m_socket_ip = QHostAddress(l_forwarded.split(',').first().trimmed());
-    }
-    else {
-        m_socket_ip = f_socket->peerAddress();
-    }
+    const bool l_trusted = isTrustedProxy(m_client_socket->peerAddress(), f_trusted_proxies);
+    m_socket_ip = resolveClientAddress(l_trusted, m_client_socket->request(), f_socket->peerAddress());
     m_connect_features = parseCapabilityTokens(m_client_socket->request());
 }
 
@@ -112,6 +105,69 @@ QStringList WebSocketTransport::parseCapabilityTokens(const QNetworkRequest &f_r
 QStringList WebSocketTransport::connectTimeFeatures() const
 {
     return m_connect_features;
+}
+
+TrustedProxyList WebSocketTransport::parseTrustedProxies(const QString &f_csv)
+{
+    TrustedProxyList l_subnets;
+    const QStringList l_entries = f_csv.split(QLatin1Char(','), Qt::SkipEmptyParts);
+    for (const QString &l_entry : l_entries) {
+        const QString l_trimmed = l_entry.trimmed();
+        if (l_trimmed.isEmpty()) {
+            continue;
+        }
+        const std::pair<QHostAddress, int> l_subnet = QHostAddress::parseSubnet(l_trimmed);
+        if (l_subnet.first.isNull()) {
+            qCWarning(akashiServer) << "Ignoring invalid trusted proxy entry:" << l_trimmed;
+            continue;
+        }
+        l_subnets.append({l_subnet.first, l_subnet.second});
+    }
+    return l_subnets;
+}
+
+bool WebSocketTransport::isTrustedProxy(const QHostAddress &f_peer, const TrustedProxyList &f_trusted)
+{
+    // localhost is always trusted (127.0.0.0/8, ::1, and the IPv4-mapped form).
+    if (f_peer.isLoopback() || f_peer == QHostAddress(QStringLiteral("::ffff:127.0.0.1"))) {
+        return true;
+    }
+    for (const auto &l_subnet : f_trusted) {
+        if (f_peer.isInSubnet(l_subnet.first, l_subnet.second)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+QHostAddress WebSocketTransport::resolveClientAddress(bool f_peer_trusted,
+                                                      const QNetworkRequest &f_request,
+                                                      const QHostAddress &f_peer)
+{
+    // Proxy headers are only trusted when the immediate peer is a trusted
+    // proxy; a direct client from the web cannot forge them.
+    if (f_peer_trusted && f_request.hasRawHeader("x-real-ip")) {
+        const QHostAddress l_real(QString::fromUtf8(f_request.rawHeader("x-real-ip")).trimmed());
+        if (!l_real.isNull()) {
+            return l_real;
+        }
+    }
+    if (f_peer_trusted && f_request.hasRawHeader("x-forwarded-for")) {
+        // The header is a comma-separated hop list. A well-behaved proxy
+        // APPENDS the peer it actually saw, so the last entry is the one the
+        // trusted proxy added; earlier entries are client-supplied and can be
+        // spoofed. Take the last, not the first, and only if it is a real
+        // address - otherwise fall through to the socket peer.
+        const QString l_forwarded = QString::fromUtf8(f_request.rawHeader("x-forwarded-for"));
+        const QStringList l_hops = l_forwarded.split(QLatin1Char(','), Qt::SkipEmptyParts);
+        if (!l_hops.isEmpty()) {
+            const QHostAddress l_client(l_hops.last().trimmed());
+            if (!l_client.isNull()) {
+                return l_client;
+            }
+        }
+    }
+    return f_peer;
 }
 
 QHostAddress WebSocketTransport::peerAddress() const
@@ -203,7 +259,13 @@ void WebSocketTransport::handleMessage(QString f_data)
 
     QString l_data = f_data;
 
-    if (l_data.toUtf8().size() > 30720) {
+    // The limit is in UTF-8 bytes. More UTF-16 units than the limit cannot
+    // fit (a unit encodes to at least one byte) and under a third of it
+    // always fits (a unit encodes to at most three bytes); only the band
+    // between needs the real transcode.
+    const qsizetype l_units = l_data.size();
+    if (l_units > FRAME_BYTE_LIMIT ||
+        (l_units * 3 > FRAME_BYTE_LIMIT && l_data.toUtf8().size() > FRAME_BYTE_LIMIT)) {
         closeWithCode(QWebSocketProtocol::CloseCodeTooMuchData);
         return;
     }

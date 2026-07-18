@@ -60,12 +60,29 @@ void WriterText::flushBuffer(const QString &f_area, const QList<LogEvent> &f_eve
 
 void WriterText::writeToFile(const QString &f_path, const QString &f_text)
 {
+    // The latch keeps a disk outage at one warning, not one per log line.
     QFile l_file(f_path);
     if (!l_file.open(QIODevice::WriteOnly | QIODevice::Append)) {
+        if (!m_write_failed) {
+            qCWarning(akashiLog) << "WriterText: cannot open" << f_path << "-" << l_file.errorString();
+            m_write_failed = true;
+        }
         return;
     }
     QTextStream l_stream(&l_file);
     l_stream << f_text;
+    l_stream.flush();
+    if (l_stream.status() != QTextStream::Ok) {
+        if (!m_write_failed) {
+            qCWarning(akashiLog) << "WriterText: write failed on" << f_path << "-" << l_file.errorString();
+            m_write_failed = true;
+        }
+        return;
+    }
+    if (m_write_failed) {
+        qCInfo(akashiLog) << "WriterText: writing resumed on" << f_path;
+        m_write_failed = false;
+    }
 }
 
 void WriterText::maintenance()

@@ -2,11 +2,11 @@
 
 #include "akashi_core_export.h"
 
-#include <QPair>
 #include <QStringList>
 #include <QVector>
 
 #include <optional>
+#include <utility>
 
 namespace akashi {
 
@@ -111,7 +111,7 @@ class AKASHI_CORE_EXPORT TestimonyRecorder
     // statement loops back to the first, at or before the first stays
     // there. A testimony without statements has nothing to play and
     // returns nothing - the old code crashed here.
-    std::optional<QPair<Statement, Playback>> jumpTo(int f_position);
+    std::optional<std::pair<Statement, Playback>> jumpTo(int f_position);
 
   private:
     QVector<Statement> m_statements;

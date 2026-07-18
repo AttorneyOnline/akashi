@@ -85,7 +85,7 @@ class CryptoHelper
     static QString hash_password(QByteArray salt, QString password)
     {
         // Select the correct hash backend based on the salt length
-        if (salt.length() < pbkdf2_salt_len) {
+        if (salt.size() < pbkdf2_salt_len) {
             // Due to an implementation oversight, the old HMAC algorithm
             // does not correctly handle salts. Instead of treating the hex string
             // as binary data, it is used directly. We have to handle this case.

@@ -24,7 +24,7 @@ void readPairField(const QString &f_field, ICMessage &f_message)
 {
     const QStringList l_parts = f_field.split("^");
     f_message.pair_requested = l_parts[0].toInt();
-    if (l_parts.length() > 1) {
+    if (l_parts.size() > 1) {
         f_message.pair_front_back = "^" + l_parts[1];
     }
 }
@@ -206,10 +206,22 @@ class IcHandler : public PacketHandler
             return;
         }
 
-        // Objection modifier hygiene; a custom shout carries text metadata.
-        if (!l_ic.objection_mod.contains("4")) {
-            const int l_objection = l_ic.objection_mod.toInt();
-            if (l_objection < 0 || l_objection > 4) {
+        // Objection modifier hygiene. A custom shout is "4&" plus its display
+        // text; everything else must be a plain 0-4. The old substring test
+        // (contains "4") let any field with a 4 anywhere in it skip
+        // validation and broadcast verbatim.
+        if (l_ic.objection_mod.startsWith(QStringLiteral("4&"))) {
+            // The text after the separator is short display metadata; cap it
+            // so the field cannot smuggle an arbitrary payload to the room.
+            constexpr int max_custom_shout = 256;
+            if (l_ic.objection_mod.size() > 2 + max_custom_shout) {
+                l_ic.objection_mod = l_ic.objection_mod.left(2 + max_custom_shout);
+            }
+        }
+        else {
+            bool l_objection_ok = false;
+            const int l_objection = l_ic.objection_mod.toInt(&l_objection_ok);
+            if (!l_objection_ok || l_objection < 0 || l_objection > 4) {
                 return;
             }
             l_ic.objection_mod = QString::number(l_objection);
@@ -309,7 +321,7 @@ class IcHandler : public PacketHandler
         // before-rule; only length and whitespace hygiene stay here, and
         // the length check runs before anything else.
         QString l_showname = stripZalgo(f_ic.showname.trimmed());
-        if (l_showname.length() > 30) {
+        if (l_showname.size() > 30) {
             f_context.sendServerMessage("Your showname is too long! Please limit it to under 30 characters");
             return false;
         }
@@ -413,7 +425,7 @@ ICMessage icMessageFromOutgoingFields(const QStringList &f_fields)
         l_ic.showname = f_fields.value(15);
         const QStringList l_pair = f_fields.value(16).split("^");
         l_ic.other_char_id = l_pair[0].toInt();
-        if (l_pair.length() > 1) {
+        if (l_pair.size() > 1) {
             l_ic.pair_front_back = "^" + l_pair[1];
         }
         l_ic.other_name = f_fields.value(17);

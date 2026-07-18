@@ -71,7 +71,7 @@ void tst_WebhookReceiver::capturesAPostVerbatim()
     QNetworkReply *l_reply = l_network.post(l_request, QByteArrayLiteral("{\"content\":\"Modcall!\"}"));
 
     QVERIFY(l_receiver.waitForRequests(1));
-    QCOMPARE(l_received.count(), 1);
+    QCOMPARE(l_received.size(), 1);
     QCOMPARE(l_receiver.requestCount(), 1);
 
     const WebhookRequest &l_captured = l_receiver.requestAt(0);

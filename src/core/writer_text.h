@@ -1,6 +1,7 @@
 #pragma once
 
 #include "akashi/log_writer.h"
+#include "akashi_core_export.h"
 
 #include <QDir>
 #include <QString>
@@ -9,7 +10,7 @@ namespace akashi {
 
 class LogService;
 
-class WriterText : public ILogWriter
+class AKASHI_CORE_EXPORT WriterText : public ILogWriter
 {
   public:
     enum class Mode
@@ -37,6 +38,7 @@ class WriterText : public ILogWriter
     int m_archive_after_days;
     bool m_logs_dir_created = false;
     bool m_modcall_dir_created = false;
+    bool m_write_failed = false;
 };
 
 } // namespace akashi

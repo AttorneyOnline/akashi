@@ -47,7 +47,7 @@ class ScriptedPolicy : public JukeboxPolicy
         return picks.size();
     }
 
-    QList<QPair<int, QString>> requests;
+    QList<std::pair<int, QString>> requests;
     QList<int> departures;
     QList<JukeboxSong> picks;
     int resets = 0;
@@ -100,6 +100,7 @@ class tst_Jukebox : public QObject
     void addSongOverwritesSameName();
     void addSongRejectsBadCdn();
     void addSongAcceptsApprovedCdn();
+    void addSongFailsClosedWithoutConfiguredCdns();
     void addSongRejectsEmptyName();
     void addCategoryWrapsInMarkers();
     void addCategoryRejectsExtension();
@@ -154,13 +155,13 @@ void tst_Jukebox::firstRequestStartsPlaybackRightAway()
     QVERIFY(!l_jukebox.isPlaying());
     l_jukebox.request(0, song("first"));
 
-    QCOMPARE(l_started.count(), 1);
+    QCOMPARE(l_started.size(), 1);
     QVERIFY(l_jukebox.isPlaying());
     QCOMPARE(l_jukebox.currentSongName(), "first");
 
     // Later requests wait for their turn.
     l_jukebox.request(0, song("second"));
-    QCOMPARE(l_started.count(), 1);
+    QCOMPARE(l_started.size(), 1);
 }
 
 void tst_Jukebox::queueDrainsAndTheLastSongLoops()
@@ -223,11 +224,11 @@ void tst_Jukebox::timerMovesToTheNextSongOnItsOwn()
     QSignalSpy l_started(&l_jukebox, &Jukebox::songStarted);
 
     l_jukebox.request(0, song("first", 1));
-    QCOMPARE(l_started.count(), 1);
+    QCOMPARE(l_started.size(), 1);
 
     // The one-second song ends and the jukebox rearms itself.
     QVERIFY(l_started.wait(2000));
-    QCOMPARE(l_started.count(), 2);
+    QCOMPARE(l_started.size(), 2);
     QVERIFY(l_jukebox.isPlaying());
 }
 
@@ -241,7 +242,7 @@ void tst_Jukebox::policySeamCarriesEveryDecision()
     // The request answer comes from the policy, not the jukebox.
     l_scripted->picks.append(song("scripted"));
     QCOMPARE(l_jukebox.request(7, song("anything")), "scripted answer");
-    QCOMPARE(l_scripted->requests.first(), qMakePair(7, QString("anything")));
+    QCOMPARE(l_scripted->requests.first(), std::make_pair(7, QString("anything")));
 
     // The pick did too.
     QCOMPARE(l_jukebox.currentSongName(), "scripted");
@@ -275,7 +276,7 @@ void tst_Jukebox::refusedRequestStartsNothing()
     // The refused song never reaches the queue, so the idle jukebox finds
     // nothing to play and stays silent.
     QCOMPARE(l_jukebox.request(0, song("broken", 0)), "Unable to add song. Duration shorter than 1.");
-    QCOMPARE(l_started.count(), 0);
+    QCOMPARE(l_started.size(), 0);
     QVERIFY(!l_jukebox.isPlaying());
     QCOMPARE(l_jukebox.pendingCount(), 0);
 }
@@ -315,7 +316,7 @@ void tst_Jukebox::setFloorCatalogClearsCustomsAndEmits()
     QSignalSpy l_spy(&l_jukebox, &Jukebox::musicListChanged);
     l_jukebox.setFloorCatalog(&l_floor);
 
-    QCOMPARE(l_spy.count(), 1);
+    QCOMPARE(l_spy.size(), 1);
     QCOMPARE(l_jukebox.resolvedList().size(), 5);
     QVERIFY(!l_jukebox.hasSong("custom.opus"));
 }
@@ -342,7 +343,7 @@ void tst_Jukebox::addSongAppendsCustomEntry()
     const QString l_result = l_jukebox.addSong({"newsong.opus", "newsong.opus", 90});
 
     QCOMPARE(l_result, "Song added successfully.");
-    QCOMPARE(l_spy.count(), 1);
+    QCOMPARE(l_spy.size(), 1);
     QVERIFY(l_jukebox.hasSong("newsong.opus"));
     QVERIFY(l_jukebox.resolvedList().contains("newsong.opus"));
 }
@@ -392,6 +393,30 @@ void tst_Jukebox::addSongRejectsEmptyName()
     QCOMPARE(l_jukebox.addSong({"", "real.opus", 60}), "Song name cannot be empty.");
 }
 
+// With no approved CDN configured, addSong used to skip validation entirely -
+// any URL from any host with any extension entered the persistent floor
+// catalog, while /play rejected the very same source. Both fail closed now:
+// no CDN list means no remote source is approved.
+void tst_Jukebox::addSongFailsClosedWithoutConfiguredCdns()
+{
+    Jukebox l_jukebox;
+    Floor l_floor = makeFloor();
+    l_floor.approved_cdns.clear();
+    l_jukebox.setFloorCatalog(&l_floor);
+
+    QCOMPARE(l_jukebox.addSong({"https://evil.com/song.opus", "https://evil.com/song.opus", 60}),
+             "The song is not from an approved source.");
+    QCOMPARE(l_jukebox.addSong({"song.exe", "song.exe", 60}),
+             "The song is not from an approved source.");
+    // Local names with a playable extension still work without any CDN.
+    QCOMPARE(l_jukebox.addSong({"local.opus", "local.opus", 60}), "Song added successfully.");
+
+    // The same holds with no floor catalog at all.
+    Jukebox l_bare;
+    QCOMPARE(l_bare.addSong({"https://evil.com/song.opus", "https://evil.com/song.opus", 60}),
+             "The song is not from an approved source.");
+}
+
 void tst_Jukebox::addCategoryWrapsInMarkers()
 {
     Jukebox l_jukebox;
@@ -399,7 +424,7 @@ void tst_Jukebox::addCategoryWrapsInMarkers()
 
     const QString l_result = l_jukebox.addCategory("Custom Music");
     QCOMPARE(l_result, "Category added successfully.");
-    QCOMPARE(l_spy.count(), 1);
+    QCOMPARE(l_spy.size(), 1);
     QVERIFY(l_jukebox.resolvedList().contains("==Custom Music=="));
 
     // Already-wrapped names stay as-is.
@@ -430,7 +455,7 @@ void tst_Jukebox::removeSongOnlyRemovesCustoms()
 
     QSignalSpy l_spy(&l_jukebox, &Jukebox::musicListChanged);
     QVERIFY(l_jukebox.removeSong("custom.opus"));
-    QCOMPARE(l_spy.count(), 1);
+    QCOMPARE(l_spy.size(), 1);
     QVERIFY(!l_jukebox.hasSong("custom.opus"));
 }
 
@@ -448,7 +473,7 @@ void tst_Jukebox::resetToFloorClearsCustoms()
     QSignalSpy l_spy(&l_jukebox, &Jukebox::musicListChanged);
     l_jukebox.resetToFloor();
 
-    QCOMPARE(l_spy.count(), 1);
+    QCOMPARE(l_spy.size(), 1);
     QCOMPARE(l_jukebox.resolvedList(), l_floor.music_ordered);
     QVERIFY(!l_jukebox.hasSong("a.opus"));
 }
@@ -610,7 +635,7 @@ void tst_Jukebox::changeAmbienceEmitsSignal()
 
     l_jukebox.changeAmbience("rain.opus");
     QCOMPARE(l_jukebox.currentAmbience(), "rain.opus");
-    QCOMPARE(l_spy.count(), 1);
+    QCOMPARE(l_spy.size(), 1);
     QCOMPARE(l_spy.at(0).at(0).toString(), "rain.opus");
 }
 
@@ -626,7 +651,7 @@ void tst_Jukebox::queueSongResolvesFromCatalog()
     const QString l_result = l_jukebox.queueSong(0, "Pursuit.opus");
 
     QCOMPARE(l_result, "Song added to Jukebox.");
-    QCOMPARE(l_started.count(), 1);
+    QCOMPARE(l_started.size(), 1);
     QCOMPARE(l_jukebox.currentSongName(), "Pursuit.opus");
 }
 
@@ -647,7 +672,7 @@ void tst_Jukebox::queueSongWithoutAnyCatalogRefuses()
 
     // No floor catalog, no customs: every name is unknown, nothing starts.
     QCOMPARE(l_jukebox.queueSong(0, "Pursuit.opus"), "Song not found in the music list.");
-    QCOMPARE(l_started.count(), 0);
+    QCOMPARE(l_started.size(), 0);
     QVERIFY(!l_jukebox.isPlaying());
 }
 

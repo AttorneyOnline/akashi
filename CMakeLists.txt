@@ -52,6 +52,9 @@ configure_file(src/core/softwareinformation.h.in softwareinformation.h)
 set(AKASHI_SOURCES
   src/core/log_service.cpp
   src/core/include/core/log_service.h
+  src/core/moderation_service.cpp
+  src/core/moderation_service.h
+  src/include/akashi/moderation.h
   src/core/writer_text.cpp
   src/core/writer_text.h
   src/include/akashi/event.h

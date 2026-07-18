@@ -114,7 +114,7 @@ void TestimonyRecorder::restart()
     m_index = 0;
 }
 
-std::optional<QPair<Statement, TestimonyRecorder::Playback>> TestimonyRecorder::jumpTo(int f_position)
+std::optional<std::pair<Statement, TestimonyRecorder::Playback>> TestimonyRecorder::jumpTo(int f_position)
 {
     // A title alone is nothing to play back.
     if (m_statements.size() < 2) {
@@ -124,13 +124,13 @@ std::optional<QPair<Statement, TestimonyRecorder::Playback>> TestimonyRecorder::
     m_index = f_position;
     if (m_index > m_statements.size() - 1) {
         m_index = 1;
-        return QPair<Statement, Playback>{m_statements.at(m_index), Playback::Looped};
+        return std::pair<Statement, Playback>{m_statements.at(m_index), Playback::Looped};
     }
     if (m_index <= 1) {
         m_index = 1;
-        return QPair<Statement, Playback>{m_statements.at(m_index), Playback::StayedAtFirst};
+        return std::pair<Statement, Playback>{m_statements.at(m_index), Playback::StayedAtFirst};
     }
-    return QPair<Statement, Playback>{m_statements.at(m_index), Playback::Ok};
+    return std::pair<Statement, Playback>{m_statements.at(m_index), Playback::Ok};
 }
 
 } // namespace akashi

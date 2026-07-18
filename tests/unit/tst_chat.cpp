@@ -246,6 +246,13 @@ void tst_Chat::evidenceEditChecksAccessAndBounds()
     run(Packet("EE", {"1", "Knife", "Sharp.", "knife.png"}), l_context);
     QCOMPARE(l_context.replaced_evidence, QStringList({"1", "Knife", "Sharp.", "knife.png"}));
     QCOMPARE(l_context.calls, QStringList({"checkBeforeRule:evidence_edited", "replaceEvidence", "sendEvidenceList", "runAfterRule:evidence_edited"}));
+
+    // An unreadable index must be rejected, not silently edit slot 0.
+    FakeContext l_garbage;
+    l_garbage.evidence_total = 3;
+    run(Packet("EE", {"first", "Knife", "Sharp.", "knife.png"}), l_garbage);
+    QVERIFY(l_garbage.replaced_evidence.isEmpty());
+    QCOMPARE(l_garbage.calls, QStringList({"checkBeforeRule:evidence_edited"}));
 }
 
 void tst_Chat::evidenceEditPassesDescriptionThrough()

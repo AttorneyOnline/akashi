@@ -73,7 +73,7 @@ void UsernameAuthenticator::authenticate(const AuthRequest &f_request, std::func
     }
 
     const QString l_salt = l_creds->salt;
-    const bool l_needs_rehash = QByteArray::fromHex(l_salt.toUtf8()).length() < CryptoHelper::pbkdf2_salt_len;
+    const bool l_needs_rehash = QByteArray::fromHex(l_salt.toUtf8()).size() < CryptoHelper::pbkdf2_salt_len;
 
     QFuture<QString> l_future = QtConcurrent::run([l_salt, l_password]() {
         return CryptoHelper::hash_password(QByteArray::fromHex(l_salt.toUtf8()), l_password);

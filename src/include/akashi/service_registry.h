@@ -39,6 +39,15 @@ class AKASHI_CORE_EXPORT ServiceRegistry : public QObject
     QStringList serviceIds() const { return m_services.keys(); }
 
     // The service cast to its concrete type, or null if missing or of the wrong type.
+    //
+    // Ownership note: the returned shared_ptr does NOT guarantee the service
+    // outlives it. Core services are registered non-owning (an aliasing
+    // shared_ptr over a QObject the ServerContext owns), so their real
+    // lifetime is the owner's, not this pointer's. Resolve a service when you
+    // need it and let the pointer go; if you must hold one across calls (a
+    // member or a captured callback), drop it in your plugin's shutdown() -
+    // that runs before the core services are destroyed. Retaining one past
+    // that point dereferences freed memory even though the pointer looks live.
     template <typename T>
     std::shared_ptr<T> resolve(const QString &f_service_id, const QString &f_version_range = QString()) const
     {

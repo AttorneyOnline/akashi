@@ -1,6 +1,7 @@
 {
     "id": "akashi.discord",
     "version": "1.0.0",
+    "about": "Posts modcalls and bans to Discord webhooks, by the akashi dev team.",
     "dependencies": [],
     "services": ["akashi.rules", "akashi.config", "akashi.discordhook", "akashi.log"]
 }

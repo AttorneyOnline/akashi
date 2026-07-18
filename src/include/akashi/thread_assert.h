@@ -2,6 +2,10 @@
 
 #include <QThread>
 
+// Both asserts are debug-only by design: Q_ASSERT compiles out of release
+// builds, so a broken threading contract fails loudly in development but
+// costs nothing in production.
+
 // Asserts that the caller runs on this QObject's owning thread.
 #define AKASHI_ASSERT_THREAD_AFFINITY() \
     Q_ASSERT(QThread::currentThread() == thread())

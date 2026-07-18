@@ -17,30 +17,40 @@ static const QByteArray &metadataMarker()
 
 bool MmdbReader::open(const QString &f_path)
 {
+    // A failed open must leave the reader closed, not half-swapped onto the new bytes.
+    m_data.clear();
+    m_node_count = 0;
+    m_cache.clear();
+
     QFile l_file(f_path);
     if (!l_file.open(QIODevice::ReadOnly)) {
+        qCCritical(akashiDb) << f_path << "cannot be read:" << l_file.errorString();
         return false;
     }
     m_data = l_file.readAll();
-    m_cache.clear();
 
     const qsizetype l_marker = m_data.lastIndexOf(metadataMarker());
     if (l_marker == -1) {
         qCCritical(akashiDb) << f_path << "is not a MaxMind database file.";
+        m_data.clear();
         return false;
     }
 
     quint32 l_offset = l_marker + metadataMarker().size();
     const QVariantMap l_metadata = readValue(l_offset).toMap();
-    m_node_count = l_metadata.value("node_count").toUInt();
+    const quint32 l_node_count = l_metadata.value("node_count").toUInt();
     m_record_size = l_metadata.value("record_size").toInt();
     m_ip_version = l_metadata.value("ip_version").toInt();
-    m_tree_size = quint64(m_node_count) * m_record_size * 2 / 8;
+    m_tree_size = quint64(l_node_count) * m_record_size * 2 / 8;
 
-    if (m_node_count == 0 || (m_record_size != 24 && m_record_size != 28 && m_record_size != 32)) {
+    if (l_node_count == 0 || (m_record_size != 24 && m_record_size != 28 && m_record_size != 32)) {
         qCCritical(akashiDb) << f_path << "has an unsupported record size or is empty.";
+        m_data.clear();
         return false;
     }
+
+    m_node_count = l_node_count;
+    qCInfo(akashiDb) << "Loaded MaxMind database" << f_path << "with" << l_node_count << "nodes, IP version" << m_ip_version;
     return true;
 }
 

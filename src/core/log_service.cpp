@@ -107,6 +107,11 @@ ServiceVersion LogService::serviceVersion() const
 
 void LogService::log(LogEvent f_event)
 {
+    // Main-thread only, like recentEvents(): the two share m_buffers with no
+    // lock. The mutex below is the hand-off to the writer thread - this is the
+    // producer side, the worker is the consumer. A plugin logging from a
+    // worker thread must marshal the call to the main thread first.
+    AKASHI_ASSERT_THREAD_AFFINITY();
     if (f_event.timestamp == 0) {
         f_event.timestamp = QDateTime::currentMSecsSinceEpoch();
     }

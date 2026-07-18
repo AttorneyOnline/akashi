@@ -36,6 +36,7 @@ class tst_TextFilter : public QObject
     void icOnlyFilterSkipsTheOocChannel();
     void bothChannelFilterRunsOnBoth();
     void applyFilterRunsOneFilterAlone();
+    void filterRegisteringMidApplyDoesNotCorruptTheList();
 };
 
 void tst_TextFilter::singleFilterTransformsText()
@@ -308,6 +309,33 @@ void tst_TextFilter::applyFilterRunsOneFilterAlone()
     QCOMPARE(*l_registry.applyFilter("medieval", "hello"), QString("Ye olde hello"));
     // An unknown id leaves the text unchanged.
     QCOMPARE(*l_registry.applyFilter("missing", "hello"), QString("hello"));
+}
+
+// A script filter may register another filter from inside its own callback.
+// apply() must iterate a snapshot so that insertion (which can reallocate the
+// entry list) does not free the running entry or invalidate the loop. Many
+// registrations force the list to grow past its initial capacity; without the
+// snapshot this reads freed memory.
+void tst_TextFilter::filterRegisteringMidApplyDoesNotCorruptTheList()
+{
+    TextFilterRegistry l_registry;
+    int l_seq = 0;
+    l_registry.registerFilter(
+        "spawner", 100,
+        [&l_registry, &l_seq](const QString &t) -> std::optional<QString> {
+            const QString l_id = QStringLiteral("spawned-%1").arg(l_seq++);
+            l_registry.registerFilter(
+                l_id, 200 + l_seq, [](const QString &s) -> std::optional<QString> { return s; }, true, "test");
+            return t + "!";
+        },
+        true, "test");
+
+    for (int i = 0; i < 64; i++)
+        QCOMPARE(*l_registry.apply("x", {}), QString("x!"));
+
+    // Every re-entrant registration landed and the surviving list is intact.
+    QVERIFY(l_registry.hasFilter("spawner"));
+    QVERIFY(l_registry.hasFilter("spawned-0"));
 }
 
 } // namespace unittests

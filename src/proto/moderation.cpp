@@ -6,6 +6,8 @@
 #include "proto/packet_codec.h"
 #include "proto/packet_registry.h"
 
+#include <algorithm>
+
 namespace akashi {
 
 namespace {
@@ -29,7 +31,7 @@ class ModActionCodec : public Codec
     {
         auto l_message = std::make_unique<ModActionMessage>();
         l_message->target_id = f_packet.field(0).toInt();
-        l_message->duration = qMax(f_packet.field(1).toInt(), -1);
+        l_message->duration = std::max(f_packet.field(1).toInt(), -1);
         l_message->reason = f_packet.field(2);
         return l_message;
     }

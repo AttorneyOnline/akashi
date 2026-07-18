@@ -175,6 +175,9 @@ class ProtocolTest : public QObject
     void advancedBootCreatesARootAccount();
     void emptyModpassBootGeneratesOne();
     void oocRoundtrip();
+    void areaMessageRejectsOutOfRangeAreaId();
+    void randomCharAssignsAFreeCharacter();
+    void randomCharRefusesWhenEveryCharacterIsTaken();
     void escapeCodeRoundtrip();
     void pipelinedFrame();
     void oversizedFrameDisconnects();
@@ -1206,6 +1209,101 @@ void ProtocolTest::oocRoundtrip()
     // setName() sends a player list update before the OOC message is broadcast.
     QCOMPARE(client.takeNext(), QStringLiteral("PU#0#0#Tester#%"));
     QCOMPARE(client.takeNext(), QStringLiteral("CT#Tester#hello akashi#0#%"));
+}
+
+void ProtocolTest::areaMessageRejectsOutOfRangeAreaId()
+{
+    TestClient client;
+    joinServer(client);
+
+    // /a with an out-of-range area id used to dereference a null Area (the
+    // owners() check ran before any range test) and take the whole server
+    // down. It must now reply with a validation error and stay alive.
+    client.send(QStringLiteral("CT#Tester#/a 99999 hello#%"));
+    QString error;
+    QVERIFY(client.waitForIdle());
+    while (client.pendingCount() > 0) {
+        const QString packet = client.takeNext();
+        if (packet.contains(QStringLiteral("valid AreaID")))
+            error = packet;
+    }
+    QVERIFY2(!error.isEmpty(), "expected a validation error for the out-of-range area id");
+
+    // The server survived: an ordinary OOC message still round-trips.
+    client.send(QStringLiteral("CT#Tester#still here#%"));
+    bool echoed = false;
+    QVERIFY(client.waitForIdle());
+    while (client.pendingCount() > 0) {
+        if (client.takeNext().contains(QStringLiteral("still here")))
+            echoed = true;
+    }
+    QVERIFY2(echoed, "no response after the bad /a - the server may have crashed");
+}
+
+void ProtocolTest::randomCharAssignsAFreeCharacter()
+{
+    TestClient client;
+    joinServer(client);
+
+    // /randomchar collects the free characters and picks one in a single
+    // pass; the old retry loop spun forever once every slot was taken. On a
+    // fresh area at least one of the three roster characters is free, so the
+    // command must confirm a selection (PV) and never refuse.
+    client.send(QStringLiteral("CT#Tester#/randomchar#%"));
+    QVERIFY(client.waitForIdle());
+    bool confirmed = false;
+    while (client.pendingCount() > 0) {
+        const QString packet = client.takeNext();
+        if (packet.startsWith(QStringLiteral("PV#0#CID#")))
+            confirmed = true;
+        QVERIFY2(!packet.contains(QStringLiteral("taken")), qPrintable("randomchar refused: " + packet));
+    }
+    QVERIFY2(confirmed, "randomchar did not confirm a character selection");
+}
+
+void ProtocolTest::randomCharRefusesWhenEveryCharacterIsTaken()
+{
+    // The fixture roster has three characters (Franziska/Phoenix/Edgeworth),
+    // so three clients can take the whole area between them.
+    TestClient a, b, c;
+    joinServer(a);
+    joinServer(b, 1);
+    joinServer(c, 2);
+
+    const auto takeOne = [](TestClient &client) {
+        client.send(QStringLiteral("CT#Tester#/randomchar#%"));
+        bool confirmed = false;
+        client.waitForIdle();
+        while (client.pendingCount() > 0) {
+            if (client.takeNext().startsWith(QStringLiteral("PV#")))
+                confirmed = true;
+        }
+        QVERIFY2(confirmed, "a client could not take a free character");
+    };
+    takeOne(a);
+    takeOne(b);
+    takeOne(c);
+
+    // Drop the cross-client player-list churn so the final window is clean.
+    for (TestClient *client : {&a, &b, &c}) {
+        client->waitForIdle();
+        while (client->pendingCount() > 0)
+            client->takeNext();
+    }
+
+    // Every character is now taken. /randomchar must refuse promptly rather
+    // than spin the server's main thread forever. Client and server are
+    // separate processes, so a reverted fix trips this idle deadline and
+    // fails the assertion here instead of hanging the test.
+    a.send(QStringLiteral("CT#Tester#/randomchar#%"));
+    QString refusal;
+    QVERIFY(a.waitForIdle());
+    while (a.pendingCount() > 0) {
+        const QString packet = a.takeNext();
+        if (packet.contains(QStringLiteral("already taken")))
+            refusal = packet;
+    }
+    QVERIFY2(!refusal.isEmpty(), "expected a refusal once every character was taken");
 }
 
 void ProtocolTest::escapeCodeRoundtrip()

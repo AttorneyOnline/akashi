@@ -6,13 +6,20 @@
 #include "proto/transport.h"
 
 #include <QHostAddress>
+#include <QList>
 #include <QNetworkRequest>
 #include <QWebSocket>
+
+#include <utility>
 
 class QTimer;
 class QWebSocketServer;
 
 namespace akashi {
+
+// A parsed proxy subnet: an address plus its prefix length, the shape
+// QHostAddress::isInSubnet() takes. Empty means only localhost is trusted.
+using TrustedProxyList = QList<std::pair<QHostAddress, int>>;
 
 // The WebSocket door every AO2 client comes through: listens on one port
 // and wraps each accepted socket in a WebSocketTransport.
@@ -22,14 +29,15 @@ class AKASHI_CORE_EXPORT WebSocketReceiver : public ClientReceiver
 
   public:
     // f_features is the same capability list the FL packet advertises
-    // (proto::serverFeatures) plus the caller's auth token - the one
-    // vocabulary, spoken here as network_-prefixed subprotocol tokens. The
-    // upgrade response echoes the FIRST OFFERED token the server speaks,
-    // so a client leads with the capability it needs accepted - the one
-    // acceptance the handshake may carry. New capabilities follow the
-    // [arch]_[packet]_[version] grammar (network for generic ones), like
-    // ao_ms_2.11.1 or network_auth_simple.
+    // (proto::serverFeatures) - the one vocabulary, spoken here as
+    // network_-prefixed subprotocol tokens. The upgrade response echoes
+    // the FIRST OFFERED token the server speaks, so a client leads with
+    // the capability it needs accepted - the one acceptance the handshake
+    // may carry. New capabilities follow the [arch]_[packet]_[version]
+    // grammar (network for generic ones), like ao_ms_2.11.1 or
+    // network_auth_simple.
     WebSocketReceiver(const QHostAddress &f_address, int f_port,
+                      const TrustedProxyList &f_trusted_proxies = {},
                       const QStringList &f_features = {}, QObject *parent = nullptr);
 
     bool start() override;
@@ -42,6 +50,7 @@ class AKASHI_CORE_EXPORT WebSocketReceiver : public ClientReceiver
     QWebSocketServer *m_server = nullptr;
     QHostAddress m_address;
     int m_port;
+    TrustedProxyList m_trusted_proxies;
 };
 
 // The WebSocket transport: the one ITransport implementation core ships. Keeps
@@ -58,7 +67,8 @@ class AKASHI_CORE_EXPORT WebSocketTransport : public ITransport
 
   public:
     // Takes ownership of the QWebSocket.
-    explicit WebSocketTransport(QWebSocket *f_socket, QObject *parent = nullptr);
+    explicit WebSocketTransport(QWebSocket *f_socket, const TrustedProxyList &f_trusted_proxies = {},
+                                QObject *parent = nullptr);
 
     QHostAddress peerAddress() const override;
     void write(const Packet &f_packet) override;
@@ -80,6 +90,38 @@ class AKASHI_CORE_EXPORT WebSocketTransport : public ITransport
      * Static and pure so it can be tested directly.
      */
     static QStringList parseCapabilityTokens(const QNetworkRequest &f_request);
+
+    /**
+     * @brief Parses the trusted_proxies config string into subnets.
+     *
+     * @details Accepts comma-separated IPs or CIDR subnets; a bare IP is a
+     * host route. Invalid entries are skipped with a warning. Static and pure
+     * so it can be tested directly.
+     */
+    static TrustedProxyList parseTrustedProxies(const QString &f_csv);
+
+    /**
+     * @brief Whether a peer may set the client-IP proxy headers.
+     *
+     * @details localhost is always trusted; otherwise the peer must fall in
+     * one of the configured trusted subnets. A direct internet client is not
+     * trusted, so it cannot forge its apparent IP.
+     */
+    static bool isTrustedProxy(const QHostAddress &f_peer, const TrustedProxyList &f_trusted);
+
+    /**
+     * @brief Resolves the real client address behind a trusted proxy.
+     *
+     * @details Proxy headers are honoured only when the immediate peer is
+     * trusted, so an untrusted client cannot forge them. For x-forwarded-for
+     * the trusted proxy appends the peer it actually saw, so the LAST entry is
+     * authoritative; earlier entries are client-supplied and spoofable. A
+     * header that does not parse to a real address falls back to the socket
+     * peer. Static and pure so it can be tested directly.
+     */
+    static QHostAddress resolveClientAddress(bool f_peer_trusted,
+                                             const QNetworkRequest &f_request,
+                                             const QHostAddress &f_peer);
 
   private Q_SLOTS:
     /**

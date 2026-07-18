@@ -70,14 +70,14 @@ class tst_CommandRegistry : public QObject
 // one-or-more-argument form.
 static akashi::CommandSpec makeVariantSpec(const QString &f_name)
 {
-    akashi::CommandSpec l_spec;
-    l_spec.name = f_name;
-    l_spec.usage = "/" + f_name + " [target]";
-    l_spec.variants = {
-        {QStringLiteral("own"), 0, 0, {}, {}, {}, [](akashi::CommandContext &) {}},
-        {QStringLiteral("user"), 1, -1, {QStringLiteral("modify_users")}, {}, {}, [](akashi::CommandContext &) {}},
+    return akashi::CommandSpec{
+        .name = f_name,
+        .usage = "/" + f_name + " [target]",
+        .variants = {
+            {QStringLiteral("own"), 0, 0, {}, {}, {}, [](akashi::CommandContext &) {}},
+            {QStringLiteral("user"), 1, -1, {QStringLiteral("modify_users")}, {}, {}, [](akashi::CommandContext &) {}},
+        },
     };
-    return l_spec;
 }
 
 void tst_CommandRegistry::registerAndLookup()
@@ -595,11 +595,12 @@ void tst_CommandRegistry::canUseChecksEveryVariantForm()
     // The free self form opens the command even without modify_users.
     QVERIFY(l_registry.canUse("listperms", [](const QString &) { return false; }));
 
-    akashi::CommandSpec l_all_gated;
-    l_all_gated.name = QStringLiteral("uncm");
-    l_all_gated.variants = {
-        {QStringLiteral("own"), 0, 0, {QStringLiteral("gamemaster")}, {}, {}, [](akashi::CommandContext &) {}},
-        {QStringLiteral("other"), 1, -1, {QStringLiteral("remove_gamemaster")}, {}, {}, [](akashi::CommandContext &) {}},
+    const akashi::CommandSpec l_all_gated{
+        .name = QStringLiteral("uncm"),
+        .variants = {
+            {QStringLiteral("own"), 0, 0, {QStringLiteral("gamemaster")}, {}, {}, [](akashi::CommandContext &) {}},
+            {QStringLiteral("other"), 1, -1, {QStringLiteral("remove_gamemaster")}, {}, {}, [](akashi::CommandContext &) {}},
+        },
     };
     QVERIFY(l_registry.registerCommand(l_all_gated, QStringLiteral("core")));
 
@@ -618,10 +619,11 @@ void tst_CommandRegistry::variantMatchPicksByArgCount()
     QCOMPARE(l_spec.match(5)->id, QStringLiteral("user"));
 
     // Bounded windows reject counts outside them.
-    akashi::CommandSpec l_bounded;
-    l_bounded.variants = {
-        {QStringLiteral("own"), 1, 1, {}, {}, {}, [](akashi::CommandContext &) {}},
-        {QStringLiteral("user"), 2, 2, {}, {}, {}, [](akashi::CommandContext &) {}},
+    const akashi::CommandSpec l_bounded{
+        .variants = {
+            {QStringLiteral("own"), 1, 1, {}, {}, {}, [](akashi::CommandContext &) {}},
+            {QStringLiteral("user"), 2, 2, {}, {}, {}, [](akashi::CommandContext &) {}},
+        },
     };
     QCOMPARE(l_bounded.match(0), nullptr);
     QCOMPARE(l_bounded.match(1)->id, QStringLiteral("own"));
@@ -634,8 +636,7 @@ void tst_CommandRegistry::registerCommandValidatesVariants()
     akashi::CommandRegistry l_registry;
 
     // The handlerless overload needs at least one variant.
-    akashi::CommandSpec l_empty;
-    l_empty.name = QStringLiteral("empty");
+    const akashi::CommandSpec l_empty{.name = QStringLiteral("empty")};
     QVERIFY(!l_registry.registerCommand(l_empty, QStringLiteral("core")));
 
     // Every variant needs an id and a handler.
@@ -654,10 +655,11 @@ void tst_CommandRegistry::registerCommandValidatesVariants()
 void tst_CommandRegistry::registerVariantAppendsGatedForm()
 {
     akashi::CommandRegistry l_registry;
-    akashi::CommandSpec l_spec;
-    l_spec.name = QStringLiteral("inspect");
-    l_spec.variants = {
-        {QStringLiteral("own"), 0, 0, {}, {}, {}, [](akashi::CommandContext &) {}},
+    const akashi::CommandSpec l_spec{
+        .name = QStringLiteral("inspect"),
+        .variants = {
+            {QStringLiteral("own"), 0, 0, {}, {}, {}, [](akashi::CommandContext &) {}},
+        },
     };
     QVERIFY(l_registry.registerCommand(l_spec, QStringLiteral("core")));
 
@@ -715,10 +717,11 @@ void tst_CommandRegistry::registerVariantRejectsMalformedForms()
 void tst_CommandRegistry::unregisterAllSweepsAddedVariants()
 {
     akashi::CommandRegistry l_registry;
-    akashi::CommandSpec l_spec;
-    l_spec.name = QStringLiteral("inspect");
-    l_spec.variants = {
-        {QStringLiteral("own"), 0, 0, {}, {}, {}, [](akashi::CommandContext &) {}},
+    const akashi::CommandSpec l_spec{
+        .name = QStringLiteral("inspect"),
+        .variants = {
+            {QStringLiteral("own"), 0, 0, {}, {}, {}, [](akashi::CommandContext &) {}},
+        },
     };
     QVERIFY(l_registry.registerCommand(l_spec, QStringLiteral("core")));
     QVERIFY(l_registry.registerVariant(QStringLiteral("inspect"),

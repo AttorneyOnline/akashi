@@ -2,14 +2,16 @@
 #pragma once
 
 #include <QByteArray>
+#include <QHash>
 #include <QJsonObject>
 #include <QList>
 #include <QObject>
-#include <QPair>
 #include <QString>
 #include <QUrl>
 
+#include <chrono>
 #include <optional>
+#include <utility>
 
 class QHttpServer;
 class QHttpServerRequest;
@@ -24,7 +26,7 @@ struct WebhookRequest
     QString method;
     QString path;
     QString query;
-    QList<QPair<QByteArray, QByteArray>> headers;
+    QList<std::pair<QByteArray, QByteArray>> headers;
     QByteArray body;
 
     // The value of a header, matched case-insensitively; empty when absent.
@@ -53,9 +55,14 @@ class WebhookReceiver : public QObject
     // Every later response carries this status.
     void setResponseStatus(int f_status);
 
+    // Serves a canned body on one exact path; other paths keep answering
+    // with the plain status. For tests whose subject reads the response.
+    void setResponse(const QString &f_path, int f_status, const QByteArray &f_body,
+                     const QByteArray &f_content_type = QByteArrayLiteral("application/json"));
+
     int requestCount() const;
     // Spins the event loop until f_count requests have arrived.
-    bool waitForRequests(int f_count, int f_timeout_ms = 5000);
+    bool waitForRequests(int f_count, std::chrono::milliseconds f_timeout = std::chrono::seconds(5));
     const WebhookRequest &requestAt(int f_index) const;
     // Pops the oldest captured request.
     std::optional<WebhookRequest> takeRequest();
@@ -65,11 +72,19 @@ class WebhookReceiver : public QObject
     void requestReceived();
 
   private:
+    struct CannedResponse
+    {
+        int status;
+        QByteArray body;
+        QByteArray content_type;
+    };
+
     QHttpServerResponse captureRequest(const QHttpServerRequest &f_request);
 
     QHttpServer *m_server = nullptr;
     QTcpServer *m_socket = nullptr;
     QList<WebhookRequest> m_requests;
+    QHash<QString, CannedResponse> m_responses;
     int m_response_status = 204;
 };
 

@@ -3,8 +3,8 @@
 #include "akashi_core_export.h"
 
 #include <QByteArray>
+#include <QHash>
 #include <QJsonObject>
-#include <QMap>
 #include <QString>
 #include <QVariantMap>
 #include <QVector>
@@ -50,7 +50,7 @@ class AKASHI_CORE_EXPORT DiscordMessage : public DiscordMessageCommon
     QJsonObject toJson() const;
 
   private:
-    QMap<QString, QString> m_fields;
+    QHash<QString, QString> m_fields;
     QVector<QVariantMap> m_embeds;
     QVariantMap m_current_embed;
     bool m_building_embed = false;

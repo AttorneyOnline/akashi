@@ -102,7 +102,7 @@ class AKASHI_CORE_EXPORT DBManager : public QObject
      * * First, a `bool` that is true if the query could return at least one such record.
      * * Then, a `QString` that is the reason for the ban.
      */
-    QPair<bool, BanInfo> isIPBanned(QString ipid);
+    std::pair<bool, BanInfo> isIPBanned(QString ipid);
 
     /**
      * @brief Checks if there is a record in the Bans table with the given hardware ID.
@@ -113,7 +113,7 @@ class AKASHI_CORE_EXPORT DBManager : public QObject
      * * First, a `bool` that is true if the query could return at least one such record.
      * * Then, a `QString` that is the reason for the ban.
      */
-    QPair<bool, BanInfo> isHDIDBanned(QString hdid);
+    std::pair<bool, BanInfo> isHDIDBanned(QString hdid);
 
     /**
      * @brief Gets the ID number of a given ban.
@@ -262,6 +262,12 @@ class AKASHI_CORE_EXPORT DBManager : public QObject
     bool updatePassword(QString username, QString password);
 
   private:
+    /**
+     * @brief The stand-in ban returned when a ban lookup itself fails, so the
+     * connection gate fails closed instead of admitting the client.
+     */
+    static BanInfo databaseErrorBan();
+
     /**
      * @brief The backing database that stores user details.
      */

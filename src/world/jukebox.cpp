@@ -92,13 +92,13 @@ QString Jukebox::addSong(const JukeboxSong &f_song)
         return QStringLiteral("Song name cannot be empty.");
     }
 
-    if (m_floor) {
-        const QStringList &l_cdns = m_floor->approved_cdns;
-        if (!l_cdns.isEmpty()) {
-            if (!validateSong(f_song.name, l_cdns) || !validateSong(f_song.real_name, l_cdns)) {
-                return QStringLiteral("The song is not from an approved source.");
-            }
-        }
+    // Validation always runs, mirroring /play: with no approved CDN
+    // configured, no remote source is approved, so URLs fail closed instead
+    // of entering the persistent floor catalog unchecked. Local names must
+    // carry a playable extension either way.
+    const QStringList l_cdns = m_floor ? m_floor->approved_cdns : QStringList();
+    if (!validateSong(f_song.name, l_cdns) || !validateSong(f_song.real_name, l_cdns)) {
+        return QStringLiteral("The song is not from an approved source.");
     }
 
     // Same-name adds overwrite - this is the deliberate change from the

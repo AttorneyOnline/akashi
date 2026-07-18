@@ -194,7 +194,7 @@ void ConfigStore::reload()
 
 SettingNotifier *ConfigStore::notifier(const QString &f_name, const QString &f_key)
 {
-    const auto l_pair = qMakePair(f_name, f_key);
+    const auto l_pair = std::make_pair(f_name, f_key);
     SettingNotifier *l_notifier = m_notifiers.value(l_pair);
     if (!l_notifier) {
         l_notifier = new SettingNotifier(this);

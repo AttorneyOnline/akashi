@@ -90,31 +90,6 @@ void ArupBroadcaster::flush()
     }
 }
 
-Packet ArupBroadcaster::buildArup(Type type) const
-{
-    QStringList fields;
-    fields.append(QString::number(static_cast<int>(type)));
-
-    for (const Area *area : m_areas) {
-        switch (type) {
-        case Type::PlayerCount:
-            fields.append(QString::number(area->playerCount()));
-            break;
-        case Type::Status:
-            fields.append(area->status());
-            break;
-        case Type::Cm:
-            fields.append(formatOwners(area));
-            break;
-        case Type::Lock:
-            fields.append(lockString(area->lockState()));
-            break;
-        }
-    }
-
-    return Packet(QStringLiteral("ARUP"), fields);
-}
-
 Packet ArupBroadcaster::buildFloorArup(Type type, int floorId) const
 {
     QStringList fields;
@@ -141,11 +116,6 @@ Packet ArupBroadcaster::buildFloorArup(Type type, int floorId) const
     return Packet(QStringLiteral("ARUP"), fields);
 }
 
-int ArupBroadcaster::floorCount() const
-{
-    return m_floor_areas.size();
-}
-
 QString ArupBroadcaster::formatOwners(const Area *area) const
 {
     if (area->owners().isEmpty()) {
@@ -165,14 +135,17 @@ QString ArupBroadcaster::formatOwners(const Area *area) const
 
 QString ArupBroadcaster::lockString(Area::LockState state)
 {
+    // No default: a future lock state must name its own broadcast string
+    // instead of silently reading as FREE.
     switch (state) {
     case Area::LockState::Locked:
         return QStringLiteral("LOCKED");
     case Area::LockState::Spectatable:
         return QStringLiteral("SPECTATABLE");
-    default:
+    case Area::LockState::Free:
         return QStringLiteral("FREE");
     }
+    return QStringLiteral("FREE");
 }
 
 } // namespace akashi

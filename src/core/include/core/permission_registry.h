@@ -122,11 +122,11 @@ class AKASHI_CORE_EXPORT ACLRolesHandler : public QObject
     ~ACLRolesHandler();
 
     // Role identifiers are not case-sensitive.
-    bool roleExists(QString f_id);
+    bool roleExists(const QString &f_id) const;
 
     // The role with the given identifier, or a permissionless role when it
     // does not exist.
-    ACLRole roleById(QString f_id);
+    ACLRole roleById(const QString &f_id) const;
 
     // Inserts or overwrites a role. Read-only roles cannot be replaced.
     bool insertRole(QString f_id, ACLRole f_role);

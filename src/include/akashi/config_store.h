@@ -6,8 +6,9 @@
 
 #include <QHash>
 #include <QObject>
-#include <QPair>
 #include <QSettings>
+
+#include <utility>
 
 namespace akashi {
 
@@ -99,7 +100,7 @@ class AKASHI_CORE_EXPORT ConfigStore : public QObject, public IService
     QHash<QString, QSettings *> m_open_settings;
     QHash<QString, QList<ConfigEntry>> m_entries;
     QHash<QString, QHash<QString, QVariant>> m_values;
-    QHash<QPair<QString, QString>, SettingNotifier *> m_notifiers;
+    QHash<std::pair<QString, QString>, SettingNotifier *> m_notifiers;
 
     struct FormatEntry
     {

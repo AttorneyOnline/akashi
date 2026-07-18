@@ -175,20 +175,23 @@ ACLRolesHandler::ACLRolesHandler(QObject *parent) :
 
 ACLRolesHandler::~ACLRolesHandler() {}
 
-bool ACLRolesHandler::roleExists(QString f_id)
+bool ACLRolesHandler::roleExists(const QString &f_id) const
 {
-    f_id = f_id.toUpper();
-    return readonly_roles.contains(f_id) || m_roles.contains(f_id);
+    AKASHI_ASSERT_THREAD_AFFINITY();
+    const QString l_id = f_id.toUpper();
+    return readonly_roles.contains(l_id) || m_roles.contains(l_id);
 }
 
-ACLRole ACLRolesHandler::roleById(QString f_id)
+ACLRole ACLRolesHandler::roleById(const QString &f_id) const
 {
-    f_id = f_id.toUpper();
-    return readonly_roles.contains(f_id) ? readonly_roles.value(f_id) : m_roles.value(f_id);
+    AKASHI_ASSERT_THREAD_AFFINITY();
+    const QString l_id = f_id.toUpper();
+    return readonly_roles.contains(l_id) ? readonly_roles.value(l_id) : m_roles.value(l_id);
 }
 
 bool ACLRolesHandler::insertRole(QString f_id, ACLRole f_role)
 {
+    AKASHI_ASSERT_THREAD_AFFINITY();
     f_id = f_id.toUpper();
     if (readonly_roles.contains(f_id)) {
         return false;
@@ -199,6 +202,7 @@ bool ACLRolesHandler::insertRole(QString f_id, ACLRole f_role)
 
 bool ACLRolesHandler::removeRole(QString f_id)
 {
+    AKASHI_ASSERT_THREAD_AFFINITY();
     f_id = f_id.toUpper();
     if (readonly_roles.contains(f_id)) {
         return false;
@@ -212,11 +216,13 @@ bool ACLRolesHandler::removeRole(QString f_id)
 
 void ACLRolesHandler::clearRoles()
 {
+    AKASHI_ASSERT_THREAD_AFFINITY();
     m_roles.clear();
 }
 
 bool ACLRolesHandler::loadFile(QString f_file_name)
 {
+    AKASHI_ASSERT_THREAD_AFFINITY();
     // JSON files use the custom format, anything else stays INI.
     QSettings l_settings(f_file_name, f_file_name.endsWith(".json") ? JsonSettings::format() : QSettings::IniFormat);
     if (!checkSettingsStatus(&l_settings)) {
@@ -256,6 +262,7 @@ bool ACLRolesHandler::loadFile(QString f_file_name)
 
 bool ACLRolesHandler::saveFile(QString f_file_name)
 {
+    AKASHI_ASSERT_THREAD_AFFINITY();
     // JSON files use the custom format, anything else stays INI.
     QSettings l_settings(f_file_name, f_file_name.endsWith(".json") ? JsonSettings::format() : QSettings::IniFormat);
     if (!checkSettingsStatus(&l_settings)) {

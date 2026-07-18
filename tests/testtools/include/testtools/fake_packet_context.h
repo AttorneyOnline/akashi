@@ -28,7 +28,7 @@ class FakeContext : public akashi::IPacketContext
     QStringList area_name_list = {"Basement", "Courtroom"};
     QStringList music_name_list = {"song1.opus", "song2.opus"};
     akashi::TimerSnapshot global_timer;
-    std::optional<akashi::BanRecord> ban;
+    std::optional<akashi::BanRecord> ban = std::nullopt;
     int selected_char_id = -100;
 
     bool ooc_chat_allowed = true;
@@ -190,7 +190,8 @@ class FakeContext : public akashi::IPacketContext
     QString area_side;
     QStringList last_area_message;
     akashi::PairInfo pair;
-    int pair_request = -100;
+    // Written by the const resolvePair, like the calls list.
+    mutable int pair_request = -100;
     int paired_with = -100;
     QStringList broadcast_ic_fields;
     int broadcast_ic_evidence = -100;
@@ -230,7 +231,7 @@ class FakeContext : public akashi::IPacketContext
         return f_text;
     }
     bool isIcMessageAllowed() const override { return ic_message_allowed; }
-    bool canActInArea() override { return area_act_allowed; }
+    bool canActInArea() const override { return area_act_allowed; }
     bool isImmediateForced() const override { return immediate_forced; }
     QString areaSide() const override { return area_side; }
     QStringList lastAreaMessage() const override { return last_area_message; }
@@ -241,7 +242,7 @@ class FakeContext : public akashi::IPacketContext
         calls.append("setPairingWith");
     }
 
-    akashi::PairInfo resolvePair(int f_pair_id) override
+    akashi::PairInfo resolvePair(int f_pair_id) const override
     {
         pair_request = f_pair_id;
         calls.append("resolvePair");

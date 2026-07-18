@@ -3,12 +3,12 @@
 #include "akashi/log_writer.h"
 
 #include <QHash>
-#include <QPair>
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QString>
 
 #include <memory>
+#include <utility>
 
 namespace akashi {
 
@@ -40,7 +40,7 @@ class WriterSql : public ILogWriter
     bool m_in_transaction = false;
 
     QHash<QString, int> m_type_cache;
-    QHash<QPair<QString, QString>, int> m_identity_cache;
+    QHash<std::pair<QString, QString>, int> m_identity_cache;
 
     std::unique_ptr<QSqlQuery> m_insert_type;
     std::unique_ptr<QSqlQuery> m_select_type;

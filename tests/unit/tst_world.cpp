@@ -1108,8 +1108,9 @@ void tst_World::removeFloorRefusesItsGuards()
 static QString writeRulesFile(QTemporaryDir &f_dir, const QByteArray &f_json)
 {
     const QString l_path = f_dir.filePath(QStringLiteral("areas.json"));
+    // Fails the test here instead of returning a silent empty path.
     QFile l_file(l_path);
-    if (!l_file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+    if (!QTest::qVerify(l_file.open(QIODevice::WriteOnly | QIODevice::Text), "l_file.open(QIODevice::WriteOnly | QIODevice::Text)", qPrintable(l_path), __FILE__, __LINE__)) {
         return {};
     }
     l_file.write(f_json);

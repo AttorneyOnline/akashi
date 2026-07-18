@@ -16,6 +16,7 @@ class tst_MmdbReader : public QObject
   private Q_SLOTS:
     void looksUpTheAsnOfAnAddress();
     void rejectsOtherFiles();
+    void closesWhenAReloadFails();
 
   private:
     QByteArray buildDatabase();
@@ -100,6 +101,31 @@ void tst_MmdbReader::rejectsOtherFiles()
 
     MmdbReader l_reader;
     QCOMPARE(l_reader.open(l_path), false);
+}
+
+void tst_MmdbReader::closesWhenAReloadFails()
+{
+    QTemporaryDir l_dir;
+    const QString l_good = l_dir.path() + "/asn.mmdb";
+    QFile l_good_file(l_good);
+    QVERIFY(l_good_file.open(QIODevice::WriteOnly));
+    l_good_file.write(buildDatabase());
+    l_good_file.close();
+
+    const QString l_bad = l_dir.path() + "/broken.mmdb";
+    QFile l_bad_file(l_bad);
+    QVERIFY(l_bad_file.open(QIODevice::WriteOnly));
+    l_bad_file.write("this is not a database");
+    l_bad_file.close();
+
+    MmdbReader l_reader;
+    QVERIFY(l_reader.open(l_good));
+    QCOMPARE(l_reader.asnForAddress(QHostAddress("1.2.3.4")), 100);
+
+    // Reloading a broken file leaves the reader closed, not on the old tree with new bytes.
+    QCOMPARE(l_reader.open(l_bad), false);
+    QCOMPARE(l_reader.isOpen(), false);
+    QCOMPARE(l_reader.asnForAddress(QHostAddress("1.2.3.4")), 0);
 }
 
 }

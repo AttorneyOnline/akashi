@@ -2,12 +2,14 @@
 {
     "id": "akashi.showcase-lua",
     "version": "1.0.0",
-    "dependencies": ["akashi.lua-host"]
+    "dependencies": ["akashi.lua-host"],
+    "about": "The Lua showcase, by the akashi dev team."
 }
 --]]
 
 -- Everything a Lua plugin can do, in one file. The header above is the
 -- manifest; dropping the file into bin/plugins is the entire install.
+-- Its "about" is the credit line /about shows, next to the server's own.
 
 -- Declared permissions show up in role files, so owners can grant them to
 -- moderator roles like any built-in permission.

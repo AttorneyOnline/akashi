@@ -14,6 +14,8 @@
 
 #include <QTime>
 
+#include <algorithm>
+
 namespace akashi::commands {
 
 static void diceThrower(CommandContext &f_context, int f_sides, int f_dice, bool f_private, int f_modifier = 0)
@@ -123,10 +125,10 @@ void cmdRoll(CommandContext &f_context)
             }
         }
         else
-            l_sides = qBound(1, l_arg.toInt(), f_context.server()->serverSettings()->max_value());
+            l_sides = std::clamp(l_arg.toInt(), 1, f_context.server()->serverSettings()->max_value());
     }
     if (f_context.argc() == 2)
-        l_dice = qBound(1, f_context.argument(1).toInt(), f_context.server()->serverSettings()->max_dice());
+        l_dice = std::clamp(f_context.argument(1).toInt(), 1, f_context.server()->serverSettings()->max_dice());
     diceThrower(f_context, l_sides, l_dice, false);
 }
 
@@ -202,10 +204,10 @@ void cmdRollP(CommandContext &f_context)
             }
         }
         else
-            l_sides = qBound(1, l_arg.toInt(), f_context.server()->serverSettings()->max_value());
+            l_sides = std::clamp(l_arg.toInt(), 1, f_context.server()->serverSettings()->max_value());
     }
     if (f_context.argc() == 2)
-        l_dice = qBound(1, f_context.argument(1).toInt(), f_context.server()->serverSettings()->max_dice());
+        l_dice = std::clamp(f_context.argument(1).toInt(), 1, f_context.server()->serverSettings()->max_dice());
     diceThrower(f_context, l_sides, l_dice, true);
 }
 
@@ -303,7 +305,7 @@ void cmdNotecardClear(CommandContext &f_context)
 void cmdNotecardReveal(CommandContext &f_context)
 {
     akashi::Area *l_area = f_context.server()->areaById(f_context.areaId());
-    const QStringList l_notecards = l_area->notecards();
+    const QStringList l_notecards = l_area->takeNotecards();
 
     if (l_notecards.isEmpty()) {
         f_context.reply("There are no cards to reveal in this area.");

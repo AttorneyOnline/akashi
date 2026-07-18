@@ -124,8 +124,8 @@ void tst_Service::signalsFireOnChange()
     l_registry.registerService(std::make_shared<FakeMusicService>());
     l_registry.unregisterService("akashi.music");
 
-    QCOMPARE(l_registered.count(), 1);
-    QCOMPARE(l_unregistered.count(), 1);
+    QCOMPARE(l_registered.size(), 1);
+    QCOMPARE(l_unregistered.size(), 1);
 }
 
 void tst_Service::nonOwningRegistration()

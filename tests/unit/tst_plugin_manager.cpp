@@ -108,6 +108,7 @@ class tst_PluginManager : public QObject
     void dependentsBlockUnloadWithoutCascade();
     void scriptDependencyCyclesNeverLoad();
     void cleanupRemovesRegistrations();
+    void aboutLeavesWithThePlugin();
 
     void headerParsesFullManifest();
     void headerDefaultsEverythingButTheMarker();
@@ -128,8 +129,9 @@ class tst_PluginManager : public QObject
 QString tst_PluginManager::writeScript(QTemporaryDir &f_dir, const QString &f_name, const QByteArray &f_content)
 {
     const QString l_path = f_dir.filePath(f_name);
+    // Fails the test here instead of returning a silent empty path.
     QFile l_file(l_path);
-    if (!l_file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+    if (!QTest::qVerify(l_file.open(QIODevice::WriteOnly | QIODevice::Text), "l_file.open(QIODevice::WriteOnly | QIODevice::Text)", qPrintable(l_path), __FILE__, __LINE__)) {
         return {};
     }
     l_file.write(f_content);
@@ -252,6 +254,36 @@ void tst_PluginManager::cleanupRemovesRegistrations()
     QVERIFY(!l_commands->contains(QStringLiteral("test_cmd")));
 }
 
+void tst_PluginManager::aboutLeavesWithThePlugin()
+{
+    QTemporaryDir l_tmp;
+    akashi::ServiceRegistry l_services;
+    auto l_host = std::make_shared<StubScriptHost>();
+    akashi::PluginInfo l_manifest = makeManifest(QStringLiteral("akashi.credited"), {});
+    l_manifest.about = QStringLiteral("Made by the test suite.");
+    l_host->manifests = {l_manifest};
+    QVERIFY(l_services.registerService(l_host));
+
+    akashi::PluginManager l_mgr(&l_services, l_tmp.path());
+    QVERIFY(l_mgr.startPlugins());
+
+    // The manifest's line shows while the plugin runs.
+    QCOMPARE(l_mgr.abouts().value(QStringLiteral("akashi.credited")), QStringLiteral("Made by the test suite."));
+
+    // A runtime override replaces it; unknown ids and empty text are refused.
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression("Refused about text"));
+    l_mgr.registerAbout(QStringLiteral("akashi.ghost"), QStringLiteral("nobody"));
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression("Refused about text"));
+    l_mgr.registerAbout(QStringLiteral("akashi.credited"), QString());
+    l_mgr.registerAbout(QStringLiteral("akashi.credited"), QStringLiteral("Runs on stub 1.0."));
+    QCOMPARE(l_mgr.abouts().value(QStringLiteral("akashi.credited")), QStringLiteral("Runs on stub 1.0."));
+    QCOMPARE(l_mgr.abouts().size(), 1);
+
+    // An unloaded plugin's line leaves /about with it.
+    QVERIFY(l_mgr.unloadPlugin(QStringLiteral("akashi.credited")));
+    QVERIFY(l_mgr.abouts().isEmpty());
+}
+
 void tst_PluginManager::headerParsesFullManifest()
 {
     QTemporaryDir l_tmp;
@@ -260,7 +292,8 @@ void tst_PluginManager::headerParsesFullManifest()
     "id": "akashi.greeter",
     "version": "2.3.4",
     "dependencies": ["akashi.other"],
-    "services": ["akashi.commands"]
+    "services": ["akashi.commands"],
+    "about": "The greeter, by example."
 }
 --]]
 print("hi")
@@ -275,6 +308,7 @@ print("hi")
     // The host dependency is added in front of the declared ones.
     QCOMPARE(l_info->dependencies, QStringList({"akashi.lua-host", "akashi.other"}));
     QCOMPARE(l_info->services, QStringList({"akashi.commands"}));
+    QCOMPARE(l_info->about, QStringLiteral("The greeter, by example."));
 }
 
 void tst_PluginManager::headerDefaultsEverythingButTheMarker()

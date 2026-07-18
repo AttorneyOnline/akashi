@@ -26,6 +26,7 @@ class tst_AuthThrottle : public QObject
     void remainingSecondsIsZeroWithoutLockout();
     void successOnUnknownIpidIsANoOp();
     void successClearsAnActiveLockout();
+    void quietFailuresDecayAfterTheLockoutWindow();
 };
 
 void tst_AuthThrottle::freshIpidIsNotLockedOut()
@@ -170,6 +171,25 @@ void tst_AuthThrottle::successClearsAnActiveLockout()
     l_throttle.recordSuccess("abc123");
     QVERIFY(!l_throttle.isLockedOut("abc123"));
     QCOMPARE(l_throttle.remainingLockoutSeconds("abc123"), 0);
+}
+
+void tst_AuthThrottle::quietFailuresDecayAfterTheLockoutWindow()
+{
+    // A count that has been quiet for a whole lockout window is pruned, so
+    // the map cannot grow one permanent entry per ipid that ever failed.
+    AuthThrottle l_throttle(3, 1);
+    l_throttle.recordFailure("abc123");
+    QTest::qWait(1200);
+
+    // The old count is gone: these two failures start from zero, and three
+    // lifetime failures do not lock out.
+    l_throttle.recordFailure("abc123");
+    l_throttle.recordFailure("abc123");
+    QVERIFY(!l_throttle.isLockedOut("abc123"));
+
+    // A third failure inside the window still locks out.
+    l_throttle.recordFailure("abc123");
+    QVERIFY(l_throttle.isLockedOut("abc123"));
 }
 
 }

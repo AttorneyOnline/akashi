@@ -229,7 +229,8 @@ class AKASHI_CORE_EXPORT Area : public QObject
     void updateLastICMessage(const QStringList &f_last_message) { m_last_ic_message = f_last_message; }
 
     bool addNotecard(const QString &f_owner, const QString &f_notecard);
-    QStringList notecards();
+    // Hands over every notecard and clears them; reading is consuming here.
+    QStringList takeNotecards();
 
     // --- Owner-tunable settings ---
 
@@ -360,6 +361,8 @@ class AKASHI_CORE_EXPORT Area : public QObject
     int m_pro_hp = 10;
     QStringList m_judgelog;
     QStringList m_last_ic_message;
+    // Stays a QMap: the notecard reveal prints these in iteration order, so
+    // the listing is deterministically alphabetical by owner.
     QMap<QString, QString> m_notecards;
 
     QVector<BeforeRuleEntry> m_before_rules;

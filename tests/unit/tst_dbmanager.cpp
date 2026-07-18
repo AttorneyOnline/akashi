@@ -2,6 +2,7 @@
 #include "akashi/database_service.h"
 #include "core/db_manager.h"
 
+#include <QRegularExpression>
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QTest>
@@ -15,6 +16,8 @@ class tst_DBManager : public QObject
 
   private Q_SLOTS:
     void olderActiveBanStillCounts();
+    void banChecksFailClosedWhenTheQueryFails();
+    void userWritesFailClosedWhenTheQueryFails();
     void lookupsAreIndexed();
     void sanctionsStoreAndExpire();
 };
@@ -45,6 +48,56 @@ void tst_DBManager::olderActiveBanStillCounts()
     const auto l_result = l_manager.isIPBanned("1234");
     QCOMPARE(l_result.first, true);
     QCOMPARE(l_result.second.duration, -2);
+}
+
+// A ban lookup whose query fails must read as banned, not as "no ban found" -
+// otherwise a database outage silently readmits every banned player.
+void tst_DBManager::banChecksFailClosedWhenTheQueryFails()
+{
+    QSqlDatabase l_database = QSqlDatabase::addDatabase("QSQLITE", "test_db_fail_closed");
+    l_database.setDatabaseName(":memory:");
+    QVERIFY(l_database.open());
+    DBManager l_manager(l_database);
+
+    // Breaking the schema out from under the manager makes every ban SELECT fail.
+    QSqlQuery l_break(l_database);
+    QVERIFY(l_break.exec("DROP TABLE bans"));
+
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression(QStringLiteral("Ban check failed for ipid")));
+    const auto l_ip_result = l_manager.isIPBanned("1234");
+    QCOMPARE(l_ip_result.first, true);
+    QVERIFY(l_ip_result.second.reason.contains(QStringLiteral("could not be checked")));
+
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression(QStringLiteral("Ban check failed for hdid")));
+    const auto l_hdid_result = l_manager.isHDIDBanned("abcd");
+    QCOMPARE(l_hdid_result.first, true);
+    QVERIFY(l_hdid_result.second.reason.contains(QStringLiteral("could not be checked")));
+}
+
+void tst_DBManager::userWritesFailClosedWhenTheQueryFails()
+{
+    QSqlDatabase l_database = QSqlDatabase::addDatabase("QSQLITE", "test_db_user_fail_closed");
+    l_database.setDatabaseName(":memory:");
+    QVERIFY(l_database.open());
+    DBManager l_manager(l_database);
+
+    // Breaking the schema out from under the manager makes every user query fail.
+    QSqlQuery l_break(l_database);
+    QVERIFY(l_break.exec("DROP TABLE users"));
+
+    // A failed existence check must report failure, not fall through to the
+    // insert and claim success.
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression(QStringLiteral("user existence check failed")));
+    QVERIFY(!l_manager.createUser("mod", QByteArray(16, 'a'), "hunter2!A", "MOD"));
+
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression(QStringLiteral("password update failed")));
+    QVERIFY(!l_manager.updatePassword("mod", "hunter3!A"));
+
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression(QStringLiteral("user existence check failed")));
+    QVERIFY(!l_manager.updateACL("mod", "MOD"));
+
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression(QStringLiteral("user existence check failed")));
+    QVERIFY(!l_manager.deleteUser("mod"));
 }
 
 void tst_DBManager::lookupsAreIndexed()

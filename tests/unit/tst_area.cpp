@@ -369,12 +369,12 @@ void Area::notecardsStoreClearAndHandOverOnce()
     // Clearing a card that was never written is harmless.
     QVERIFY(!m_area->addNotecard("Edgeworth", QString()));
 
-    // Reading hands the cards over and forgets them.
-    const QStringList l_cards = m_area->notecards();
+    // Taking hands the cards over and forgets them.
+    const QStringList l_cards = m_area->takeNotecards();
     QVERIFY(l_cards.contains("Franziska"));
     QVERIFY(!l_cards.contains("Phoenix"));
     QVERIFY(!l_cards.contains("Edgeworth"));
-    QVERIFY(m_area->notecards().isEmpty());
+    QVERIFY(m_area->takeNotecards().isEmpty());
 }
 
 }

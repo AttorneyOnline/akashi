@@ -122,7 +122,7 @@ static QVector<RuleDeclaration> parseRules(const QJsonObject &f_rules)
     QVector<RuleDeclaration> l_result;
     for (auto it = f_rules.begin(); it != f_rules.end(); ++it) {
         const QJsonObject l_buckets = it.value().toObject();
-        const QVector<QPair<QString, RulePhase>> l_phases = {
+        const QVector<std::pair<QString, RulePhase>> l_phases = {
             {QStringLiteral("before"), RulePhase::Before},
             {QStringLiteral("transform"), RulePhase::Transform},
             {QStringLiteral("after"), RulePhase::After},
@@ -198,10 +198,11 @@ QStringList loadIpRangeBans(const QString &f_path)
         return {};
     }
 
+    // A malformed ban file must be called out, or it silently loads as "no bans".
     QJsonParseError l_error;
     QJsonDocument l_doc = QJsonDocument::fromJson(l_file.readAll(), &l_error);
-    if (l_error.error != QJsonParseError::NoError) {
-        qCDebug(akashiConfig) << "Unable to parse JSON file. Error:" << l_error.errorString();
+    if (l_error.error != QJsonParseError::NoError || !l_doc.isObject()) {
+        qCWarning(akashiConfig) << "Unable to load IP range bans from" << f_path << "- no bans applied. Error:" << l_error.errorString();
         return {};
     }
 
@@ -219,10 +220,22 @@ QList<quint32> loadBannedAsns(const QString &f_path)
     if (!l_file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         return l_asns;
     }
-    const QJsonObject l_root = QJsonDocument::fromJson(l_file.readAll()).object();
-    const QStringList l_texts = l_root["asn"].toVariant().toStringList();
+    // A malformed ban file must be called out, or it silently loads as "no bans".
+    QJsonParseError l_error;
+    const QJsonDocument l_doc = QJsonDocument::fromJson(l_file.readAll(), &l_error);
+    if (l_error.error != QJsonParseError::NoError || !l_doc.isObject()) {
+        qCWarning(akashiConfig) << "Unable to load banned ASNs from" << f_path << "- no bans applied. Error:" << l_error.errorString();
+        return l_asns;
+    }
+    const QStringList l_texts = l_doc.object()["asn"].toVariant().toStringList();
     for (const QString &l_text : l_texts) {
-        l_asns.append(l_text.toUInt());
+        bool l_ok;
+        const quint32 l_asn = l_text.toUInt(&l_ok);
+        if (!l_ok) {
+            qCWarning(akashiConfig) << "Ignoring banned ASN entry that is not a number:" << l_text;
+            continue;
+        }
+        l_asns.append(l_asn);
     }
     return l_asns;
 }

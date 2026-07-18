@@ -44,6 +44,7 @@ bool RuleRegistry::refuseTakenActionName(const QString &f_name, const QString &f
 
 void RuleRegistry::registerBeforeAction(const QString &f_name, BeforeActionFactory f_factory, const QString &f_owner)
 {
+    AKASHI_ASSERT_OWNER_THREAD();
     if (refuseTakenActionName(f_name, f_owner))
         return;
     m_actions.insert(f_name, {std::move(f_factory), RulePhase::Before, f_owner});
@@ -51,6 +52,7 @@ void RuleRegistry::registerBeforeAction(const QString &f_name, BeforeActionFacto
 
 void RuleRegistry::registerAfterAction(const QString &f_name, AfterActionFactory f_factory, const QString &f_owner)
 {
+    AKASHI_ASSERT_OWNER_THREAD();
     if (refuseTakenActionName(f_name, f_owner))
         return;
     m_actions.insert(f_name, {std::move(f_factory), RulePhase::After, f_owner});
@@ -58,6 +60,7 @@ void RuleRegistry::registerAfterAction(const QString &f_name, AfterActionFactory
 
 void RuleRegistry::registerTransformAction(const QString &f_name, TransformActionFactory f_factory, const QString &f_owner)
 {
+    AKASHI_ASSERT_OWNER_THREAD();
     if (refuseTakenActionName(f_name, f_owner))
         return;
     m_actions.insert(f_name, {std::move(f_factory), RulePhase::Transform, f_owner});
@@ -65,6 +68,7 @@ void RuleRegistry::registerTransformAction(const QString &f_name, TransformActio
 
 void RuleRegistry::unregisterActions(const QString &f_owner)
 {
+    AKASHI_ASSERT_OWNER_THREAD();
     m_actions.removeIf([&f_owner](std::pair<const QString &, ActionFactory &> f_item) {
         return f_item.second.owner == f_owner;
     });
@@ -72,6 +76,7 @@ void RuleRegistry::unregisterActions(const QString &f_owner)
 
 std::optional<BeforeRuleFunction> RuleRegistry::buildBefore(const QString &f_name, ServiceRegistry &f_services, const QVariantMap &f_args) const
 {
+    AKASHI_ASSERT_OWNER_THREAD();
     auto it = m_actions.constFind(f_name);
     if (it == m_actions.constEnd())
         return std::nullopt;
@@ -83,6 +88,7 @@ std::optional<BeforeRuleFunction> RuleRegistry::buildBefore(const QString &f_nam
 
 std::optional<AfterRuleFunction> RuleRegistry::buildAfter(const QString &f_name, ServiceRegistry &f_services, const QVariantMap &f_args) const
 {
+    AKASHI_ASSERT_OWNER_THREAD();
     auto it = m_actions.constFind(f_name);
     if (it == m_actions.constEnd())
         return std::nullopt;
@@ -94,6 +100,7 @@ std::optional<AfterRuleFunction> RuleRegistry::buildAfter(const QString &f_name,
 
 std::optional<TransformRuleFunction> RuleRegistry::buildTransform(const QString &f_name, ServiceRegistry &f_services, const QVariantMap &f_args) const
 {
+    AKASHI_ASSERT_OWNER_THREAD();
     auto it = m_actions.constFind(f_name);
     if (it == m_actions.constEnd())
         return std::nullopt;
@@ -105,16 +112,19 @@ std::optional<TransformRuleFunction> RuleRegistry::buildTransform(const QString 
 
 RulePhase RuleRegistry::actionPhase(const QString &f_name) const
 {
+    AKASHI_ASSERT_OWNER_THREAD();
     return m_actions.value(f_name).phase;
 }
 
 QStringList RuleRegistry::actionNames() const
 {
+    AKASHI_ASSERT_OWNER_THREAD();
     return m_actions.keys();
 }
 
 QStringList RuleRegistry::actionsOwnedBy(const QString &f_owner) const
 {
+    AKASHI_ASSERT_OWNER_THREAD();
     QStringList l_result;
     for (auto it = m_actions.constBegin(); it != m_actions.constEnd(); ++it) {
         if (it->owner == f_owner)
@@ -125,6 +135,7 @@ QStringList RuleRegistry::actionsOwnedBy(const QString &f_owner) const
 
 bool RuleRegistry::hasAction(const QString &f_name) const
 {
+    AKASHI_ASSERT_OWNER_THREAD();
     return m_actions.contains(f_name);
 }
 
@@ -280,7 +291,12 @@ void RuleRegistry::unregisterObservers(const QString &f_owner)
 void RuleRegistry::notifyObservers(const QString &f_event, const RuleContext &f_context)
 {
     AKASHI_ASSERT_OWNER_THREAD();
-    for (const ObserverEntry &l_entry : std::as_const(m_observers)) {
+    // Iterate a snapshot so an observer may register or unregister an observer
+    // from inside its own callback (or a plugin may unload mid-dispatch)
+    // without invalidating the vector under us; the change takes effect from
+    // the next event on.
+    const QVector<ObserverEntry> l_observers = m_observers;
+    for (const ObserverEntry &l_entry : l_observers) {
         if (l_entry.event == f_event)
             l_entry.function(f_context);
     }

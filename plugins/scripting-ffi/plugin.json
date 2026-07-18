@@ -1,6 +1,7 @@
 {
     "id": "akashi.scripting-ffi",
     "version": "1.8.0",
+    "about": "The C bridge that lets scripting languages drive the server, by the akashi dev team.",
     "dependencies": [],
     "services": ["akashi.commands", "akashi.textfilters", "akashi.permissions", "akashi.config", "akashi.rules", "akashi.filesystem", "akashi.database"]
 }

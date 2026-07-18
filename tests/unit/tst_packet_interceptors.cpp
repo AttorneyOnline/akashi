@@ -1,6 +1,6 @@
 // AI-generated: written by Claude.
-#include "testtools/fake_packet_context.h"
 #include "proto/packet_interceptors.h"
+#include "testtools/fake_packet_context.h"
 
 #include <QTest>
 

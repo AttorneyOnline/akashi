@@ -60,10 +60,7 @@ class AKASHI_CORE_EXPORT ArupBroadcaster : public QObject
     // player-count update arrives in the same packet burst.
     void broadcastNow(Type type);
 
-    Packet buildArup(Type type) const;
     Packet buildFloorArup(Type type, int floorId) const;
-
-    int floorCount() const;
 
   Q_SIGNALS:
     void arupFloorBroadcast(const akashi::Packet &packet, int floorId);

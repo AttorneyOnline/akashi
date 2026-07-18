@@ -11,6 +11,8 @@
 #include <QSqlError>
 #include <QSqlQuery>
 
+#include <algorithm>
+
 namespace akashi {
 
 DatabaseService::DatabaseService(const QString &f_data_root, QObject *parent) :
@@ -184,7 +186,7 @@ void DatabaseService::runMaintenance(bool f_vacuum)
 
 int DatabaseService::runBackups(int f_keep)
 {
-    const int l_keep = qMax(1, f_keep);
+    const int l_keep = std::max(1, f_keep);
     const QString l_backup_root = m_data_root + "/backups";
     QDir().mkpath(l_backup_root);
     const QString l_stamp = QDateTime::currentDateTime().toString("yyyyMMdd-HHmmss");

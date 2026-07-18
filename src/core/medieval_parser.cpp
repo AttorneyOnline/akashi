@@ -8,6 +8,8 @@
 #include <QJsonObject>
 #include <QRandomGenerator>
 
+#include <algorithm>
+
 inline int MedievalParser::randomInt(int min, int max)
 {
     if (min > max) {
@@ -143,8 +145,8 @@ QString MedievalParser::randomPre()
 
     static int prevPre = 0;
     prevPre += (randomInt(1, 4));
-    while (prevPre >= prepended_words.count()) {
-        prevPre -= prepended_words.count();
+    while (prevPre >= prepended_words.size()) {
+        prevPre -= prepended_words.size();
     }
 
     return prepended_words[prevPre];
@@ -161,8 +163,8 @@ QString MedievalParser::randomPost()
 
     static int prevPost = 0;
     prevPost += randomInt(1, 4);
-    while (prevPost >= appended_words.count()) {
-        prevPost -= appended_words.count();
+    while (prevPost >= appended_words.size()) {
+        prevPost -= appended_words.size();
     }
 
     return appended_words[prevPost];
@@ -176,8 +178,8 @@ MatchResult MedievalParser::wordMatches(WordReplacement *rep, ReplacementCheck *
         }
     }
 
-    if (rep->prev_words.count() > 0) {
-        if (check->prev_word.length() <= 0 || !containsCaseInsensitive(word_vector, check->prev_word) || !containsCaseInsensitive(rep->prev_words, check->prev_word)) {
+    if (rep->prev_words.size() > 0) {
+        if (check->prev_word.size() <= 0 || !containsCaseInsensitive(word_vector, check->prev_word) || !containsCaseInsensitive(rep->prev_words, check->prev_word)) {
             return MATCHES_NOT;
         }
         check->used_prev_word = true;
@@ -214,13 +216,13 @@ bool MedievalParser::replaceWord(ReplacementCheck *check, QString *rep_str, bool
             continue;
         }
 
-        if (rep_ptr->prepended.count() > 0) {
+        if (rep_ptr->prepended.size() > 0) {
             QVector<int> vector_used;
-            const int l_prepend_count = qMin(rep_ptr->prepend_count, rep_ptr->prepended.count());
+            const int l_prepend_count = std::min(rep_ptr->prepend_count, int(rep_ptr->prepended.size()));
             for (int count = 0; count < l_prepend_count; count++) {
                 int rnd = 0;
                 do {
-                    rnd = randomInt(0, rep_ptr->prepended.count() - 1);
+                    rnd = randomInt(0, rep_ptr->prepended.size() - 1);
                 } while (vector_used.contains(rnd));
                 vector_used.append(rnd);
 
@@ -234,30 +236,30 @@ bool MedievalParser::replaceWord(ReplacementCheck *check, QString *rep_str, bool
             }
         }
 
-        rep_str->append(l_pool[randomInt(0, l_pool.count() - 1)]);
+        rep_str->append(l_pool[randomInt(0, l_pool.size() - 1)]);
 
         return true;
     }
 
     if (!symbols && !word_list_only) {
-        QChar fc = check->word[0];
+        const char16_t fc = check->word[0].unicode();
 
-        if (fc == 'h' && randomInt(1, 2) == 1) {
+        if (fc == u'h' && randomInt(1, 2) == 1) {
             *rep_str = check->word.replace(0, 1, "'");
             return true;
         }
 
-        QChar lc = check->word[check->word.length() - 1];
-        if (check->word.length() > 3) {
-            QChar slc = check->word[check->word.length() - 2];
-            QChar lllc = check->word[check->word.length() - 3];
+        const char16_t lc = check->word[check->word.size() - 1].unicode();
+        if (check->word.size() > 3) {
+            const char16_t slc = check->word[check->word.size() - 2].unicode();
+            const char16_t lllc = check->word[check->word.size() - 3].unicode();
 
-            if (slc == 'e' && lc == 'd' && lllc != 'e' && randomInt(1, 4) == 1) {
-                *rep_str = check->word.replace(check->word.length() - 2, 1, "'");
+            if (slc == u'e' && lc == u'd' && lllc != u'e' && randomInt(1, 4) == 1) {
+                *rep_str = check->word.replace(check->word.size() - 2, 1, "'");
                 return true;
             }
 
-            if (slc == 'k' && lc == 'e' && randomInt(1, 3) == 1) {
+            if (slc == u'k' && lc == u'e' && randomInt(1, 3) == 1) {
                 *rep_str = check->word;
                 if (randomInt(1, 2) == 1) {
                     rep_str->append("th");
@@ -269,35 +271,35 @@ bool MedievalParser::replaceWord(ReplacementCheck *check, QString *rep_str, bool
             }
         }
 
-        if (check->word.length() >= 3) {
-            QChar slc = check->word[check->word.length() - 2];
+        if (check->word.size() >= 3) {
+            const char16_t slc = check->word[check->word.size() - 2].unicode();
 
             if (randomInt(1, 5) == 1 &&
-                (lc == 't' || lc == 'p' || lc == 'k' || lc == 'g' || lc == 'b' || lc == 'w')) {
+                (lc == u't' || lc == u'p' || lc == u'k' || lc == u'g' || lc == u'b' || lc == u'w')) {
                 *rep_str = check->word;
                 rep_str->append("eth");
                 return true;
             }
 
-            if (lc == 's' && slc == 's' && randomInt(1, 5) == 1) {
+            if (lc == u's' && slc == u's' && randomInt(1, 5) == 1) {
                 *rep_str = check->word;
                 rep_str->append("est");
                 return true;
             }
         }
-        if (check->word.length() > 4) {
-            QChar slc = check->word[check->word.length() - 2];
-            QChar lllc = check->word[check->word.length() - 3];
-            if (lllc == 'i' && slc == 'n' && lc == 'g') {
-                QChar sc = check->word[2];
-                if (sc != '-') {
+        if (check->word.size() > 4) {
+            const char16_t slc = check->word[check->word.size() - 2].unicode();
+            const char16_t lllc = check->word[check->word.size() - 3].unicode();
+            if (lllc == u'i' && slc == u'n' && lc == u'g') {
+                const char16_t sc = check->word[2].unicode();
+                if (sc != u'-') {
                     rep_str->append("a-");
 
                     if (randomInt(1, 2) == 1) {
                         rep_str->append(check->word);
                     }
                     else {
-                        rep_str->append(check->word.replace(check->word.length() - 1, 2, "' "));
+                        rep_str->append(check->word.replace(check->word.size() - 1, 2, "' "));
                     }
                     return true;
                 }
@@ -311,15 +313,15 @@ bool MedievalParser::replaceWord(ReplacementCheck *check, QString *rep_str, bool
 bool MedievalParser::performReplacement(QString rep_str, ReplacementCheck *check, QString stored_word, QString *out_text)
 {
     if (!rep_str.isEmpty()) {
-        QChar fc = rep_str[0].toLower();
-        if (!qstrnicmp(check->prev_word.toStdString().c_str(), "an", qMax(check->prev_word.length() + 1, 2))) {
-            if (fc != 'a' && fc != 'e' && fc != 'i' && fc != 'o' && fc != 'u') {
+        const char16_t fc = rep_str[0].toLower().unicode();
+        if (!qstrnicmp(check->prev_word.toStdString().c_str(), "an", std::max<qsizetype>(check->prev_word.size() + 1, 2))) {
+            if (fc != u'a' && fc != u'e' && fc != u'i' && fc != u'o' && fc != u'u') {
                 stored_word.chop(2);
                 stored_word.append(' ');
             }
         }
         else if (check->prev_word == 'a') {
-            if (fc == 'a' || fc == 'e' || fc == 'i' || fc == 'o' || fc == 'u') {
+            if (fc == u'a' || fc == u'e' || fc == u'i' || fc == u'o' || fc == u'u') {
                 stored_word.append("n");
             }
         }
@@ -347,7 +349,7 @@ QString MedievalParser::modifySpeech(QString text, bool generate_pre_and_post, b
     int current_word_cur = 0;
     int cur = 0;
 
-    int text_len = text.length();
+    int text_len = text.size();
 
     QString stored_word = "";
     QString current_word = "";
@@ -367,7 +369,7 @@ QString MedievalParser::modifySpeech(QString text, bool generate_pre_and_post, b
         }
 
         int current_word_len = cur - current_word_cur;
-        int prev_word_len = qMax(0, (int)(current_word_cur - prev_word_cur) - 1);
+        int prev_word_len = std::max(0, (int)(current_word_cur - prev_word_cur) - 1);
         current_word = text.mid(current_word_cur, current_word_len);
         check.prev_word = text.mid(prev_word_cur, prev_word_len);
         check.used_prev_word = false;
@@ -381,7 +383,7 @@ QString MedievalParser::modifySpeech(QString text, bool generate_pre_and_post, b
         }
 
         if (skip_one_letter) {
-            check.word = current_word.mid(1, current_word.length() - 1);
+            check.word = current_word.mid(1, current_word.size() - 1);
         }
         else {
             check.word = current_word;
@@ -392,7 +394,7 @@ QString MedievalParser::modifySpeech(QString text, bool generate_pre_and_post, b
 
             if (changed && modify_word) {
                 if (!stored_word.isEmpty()) {
-                    int st_len = stored_word.length();
+                    int st_len = stored_word.size();
                     if (stored_word[st_len - 1] == '\'') {
                         check.word = stored_word;
                         check.word.append(current_word);
@@ -408,7 +410,7 @@ QString MedievalParser::modifySpeech(QString text, bool generate_pre_and_post, b
 
             if (!stored_word.isEmpty()) {
                 if (performReplacement(current_word, &check, stored_word, &final_text)) {
-                    int st_len = stored_word.length();
+                    int st_len = stored_word.size();
                     if (stored_word[st_len - 1] != '\'') {
                         final_text.append(" ");
                     }
@@ -462,11 +464,11 @@ QString MedievalParser::modifySpeech(QString text, bool generate_pre_and_post, b
 
     if (generate_pre_and_post) {
         if (!final_text.isEmpty()) {
-            QChar pszLC = final_text[final_text.length() - 1];
-            if (pszLC != '?' && pszLC != '!') {
+            const char16_t pszLC = final_text[final_text.size() - 1].unicode();
+            if (pszLC != u'?' && pszLC != u'!') {
                 QString post = randomPost();
                 if (!post.isEmpty()) {
-                    if (pszLC != '.') {
+                    if (pszLC != u'.') {
                         final_text.append(". ");
                     }
                     else {

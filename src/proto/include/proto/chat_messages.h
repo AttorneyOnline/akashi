@@ -24,7 +24,7 @@ class AKASHI_CORE_EXPORT OocMessage : public Message
 class AKASHI_CORE_EXPORT EvidenceDeleteMessage : public Message
 {
   public:
-    std::optional<int> index;
+    std::optional<int> index = std::nullopt;
 };
 
 // EE: the client rewrites one piece of evidence.

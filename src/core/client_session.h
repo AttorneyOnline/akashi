@@ -96,8 +96,8 @@ class AKASHI_CORE_EXPORT ClientSession : public QObject, public IPacketContext
     ITransport *transport = nullptr;
 
     // Outgoing packets held while the connection is down, sent once a new
-    // one binds. Bounded: when full the oldest is dropped and the overflow
-    // is recorded so a resume can tell the held sequence is incomplete.
+    // one binds. Bounded: when full the oldest is dropped, and the person
+    // is told about the gap when they reconnect.
     QQueue<Packet> pending_packets;
     bool pending_overflowed = false;
     int id = 0;
@@ -168,7 +168,7 @@ class AKASHI_CORE_EXPORT ClientSession : public QObject, public IPacketContext
     bool isJoined() const override;
     bool isAuthenticated() const override;
     void calculateIpid();
-    ServerContext *server();
+    ServerContext *server() const;
     int clientId() const override;
 
     QString name() const;
@@ -190,9 +190,8 @@ class AKASHI_CORE_EXPORT ClientSession : public QObject, public IPacketContext
     void sendServerBroadcast(QString message);
     void sendEvidenceList(Area *area) const;
     void updateEvidenceList(Area *area);
-    QString dezalgo(QString p_text);
-    bool canModifyEvidence(Area *area);
-    bool canModifyEvidence();
+    bool canModifyEvidence(Area *area) const;
+    bool canModifyEvidence() const;
     void sendFullArup();
     // The one door every character change goes through: person gates, the
     // character_changed before-rules, the area's uniqueness mechanism, the
@@ -219,7 +218,6 @@ class AKASHI_CORE_EXPORT ClientSession : public QObject, public IPacketContext
     QVariantMap runTransformRules(const QString &f_event, const QVariantMap &f_payload) override;
     void runAfterRule(const QString &f_event, const QVariantMap &f_payload = {}) override;
     void handleCommand(QString command, int argc, QStringList argv);
-    QString decodeMessage(QString incoming_message);
     void addStatement(QStringList packet);
     QStringList updateStatement(QStringList packet);
     void updateJudgeLog(Area *area, ClientSession *client, QString action);
@@ -316,11 +314,11 @@ class AKASHI_CORE_EXPORT ClientSession : public QObject, public IPacketContext
     void changePosition(QString f_new_pos);
     void closeSocket();
     bool isIcMessageAllowed() const override;
-    bool canActInArea() override;
+    bool canActInArea() const override;
     bool isImmediateForced() const override;
     QString areaSide() const override;
     QStringList lastAreaMessage() const override;
-    PairInfo resolvePair(int f_pair_id) override;
+    PairInfo resolvePair(int f_pair_id) const override;
     QStringList applyTestimony(const QStringList &f_fields) override;
     void broadcastIc(const QStringList &f_fields, int f_evidence_index) override;
     bool hasSong(const QString &f_name) const override;

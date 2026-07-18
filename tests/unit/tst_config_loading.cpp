@@ -16,7 +16,7 @@ class tst_ConfigLoading : public QObject
 {
     Q_OBJECT
 
-    typedef QMap<QString, QPair<QString, int>> MusicList;
+    typedef QMap<QString, std::pair<QString, int>> MusicList;
 
   private Q_SLOTS:
     void initTestCase();
@@ -33,6 +33,7 @@ class tst_ConfigLoading : public QObject
     void deprecatedSettingNamesRemapOrRefuse();
     void malformedAreaRulesFilesLoadNothing();
     void malformedMusicListLoadsNothing();
+    void malformedBanFilesWarnAndLoadNothing();
 
   private:
     akashi::ConfigStore *m_store = nullptr;
@@ -76,7 +77,7 @@ void tst_ConfigLoading::backgrounds()
 void tst_ConfigLoading::musiclist()
 {
     akashi::config::MusicCatalog l_catalog = akashi::config::loadMusicList(m_store->filePath("music.json"));
-    QPair<QString, int> l_contents;
+    std::pair<QString, int> l_contents;
 
     l_contents = l_catalog.songs.value("==Samplelist==");
     QCOMPARE(l_contents.first, "==Samplelist==");
@@ -118,8 +119,9 @@ void tst_ConfigLoading::iprangeBans()
 static QString writeAreasFile(QTemporaryDir &f_dir, const QByteArray &f_json)
 {
     const QString l_path = f_dir.filePath("areas.json");
+    // Fails the test here instead of returning a silent empty path.
     QFile l_file(l_path);
-    if (!l_file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+    if (!QTest::qVerify(l_file.open(QIODevice::WriteOnly | QIODevice::Text), "l_file.open(QIODevice::WriteOnly | QIODevice::Text)", qPrintable(l_path), __FILE__, __LINE__)) {
         return {};
     }
     l_file.write(f_json);
@@ -329,6 +331,32 @@ void tst_ConfigLoading::malformedMusicListLoadsNothing()
     const akashi::config::MusicCatalog l_missing = akashi::config::loadMusicList(l_dir.filePath("missing.json"));
     QVERIFY(l_missing.songs.isEmpty());
     QVERIFY(l_missing.ordered.isEmpty());
+}
+
+void tst_ConfigLoading::malformedBanFilesWarnAndLoadNothing()
+{
+    // A broken ipbans.json must warn instead of silently unbanning everyone.
+    QTemporaryDir l_dir;
+    const QString l_broken = writeAreasFile(l_dir, "{ this is not json");
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression("Unable to load IP range bans"));
+    QVERIFY(akashi::config::loadIpRangeBans(l_broken).isEmpty());
+
+    // Valid JSON that is not an object is refused the same way.
+    QTemporaryDir l_array_dir;
+    const QString l_array = writeAreasFile(l_array_dir, R"(["not", "an", "object"])");
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression("Unable to load IP range bans"));
+    QVERIFY(akashi::config::loadIpRangeBans(l_array).isEmpty());
+
+    // The same for the ASN ban list, which also skips non-numeric entries.
+    QTemporaryDir l_asn_dir;
+    const QString l_asn_broken = writeAreasFile(l_asn_dir, "{ this is not json");
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression("Unable to load banned ASNs"));
+    QVERIFY(akashi::config::loadBannedAsns(l_asn_broken).isEmpty());
+
+    QTemporaryDir l_mixed_dir;
+    const QString l_mixed = writeAreasFile(l_mixed_dir, R"({"asn": ["64512", "not-a-number"]})");
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression("not a number"));
+    QCOMPARE(akashi::config::loadBannedAsns(l_mixed), QList<quint32>({64512}));
 }
 
 }

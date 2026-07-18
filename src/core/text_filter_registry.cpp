@@ -28,6 +28,18 @@ void TextFilterRegistry::registerFilter(const QString &f_id, int f_order, TextFi
                                         bool f_always_active, const QString &f_owner,
                                         const QSet<TextChannel> &f_channels)
 {
+    // A text-only filter is a context filter that ignores the context.
+    registerFilter(f_id, f_order,
+                   ContextTextFilterFn([l_filter = std::move(f_filter)](const QString &f_text, const TextFilterContext &) {
+                       return l_filter(f_text);
+                   }),
+                   f_always_active, f_owner, f_channels);
+}
+
+void TextFilterRegistry::registerFilter(const QString &f_id, int f_order, ContextTextFilterFn f_filter,
+                                        bool f_always_active, const QString &f_owner,
+                                        const QSet<TextChannel> &f_channels)
+{
     AKASHI_ASSERT_OWNER_THREAD();
     // An id registers once; a duplicate would shadow or double an existing
     // filter while the id stays in the first owner's unregisterAll sweep.
@@ -57,17 +69,22 @@ void TextFilterRegistry::unregisterAll(const QString &f_owner)
 
 std::optional<QString> TextFilterRegistry::apply(const QString &f_text,
                                                  const QSet<QString> &f_active_ids,
-                                                 TextChannel f_channel) const
+                                                 TextChannel f_channel,
+                                                 const TextFilterContext &f_context) const
 {
     AKASHI_ASSERT_OWNER_THREAD();
     QString l_text = f_text;
-    for (const auto &l_entry : m_entries) {
+    // Iterate a snapshot so a filter may register or unregister a filter
+    // mid-message without invalidating the list under us; the change takes
+    // effect from the next message on.
+    const QList<Entry> l_entries = m_entries;
+    for (const auto &l_entry : l_entries) {
         if (!l_entry.channels.contains(f_channel))
             continue;
         if (!l_entry.always_active && !f_active_ids.contains(l_entry.id))
             continue;
 
-        auto l_result = l_entry.filter(l_text);
+        auto l_result = l_entry.filter(l_text, f_context);
         if (!l_result)
             return std::nullopt;
         l_text = *l_result;
@@ -78,9 +95,12 @@ std::optional<QString> TextFilterRegistry::apply(const QString &f_text,
 std::optional<QString> TextFilterRegistry::applyFilter(const QString &f_id, const QString &f_text) const
 {
     AKASHI_ASSERT_OWNER_THREAD();
-    for (const auto &l_entry : m_entries) {
+    // Snapshot so the matched filter may register or unregister a filter
+    // while it runs without freeing the entry out from under this call.
+    const QList<Entry> l_entries = m_entries;
+    for (const auto &l_entry : l_entries) {
         if (l_entry.id == f_id)
-            return l_entry.filter(f_text);
+            return l_entry.filter(f_text, {});
     }
     return f_text;
 }

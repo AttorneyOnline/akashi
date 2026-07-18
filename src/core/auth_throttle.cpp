@@ -34,15 +34,18 @@ int AuthThrottle::remainingLockoutSeconds(const QString &f_ipid) const
 
 void AuthThrottle::recordFailure(const QString &f_ipid)
 {
+    prune();
     AttemptRecord &l_record = m_attempts[f_ipid];
     if (l_record.locked_out && l_record.lockout_until.hasExpired()) {
         l_record.failed_count = 0;
         l_record.locked_out = false;
     }
     l_record.failed_count++;
+    l_record.stale_after = QDeadlineTimer(m_lockout_seconds * 1000);
     if (l_record.failed_count >= m_max_attempts) {
         l_record.lockout_until = QDeadlineTimer(m_lockout_seconds * 1000);
         l_record.locked_out = true;
+        l_record.stale_after = l_record.lockout_until;
     }
 }
 
@@ -54,6 +57,15 @@ void AuthThrottle::recordSuccess(const QString &f_ipid)
 void AuthThrottle::reset(const QString &f_ipid)
 {
     m_attempts.remove(f_ipid);
+}
+
+void AuthThrottle::prune()
+{
+    // Stale records influence nothing, so drop them - otherwise the map
+    // grows by one permanent entry per ipid that ever failed a login.
+    m_attempts.removeIf([](const std::pair<const QString &, AttemptRecord &> &f_entry) {
+        return f_entry.second.stale_after.hasExpired();
+    });
 }
 
 } // namespace akashi

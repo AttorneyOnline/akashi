@@ -229,7 +229,7 @@ void PluginManager::loadDiscoveredScripts()
 
 void PluginManager::shutdownAll()
 {
-    QList<QString> l_reverse = m_load_order;
+    QStringList l_reverse = m_load_order;
     std::reverse(l_reverse.begin(), l_reverse.end());
 
     for (const QString &l_id : std::as_const(l_reverse)) {
@@ -297,6 +297,7 @@ bool PluginManager::loadPlugin(const QString &f_id)
             l_entry.info.file_path = l_manifest.file_path;
             l_entry.info.dependencies = l_manifest.dependencies;
             l_entry.info.services = l_manifest.services;
+            l_entry.info.about = l_manifest.about;
             l_found = true;
             break;
         }
@@ -380,7 +381,7 @@ bool PluginManager::loadPlugin(const QString &f_id)
 // operator can see at a glance which plugins weigh on startup.
 void PluginManager::reportBootTimes()
 {
-    QList<QPair<QString, qint64>> l_booted;
+    QList<std::pair<QString, qint64>> l_booted;
     qint64 l_total = 0;
     for (auto it = m_plugins.constBegin(); it != m_plugins.constEnd(); ++it) {
         if (it.value().info.state == PluginInfo::State::Started) {
@@ -475,6 +476,26 @@ std::optional<PluginInfo> PluginManager::pluginInfo(const QString &f_id) const
     return it.value().info;
 }
 
+void PluginManager::registerAbout(const QString &f_plugin_id, const QString &f_text)
+{
+    auto it = m_plugins.find(f_plugin_id);
+    if (it == m_plugins.end() || f_text.isEmpty()) {
+        qCWarning(akashiPlugins) << "Refused about text for" << f_plugin_id << "- no such plugin or empty text";
+        return;
+    }
+    it.value().info.about = f_text;
+}
+
+QMap<QString, QString> PluginManager::abouts() const
+{
+    QMap<QString, QString> l_abouts;
+    for (auto it = m_plugins.cbegin(); it != m_plugins.cend(); ++it) {
+        if (it.value().isActive() && !it.value().info.about.isEmpty())
+            l_abouts.insert(it.key(), it.value().info.about);
+    }
+    return l_abouts;
+}
+
 bool PluginManager::discover(const QStringList &f_allowlist)
 {
     QDir l_dir(m_plugin_dir);
@@ -551,6 +572,8 @@ bool PluginManager::discover(const QStringList &f_allowlist)
         const QJsonArray l_svcs = l_md.value(QStringLiteral("services")).toArray();
         for (const auto &l_val : l_svcs)
             l_info.services.append(l_val.toString());
+
+        l_info.about = l_md.value(QStringLiteral("about")).toString();
 
         PluginEntry l_entry;
         l_entry.info = l_info;
@@ -650,6 +673,8 @@ std::optional<PluginInfo> PluginManager::parseScriptHeader(const QString &f_file
     for (const auto &l_val : l_svcs) {
         l_info.services.append(l_val.toString());
     }
+
+    l_info.about = l_md.value(QStringLiteral("about")).toString();
 
     return l_info;
 }

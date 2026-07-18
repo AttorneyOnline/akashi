@@ -69,7 +69,9 @@ void WriterSql::writeConnection(const LogEvent &f_event)
     m_insert_connection->bindValue(3, f_event.hwid.isEmpty() ? QVariant() : f_event.hwid);
     m_insert_connection->bindValue(4, f_event.client_id.isEmpty() ? QVariant() : f_event.client_id);
     m_insert_connection->bindValue(5, f_event.target_ipid.isEmpty() ? QVariant() : f_event.target_ipid);
-    m_insert_connection->exec();
+    if (!m_insert_connection->exec()) {
+        qCWarning(akashiLog) << "WriterSql: connection row dropped:" << m_insert_connection->lastError().text();
+    }
 }
 
 void WriterSql::writeEvent(const LogEvent &f_event)
@@ -95,7 +97,9 @@ void WriterSql::writeEvent(const LogEvent &f_event)
     m_insert_event->bindValue(12, f_event.target_ipid.isEmpty() ? QVariant() : f_event.target_ipid);
     m_insert_event->bindValue(13, f_event.duration.isEmpty() ? QVariant() : f_event.duration);
     m_insert_event->bindValue(14, f_event.success ? 1 : 0);
-    m_insert_event->exec();
+    if (!m_insert_event->exec()) {
+        qCWarning(akashiLog) << "WriterSql: event row dropped:" << m_insert_event->lastError().text();
+    }
 }
 
 void WriterSql::flush()
@@ -299,7 +303,7 @@ int WriterSql::identityId(const QString &f_ipid, const QString &f_hwid)
     // NULL: the NOT NULL column rejects it, OR IGNORE swallows the error,
     // and the lookup below never matches - so store an empty one instead.
     const QString l_hwid = f_hwid.isNull() ? QStringLiteral("") : f_hwid;
-    const auto l_key = qMakePair(f_ipid, l_hwid);
+    const auto l_key = std::make_pair(f_ipid, l_hwid);
     auto l_it = m_identity_cache.constFind(l_key);
     if (l_it != m_identity_cache.constEnd()) {
         return l_it.value();

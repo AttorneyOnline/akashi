@@ -1,0 +1,7 @@
+{
+    "id": "akashi.modbot",
+    "version": "1.0.0",
+    "about": "The automated moderator watching for floods and spam, by the akashi dev team.",
+    "dependencies": [],
+    "services": ["akashi.textfilters", "akashi.rules", "akashi.players", "akashi.moderation", "akashi.config", "akashi.database", "akashi.log"]
+}

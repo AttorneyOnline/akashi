@@ -2,6 +2,7 @@
 
 #include "world/jukebox.h"
 
+#include <QHash>
 #include <QSettings>
 #include <QTimer>
 
@@ -208,7 +209,7 @@ void Area::setStatus(const QString &f_status)
 std::optional<QString> Area::canonicalStatus(const QString &f_name)
 {
     // The known names keep their exact old spellings on the wire.
-    static const QMap<QString, QString> s_statuses = {
+    static const QHash<QString, QString> s_statuses = {
         {QStringLiteral("idle"), QStringLiteral("IDLE")},
         {QStringLiteral("rp"), QStringLiteral("RP")},
         {QStringLiteral("casing"), QStringLiteral("CASING")},
@@ -286,10 +287,10 @@ void Area::changeAmbience(const QString &f_new_song)
 void Area::changeHP(Side f_side, int f_new_hp)
 {
     if (f_side == Side::DEFENCE) {
-        m_def_hp = std::min(std::max(0, f_new_hp), 10);
+        m_def_hp = std::clamp(f_new_hp, 0, 10);
     }
     else if (f_side == Side::PROSECUTOR) {
-        m_pro_hp = std::min(std::max(0, f_new_hp), 10);
+        m_pro_hp = std::clamp(f_new_hp, 0, 10);
     }
 }
 
@@ -312,14 +313,11 @@ bool Area::addNotecard(const QString &f_owner, const QString &f_notecard)
     return true;
 }
 
-QStringList Area::notecards()
+QStringList Area::takeNotecards()
 {
-    QMapIterator<QString, QString> l_iterator(m_notecards);
     QStringList l_notecards;
-
-    while (l_iterator.hasNext()) {
-        l_iterator.next();
-        l_notecards << l_iterator.key() << ": " << l_iterator.value() << "\n";
+    for (auto l_it = m_notecards.constBegin(); l_it != m_notecards.constEnd(); ++l_it) {
+        l_notecards << l_it.key() << ": " << l_it.value() << "\n";
     }
 
     m_notecards.clear();

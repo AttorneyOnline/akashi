@@ -29,7 +29,9 @@
 #include <QPointer>
 #include <QQueue>
 
+#include <algorithm>
 #include <functional>
+#include <tuple>
 
 // How many outbound packets a session holds while its connection is down. Bounded
 // so a session nobody deletes cannot hoard memory; a full buffer drops the
@@ -108,6 +110,13 @@ void ClientSession::bindTransport(ITransport *f_transport)
     while (!pending_packets.isEmpty() && transport->isOpen()) {
         transport->write(pending_packets.dequeue());
     }
+    if (pending_overflowed) {
+        pending_overflowed = false;
+        // A server-less test session has no nickname to speak with.
+        if (m_server) {
+            sendServerMessage("Some messages sent while your connection was down were lost.");
+        }
+    }
 }
 
 void ClientSession::leave()
@@ -177,7 +186,13 @@ void ClientSession::handlePacket(const akashi::Packet &packet)
         return;
     }
 
-    if (packet.fields().join("").size() > 16384) {
+    // Sum the field lengths instead of joining them into a throwaway string.
+    const QStringList &l_size_fields = packet.fields();
+    qsizetype l_payload_length = 0;
+    for (const QString &l_field : l_size_fields) {
+        l_payload_length += l_field.size();
+    }
+    if (l_payload_length > 16384) {
         return;
     }
 
@@ -431,7 +446,7 @@ std::optional<QString> ClientSession::takeCharacter(int f_char_id, bool f_announ
     // their DONE even when the curse gate holds the release, exactly as
     // their old manual sends did.
     if (f_char_id < 0) {
-        std::optional<QString> l_refused;
+        std::optional<QString> l_refused = std::nullopt;
         if (isCharCursed() && !charcurse_list.contains(f_char_id)) {
             l_refused = QString();
         }
@@ -497,49 +512,49 @@ void ClientSession::handleCommand(QString command, int argc, QStringList argv)
 {
     command = command.toLower();
 
-    // New registry path: if the command is registered, run through the new dispatch.
+    // One lookup resolves the alias, the spec and the handler together.
     akashi::CommandRegistry *l_registry = m_server->commandRegistry();
-    if (l_registry && l_registry->contains(command)) {
-        if (auto l_spec = l_registry->spec(command)) {
-            // A variant command carries its gates per argument shape; the
-            // matched form decides which permissions apply and what runs.
-            const akashi::CommandVariant *l_variant = l_spec->match(argc);
-            if (!l_spec->variants.isEmpty() && !l_variant) {
-                sendServerMessage("Invalid command syntax.");
-                if (!l_spec->usage.isEmpty()) {
-                    sendServerMessage("The expected syntax for this command is: \n" + l_spec->usage);
-                }
-                return;
-            }
+    const auto l_command = l_registry ? l_registry->lookup(command) : std::nullopt;
+    if (!l_command) {
+        sendServerMessage("Invalid command.");
+        return;
+    }
+    const akashi::CommandSpec &l_spec = l_command->spec;
 
-            // Permission check: any-of the listed permissions must pass.
-            // The same gate CommandRegistry::canUse answers /commands with.
-            const QStringList l_permissions = l_variant ? l_variant->permissions : l_spec->permissions;
-            if (!akashi::CommandRegistry::passesAnyOf(l_permissions, [this](const QString &f_permission) { return canPerform(f_permission); })) {
-                sendServerMessage("You do not have permission to use that command.");
-                return;
-            }
-
-            if (!l_variant && argc < l_spec->min_args) {
-                sendServerMessage("Invalid command syntax.");
-                if (!l_spec->usage.isEmpty()) {
-                    sendServerMessage("The expected syntax for this command is: \n" + l_spec->usage);
-                }
-                return;
-            }
-
-            akashi::CommandContext l_context(this, m_server, argv);
-            if (l_variant) {
-                l_variant->handler(l_context);
-            }
-            else {
-                l_registry->handler(command)(l_context);
-            }
-            return;
+    // A variant command carries its gates per argument shape; the
+    // matched form decides which permissions apply and what runs.
+    const akashi::CommandVariant *l_variant = l_spec.match(argc);
+    if (!l_spec.variants.isEmpty() && !l_variant) {
+        sendServerMessage("Invalid command syntax.");
+        if (!l_spec.usage.isEmpty()) {
+            sendServerMessage("The expected syntax for this command is: \n" + l_spec.usage);
         }
+        return;
     }
 
-    sendServerMessage("Invalid command.");
+    // Permission check: any-of the listed permissions must pass.
+    // The same gate CommandRegistry::canUse answers /commands with.
+    const QStringList l_permissions = l_variant ? l_variant->permissions : l_spec.permissions;
+    if (!akashi::CommandRegistry::passesAnyOf(l_permissions, [this](const QString &f_permission) { return canPerform(f_permission); })) {
+        sendServerMessage("You do not have permission to use that command.");
+        return;
+    }
+
+    if (!l_variant && argc < l_spec.min_args) {
+        sendServerMessage("Invalid command syntax.");
+        if (!l_spec.usage.isEmpty()) {
+            sendServerMessage("The expected syntax for this command is: \n" + l_spec.usage);
+        }
+        return;
+    }
+
+    akashi::CommandContext l_context(this, m_server, argv);
+    if (l_variant) {
+        l_variant->handler(l_context);
+    }
+    else {
+        l_command->handler(l_context);
+    }
 }
 
 void ClientSession::sendPacket(const akashi::Packet &packet)
@@ -614,7 +629,7 @@ bool ClientSession::isAuthenticated() const
     return authenticated;
 }
 
-ServerContext *ClientSession::server()
+ServerContext *ClientSession::server() const
 {
     return m_server;
 }
@@ -921,7 +936,7 @@ void ClientSession::broadcastOoc(const QString &f_message)
                                  .message = f_message});
 }
 
-bool ClientSession::canModifyEvidence()
+bool ClientSession::canModifyEvidence() const
 {
     return canModifyEvidence(m_server->areaById(areaId()));
 }
@@ -1061,7 +1076,12 @@ std::optional<QString> ClientSession::applyTextFilters(const QString &f_text, ak
 {
     // The area's medieval mode is no personal sanction: the apply_medieval
     // transform rule reads that knob.
-    return m_server->textFilterRegistry()->apply(f_text, sanctions, f_channel);
+    akashi::TextFilterContext l_context;
+    l_context.client_session_id = clientId();
+    l_context.player_state_id = player() ? player()->id() : -1;
+    l_context.ipid = ipid();
+    l_context.channel = f_channel;
+    return m_server->textFilterRegistry()->apply(f_text, sanctions, f_channel, l_context);
 }
 
 bool ClientSession::isAfk() const
@@ -1194,7 +1214,7 @@ bool ClientSession::isIcMessageAllowed() const
     return m_server->areaById(areaId())->isMessageAllowed() && m_server->isMessageAllowed();
 }
 
-bool ClientSession::canActInArea()
+bool ClientSession::canActInArea() const
 {
     akashi::Area *l_area = m_server->areaById(areaId());
     return !(l_area->lockState() == akashi::Area::LockState::Spectatable && !l_area->invited().contains(clientId()) && !canPerform(permission::bypass_locks));
@@ -1215,7 +1235,7 @@ QStringList ClientSession::lastAreaMessage() const
     return m_server->areaById(areaId())->lastICMessage();
 }
 
-akashi::PairInfo ClientSession::resolvePair(int f_pair_id)
+akashi::PairInfo ClientSession::resolvePair(int f_pair_id) const
 {
     // A pure query over committed state: the sender's own request commits
     // through setPairingWith with the rest of the message.
@@ -1263,7 +1283,7 @@ QStringList ClientSession::applyTestimony(const QStringList &f_fields)
         l_args = updateStatement(l_args);
     }
     else if (l_state == State::Playback) {
-        std::optional<QPair<akashi::Statement, akashi::TestimonyRecorder::Playback>> l_jump;
+        std::optional<std::pair<akashi::Statement, akashi::TestimonyRecorder::Playback>> l_jump = std::nullopt;
         bool l_navigating = false;
 
         static const QRegularExpression s_jump("(?<arrow>>|<)(?<int>\\d+)");
@@ -1350,7 +1370,7 @@ void ClientSession::addStatement(QStringList packet)
         // Behind the current statement; never before the title, which the
         // old code got wrong and displaced the title with.
         l_statement.setTextColor("1");
-        l_recorder->insert(qMax(l_recorder->statementIndex(), 0) + 1, l_statement);
+        l_recorder->insert(std::max(l_recorder->statementIndex(), 0) + 1, l_statement);
         l_recorder->setState(State::Playback);
     }
 }
@@ -1665,7 +1685,7 @@ bool ClientSession::isWtceBlocked() const
 
 bool ClientSession::startWtceCooldown()
 {
-    const qint64 l_now = QDateTime::currentDateTime().toSecsSinceEpoch();
+    const qint64 l_now = QDateTime::currentSecsSinceEpoch();
     if (l_now - last_wtce_time <= 5) {
         return false;
     }
@@ -1873,12 +1893,7 @@ void ClientSession::updateEvidenceList(akashi::Area *area)
     sendPacket(akashi::Packet("LE", l_evidence_list));
 }
 
-QString ClientSession::dezalgo(QString p_text)
-{
-    return akashi::stripZalgo(p_text);
-}
-
-bool ClientSession::canModifyEvidence(akashi::Area *area)
+bool ClientSession::canModifyEvidence(akashi::Area *area) const
 {
     switch (area->evidenceAccess()) {
     case akashi::EvidenceStore::Access::FreeForAll:
@@ -1902,15 +1917,6 @@ void ClientSession::updateJudgeLog(akashi::Area *area, ClientSession *client, QS
     QString l_message = action;
     QString l_logmessage = QString("[%1]: [%2] %3 (%4) %5").arg(l_timestamp, l_uid, l_char_name, l_ipid, l_message);
     area->appendJudgelog(l_logmessage);
-}
-
-QString ClientSession::decodeMessage(QString incoming_message)
-{
-    QString decoded_message = incoming_message.replace("<num>", "#")
-                                  .replace("<percent>", "%")
-                                  .replace("<dollar>", "$")
-                                  .replace("<and>", "&");
-    return decoded_message;
 }
 
 // The prompt speaks only the two core dialects; /login refuses to open it
@@ -1970,7 +1976,11 @@ void ClientSession::onAuthOutcome(const akashi::AuthOutcome &f_outcome)
         acl_role_id = f_outcome.acl_role_id;
         moderator_name = f_outcome.moderator_name;
         sendPacket("AUTH", {"1"});
-        if (m_profile.version.release <= 2 && m_profile.version.major <= 9 && m_profile.version.minor <= 0)
+        // Clients before 2.9.1 do not display the AUTH result themselves,
+        // so they get the text notice. Compare the whole version, not each
+        // component: 2.8.4 is older than 2.9.0 even though its minor is
+        // higher.
+        if (std::tie(m_profile.version.release, m_profile.version.major, m_profile.version.minor) <= std::make_tuple(2, 9, 0))
             sendServerMessage("Logged in as a moderator.");
         if (!f_outcome.message.isEmpty())
             sendServerMessage(f_outcome.message);

@@ -62,7 +62,7 @@ void tst_DiscordHook::postDeliversTheJsonPayload()
     QCOMPARE(l_embeds.first().toObject().value(QStringLiteral("title")).toString(), QStringLiteral("Modcall"));
 
     // The 204 comes back and the hook has nothing to complain about.
-    QTRY_COMPARE(l_finished.count(), 1);
+    QTRY_COMPARE(l_finished.size(), 1);
 }
 
 void tst_DiscordHook::postDeliversMultipartWithPayloadAndFile()
@@ -95,7 +95,7 @@ void tst_DiscordHook::postDeliversMultipartWithPayloadAndFile()
     QVERIFY(l_request->body.contains("name=\"payload_json\""));
     QVERIFY(l_request->body.contains("Ban issued"));
 
-    QTRY_COMPARE(l_finished.count(), 1);
+    QTRY_COMPARE(l_finished.size(), 1);
 }
 
 void tst_DiscordHook::invalidUrlSendsNothing()
@@ -126,7 +126,7 @@ void tst_DiscordHook::failureResponseIsLogged()
     l_message.setRequestUrl(l_receiver.url().toString()).setContent(QStringLiteral("hello"));
     l_hook.post(l_message);
 
-    QTRY_COMPARE(l_finished.count(), 1);
+    QTRY_COMPARE(l_finished.size(), 1);
 }
 
 }

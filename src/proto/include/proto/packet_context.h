@@ -150,7 +150,7 @@ class AKASHI_CORE_EXPORT IPacketContext
 
     // In-character chat: the area's rules and state.
     virtual bool isIcMessageAllowed() const = 0;
-    virtual bool canActInArea() = 0;
+    virtual bool canActInArea() const = 0;
     virtual bool isImmediateForced() const = 0;
     virtual QString areaSide() const = 0;
     virtual QStringList lastAreaMessage() const = 0;
@@ -163,7 +163,7 @@ class AKASHI_CORE_EXPORT IPacketContext
     virtual void setPairingWith(int f_char_id) = 0;
     // A pure query: finds the partner whose committed pair request points
     // back at the sender on the same position. Commits nothing.
-    virtual PairInfo resolvePair(int f_pair_id) = 0;
+    virtual PairInfo resolvePair(int f_pair_id) const = 0;
     virtual QStringList applyTestimony(const QStringList &f_fields) = 0;
     virtual void broadcastIc(const QStringList &f_fields, int f_evidence_index) = 0;
 

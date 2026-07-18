@@ -2,12 +2,19 @@
 #include "akashi/scheduler.h"
 
 #include "akashi/logging_categories.h"
+#include "akashi/thread_assert.h"
 
 #include <QDebug>
 #include <QRegularExpression>
 #include <QTimer>
 
+#include <algorithm>
+
 namespace akashi {
+
+// Timestamp policy: schedules are wall-clock local time by design - an
+// operator's "daily 04:00" means 04:00 on the server's clock, across DST
+// changes. Instants elsewhere use epoch seconds (currentSecsSinceEpoch).
 
 // Due jobs postponed by their check retry this much later.
 static const int POSTPONE_MSECS = 30 * 60 * 1000;
@@ -194,6 +201,10 @@ ServiceVersion Scheduler::serviceVersion() const
 bool Scheduler::schedule(const QString &f_id, const Schedule &f_schedule, std::function<void()> f_action,
                          const QString &f_owner_id, const std::function<bool()> &f_postpone)
 {
+    // Main-thread only: m_jobs and the QTimer carry no lock, and QTimer must
+    // be driven from its owning thread. A worker-thread plugin must marshal
+    // its scheduling calls to the main thread.
+    AKASHI_ASSERT_THREAD_AFFINITY();
     if (f_id.isEmpty() || !f_schedule.isValid() || !f_action) {
         return false;
     }
@@ -216,18 +227,21 @@ bool Scheduler::schedule(const QString &f_id, const Schedule &f_schedule, std::f
 
 void Scheduler::cancel(const QString &f_id)
 {
+    AKASHI_ASSERT_THREAD_AFFINITY();
     m_jobs.removeIf([&f_id](const Job &f_job) { return f_job.id == f_id; });
     rearm();
 }
 
 void Scheduler::cancelAll(const QString &f_owner_id)
 {
+    AKASHI_ASSERT_THREAD_AFFINITY();
     m_jobs.removeIf([&f_owner_id](const Job &f_job) { return f_job.owner_id == f_owner_id; });
     rearm();
 }
 
 std::optional<QDateTime> Scheduler::nextRunAt(const QString &f_id) const
 {
+    AKASHI_ASSERT_THREAD_AFFINITY();
     for (const Job &l_job : m_jobs) {
         if (l_job.id == f_id) {
             return l_job.next_due;
@@ -238,6 +252,7 @@ std::optional<QDateTime> Scheduler::nextRunAt(const QString &f_id) const
 
 bool Scheduler::runNow(const QString &f_id)
 {
+    AKASHI_ASSERT_THREAD_AFFINITY();
     for (int i = 0; i < m_jobs.size(); i++) {
         if (m_jobs[i].id != f_id) {
             continue;
@@ -303,7 +318,7 @@ void Scheduler::rearm()
             l_soonest = l_job.next_due;
         }
     }
-    const qint64 l_wait = qBound(qint64(0), l_now.msecsTo(l_soonest), MAX_ARM_MSECS);
+    const qint64 l_wait = std::clamp(l_now.msecsTo(l_soonest), qint64(0), MAX_ARM_MSECS);
     m_timer->start(int(l_wait));
 }
 

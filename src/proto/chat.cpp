@@ -47,7 +47,11 @@ class EvidenceEditCodec : public Codec
     std::unique_ptr<Message> decode(const Packet &f_packet) const override
     {
         auto l_message = std::make_unique<EvidenceEditMessage>();
-        l_message->index = f_packet.field(0).toInt();
+        bool l_ok;
+        const int l_index = f_packet.field(0).toInt(&l_ok);
+        if (l_ok) {
+            l_message->index = l_index;
+        }
         l_message->name = f_packet.field(1);
         l_message->description = f_packet.field(2);
         l_message->image = f_packet.field(3);
@@ -97,7 +101,7 @@ class OocHandler : public PacketHandler
             return;
         }
 
-        if (l_name.length() > 30) {
+        if (l_name.size() > 30) {
             f_context.sendServerMessage("Your name is too long! Please limit it to under 30 characters.");
             return;
         }
@@ -110,7 +114,7 @@ class OocHandler : public PacketHandler
         }
 
         QString l_message = stripZalgo(l_ooc.message);
-        if (l_message.length() == 0 || l_message.length() > f_context.maxMessageLength()) {
+        if (l_message.size() == 0 || l_message.size() > f_context.maxMessageLength()) {
             return;
         }
 

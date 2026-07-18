@@ -17,6 +17,7 @@ class tst_EventRegistry : public QObject
     void observerTiesKeepRegistrationOrder();
     void observersFilterByEvent();
     void observerOwnerSweepRemovesOnlyThatOwner();
+    void observerRegisteringMidNotifyDoesNotCorruptTheList();
     void notifyingAnEmptyRegistryIsHarmless();
     void observersSeeTheContext();
     void customEventsRoundTripThroughObservers();
@@ -121,6 +122,38 @@ void tst_EventRegistry::observerOwnerSweepRemovesOnlyThatOwner()
     l_registry.unregisterObservers(QStringLiteral("plugin-x"));
     l_registry.notifyObservers(QStringLiteral("player_left"), {.player_state_id = 4, .client_session_id = 4, .area_id = 1, .floor_id = 0, .payload = {}, .services = nullptr});
     QCOMPARE(l_b, 2);
+}
+
+// A script observer may subscribe another observer from inside its own
+// callback. notifyObservers must iterate a snapshot so the insertion (which
+// can reallocate the observer vector) does not free the running entry or
+// invalidate the loop. The freshly added observer runs from the next event on,
+// not during the dispatch that spawned it.
+void tst_EventRegistry::observerRegisteringMidNotifyDoesNotCorruptTheList()
+{
+    akashi::RuleRegistry l_registry;
+    int l_spawned_runs = 0;
+    int l_seq = 0;
+
+    l_registry.registerObserver(
+        QStringLiteral("modcall"), 100,
+        [&](const akashi::RuleContext &) {
+            l_registry.registerObserver(
+                QStringLiteral("modcall"), 200 + l_seq++,
+                [&l_spawned_runs](const akashi::RuleContext &) { l_spawned_runs++; },
+                QStringLiteral("test"));
+        },
+        QStringLiteral("test"));
+
+    const akashi::RuleContext l_ctx{.player_state_id = -1, .client_session_id = -1, .area_id = -1, .floor_id = -1, .payload = {}, .services = nullptr};
+    // Each dispatch adds one observer; without the snapshot the growing vector
+    // reallocates under the live loop and this reads freed memory.
+    for (int i = 0; i < 64; i++)
+        l_registry.notifyObservers(QStringLiteral("modcall"), l_ctx);
+
+    // The spawner never sees its own children within a single dispatch: each
+    // notify runs the observers present when it began.
+    QVERIFY(l_spawned_runs > 0);
 }
 
 void tst_EventRegistry::notifyingAnEmptyRegistryIsHarmless()

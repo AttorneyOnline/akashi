@@ -19,6 +19,7 @@ class tst_ClientSession : public QObject
     void rebindReplaysPendingInOrder();
     void bufferIsBoundedAndRecordsOverflow();
     void overflowBeginsExactlyBeyondTheLimit();
+    void rebindClearsTheOverflowRecordOnce();
     void rebindReplacesAndDeletesOldTransport();
     void rebindToClosedTransportKeepsThePending();
     void forwardsTransportSignals();
@@ -104,6 +105,25 @@ void tst_ClientSession::overflowBeginsExactlyBeyondTheLimit()
     QCOMPARE(l_session.pending_packets.size(), 512);
     QVERIFY(l_session.pending_overflowed);
     QCOMPARE(l_session.pending_packets.head().fields()[1], QString("1"));
+}
+
+void tst_ClientSession::rebindClearsTheOverflowRecordOnce()
+{
+    // On a live server the rebind also tells the person about the gap; the
+    // record must reset with it, so only the rebind after THIS overflow
+    // speaks. A server-less session skips the message but keeps the reset.
+    FakeTransport *l_transport = new FakeTransport(false);
+    akashi::ClientSession l_session(nullptr, l_transport, 1);
+
+    for (int i = 0; i < 513; i++) {
+        l_session.write(akashi::Packet("CT", {"server", QString::number(i)}));
+    }
+    QVERIFY(l_session.pending_overflowed);
+
+    FakeTransport *l_replacement = new FakeTransport(true);
+    l_session.bindTransport(l_replacement);
+    QCOMPARE(l_replacement->written.size(), 512);
+    QVERIFY(!l_session.pending_overflowed);
 }
 
 void tst_ClientSession::rebindReplacesAndDeletesOldTransport()

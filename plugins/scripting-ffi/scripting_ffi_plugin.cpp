@@ -514,9 +514,14 @@ static const char *ffiConfigGet(const char *f_owner_id, size_t f_owner_id_length
     if (l_settings && l_settings->contains(l_key)) {
         return stringReturn(l_settings->value(l_key).toString(), f_out_length);
     }
-    for (const akashi::ConfigEntry &l_entry : std::as_const(s_declared_config[l_owner])) {
-        if (l_entry.key() == l_key) {
-            return stringReturn(s_config->value(l_name, l_key).toString(), f_out_length);
+    // constFind, not operator[]: a read must not grow the hash with an
+    // empty list for every owner that never declared config.
+    const auto l_declared = s_declared_config.constFind(l_owner);
+    if (l_declared != s_declared_config.constEnd()) {
+        for (const akashi::ConfigEntry &l_entry : *l_declared) {
+            if (l_entry.key() == l_key) {
+                return stringReturn(s_config->value(l_name, l_key).toString(), f_out_length);
+            }
         }
     }
     return stringReturn(l_fallback, f_out_length);
@@ -972,8 +977,15 @@ static int ffiAreaSet(int f_area_id, const char *f_key, size_t f_key_length,
         l_typed = l_value == QStringLiteral("true") || l_value == QStringLiteral("1");
         break;
     case QMetaType::Int:
-        l_typed = l_value.toInt();
+    {
+        bool l_ok;
+        const int l_number = l_value.toInt(&l_ok);
+        if (!l_ok) {
+            return 0;
+        }
+        l_typed = l_number;
         break;
+    }
     default:
         l_typed = l_value;
         break;

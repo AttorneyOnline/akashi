@@ -26,11 +26,16 @@ class AKASHI_CORE_EXPORT AuthThrottle
     void reset(const QString &f_ipid);
 
   private:
+    void prune();
+
     struct AttemptRecord
     {
         int failed_count = 0;
         bool locked_out = false;
         QDeadlineTimer lockout_until;
+        // When the record stops mattering: failures decay after a quiet
+        // lockout window, an ended lockout resets on its next failure anyway.
+        QDeadlineTimer stale_after;
     };
 
     QHash<QString, AttemptRecord> m_attempts;

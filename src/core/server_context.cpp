@@ -49,6 +49,7 @@
 #include "core/discord_hook.h"
 #include "core/log_service.h"
 #include "core/medieval_parser.h"
+#include "core/moderation_service.h"
 #include "core/permission_registry.h"
 #include "core/plugin_manager.h"
 #include "core/rule_actions.h"
@@ -78,8 +79,10 @@
 #include <QJsonObject>
 #include <QRandomGenerator>
 #include <QRegularExpression>
+#include <QSet>
 #include <QTextStream>
 
+#include <algorithm>
 #include <utility>
 
 static bool fileExists(const QFileInfo &f) { return f.exists() && f.isFile(); }
@@ -111,7 +114,7 @@ static bool verifyServerConfig(akashi::ConfigStore *f_store, ServerSettings *f_s
         }
     }
 
-    if (l_areas->childGroups().length() < 1) {
+    if (l_areas->childGroups().size() < 1) {
         qCCritical(akashiServer) << "areas.json is invalid!";
         return false;
     }
@@ -281,7 +284,7 @@ QString ServerContext::generateBootstrapSecret() const
     // Hex-spelled random secret as long as the configured minimum password
     // length demands, floored at the setting's own default for the
     // degenerate zero case.
-    const int l_length = qMax(m_server_settings->pass_min_length(), 8);
+    const int l_length = std::max(m_server_settings->pass_min_length(), 8);
     return QString::fromLatin1(CryptoHelper::randbytes((l_length + 1) / 2).toHex()).left(l_length);
 }
 
@@ -481,6 +484,7 @@ void ServerContext::buildCore()
     m_services->registerService(std::shared_ptr<akashi::TextFilterRegistry>(m_text_filter_registry, [](auto *) {}));
     m_services->registerService(std::shared_ptr<akashi::RuleRegistry>(m_rule_registry, [](auto *) {}));
     m_services->registerService(std::shared_ptr<akashi::AuthenticatorRegistry>(m_authenticator_registry, [](auto *) {}));
+    m_services->registerService(std::make_shared<akashi::CoreModerationService>(db_manager, acl_roles_handler, this));
 }
 
 std::optional<QString> ServerContext::applyWordFilter(const QString &f_text) const
@@ -491,9 +495,15 @@ std::optional<QString> ServerContext::applyWordFilter(const QString &f_text) con
     return l_result;
 }
 
-std::optional<QString> ServerContext::applyGimpFilter(const QString &) const
+std::optional<QString> ServerContext::applyGimpFilter(const QString &f_text) const
 {
     const auto &l_list = gimpList();
+    // A present-but-empty gimp.txt leaves nothing to swap in; pass the real
+    // text through rather than index an empty list. Returning nullopt here
+    // would drop the message and silently mute the gimped player instead.
+    if (l_list.isEmpty()) {
+        return f_text;
+    }
     return l_list.at(QRandomGenerator::global()->bounded(l_list.size()));
 }
 
@@ -682,12 +692,14 @@ ExitCode ServerContext::startListening()
         return ExitCode::InvalidBindAddress;
     }
 
+    const akashi::TrustedProxyList l_trusted_proxies =
+        akashi::WebSocketTransport::parseTrustedProxies(m_server_settings->trusted_proxies());
     // The configured auth id stands in for the active one, which
         // resolves only after the plugins start - a config naming an
         // unloadable system stops the server anyway.
         QStringList l_vocabulary = akashi::serverFeatures();
         l_vocabulary.append(QStringLiteral("auth_") + configuredAuthSystemId());
-        m_receiver = new akashi::WebSocketReceiver(bind_addr, m_port, l_vocabulary, this);
+        m_receiver = new akashi::WebSocketReceiver(bind_addr, m_port, l_trusted_proxies, l_vocabulary, this);
     connect(m_receiver, &akashi::ClientReceiver::inboundClient, this, &ServerContext::inboundClient);
     if (!m_receiver->start()) {
         qCCritical(akashiServer) << "Server error:" << m_receiver->lastError();
@@ -719,11 +731,7 @@ ExitCode ServerContext::startListening()
 
     m_world->buildFromConfig(QFileInfo(configPath("areas.json")).absoluteFilePath());
 
-    m_ipban_list = akashi::config::loadIpRangeBans(configPath("ipbans.json"));
-    m_banned_asns = akashi::config::loadBannedAsns(configPath("ipbans.json"));
-    if (QFile::exists("storage/GeoLite2-ASN.mmdb")) {
-        m_asn_reader.open("storage/GeoLite2-ASN.mmdb");
-    }
+    reloadBanLists();
 
     // Text data must reload before the music floor (cdns feed into it).
     connect(m_config_store, &akashi::ConfigStore::configReloaded, this, &ServerContext::reloadTextData);
@@ -873,7 +881,7 @@ void ServerContext::applyIdAssignment()
                                            : akashi::PlayerDirectory::IdAssignment::LastFreed);
 }
 
-QVector<akashi::ClientSession *> ServerContext::clients()
+QVector<akashi::ClientSession *> ServerContext::clients() const
 {
     return m_player_directory.clients();
 }
@@ -997,11 +1005,13 @@ void ServerContext::onClientTransportClosed(akashi::ClientSession *f_client, aka
 
 void ServerContext::updateCharsTaken(akashi::Area *area)
 {
+    // The roster index is the character id, so no per-name lookup is needed.
+    const QList<int> l_taken_list = area->charactersTaken();
+    const QSet<int> l_taken(l_taken_list.begin(), l_taken_list.end());
     QStringList chars_taken;
-    for (const QString &cur_char : std::as_const(m_characters)) {
-        chars_taken.append(area->charactersTaken().contains(characterId(cur_char))
-                               ? QStringLiteral("-1")
-                               : QStringLiteral("0"));
+    chars_taken.reserve(m_characters.size());
+    for (int i = 0; i < m_characters.size(); i++) {
+        chars_taken.append(l_taken.contains(i) ? QStringLiteral("-1") : QStringLiteral("0"));
     }
 
     akashi::Packet response_cc("CharsCheck", chars_taken);
@@ -1020,10 +1030,10 @@ void ServerContext::updateCharsTaken(akashi::Area *area)
     }
 }
 
-QStringList ServerContext::cursedCharsTaken(akashi::ClientSession *client, QStringList chars_taken)
+QStringList ServerContext::cursedCharsTaken(akashi::ClientSession *client, QStringList chars_taken) const
 {
     QStringList chars_taken_cursed;
-    for (int i = 0; i < chars_taken.length(); i++) {
+    for (int i = 0; i < chars_taken.size(); i++) {
         if (!client->charCurseList().contains(i))
             chars_taken_cursed.append("-1");
         else
@@ -1042,7 +1052,7 @@ void ServerContext::startMessageFloodguard(int f_duration)
     m_message_floodguard.start(f_duration);
 }
 
-QHostAddress ServerContext::parseToIPv4(QHostAddress f_remote_ip)
+QHostAddress ServerContext::parseToIPv4(QHostAddress f_remote_ip) const
 {
     bool l_ok;
     QHostAddress l_remote_ip = f_remote_ip;
@@ -1058,37 +1068,37 @@ PlayerStateObserver *ServerContext::playerStateObserver()
     return &m_player_state_observer;
 }
 
-akashi::ArupBroadcaster *ServerContext::arupBroadcaster()
+akashi::ArupBroadcaster *ServerContext::arupBroadcaster() const
 {
     return m_arup_broadcaster;
 }
 
-akashi::CommandRegistry *ServerContext::commandRegistry()
+akashi::CommandRegistry *ServerContext::commandRegistry() const
 {
     return m_command_registry;
 }
 
-akashi::ConsoleMenu *ServerContext::consoleMenu()
+akashi::ConsoleMenu *ServerContext::consoleMenu() const
 {
     return m_console_menu;
 }
 
-akashi::PermissionRegistry *ServerContext::permissionRegistry()
+akashi::PermissionRegistry *ServerContext::permissionRegistry() const
 {
     return m_permission_registry;
 }
 
-akashi::TextFilterRegistry *ServerContext::textFilterRegistry()
+akashi::TextFilterRegistry *ServerContext::textFilterRegistry() const
 {
     return m_text_filter_registry;
 }
 
-akashi::RuleRegistry *ServerContext::ruleRegistry()
+akashi::RuleRegistry *ServerContext::ruleRegistry() const
 {
     return m_rule_registry;
 }
 
-akashi::AuthThrottle *ServerContext::authThrottle()
+akashi::AuthThrottle *ServerContext::authThrottle() const
 {
     return m_auth_throttle;
 }
@@ -1139,10 +1149,23 @@ void ServerContext::reloadMusicFloor()
 
 void ServerContext::reloadBanLists()
 {
-    m_ipban_list = akashi::config::loadIpRangeBans(configPath("ipbans.json"));
+    // Parse the ranges once here; the ban check runs on every connection.
+    m_ipban_subnets.clear();
+    const QStringList l_ranges = akashi::config::loadIpRangeBans(configPath("ipbans.json"));
+    for (const QString &l_range : l_ranges) {
+        const auto l_subnet = QHostAddress::parseSubnet(l_range);
+        if (l_subnet.first.isNull()) {
+            qCWarning(akashiConfig) << "Ignoring IP range ban that does not parse as a subnet:" << l_range;
+            continue;
+        }
+        m_ipban_subnets.append(l_subnet);
+    }
     m_banned_asns = akashi::config::loadBannedAsns(configPath("ipbans.json"));
     if (QFile::exists("storage/GeoLite2-ASN.mmdb")) {
         m_asn_reader.open("storage/GeoLite2-ASN.mmdb");
+    }
+    else if (!m_banned_asns.isEmpty()) {
+        qCWarning(akashiConfig) << "ipbans.json bans" << m_banned_asns.size() << "ASNs, but storage/GeoLite2-ASN.mmdb does not exist. ASN bans are inactive.";
     }
 }
 
@@ -1186,13 +1209,29 @@ void ServerContext::broadcast(const akashi::Packet &packet, int area_index)
 
 void ServerContext::broadcastIc(const QStringList &f_fields, int f_area_id, const std::function<QStringList(akashi::ClientSession *)> &f_viewer_fields)
 {
-    const QVector<akashi::ClientSession *> l_client_list = m_player_directory.clients();
-    for (akashi::ClientSession *l_client : l_client_list) {
-        if (l_client->areaId() != f_area_id) {
+    akashi::Area *l_area = m_world->areaById(f_area_id);
+    if (!l_area) {
+        return;
+    }
+
+    // Without a per-viewer transform every recipient gets the same packet,
+    // so it encodes at most once.
+    std::optional<akashi::Packet> l_packet = std::nullopt;
+
+    const QVector<int> l_client_ids = l_area->players();
+    for (const int l_client_id : l_client_ids) {
+        akashi::ClientSession *l_client = clientById(l_client_id);
+        if (!l_client) {
             continue;
         }
-        const QStringList l_fields = f_viewer_fields ? f_viewer_fields(l_client) : f_fields;
-        l_client->sendPacket(akashi::Packet("MS", l_fields));
+        if (f_viewer_fields) {
+            l_client->sendPacket(akashi::Packet("MS", f_viewer_fields(l_client)));
+            continue;
+        }
+        if (!l_packet) {
+            l_packet = akashi::Packet("MS", f_fields);
+        }
+        l_client->sendPacket(*l_packet);
     }
 }
 
@@ -1224,7 +1263,7 @@ ServerContext::BanResult ServerContext::banPlayers(const QString &f_ipid, long l
     l_ban.reason = f_reason;
     l_ban.moderator = f_moderator;
     l_ban.duration = f_duration_secs;
-    l_ban.time = QDateTime::currentDateTime().toSecsSinceEpoch();
+    l_ban.time = QDateTime::currentSecsSinceEpoch();
 
     QString l_duration_text = f_perma_text;
     if (l_ban.duration != -2) {
@@ -1320,6 +1359,7 @@ void ServerContext::broadcast(const akashi::Packet &packet, const akashi::Packet
                 }
             }
         }
+        break;
     }
     default:
         // Unimplemented, so not handled.
@@ -1336,7 +1376,7 @@ void ServerContext::unicast(const akashi::Packet &f_packet, int f_client_id)
     }
 }
 
-QList<akashi::ClientSession *> ServerContext::clientsByIpid(QString ipid)
+QList<akashi::ClientSession *> ServerContext::clientsByIpid(QString ipid) const
 {
     QList<akashi::ClientSession *> return_clients;
     const QVector<akashi::ClientSession *> l_client_list = m_player_directory.clients();
@@ -1347,7 +1387,7 @@ QList<akashi::ClientSession *> ServerContext::clientsByIpid(QString ipid)
     return return_clients;
 }
 
-QList<akashi::ClientSession *> ServerContext::clientsByHwid(QString f_hwid)
+QList<akashi::ClientSession *> ServerContext::clientsByHwid(QString f_hwid) const
 {
     QList<akashi::ClientSession *> return_clients;
     const QVector<akashi::ClientSession *> l_client_list = m_player_directory.clients();
@@ -1358,41 +1398,42 @@ QList<akashi::ClientSession *> ServerContext::clientsByHwid(QString f_hwid)
     return return_clients;
 }
 
-akashi::ClientSession *ServerContext::clientById(int id)
+akashi::ClientSession *ServerContext::clientById(int id) const
 {
     return m_player_directory.clientById(id);
 }
 
-int ServerContext::playerCount()
+int ServerContext::playerCount() const
 {
     return m_player_count;
 }
 
-QStringList ServerContext::characters()
+QStringList ServerContext::characters() const
 {
     return m_characters;
 }
 
-int ServerContext::characterCount()
+int ServerContext::characterCount() const
 {
-    return m_characters.length();
+    return m_characters.size();
 }
 
-QString ServerContext::characterById(int f_chr_id)
+QString ServerContext::characterById(int f_chr_id) const
 {
     QString l_chr;
 
-    if (f_chr_id >= 0 && f_chr_id < m_characters.length()) {
+    if (f_chr_id >= 0 && f_chr_id < m_characters.size()) {
         l_chr = m_characters.at(f_chr_id);
     }
 
     return l_chr;
 }
 
-int ServerContext::characterId(QString char_name)
+int ServerContext::characterId(QString char_name) const
 {
-    for (int i = 0; i < m_characters.length(); i++) {
-        if (m_characters[i].toLower() == char_name.toLower()) {
+    const QString l_needle = char_name.toLower();
+    for (int i = 0; i < m_characters.size(); i++) {
+        if (m_characters[i].toLower() == l_needle) {
             return i;
         }
     }
@@ -1400,12 +1441,12 @@ int ServerContext::characterId(QString char_name)
     return -1; // character does not exist
 }
 
-QVector<akashi::Area *> ServerContext::areas()
+QVector<akashi::Area *> ServerContext::areas() const
 {
     return m_world->areas();
 }
 
-akashi::LogService *ServerContext::logService()
+akashi::LogService *ServerContext::logService() const
 {
     return m_log_service;
 }
@@ -1463,37 +1504,37 @@ void ServerContext::onPluginAboutToUnload(const QString &f_plugin_id)
 
 // One area's settings and savable rules, in the shape areas.json reads.
 
-QStringList ServerContext::musicList()
+QStringList ServerContext::musicList() const
 {
     return m_world->defaultFloor().music_ordered;
 }
 
-QStringList ServerContext::backgrounds()
+QStringList ServerContext::backgrounds() const
 {
     return m_backgrounds;
 }
 
-DBManager *ServerContext::databaseManager()
+DBManager *ServerContext::databaseManager() const
 {
     return db_manager;
 }
 
-akashi::FileSystemService *ServerContext::fileSystem()
+akashi::FileSystemService *ServerContext::fileSystem() const
 {
     return m_filesystem;
 }
 
-akashi::ServiceRegistry *ServerContext::services()
+akashi::ServiceRegistry *ServerContext::services() const
 {
     return m_services;
 }
 
-std::shared_ptr<akashi::PacketService> ServerContext::packets()
+std::shared_ptr<akashi::PacketService> ServerContext::packets() const
 {
     return m_packets;
 }
 
-akashi::ACLRolesHandler *ServerContext::aclRolesHandler()
+akashi::ACLRolesHandler *ServerContext::aclRolesHandler() const
 {
     return acl_roles_handler;
 }
@@ -1542,8 +1583,8 @@ void ServerContext::decreasePlayerCount()
 
 bool ServerContext::isIPBanned(QHostAddress f_remote_IP)
 {
-    for (const QString &l_ipban : std::as_const(m_ipban_list)) {
-        if (f_remote_IP.isInSubnet(QHostAddress::parseSubnet(l_ipban))) {
+    for (const auto &l_subnet : std::as_const(m_ipban_subnets)) {
+        if (f_remote_IP.isInSubnet(l_subnet.first, l_subnet.second)) {
             return true;
         }
     }
@@ -1553,8 +1594,8 @@ bool ServerContext::isIPBanned(QHostAddress f_remote_IP)
     return l_asn != 0 && m_banned_asns.contains(l_asn);
 }
 
-akashi::ConfigStore *ServerContext::configStore() { return m_config_store; }
-ServerSettings *ServerContext::serverSettings() { return m_server_settings; }
+akashi::ConfigStore *ServerContext::configStore() const { return m_config_store; }
+ServerSettings *ServerContext::serverSettings() const { return m_server_settings; }
 
 QString ServerContext::configPath(const QString &f_file) const
 {
@@ -1627,6 +1668,10 @@ void ServerContext::shutdown()
     // never runs, because the event loop is already gone at this point.
     const QVector<akashi::ClientSession *> l_clients = m_player_directory.clients();
     m_player_directory.clear();
+    // Drop the observer's player pointers too: deleting the sessions below
+    // destroys their PlayerState children, and the observer would otherwise be
+    // left holding dangling references for the rest of its life.
+    m_player_state_observer.clear();
     qDeleteAll(l_clients);
 
     delete m_receiver;
@@ -1666,22 +1711,22 @@ akashi::World *ServerContext::world() const
     return m_world;
 }
 
-akashi::Area *ServerContext::areaById(int f_area_id)
+akashi::Area *ServerContext::areaById(int f_area_id) const
 {
     return m_world->areaById(f_area_id);
 }
 
-QString ServerContext::areaName(int f_area_id)
+QString ServerContext::areaName(int f_area_id) const
 {
     return m_world->areaName(f_area_id);
 }
 
-QStringList ServerContext::areaNames()
+QStringList ServerContext::areaNames() const
 {
     return m_world->areaNames();
 }
 
-int ServerContext::areaCount()
+int ServerContext::areaCount() const
 {
     return m_world->areaCount();
 }

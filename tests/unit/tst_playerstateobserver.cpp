@@ -21,6 +21,7 @@ class tst_PlayerStateObserver : public QObject
     void changesReachEveryone();
     void unregisterAnnouncesRemovalOnce();
     void multiCharacterSessionHearsBroadcastsOnce();
+    void clearDropsEveryPlayerSilentlyAndLeavesNoDanglingRefs();
 };
 
 // One person with one character, watching through a fake transport.
@@ -147,6 +148,42 @@ void tst_PlayerStateObserver::multiCharacterSessionHearsBroadcastsOnce()
 
     // Two characters, one person: the announcement arrives exactly once.
     QCOMPARE(alice.received(), QStringList({"PR#1#0#%"}));
+}
+
+// clear() is the shutdown path: it must drop every tracked player without a
+// PR-remove broadcast (the sessions are being deleted, not leaving), and it
+// must actually let go of the pointers. If it did not, deleting the sessions
+// would leave the observer holding dangling PlayerState pointers that the next
+// registerPlayer roster loop would walk into.
+void tst_PlayerStateObserver::clearDropsEveryPlayerSilentlyAndLeavesNoDanglingRefs()
+{
+    PlayerStateObserver observer;
+    auto *alice = new Person(0);
+    auto *bob = new Person(1);
+    observer.registerPlayer(alice->player());
+    observer.registerPlayer(bob->player());
+    alice->transport->written.clear();
+    bob->transport->written.clear();
+
+    observer.clear();
+    // No teardown broadcast reaches anyone.
+    QVERIFY(alice->transport->written.isEmpty());
+    QVERIFY(bob->transport->written.isEmpty());
+
+    // Free the sessions (and their PlayerState children). With the pointers
+    // still tracked this would strand freed memory in the observer.
+    delete alice;
+    delete bob;
+
+    auto *carol = new Person(2);
+    observer.registerPlayer(carol->player());
+    // The cleared roster held no one, so Carol sees only her own entry.
+    QCOMPARE(carol->received(), QStringList({"PR#2#0#%",
+                                             "PU#2#0##%",
+                                             "PU#2#1##%",
+                                             "PU#2#2##%",
+                                             "PU#2#3#0#%"}));
+    delete carol;
 }
 
 }

@@ -27,10 +27,10 @@ bool passwordMeetsRequirements(ServerSettings *f_settings, const QString &f_user
     if (!f_settings->password_requirements())
         return true;
 
-    if (f_settings->pass_min_length() > f_password.length())
+    if (f_settings->pass_min_length() > f_password.size())
         return false;
 
-    if (f_settings->pass_max_length() < f_password.length() && f_settings->pass_max_length() != 0)
+    if (f_settings->pass_max_length() < f_password.size() && f_settings->pass_max_length() != 0)
         return false;
 
     if (f_settings->pass_required_mix_case()) {

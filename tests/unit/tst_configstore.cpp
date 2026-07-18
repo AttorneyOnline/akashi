@@ -153,7 +153,7 @@ void tst_ConfigStore::reloadSignalsChangedValues()
     QSignalSpy l_spy(&l_store, &ConfigStore::valueChanged);
     l_store.reload();
 
-    QCOMPARE(l_spy.count(), 1);
+    QCOMPARE(l_spy.size(), 1);
     QCOMPARE(l_spy.at(0).at(1).toString(), "Options/motd");
     QCOMPARE(l_store.get<QString>("config", "Options/motd"), "new");
 }
@@ -182,7 +182,7 @@ void tst_ConfigStore::notifierFiresOnReload()
     writeFileAndWaitForMtime(l_path, R"({"Options": {"motd": "new"}})");
     l_store.reload();
 
-    QCOMPARE(l_spy.count(), 1);
+    QCOMPARE(l_spy.size(), 1);
     QCOMPARE(l_store.get<QString>("config", "Options/motd"), "new");
 }
 
@@ -202,7 +202,7 @@ void tst_ConfigStore::notifierSilentWhenUnchanged()
     writeFileAndWaitForMtime(l_path, R"({"Options": {"motd": "same"}})");
     l_store.reload();
 
-    QCOMPARE(l_spy.count(), 0);
+    QCOMPARE(l_spy.size(), 0);
 }
 
 void tst_ConfigStore::settingNotifierIntegration()
@@ -225,7 +225,7 @@ void tst_ConfigStore::settingNotifierIntegration()
     writeFileAndWaitForMtime(l_path, R"({"Options": {"motd": "world"}})");
     l_store.reload();
 
-    QCOMPARE(l_spy.count(), 1);
+    QCOMPARE(l_spy.size(), 1);
     QCOMPARE(l_motd(), "world");
 }
 

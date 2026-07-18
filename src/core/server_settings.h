@@ -46,6 +46,7 @@ class AKASHI_CORE_EXPORT ServerSettings : public akashi::Settings
     akashi::Setting<int> afk_timeout{this, "Options/afk_timeout", 300, "Seconds without input before a player counts as AFK.", akashi::atLeast(1)};
     akashi::Setting<QString> console_socket{this, "Options/console_socket", "akashi-console", "The local socket the akashi-console attach client connects to; a named pipe on Windows. On Linux a name containing a slash is used as a full path. Servers sharing a machine need distinct names. Empty turns attaching off."};
     akashi::Setting<QString> asset_url{this, "Options/asset_url", "", "The URL of the server's asset repository, used by WebAO users.", akashi::emptyOr(akashi::url())};
+    akashi::Setting<QString> trusted_proxies{this, "Options/trusted_proxies", "", "Comma-separated IPs or CIDR subnets of reverse proxies whose x-forwarded-for and x-real-ip headers are trusted to carry the real client IP. localhost is always trusted; empty trusts only localhost."};
     akashi::Setting<bool> advertise{this, "Advertiser/advertise", true, "Whether the server appears on the master server."};
     akashi::Setting<QString> ms_ip{this, "Advertiser/ms_ip", "https://servers.aceattorneyonline.com/servers", "The address of the master server.", akashi::url()};
     akashi::Setting<QString> hostname{this, "Advertiser/hostname", "", "Optional hostname of the server, disables automatic IP detection."};

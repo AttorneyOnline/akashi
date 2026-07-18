@@ -3,7 +3,7 @@
 #include "akashi/area_rule.h"
 #include "akashi/jukebox_policy.h"
 
-#include <QMap>
+#include <QHash>
 #include <QString>
 #include <QStringList>
 #include <QVector>
@@ -25,7 +25,7 @@ class Floor
     // floor config can add, remove or replace entries. Every area on this
     // floor inherits this list as its baseline; area customs layer on top.
     QStringList music_ordered;
-    QMap<QString, JukeboxSong> music_songs;
+    QHash<QString, JukeboxSong> music_songs;
 
     // CDN domains approved for URL-based custom songs.
     QStringList approved_cdns;

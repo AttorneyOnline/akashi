@@ -7,6 +7,7 @@
 #include "world/jukebox.h"
 #include "world/rule_registry.h"
 
+#include <QHash>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -192,7 +193,7 @@ void World::buildFromConfig(const QString &f_rules_path)
     });
     std::sort(l_raw_names.begin(), l_raw_names.end(), [](const QString &a, const QString &b) { return a.split(":")[0].toInt() < b.split(":")[0].toInt(); });
 
-    QMap<QString, int> l_floor_name_to_id;
+    QHash<QString, int> l_floor_name_to_id;
     QStringList l_area_floor_names;
 
     for (const QString &l_raw : std::as_const(l_raw_names)) {
@@ -221,7 +222,7 @@ void World::buildFromConfig(const QString &f_rules_path)
         applyDefaultFloorRules(l_floor);
     }
 
-    for (int i = 0; i < m_area_names.length(); i++) {
+    for (int i = 0; i < m_area_names.size(); i++) {
         buildArea(i, m_area_names[i], l_floor_name_to_id.value(l_area_floor_names[i], 0));
     }
 

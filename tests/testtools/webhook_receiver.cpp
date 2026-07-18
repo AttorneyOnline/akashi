@@ -106,14 +106,21 @@ void WebhookReceiver::setResponseStatus(int f_status)
     m_response_status = f_status;
 }
 
+void WebhookReceiver::setResponse(const QString &f_path, int f_status, const QByteArray &f_body,
+                                  const QByteArray &f_content_type)
+{
+    const QString l_path = f_path.startsWith(QLatin1Char('/')) ? f_path : QLatin1Char('/') + f_path;
+    m_responses.insert(l_path, {f_status, f_body, f_content_type});
+}
+
 int WebhookReceiver::requestCount() const
 {
     return m_requests.size();
 }
 
-bool WebhookReceiver::waitForRequests(int f_count, int f_timeout_ms)
+bool WebhookReceiver::waitForRequests(int f_count, std::chrono::milliseconds f_timeout)
 {
-    return QTest::qWaitFor([this, f_count] { return m_requests.size() >= f_count; }, f_timeout_ms);
+    return QTest::qWaitFor([this, f_count] { return m_requests.size() >= f_count; }, int(f_timeout.count()));
 }
 
 const WebhookRequest &WebhookReceiver::requestAt(int f_index) const
@@ -153,6 +160,11 @@ QHttpServerResponse WebhookReceiver::captureRequest(const QHttpServerRequest &f_
 #endif
     m_requests.append(l_request);
     Q_EMIT requestReceived();
+    const auto l_canned = m_responses.constFind(l_request.path);
+    if (l_canned != m_responses.constEnd()) {
+        return QHttpServerResponse(l_canned->content_type, l_canned->body,
+                                   static_cast<QHttpServerResponder::StatusCode>(l_canned->status));
+    }
     return QHttpServerResponse(static_cast<QHttpServerResponder::StatusCode>(m_response_status));
 }
 

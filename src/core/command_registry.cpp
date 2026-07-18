@@ -145,6 +145,16 @@ CommandHandler CommandRegistry::handler(const QString &f_command_name) const
     return {};
 }
 
+std::optional<CommandRegistry::Resolved> CommandRegistry::lookup(const QString &f_command_name) const
+{
+    AKASHI_ASSERT_OWNER_THREAD();
+    const QString l_key = resolve(f_command_name);
+    if (auto it = m_entries.constFind(l_key); it != m_entries.constEnd()) {
+        return Resolved{it->spec, it->handler};
+    }
+    return std::nullopt;
+}
+
 QStringList CommandRegistry::commandNames() const
 {
     AKASHI_ASSERT_OWNER_THREAD();

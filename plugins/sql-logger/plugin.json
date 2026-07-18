@@ -1,6 +1,7 @@
 {
     "id": "akashi.sql-logger",
     "version": "1.0.0",
+    "about": "Keeps the server log in a SQL database, by the akashi dev team.",
     "dependencies": [],
     "services": ["akashi.log", "akashi.database", "akashi.config"]
 }

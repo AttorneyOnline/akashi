@@ -1593,7 +1593,7 @@ class PythonScriptHost : public akashi::IScriptPluginHost
 };
 
 QString PythonHostPlugin::id() const { return QStringLiteral("akashi.python-host"); }
-akashi::ServiceVersion PythonHostPlugin::pluginVersion() const { return {1, 1, 0}; }
+akashi::ServiceVersion PythonHostPlugin::pluginVersion() const { return {1, 2, 0}; }
 
 bool PythonHostPlugin::load(akashi::ServiceRegistry &services)
 {
@@ -1615,6 +1615,14 @@ bool PythonHostPlugin::load(akashi::ServiceRegistry &services)
         s_ffi = nullptr;
         return false;
     }
+    // The manifest cannot know which Python the server runs on, so the
+    // credit line is composed here and overrides it.
+    if (auto l_plugins = services.resolve<akashi::PluginManager>(QStringLiteral("akashi.plugins"))) {
+        l_plugins->registerAbout(id(), "Runs the server's .py plugins on Python " +
+                                           QString::fromUtf8(Py_GetVersion()).section(' ', 0, 0) +
+                                           " by the Python Software Foundation (PSF license).");
+    }
+
     qCInfo(akashiScripting).noquote() << "python-host: providing" << m_host->serviceId() << "with Python" << QString::fromUtf8(Py_GetVersion()).section(' ', 0, 0);
     return true;
 }

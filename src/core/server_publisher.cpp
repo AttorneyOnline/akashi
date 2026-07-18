@@ -8,11 +8,14 @@
 #include <QJsonObject>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
+#include <QSslError>
 #include <QTimer>
 
 const int HTTP_OK = 200;
 const int WS_REVERSE_PROXY = 80;
 const int TIMEOUT = 1000 * 60 * 4;
+// A stalled post must fail instead of lingering until the next publish.
+const int TRANSFER_TIMEOUT = 1000 * 30;
 
 ServerPublisher::ServerPublisher(int port, int *player_count, ServerSettings *f_settings, QObject *parent) :
     QObject(parent),
@@ -22,7 +25,9 @@ ServerPublisher::ServerPublisher(int port, int *player_count, ServerSettings *f_
     m_port{port},
     m_settings(f_settings)
 {
+    m_manager->setTransferTimeout(TRANSFER_TIMEOUT);
     connect(m_manager, &QNetworkAccessManager::finished, this, &ServerPublisher::finished);
+    connect(m_manager, &QNetworkAccessManager::sslErrors, this, &ServerPublisher::onSslErrors);
     connect(timeout_timer, &QTimer::timeout, this, &ServerPublisher::publishServer);
 
     timeout_timer->setTimerType(Qt::PreciseTimer);
@@ -64,41 +69,40 @@ void ServerPublisher::publishServer()
 
 void ServerPublisher::finished(QNetworkReply *f_reply)
 {
-    QNetworkReply *reply(f_reply);
-    reply->deleteLater();
-    QString remote_url = reply->url().toString();
+    f_reply->deleteLater();
+    const QString remote_url = f_reply->url().toString();
+    const QByteArray data = f_reply->isReadable() ? f_reply->readAll() : QByteArray();
+    const int status = f_reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
 
-    if (reply->error() != QNetworkReply::NoError) {
-        qCWarning(akashiNet) << "Unable to connect to serverlist due to the following error:" << reply->errorString();
-        qCWarning(akashiNet) << "Remote URL:" << remote_url;
+    if (f_reply->error() == QNetworkReply::NoError && status == HTTP_OK) {
+        qCInfo(akashiNet) << "Successfully advertised server to serverlist.";
         return;
     }
 
-    QByteArray data = reply->isReadable() ? reply->readAll() : QByteArray();
-    const int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-    if (status != HTTP_OK) {
-        QJsonParseError error;
-        QJsonDocument document = QJsonDocument::fromJson(data, &error);
+    qCWarning(akashiNet) << "Failed to advertise to the serverlist:" << f_reply->errorString();
+    qCWarning(akashiNet) << "Remote URL:" << remote_url << "- HTTP status code:" << status;
 
-        if (error.error != QJsonParseError::NoError || !document.isObject()) {
-            qCWarning(akashiNet) << "Received malformed response from masterserver. Error:" << error.errorString();
-            qCWarning(akashiNet) << "HTTP status code:" << status;
-            qCWarning(akashiNet) << "Parse error offset:" << error.offset;
-            qCWarning(akashiNet) << "Response body size:" << data.size() << "bytes";
+    // An HTTP-level refusal carries the masterserver's error report in the
+    // body; a transport failure has no body worth parsing.
+    QJsonParseError error;
+    const QJsonDocument document = QJsonDocument::fromJson(data, &error);
+    if (error.error != QJsonParseError::NoError || !document.isObject()) {
+        if (!data.isEmpty()) {
             qCWarning(akashiNet).noquote() << "Raw response body:" << QString::fromUtf8(data);
-            return;
         }
-
-        QJsonObject body = document.object();
-        if (body.contains("errors")) {
-            qCWarning(akashiNet) << "Failed to advertise to the serverlist due to the following errors:";
-            const QJsonArray errors = body["errors"].toArray();
-            for (const auto &ref : errors) {
-                QJsonObject error = ref.toObject();
-                qCWarning(akashiNet).noquote() << "Error:" << error["type"].toString() << ". Message:" << error["message"].toString();
-            }
-            return;
-        }
+        return;
     }
-    qCInfo(akashiNet) << "Sucessfully advertised server to serverlist.";
+
+    const QJsonArray errors = document.object()["errors"].toArray();
+    for (const auto &ref : errors) {
+        const QJsonObject entry = ref.toObject();
+        qCWarning(akashiNet).noquote() << "Error:" << entry["type"].toString() << ". Message:" << entry["message"].toString();
+    }
+}
+
+void ServerPublisher::onSslErrors(QNetworkReply *f_reply, const QList<QSslError> &f_errors)
+{
+    for (const QSslError &l_error : f_errors) {
+        qCWarning(akashiNet) << "SSL error advertising to" << f_reply->url().toString() << "-" << l_error.errorString();
+    }
 }

@@ -46,6 +46,16 @@ class AKASHI_CORE_EXPORT CommandRegistry : public IService
     QStringList commandNames() const;
     bool contains(const QString &f_command_name) const;
 
+    struct Resolved
+    {
+        CommandSpec spec;
+        CommandHandler handler;
+    };
+
+    // The dispatcher's single lookup: the command's spec and handler
+    // together, alias-resolved once.
+    std::optional<Resolved> lookup(const QString &f_command_name) const;
+
     // True when the permission list is empty or any entry resolves - the
     // exact any-of gate the dispatcher applies to the matched form.
     static bool passesAnyOf(const QStringList &f_permissions, const std::function<bool(const QString &)> &f_can_perform);

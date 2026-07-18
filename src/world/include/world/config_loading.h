@@ -5,17 +5,17 @@
 
 #include <QHash>
 #include <QList>
-#include <QMap>
-#include <QPair>
 #include <QStringList>
 #include <QVariantMap>
 #include <QVector>
+
+#include <utility>
 
 namespace akashi {
 namespace config {
 
 // Song name to its category and duration, as loaded from music.json.
-using MusicList = QMap<QString, QPair<QString, int>>;
+using MusicList = QHash<QString, std::pair<QString, int>>;
 
 struct MusicCatalog
 {

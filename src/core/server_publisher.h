@@ -1,6 +1,10 @@
 #pragma once
 
+#include "akashi_core_export.h"
+
+#include <QList>
 #include <QObject>
+#include <QSslError>
 
 class QNetworkAccessManager;
 class QNetworkReply;
@@ -10,7 +14,7 @@ class ServerSettings;
 /**
  * @brief Represents the ServerPublisher of the server. Sends current server information to the serverlist.
  */
-class ServerPublisher : public QObject
+class AKASHI_CORE_EXPORT ServerPublisher : public QObject
 {
     Q_OBJECT
 
@@ -29,6 +33,11 @@ class ServerPublisher : public QObject
      * @brief Reads the response from the serverlist.
      */
     void finished(QNetworkReply *f_reply);
+
+    /**
+     * @brief Logs certificate failures; the request still fails, they are never ignored.
+     */
+    void onSslErrors(QNetworkReply *f_reply, const QList<QSslError> &f_errors);
 
   private:
     /**
