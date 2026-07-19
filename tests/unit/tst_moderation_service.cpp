@@ -76,20 +76,20 @@ void tst_ModerationService::roleGateAnswersLikeAHumanModeratorCheck()
 {
     akashi::ACLRolesHandler l_roles;
     akashi::ACLRole l_bot_role;
-    l_bot_role.setPermission(akashi::permission::mute, true);
+    l_bot_role.setPermission(akashi::permission::sanction_mute, true);
     QVERIFY(l_roles.insertRole("modbot", l_bot_role));
 
     akashi::CoreModerationService l_service(nullptr, &l_roles, nullptr);
 
     // The role holds exactly what the owner granted it.
-    QVERIFY(l_service.roleCanPerform("modbot", akashi::permission::mute));
+    QVERIFY(l_service.roleCanPerform("modbot", akashi::permission::sanction_mute));
     QVERIFY(!l_service.roleCanPerform("modbot", akashi::permission::kick));
 
     // The built-in SUPER wildcard and unknown roles behave like they do
     // for humans: everything and nothing.
     QVERIFY(l_service.roleCanPerform("SUPER", akashi::permission::ban));
-    QVERIFY(!l_service.roleCanPerform("nosuchrole", akashi::permission::mute));
-    QVERIFY(!l_service.roleCanPerform("", akashi::permission::mute));
+    QVERIFY(!l_service.roleCanPerform("nosuchrole", akashi::permission::sanction_mute));
+    QVERIFY(!l_service.roleCanPerform("", akashi::permission::sanction_mute));
 }
 
 void tst_ModerationService::writesRefuseWithoutAServer()

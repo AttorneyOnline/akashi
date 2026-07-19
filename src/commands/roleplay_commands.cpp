@@ -239,7 +239,9 @@ void cmdTimer(CommandContext &f_context)
 
     QTimer *l_requested_timer;
     if (l_timer_id == 0) {
-        if (!f_context.canPerform(akashi::permission::global_timer)) {
+        // Timer 0 is the server-wide one: the spec declares the
+        // escalation, so /help shows it and an extension can change it.
+        if (!f_context.canPerform(f_context.escalatesTo())) {
             f_context.reply("You are not authorized to alter the global timer.");
             return;
         }
@@ -345,16 +347,25 @@ void cmdSubtheme(CommandContext &f_context)
 
 void registerRoleplayCommands(CommandRegistry &f_registry)
 {
-    f_registry.registerCommand({"coinflip", {}, {permission::user}, 0, "/coinflip", "Flips a coin for the area to see."}, cmdCoinFlip, "core");
-    f_registry.registerCommand({"roll", {"r"}, {permission::user}, 0, "/roll [dice] [faces]", "Rolls dice for the area to see."}, cmdRoll, "core");
-    f_registry.registerCommand({"rolla", {}, {permission::user}, 0, "/rolla <name>", "Rolls a named die from the dice config."}, cmdRollA, "core");
-    f_registry.registerCommand({"rollp", {}, {permission::user}, 0, "/rollp [dice] [faces]", "Rolls dice only you and the moderators see."}, cmdRollP, "core");
-    f_registry.registerCommand({"timer", {}, {permission::gamemaster}, 0, "/timer [id] [time|start|pause|hide]", "Shows or controls the area's timers."}, cmdTimer, "core");
-    f_registry.registerCommand({"notecard", {}, {permission::user}, 1, "/notecard <message>", "Writes your hidden notecard."}, cmdNotecard, "core");
-    f_registry.registerCommand({"notecard_clear", {"clear_notecard", "notecardclear"}, {permission::user}, 0, "/notecard_clear", "Clears your notecard."}, cmdNotecardClear, "core");
-    f_registry.registerCommand({"notecard_reveal", {"reveal_notecard", "notecardreveal"}, {permission::gamemaster}, 0, "/notecard_reveal", "Reveals every notecard in the area."}, cmdNotecardReveal, "core");
-    f_registry.registerCommand({"8ball", {}, {permission::user}, 1, "/8ball <question>", "Asks the magic 8-ball a question."}, cmd8Ball, "core");
-    f_registry.registerCommand({"subtheme", {}, {permission::gamemaster}, 1, "/subtheme <name>", "Switches the area's client subtheme."}, cmdSubtheme, "core");
+    f_registry.registerCommand({"coinflip", {}, {permission::roleplay_coinflip}, 0, "/coinflip", "Flips a coin for the area to see."}, cmdCoinFlip, "core");
+    f_registry.registerCommand({"roll", {"r"}, {permission::roleplay_roll}, 0, "/roll [dice] [faces]", "Rolls dice for the area to see."}, cmdRoll, "core");
+    f_registry.registerCommand({"rolla", {}, {permission::roleplay_rolla}, 0, "/rolla <name>", "Rolls a named die from the dice config."}, cmdRollA, "core");
+    f_registry.registerCommand({"rollp", {}, {permission::roleplay_rollp}, 0, "/rollp [dice] [faces]", "Rolls dice only you and the moderators see."}, cmdRollP, "core");
+    {
+        CommandSpec l_timer;
+        l_timer.name = QStringLiteral("timer");
+        l_timer.permissions = {permission::cm_timer};
+        l_timer.usage = QStringLiteral("/timer [id] [time|start|pause|hide]");
+        l_timer.description = QStringLiteral("Shows or controls the area's timers.");
+        l_timer.escalates_to = permission::timer_global;
+        l_timer.escalates_when = QStringLiteral("altering timer 0, the server-wide one");
+        f_registry.registerCommand(l_timer, cmdTimer, QStringLiteral("core"));
+    }
+    f_registry.registerCommand({"notecard", {}, {permission::roleplay_notecard}, 1, "/notecard <message>", "Writes your hidden notecard."}, cmdNotecard, "core");
+    f_registry.registerCommand({"notecard_clear", {"clear_notecard", "notecardclear"}, {permission::roleplay_notecard_clear}, 0, "/notecard_clear", "Clears your notecard."}, cmdNotecardClear, "core");
+    f_registry.registerCommand({"notecard_reveal", {"reveal_notecard", "notecardreveal"}, {permission::cm_notecard_reveal}, 0, "/notecard_reveal", "Reveals every notecard in the area."}, cmdNotecardReveal, "core");
+    f_registry.registerCommand({"8ball", {}, {permission::roleplay_8ball}, 1, "/8ball <question>", "Asks the magic 8-ball a question."}, cmd8Ball, "core");
+    f_registry.registerCommand({"subtheme", {}, {permission::cm_subtheme}, 1, "/subtheme <name>", "Switches the area's client subtheme."}, cmdSubtheme, "core");
 }
 
 } // namespace akashi::commands

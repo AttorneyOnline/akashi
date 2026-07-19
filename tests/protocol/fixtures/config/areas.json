@@ -28,6 +28,11 @@
         "evidence_mod": "ffa",
         "blankposting_allowed": "true",
         "force_immediate": "false",
+        "grants": {
+            "send_notice": "everyone",
+            "kick": "everyone",
+            "area.cm": "everyone"
+        },
         "rules": {
             "ic_message_sent": {
                 "before": [

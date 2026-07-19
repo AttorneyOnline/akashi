@@ -34,7 +34,7 @@ DBManager::DBManager(QSqlDatabase f_database) :
     const bool l_fresh = !db.tables().contains(QStringLiteral("bans"));
     execLogged(db, "CREATE TABLE IF NOT EXISTS bans ('ID' INTEGER, 'IPID' TEXT, 'HDID' TEXT, 'IP' TEXT, 'TIME' INTEGER, 'REASON' TEXT, 'DURATION' INTEGER, 'MODERATOR' TEXT, PRIMARY KEY('ID' AUTOINCREMENT))", "creating the bans table");
     execLogged(db, "CREATE TABLE IF NOT EXISTS users ('ID' INTEGER, 'USERNAME' TEXT, 'SALT' TEXT, 'PASSWORD' TEXT, 'ACL' TEXT, PRIMARY KEY('ID' AUTOINCREMENT))", "creating the users table");
-    execLogged(db, "CREATE TABLE IF NOT EXISTS sanctions ('ID' INTEGER, 'IPID' TEXT NOT NULL, 'SANCTION' TEXT NOT NULL, 'MODERATOR' TEXT, 'ISSUED' INTEGER, 'EXPIRES' INTEGER NOT NULL, PRIMARY KEY('ID' AUTOINCREMENT), UNIQUE('IPID', 'SANCTION'))", "creating the sanctions table");
+    execLogged(db, "CREATE TABLE IF NOT EXISTS sanctions ('ID' INTEGER, 'IPID' TEXT NOT NULL, 'SANCTION' TEXT NOT NULL, 'MODERATOR' TEXT, 'ISSUED' INTEGER, 'EXPIRES' INTEGER NOT NULL, 'HWID' TEXT NOT NULL DEFAULT '', 'DATA' TEXT NOT NULL DEFAULT '', PRIMARY KEY('ID' AUTOINCREMENT), UNIQUE('IPID', 'SANCTION'))", "creating the sanctions table");
     // The lookup indexes are part of the current schema; they carry the
     // same names migration 3 uses, so nothing double-creates.
     execLogged(db, "CREATE INDEX IF NOT EXISTS bans_ipid_time ON bans(IPID, TIME)", "creating a lookup index");
@@ -446,6 +446,27 @@ void DBManager::updateDB(int current_version)
         akashi::DatabaseService::applyMigration(db, 4, [](QSqlDatabase &f_db) {
             return QSqlQuery(f_db).exec("CREATE TABLE IF NOT EXISTS sanctions ('ID' INTEGER, 'IPID' TEXT NOT NULL, 'SANCTION' TEXT NOT NULL, 'MODERATOR' TEXT, 'ISSUED' INTEGER, 'EXPIRES' INTEGER NOT NULL, PRIMARY KEY('ID' AUTOINCREMENT), UNIQUE('IPID', 'SANCTION'))");
         });
+        Q_FALLTHROUGH();
+    case 4:
+        // Untimed sanctions persist too (EXPIRES -1), matched by HWID as
+        // well, with a payload column for list-carrying ones (charcurse).
+        // Guarded per column: an older database that already got the new
+        // table shape from the constructor must not re-add them.
+        akashi::DatabaseService::applyMigration(db, 5, [](QSqlDatabase &f_db) {
+            const auto l_missingColumn = [&f_db](const QString &f_name) {
+                QSqlQuery l_check(f_db);
+                l_check.prepare("SELECT COUNT(*) FROM pragma_table_info('sanctions') WHERE name = ?");
+                l_check.addBindValue(f_name);
+                return l_check.exec() && l_check.first() && l_check.value(0).toInt() == 0;
+            };
+            if (l_missingColumn(QStringLiteral("HWID")) && !QSqlQuery(f_db).exec("ALTER TABLE sanctions ADD COLUMN HWID TEXT NOT NULL DEFAULT ''")) {
+                return false;
+            }
+            if (l_missingColumn(QStringLiteral("DATA")) && !QSqlQuery(f_db).exec("ALTER TABLE sanctions ADD COLUMN DATA TEXT NOT NULL DEFAULT ''")) {
+                return false;
+            }
+            return true;
+        });
         break;
     }
 }
@@ -453,13 +474,17 @@ void DBManager::updateDB(int current_version)
 void DBManager::upsertSanction(const SanctionInfo &f_sanction)
 {
     QSqlQuery query(db);
-    query.prepare("INSERT INTO sanctions(IPID, SANCTION, MODERATOR, ISSUED, EXPIRES) VALUES(?, ?, ?, ?, ?) "
-                  "ON CONFLICT(IPID, SANCTION) DO UPDATE SET MODERATOR = excluded.MODERATOR, ISSUED = excluded.ISSUED, EXPIRES = excluded.EXPIRES");
+    query.prepare("INSERT INTO sanctions(IPID, SANCTION, MODERATOR, ISSUED, EXPIRES, HWID, DATA) VALUES(?, ?, ?, ?, ?, ?, ?) "
+                  "ON CONFLICT(IPID, SANCTION) DO UPDATE SET MODERATOR = excluded.MODERATOR, ISSUED = excluded.ISSUED, EXPIRES = excluded.EXPIRES, HWID = excluded.HWID, DATA = excluded.DATA");
     query.addBindValue(f_sanction.ipid);
     query.addBindValue(f_sanction.sanction);
     query.addBindValue(f_sanction.moderator);
     query.addBindValue(f_sanction.issued);
     query.addBindValue(f_sanction.expires);
+    // A null QString binds as SQL NULL, which the NOT NULL columns
+    // refuse; an absent identifier or payload is the empty string.
+    query.addBindValue(f_sanction.hwid.isNull() ? QStringLiteral("") : f_sanction.hwid);
+    query.addBindValue(f_sanction.data.isNull() ? QStringLiteral("") : f_sanction.data);
     execLogged(query, "sanction upsert");
 }
 
@@ -482,6 +507,8 @@ static QList<DBManager::SanctionInfo> readSanctions(QSqlQuery &query)
         sanction.moderator = query.value(2).toString();
         sanction.issued = query.value(3).toLongLong();
         sanction.expires = query.value(4).toLongLong();
+        sanction.hwid = query.value(5).toString();
+        sanction.data = query.value(6).toString();
         sanctions.append(sanction);
     }
     return sanctions;
@@ -490,17 +517,45 @@ static QList<DBManager::SanctionInfo> readSanctions(QSqlQuery &query)
 QList<DBManager::SanctionInfo> DBManager::sanctionsFor(const QString &f_ipid, qint64 f_now)
 {
     QSqlQuery query(db);
-    query.prepare("SELECT IPID, SANCTION, MODERATOR, ISSUED, EXPIRES FROM sanctions WHERE IPID = ? AND EXPIRES > ?");
+    query.prepare("SELECT IPID, SANCTION, MODERATOR, ISSUED, EXPIRES, HWID, DATA FROM sanctions WHERE IPID = ? AND (EXPIRES < 0 OR EXPIRES > ?)");
     query.addBindValue(f_ipid);
     query.addBindValue(f_now);
     execLogged(query, "sanction lookup");
     return readSanctions(query);
 }
 
+QList<DBManager::SanctionInfo> DBManager::sanctionsForIdentity(const QString &f_ipid, const QString &f_hwid, qint64 f_now)
+{
+    if (f_hwid.isEmpty()) {
+        return sanctionsFor(f_ipid, f_now);
+    }
+    QSqlQuery query(db);
+    query.prepare("SELECT IPID, SANCTION, MODERATOR, ISSUED, EXPIRES, HWID, DATA FROM sanctions WHERE (IPID = ? OR HWID = ?) AND (EXPIRES < 0 OR EXPIRES > ?)");
+    query.addBindValue(f_ipid);
+    query.addBindValue(f_hwid);
+    query.addBindValue(f_now);
+    execLogged(query, "sanction lookup");
+    return readSanctions(query);
+}
+
+std::optional<DBManager::SanctionInfo> DBManager::sanctionRow(const QString &f_ipid, const QString &f_sanction)
+{
+    QSqlQuery query(db);
+    query.prepare("SELECT IPID, SANCTION, MODERATOR, ISSUED, EXPIRES, HWID, DATA FROM sanctions WHERE IPID = ? AND SANCTION = ?");
+    query.addBindValue(f_ipid);
+    query.addBindValue(f_sanction);
+    execLogged(query, "sanction lookup");
+    const QList<SanctionInfo> l_rows = readSanctions(query);
+    if (l_rows.isEmpty()) {
+        return std::nullopt;
+    }
+    return l_rows.first();
+}
+
 QList<DBManager::SanctionInfo> DBManager::allSanctions()
 {
     QSqlQuery query(db);
-    query.prepare("SELECT IPID, SANCTION, MODERATOR, ISSUED, EXPIRES FROM sanctions");
+    query.prepare("SELECT IPID, SANCTION, MODERATOR, ISSUED, EXPIRES, HWID, DATA FROM sanctions");
     execLogged(query, "sanction lookup");
     return readSanctions(query);
 }

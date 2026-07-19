@@ -142,7 +142,7 @@ QSettings *ConfigStore::settings(const QString &f_name)
         l_it = m_formats.constFind(l_ext);
     }
 
-    migrateIniFile(f_name, l_ext);
+    migrateConfigFile(f_name, l_ext);
     l_settings = new QSettings(filePath(f_name + "." + l_ext),
                                l_it->format, this);
     m_open_settings.insert(f_name, l_settings);
@@ -219,11 +219,11 @@ QString ConfigStore::resolveRootPath()
     return QStringLiteral("config");
 }
 
-void ConfigStore::migrateIniFile(const QString &f_name, const QString &f_extension)
+void ConfigStore::migrateConfigFile(const QString &f_name, const QString &f_extension, const QString &f_new_name)
 {
-    const QString l_target_path = filePath(f_name + "." + f_extension);
-    const QString l_ini_path = filePath(f_name + ".ini");
-    if (QFileInfo::exists(l_target_path) || !QFileInfo::exists(l_ini_path)) {
+    const QString l_target_name = f_new_name.isEmpty() ? f_name : f_new_name;
+    const QString l_target_path = filePath(l_target_name + "." + f_extension);
+    if (QFileInfo::exists(l_target_path)) {
         return;
     }
 
@@ -232,11 +232,24 @@ void ConfigStore::migrateIniFile(const QString &f_name, const QString &f_extensi
         return;
     }
 
-    QSettings l_ini(l_ini_path, QSettings::IniFormat);
+    // The newest home of the old name is the source: a name migration
+    // prefers the already-converted file over the INI it once came from,
+    // so edits made since the conversion travel along.
+    QString l_source_path = filePath(f_name + ".ini");
+    QSettings::Format l_source_format = QSettings::IniFormat;
+    if (!f_new_name.isEmpty() && QFileInfo::exists(filePath(f_name + "." + f_extension))) {
+        l_source_path = filePath(f_name + "." + f_extension);
+        l_source_format = l_it->format;
+    }
+    if (!QFileInfo::exists(l_source_path)) {
+        return;
+    }
+
+    QSettings l_source(l_source_path, l_source_format);
     QSettings l_target(l_target_path, l_it->format);
-    const QStringList l_keys = l_ini.allKeys();
+    const QStringList l_keys = l_source.allKeys();
     for (const QString &l_key : l_keys) {
-        QVariant l_value = l_ini.value(l_key);
+        QVariant l_value = l_source.value(l_key);
         const ConfigEntry *l_entry = findEntry(f_name, l_key);
         if (l_entry) {
             QVariant l_typed;
@@ -247,7 +260,7 @@ void ConfigStore::migrateIniFile(const QString &f_name, const QString &f_extensi
         l_target.setValue(l_key, l_value);
     }
     l_target.sync();
-    qCInfo(akashiConfig) << "Converted" << l_ini_path << "to" << l_target_path;
+    qCInfo(akashiConfig) << "Converted" << l_source_path << "to" << l_target_path;
 }
 
 bool ConfigStore::loadDeclaredValues(const QString &f_name)

@@ -200,9 +200,8 @@ class AKASHI_CORE_EXPORT IPacketContext
     // checkBeforeRule returns the block reason, or nullopt if allowed.
     virtual std::optional<QString> checkBeforeRule(const QString &f_event, const QVariantMap &f_payload = {}) = 0;
     // Runs the transform rules between gate and commit and returns the
-    // rewritten payload. bypass_rules does NOT skip transforms: they are
-    // area flavor, not gates - a moderator's message still gets
-    // medieval-ized.
+    // rewritten payload. Rules bind everyone - a moderator's message
+    // still gets medieval-ized.
     virtual QVariantMap runTransformRules(const QString &f_event, const QVariantMap &f_payload) = 0;
     virtual void runAfterRule(const QString &f_event, const QVariantMap &f_payload = {}) = 0;
 

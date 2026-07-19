@@ -4,6 +4,8 @@
 #include "akashi_core_export.h"
 
 #include <QHash>
+#include <QHostAddress>
+#include <QString>
 #include <QVector>
 
 namespace akashi {
@@ -69,6 +71,15 @@ class AKASHI_CORE_EXPORT PlayerDirectory : public IService
 
     int clientCount() const;
 
+    // How many connected clients share the given IP - an O(1) tally kept
+    // as clients are added and removed, so the multiclient-limit check no
+    // longer scans every client on each arrival. IPv4 and IPv4-mapped IPv6
+    // count as the same origin (matching the old tolerant comparison).
+    int sameIpCount(const QHostAddress &f_ip) const;
+
+    // The tally key for an address, exposed so the grouping is testable.
+    static QString ipKey(const QHostAddress &f_ip);
+
     // Forgets all clients and IDs without deleting anything; the caller
     // owns the objects. Used for the server's shutdown sequence.
     void clear();
@@ -80,6 +91,7 @@ class AKASHI_CORE_EXPORT PlayerDirectory : public IService
     QVector<akashi::ClientSession *> m_clients;
     QHash<int, akashi::ClientSession *> m_clients_by_id;
     QVector<int> m_free_ids; // most recently freed at the back
+    QHash<QString, int> m_ip_counts; // live per-IP connection tally
 
     // The selected pick function; setIdAssignment replaces it.
     int (PlayerDirectory::*m_take_free_id)() = &PlayerDirectory::takeLastFreedId;

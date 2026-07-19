@@ -49,6 +49,7 @@ class AKASHI_CORE_EXPORT World : public QObject, public IService
     const Floor *floorById(int f_floor_id) const;
     Floor *floorById(int f_floor_id);
     const Floor *floorByName(const QString &f_name) const;
+    Floor *floorByName(const QString &f_name);
     int floorIdForArea(int f_area_id) const;
     QStringList floorNames() const;
 

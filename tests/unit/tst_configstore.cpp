@@ -2,6 +2,7 @@
 #include "akashi/config_store.h"
 #include "akashi/setting_notifier.h"
 #include "akashi/settings.h"
+#include "core/json_settings.h"
 
 #include <QFileInfo>
 #include <QSignalSpy>
@@ -36,6 +37,9 @@ class tst_ConfigStore : public QObject
     void registerFileFormatWithSettingsWrapper();
     void unregisterFormatRemovesEntry();
     void pluginJsonReadFromFile();
+    void nameMigrationConvertsAnIniInOneHop();
+    void nameMigrationPrefersTheConvertedFile();
+    void nameMigrationLeavesAnExistingTargetAlone();
 };
 
 static void writeFile(const QString &f_path, const QByteArray &f_content)
@@ -338,6 +342,51 @@ void tst_ConfigStore::pluginJsonReadFromFile()
     ConfigStore l_store(l_dir.path());
     QVERIFY(l_store.declarePlugin("testread", {{"greeting", QString("default"), "The greeting."}}));
     QCOMPARE(l_store.get<QString>("plugins/testread", "greeting"), "from file");
+}
+
+void tst_ConfigStore::nameMigrationConvertsAnIniInOneHop()
+{
+    // A 1.x INI under the old name arrives converted at the new name in
+    // one boot, and the INI stays behind as the backup.
+    QTemporaryDir l_dir;
+    writeFile(l_dir.path() + "/acl_roles.ini", "[moderator]\nkick=true\n");
+
+    ConfigStore l_store(l_dir.path());
+    l_store.migrateConfigFile("acl_roles", "json", "permissions");
+    QVERIFY(QFileInfo::exists(l_dir.path() + "/permissions.json"));
+    QVERIFY(QFileInfo::exists(l_dir.path() + "/acl_roles.ini"));
+    QVERIFY(!QFileInfo::exists(l_dir.path() + "/acl_roles.json"));
+
+    QSettings l_result(l_dir.path() + "/permissions.json", JsonSettings::format());
+    QCOMPARE(l_result.value("moderator/kick").toBool(), true);
+}
+
+void tst_ConfigStore::nameMigrationPrefersTheConvertedFile()
+{
+    // With both the INI and its earlier conversion present, the newer
+    // JSON wins - edits made since the conversion travel along.
+    QTemporaryDir l_dir;
+    writeFile(l_dir.path() + "/acl_roles.ini", "[moderator]\nkick=true\n");
+    writeFile(l_dir.path() + "/acl_roles.json", R"({"moderator": {"ban": "true"}})");
+
+    ConfigStore l_store(l_dir.path());
+    l_store.migrateConfigFile("acl_roles", "json", "permissions");
+    QSettings l_result(l_dir.path() + "/permissions.json", JsonSettings::format());
+    QCOMPARE(l_result.value("moderator/ban").toString(), QStringLiteral("true"));
+    QVERIFY(!l_result.contains("moderator/kick"));
+}
+
+void tst_ConfigStore::nameMigrationLeavesAnExistingTargetAlone()
+{
+    QTemporaryDir l_dir;
+    writeFile(l_dir.path() + "/acl_roles.json", R"({"moderator": {"ban": "true"}})");
+    writeFile(l_dir.path() + "/permissions.json", R"({"moderator": {"motd": "true"}})");
+
+    ConfigStore l_store(l_dir.path());
+    l_store.migrateConfigFile("acl_roles", "json", "permissions");
+    QSettings l_result(l_dir.path() + "/permissions.json", JsonSettings::format());
+    QVERIFY(l_result.contains("moderator/motd"));
+    QVERIFY(!l_result.contains("moderator/ban"));
 }
 
 }

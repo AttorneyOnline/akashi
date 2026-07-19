@@ -268,6 +268,7 @@ void tst_EventRegistry::eventIdsMatchTheRuleCatalog()
 
     // The placeless and unmapped ones carry their own ids.
     QCOMPARE(akashi::AreaChangedEvent::id, QStringLiteral("area_changed"));
+    QCOMPARE(akashi::GlobalMessageEvent::id, QStringLiteral("global_message_sent"));
     QCOMPARE(akashi::ModcallEvent::id, QStringLiteral("modcall"));
     QCOMPARE(akashi::BanIssuedEvent::id, QStringLiteral("ban_issued"));
     QCOMPARE(akashi::KickIssuedEvent::id, QStringLiteral("kick_issued"));
@@ -280,6 +281,7 @@ void tst_EventRegistry::placelessEventsDispatchNoRulePhase()
     // Placeless events sit in the catalog so /addrule can refuse them,
     // but no rule phase ever dispatches; only observers hear them.
     const QStringList l_placeless = {
+        akashi::GlobalMessageEvent::id,
         akashi::ModcallEvent::id,
         akashi::BanIssuedEvent::id,
         akashi::KickIssuedEvent::id,

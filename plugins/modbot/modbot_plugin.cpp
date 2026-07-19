@@ -118,6 +118,9 @@ bool ModbotPlugin::load(akashi::ServiceRegistry &services)
     // Everything else is analysis: committed facts stream to the worker.
     l_rules->registerObserver(akashi::ICMessageEvent::id, 0, std::bind_front(&ModbotPlugin::observeChatMessage, this, Event::Kind::IcMessage), id());
     l_rules->registerObserver(akashi::OOCMessageEvent::id, 0, std::bind_front(&ModbotPlugin::observeChatMessage, this, Event::Kind::OocMessage), id());
+    // Global chat, adverts, PMs and CM area-broadcasts leave the sender's
+    // area outside the ooc event; count them toward the same flood window.
+    l_rules->registerObserver(akashi::GlobalMessageEvent::id, 0, std::bind_front(&ModbotPlugin::observeChatMessage, this, Event::Kind::OocMessage), id());
     l_rules->registerObserver(akashi::ModcallEvent::id, 0, std::bind_front(&ModbotPlugin::observeModcall, this), id());
     l_rules->registerObserver(akashi::BanIssuedEvent::id, 0, std::bind_front(&ModbotPlugin::observeModeration, this, Event::Kind::BanIssued), id());
     l_rules->registerObserver(akashi::KickIssuedEvent::id, 0, std::bind_front(&ModbotPlugin::observeModeration, this, Event::Kind::KickIssued), id());
@@ -302,7 +305,7 @@ void ModbotPlugin::onVerdict(const Verdict &f_verdict)
     if (l_action == Verdict::Action::Kick && !m_moderation->roleCanPerform(m_acl_role, akashi::permission::kick)) {
         l_action = Verdict::Action::Mute;
     }
-    if (l_action == Verdict::Action::Mute && !m_moderation->roleCanPerform(m_acl_role, akashi::permission::mute)) {
+    if (l_action == Verdict::Action::Mute && !m_moderation->roleCanPerform(m_acl_role, akashi::permission::sanction_mute)) {
         l_action = Verdict::Action::Warn;
     }
 

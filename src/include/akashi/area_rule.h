@@ -154,6 +154,7 @@ inline const QVector<AreaEventInfo> &areaEventCatalog()
         {AreaEvents::StatusChanged, true, true},
         {AreaEvents::DocChanged, true, true},
         // Placeless events, observe-only.
+        {QStringLiteral("global_message_sent"), false, false, false, false},
         {QStringLiteral("modcall"), false, false, false, false},
         {QStringLiteral("ban_issued"), false, false, false, false},
         {QStringLiteral("kick_issued"), false, false, false, false},

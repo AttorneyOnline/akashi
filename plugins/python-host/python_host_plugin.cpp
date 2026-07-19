@@ -501,6 +501,43 @@ static PyObject *pyApiRegisterPermission(PyObject *, PyObject *f_args)
     Py_RETURN_NONE;
 }
 
+// akashi.grant(permission, audience, key) / akashi.revoke(...) place and
+// lift standing grants: audience "person" with an IPID or "role" with a
+// role id. The owner is stamped from the plugin, never script-supplied.
+static PyObject *pyGrantOrRevoke(PyObject *f_args, bool f_grant)
+{
+    PyObject *l_permission_obj = nullptr, *l_audience_obj = nullptr, *l_key_obj = nullptr;
+    if (!PyArg_ParseTuple(f_args, "UUU", &l_permission_obj, &l_audience_obj, &l_key_obj)) {
+        return nullptr;
+    }
+    const char *l_permission = nullptr, *l_audience = nullptr, *l_key = nullptr;
+    Py_ssize_t l_permission_length = 0, l_audience_length = 0, l_key_length = 0;
+    if (!pyStringArg(l_permission_obj, &l_permission, &l_permission_length) ||
+        !pyStringArg(l_audience_obj, &l_audience, &l_audience_length) ||
+        !pyStringArg(l_key_obj, &l_key, &l_key_length)) {
+        return nullptr;
+    }
+    if (!s_active_plugin || s_ffi->abi_version < 11) {
+        PyErr_SetString(PyExc_RuntimeError, "grant/revoke unavailable");
+        return nullptr;
+    }
+    const auto l_call = f_grant ? s_ffi->grant : s_ffi->revoke;
+    return PyBool_FromLong(l_call(l_permission, size_t(l_permission_length),
+                                  l_audience, size_t(l_audience_length),
+                                  l_key, size_t(l_key_length),
+                                  s_active_plugin->owner_id.constData(), size_t(s_active_plugin->owner_id.size())));
+}
+
+static PyObject *pyApiGrant(PyObject *, PyObject *f_args)
+{
+    return pyGrantOrRevoke(f_args, true);
+}
+
+static PyObject *pyApiRevoke(PyObject *, PyObject *f_args)
+{
+    return pyGrantOrRevoke(f_args, false);
+}
+
 static PyObject *pyApiConfigGet(PyObject *, PyObject *f_args)
 {
     PyObject *l_key_obj = nullptr, *l_fallback_obj = nullptr;
@@ -1422,6 +1459,8 @@ static PyMethodDef s_akashi_methods[] = {
     {"register_command", pyApiRegisterCommand, METH_VARARGS, "register_command(name, usage, description, handler, permission='', min_args=0)."},
     {"register_text_filter", pyApiRegisterTextFilter, METH_VARARGS, "register_text_filter(id, order, always_active, handler); the handler returns a str rewrite, False to drop, or None."},
     {"register_permission", pyApiRegisterPermission, METH_VARARGS, "register_permission(id, display_name, category)."},
+    {"grant", pyApiGrant, METH_VARARGS, "grant(permission, audience, key): a standing grant to a person (key = IPID) or role (key = role id)."},
+    {"revoke", pyApiRevoke, METH_VARARGS, "revoke(permission, audience, key): removes exactly the matching grant this plugin placed."},
     {"register_rule_action", pyApiRegisterRuleAction, METH_VARARGS, "register_rule_action(name, phase, handler); a before handler may return a str or False to block."},
     {"register_console_action", pyApiRegisterConsoleAction, METH_VARARGS, "register_console_action(title, handler): puts a task on the server console's menu."},
     {"subscribe_event", pyApiSubscribeEvent, METH_VARARGS, "subscribe_event(name, handler); the handler receives the payload dict."},

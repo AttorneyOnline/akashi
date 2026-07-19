@@ -71,6 +71,14 @@ class AKASHI_CORE_EXPORT ConfigStore : public QObject, public IService
     // A leftover <name>.ini is converted to the file's format once if the target does not exist yet.
     QSettings *settings(const QString &f_name);
 
+    // Copies the settings of an outdated file into its current home, once,
+    // skipped when the target already exists; the source stays behind as a
+    // backup. Without a new name this is the INI-to-current-format
+    // conversion every settings() call runs. With one, the file also
+    // changes its base name - the newest home of the old name is the
+    // source, so a converted file wins over the INI it came from.
+    void migrateConfigFile(const QString &f_name, const QString &f_extension, const QString &f_new_name = QString());
+
     // Markdown reference for a declared file, generated from the declarations.
     QString documentation(const QString &f_name) const;
 
@@ -91,7 +99,6 @@ class AKASHI_CORE_EXPORT ConfigStore : public QObject, public IService
     void valueChanged(const QString &f_name, const QString &f_key, const QVariant &f_old, const QVariant &f_new);
 
   private:
-    void migrateIniFile(const QString &f_name, const QString &f_extension);
     bool loadDeclaredValues(const QString &f_name);
     const ConfigEntry *findEntry(const QString &f_name, const QString &f_key) const;
     QString formatExtension(const QString &f_name) const;

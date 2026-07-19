@@ -6,6 +6,7 @@
 #include "akashi/database_service.h"
 #include "akashi/filesystem_service.h"
 #include "akashi/logging_categories.h"
+#include "akashi/permissions.h"
 #include "akashi/scheduler.h"
 #include "akashi/service_registry.h"
 #include "core/command_context.h"
@@ -30,6 +31,7 @@
 #include <QHash>
 #include <QList>
 #include <QMetaProperty>
+#include <QSet>
 #include <QSettings>
 #include <QSqlError>
 #include <QSqlQuery>
@@ -168,6 +170,14 @@ static int ffiRegisterCommand(const char *f_name, size_t f_name_length,
 static void ffiUnregisterOwner(const char *f_owner_id, size_t f_owner_id_length)
 {
     const QString l_owner = toString(f_owner_id, f_owner_id_length);
+    // The sweep target is stamped like every registration: a buggy caller
+    // must not sweep the reserved owners' registrations by typo.
+    static const QSet<QString> s_reserved{QStringLiteral("core"), QStringLiteral("config"),
+                                          QStringLiteral("roles"), QStringLiteral("command")};
+    if (s_reserved.contains(l_owner)) {
+        qCWarning(akashiScripting) << "unregister_owner refused for reserved owner" << l_owner;
+        return;
+    }
     if (s_commands) {
         s_commands->unregisterAll(l_owner);
     }
@@ -176,6 +186,9 @@ static void ffiUnregisterOwner(const char *f_owner_id, size_t f_owner_id_length)
     }
     if (s_permissions) {
         s_permissions->unregisterAllPermissions(l_owner);
+        s_permissions->removeGrantsByOwner(l_owner);
+        s_permissions->unregisterAllGrantSources(l_owner);
+        s_permissions->unregisterAllSanctionMasks(l_owner);
     }
     if (s_rules) {
         s_rules->unregisterActions(l_owner);
@@ -407,6 +420,60 @@ static int ffiRegisterPermission(const char *f_id, size_t f_id_length,
         return 0;
     }
     return s_permissions->registerPermission(l_info, toString(f_owner_id, f_owner_id_length)) ? 1 : 0;
+}
+
+// Builds the one grant shape a script may place: person- or role-audience
+// at server scope. Everyone-shaped audiences and the super wildcard stay
+// config and core territory.
+static bool buildScriptGrant(const char *f_permission, size_t f_permission_length,
+                             const char *f_audience, size_t f_audience_length,
+                             const char *f_key, size_t f_key_length,
+                             const char *f_owner_id, size_t f_owner_id_length,
+                             akashi::Grant &f_out)
+{
+    const QString l_permission = toString(f_permission, f_permission_length).toLower();
+    const QString l_audience = toString(f_audience, f_audience_length).toLower();
+    const QString l_key = toString(f_key, f_key_length);
+    if (l_permission.isEmpty() || l_permission == akashi::permission::super || l_key.isEmpty()) {
+        return false;
+    }
+    if (l_audience == QStringLiteral("person")) {
+        f_out.audience = akashi::Audience::person(l_key);
+    }
+    else if (l_audience == QStringLiteral("role")) {
+        f_out.audience = akashi::Audience::role(l_key);
+    }
+    else {
+        return false;
+    }
+    f_out.permission = l_permission;
+    f_out.scope = akashi::GrantScope::Server;
+    f_out.owner = toString(f_owner_id, f_owner_id_length);
+    return true;
+}
+
+static int ffiGrant(const char *f_permission, size_t f_permission_length,
+                    const char *f_audience, size_t f_audience_length,
+                    const char *f_key, size_t f_key_length,
+                    const char *f_owner_id, size_t f_owner_id_length)
+{
+    akashi::Grant l_grant;
+    if (!s_permissions || !buildScriptGrant(f_permission, f_permission_length, f_audience, f_audience_length, f_key, f_key_length, f_owner_id, f_owner_id_length, l_grant)) {
+        return 0;
+    }
+    return s_permissions->addGrant(l_grant) ? 1 : 0;
+}
+
+static int ffiRevoke(const char *f_permission, size_t f_permission_length,
+                     const char *f_audience, size_t f_audience_length,
+                     const char *f_key, size_t f_key_length,
+                     const char *f_owner_id, size_t f_owner_id_length)
+{
+    akashi::Grant l_grant;
+    if (!s_permissions || !buildScriptGrant(f_permission, f_permission_length, f_audience, f_audience_length, f_key, f_key_length, f_owner_id, f_owner_id_length, l_grant)) {
+        return 0;
+    }
+    return s_permissions->removeGrant(l_grant) ? 1 : 0;
 }
 
 // Marshals one rule fire into the C callback: the context ids plus the
@@ -1129,6 +1196,8 @@ static const AkashiFfi s_table = {
     ffiWorldFloorCount,
     ffiRegisterOutboundInterceptor,
     ffiPacketResultSet,
+    ffiGrant,
+    ffiRevoke,
 };
 
 namespace {

@@ -1,6 +1,7 @@
 #include "core/rule_actions.h"
 
 #include "akashi/logging_categories.h"
+#include "akashi/permissions.h"
 #include "akashi/service_registry.h"
 #include "core/client_session.h"
 #include "core/server_context.h"
@@ -49,27 +50,9 @@ BeforeRuleFunction block(ServerContext *, ServiceRegistry &, const QVariantMap &
     };
 }
 
-// Holds the door of a locked area. honor_invites=false ignores the guest
-// list; the bypass_locks permission always wins.
-BeforeRuleFunction checkLock(ServerContext *, ServiceRegistry &, const QVariantMap &f_args)
-{
-    bool l_honor_invites = f_args.value(QStringLiteral("honor_invites"), true).toBool();
-    return [l_honor_invites](const RuleContext &f_ctx) -> RuleVerdict {
-        if (f_ctx.payload.value(QStringLiteral("lock_status")).toString() != QStringLiteral("locked"))
-            return {};
-        if (l_honor_invites && f_ctx.payload.value(QStringLiteral("is_invited")).toBool())
-            return {};
-        // No rule argument may switch a granted permission off.
-        if (f_ctx.payload.value(QStringLiteral("bypass_locks")).toBool())
-            return {};
-        return {false, QStringLiteral("Area ") + f_ctx.payload.value(QStringLiteral("area_name")).toString() + QStringLiteral(" is locked.")};
-    };
-}
-
 // Blocks claiming a character that is already held. The policy argument
 // picks the scope: unique_per_area mirrors the per-area mechanism (so the
-// default rule changes nothing, and bypass_rules holders still meet the
-// mechanism's refusal below the rules), unique_on_floor holds a claim
+// default rule changes nothing), unique_on_floor holds a claim
 // against every area on the acting client's floor. Without a message
 // argument the refusal is silent, like the mechanism's always has been;
 // the legacy no_duplicates policy (the player_joined shape) keeps its
@@ -114,21 +97,6 @@ BeforeRuleFunction checkCharacter(ServerContext *, ServiceRegistry &f_services, 
         if (l_policy == QStringLiteral("no_duplicates"))
             return {false, QStringLiteral("That character is already taken in ") + l_world->areaName(f_ctx.area_id) + QStringLiteral(".")};
         return {false, QString()};
-    };
-}
-
-// Requires a named permission.
-BeforeRuleFunction checkPermission(ServerContext *f_server, ServiceRegistry &, const QVariantMap &f_args)
-{
-    QString l_permission = f_args.value(QStringLiteral("permission")).toString();
-    QString l_message = f_args.value(QStringLiteral("message"), QStringLiteral("You do not have permission to do that here.")).toString();
-    return [f_server, l_permission, l_message](const RuleContext &f_ctx) -> RuleVerdict {
-        akashi::ClientSession *l_client = clientFor(f_server, f_ctx);
-        if (!l_client || l_permission.isEmpty())
-            return {};
-        if (!l_client->canPerform(l_permission))
-            return {false, l_message};
-        return {};
     };
 }
 
@@ -221,13 +189,14 @@ BeforeRuleFunction checkEvidenceAccess(ServerContext *f_server, ServiceRegistry 
     };
 }
 
-// Holds a locked background against everyone but moderators.
+// Holds a locked background against everyone without the named grant -
+// the formerly unnamed "is logged in" privilege, now grantable to roles.
 BeforeRuleFunction checkBackground(ServerContext *f_server, ServiceRegistry &, const QVariantMap &)
 {
     return [f_server](const RuleContext &f_ctx) -> RuleVerdict {
         akashi::Area *l_area = areaFor(f_server, f_ctx);
         akashi::ClientSession *l_client = clientFor(f_server, f_ctx);
-        if (l_area && l_area->isBgLocked() && l_client && !l_client->isAuthenticated())
+        if (l_area && l_area->isBgLocked() && l_client && !l_client->canPerform(permission::change_locked_background))
             return {false, QStringLiteral("This area's background is locked.")};
         return {};
     };
@@ -276,7 +245,7 @@ BeforeRuleFunction checkWtce(ServerContext *f_server, ServiceRegistry &, const Q
 }
 
 // --- Transform factories. Each builds one payload-rewriting rule. ---
-// Transforms run for everyone: bypass_rules skips gates, not area flavor.
+// Transforms run for everyone, like every rule.
 
 // Downgrades shouts to plain messages where the area's shout knob is off.
 // The protocol hygiene (custom "4", [0,4] range) stays with the handler.
@@ -487,9 +456,7 @@ struct TransformDef
 
 constexpr GateDef s_gates[] = {
     {"block", &block},
-    {"check_lock", &checkLock},
     {"check_character", &checkCharacter},
-    {"check_permission", &checkPermission},
     {"check_setting", &checkSetting},
     {"check_blankposting", &checkBlankposting},
     {"check_iniswap", &checkIniswap},

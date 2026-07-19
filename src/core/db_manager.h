@@ -1,6 +1,6 @@
 #pragma once
 
-#define DB_VERSION 4
+#define DB_VERSION 5
 
 #include "akashi_core_export.h"
 #include "core/crypto_helper.h"
@@ -59,8 +59,9 @@ class AKASHI_CORE_EXPORT DBManager : public QObject
     };
 
     /**
-     * @brief A stored timed sanction: applied on connect while active,
-     * lifted by the scheduler when it expires.
+     * @brief A stored sanction: applied on connect while active. A timed
+     * one is lifted by the scheduler; an untimed one holds until a
+     * moderator lifts it by hand.
      */
     struct SanctionInfo
     {
@@ -68,12 +69,14 @@ class AKASHI_CORE_EXPORT DBManager : public QObject
         QString sanction;  //!< The sanction id, for example "muted".
         QString moderator; //!< The moderator who issued the sanction.
         qint64 issued;     //!< When the sanction was issued, in epoch seconds.
-        qint64 expires;    //!< When the sanction lifts, in epoch seconds.
+        qint64 expires;    //!< When the sanction lifts, in epoch seconds; -1 holds until lifted by hand.
+        QString hwid;      //!< The sanctioned user's HWID, so a new IP does not shake the sanction off. May be empty.
+        QString data;      //!< Sanction-specific payload, for example the charcurse character list.
     };
 
     /**
-     * @brief Stores a timed sanction, replacing an earlier one for the
-     * same IPID and sanction id.
+     * @brief Stores a sanction, replacing an earlier one for the same
+     * IPID and sanction id.
      */
     void upsertSanction(const SanctionInfo &f_sanction);
 
@@ -83,9 +86,20 @@ class AKASHI_CORE_EXPORT DBManager : public QObject
     void removeSanction(const QString &f_ipid, const QString &f_sanction);
 
     /**
-     * @brief The sanctions still active for an IPID at the given moment.
+     * @brief The sanctions still in force for an IPID at the given moment.
      */
     QList<SanctionInfo> sanctionsFor(const QString &f_ipid, qint64 f_now);
+
+    /**
+     * @brief The sanctions still in force for a person known by IPID or
+     * HWID - the join-time check, so neither identifier shakes one off.
+     */
+    QList<SanctionInfo> sanctionsForIdentity(const QString &f_ipid, const QString &f_hwid, qint64 f_now);
+
+    /**
+     * @brief The stored row for one sanction, if any.
+     */
+    std::optional<SanctionInfo> sanctionRow(const QString &f_ipid, const QString &f_sanction);
 
     /**
      * @brief Every stored sanction, expired ones included - the boot pass

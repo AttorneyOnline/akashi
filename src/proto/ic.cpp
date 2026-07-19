@@ -229,8 +229,8 @@ class IcHandler : public PacketHandler
 
         // The transform rules rewrite the payload between gate and commit:
         // strip_shouts downgrades the shout, apply_medieval reworks the
-        // text. bypass_rules does not skip them - transforms are area
-        // flavor, not gates, so a moderator's message is transformed too.
+        // text. Rules bind everyone, so a moderator's message is
+        // transformed too.
         const QVariantMap l_transformed = f_context.runTransformRules(AreaEvents::IcMessageSent,
                                                                       {{QStringLiteral("message"), l_ic.message_text},
                                                                        {QStringLiteral("char_name"), l_ic.char_name},

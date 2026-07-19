@@ -1,6 +1,7 @@
 #pragma once
 
 #include "akashi/area_rule.h"
+#include "akashi/grants.h"
 #include "akashi_core_export.h"
 #include "world/area_settings.h"
 #include "world/evidence_store.h"
@@ -320,6 +321,11 @@ class AKASHI_CORE_EXPORT Area : public QObject
     const QVector<AfterRuleEntry> &afterRules() const { return m_after_rules; }
     const QVector<TransformRuleEntry> &transformRules() const { return m_transform_rules; }
 
+    // --- Standing permission offers in this area ---
+
+    QVector<Grant> &grants() { return m_grants; }
+    const QVector<Grant> &grants() const { return m_grants; }
+
   Q_SIGNALS:
     // One signal per area-update type the protocol knows; the broadcaster
     // subscribes to exactly these four.
@@ -368,6 +374,7 @@ class AKASHI_CORE_EXPORT Area : public QObject
     QVector<BeforeRuleEntry> m_before_rules;
     QVector<AfterRuleEntry> m_after_rules;
     QVector<TransformRuleEntry> m_transform_rules;
+    QVector<Grant> m_grants;
 };
 
 } // namespace akashi

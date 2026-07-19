@@ -167,7 +167,8 @@ void cmdSetPerms(CommandContext &f_context)
         return;
     }
 
-    if (l_target_acl == ACLRolesHandler::SUPER_ID && !f_context.canPerform(akashi::permission::super)) {
+    // Handing out SUPER is the spec-declared escalation.
+    if (l_target_acl == ACLRolesHandler::SUPER_ID && !f_context.canPerform(f_context.escalatesTo())) {
         f_context.reply("You aren't allowed to set that role!");
         return;
     }
@@ -269,9 +270,17 @@ void registerAuthenticationCommands(CommandRegistry &f_registry)
     };
     f_registry.registerCommand(l_listperms, QStringLiteral("core"));
 
-    f_registry.registerCommand(
-        {QStringLiteral("setperms"), {}, {akashi::permission::modify_users}, 2, QStringLiteral("/setperms <username> <role>"), QStringLiteral("Sets the role of the given user.")},
-        cmdSetPerms, QStringLiteral("core"));
+    {
+        CommandSpec l_setperms;
+        l_setperms.name = QStringLiteral("setperms");
+        l_setperms.permissions = {akashi::permission::modify_users};
+        l_setperms.min_args = 2;
+        l_setperms.usage = QStringLiteral("/setperms <username> <role>");
+        l_setperms.description = QStringLiteral("Sets the role of the given user.");
+        l_setperms.escalates_to = akashi::permission::super;
+        l_setperms.escalates_when = QStringLiteral("assigning the SUPER role");
+        f_registry.registerCommand(l_setperms, cmdSetPerms, QStringLiteral("core"));
+    }
 
     f_registry.registerCommand(
         {QStringLiteral("removeperms"), {}, {akashi::permission::modify_users}, 1, QStringLiteral("/removeperms <username>"), QStringLiteral("Removes all permissions from the given user.")},

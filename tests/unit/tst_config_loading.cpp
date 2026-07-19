@@ -149,7 +149,7 @@ void tst_ConfigLoading::areaRules()
             "background": "gs4",
             "rules": {
                 "evidence_added": {
-                    "before": [{"action": "check_permission", "permission": "canModifyEvidence"}]
+                    "before": [{"action": "check_setting", "setting": "evidence_allowed"}]
                 }
             }
         },
@@ -183,8 +183,8 @@ void tst_ConfigLoading::areaRules()
     QCOMPARE(l_area_rules.size(), 1);
     QCOMPARE(l_area_rules[0].event, QString("evidence_added"));
     QCOMPARE(l_area_rules[0].phase, akashi::RulePhase::Before);
-    QCOMPARE(l_area_rules[0].action, QString("check_permission"));
-    QCOMPARE(l_area_rules[0].args.value("permission").toString(), QString("canModifyEvidence"));
+    QCOMPARE(l_area_rules[0].action, QString("check_setting"));
+    QCOMPARE(l_area_rules[0].args.value("setting").toString(), QString("evidence_allowed"));
     QVERIFY(!l_area_rules[0].args.contains("action"));
 }
 
@@ -270,6 +270,7 @@ void tst_ConfigLoading::deprecatedSettingNamesRemapOrRefuse()
     QTest::ignoreMessage(QtWarningMsg, QRegularExpression("no longer gates \"shownames\".*check_showname"));
     QTest::ignoreMessage(QtWarningMsg, QRegularExpression("no longer gates \"wtce\".*check_wtce"));
     QTest::ignoreMessage(QtWarningMsg, QRegularExpression("no longer gates \"ic_messages\".*floodguard"));
+    QTest::ignoreMessage(QtWarningMsg, QRegularExpression("bypass argument names.*gamemaster.*legacy name"));
 
     const akashi::config::AreaRulesConfig l_config = akashi::config::loadAreaRules(l_path);
     const auto l_rules = l_config.floor_rules.value("Legacy");
@@ -283,7 +284,8 @@ void tst_ConfigLoading::deprecatedSettingNamesRemapOrRefuse()
         if (l_rule.event == "music_changed") {
             QCOMPARE(l_rule.action, QString("check_setting"));
             QCOMPARE(l_rule.args.value("setting").toString(), QString("music_allowed"));
-            QCOMPARE(l_rule.args.value("bypass").toString(), QString("gamemaster"));
+            // The legacy bypass value translated to its new name.
+            QCOMPARE(l_rule.args.value("bypass").toString(), QString("area.cm"));
         }
         else {
             QCOMPARE(l_rule.event, QString("ic_message_sent"));

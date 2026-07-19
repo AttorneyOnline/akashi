@@ -784,7 +784,9 @@ void PluginManager::cleanupPlugin(const QString &f_id)
     auto l_permissions = m_services->resolve<PermissionRegistry>(QStringLiteral("akashi.permissions"));
     if (l_permissions) {
         l_permissions->unregisterAllPermissions(f_id);
-        l_permissions->unregisterAllResolvers(f_id);
+        l_permissions->removeGrantsByOwner(f_id);
+        l_permissions->unregisterAllGrantSources(f_id);
+        l_permissions->unregisterAllSanctionMasks(f_id);
     }
 
     auto l_log = m_services->resolve<LogService>(QStringLiteral("akashi.log"));

@@ -12,6 +12,24 @@ class CommandContext;
 
 using CommandHandler = std::function<void(CommandContext &)>;
 
+// A shadow's way forward: invoke it with the (possibly rewritten)
+// argument list, and the gate plus variant selection re-run on those
+// arguments before anything deeper executes - a rewrite can never
+// smuggle arguments past the gate. Not calling it swallows the command.
+using CommandNext = std::function<void(const QStringList &)>;
+
+// A shadow over an existing command: it runs in the command's place and
+// decides whether, and with what arguments, the wrapped binding
+// proceeds. This is the packet-interceptor pattern on the command chain.
+using CommandShadowFn = std::function<void(CommandContext &, const CommandNext &)>;
+
+struct CommandShadow
+{
+    int priority = 0; // higher runs earlier (outermost)
+    CommandShadowFn shadow;
+    QString owner_id;
+};
+
 // One gated form of a command. Variants let one command carry different
 // permission requirements per argument shape, resolved at the dispatch gate
 // before the handler runs - no permission check hides inside a handler body,
@@ -26,6 +44,11 @@ struct CommandVariant
     QString description;
     CommandHandler handler;
     QString owner_id; // set by the registry; plugin unload sweeps by it
+
+    // Any-of over all-of groups: {{"area.cm","kick"}} needs both,
+    // {{"area.cm"},{"music.jukebox"}} needs either. When non-empty this
+    // is the form's whole gate and the flat permissions list is ignored.
+    QList<QStringList> requirement_groups;
 
     bool matches(int f_argc) const
     {
@@ -47,6 +70,20 @@ struct CommandSpec
     // matches and gates on ITS permissions; the spec-level permissions,
     // min_args and registered handler are not consulted.
     QList<CommandVariant> variants;
+
+    // The spec-level AND gate, same shape as the variant field.
+    QList<QStringList> requirement_groups;
+
+    // A value-dependent escalation the body triggers but the spec names,
+    // so /help shows it and an extension can override it: timer 0 needs
+    // this, the SUPER role as a /setperms argument needs this.
+    QString escalates_to;
+    QString escalates_when; // the human words for /help
+
+    // A target holding this permission is immune to the command - "you
+    // cannot kick another CM" - declared here instead of hidden inline,
+    // enforced through CommandContext::targetIsImmune.
+    QString target_immune_if;
 
     // The first variant taking this many arguments, or nullptr when no form
     // does. Declaration order decides ties, so narrower forms come first.

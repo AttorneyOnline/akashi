@@ -20,6 +20,7 @@ void cmdMotd(akashi::CommandContext &f_context);
 void cmdSetMotd(akashi::CommandContext &f_context);
 void cmdBans(akashi::CommandContext &f_context);
 void cmdUnban(akashi::CommandContext &f_context);
+void cmdLiftSanction(akashi::CommandContext &f_context);
 void cmdAbout(akashi::CommandContext &f_context);
 void cmdMute(akashi::CommandContext &f_context);
 void cmdUnmute(akashi::CommandContext &f_context);
@@ -38,17 +39,21 @@ void cmdUpdateBan(akashi::CommandContext &f_context);
 void cmdNotice(akashi::CommandContext &f_context);
 void cmdNoticeG(akashi::CommandContext &f_context);
 void cmdKickOther(akashi::CommandContext &f_context);
+void cmdWhy(akashi::CommandContext &f_context);
+void cmdDumpGrants(akashi::CommandContext &f_context);
 
 void registerModerationCommands(akashi::CommandRegistry &f_registry);
 
-// Handles the optional trailing time of a sanction command. With one, the
-// sanction is stored under the target's IPID and lifts itself - it
-// survives reconnects and restarts. Without one, any stored lift is
-// dropped so the sanction holds until lifted by hand. Returns false when
-// a time was given but could not be read; an error was already replied.
-bool applySanctionSchedule(akashi::CommandContext &f_context, akashi::TargetPlayer &f_target, const QString &f_sanction_id);
+// Places a sanction through the server's one door: stored under the
+// target's IPID and HWID so it survives reconnects and restarts, flagged
+// on every window the person owns, with an optional trailing time after
+// which it lifts itself - without one it holds until lifted by hand.
+// Returns false when a time was given but could not be read; an error
+// was already replied. f_data is the sanction's payload, if it has one.
+bool applySanction(akashi::CommandContext &f_context, akashi::TargetPlayer &f_target, const QString &f_sanction_id, const QString &f_data = QString());
 
-// Drops the stored row and pending lift when a sanction is lifted by hand.
-void clearSanctionSchedule(akashi::CommandContext &f_context, akashi::TargetPlayer &f_target, const QString &f_sanction_id);
+// Lifts a sanction by hand: the stored row, the pending lift and the
+// session flags of everyone it covered all clear.
+void liftSanction(akashi::CommandContext &f_context, akashi::TargetPlayer &f_target, const QString &f_sanction_id);
 
 } // namespace akashi::commands

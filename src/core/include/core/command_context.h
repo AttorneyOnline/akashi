@@ -33,6 +33,7 @@ class AKASHI_CORE_EXPORT TargetPlayer
     int areaId() const;
     QString ipid() const;
     bool isAuthenticated() const;
+    bool canPerform(const QString &f_permission) const;
 
     void reply(const QString &f_message);
 
@@ -48,7 +49,6 @@ class AKASHI_CORE_EXPORT TargetPlayer
     QString hwid() const;
     QString characterName() const;
     bool isPmMuted() const;
-    void setTestimonySaving(bool f_state);
 
     // The characters this person plays (core/player_state.h), oldest first.
     // A session has exactly one today; a richer protocol may
@@ -64,7 +64,8 @@ class AKASHI_CORE_EXPORT TargetPlayer
 class AKASHI_CORE_EXPORT CommandContext
 {
   public:
-    CommandContext(akashi::ClientSession *f_invoker, ServerContext *f_server, QStringList f_arguments);
+    CommandContext(akashi::ClientSession *f_invoker, ServerContext *f_server, QStringList f_arguments,
+                   const QString &f_command_name = {});
 
     int clientId() const;
     QString name() const;
@@ -78,6 +79,21 @@ class AKASHI_CORE_EXPORT CommandContext
     QString hwid() const;
     bool isAuthenticated() const;
     bool canPerform(const QString &f_permission) const;
+    // The same question about another area - "would this resolve there?".
+    bool canPerformIn(const QString &f_permission, int f_area_id) const;
+
+    // The command being dispatched, as its registered name.
+    QString commandName() const;
+
+    // The spec's declared escalation permission, empty when none - so a
+    // body checks canPerform(escalatesTo()) and an extension clearing the
+    // field opens the escalated form.
+    QString escalatesTo() const;
+
+    // True when the acted-on client holds the spec's declared immunity
+    // permission - "you cannot kick another CM" - false when the spec
+    // declares none or the id resolves to nobody.
+    bool targetIsImmune(int f_target_id) const;
 
     QString aclRoleId() const;
     void setAclRoleId(const QString &f_role_id);
@@ -107,6 +123,7 @@ class AKASHI_CORE_EXPORT CommandContext
     akashi::ClientSession *m_invoker;
     ServerContext *m_server;
     QStringList m_arguments;
+    QString m_command_name;
 };
 
 } // namespace akashi

@@ -190,7 +190,7 @@ void tst_World::rulesApplyToTheirScopeOnly()
 void tst_World::firstBlockingRuleWins()
 {
     QVector<akashi::BeforeRuleEntry> l_area_rules = {
-        {akashi::AreaEvents::PlayerJoined, QStringLiteral("check_lock"),
+        {akashi::AreaEvents::PlayerJoined, QStringLiteral("check_gate"),
          [](const akashi::RuleContext &) { return akashi::RuleVerdict{false, "the area says no"}; },
          "test"},
     };
@@ -212,7 +212,7 @@ void tst_World::areaRulesOverrideFloorRulesOfSameAction()
         {akashi::AreaEvents::EvidencePresented, QStringLiteral("check_evidence"),
          [](const akashi::RuleContext &) { return akashi::RuleVerdict{false, "No evidence on this floor."}; },
          "test"},
-        {akashi::AreaEvents::EvidencePresented, QStringLiteral("check_permission"),
+        {akashi::AreaEvents::EvidencePresented, QStringLiteral("check_probe"),
          [](const akashi::RuleContext &) { return akashi::RuleVerdict{}; },
          "test"},
     };
@@ -222,7 +222,7 @@ void tst_World::areaRulesOverrideFloorRulesOfSameAction()
          "test"},
     };
 
-    // Area overrides check_evidence (allows), floor check_permission still runs (allows).
+    // Area overrides check_evidence (allows), floor check_probe still runs (allows).
     QVERIFY(akashi::RuleRegistry::checkBefore(akashi::AreaEvents::EvidencePresented, {.player_state_id = 4, .client_session_id = 4, .area_id = 2, .floor_id = 0, .payload = {}, .services = nullptr},
                                               l_area_rules, l_floor_rules)
                 .allowed);
@@ -232,12 +232,12 @@ void tst_World::areaRulesOverrideFloorRulesOfSameAction()
                                                l_empty, l_floor_rules)
                  .allowed);
 
-    // Floor check_permission blocks, area only overrides check_evidence.
+    // Floor check_probe blocks, area only overrides check_evidence.
     QVector<akashi::BeforeRuleEntry> l_floor_rules2 = {
         {akashi::AreaEvents::EvidencePresented, QStringLiteral("check_evidence"),
          [](const akashi::RuleContext &) { return akashi::RuleVerdict{false, "floor blocks"}; },
          "test"},
-        {akashi::AreaEvents::EvidencePresented, QStringLiteral("check_permission"),
+        {akashi::AreaEvents::EvidencePresented, QStringLiteral("check_probe"),
          [](const akashi::RuleContext &) { return akashi::RuleVerdict{false, "no permission"}; },
          "test"},
     };
@@ -1139,7 +1139,7 @@ void tst_World::configRulesSkipUnknownActionsAndWrongPhases()
                             {"action": "send_message", "message": "an after action in the gate bucket"},
                             {"action": "check_setting", "setting": "music_allowed"}
                         ],
-                        "transform": [{"action": "check_lock"}],
+                        "transform": [{"action": "check_character"}],
                         "after": [{"action": "strip_shouts"}]
                     }
                 }

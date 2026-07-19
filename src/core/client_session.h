@@ -1,6 +1,8 @@
 #pragma once
 
 #include "akashi_core_export.h"
+#include "core/command_registry.h"
+#include "core/permission_registry.h"
 #include "core/player_state.h"
 #include "proto/client_profile.h"
 #include "proto/packet_codec.h"
@@ -153,7 +155,6 @@ class AKASHI_CORE_EXPORT ClientSession : public QObject, public IPacketContext
 
     // Misc person-level state.
     long last_wtce_time = 0;
-    bool testimony_saving = false;
 
     // The character id AO uses for "no character": a spectator.
     const int SPECTATOR_ID = -1;
@@ -293,8 +294,6 @@ class AKASHI_CORE_EXPORT ClientSession : public QObject, public IPacketContext
     void setAdvertEnabled(bool f_advert_enabled);
     bool isCharCursed() const;
     void setCharCursed(bool f_char_cursed);
-    bool isTestimonySaving() const;
-    void setTestimonySaving(bool f_testimony_saving);
 
     QHostAddress remoteIp() const;
     QString moderatorName() const;
@@ -361,6 +360,11 @@ class AKASHI_CORE_EXPORT ClientSession : public QObject, public IPacketContext
     void broadcastCaseAlert(const QList<bool> &f_needs, const Packet &f_packet) override;
     void setCharacterPassword(const QString &f_password) override;
     bool canPerform(const QString &f_permission) const override;
+    // The same question about another area - "would this resolve there?".
+    bool canPerformIn(const QString &f_permission, int f_area_id) const;
+    // The full resolution taken apart, for /why: which grants matched,
+    // which sanction masked, in fixed presentation order.
+    akashi::Resolution explainPermission(const QString &f_permission) const;
     QString areaName() const override;
     std::optional<QString> playerName(int f_client_id) const override;
     void broadcastModerators(const Packet &f_packet) override;
@@ -396,6 +400,13 @@ class AKASHI_CORE_EXPORT ClientSession : public QObject, public IPacketContext
     void reconnectTimedOut();
 
   private:
+    // The one place a resolution query is assembled from session state.
+    akashi::PermissionQuery buildPermissionQuery(const QString &f_permission, int f_area_id) const;
+
+    // One layer of the shadow chain; the gate re-runs per argument list.
+    void dispatchCommand(const akashi::CommandRegistry::Resolved &f_command, QStringList f_arguments,
+                         QList<akashi::CommandShadow> f_shadows);
+
     // The person's profile as told at the handshake; profile() exposes it.
     ClientProfile m_profile;
 

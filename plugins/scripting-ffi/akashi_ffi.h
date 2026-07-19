@@ -25,7 +25,7 @@ extern "C"
 {
 #endif
 
-#define AKASHI_FFI_ABI_VERSION 10
+#define AKASHI_FFI_ABI_VERSION 11
 
     /* Valid only for the duration of a command callback. */
     typedef struct AkashiCommandContext AkashiCommandContext;
@@ -408,6 +408,27 @@ extern "C"
         void (*packet_result_set)(AkashiPacketResult *f_result,
                                   const char *f_header, size_t f_header_length,
                                   int f_field_count, const char *const *f_fields, const size_t *f_field_lengths);
+
+        /* --- Added in ABI version 11 --- */
+
+        /* Places a standing server-scope grant of f_permission for one person
+         * (f_audience "person", f_key their IPID) or one role (f_audience
+         * "role", f_key the role id). The grant carries the owner as its
+         * provenance and leaves with the plugin. Everyone-shaped audiences
+         * and the super wildcard are refused - those are config and core
+         * territory - as is an unregistered permission name. Returns 1 on
+         * success. */
+        int (*grant)(const char *f_permission, size_t f_permission_length,
+                     const char *f_audience, size_t f_audience_length,
+                     const char *f_key, size_t f_key_length,
+                     const char *f_owner_id, size_t f_owner_id_length);
+
+        /* Removes exactly the matching grant the owner placed. Returns 1 when
+         * one was removed. */
+        int (*revoke)(const char *f_permission, size_t f_permission_length,
+                      const char *f_audience, size_t f_audience_length,
+                      const char *f_key, size_t f_key_length,
+                      const char *f_owner_id, size_t f_owner_id_length);
     } AkashiFfi;
 
 #ifdef __cplusplus

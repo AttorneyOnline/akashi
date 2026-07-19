@@ -1,6 +1,7 @@
 #include "world/config_loading.h"
 
 #include "akashi/logging_categories.h"
+#include "akashi/permissions.h"
 
 #include <QFile>
 #include <QJsonArray>
@@ -76,6 +77,14 @@ MusicCatalog loadMusicList(const QString &f_path)
 // declaration must be skipped.
 static bool remapDeprecatedSetting(RuleDeclaration &f_declaration)
 {
+    if (f_declaration.action == QStringLiteral("check_permission")) {
+        qCWarning(akashiConfig) << "check_permission was retired - permissions do not live in rules. Grant the permission in permissions.json or an areas.json grants section instead. The rule was skipped.";
+        return false;
+    }
+    if (f_declaration.action == QStringLiteral("check_lock")) {
+        qCWarning(akashiConfig) << "check_lock was retired - entering is the area.enter permission: the lock state shapes the area's offer, invites grant it personally, and staff hold it at server scope. The rule was skipped.";
+        return false;
+    }
     if (f_declaration.action != QStringLiteral("check_setting"))
         return true;
     const QString l_setting = f_declaration.args.value(QStringLiteral("setting")).toString();
@@ -140,8 +149,19 @@ static QVector<RuleDeclaration> parseRules(const QJsonObject &f_rules)
                     continue;
                 }
                 for (auto arg = l_object.begin(); arg != l_object.end(); ++arg) {
-                    if (arg.key() != QStringLiteral("action"))
-                        l_declaration.args.insert(arg.key(), arg.value().toVariant());
+                    if (arg.key() == QStringLiteral("action"))
+                        continue;
+                    QVariant l_value = arg.value().toVariant();
+                    // A bypass argument names a permission; legacy
+                    // spellings translate through the shared alias table.
+                    if (arg.key() == QStringLiteral("bypass")) {
+                        const auto l_alias = permission::legacyAliases().constFind(l_value.toString().toLower());
+                        if (l_alias != permission::legacyAliases().constEnd()) {
+                            qCWarning(akashiConfig) << "A rule's bypass argument names" << l_value.toString() << "by its legacy name - now" << l_alias->first() << "- update the file.";
+                            l_value = l_alias->first();
+                        }
+                    }
+                    l_declaration.args.insert(arg.key(), l_value);
                 }
                 if (!remapDeprecatedSetting(l_declaration)) {
                     continue;
@@ -187,6 +207,71 @@ AreaRulesConfig loadAreaRules(const QString &f_path)
         const auto l_rules = parseRules(it.value().toObject().value(QStringLiteral("rules")).toObject());
         if (!l_rules.isEmpty())
             l_config.area_rules.insert(l_index, l_rules);
+    }
+    return l_config;
+}
+
+// Reads one "grants" object: permission (or @group) to its audience, or
+// to an array of audiences.
+static QVector<GrantDeclaration> parseGrants(const QJsonObject &f_grants)
+{
+    QVector<GrantDeclaration> l_result;
+    for (auto it = f_grants.begin(); it != f_grants.end(); ++it) {
+        QStringList l_audiences;
+        if (it.value().isArray()) {
+            const QJsonArray l_array = it.value().toArray();
+            for (const QJsonValue &l_value : l_array) {
+                l_audiences.append(l_value.toString());
+            }
+        }
+        else {
+            l_audiences.append(it.value().toString());
+        }
+        for (const QString &l_audience : std::as_const(l_audiences)) {
+            if (l_audience.isEmpty()) {
+                qCWarning(akashiConfig) << "A grant of" << it.key() << "names no audience and was skipped.";
+                continue;
+            }
+            l_result.append({it.key(), l_audience});
+        }
+    }
+    return l_result;
+}
+
+AreaGrantsConfig loadAreaGrants(const QString &f_path)
+{
+    AreaGrantsConfig l_config;
+    QFile l_file(f_path);
+    if (!l_file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        return l_config;
+    }
+
+    QJsonParseError l_error;
+    const QJsonDocument l_doc = QJsonDocument::fromJson(l_file.readAll(), &l_error);
+    if (l_error.error != QJsonParseError::NoError || !l_doc.isObject()) {
+        qCWarning(akashiConfig) << "Unable to load area grants. The following error was encountered:" << l_error.errorString();
+        return l_config;
+    }
+
+    const QJsonObject l_root = l_doc.object();
+    const QJsonObject l_floors = l_root.value(QStringLiteral("floors")).toObject();
+    for (auto it = l_floors.begin(); it != l_floors.end(); ++it) {
+        const auto l_grants = parseGrants(it.value().toObject().value(QStringLiteral("grants")).toObject());
+        if (!l_grants.isEmpty())
+            l_config.floor_grants.insert(it.key(), l_grants);
+    }
+
+    for (auto it = l_root.begin(); it != l_root.end(); ++it) {
+        if (!it.value().isObject())
+            continue;
+        const QStringList l_parts = it.key().split(QLatin1Char(':'));
+        bool l_is_area = false;
+        const int l_index = l_parts.first().toInt(&l_is_area);
+        if (!l_is_area || l_parts.size() < 2)
+            continue;
+        const auto l_grants = parseGrants(it.value().toObject().value(QStringLiteral("grants")).toObject());
+        if (!l_grants.isEmpty())
+            l_config.area_grants.insert(l_index, l_grants);
     }
     return l_config;
 }

@@ -20,14 +20,15 @@ struct BanHistoryEntry
     QString moderator;
 };
 
-// An active timed sanction row from the shared store.
+// An active sanction row from the shared store.
 struct SanctionEntry
 {
     QString ipid;
     QString sanction;
     QString issuer;
     qint64 issued = 0;  // epoch seconds
-    qint64 expires = 0; // epoch seconds
+    qint64 expires = 0; // epoch seconds; -1 holds until lifted by hand
+    QString hwid;       // matched besides the ipid; may be empty
 };
 
 // The service-mediated door to the moderation data: plugins read history
@@ -46,7 +47,8 @@ class ModerationService : public IService
     virtual QList<BanHistoryEntry> banHistory(const QString &f_ipid) const = 0;
     virtual QList<BanHistoryEntry> banHistoryByHwid(const QString &f_hwid) const = 0;
 
-    // The identifier's timed sanctions that have not expired yet.
+    // The identifier's sanctions still in force - timed ones that have
+    // not expired, and untimed ones waiting for a hand lift.
     virtual QList<SanctionEntry> activeSanctions(const QString &f_ipid) const = 0;
 
     // True when the named ACL role holds the permission. This is how a

@@ -63,6 +63,7 @@ QList<SanctionEntry> CoreModerationService::activeSanctions(const QString &f_ipi
         l_entry.issuer = l_row.moderator;
         l_entry.issued = l_row.issued;
         l_entry.expires = l_row.expires;
+        l_entry.hwid = l_row.hwid;
         l_sanctions.append(l_entry);
     }
     return l_sanctions;
@@ -94,10 +95,8 @@ void CoreModerationService::liftSanction(const QString &f_ipid, const QString &f
         qCWarning(akashiServer) << "Moderation service has no server; sanction not lifted.";
         return;
     }
-    m_server->clearStoredSanction(f_ipid, f_sanction_id);
-    const QList<akashi::ClientSession *> l_clients = m_server->clientsByIpid(f_ipid);
+    const QList<akashi::ClientSession *> l_clients = m_server->removeSanction(f_ipid, f_sanction_id);
     for (akashi::ClientSession *l_client : l_clients) {
-        l_client->setSanction(f_sanction_id, false);
         l_client->sendServerMessage(QStringLiteral("Your \"%1\" sanction has been lifted.").arg(f_sanction_id));
     }
 }

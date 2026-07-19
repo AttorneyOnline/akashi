@@ -1784,9 +1784,12 @@ class ModbotDance : public QObject
         }
         else if (m_phase == Phase::ScreenedIc && l_text.contains("marker one")) {
             say("OK: the screened line never echoed");
-            setPhase(Phase::RepeatWarn, "the bot to warn the spammer");
+            // Spam through global chat, not area OOC: /g dispatches as a
+            // command and never fires the ooc event, so this only trips the
+            // bot if the global_message_sent signal reaches its analysis.
+            setPhase(Phase::RepeatWarn, "the bot to warn the global-chat spammer");
             for (int i = 0; i < 4; i++) {
-                m_target->sendOoc("buy my wares");
+                m_target->sendOoc("/g buy my wares");
             }
         }
     }
@@ -2206,8 +2209,8 @@ class ScriptingDance : public QObject
         // Script rule actions attached to the live area: the Lua before
         // rule blocks by content, the Python after rule tallies what
         // actually happened - a blocked message never reaches it. Rules
-        // only gate ordinary players (a moderator holds bypass_rules), so
-        // the moderator steps aside while the gate is under test.
+        // bind everyone, moderators included; the logout just keeps the
+        // gate under test on the plainest possible client.
         {Step::Command, "/addrule ic_message_sent lua.no_word word=banana", "Added lua.no_word"},
         {Step::Command, "/addrule ic_message_sent py.tally", "Added py.tally"},
         {Step::Command, "/logout", "Logged out."},

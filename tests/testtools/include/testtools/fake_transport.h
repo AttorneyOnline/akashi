@@ -19,10 +19,14 @@ class FakeTransport : public akashi::ITransport
     {
     }
 
-    QHostAddress peerAddress() const override { return QHostAddress::LocalHost; }
+    QHostAddress peerAddress() const override { return m_peer; }
     bool isOpen() const override { return m_open; }
     Capabilities capabilities() const override { return NoCapabilities; }
     QStringList connectTimeFeatures() const override { return connect_features; }
+
+    // Sets the peer address a client built on this transport reports; the
+    // ClientSession reads it once at construction, so call this first.
+    void setPeerAddress(const QHostAddress &f_peer) { m_peer = f_peer; }
 
     void write(const akashi::Packet &f_packet) override
     {
@@ -57,6 +61,7 @@ class FakeTransport : public akashi::ITransport
 
   private:
     bool m_open;
+    QHostAddress m_peer = QHostAddress::LocalHost;
 };
 
 } // namespace akashi

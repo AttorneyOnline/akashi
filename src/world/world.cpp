@@ -82,6 +82,16 @@ const Floor *World::floorByName(const QString &f_name) const
     return nullptr;
 }
 
+Floor *World::floorByName(const QString &f_name)
+{
+    for (Floor &l_floor : m_floors) {
+        if (l_floor.name.compare(f_name, Qt::CaseInsensitive) == 0) {
+            return &l_floor;
+        }
+    }
+    return nullptr;
+}
+
 int World::floorIdForArea(int f_area_id) const
 {
     if (f_area_id >= 0 && f_area_id < m_areas.size()) {
@@ -128,13 +138,12 @@ void World::applyDefaultFloorRules(Floor &f_floor)
         QVariantMap args;
     };
     const QVector<GateDefault> l_gate_defaults = {
-        {AreaEvents::PlayerJoined, QStringLiteral("check_lock"), {}},
         {AreaEvents::IcMessageSent, QStringLiteral("check_blankposting"), {}},
         {AreaEvents::IcMessageSent, QStringLiteral("check_iniswap"), {}},
         {AreaEvents::IcMessageSent, QStringLiteral("check_showname"), {}},
-        {AreaEvents::MusicChanged, QStringLiteral("check_setting"), {{QStringLiteral("setting"), QStringLiteral("music_allowed")}, {QStringLiteral("bypass"), permission::gamemaster}, {QStringLiteral("message"), QStringLiteral("Music is disabled in this area.")}}},
-        {AreaEvents::MusicChanged, QStringLiteral("check_free_play"), {{QStringLiteral("bypass"), permission::gamemaster}, {QStringLiteral("message"), QStringLiteral("Free music play is disabled in this area.")}}},
-        {AreaEvents::AmbienceChanged, QStringLiteral("check_free_play"), {{QStringLiteral("bypass"), permission::gamemaster}, {QStringLiteral("message"), QStringLiteral("Free ambience play is disabled in this area.")}}},
+        {AreaEvents::MusicChanged, QStringLiteral("check_setting"), {{QStringLiteral("setting"), QStringLiteral("music_allowed")}, {QStringLiteral("bypass"), permission::area_cm}, {QStringLiteral("message"), QStringLiteral("Music is disabled in this area.")}}},
+        {AreaEvents::MusicChanged, QStringLiteral("check_free_play"), {{QStringLiteral("bypass"), permission::area_cm}, {QStringLiteral("message"), QStringLiteral("Free music play is disabled in this area.")}}},
+        {AreaEvents::AmbienceChanged, QStringLiteral("check_free_play"), {{QStringLiteral("bypass"), permission::area_cm}, {QStringLiteral("message"), QStringLiteral("Free ambience play is disabled in this area.")}}},
         {AreaEvents::EvidenceAdded, QStringLiteral("check_evidence_access"), {}},
         {AreaEvents::EvidenceRemoved, QStringLiteral("check_evidence_access"), {}},
         {AreaEvents::EvidenceEdited, QStringLiteral("check_evidence_access"), {}},

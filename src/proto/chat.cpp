@@ -85,9 +85,22 @@ class OocHandler : public PacketHandler
     void handle(const Message &f_message, IPacketContext &f_context) const override
     {
         const auto &l_ooc = static_cast<const OocMessage &>(f_message);
+        // An OOC mute silences the chat, not the doors: the login flow
+        // stays open (a sanction must never gate authentication - a
+        // stored mute would otherwise brick the account forever), and an
+        // authenticated moderator keeps their commands, since a sanction
+        // may suppress speech but never strip a role-granted tool.
         if (!f_context.canUseOocChat()) {
-            f_context.sendServerMessage("You are OOC muted, and cannot speak.");
-            return;
+            const QString l_line = l_ooc.message.trimmed();
+            const QString l_verb = l_line.startsWith(QLatin1Char('/'))
+                                       ? l_line.mid(1).section(QLatin1Char(' '), 0, 0).toLower()
+                                       : QString();
+            const bool l_login_door = f_context.isInLoginPrompt() || l_verb == QStringLiteral("login");
+            const bool l_staff_tool = !l_verb.isEmpty() && f_context.isAuthenticated();
+            if (!l_login_door && !l_staff_tool) {
+                f_context.sendServerMessage("You are OOC muted, and cannot speak.");
+                return;
+            }
         }
 
         // The name checks run against the sanitized local; a refused name

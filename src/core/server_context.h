@@ -34,6 +34,7 @@
 #include <QMap>
 #include <QPointer>
 #include <QRegularExpression>
+#include <QSet>
 #include <QSettings>
 #include <QStack>
 #include <QString>
@@ -52,7 +53,7 @@ class ITransport;
 enum class DisconnectKind;
 struct JukeboxSong;
 struct PermissionQuery;
-enum class PermissionVerdict;
+struct Grant;
 class WebSocketReceiver;
 class PluginManager;
 class ConsoleMenu;
@@ -376,6 +377,48 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
     void applyConfigRules();
 
     /**
+     * @brief Replaces all "config"-owned grants on floors and areas with
+     * the "grants" declarations currently in areas.json - @group
+     * references expanded, audiences parsed, permission names validated
+     * against the catalog. Runs alongside applyConfigRules, again when a
+     * plugin loads so grants of plugin permissions land too, and on every
+     * settings reload - unlike rules, no runtime edit can be resurrected
+     * by reapplying, and the permissions.json half already re-reads there.
+     */
+    void applyConfigGrants();
+
+    /**
+     * @brief Grants the ordinary-operation baseline: the permissions.json
+     * everyone section, or the stock default set when no section exists.
+     * Dangerous permissions and unknown names are refused loudly. Runs
+     * wherever the roles file is (re)read.
+     */
+    void applyEveryoneBaseline();
+
+    /**
+     * @brief Recomputes the case-manager power set the area_owner grant
+     * source hands to an area's owners: the @cm group if permissions.json
+     * declares one, otherwise permission::defaultCmPowers(). Runs wherever
+     * the roles file is (re)read, before any connection is serviced.
+     */
+    void refreshCmPowers();
+
+    /**
+     * @brief Prints the compiled offers to stdout for --check-config: every
+     * role's expanded permission set, every group, every stored grant with
+     * its owner tag - sorted, so two runs diff cleanly.
+     */
+    void printCompiledOffers() const;
+
+    /**
+     * @brief The quarantine: a role granting a permission the catalog does
+     * not know is disabled whole and reported loudly - a fork's private
+     * vocabulary must never load as silent no-ops, and the boot never
+     * fails over it. Runs after the plugins registered their permissions.
+     */
+    void validateRoles();
+
+    /**
      * @brief Creates a new area on the given floor and catches the floor's
      * clients up on their new area list.
      *
@@ -549,18 +592,42 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
     QStringList diceFaces(const QString &f_name) const;
 
     /**
-     * @brief Applies a sanction that outlives the session: the flag on
-     * every online client with the IPID, a row in the database, and a
-     * scheduled lift.
+     * @brief The one door for placing a sanction: stores the row (no
+     * lift moment means it holds until lifted by hand), arms or cancels
+     * the scheduled lift, and flags every online session the person owns
+     * by IPID or HWID - so neither a reconnect nor a second window
+     * shakes it off.
+     *
+     * @param f_data Sanction-specific payload, for example the charcurse
+     * character list.
+     * @param f_exempt A session the identity fan-out skips: the issuing
+     * moderator's own, so sharing an IP or machine with the target never
+     * sweeps the issuer into their own sanction.
+     * @return The online sessions the sanction landed on.
+     */
+    QList<akashi::ClientSession *> applySanction(const QString &f_ipid, const QString &f_hwid, const QString &f_sanction, const QString &f_moderator, const std::optional<QDateTime> &f_until, const QString &f_data = QString(), akashi::ClientSession *f_exempt = nullptr);
+
+    /**
+     * @brief The matching lift: the stored row, the pending lift and the
+     * session flags of everyone the row covers all clear.
+     *
+     * @return The online sessions the sanction was lifted from.
+     */
+    QList<akashi::ClientSession *> removeSanction(const QString &f_ipid, const QString &f_sanction);
+
+    /**
+     * @brief Applies a timed sanction by IPID alone - the moderation
+     * service seam. The HWID is filled in from an online session with
+     * that IPID when one exists.
      */
     void applyTimedSanction(const QString &f_ipid, const QString &f_sanction, const QDateTime &f_until, const QString &f_moderator);
 
     /**
-     * @brief Drops the stored row and the pending lift of a sanction, for
-     * when a moderator lifts it by hand or makes it permanent. Session
-     * flags stay with the caller.
+     * @brief Applies the stored sanctions matching a connecting client's
+     * IPID and HWID. Runs at connect and again once the client announces
+     * its hardware id, so both identifiers are checked before it can act.
      */
-    void clearStoredSanction(const QString &f_ipid, const QString &f_sanction);
+    void applyStoredSanctions(akashi::ClientSession *f_client);
 
   public Q_SLOTS:
     /**
@@ -633,18 +700,15 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
     void runMaintenanceAndReport();
     void runBackupsAndReport();
     void showRecentBans();
+    void showStoredSanctions();
     void showDatabaseOverview();
 
     /**
-     * @brief Arms a lift job for every stored sanction at boot; overdue
-     * ones fire on the first tick and clean their rows up.
+     * @brief Arms a lift job for every stored timed sanction at boot;
+     * overdue ones fire on the first tick and clean their rows up.
+     * Untimed rows have no lift to arm.
      */
     void armStoredSanctions();
-
-    /**
-     * @brief Applies the stored sanctions of a connecting client's IPID.
-     */
-    void applyStoredSanctions(akashi::ClientSession *f_client);
 
     /**
      * @brief Schedules the lift moment of a stored sanction.
@@ -658,17 +722,29 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
     void liftSanction(const QString &f_ipid, const QString &f_sanction);
 
     /**
+     * @brief Sets one sanction's session state: the flag, and for
+     * charcurse the character list carried in the payload.
+     */
+    void applySanctionToSession(akashi::ClientSession *f_client, const QString &f_sanction, const QString &f_data);
+
+    /**
+     * @brief Every online session the person owns, matched by IPID or
+     * HWID, without duplicates.
+     */
+    QList<akashi::ClientSession *> sessionsForIdentity(const QString &f_ipid, const QString &f_hwid) const;
+
+    /**
      * @brief Opens the receiver and assembles everything that needs a
      * listening server: the publisher, the world, the ban lists.
      */
     ExitCode startListening();
 
-    // The built-in permission resolver chain.
-    static akashi::PermissionVerdict resolveNoneCheck(const akashi::PermissionQuery &f_query);
-    akashi::PermissionVerdict resolveJoinedUser(const akashi::PermissionQuery &f_query);
-    akashi::PermissionVerdict resolveAreaOwner(const akashi::PermissionQuery &f_query);
-    static akashi::PermissionVerdict resolveAuthentication(const akashi::PermissionQuery &f_query);
-    akashi::PermissionVerdict resolveRoleCheck(const akashi::PermissionQuery &f_query);
+    // The built-in grant sources feeding the resolution union.
+    QList<akashi::Grant> offerAreaOwner(const akashi::PermissionQuery &f_query);
+    QList<akashi::Grant> offerRoleGrants(const akashi::PermissionQuery &f_query);
+    static QList<akashi::Grant> offerSimpleAuth(const akashi::PermissionQuery &f_query);
+    QList<akashi::Grant> offerLockState(const akashi::PermissionQuery &f_query);
+    QList<akashi::Grant> offerPlaceGrants(const akashi::PermissionQuery &f_query);
 
     // The core text filters.
     std::optional<QString> applyWordFilter(const QString &f_text) const;
@@ -759,6 +835,10 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
     // The ASNs that are banned and the database to look up who announces an address.
     QList<quint32> m_banned_asns;
     akashi::MmdbReader m_asn_reader;
+
+    // The case-manager powers granted at area scope to an area's owners,
+    // refreshed from the @cm group (or the stock bundle) on every role load.
+    QSet<QString> m_cm_powers;
 
     /**
      * @brief The server-wide IC rate gate; areas each hold their own.

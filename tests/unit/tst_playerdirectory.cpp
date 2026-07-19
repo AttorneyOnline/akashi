@@ -6,6 +6,7 @@
 #include "core/player_state.h"
 #include "testtools/fake_transport.h"
 
+#include <QHostAddress>
 #include <QTest>
 
 using akashi::FakeTransport;
@@ -27,14 +28,25 @@ class tst_PlayerDirectory : public QObject
     void removingAClientFreesItsId();
     void listsClientsOldestFirst();
     void resolvesAsAServiceFromTheRegistry();
+    void ipKeyGroupsIpv4AndMappedIpv6();
+    void countsConnectionsPerIp();
 
   private:
     akashi::ClientSession *makeClient(int f_id);
+    akashi::ClientSession *makeClientWithIp(int f_id, const QString &f_ip);
 };
 
 akashi::ClientSession *tst_PlayerDirectory::makeClient(int f_id)
 {
     return new akashi::ClientSession(nullptr, new FakeTransport(true), f_id);
+}
+
+akashi::ClientSession *tst_PlayerDirectory::makeClientWithIp(int f_id, const QString &f_ip)
+{
+    auto *l_transport = new FakeTransport(true);
+    // The session reads the peer address once at construction.
+    l_transport->setPeerAddress(QHostAddress(f_ip));
+    return new akashi::ClientSession(nullptr, l_transport, f_id);
 }
 
 void tst_PlayerDirectory::handsOutLowestIdsFirst()
@@ -181,6 +193,54 @@ void tst_PlayerDirectory::resolvesAsAServiceFromTheRegistry()
     QCOMPARE(l_player.players().constFirst()->oocName(), QStringLiteral("Phoenix"));
 
     delete l_client;
+}
+
+void tst_PlayerDirectory::ipKeyGroupsIpv4AndMappedIpv6()
+{
+    // IPv4 and its IPv4-mapped IPv6 form are the same origin, so they must
+    // key identically (the old scan used isEqual's tolerant comparison).
+    QCOMPARE(PlayerDirectory::ipKey(QHostAddress(QStringLiteral("1.2.3.4"))),
+             PlayerDirectory::ipKey(QHostAddress(QStringLiteral("::ffff:1.2.3.4"))));
+    // Different addresses key apart; a real IPv6 keys apart from IPv4.
+    QVERIFY(PlayerDirectory::ipKey(QHostAddress(QStringLiteral("1.2.3.4"))) !=
+            PlayerDirectory::ipKey(QHostAddress(QStringLiteral("1.2.3.5"))));
+    QVERIFY(PlayerDirectory::ipKey(QHostAddress(QStringLiteral("::1"))) !=
+            PlayerDirectory::ipKey(QHostAddress(QStringLiteral("1.2.3.4"))));
+}
+
+void tst_PlayerDirectory::countsConnectionsPerIp()
+{
+    PlayerDirectory l_directory;
+    l_directory.setCapacity(5);
+    akashi::ClientSession *l_a1 = makeClientWithIp(l_directory.takeId(), QStringLiteral("1.2.3.4"));
+    akashi::ClientSession *l_a2 = makeClientWithIp(l_directory.takeId(), QStringLiteral("1.2.3.4"));
+    akashi::ClientSession *l_b1 = makeClientWithIp(l_directory.takeId(), QStringLiteral("5.6.7.8"));
+    l_directory.addClient(0, l_a1);
+    l_directory.addClient(1, l_a2);
+    l_directory.addClient(2, l_b1);
+
+    const QHostAddress l_a(QStringLiteral("1.2.3.4"));
+    const QHostAddress l_b(QStringLiteral("5.6.7.8"));
+    QCOMPARE(l_directory.sameIpCount(l_a), 2);
+    QCOMPARE(l_directory.sameIpCount(l_b), 1);
+    QCOMPARE(l_directory.sameIpCount(QHostAddress(QStringLiteral("9.9.9.9"))), 0);
+    // The mapped-IPv6 form of an address sees the same tally.
+    QCOMPARE(l_directory.sameIpCount(QHostAddress(QStringLiteral("::ffff:1.2.3.4"))), 2);
+
+    // Removal decrements; the key is dropped when it hits zero.
+    l_directory.removeClient(0);
+    QCOMPARE(l_directory.sameIpCount(l_a), 1);
+    l_directory.removeClient(1);
+    QCOMPARE(l_directory.sameIpCount(l_a), 0);
+    QCOMPARE(l_directory.sameIpCount(l_b), 1);
+
+    // clear() forgets every tally.
+    l_directory.clear();
+    QCOMPARE(l_directory.sameIpCount(l_b), 0);
+
+    delete l_a1;
+    delete l_a2;
+    delete l_b1;
 }
 
 }

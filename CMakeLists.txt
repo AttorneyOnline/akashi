@@ -155,6 +155,7 @@ set(AKASHI_SOURCES
   src/include/akashi/setting_notifier.h
   src/include/akashi/database_service.h
   src/include/akashi/filesystem_service.h
+  src/include/akashi/grants.h
   src/include/akashi/jukebox_policy.h
   src/include/akashi/network_service.h
   src/include/akashi/permissions.h

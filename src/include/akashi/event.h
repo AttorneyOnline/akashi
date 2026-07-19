@@ -76,6 +76,37 @@ struct EvidencePresentedEvent
     static inline const QString id = QStringLiteral("evidence_presented");
 };
 
+// A chat message that leaves the sender's area without passing through the
+// placed ic/ooc events: global chat (/g), adverts (/need), private messages
+// (/pm) and the CM area-broadcasts (/a, /s). Observe-only and placeless, so
+// the automated moderator can count these toward the same per-actor flood
+// and repeat windows as ordinary area chat. Observer payload: channel,
+// message, ipid + actor keys.
+struct GlobalMessageEvent : Event
+{
+    Q_GADGET_EXPORT(AKASHI_CORE_EXPORT)
+    Q_PROPERTY(int client_session_id MEMBER client_session_id)
+    Q_PROPERTY(int player_state_id MEMBER player_state_id)
+    Q_PROPERTY(QString ipid MEMBER ipid)
+    Q_PROPERTY(QString char_name MEMBER char_name)
+    Q_PROPERTY(QString ooc_name MEMBER ooc_name)
+    Q_PROPERTY(QString channel MEMBER channel)
+    Q_PROPERTY(QString message MEMBER message)
+
+  public:
+    static inline const QString id = QStringLiteral("global_message_sent");
+
+    int client_session_id = -1;
+    // The user slot that spoke; -1 when the firing site has no slot handle.
+    int player_state_id = -1;
+    QString ipid;
+    QString char_name;
+    QString ooc_name;
+    // Which command channel carried it: global, advert, pm or cm.
+    QString channel;
+    QString message;
+};
+
 struct ModcallEvent : Event
 {
     Q_GADGET_EXPORT(AKASHI_CORE_EXPORT)
@@ -187,6 +218,7 @@ QVariantMap eventToMap(const T &f_event)
 
 } // namespace akashi
 
+Q_DECLARE_METATYPE(akashi::GlobalMessageEvent)
 Q_DECLARE_METATYPE(akashi::ModcallEvent)
 Q_DECLARE_METATYPE(akashi::BanIssuedEvent)
 Q_DECLARE_METATYPE(akashi::KickIssuedEvent)

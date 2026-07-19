@@ -39,9 +39,25 @@ struct AreaRulesConfig
     QHash<int, QVector<RuleDeclaration>> area_rules;
 };
 
+// One standing offer as declared in a "grants" object: the key names a
+// permission or an @group reference (expanded when applied), the value
+// an audience - "everyone", "participants" or "role:<id>".
+struct GrantDeclaration
+{
+    QString permission;
+    QString audience;
+};
+
+struct AreaGrantsConfig
+{
+    QHash<QString, QVector<GrantDeclaration>> floor_grants;
+    QHash<int, QVector<GrantDeclaration>> area_grants;
+};
+
 AKASHI_CORE_EXPORT QStringList loadTextFile(const QString &f_path);
 AKASHI_CORE_EXPORT MusicCatalog loadMusicList(const QString &f_path);
 AKASHI_CORE_EXPORT AreaRulesConfig loadAreaRules(const QString &f_path);
+AKASHI_CORE_EXPORT AreaGrantsConfig loadAreaGrants(const QString &f_path);
 AKASHI_CORE_EXPORT QStringList loadIpRangeBans(const QString &f_path);
 AKASHI_CORE_EXPORT QList<quint32> loadBannedAsns(const QString &f_path);
 

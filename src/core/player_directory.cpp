@@ -1,5 +1,7 @@
 #include "core/player_directory.h"
 
+#include "client_session.h"
+
 #include <algorithm>
 #include <functional>
 
@@ -12,7 +14,7 @@ QString PlayerDirectory::serviceId() const
 
 ServiceVersion PlayerDirectory::serviceVersion() const
 {
-    return {1, 0, 0};
+    return {1, 1, 0};
 }
 
 void PlayerDirectory::setCapacity(int f_capacity)
@@ -64,6 +66,7 @@ void PlayerDirectory::addClient(int f_id, akashi::ClientSession *f_client)
     Q_ASSERT(!m_clients_by_id.contains(f_id));
     m_clients_by_id.insert(f_id, f_client);
     m_clients.append(f_client);
+    ++m_ip_counts[ipKey(f_client->remoteIp())];
 }
 
 void PlayerDirectory::removeClient(int f_id)
@@ -74,6 +77,26 @@ void PlayerDirectory::removeClient(int f_id)
     }
     m_clients.removeAll(l_client);
     m_free_ids.append(f_id);
+    const auto l_it = m_ip_counts.find(ipKey(l_client->remoteIp()));
+    if (l_it != m_ip_counts.end() && --l_it.value() <= 0) {
+        m_ip_counts.erase(l_it);
+    }
+}
+
+int PlayerDirectory::sameIpCount(const QHostAddress &f_ip) const
+{
+    return m_ip_counts.value(ipKey(f_ip));
+}
+
+QString PlayerDirectory::ipKey(const QHostAddress &f_ip)
+{
+    // IPv4 and IPv4-mapped IPv6 collapse to one key so the same origin
+    // counts once, matching the old isEqual tolerant comparison; a real
+    // IPv6 address keys by its own text.
+    bool l_is_v4 = false;
+    const quint32 l_v4 = f_ip.toIPv4Address(&l_is_v4);
+    return l_is_v4 ? QStringLiteral("v4:") + QString::number(l_v4)
+                   : QStringLiteral("v6:") + f_ip.toString();
 }
 
 akashi::ClientSession *PlayerDirectory::clientById(int f_id) const
@@ -96,6 +119,7 @@ void PlayerDirectory::clear()
     m_clients.clear();
     m_clients_by_id.clear();
     m_free_ids.clear();
+    m_ip_counts.clear();
 }
 
 } // namespace akashi

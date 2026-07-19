@@ -379,6 +379,43 @@ static int luaApiRegisterPermission(lua_State *L)
     return 1;
 }
 
+// akashi.grant(permission, audience, key) / akashi.revoke(...) place and
+// lift standing grants: audience "person" with an IPID or "role" with a
+// role id. The owner is stamped from the plugin, never script-supplied.
+static int luaApiGrant(lua_State *L)
+{
+    size_t l_permission_length = 0, l_audience_length = 0, l_key_length = 0;
+    const char *l_permission = luaL_checklstring(L, 1, &l_permission_length);
+    const char *l_audience = luaL_checklstring(L, 2, &l_audience_length);
+    const char *l_key = luaL_checklstring(L, 3, &l_key_length);
+
+    LuaPluginState *l_plugin = pluginOf(L);
+    if (!l_plugin || s_ffi->abi_version < 11) {
+        return luaL_error(L, "grant: unavailable");
+    }
+    lua_pushboolean(L, s_ffi->grant(l_permission, l_permission_length, l_audience, l_audience_length,
+                                    l_key, l_key_length,
+                                    l_plugin->owner_id.constData(), size_t(l_plugin->owner_id.size())));
+    return 1;
+}
+
+static int luaApiRevoke(lua_State *L)
+{
+    size_t l_permission_length = 0, l_audience_length = 0, l_key_length = 0;
+    const char *l_permission = luaL_checklstring(L, 1, &l_permission_length);
+    const char *l_audience = luaL_checklstring(L, 2, &l_audience_length);
+    const char *l_key = luaL_checklstring(L, 3, &l_key_length);
+
+    LuaPluginState *l_plugin = pluginOf(L);
+    if (!l_plugin || s_ffi->abi_version < 11) {
+        return luaL_error(L, "revoke: unavailable");
+    }
+    lua_pushboolean(L, s_ffi->revoke(l_permission, l_permission_length, l_audience, l_audience_length,
+                                     l_key, l_key_length,
+                                     l_plugin->owner_id.constData(), size_t(l_plugin->owner_id.size())));
+    return 1;
+}
+
 static int luaApiConfigGet(lua_State *L)
 {
     size_t l_key_length = 0, l_fallback_length = 0;
@@ -1013,6 +1050,8 @@ static const luaL_Reg s_akashi_api[] = {
     {"register_command", luaApiRegisterCommand},
     {"register_text_filter", luaApiRegisterTextFilter},
     {"register_permission", luaApiRegisterPermission},
+    {"grant", luaApiGrant},
+    {"revoke", luaApiRevoke},
     {"register_rule_action", luaApiRegisterRuleAction},
     {"register_console_action", luaApiRegisterConsoleAction},
     {"subscribe_event", luaApiSubscribeEvent},

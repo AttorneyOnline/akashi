@@ -24,7 +24,7 @@ void cmdPlay(CommandContext &f_context)
 {
     QString l_song = f_context.arguments().join(" ");
     akashi::ClientSession *l_self = f_context.server()->clientById(f_context.clientId());
-    if (l_self->hasSanction(akashi::sanction::dj_blocked)) {
+    if (l_self->isDjBlocked()) {
         f_context.reply("You are blocked from changing the music.");
         return;
     }
@@ -45,7 +45,7 @@ void cmdPlay(CommandContext &f_context)
 void cmdPlayAmbience(CommandContext &f_context)
 {
     akashi::ClientSession *l_self = f_context.server()->clientById(f_context.clientId());
-    if (l_self->hasSanction(akashi::sanction::dj_blocked)) {
+    if (l_self->isDjBlocked()) {
         f_context.reply("You are blocked from changing the ambience.");
         return;
     }
@@ -72,29 +72,29 @@ void cmdCurrentMusic(CommandContext &f_context)
 void cmdBlockDj(CommandContext &f_context)
 {
     if (auto l_target = f_context.resolveTarget()) {
-        if (!applySanctionSchedule(f_context, *l_target, akashi::sanction::dj_blocked))
+        const bool l_was_sanctioned = l_target->hasSanction(akashi::sanction::dj_blocked);
+        if (!applySanction(f_context, *l_target, akashi::sanction::dj_blocked))
             return;
-        if (l_target->hasSanction(akashi::sanction::dj_blocked))
+        if (l_was_sanctioned)
             f_context.reply("That player is already DJ blocked!");
         else {
             f_context.reply("DJ blocked player.");
             l_target->reply("You were blocked from changing the music by a moderator. " + reprimand(f_context.server()));
         }
-        l_target->setSanction(akashi::sanction::dj_blocked, true);
     }
 }
 
 void cmdUnblockDj(CommandContext &f_context)
 {
     if (auto l_target = f_context.resolveTarget()) {
-        clearSanctionSchedule(f_context, *l_target, akashi::sanction::dj_blocked);
-        if (!l_target->hasSanction(akashi::sanction::dj_blocked))
+        const bool l_was_sanctioned = l_target->hasSanction(akashi::sanction::dj_blocked);
+        liftSanction(f_context, *l_target, akashi::sanction::dj_blocked);
+        if (!l_was_sanctioned)
             f_context.reply("That player is not DJ blocked!");
         else {
             f_context.reply("DJ permissions restored to player.");
             l_target->reply("A moderator restored your music permissions. " + reprimand(f_context.server(), true));
         }
-        l_target->setSanction(akashi::sanction::dj_blocked, false);
     }
 }
 
@@ -188,55 +188,55 @@ void cmdJukeboxSkip(CommandContext &f_context)
 void registerMusicCommands(CommandRegistry &f_registry)
 {
     f_registry.registerCommand(
-        {QStringLiteral("play"), {}, {akashi::permission::user}, 1, QStringLiteral("/play <song>"), QStringLiteral("Plays a song in the area.")},
+        {QStringLiteral("play"), {}, {akashi::permission::music_play}, 1, QStringLiteral("/play <song>"), QStringLiteral("Plays a song in the area.")},
         cmdPlay, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("play_ambience"), {QStringLiteral("playambience"), QStringLiteral("playa")}, {akashi::permission::user}, 1, QStringLiteral("/play_ambience <song>"), QStringLiteral("Plays ambient music in the area.")},
+        {QStringLiteral("play_ambience"), {QStringLiteral("playambience"), QStringLiteral("playa")}, {akashi::permission::music_play_ambience}, 1, QStringLiteral("/play_ambience <song>"), QStringLiteral("Plays ambient music in the area.")},
         cmdPlayAmbience, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("currentmusic"), {}, {akashi::permission::user}, 0, QStringLiteral("/currentmusic"), QStringLiteral("Shows the currently playing song in the area.")},
+        {QStringLiteral("currentmusic"), {}, {akashi::permission::music_currentmusic}, 0, QStringLiteral("/currentmusic"), QStringLiteral("Shows the currently playing song in the area.")},
         cmdCurrentMusic, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("block_dj"), {QStringLiteral("blockdj")}, {akashi::permission::mute}, 1, QStringLiteral("/block_dj <id> [until]"), QStringLiteral("Blocks a client from changing music, until a time like 1d12h if one is given.")},
+        {QStringLiteral("block_dj"), {QStringLiteral("blockdj")}, {akashi::permission::sanction_block_dj}, 1, QStringLiteral("/block_dj <id> [until]"), QStringLiteral("Blocks a client from changing music, until a time like 1d12h if one is given.")},
         cmdBlockDj, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("unblock_dj"), {QStringLiteral("unblockdj")}, {akashi::permission::mute}, 1, QStringLiteral("/unblock_dj <id>"), QStringLiteral("Restores a client's music permissions.")},
+        {QStringLiteral("unblock_dj"), {QStringLiteral("unblockdj")}, {akashi::permission::sanction_block_dj}, 1, QStringLiteral("/unblock_dj <id>"), QStringLiteral("Restores a client's music permissions.")},
         cmdUnblockDj, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("togglemusic"), {}, {akashi::permission::gamemaster}, 0, QStringLiteral("/togglemusic"), QStringLiteral("Toggles music playing in the area.")},
+        {QStringLiteral("togglemusic"), {}, {akashi::permission::cm_togglemusic}, 0, QStringLiteral("/togglemusic"), QStringLiteral("Toggles music playing in the area.")},
         cmdToggleMusic, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("togglejukebox"), {}, {akashi::permission::gamemaster, akashi::permission::jukebox}, 0, QStringLiteral("/togglejukebox"), QStringLiteral("Toggles the jukebox in the area.")},
+        {QStringLiteral("togglejukebox"), {}, {akashi::permission::music_jukebox}, 0, QStringLiteral("/togglejukebox"), QStringLiteral("Toggles the jukebox in the area.")},
         cmdToggleJukebox, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("addmusic"), {}, {akashi::permission::gamemaster}, 1, QStringLiteral("/addmusic <name>[, truename][, duration]"), QStringLiteral("Adds a song to the custom music list.")},
+        {QStringLiteral("addmusic"), {}, {akashi::permission::cm_addmusic}, 1, QStringLiteral("/addmusic <name>[, truename][, duration]"), QStringLiteral("Adds a song to the custom music list.")},
         cmdAddMusic, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("addmusiccategory"), {}, {akashi::permission::gamemaster}, 1, QStringLiteral("/addmusiccategory <name>"), QStringLiteral("Adds a category to the custom music list.")},
+        {QStringLiteral("addmusiccategory"), {}, {akashi::permission::cm_addmusiccategory}, 1, QStringLiteral("/addmusiccategory <name>"), QStringLiteral("Adds a category to the custom music list.")},
         cmdAddMusicCategory, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("removecustommusic"), {}, {akashi::permission::gamemaster}, 1, QStringLiteral("/removecustommusic <name>"), QStringLiteral("Removes a song or category from the custom list.")},
+        {QStringLiteral("removecustommusic"), {}, {akashi::permission::cm_removecustommusic}, 1, QStringLiteral("/removecustommusic <name>"), QStringLiteral("Removes a song or category from the custom list.")},
         cmdRemoveCustomMusic, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("togglecustommusic"), {}, {akashi::permission::gamemaster}, 0, QStringLiteral("/togglecustommusic"), QStringLiteral("Resets the custom music list to floor defaults.")},
+        {QStringLiteral("togglecustommusic"), {}, {akashi::permission::cm_togglecustommusic}, 0, QStringLiteral("/togglecustommusic"), QStringLiteral("Resets the custom music list to floor defaults.")},
         cmdToggleCustomMusic, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("clearcustommusic"), {}, {akashi::permission::gamemaster}, 0, QStringLiteral("/clearcustommusic"), QStringLiteral("Clears all custom songs in the area.")},
+        {QStringLiteral("clearcustommusic"), {}, {akashi::permission::cm_clearcustommusic}, 0, QStringLiteral("/clearcustommusic"), QStringLiteral("Clears all custom songs in the area.")},
         cmdClearCustomMusic, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("jukebox_skip"), {QStringLiteral("jukeboxskip")}, {akashi::permission::gamemaster}, 0, QStringLiteral("/jukebox_skip"), QStringLiteral("Skips the current jukebox song.")},
+        {QStringLiteral("jukebox_skip"), {QStringLiteral("jukeboxskip")}, {akashi::permission::cm_jukebox_skip}, 0, QStringLiteral("/jukebox_skip"), QStringLiteral("Skips the current jukebox song.")},
         cmdJukeboxSkip, QStringLiteral("core"));
 }
 

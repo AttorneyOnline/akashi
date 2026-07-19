@@ -256,31 +256,31 @@ void ClientSession::changeArea(int new_area)
     akashi::RuleContext l_ctx;
     l_ctx.player_state_id = player()->id();
     l_ctx.client_session_id = clientId();
+    // Entering is a permission, not a rule: the lock state shapes the
+    // target area's enter offer, an invite is a personal grant of it,
+    // and staff hold it at server scope through their role.
+    if (!canPerformIn(permission::area_enter, new_area)) {
+        sendServerMessage("Area " + m_server->areaName(new_area) + " is locked.");
+        return;
+    }
+
     l_ctx.area_id = new_area;
     l_ctx.floor_id = l_new_floor;
     l_ctx.services = m_server->services();
     l_ctx.payload = withActorIdentity({
-        {QStringLiteral("lock_status"),
-         l_target->lockState() == akashi::Area::LockState::Locked ? QStringLiteral("locked") : l_target->lockState() == akashi::Area::LockState::Spectatable ? QStringLiteral("spectatable")
-                                                                                                                                                             : QStringLiteral("free")},
-        {QStringLiteral("is_invited"), l_target->invited().contains(clientId())},
-        {QStringLiteral("bypass_locks"), canPerform(permission::bypass_locks)},
         {QStringLiteral("area_name"), m_server->areaName(new_area)},
         {QStringLiteral("character_id"), m_server->characterId(character())},
     });
 
-    // Same floor as checkBeforeRule: bypass_rules holders pass every
-    // before-rule, including the target area's join gate.
+    // Rules bind everyone - a rule is a rule, or it is not one.
     const akashi::Floor *l_target_floor = m_server->floorById(l_new_floor);
-    if (!canPerform(permission::bypass_rules)) {
-        akashi::RuleVerdict l_verdict = akashi::RuleRegistry::checkBefore(
-            akashi::AreaEvents::PlayerJoined, l_ctx,
-            l_target->beforeRules(),
-            l_target_floor ? l_target_floor->before_rules : QVector<akashi::BeforeRuleEntry>{});
-        if (!l_verdict.allowed) {
-            sendServerMessage(l_verdict.reason);
-            return;
-        }
+    akashi::RuleVerdict l_verdict = akashi::RuleRegistry::checkBefore(
+        akashi::AreaEvents::PlayerJoined, l_ctx,
+        l_target->beforeRules(),
+        l_target_floor ? l_target_floor->before_rules : QVector<akashi::BeforeRuleEntry>{});
+    if (!l_verdict.allowed) {
+        sendServerMessage(l_verdict.reason);
+        return;
     }
 
     if (character() != "") {
@@ -370,12 +370,11 @@ QVariantMap ClientSession::withActorIdentity(QVariantMap f_payload) const
 
 std::optional<QString> ClientSession::checkBeforeRule(const QString &f_event, const QVariantMap &f_payload)
 {
-    // Rules only tighten for ordinary players; a bypass_rules holder is
-    // never gated by any before-rule.
-    if (canPerform(permission::bypass_rules)) {
-        return std::nullopt;
-    }
-
+    // Rules bind everyone, moderators included - an area can be made
+    // silent, never moderator-proof. Staff exemptions are named
+    // permissions the individual gates honor (bypass_locks,
+    // change_locked_background, the free-play bypass), so no blanket
+    // skip exists to forget or misconfigure.
     akashi::RuleContext l_ctx;
     l_ctx.player_state_id = player()->id();
     l_ctx.client_session_id = clientId();
@@ -395,8 +394,8 @@ std::optional<QString> ClientSession::checkBeforeRule(const QString &f_event, co
 
 QVariantMap ClientSession::runTransformRules(const QString &f_event, const QVariantMap &f_payload)
 {
-    // No bypass_rules floor here: transforms are area flavor, not gates -
-    // a moderator's message still gets medieval-ized.
+    // Transforms bind everyone like every rule - a moderator's message
+    // still gets medieval-ized.
     akashi::RuleContext l_ctx;
     l_ctx.player_state_id = player()->id();
     l_ctx.client_session_id = clientId();
@@ -510,6 +509,7 @@ void ClientSession::changePosition(QString f_new_pos)
 
 void ClientSession::handleCommand(QString command, int argc, QStringList argv)
 {
+    Q_UNUSED(argc)
     command = command.toLower();
 
     // One lookup resolves the alias, the spec and the handler together.
@@ -519,7 +519,18 @@ void ClientSession::handleCommand(QString command, int argc, QStringList argv)
         sendServerMessage("Invalid command.");
         return;
     }
-    const akashi::CommandSpec &l_spec = l_command->spec;
+    dispatchCommand(*l_command, argv, l_registry->shadowsOf(l_command->spec.name));
+}
+
+// Runs one layer of the command's shadow chain. The gate and variant
+// selection run on THIS argument list - so when a shadow hands rewritten
+// arguments forward, they meet the same gate again and can neither
+// soften nor sharpen the verb they came through.
+void ClientSession::dispatchCommand(const akashi::CommandRegistry::Resolved &f_command, QStringList f_arguments,
+                                    QList<akashi::CommandShadow> f_shadows)
+{
+    const akashi::CommandSpec &l_spec = f_command.spec;
+    const int argc = f_arguments.size();
 
     // A variant command carries its gates per argument shape; the
     // matched form decides which permissions apply and what runs.
@@ -532,10 +543,12 @@ void ClientSession::handleCommand(QString command, int argc, QStringList argv)
         return;
     }
 
-    // Permission check: any-of the listed permissions must pass.
-    // The same gate CommandRegistry::canUse answers /commands with.
+    // Permission check: the matched form's whole gate - any-of, or any
+    // all-of group. The same gate CommandRegistry::canUse answers
+    // /commands with.
     const QStringList l_permissions = l_variant ? l_variant->permissions : l_spec.permissions;
-    if (!akashi::CommandRegistry::passesAnyOf(l_permissions, [this](const QString &f_permission) { return canPerform(f_permission); })) {
+    const QList<QStringList> l_groups = l_variant ? l_variant->requirement_groups : l_spec.requirement_groups;
+    if (!akashi::CommandRegistry::passesRequirements(l_permissions, l_groups, [this](const QString &f_permission) { return canPerform(f_permission); })) {
         sendServerMessage("You do not have permission to use that command.");
         return;
     }
@@ -548,12 +561,21 @@ void ClientSession::handleCommand(QString command, int argc, QStringList argv)
         return;
     }
 
-    akashi::CommandContext l_context(this, m_server, argv);
+    if (!f_shadows.isEmpty()) {
+        const akashi::CommandShadow l_shadow = f_shadows.takeFirst();
+        akashi::CommandContext l_context(this, m_server, f_arguments, l_spec.name);
+        l_shadow.shadow(l_context, [this, f_command, f_shadows](const QStringList &f_rewritten) {
+            dispatchCommand(f_command, f_rewritten, f_shadows);
+        });
+        return;
+    }
+
+    akashi::CommandContext l_context(this, m_server, f_arguments, l_spec.name);
     if (l_variant) {
         l_variant->handler(l_context);
     }
     else {
-        l_command->handler(l_context);
+        f_command.handler(l_context);
     }
 }
 
@@ -765,6 +787,11 @@ bool ClientSession::isIdentified() const
 void ClientSession::setHwid(const QString &f_hwid)
 {
     session_hwid = f_hwid;
+    // A sanction stored against this hardware id only becomes findable
+    // now; the IPID pass at connect ran before the client announced it.
+    if (m_server) {
+        m_server->applyStoredSanctions(this);
+    }
 }
 
 void ClientSession::identify(const akashi::ClientProfile &f_profile)
@@ -882,7 +909,7 @@ bool ClientSession::selectCharacter(int f_char_id)
 
 bool ClientSession::canUseOocChat() const
 {
-    return !hasSanction(akashi::sanction::ooc_muted);
+    return canPerform(permission::ooc_chat);
 }
 
 QString ClientSession::oocName() const
@@ -953,7 +980,7 @@ void ClientSession::deleteEvidence(int f_index)
     // the whole record - every incoming evidence number must be translated
     // through this viewer's own list, the way tsu3 calculated the positions
     // by hand. A protocol update replaces this with stable item ids.
-    const int l_real_index = l_area->evidenceIndexByVisibleIndex(f_index + 1, player()->pos, canPerform(permission::gamemaster));
+    const int l_real_index = l_area->evidenceIndexByVisibleIndex(f_index + 1, player()->pos, canPerform(permission::area_cm));
     l_area->deleteEvidence(l_real_index);
 }
 
@@ -962,7 +989,7 @@ void ClientSession::replaceEvidence(int f_index, const QString &f_name, const QS
     akashi::Area *l_area = m_server->areaById(areaId());
     // Same viewer translation as deleteEvidence; an unknown number maps to
     // -1 and the store refuses it, so a stale list cannot hit the wrong item.
-    const int l_real_index = l_area->evidenceIndexByVisibleIndex(f_index + 1, player()->pos, canPerform(permission::gamemaster));
+    const int l_real_index = l_area->evidenceIndexByVisibleIndex(f_index + 1, player()->pos, canPerform(permission::area_cm));
     akashi::Evidence l_evidence;
     l_evidence.name = f_name;
     // A hidden-CM area writes the <owner=all> tag into untagged items.
@@ -978,7 +1005,8 @@ void ClientSession::setCasingPreferences(const QList<bool> &f_preferences)
 
 bool ClientSession::canUseIcChat() const
 {
-    return !hasSanction(akashi::sanction::muted);
+    // The baseline offers the act; a mute is a mask over it.
+    return canPerform(permission::ic_chat);
 }
 
 int ClientSession::characterId() const
@@ -1124,15 +1152,6 @@ void ClientSession::setCharCursed(bool f_char_cursed)
     setSanction(akashi::sanction::charcurse, f_char_cursed);
 }
 
-bool ClientSession::isTestimonySaving() const
-{
-    return testimony_saving;
-}
-
-void ClientSession::setTestimonySaving(bool f_testimony_saving)
-{
-    testimony_saving = f_testimony_saving;
-}
 
 QHostAddress ClientSession::remoteIp() const
 {
@@ -1217,7 +1236,7 @@ bool ClientSession::isIcMessageAllowed() const
 bool ClientSession::canActInArea() const
 {
     akashi::Area *l_area = m_server->areaById(areaId());
-    return !(l_area->lockState() == akashi::Area::LockState::Spectatable && !l_area->invited().contains(clientId()) && !canPerform(permission::bypass_locks));
+    return !(l_area->lockState() == akashi::Area::LockState::Spectatable && !l_area->invited().contains(clientId()) && !canPerform(permission::area_enter));
 }
 
 bool ClientSession::isImmediateForced() const
@@ -1416,7 +1435,7 @@ void ClientSession::broadcastIc(const QStringList &f_fields, int f_evidence_inde
     int l_real_index = -1;
     bool l_evidence_presented = false;
     if (f_evidence_index > 0 && l_area->evidenceAccess() == akashi::EvidenceStore::Access::HiddenCm) {
-        l_real_index = l_area->evidenceIndexByVisibleIndex(f_evidence_index, player()->pos, canPerform(permission::gamemaster));
+        l_real_index = l_area->evidenceIndexByVisibleIndex(f_evidence_index, player()->pos, canPerform(permission::area_cm));
         if (l_real_index >= 0) {
             l_area->setEvidenceOwnerToAll(l_real_index);
             sendEvidenceList(l_area);
@@ -1430,7 +1449,7 @@ void ClientSession::broadcastIc(const QStringList &f_fields, int f_evidence_inde
     if (l_evidence_presented) {
         l_viewer_fields = [l_fields, l_area, l_real_index](ClientSession *f_client) {
             QStringList l_client_fields = l_fields;
-            l_client_fields[11] = QString::number(l_area->visibleIndexByEvidenceIndex(l_real_index, f_client->pos(), f_client->canPerform(permission::gamemaster)));
+            l_client_fields[11] = QString::number(l_area->visibleIndexByEvidenceIndex(l_real_index, f_client->pos(), f_client->canPerform(permission::area_cm)));
             return l_client_fields;
         };
     }
@@ -1456,7 +1475,7 @@ bool ClientSession::hasSong(const QString &f_name) const
 
 bool ClientSession::isDjBlocked() const
 {
-    return hasSanction(akashi::sanction::dj_blocked);
+    return !canPerform(permission::change_music);
 }
 
 std::optional<QString> ClientSession::playMusic(const QString &f_song, akashi::MusicSource f_source, const QString &f_char_id, const QString &f_effects)
@@ -1680,7 +1699,7 @@ std::optional<QString> ClientSession::removeAreaOwner(int f_target)
 
 bool ClientSession::isWtceBlocked() const
 {
-    return hasSanction(akashi::sanction::wtce_blocked);
+    return !canPerform(permission::use_wtce);
 }
 
 bool ClientSession::startWtceCooldown()
@@ -1772,10 +1791,25 @@ void ClientSession::setCharacterPassword(const QString &f_password)
 
 bool ClientSession::canPerform(const QString &f_permission) const
 {
+    return canPerformIn(f_permission, areaId());
+}
+
+bool ClientSession::canPerformIn(const QString &f_permission, int f_area_id) const
+{
+    return m_server->permissionRegistry()->resolve(buildPermissionQuery(f_permission, f_area_id));
+}
+
+akashi::Resolution ClientSession::explainPermission(const QString &f_permission) const
+{
+    return m_server->permissionRegistry()->resolveExplained(buildPermissionQuery(f_permission, areaId()));
+}
+
+akashi::PermissionQuery ClientSession::buildPermissionQuery(const QString &f_permission, int f_area_id) const
+{
     akashi::PermissionQuery l_query;
     l_query.permission = f_permission;
     l_query.client_id = clientId();
-    l_query.area_id = areaId();
+    l_query.area_id = f_area_id;
     l_query.is_authenticated = isAuthenticated();
     // The blanket simple-auth grant keys off the ACTIVE system, so a
     // plugin system's logins resolve through their roles, never through
@@ -1784,7 +1818,10 @@ bool ClientSession::canPerform(const QString &f_permission) const
                             ? QStringLiteral("simple")
                             : QStringLiteral("advanced");
     l_query.acl_role_id = acl_role_id;
-    return m_server->permissionRegistry()->resolve(l_query);
+    l_query.ipid = ipid();
+    l_query.is_joined = stage() == SessionStage::Joined;
+    l_query.sanctions = sanctions;
+    return l_query;
 }
 
 QString ClientSession::areaName() const
@@ -1805,7 +1842,7 @@ void ClientSession::broadcastModerators(const akashi::Packet &f_packet)
 {
     const QVector<ClientSession *> l_clients = m_server->clients();
     for (ClientSession *l_client : l_clients) {
-        if (l_client->isAuthenticated()) {
+        if (l_client->canPerform(permission::receive_modcalls)) {
             l_client->sendPacket(f_packet);
         }
     }
@@ -1885,7 +1922,7 @@ void ClientSession::updateEvidenceList(akashi::Area *area)
 
     // The store applies the hidden-items rules; the same filter also drives
     // the visible-index translation, so the two can never disagree.
-    const QList<akashi::Evidence> l_visible = area->visibleEvidence(canPerform(permission::gamemaster), player()->pos);
+    const QList<akashi::Evidence> l_visible = area->visibleEvidence(canPerform(permission::area_cm), player()->pos);
     for (const akashi::Evidence &l_item : l_visible) {
         l_evidence_list.append(l_item.toLeField());
     }
@@ -1900,9 +1937,9 @@ bool ClientSession::canModifyEvidence(akashi::Area *area) const
         return true;
     case akashi::EvidenceStore::Access::Cm:
     case akashi::EvidenceStore::Access::HiddenCm:
-        return canPerform(permission::gamemaster);
+        return canPerform(permission::area_cm);
     case akashi::EvidenceStore::Access::Mod:
-        return authenticated;
+        return canPerform(permission::modify_evidence);
     default:
         return false;
     }

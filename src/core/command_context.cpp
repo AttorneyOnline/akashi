@@ -1,6 +1,7 @@
 #include "core/command_context.h"
 
 #include "core/client_session.h"
+#include "core/command_registry.h"
 #include "core/server_context.h"
 
 #include <QRandomGenerator>
@@ -19,6 +20,7 @@ QString TargetPlayer::character() const { return m_client->character(); }
 int TargetPlayer::areaId() const { return m_client->areaId(); }
 QString TargetPlayer::ipid() const { return m_client->ipid(); }
 bool TargetPlayer::isAuthenticated() const { return m_client->isAuthenticated(); }
+bool TargetPlayer::canPerform(const QString &f_permission) const { return m_client->canPerform(f_permission); }
 
 void TargetPlayer::reply(const QString &f_message)
 {
@@ -59,15 +61,16 @@ QHostAddress TargetPlayer::remoteIp() const { return m_client->remoteIp(); }
 QString TargetPlayer::hwid() const { return m_client->hwid(); }
 QString TargetPlayer::characterName() const { return m_client->characterName(); }
 bool TargetPlayer::isPmMuted() const { return m_client->isPmMuted(); }
-void TargetPlayer::setTestimonySaving(bool f_state) { m_client->setTestimonySaving(f_state); }
 QList<PlayerState *> TargetPlayer::players() const { return m_client->players; }
 
 // -- CommandContext --
 
-CommandContext::CommandContext(akashi::ClientSession *f_invoker, ServerContext *f_server, QStringList f_arguments) :
+CommandContext::CommandContext(akashi::ClientSession *f_invoker, ServerContext *f_server, QStringList f_arguments,
+                               const QString &f_command_name) :
     m_invoker(f_invoker),
     m_server(f_server),
-    m_arguments(std::move(f_arguments))
+    m_arguments(std::move(f_arguments)),
+    m_command_name(f_command_name)
 {}
 
 int CommandContext::clientId() const { return m_invoker->clientId(); }
@@ -85,6 +88,32 @@ bool CommandContext::isAuthenticated() const { return m_invoker->isAuthenticated
 bool CommandContext::canPerform(const QString &f_permission) const
 {
     return m_invoker->canPerform(f_permission);
+}
+
+bool CommandContext::canPerformIn(const QString &f_permission, int f_area_id) const
+{
+    return m_invoker->canPerformIn(f_permission, f_area_id);
+}
+
+QString CommandContext::commandName() const
+{
+    return m_command_name;
+}
+
+QString CommandContext::escalatesTo() const
+{
+    const auto l_spec = m_server->commandRegistry()->spec(m_command_name);
+    return l_spec ? l_spec->escalates_to : QString();
+}
+
+bool CommandContext::targetIsImmune(int f_target_id) const
+{
+    const auto l_spec = m_server->commandRegistry()->spec(m_command_name);
+    if (!l_spec || l_spec->target_immune_if.isEmpty()) {
+        return false;
+    }
+    akashi::ClientSession *l_target = m_server->clientById(f_target_id);
+    return l_target && l_target->canPerform(l_spec->target_immune_if);
 }
 
 QString CommandContext::aclRoleId() const { return m_invoker->aclRoleId(); }

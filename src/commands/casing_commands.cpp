@@ -227,48 +227,36 @@ void cmdAdd(CommandContext &f_context)
 
 void cmdSaveTestimony(CommandContext &f_context)
 {
-    bool l_permission_found = false;
-    if (f_context.canPerform(akashi::permission::save_testimony))
-        l_permission_found = true;
-
-    akashi::ClientSession *l_self = f_context.server()->clientById(f_context.clientId());
-    if (l_self->isTestimonySaving())
-        l_permission_found = true;
-
-    if (l_permission_found) {
-        akashi::TestimonyRecorder *l_recorder = f_context.server()->areaById(f_context.areaId())->testimonyRecorder();
-        if (l_recorder->statementCount() - 1 <= 0) {
-            f_context.reply("Can't save an empty testimony.");
-            return;
-        }
-
-        const std::optional<QString> l_testimony_name = akashi::FileSystemService::sanitizedFileName(f_context.argument(0));
-        const std::optional<QString> l_path =
-            l_testimony_name ? f_context.server()->fileSystem()->resolve(akashi::FileSystemService::Scope::Storage, "testimony/" + *l_testimony_name + ".txt") : std::nullopt;
-        if (!l_path) {
-            f_context.reply("Invalid testimony name. Use only letters, numbers, dashes and underscores.");
-            return;
-        }
-        if (QFile::exists(*l_path)) {
-            f_context.reply("Unable to save testimony. Testimony name already exists.");
-            return;
-        }
-
-        QByteArray l_data;
-        for (int i = 0; i < l_recorder->statementCount(); i++) {
-            l_data += l_recorder->statementAt(i)->toSavedLine().toUtf8() + "\n";
-        }
-        if (auto l_error = f_context.server()->fileSystem()->writeFile(*l_path, l_data)) {
-            f_context.reply("Unable to save testimony: " + *l_error);
-            return;
-        }
-        f_context.reply("Testimony saved. To load it use /loadtestimony " + *l_testimony_name);
-        l_self->setTestimonySaving(false);
-    }
-    else {
-        f_context.reply("You don't have permission to save a testimony. Please contact a moderator for permission.");
+    // The gate is the spec's save_testimony requirement; /permitsaving
+    // hands that permission to a person as a grant, so no session flag
+    // and no inline check exist anymore.
+    akashi::TestimonyRecorder *l_recorder = f_context.server()->areaById(f_context.areaId())->testimonyRecorder();
+    if (l_recorder->statementCount() - 1 <= 0) {
+        f_context.reply("Can't save an empty testimony.");
         return;
     }
+
+    const std::optional<QString> l_testimony_name = akashi::FileSystemService::sanitizedFileName(f_context.argument(0));
+    const std::optional<QString> l_path =
+        l_testimony_name ? f_context.server()->fileSystem()->resolve(akashi::FileSystemService::Scope::Storage, "testimony/" + *l_testimony_name + ".txt") : std::nullopt;
+    if (!l_path) {
+        f_context.reply("Invalid testimony name. Use only letters, numbers, dashes and underscores.");
+        return;
+    }
+    if (QFile::exists(*l_path)) {
+        f_context.reply("Unable to save testimony. Testimony name already exists.");
+        return;
+    }
+
+    QByteArray l_data;
+    for (int i = 0; i < l_recorder->statementCount(); i++) {
+        l_data += l_recorder->statementAt(i)->toSavedLine().toUtf8() + "\n";
+    }
+    if (auto l_error = f_context.server()->fileSystem()->writeFile(*l_path, l_data)) {
+        f_context.reply("Unable to save testimony: " + *l_error);
+        return;
+    }
+    f_context.reply("Testimony saved. To load it use /loadtestimony " + *l_testimony_name);
 }
 
 void cmdLoadTestimony(CommandContext &f_context)
@@ -325,11 +313,11 @@ void cmdLoadTestimony(CommandContext &f_context)
 void registerCasingCommands(CommandRegistry &f_registry)
 {
     f_registry.registerCommand(
-        {QStringLiteral("doc"), {}, {akashi::permission::user}, 0, QStringLiteral("/doc [text]"), QStringLiteral("Views or sets the document for the area.")},
+        {QStringLiteral("doc"), {}, {akashi::permission::casing_doc}, 0, QStringLiteral("/doc [text]"), QStringLiteral("Views or sets the document for the area.")},
         cmdDoc, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("cleardoc"), {}, {akashi::permission::user}, 0, QStringLiteral("/cleardoc"), QStringLiteral("Clears the document in the area.")},
+        {QStringLiteral("cleardoc"), {}, {akashi::permission::casing_cleardoc}, 0, QStringLiteral("/cleardoc"), QStringLiteral("Clears the document in the area.")},
         cmdClearDoc, QStringLiteral("core"));
 
     f_registry.registerCommand(
@@ -337,43 +325,43 @@ void registerCasingCommands(CommandRegistry &f_registry)
         cmdEvidenceMod, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("evidence_swap"), {}, {akashi::permission::gamemaster}, 2, QStringLiteral("/evidence_swap <id1> <id2>"), QStringLiteral("Swaps two pieces of evidence in the area.")},
+        {QStringLiteral("evidence_swap"), {}, {akashi::permission::cm_evidence_swap}, 2, QStringLiteral("/evidence_swap <id1> <id2>"), QStringLiteral("Swaps two pieces of evidence in the area.")},
         cmdEvidenceSwap, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("testify"), {}, {akashi::permission::gamemaster}, 0, QStringLiteral("/testify"), QStringLiteral("Starts testimony recording.")},
+        {QStringLiteral("testify"), {}, {akashi::permission::cm_testify}, 0, QStringLiteral("/testify"), QStringLiteral("Starts testimony recording.")},
         cmdTestify, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("examine"), {}, {akashi::permission::gamemaster}, 0, QStringLiteral("/examine"), QStringLiteral("Starts testimony playback.")},
+        {QStringLiteral("examine"), {}, {akashi::permission::cm_examine}, 0, QStringLiteral("/examine"), QStringLiteral("Starts testimony playback.")},
         cmdExamine, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("testimony"), {}, {akashi::permission::user}, 0, QStringLiteral("/testimony"), QStringLiteral("Lists the statements in the current testimony.")},
+        {QStringLiteral("testimony"), {}, {akashi::permission::casing_testimony}, 0, QStringLiteral("/testimony"), QStringLiteral("Lists the statements in the current testimony.")},
         cmdTestimony, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("delete"), {}, {akashi::permission::gamemaster}, 0, QStringLiteral("/delete"), QStringLiteral("Deletes the currently selected testimony statement.")},
+        {QStringLiteral("delete"), {}, {akashi::permission::cm_delete}, 0, QStringLiteral("/delete"), QStringLiteral("Deletes the currently selected testimony statement.")},
         cmdDelete, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("update"), {}, {akashi::permission::gamemaster}, 0, QStringLiteral("/update"), QStringLiteral("Replaces the current testimony statement with the next IC message.")},
+        {QStringLiteral("update"), {}, {akashi::permission::cm_update}, 0, QStringLiteral("/update"), QStringLiteral("Replaces the current testimony statement with the next IC message.")},
         cmdUpdate, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("pause"), {QStringLiteral("end")}, {akashi::permission::gamemaster}, 0, QStringLiteral("/pause"), QStringLiteral("Pauses testimony recording or playback.")},
+        {QStringLiteral("pause"), {QStringLiteral("end")}, {akashi::permission::cm_pause}, 0, QStringLiteral("/pause"), QStringLiteral("Pauses testimony recording or playback.")},
         cmdPause, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("add"), {}, {akashi::permission::gamemaster}, 0, QStringLiteral("/add"), QStringLiteral("Inserts a new statement after the current one.")},
+        {QStringLiteral("add"), {}, {akashi::permission::cm_add}, 0, QStringLiteral("/add"), QStringLiteral("Inserts a new statement after the current one.")},
         cmdAdd, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("savetestimony"), {}, {akashi::permission::user}, 1, QStringLiteral("/savetestimony <name>"), QStringLiteral("Saves the current testimony to a file.")},
+        {QStringLiteral("savetestimony"), {}, {akashi::permission::save_testimony}, 1, QStringLiteral("/savetestimony <name>"), QStringLiteral("Saves the current testimony to a file.")},
         cmdSaveTestimony, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("loadtestimony"), {}, {akashi::permission::gamemaster}, 1, QStringLiteral("/loadtestimony <name>"), QStringLiteral("Loads a saved testimony for playback.")},
+        {QStringLiteral("loadtestimony"), {}, {akashi::permission::cm_loadtestimony}, 1, QStringLiteral("/loadtestimony <name>"), QStringLiteral("Loads a saved testimony for playback.")},
         cmdLoadTestimony, QStringLiteral("core"));
 }
 

@@ -235,18 +235,19 @@ void cmdFloorRule(CommandContext &f_context)
 void cmdReloadRules(CommandContext &f_context)
 {
     f_context.server()->applyConfigRules();
-    f_context.reply("Reapplied the rule declarations from areas.json.");
-    logRuleChange(f_context, QStringLiteral("reloadrules"), QStringLiteral("reapplied the rule declarations from areas.json"));
+    f_context.server()->applyConfigGrants();
+    f_context.reply("Reapplied the rule and grant declarations from areas.json.");
+    logRuleChange(f_context, QStringLiteral("reloadrules"), QStringLiteral("reapplied the rule and grant declarations from areas.json"));
 }
 
 void registerRuleCommands(CommandRegistry &f_registry)
 {
     f_registry.registerCommand(
-        {QStringLiteral("rules"), {}, {akashi::permission::user}, 0, QStringLiteral("/rules"), QStringLiteral("Lists the rules active in this area, floor rules included.")},
+        {QStringLiteral("rules"), {}, {akashi::permission::info_rules}, 0, QStringLiteral("/rules"), QStringLiteral("Lists the rules active in this area, floor rules included.")},
         cmdRules, QStringLiteral("core"));
 
     f_registry.registerCommand(
-        {QStringLiteral("ruleactions"), {}, {akashi::permission::user}, 0, QStringLiteral("/ruleactions"), QStringLiteral("Lists the rule actions available to /addrule.")},
+        {QStringLiteral("ruleactions"), {}, {akashi::permission::info_ruleactions}, 0, QStringLiteral("/ruleactions"), QStringLiteral("Lists the rule actions available to /addrule.")},
         cmdRuleActions, QStringLiteral("core"));
 
     f_registry.registerCommand(

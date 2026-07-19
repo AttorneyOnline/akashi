@@ -1,6 +1,7 @@
 #pragma once
 
 #include "akashi/area_rule.h"
+#include "akashi/grants.h"
 #include "akashi/jukebox_policy.h"
 
 #include <QHash>
@@ -34,6 +35,9 @@ class Floor
     QVector<BeforeRuleEntry> before_rules;
     QVector<AfterRuleEntry> after_rules;
     QVector<TransformRuleEntry> transform_rules;
+
+    // Standing permission offers to everyone on this floor.
+    QVector<Grant> grants;
 };
 
 } // namespace akashi
