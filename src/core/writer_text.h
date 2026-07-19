@@ -29,6 +29,10 @@ class AKASHI_CORE_EXPORT WriterText : public ILogWriter
     void flushBuffer(const QString &f_area, const QList<LogEvent> &f_events);
 
   private:
+    // Area names are operator-set (/createarea, /renamearea) and become part of
+    // a log file name, so they must never carry a path separator or ".." out of
+    // logs/. Fold anything that is not a plain name character to '_'.
+    static QString safeAreaToken(const QString &f_area);
     void writeToFile(const QString &f_path, const QString &f_text);
     void ensureDir(const QString &f_path);
     void archiveOldLogs();

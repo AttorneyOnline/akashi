@@ -59,8 +59,11 @@ void SqlLoggerPlugin::applyLoggingMode(bool f_initial)
         qCInfo(akashiLog).noquote() << "sql-logger: logging events to" << l_database.databaseName();
     }
     else if (!l_wants_writer && m_writer) {
-        m_log->unregisterAll(id());
+        // Drop our reference first, then unregister: the writer's SQL
+        // connection is affine to the log worker thread, so LogService must
+        // hold the last reference and dispose it on that thread.
         m_writer.reset();
+        m_log->unregisterAll(id());
         qCInfo(akashiLog).noquote() << QStringLiteral("sql-logger: logging is %1, the SQL writer retired").arg(l_mode);
     }
     else if (!l_wants_writer && f_initial) {
@@ -71,10 +74,12 @@ void SqlLoggerPlugin::applyLoggingMode(bool f_initial)
 void SqlLoggerPlugin::shutdown(akashi::ServiceRegistry &services)
 {
     auto l_log = services.resolve<akashi::LogService>(QStringLiteral("akashi.log"));
+    // Same ordering as the runtime retirement: release our reference before
+    // unregistering so the worker thread disposes the SQL connection.
+    m_writer.reset();
     if (l_log)
         l_log->unregisterAll(id());
 
-    m_writer.reset();
     m_config.reset();
     m_databases.reset();
     m_log.reset();

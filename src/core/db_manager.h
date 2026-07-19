@@ -277,6 +277,15 @@ class AKASHI_CORE_EXPORT DBManager : public QObject
 
   private:
     /**
+     * @brief Shared body of isIPBanned/isHDIDBanned: looks up active bans by a
+     * single indexed column, applying the same fail-closed and expiry rules.
+     * @param f_column The ban column to match on (a fixed literal, never input).
+     * @param f_value The value to match against that column.
+     * @param f_what The lowercase label for the fail-closed warning (ipid/hdid).
+     */
+    std::pair<bool, BanInfo> queryBan(const QString &f_column, const QString &f_value, const char *f_what);
+
+    /**
      * @brief The stand-in ban returned when a ban lookup itself fails, so the
      * connection gate fails closed instead of admitting the client.
      */

@@ -76,6 +76,10 @@ class AKASHI_CORE_EXPORT LogService : public QObject, public IService
     QWaitCondition m_condition;
     QQueue<LogEvent> m_queue;
     QList<WriterEntry> m_writers;
+    // Writers unregistered at runtime are handed here for the worker thread to
+    // drop, so one that opened a thread-affine resource (a SQL connection) is
+    // destroyed on the same thread it was created on rather than on the caller.
+    QList<std::shared_ptr<ILogWriter>> m_pending_disposal;
 
     QThread *m_worker = nullptr;
     std::atomic<bool> m_stop{false};

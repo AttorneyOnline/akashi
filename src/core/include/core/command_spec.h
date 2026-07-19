@@ -87,6 +87,10 @@ struct CommandSpec
 
     // The first variant taking this many arguments, or nullptr when no form
     // does. Declaration order decides ties, so narrower forms come first.
+    // The result points into this spec's own storage, so bind the spec to a
+    // named variable first - never call match() on a CommandRegistry lookup
+    // returned by value (e.g. registry.spec(name)->match(argc)), or the
+    // pointer dangles once the temporary spec dies.
     const CommandVariant *match(int f_argc) const
     {
         for (const CommandVariant &l_variant : variants) {

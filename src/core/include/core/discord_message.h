@@ -13,7 +13,9 @@
 
 namespace akashi {
 
-class DiscordMessageCommon
+// Exported alongside its derived classes so the shared base does not cross the
+// DLL boundary as an unexported symbol (MSVC C4275).
+class AKASHI_CORE_EXPORT DiscordMessageCommon
 {
   public:
     const QString &requestUrl() const { return m_request_url; }

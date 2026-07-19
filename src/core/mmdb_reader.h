@@ -28,6 +28,9 @@ class AKASHI_CORE_EXPORT MmdbReader
     int m_record_size = 0;
     int m_ip_version = 0;
     quint32 m_tree_size = 0;
+    // asnForAddress caches one entry per distinct connecting address; the cap
+    // stops a flood of unique source addresses from growing it without bound.
+    static constexpr int s_cache_limit = 8192;
     QHash<QString, quint32> m_cache;
 };
 

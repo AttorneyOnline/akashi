@@ -90,7 +90,7 @@ class AKASHI_CORE_EXPORT PlayerDirectory : public IService
 
     QVector<akashi::ClientSession *> m_clients;
     QHash<int, akashi::ClientSession *> m_clients_by_id;
-    QVector<int> m_free_ids; // most recently freed at the back
+    QVector<int> m_free_ids;         // most recently freed at the back
     QHash<QString, int> m_ip_counts; // live per-IP connection tally
 
     // The selected pick function; setIdAssignment replaces it.

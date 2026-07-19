@@ -62,15 +62,17 @@ DBManager::BanInfo DBManager::databaseErrorBan()
     return ban;
 }
 
-std::pair<bool, DBManager::BanInfo> DBManager::isIPBanned(QString ipid)
+std::pair<bool, DBManager::BanInfo> DBManager::queryBan(const QString &f_column, const QString &f_value, const char *f_what)
 {
     QSqlQuery query(db);
-    query.prepare("SELECT * FROM BANS WHERE IPID = ? ORDER BY TIME DESC");
-    query.addBindValue(ipid);
+    // f_column is a fixed literal ("IPID"/"HDID"), never client input, so the
+    // interpolation carries no injection risk; the value stays a bound param.
+    query.prepare(QStringLiteral("SELECT * FROM BANS WHERE %1 = ? ORDER BY TIME DESC").arg(f_column));
+    query.addBindValue(f_value);
     if (!query.exec()) {
         // Fail closed: a failed lookup must not read as "not banned", or a
         // database outage silently readmits every banned player.
-        qCWarning(akashiDb) << "Ban check failed for ipid" << ipid << ":" << query.lastError().text();
+        qCWarning(akashiDb) << "Ban check failed for" << f_what << f_value << ":" << query.lastError().text();
         return {true, databaseErrorBan()};
     }
     // Every ban is checked, an older ban can still be active while newer ones expired.
@@ -93,33 +95,14 @@ std::pair<bool, DBManager::BanInfo> DBManager::isIPBanned(QString ipid)
     return {false, ban};
 }
 
+std::pair<bool, DBManager::BanInfo> DBManager::isIPBanned(QString ipid)
+{
+    return queryBan(QStringLiteral("IPID"), ipid, "ipid");
+}
+
 std::pair<bool, DBManager::BanInfo> DBManager::isHDIDBanned(QString hdid)
 {
-    QSqlQuery query(db);
-    query.prepare("SELECT * FROM BANS WHERE HDID = ? ORDER BY TIME DESC");
-    query.addBindValue(hdid);
-    if (!query.exec()) {
-        qCWarning(akashiDb) << "Ban check failed for hdid" << hdid << ":" << query.lastError().text();
-        return {true, databaseErrorBan()};
-    }
-    // Every ban is checked, an older ban can still be active while newer ones expired.
-    BanInfo ban;
-    while (query.next()) {
-        ban.id = query.value(0).toInt();
-        ban.ipid = query.value(1).toString();
-        ban.hdid = query.value(2).toString();
-        ban.ip = QHostAddress(query.value(3).toString());
-        ban.time = static_cast<unsigned long>(query.value(4).toULongLong());
-        ban.reason = query.value(5).toString();
-        ban.duration = query.value(6).toLongLong();
-        ban.moderator = query.value(7).toString();
-        if (ban.duration == -2)
-            return {true, ban};
-        unsigned long current_time = QDateTime::currentSecsSinceEpoch();
-        if (ban.time + ban.duration > current_time)
-            return {true, ban};
-    }
-    return {false, ban};
+    return queryBan(QStringLiteral("HDID"), hdid, "hdid");
 }
 
 int DBManager::banId(QString hdid)

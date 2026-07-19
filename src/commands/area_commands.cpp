@@ -27,7 +27,6 @@ static QStringList buildAreaList(CommandContext &f_context, int f_area_index)
         l_entries.append("[SPECTATABLE]");
         break;
     case akashi::Area::LockState::Free:
-    default:
         break;
     }
     l_entries.append("[" + QString::number(l_area->playerCount()) + " users][" + l_area->status() + "]");

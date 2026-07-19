@@ -182,8 +182,23 @@ void LogService::registerWriter(std::shared_ptr<ILogWriter> f_writer, const QStr
 void LogService::unregisterAll(const QString &f_owner_id)
 {
     AKASHI_ASSERT_THREAD_AFFINITY();
-    QMutexLocker l_lock(&m_mutex);
-    m_writers.removeIf([&](const WriterEntry &e) { return e.owner == f_owner_id; });
+    {
+        QMutexLocker l_lock(&m_mutex);
+        // Hand each retired writer to the worker for disposal instead of
+        // dropping it here: the writer may hold a resource affine to the worker
+        // thread, so its destructor has to run there. The caller should release
+        // its own reference before this call so the worker holds the last one.
+        for (auto l_it = m_writers.begin(); l_it != m_writers.end();) {
+            if (l_it->owner == f_owner_id) {
+                m_pending_disposal.append(std::move(l_it->writer));
+                l_it = m_writers.erase(l_it);
+            }
+            else {
+                ++l_it;
+            }
+        }
+    }
+    m_condition.wakeOne();
 }
 
 void LogService::registerTemplate(const QString &f_type, const QString &f_tmpl)
@@ -256,20 +271,34 @@ void LogService::workerLoop()
                 l_entry.writer->maintenance();
             }
         }
+
+        // Drop retired writers here, on the worker thread, so a thread-affine
+        // resource is torn down on the thread that created it.
+        QList<std::shared_ptr<ILogWriter>> l_disposal;
+        {
+            QMutexLocker l_lock(&m_mutex);
+            l_disposal.swap(m_pending_disposal);
+        }
+        l_disposal.clear();
     }
 
     QQueue<LogEvent> l_remaining;
     QList<WriterEntry> l_writers;
+    QList<std::shared_ptr<ILogWriter>> l_final_disposal;
     {
         QMutexLocker l_lock(&m_mutex);
         l_remaining.swap(m_queue);
         l_writers = m_writers;
+        l_final_disposal.swap(m_pending_disposal);
     }
     for (const auto &l_event : l_remaining) {
         for (const auto &l_entry : l_writers) {
             l_entry.writer->write(l_event);
         }
     }
+    // Anything retired after the last loop iteration still gets disposed here,
+    // before the worker thread exits.
+    l_final_disposal.clear();
 }
 
 QString LogService::applyTemplate(const QString &f_tmpl, const LogEvent &f_event) const

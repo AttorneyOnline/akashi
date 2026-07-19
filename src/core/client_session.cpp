@@ -104,6 +104,7 @@ void ClientSession::bindTransport(ITransport *f_transport)
     for (const QString &l_feature : l_announced) {
         m_profile.features.insert(l_feature);
     }
+
     connect(transport, &ITransport::packetReceived, this, &ClientSession::packetReceived);
     connect(transport, &ITransport::clientDisconnected, this, &ClientSession::transportClosed);
 
@@ -1152,7 +1153,6 @@ void ClientSession::setCharCursed(bool f_char_cursed)
     setSanction(akashi::sanction::charcurse, f_char_cursed);
 }
 
-
 QHostAddress ClientSession::remoteIp() const
 {
     return remote_ip;
@@ -1940,9 +1940,8 @@ bool ClientSession::canModifyEvidence(akashi::Area *area) const
         return canPerform(permission::area_cm);
     case akashi::EvidenceStore::Access::Mod:
         return canPerform(permission::modify_evidence);
-    default:
-        return false;
     }
+    return false;
 }
 
 void ClientSession::updateJudgeLog(akashi::Area *area, ClientSession *client, QString action)

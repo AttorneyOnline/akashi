@@ -108,6 +108,11 @@ quint32 MmdbReader::asnForAddress(const QHostAddress &f_address)
         l_node = l_record;
     }
 
+    // A full flush (rather than LRU eviction) keeps this simple; the cache is
+    // only a short-term reuse win, so re-warming a dropped entry is cheap.
+    if (m_cache.size() >= s_cache_limit) {
+        m_cache.clear();
+    }
     m_cache.insert(l_key, l_asn);
     return l_asn;
 }

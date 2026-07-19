@@ -39,16 +39,33 @@ void WriterText::write(const LogEvent &f_event)
     }
     else {
         ensureDir(QStringLiteral("logs"));
-        const QString l_area = f_event.area.isEmpty() ? QStringLiteral("SERVER") : f_event.area;
+        const QString l_area = safeAreaToken(f_event.area);
         writeToFile(QStringLiteral("logs/%1_%2.log").arg(l_area, l_date), l_formatted);
     }
+}
+
+QString WriterText::safeAreaToken(const QString &f_area)
+{
+    QString l_token;
+    l_token.reserve(f_area.size());
+    for (const QChar l_ch : f_area) {
+        if (l_ch.isLetterOrNumber() || l_ch == QLatin1Char('_') || l_ch == QLatin1Char('-')) {
+            l_token.append(l_ch);
+        }
+        else {
+            l_token.append(QLatin1Char('_'));
+        }
+    }
+    // Empty (or all-separator) names fall back to the same label an
+    // area-less event already used.
+    return l_token.isEmpty() ? QStringLiteral("SERVER") : l_token;
 }
 
 void WriterText::flushBuffer(const QString &f_area, const QList<LogEvent> &f_events)
 {
     ensureDir(QStringLiteral("logs/modcall"));
     const QString l_timestamp = QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd_hhmmss"));
-    const QString l_path = QStringLiteral("logs/modcall/report_%1_%2.log").arg(f_area, l_timestamp);
+    const QString l_path = QStringLiteral("logs/modcall/report_%1_%2.log").arg(safeAreaToken(f_area), l_timestamp);
 
     QString l_content;
     for (const auto &l_event : f_events) {

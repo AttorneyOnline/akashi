@@ -42,7 +42,7 @@ class AKASHI_CORE_EXPORT Schedule
         Never,
         Daily,
         Weekly,
-        Once
+        Once,
     };
 
     Kind m_kind = Kind::Never;

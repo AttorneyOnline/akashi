@@ -20,7 +20,11 @@ namespace akashi::commands {
 
 static void diceThrower(CommandContext &f_context, int f_sides, int f_dice, bool f_private, int f_modifier = 0)
 {
-    if (f_sides < 0 || f_dice < 0 || f_sides > f_context.server()->serverSettings()->max_value() || f_dice > f_context.server()->serverSettings()->max_dice()) {
+    const int l_max_value = f_context.server()->serverSettings()->max_value();
+    // The modifier is client-supplied; bound it to the same range as a face so
+    // genRand(...) + f_modifier below cannot signed-overflow. The comparison
+    // avoids qAbs(), which is itself UB at INT_MIN.
+    if (f_sides < 0 || f_dice < 0 || f_sides > l_max_value || f_dice > f_context.server()->serverSettings()->max_dice() || f_modifier > l_max_value || f_modifier < -l_max_value) {
         f_context.reply("Dice or side number out of bounds.");
         return;
     }
