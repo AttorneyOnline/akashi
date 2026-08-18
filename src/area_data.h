@@ -69,11 +69,13 @@ class AreaData : public QObject
     enum Status
     {
         IDLE,                //!< The area is currently not busy with anything, or the area is empty.
-        RP,                  //!< There is some (non-Ace Attorney-related) roleplay going on in the area.
-        CASING,              //!< An Ace Attorney or Danganronpa-styled case is currently being held in the area.
-        LOOKING_FOR_PLAYERS, //!< Something is being planned in the area, but it needs more players.
-        RECESS,              //!< The area is currently taking a break from casing, but will continue later.
-        GAMING               //!< The users inside the area are playing some game outside of AO, and are using the area to communicate.
+        RP,                  //!< There is a roleplay going on in the area.
+        CASING,              //!< An Ace Attorney-style case is currently being held in the area.
+        LOOKING_FOR_PLAYERS, //!< An activity is being planned in the area, but it needs more players.
+        RECESS,              //!< The area is currently taking a temporary break.
+        GAMING,              //!< The users are playing some gamemode that maybe in or outside of AO.
+        BUILDING,            //!< The users are collectively building or improvising an activity.
+        STARTING             //!< The users are ready to begin the activity and are waiting for something.
     };
 
     /// Exposes the metadata of the Status enum.
