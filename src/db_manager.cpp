@@ -163,7 +163,7 @@ void DBManager::addBan(BanInfo ban)
     query.addBindValue(ban.duration);
     query.addBindValue(ban.moderator);
     if (!query.exec())
-        qDebug() << "SQL Error:" << query.lastError().text();
+        qWarning() << "SQL Error:" << query.lastError().text();
 }
 
 bool DBManager::invalidateBan(int id)
@@ -352,7 +352,7 @@ bool DBManager::updateBan(int ban_id, QString field, QVariant updated_info)
     }
     query.addBindValue(ban_id);
     if (!query.exec()) {
-        qDebug() << query.lastError();
+        qWarning() << query.lastError();
         return false;
     }
     else {

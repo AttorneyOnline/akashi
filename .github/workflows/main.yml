@@ -60,30 +60,40 @@ jobs:
   
   build-windows:
     needs: formatting-check
-    if: always()
     runs-on: windows-latest
     
     steps:
       - uses: actions/checkout@v4
-      - uses: ilammy/msvc-dev-cmd@v1
-      
+
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
           version: 6.5.3
           target: desktop
-          arch: win64_msvc2019_64
+          arch: win64_mingw
+          tools: 'tools_mingw1310'
           cache: true
           cache-key-prefix: install-qt-action
           modules: 'qtwebsockets'
-     
+
+      - name: Add MinGW to PATH
+        run: echo "$Env:IQTA_TOOLS\mingw1310_64\bin" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
+
       - name: Build
         run: |
           cd $Env:GITHUB_WORKSPACE
-          cmake . -D CMAKE_BUILD_TYPE=Release
-          cmake --build . --config Release
+          cmake . -G "MinGW Makefiles" -D CMAKE_BUILD_TYPE=Release
+          cmake --build . --config Release --parallel
           windeployqt bin\akashi.exe --release --no-translations --no-compiler-runtime --no-opengl-sw
-          
+          Copy-Item "$Env:IQTA_TOOLS\mingw1310_64\bin\libgcc_s_seh-1.dll" bin\
+          Copy-Item "$Env:IQTA_TOOLS\mingw1310_64\bin\libstdc++-6.dll" bin\
+          Copy-Item "$Env:IQTA_TOOLS\mingw1310_64\bin\libwinpthread-1.dll" bin\
+          New-Item -ItemType Directory -Force -Path bin\sqldrivers | Out-Null
+          Copy-Item "$Env:QT_ROOT_DIR\plugins\sqldrivers\qsqlite.dll" bin\sqldrivers\
+
+      - name: List deployed files
+        run: Get-ChildItem -Recurse bin\ | Select-Object FullName
+
       - name: Upload zip
         uses: actions/upload-artifact@v4
         with:
