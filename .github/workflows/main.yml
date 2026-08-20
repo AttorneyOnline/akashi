@@ -71,7 +71,7 @@ jobs:
           version: 6.5.3
           target: desktop
           arch: win64_mingw
-          tools: 'tools_mingw1310'
+          tools: 'tools_mingw1310 tools_opensslv3_x64'
           cache: true
           cache-key-prefix: install-qt-action
           modules: 'qtwebsockets'
@@ -90,6 +90,9 @@ jobs:
           Copy-Item "$Env:IQTA_TOOLS\mingw1310_64\bin\libwinpthread-1.dll" bin\
           New-Item -ItemType Directory -Force -Path bin\sqldrivers | Out-Null
           Copy-Item "$Env:QT_ROOT_DIR\plugins\sqldrivers\qsqlite.dll" bin\sqldrivers\
+          $ssl = Get-ChildItem -Recurse -Path "$Env:IQTA_TOOLS\.." -Filter "libssl-3-x64.dll" | Select-Object -First 1
+          Copy-Item $ssl.FullName bin\
+          Copy-Item (Join-Path $ssl.Directory.FullName "libcrypto-3-x64.dll") bin\
 
       - name: List deployed files
         run: Get-ChildItem -Recurse bin\ | Select-Object FullName
