@@ -57,6 +57,7 @@ QHostAddress NetworkSocket::peerAddress()
 
 void NetworkSocket::close(QWebSocketProtocol::CloseCode f_code)
 {
+    m_disconnecting = true;
     if (m_client_socket) {
         m_client_socket->close(f_code);
     }
@@ -64,11 +65,17 @@ void NetworkSocket::close(QWebSocketProtocol::CloseCode f_code)
 
 void NetworkSocket::handleMessage(QString f_data)
 {
+    // Ignore messages if we're already disconnecting
+    if (m_disconnecting) {
+        return;
+    }
+
     QString l_data = f_data;
 
     if (l_data.toUtf8().size() > 30720) {
         if (m_client_socket)
             m_client_socket->close(QWebSocketProtocol::CloseCodeTooMuchData);
+        return;
     }
 
     QStringList l_all_packets = l_data.split("%");
@@ -90,16 +97,23 @@ void NetworkSocket::handleMessage(QString f_data)
     }
 }
 
+bool NetworkSocket::isAlive() const
+{
+    if (m_disconnecting) {
+        return false;
+    }
+    if (!m_client_socket) {
+        return false;
+    }
+    if (m_client_socket->state() != QAbstractSocket::ConnectedState) {
+        return false;
+    }
+    return true;
+}
+
 void NetworkSocket::write(AOPacket *f_packet)
 {
-    if (!m_client_socket) {
-        qWarning() << "NetworkSocket::write(): attempt to write to null socket";
-        return;
-    }
-
-    if (m_client_socket->state() != QAbstractSocket::ConnectedState) {
-        qWarning() << "NetworkSocket::write(): attempt to write on non-connected socket, state="
-                   << m_client_socket->state();
+    if (!isAlive()) {
         return;
     }
 
