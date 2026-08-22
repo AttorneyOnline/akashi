@@ -10,16 +10,20 @@ void PlayerStateObserver::registerClient(AOClient *client)
 {
     Q_ASSERT(!m_client_list.contains(client));
 
-    PacketPR packet(client->clientId(), PacketPR::ADD);
-    sendToClientList(packet);
-
+    // First, add the new client to our list before broadcasting
     m_client_list.append(client);
 
+    // Now connect signals from this client
     connect(client, &AOClient::nameChanged, this, &PlayerStateObserver::notifyNameChanged);
     connect(client, &AOClient::characterChanged, this, &PlayerStateObserver::notifyCharacterChanged);
     connect(client, &AOClient::characterNameChanged, this, &PlayerStateObserver::notifyCharacterNameChanged);
     connect(client, &AOClient::areaIdChanged, this, &PlayerStateObserver::notifyAreaIdChanged);
 
+    // Notify all existing clients about the new player joining (including the new client itself now in the list)
+    PacketPR packet(client->clientId(), PacketPR::ADD);
+    sendToClientList(packet);
+
+    // Send all existing client information to the new client
     QList<AOPacket *> packets;
     for (AOClient *i_client : qAsConst(m_client_list)) {
         packets.append(new PacketPR(i_client->clientId(), PacketPR::ADD));
