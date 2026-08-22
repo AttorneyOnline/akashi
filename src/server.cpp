@@ -304,7 +304,9 @@ void Server::broadcast(AOPacket *packet, int area_index)
 void Server::broadcast(AOPacket *packet)
 {
     for (AOClient *l_client : qAsConst(m_clients)) {
-        l_client->sendPacket(packet);
+        if (l_client && l_client->m_socket) {
+            l_client->sendPacket(packet);
+        }
     }
 }
 
