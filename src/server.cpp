@@ -151,8 +151,7 @@ void Server::clientConnected()
     }
 
     int user_id = m_available_ids.pop();
--    AOClient *client = new AOClient(this, l_socket, l_socket, user_id, music_manager);
-+    AOClient *client = new AOClient(this, l_socket, this, user_id, music_manager);
+    AOClient *client = new AOClient(this, l_socket, this, user_id, music_manager);
     m_clients_ids.insert(user_id, client);
 
     int multiclient_count = 1;
