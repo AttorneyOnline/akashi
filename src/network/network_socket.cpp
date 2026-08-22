@@ -44,6 +44,9 @@ NetworkSocket::NetworkSocket(QWebSocket *f_socket, QObject *parent) :
 
 NetworkSocket::~NetworkSocket()
 {
+    if (m_client_socket) {
+        disconnect(m_client_socket, nullptr, this, nullptr);
+    }
     m_client_socket = nullptr;
 }
 
@@ -54,7 +57,9 @@ QHostAddress NetworkSocket::peerAddress()
 
 void NetworkSocket::close(QWebSocketProtocol::CloseCode f_code)
 {
-    m_client_socket->close(f_code);
+    if (m_client_socket) {
+        m_client_socket->close(f_code);
+    }
 }
 
 void NetworkSocket::handleMessage(QString f_data)
@@ -62,7 +67,8 @@ void NetworkSocket::handleMessage(QString f_data)
     QString l_data = f_data;
 
     if (l_data.toUtf8().size() > 30720) {
-        m_client_socket->close(QWebSocketProtocol::CloseCodeTooMuchData);
+        if (m_client_socket)
+            m_client_socket->close(QWebSocketProtocol::CloseCodeTooMuchData);
     }
 
     QStringList l_all_packets = l_data.split("%");
@@ -86,5 +92,9 @@ void NetworkSocket::handleMessage(QString f_data)
 
 void NetworkSocket::write(AOPacket *f_packet)
 {
-    m_client_socket->sendTextMessage(f_packet->toString());
+    if (m_client_socket) {
+        m_client_socket->sendTextMessage(f_packet->toString());
+    } else {
+        qWarning() << "NetworkSocket::write(): attempt to write to invalid socket";
+    }
 }
