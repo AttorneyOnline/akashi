@@ -44,7 +44,7 @@ NetworkSocket::NetworkSocket(QWebSocket *f_socket, QObject *parent) :
 
 NetworkSocket::~NetworkSocket()
 {
-    m_client_socket->deleteLater();
+    m_client_socket = nullptr;
 }
 
 QHostAddress NetworkSocket::peerAddress()
