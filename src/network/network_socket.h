@@ -20,6 +20,7 @@
 
 #include <QHostAddress>
 #include <QObject>
+#include <QPointer>
 #include <QWebSocket>
 
 #include "network/aopacket.h"
@@ -85,7 +86,7 @@ class NetworkSocket : public QObject
     void handleMessage(QString f_data);
 
   private:
-    QWebSocket *m_client_socket;
+    QPointer<QWebSocket> m_client_socket;
 
     /**
      * @brief Remote IP of the client.
