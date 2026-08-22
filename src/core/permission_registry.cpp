@@ -12,6 +12,39 @@
 
 namespace akashi {
 
+QString describeGrant(const Grant &f_grant, const QString &f_place_name)
+{
+    QString l_audience;
+    switch (f_grant.audience.kind) {
+    case AudienceKind::Everyone:
+        l_audience = QStringLiteral("everyone");
+        break;
+    case AudienceKind::Participants:
+        l_audience = QStringLiteral("participants");
+        break;
+    case AudienceKind::Role:
+        l_audience = QStringLiteral("role ") + f_grant.audience.role_id;
+        break;
+    case AudienceKind::Person:
+        l_audience = QStringLiteral("person ") + f_grant.audience.person_key;
+        break;
+    }
+    const QString l_place = f_place_name.isEmpty() ? QString::number(f_grant.place_id) : f_place_name;
+    QString l_where;
+    switch (f_grant.scope) {
+    case GrantScope::Server:
+        l_where = QStringLiteral("server");
+        break;
+    case GrantScope::Floor:
+        l_where = QStringLiteral("floor ") + l_place;
+        break;
+    case GrantScope::Area:
+        l_where = QStringLiteral("area ") + l_place;
+        break;
+    }
+    return f_grant.permission + QStringLiteral(" -> ") + l_audience + QStringLiteral(" @ ") + l_where + QStringLiteral(" [") + f_grant.owner + QStringLiteral("]");
+}
+
 PermissionRegistry::PermissionRegistry() :
     m_owner_thread(QThread::currentThread())
 {}
@@ -23,7 +56,7 @@ QString PermissionRegistry::serviceId() const
 
 ServiceVersion PermissionRegistry::serviceVersion() const
 {
-    return {2, 0, 0};
+    return {3, 0, 0};
 }
 
 bool PermissionRegistry::registerPermission(const PermissionInfo &f_info, const QString &f_owner_id)
@@ -36,12 +69,25 @@ bool PermissionRegistry::registerPermission(const PermissionInfo &f_info, const 
     return true;
 }
 
-void PermissionRegistry::unregisterAllPermissions(const QString &f_owner_id)
+QStringList PermissionRegistry::unregisterAllPermissions(const QString &f_owner_id)
 {
     AKASHI_ASSERT_OWNER_THREAD();
+    const QStringList l_dropped = permissionsOwnedBy(f_owner_id);
     m_permissions.removeIf([&f_owner_id](std::pair<const QString &, PermissionEntry &> f_item) {
         return f_item.second.owner_id == f_owner_id;
     });
+    // An offer naming a permission that no longer exists would keep
+    // resolving by name alone, so the catalog entry and every offer that
+    // leans on it leave together.
+    removeGrantsNaming(QSet<QString>(l_dropped.begin(), l_dropped.end()));
+    return l_dropped;
+}
+
+void PermissionRegistry::removeGrantsNaming(const QSet<QString> &f_permissions)
+{
+    for (const QString &l_permission : f_permissions) {
+        m_grants.remove(l_permission);
+    }
 }
 
 bool PermissionRegistry::isRegistered(const QString &f_permission_id) const
@@ -82,43 +128,136 @@ std::optional<PermissionInfo> PermissionRegistry::permissionById(const QString &
     return std::nullopt;
 }
 
+QStringList PermissionRegistry::permissionsOwnedBy(const QString &f_owner_id) const
+{
+    AKASHI_ASSERT_OWNER_THREAD();
+    QStringList l_ids;
+    for (auto it = m_permissions.constBegin(); it != m_permissions.constEnd(); ++it) {
+        if (it.value().owner_id == f_owner_id) {
+            l_ids << it.key();
+        }
+    }
+    l_ids.sort();
+    return l_ids;
+}
+
+std::optional<Grant> PermissionRegistry::admit(const Grant &f_grant, const QString &f_where) const
+{
+    AKASHI_ASSERT_OWNER_THREAD();
+    const auto l_entry = m_permissions.constFind(f_grant.permission);
+    if (l_entry == m_permissions.constEnd()) {
+        qCWarning(akashiServer) << f_where << "grants unknown permission" << f_grant.permission << "- the grant was skipped.";
+        return std::nullopt;
+    }
+    // The guard rail: the hammers never ride an everyone-shaped offer - a
+    // room can be handed the jukebox, never the mute. Asked here rather
+    // than at the config compile, so the plugin and script doors meet it
+    // too, and asked on the expanded name, so a group cannot smuggle a
+    // member past it.
+    const bool l_everyone_shaped = f_grant.audience.kind == AudienceKind::Everyone || f_grant.audience.kind == AudienceKind::Participants;
+    if (l_everyone_shaped && l_entry->info.restricted) {
+        qCCritical(akashiServer) << f_where << "tries to offer" << f_grant.permission
+                                 << "to everyone - moderation and administration powers are role grants. The grant was refused.";
+        return std::nullopt;
+    }
+    return f_grant;
+}
+
 bool PermissionRegistry::addGrant(const Grant &f_grant)
 {
     AKASHI_ASSERT_OWNER_THREAD();
-    if (!m_permissions.contains(f_grant.permission)) {
-        qCWarning(akashiServer) << "grant refused: unknown permission" << f_grant.permission << "(owner" << f_grant.owner << ")";
+    const std::optional<Grant> l_admitted = admit(f_grant, QStringLiteral("the grant from ") + f_grant.owner);
+    if (!l_admitted) {
         return false;
     }
+    QList<Grant> &l_bucket = m_grants[l_admitted->permission];
     // Granting the same offer twice is a no-op, so repeatable commands
     // like /permitsaving never stack duplicate entries.
-    if (m_server_grants.contains(f_grant)) {
-        return true;
+    if (!l_bucket.contains(*l_admitted)) {
+        l_bucket.append(*l_admitted);
     }
-    m_server_grants.append(f_grant);
     return true;
 }
 
 bool PermissionRegistry::removeGrant(const Grant &f_grant)
 {
     AKASHI_ASSERT_OWNER_THREAD();
-    return m_server_grants.removeOne(f_grant);
+    const auto l_bucket = m_grants.find(f_grant.permission);
+    if (l_bucket == m_grants.end()) {
+        return false;
+    }
+    const bool l_removed = l_bucket->removeOne(f_grant);
+    if (l_bucket->isEmpty()) {
+        m_grants.erase(l_bucket);
+    }
+    return l_removed;
 }
 
 void PermissionRegistry::removeGrantsByOwner(const QString &f_owner_id)
 {
     AKASHI_ASSERT_OWNER_THREAD();
-    m_server_grants.removeIf([&f_owner_id](const Grant &g) {
-        return g.owner == f_owner_id;
-    });
+    for (auto it = m_grants.begin(); it != m_grants.end();) {
+        it->removeIf([&f_owner_id](const Grant &g) {
+            return g.owner == f_owner_id;
+        });
+        it = it->isEmpty() ? m_grants.erase(it) : std::next(it);
+    }
 }
 
-QList<Grant> PermissionRegistry::serverGrants() const
+QList<Grant> PermissionRegistry::grants() const
 {
     AKASHI_ASSERT_OWNER_THREAD();
-    return m_server_grants;
+    QList<Grant> l_all;
+    for (const QList<Grant> &l_bucket : m_grants) {
+        l_all += l_bucket;
+    }
+    // A hash iterates in whatever order it likes, and the --check-config
+    // dump is diffed between runs, so the order is decided here.
+    std::sort(l_all.begin(), l_all.end(), [](const Grant &a, const Grant &b) {
+        if (a.permission != b.permission) {
+            return a.permission < b.permission;
+        }
+        if (a.scope != b.scope) {
+            return a.scope < b.scope;
+        }
+        if (a.place_id != b.place_id) {
+            return a.place_id < b.place_id;
+        }
+        if (a.owner != b.owner) {
+            return a.owner < b.owner;
+        }
+        return static_cast<int>(a.audience.kind) < static_cast<int>(b.audience.kind);
+    });
+    return l_all;
 }
 
-bool PermissionRegistry::registerGrantSource(const QString &f_source_id, GrantSource f_source, const QString &f_owner_id)
+void PermissionRegistry::setRoleProvider(RoleProvider f_provider)
+{
+    AKASHI_ASSERT_OWNER_THREAD();
+    m_role_provider = std::move(f_provider);
+}
+
+void PermissionRegistry::setRoleHolds(RoleHoldsFn f_role_holds)
+{
+    AKASHI_ASSERT_OWNER_THREAD();
+    m_role_holds = std::move(f_role_holds);
+}
+
+QStringList PermissionRegistry::rolesWorn(const PermissionQuery &f_query) const
+{
+    if (m_role_provider) {
+        return m_role_provider(f_query);
+    }
+    // Without a host provider the only role anyone wears is the one they
+    // authenticated into.
+    if (f_query.is_authenticated && !f_query.acl_role_id.isEmpty()) {
+        return {f_query.acl_role_id};
+    }
+    return {};
+}
+
+bool PermissionRegistry::registerGrantSource(const QString &f_source_id, const QString &f_because, GrantSource f_source,
+                                             const QString &f_owner_id, const QSet<QString> &f_interests)
 {
     AKASHI_ASSERT_OWNER_THREAD();
     for (const auto &l_entry : m_sources) {
@@ -127,8 +266,20 @@ bool PermissionRegistry::registerGrantSource(const QString &f_source_id, GrantSo
             return false;
         }
     }
-    m_sources.append({f_source_id, std::move(f_source), f_owner_id});
+    m_sources.append({f_source_id, f_because, std::move(f_source), f_owner_id, f_interests});
     return true;
+}
+
+bool PermissionRegistry::setSourceInterests(const QString &f_source_id, const QSet<QString> &f_interests)
+{
+    AKASHI_ASSERT_OWNER_THREAD();
+    for (SourceEntry &l_entry : m_sources) {
+        if (l_entry.source_id == f_source_id) {
+            l_entry.interests = f_interests;
+            return true;
+        }
+    }
+    return false;
 }
 
 void PermissionRegistry::unregisterAllGrantSources(const QString &f_owner_id)
@@ -146,29 +297,41 @@ bool PermissionRegistry::registerSanctionMask(const QString &f_sanction_id, cons
         qCWarning(akashiServer) << "sanction mask refused: unknown permission" << f_permission_id;
         return false;
     }
-    if (auto it = m_sanction_masks.constFind(f_sanction_id); it != m_sanction_masks.constEnd()) {
-        qCWarning(akashiServer) << "sanction mask for" << f_sanction_id << "already registered by" << it->owner_id << "- refused for" << f_owner_id;
-        return false;
+    // One sanction may take away several acts; the same act twice is the
+    // refusal, since two owners would each think they held that mask.
+    QList<MaskEntry> &l_masks = m_sanction_masks[f_sanction_id];
+    for (const MaskEntry &l_mask : l_masks) {
+        if (l_mask.permission_id == f_permission_id) {
+            qCWarning(akashiServer) << "sanction" << f_sanction_id << "already masks" << f_permission_id
+                                    << "- registered by" << l_mask.owner_id << ", refused for" << f_owner_id;
+            return false;
+        }
     }
-    m_sanction_masks.insert(f_sanction_id, {f_permission_id, f_owner_id});
+    l_masks.append({f_permission_id, f_owner_id});
     return true;
 }
 
 void PermissionRegistry::unregisterAllSanctionMasks(const QString &f_owner_id)
 {
     AKASHI_ASSERT_OWNER_THREAD();
-    m_sanction_masks.removeIf([&f_owner_id](std::pair<const QString &, MaskEntry &> f_item) {
-        return f_item.second.owner_id == f_owner_id;
-    });
+    for (auto it = m_sanction_masks.begin(); it != m_sanction_masks.end();) {
+        it->removeIf([&f_owner_id](const MaskEntry &f_mask) {
+            return f_mask.owner_id == f_owner_id;
+        });
+        it = it->isEmpty() ? m_sanction_masks.erase(it) : std::next(it);
+    }
 }
 
-bool PermissionRegistry::audienceCovers(const Audience &f_audience, const PermissionQuery &f_query)
+bool PermissionRegistry::audienceCovers(const Audience &f_audience, const PermissionQuery &f_query,
+                                        const QStringList &f_worn_roles)
 {
     switch (f_audience.kind) {
     case AudienceKind::Everyone:
         return f_query.is_joined;
     case AudienceKind::Role:
-        return f_query.is_authenticated && f_query.acl_role_id.compare(f_audience.role_id, Qt::CaseInsensitive) == 0;
+        return std::any_of(f_worn_roles.cbegin(), f_worn_roles.cend(), [&f_audience](const QString &f_role) {
+            return f_role.compare(f_audience.role_id, Qt::CaseInsensitive) == 0;
+        });
     case AudienceKind::Person:
         return !f_query.ipid.isEmpty() && f_query.ipid == f_audience.person_key;
     case AudienceKind::Participants:
@@ -179,85 +342,138 @@ bool PermissionRegistry::audienceCovers(const Audience &f_audience, const Permis
     return false;
 }
 
-bool PermissionRegistry::isMasked(const PermissionQuery &f_query) const
+bool PermissionRegistry::scopeCovers(const Grant &f_grant, const PermissionQuery &f_query)
 {
-    for (const QString &l_sanction : f_query.sanctions) {
-        if (auto it = m_sanction_masks.constFind(l_sanction); it != m_sanction_masks.constEnd() && it->permission_id == f_query.permission) {
-            return true;
-        }
+    switch (f_grant.scope) {
+    case GrantScope::Server:
+        return true;
+    case GrantScope::Floor:
+        return f_grant.place_id == f_query.floor_id;
+    case GrantScope::Area:
+        return f_grant.place_id == f_query.area_id;
     }
     return false;
+}
+
+// Where one contribution sits in the printed answer: the roles you wear,
+// then standing offers from the widest scope inward with personal ones
+// last, then the live facts.
+static int contributionTier(const Contribution &f_contribution)
+{
+    switch (f_contribution.kind) {
+    case Contribution::Kind::Role:
+        return 0;
+    case Contribution::Kind::Grant:
+        if (f_contribution.grant->audience.kind == AudienceKind::Person) {
+            return 4;
+        }
+        return 1 + static_cast<int>(f_contribution.grant->scope);
+    case Contribution::Kind::Source:
+        return 5;
+    }
+    return 5;
 }
 
 bool PermissionRegistry::resolve(const PermissionQuery &f_query) const
 {
-    AKASHI_ASSERT_OWNER_THREAD();
-    // No requirement is the one trivially-true query.
-    if (f_query.permission.isEmpty() || f_query.permission == permission::none) {
-        return true;
-    }
-    // The mask beats any grant, so a masked permission never walks the union.
-    if (isMasked(f_query)) {
-        return false;
-    }
-    for (const Grant &l_grant : m_server_grants) {
-        if (l_grant.permission == f_query.permission && audienceCovers(l_grant.audience, f_query)) {
-            return true;
-        }
-    }
-    for (const auto &l_source : m_sources) {
-        if (!l_source.source(f_query).isEmpty()) {
-            return true;
-        }
-    }
-    return false;
+    return resolveInternal(f_query, Mode::StopAtFirst).allowed;
 }
 
 Resolution PermissionRegistry::resolveExplained(const PermissionQuery &f_query) const
 {
+    return resolveInternal(f_query, Mode::CollectAll);
+}
+
+Resolution PermissionRegistry::resolveInternal(const PermissionQuery &f_query, Mode f_mode) const
+{
     AKASHI_ASSERT_OWNER_THREAD();
     Resolution l_resolution;
+
+    // No requirement is the one trivially-true query.
     if (f_query.permission.isEmpty() || f_query.permission == permission::none) {
         l_resolution.allowed = true;
         return l_resolution;
     }
+
+    // The subtraction, asked first because it outranks everything that
+    // follows - a masked act never walks the union.
     for (const QString &l_sanction : f_query.sanctions) {
-        if (auto it = m_sanction_masks.constFind(l_sanction); it != m_sanction_masks.constEnd() && it->permission_id == f_query.permission) {
+        const auto l_masks = m_sanction_masks.constFind(l_sanction);
+        if (l_masks == m_sanction_masks.constEnd()) {
+            continue;
+        }
+        for (const MaskEntry &l_mask : *l_masks) {
+            if (l_mask.permission_id != f_query.permission) {
+                continue;
+            }
             l_resolution.masked_by.append(l_sanction);
+            if (f_mode == Mode::StopAtFirst) {
+                return l_resolution;
+            }
+            break;
         }
     }
+
+    const QStringList l_worn = rolesWorn(f_query);
+
+    // A role worn here holds the act outright. This is the one place
+    // super lives - the roles handler answers for it.
+    if (m_role_holds) {
+        for (const QString &l_role : l_worn) {
+            if (!m_role_holds(l_role, f_query.permission)) {
+                continue;
+            }
+            l_resolution.contributions.append({Contribution::Kind::Role, l_role, {}, std::nullopt});
+            if (f_mode == Mode::StopAtFirst) {
+                l_resolution.allowed = true;
+                return l_resolution;
+            }
+        }
+    }
+
+    // The standing offers that name this act, whatever scope they stand
+    // in - one bucket, not a walk over every grant the server holds.
+    const QList<Grant> l_stored = m_grants.value(f_query.permission);
+    for (const Grant &l_grant : l_stored) {
+        if (!scopeCovers(l_grant, f_query) || !audienceCovers(l_grant.audience, f_query, l_worn)) {
+            continue;
+        }
+        l_resolution.contributions.append({Contribution::Kind::Grant, {}, {}, l_grant});
+        if (f_mode == Mode::StopAtFirst) {
+            l_resolution.allowed = true;
+            return l_resolution;
+        }
+    }
+
+    // The live facts, asked only where they said they could answer.
+    for (const SourceEntry &l_source : m_sources) {
+        if (!l_source.answers(f_query.permission) || !l_source.source(f_query)) {
+            continue;
+        }
+        l_resolution.contributions.append({Contribution::Kind::Source, l_source.source_id, l_source.because, std::nullopt});
+        if (f_mode == Mode::StopAtFirst) {
+            l_resolution.allowed = true;
+            return l_resolution;
+        }
+    }
+
+    // Fixed presentation order - never container iteration order, which
+    // Qt randomizes per process.
     l_resolution.masked_by.sort();
-    for (const Grant &l_grant : m_server_grants) {
-        if (l_grant.permission == f_query.permission && audienceCovers(l_grant.audience, f_query)) {
-            l_resolution.matched.append({l_grant, QStringLiteral("server_grants")});
-        }
-    }
-    for (const auto &l_source : m_sources) {
-        const QList<Grant> l_offers = l_source.source(f_query);
-        for (const Grant &l_grant : l_offers) {
-            l_resolution.matched.append({l_grant, l_source.source_id});
-        }
-    }
-    // Fixed presentation order: scope tier first (server, floor, area),
-    // person-audience entries last, then owner and permission - never
-    // container iteration order, which Qt randomizes per process.
-    std::stable_sort(l_resolution.matched.begin(), l_resolution.matched.end(),
-                     [](const GrantMatch &a, const GrantMatch &b) {
-                         const auto tier = [](const GrantMatch &m) {
-                             if (m.grant.audience.kind == AudienceKind::Person) {
-                                 return 3;
-                             }
-                             return static_cast<int>(m.grant.scope);
-                         };
-                         if (tier(a) != tier(b)) {
-                             return tier(a) < tier(b);
+    std::stable_sort(l_resolution.contributions.begin(), l_resolution.contributions.end(),
+                     [](const Contribution &a, const Contribution &b) {
+                         if (contributionTier(a) != contributionTier(b)) {
+                             return contributionTier(a) < contributionTier(b);
                          }
-                         if (a.grant.owner != b.grant.owner) {
-                             return a.grant.owner < b.grant.owner;
+                         if (a.id != b.id) {
+                             return a.id < b.id;
                          }
-                         return a.grant.permission < b.grant.permission;
+                         if (a.grant && b.grant && a.grant->owner != b.grant->owner) {
+                             return a.grant->owner < b.grant->owner;
+                         }
+                         return false;
                      });
-    l_resolution.allowed = l_resolution.masked_by.isEmpty() && !l_resolution.matched.isEmpty();
+    l_resolution.allowed = l_resolution.masked_by.isEmpty() && !l_resolution.contributions.isEmpty();
     return l_resolution;
 }
 

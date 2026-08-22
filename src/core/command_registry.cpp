@@ -208,40 +208,6 @@ bool CommandRegistry::contains(const QString &f_command_name) const
     return !resolve(f_command_name).isEmpty();
 }
 
-bool CommandRegistry::passesAnyOf(const QStringList &f_permissions, const std::function<bool(const QString &)> &f_can_perform)
-{
-    if (f_permissions.isEmpty()) {
-        return true;
-    }
-    for (const QString &l_permission : f_permissions) {
-        if (f_can_perform(l_permission)) {
-            return true;
-        }
-    }
-    return false;
-}
-
-bool CommandRegistry::passesRequirements(const QStringList &f_permissions, const QList<QStringList> &f_groups,
-                                         const std::function<bool(const QString &)> &f_can_perform)
-{
-    if (f_groups.isEmpty()) {
-        return passesAnyOf(f_permissions, f_can_perform);
-    }
-    for (const QStringList &l_group : f_groups) {
-        bool l_all = true;
-        for (const QString &l_permission : l_group) {
-            if (!f_can_perform(l_permission)) {
-                l_all = false;
-                break;
-            }
-        }
-        if (l_all) {
-            return true;
-        }
-    }
-    return false;
-}
-
 bool CommandRegistry::canUse(const QString &f_command, const std::function<bool(const QString &)> &f_can_perform) const
 {
     AKASHI_ASSERT_OWNER_THREAD();
@@ -250,25 +216,24 @@ bool CommandRegistry::canUse(const QString &f_command, const std::function<bool(
         return false;
     }
     if (l_spec->variants.isEmpty()) {
-        return passesRequirements(l_spec->permissions, l_spec->requirement_groups, f_can_perform);
+        return l_spec->gate.passes(f_can_perform);
     }
     for (const CommandVariant &l_variant : l_spec->variants) {
-        if (passesRequirements(l_variant.permissions, l_variant.requirement_groups, f_can_perform)) {
+        if (l_variant.gate.passes(f_can_perform)) {
             return true;
         }
     }
     return false;
 }
 
-// Reads one extension permission string into the flat list and the AND
-// groups: "gamemaster+kick ban" is (gamemaster AND kick) OR ban. Answers
-// false - the override must be skipped whole - when the validator knows
-// a name is a typo; a half-applied gate could be softer than intended.
+// Reads one extension permission string into a gate: "gamemaster+kick
+// ban" is (gamemaster AND kick) OR ban. Answers false - the override
+// must be skipped whole - when the validator knows a name is a typo; a
+// half-applied gate could be softer than intended.
 static bool parseExtensionGate(const QString &f_text, const std::function<bool(const QString &)> &f_known,
-                               QStringList &f_permissions, QList<QStringList> &f_groups)
+                               Gate &f_gate)
 {
-    f_permissions.clear();
-    f_groups.clear();
+    f_gate.groups.clear();
     const QStringList l_terms = f_text.split(QChar(' '), Qt::SkipEmptyParts);
     for (const QString &l_term : l_terms) {
         const QStringList l_members = l_term.split(QChar('+'), Qt::SkipEmptyParts);
@@ -278,19 +243,9 @@ static bool parseExtensionGate(const QString &f_text, const std::function<bool(c
                 return false;
             }
         }
-        if (l_members.size() > 1) {
-            f_groups.append(l_members);
+        if (!l_members.isEmpty()) {
+            f_gate.groups.append(l_members);
         }
-        else if (!l_members.isEmpty()) {
-            f_permissions.append(l_members.first());
-        }
-    }
-    // Mixed input compiles to groups only, so one mechanism gates the form.
-    if (!f_groups.isEmpty()) {
-        for (const QString &l_single : std::as_const(f_permissions)) {
-            f_groups.append(QStringList{l_single});
-        }
-        f_permissions.clear();
     }
     return true;
 }
@@ -332,11 +287,9 @@ void CommandRegistry::applyExtensions(const QString &f_path, const std::function
             for (CommandVariant &l_variant : l_entry->spec.variants) {
                 if (l_variant.id == l_variant_id) {
                     if (l_ext.contains(QStringLiteral("permissions"))) {
-                        QStringList l_permissions;
-                        QList<QStringList> l_groups;
-                        if (parseExtensionGate(l_ext.value(QStringLiteral("permissions")).toString(), f_known_permission, l_permissions, l_groups)) {
-                            l_variant.permissions = l_permissions;
-                            l_variant.requirement_groups = l_groups;
+                        Gate l_gate;
+                        if (parseExtensionGate(l_ext.value(QStringLiteral("permissions")).toString(), f_known_permission, l_gate)) {
+                            l_variant.gate = l_gate;
                         }
                     }
                     l_found = true;
@@ -371,11 +324,9 @@ void CommandRegistry::applyExtensions(const QString &f_path, const std::function
                                           << l_name + QStringLiteral(".<variant>") << "instead";
             }
             else {
-                QStringList l_permissions;
-                QList<QStringList> l_groups;
-                if (parseExtensionGate(l_ext.value(QStringLiteral("permissions")).toString(), f_known_permission, l_permissions, l_groups)) {
-                    l_entry->spec.permissions = l_permissions;
-                    l_entry->spec.requirement_groups = l_groups;
+                Gate l_gate;
+                if (parseExtensionGate(l_ext.value(QStringLiteral("permissions")).toString(), f_known_permission, l_gate)) {
+                    l_entry->spec.gate = l_gate;
                 }
             }
         }

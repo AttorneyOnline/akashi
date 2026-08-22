@@ -132,7 +132,7 @@ void registerPluginCommands(CommandRegistry &f_registry)
 {
     CommandSpec l_spec;
     l_spec.name = QStringLiteral("plugin");
-    l_spec.permissions = {permission::super};
+    l_spec.gate = {permission::super};
     l_spec.min_args = 1;
     l_spec.usage = QStringLiteral("/plugin <list|load|unload|reload> [id] [--cascade]");
     l_spec.description = QStringLiteral("Manage server plugins.");

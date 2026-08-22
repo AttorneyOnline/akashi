@@ -36,8 +36,9 @@ class Floor
     QVector<AfterRuleEntry> after_rules;
     QVector<TransformRuleEntry> transform_rules;
 
-    // Standing permission offers to everyone on this floor.
-    QVector<Grant> grants;
+    // Standing permission offers live in the permission registry, filed
+    // under the permission they grant and carrying the floor id they
+    // stand in - the world does not keep a second copy.
 };
 
 } // namespace akashi

@@ -243,9 +243,7 @@ ExitCode ServerContext::start()
     // Config grants apply after the plugins start, like the extensions,
     // so grants of plugin-registered permissions land too - and the role
     // quarantine runs once every permission that will exist does.
-    applyConfigGrants();
-    applyEveryoneBaseline();
-    validateRoles();
+    reconcilePermissions();
     setStage(Stage::PluginsLoaded);
 
     // The one active authentication system resolves after the plugins
@@ -540,8 +538,9 @@ void ServerContext::onPluginLoaded()
 {
     m_command_registry->applyExtensions(configPath("command_extensions.json"),
                                         std::bind_front(&akashi::PermissionRegistry::isRegistered, m_permission_registry));
-    applyConfigGrants();
-    applyEveryoneBaseline();
+    // A plugin that registered permissions changed what the catalog
+    // knows, so the offers and the quarantine are recomputed against it.
+    reconcilePermissions();
 }
 
 void ServerContext::registerConsoleTasks()
@@ -860,100 +859,12 @@ ExitCode ServerContext::startListening()
     applyIdAssignment();
     connect(m_server_settings->id_assignment.notifier(), &akashi::SettingNotifier::changed, this, &ServerContext::applyIdAssignment);
 
-    // Register built-in permissions.
-    const auto l_register_perm = [this](const QString &f_id, const QString &f_display, const QString &f_category) {
-        m_permission_registry->registerPermission({f_id, f_display, {}, f_category}, QStringLiteral("core"));
-    };
-    l_register_perm(akashi::permission::kick, QStringLiteral("Kick"), QStringLiteral("moderation"));
-    l_register_perm(akashi::permission::ban, QStringLiteral("Ban"), QStringLiteral("moderation"));
-    l_register_perm(akashi::permission::lock_background, QStringLiteral("Lock Background"), QStringLiteral("area"));
-    l_register_perm(akashi::permission::modify_users, QStringLiteral("Modify Users"), QStringLiteral("administration"));
-    l_register_perm(akashi::permission::area_cm, QStringLiteral("Case Manager"), QStringLiteral("area"));
-    l_register_perm(akashi::permission::timer_global, QStringLiteral("Global Timer"), QStringLiteral("area"));
-    l_register_perm(akashi::permission::modify_evidence, QStringLiteral("Modify Evidence"), QStringLiteral("area"));
-    l_register_perm(akashi::permission::motd, QStringLiteral("MOTD"), QStringLiteral("administration"));
-    l_register_perm(akashi::permission::announcer, QStringLiteral("Announcer"), QStringLiteral("moderation"));
-    l_register_perm(akashi::permission::chat_moderator, QStringLiteral("Chat Moderator"), QStringLiteral("moderation"));
-    l_register_perm(akashi::permission::sanction_mute, QStringLiteral("Mute"), QStringLiteral("moderation"));
-    l_register_perm(akashi::permission::sanction_ooc_mute, QStringLiteral("OOC Mute"), QStringLiteral("moderation"));
-    l_register_perm(akashi::permission::sanction_block_dj, QStringLiteral("Block DJ"), QStringLiteral("moderation"));
-    l_register_perm(akashi::permission::sanction_block_wtce, QStringLiteral("Block Judge Controls"), QStringLiteral("moderation"));
-    l_register_perm(akashi::permission::sanction_gimp, QStringLiteral("Gimp"), QStringLiteral("moderation"));
-    l_register_perm(akashi::permission::sanction_disemvowel, QStringLiteral("Disemvowel"), QStringLiteral("moderation"));
-    l_register_perm(akashi::permission::sanction_shake, QStringLiteral("Shake"), QStringLiteral("moderation"));
-    l_register_perm(akashi::permission::sanction_medieval, QStringLiteral("Medieval"), QStringLiteral("moderation"));
-    l_register_perm(akashi::permission::sanction_charcurse, QStringLiteral("Charcurse"), QStringLiteral("moderation"));
-    l_register_perm(akashi::permission::area_uncm, QStringLiteral("Remove CM"), QStringLiteral("moderation"));
-    l_register_perm(akashi::permission::save_testimony, QStringLiteral("Save Testimony"), QStringLiteral("area"));
-    l_register_perm(akashi::permission::force_charselect, QStringLiteral("Force Charselect"), QStringLiteral("moderation"));
-    l_register_perm(akashi::permission::area_enter, QStringLiteral("Enter Locked Areas"), QStringLiteral("moderation"));
-    l_register_perm(akashi::permission::ignore_background_list, QStringLiteral("Ignore BG List"), QStringLiteral("area"));
-    l_register_perm(akashi::permission::send_notice, QStringLiteral("Send Notice"), QStringLiteral("moderation"));
-    l_register_perm(akashi::permission::music_jukebox, QStringLiteral("Jukebox"), QStringLiteral("area"));
-    l_register_perm(akashi::permission::modify_rules, QStringLiteral("Modify Rules"), QStringLiteral("area"));
-    l_register_perm(akashi::permission::modify_floors, QStringLiteral("Modify Floors"), QStringLiteral("administration"));
-    l_register_perm(akashi::permission::super, QStringLiteral("Super"), QStringLiteral("administration"));
-    l_register_perm(akashi::permission::user, QStringLiteral("User"), QStringLiteral("lifecycle"));
-    l_register_perm(akashi::permission::see_ipids, QStringLiteral("See IPIDs"), QStringLiteral("moderation"));
-    l_register_perm(akashi::permission::receive_modcalls, QStringLiteral("Receive Modcalls"), QStringLiteral("moderation"));
-    l_register_perm(akashi::permission::see_staff_presence, QStringLiteral("See Staff Presence"), QStringLiteral("moderation"));
-    l_register_perm(akashi::permission::see_real_names, QStringLiteral("See Real Names"), QStringLiteral("moderation"));
-    l_register_perm(akashi::permission::change_locked_background, QStringLiteral("Change Locked Background"), QStringLiteral("area"));
-    l_register_perm(akashi::permission::ic_chat, QStringLiteral("IC Chat"), QStringLiteral("speech"));
-    l_register_perm(akashi::permission::ooc_chat, QStringLiteral("OOC Chat"), QStringLiteral("speech"));
-    l_register_perm(akashi::permission::change_music, QStringLiteral("Change Music"), QStringLiteral("area"));
-    l_register_perm(akashi::permission::use_wtce, QStringLiteral("Use Judge Controls"), QStringLiteral("area"));
-    l_register_perm(akashi::permission::sanction_immune, QStringLiteral("Sanction Immunity"), QStringLiteral("moderation"));
-    l_register_perm(akashi::permission::music_play, QStringLiteral("Play Music"), QStringLiteral("music"));
-    l_register_perm(akashi::permission::music_play_ambience, QStringLiteral("Play Ambience"), QStringLiteral("music"));
-    l_register_perm(akashi::permission::music_currentmusic, QStringLiteral("Show Current Music"), QStringLiteral("music"));
-    l_register_perm(akashi::permission::messaging_g, QStringLiteral("Global Chat"), QStringLiteral("messaging"));
-    l_register_perm(akashi::permission::messaging_need, QStringLiteral("Send Adverts"), QStringLiteral("messaging"));
-    l_register_perm(akashi::permission::messaging_pm, QStringLiteral("Private Messages"), QStringLiteral("messaging"));
-    l_register_perm(akashi::permission::messaging_a, QStringLiteral("Message Owned Area"), QStringLiteral("messaging"));
-    l_register_perm(akashi::permission::messaging_s, QStringLiteral("Message Owned Areas"), QStringLiteral("messaging"));
-    l_register_perm(akashi::permission::roleplay_coinflip, QStringLiteral("Coin Flip"), QStringLiteral("roleplay"));
-    l_register_perm(akashi::permission::roleplay_roll, QStringLiteral("Roll Dice"), QStringLiteral("roleplay"));
-    l_register_perm(akashi::permission::roleplay_rolla, QStringLiteral("Roll Named Die"), QStringLiteral("roleplay"));
-    l_register_perm(akashi::permission::roleplay_rollp, QStringLiteral("Roll Privately"), QStringLiteral("roleplay"));
-    l_register_perm(akashi::permission::roleplay_notecard, QStringLiteral("Write Notecard"), QStringLiteral("roleplay"));
-    l_register_perm(akashi::permission::roleplay_notecard_clear, QStringLiteral("Clear Notecard"), QStringLiteral("roleplay"));
-    l_register_perm(akashi::permission::roleplay_8ball, QStringLiteral("Magic 8-Ball"), QStringLiteral("roleplay"));
-    l_register_perm(akashi::permission::casing_doc, QStringLiteral("Document"), QStringLiteral("casing"));
-    l_register_perm(akashi::permission::casing_cleardoc, QStringLiteral("Clear Document"), QStringLiteral("casing"));
-    l_register_perm(akashi::permission::casing_testimony, QStringLiteral("View Testimony"), QStringLiteral("casing"));
-    l_register_perm(akashi::permission::area_background, QStringLiteral("Change Background"), QStringLiteral("area"));
-    l_register_perm(akashi::permission::area_status, QStringLiteral("Change Status"), QStringLiteral("area"));
-    l_register_perm(akashi::permission::area_webfiles, QStringLiteral("List Webfiles"), QStringLiteral("area"));
-    l_register_perm(akashi::permission::area_area, QStringLiteral("Move To Area"), QStringLiteral("area"));
-    l_register_perm(akashi::permission::area_floor, QStringLiteral("Move To Floor"), QStringLiteral("area"));
-    l_register_perm(akashi::permission::area_floors, QStringLiteral("List Floors"), QStringLiteral("area"));
-    l_register_perm(akashi::permission::area_getarea, QStringLiteral("List Area Clients"), QStringLiteral("area"));
-    l_register_perm(akashi::permission::area_getareas, QStringLiteral("List All Clients"), QStringLiteral("area"));
-    l_register_perm(akashi::permission::characters_switch, QStringLiteral("Switch Character"), QStringLiteral("characters"));
-    l_register_perm(akashi::permission::characters_randomchar, QStringLiteral("Random Character"), QStringLiteral("characters"));
-    l_register_perm(akashi::permission::characters_charselect, QStringLiteral("Character Select"), QStringLiteral("characters"));
-    l_register_perm(akashi::permission::characters_pos, QStringLiteral("Change Position"), QStringLiteral("characters"));
-    l_register_perm(akashi::permission::messaging_afk, QStringLiteral("AFK"), QStringLiteral("messaging"));
-    l_register_perm(akashi::permission::messaging_firstperson, QStringLiteral("First-Person Mode"), QStringLiteral("messaging"));
-    l_register_perm(akashi::permission::messaging_toggleglobal, QStringLiteral("Toggle Global Chat"), QStringLiteral("messaging"));
-    l_register_perm(akashi::permission::messaging_mutepm, QStringLiteral("Mute PMs"), QStringLiteral("messaging"));
-    l_register_perm(akashi::permission::messaging_toggleadverts, QStringLiteral("Toggle Adverts"), QStringLiteral("messaging"));
-    l_register_perm(akashi::permission::info_help, QStringLiteral("Help"), QStringLiteral("info"));
-    l_register_perm(akashi::permission::info_commands, QStringLiteral("List Commands"), QStringLiteral("info"));
-    l_register_perm(akashi::permission::info_why, QStringLiteral("Explain Permissions"), QStringLiteral("info"));
-    l_register_perm(akashi::permission::info_motd, QStringLiteral("View MOTD"), QStringLiteral("info"));
-    l_register_perm(akashi::permission::info_mods, QStringLiteral("List Moderators"), QStringLiteral("info"));
-    l_register_perm(akashi::permission::info_about, QStringLiteral("About"), QStringLiteral("info"));
-    l_register_perm(akashi::permission::info_rules, QStringLiteral("View Rules"), QStringLiteral("info"));
-    l_register_perm(akashi::permission::info_ruleactions, QStringLiteral("List Rule Actions"), QStringLiteral("info"));
-    // The case-manager powers, registered from the one list so a @cm group
-    // may reference any of them (music.jukebox is already registered above,
-    // so the guard skips it).
-    for (const QString &l_cm_power : akashi::permission::defaultCmPowers()) {
-        if (!m_permission_registry->isRegistered(l_cm_power)) {
-            l_register_perm(l_cm_power, QStringLiteral("CM: ") + l_cm_power.section(QLatin1Char('.'), 1), QStringLiteral("cm"));
-        }
+    // Register the built-in permissions from the one catalog: the id,
+    // the words the operator sees, and the two policy columns.
+    for (const akashi::permission::CatalogEntry &l_entry : akashi::permission::catalog()) {
+        m_permission_registry->registerPermission(
+            {l_entry.id, l_entry.display_name, {}, l_entry.category, l_entry.restricted},
+            QStringLiteral("core"));
     }
 
     // The user baseline: finishing the join handshake is the grant, a
@@ -964,7 +875,7 @@ ExitCode ServerContext::startListening()
     // included, comes from the everyone section (or the stock default)
     // through applyEveryoneBaseline, and a whitelist server may close
     // all of it.
-    m_permission_registry->addGrant({akashi::permission::user, akashi::Audience::everyone(), akashi::GrantScope::Server, QStringLiteral("core")});
+    m_permission_registry->addGrant({akashi::permission::user, akashi::Audience::everyone(), akashi::GrantScope::Server, -1, QStringLiteral("core")});
 
     // The block sanctions stay masks - the model's one subtraction takes
     // exactly one act away, whatever grants it, staff grants included.
@@ -973,17 +884,18 @@ ExitCode ServerContext::startListening()
     m_permission_registry->registerSanctionMask(akashi::sanction::dj_blocked, akashi::permission::change_music, QStringLiteral("core"));
     m_permission_registry->registerSanctionMask(akashi::sanction::wtce_blocked, akashi::permission::use_wtce, QStringLiteral("core"));
 
-    // The built-in grant sources feeding the resolution union.
+    // Which roles an actor wears here, and what a worn role holds. These
+    // two answer for authentication, the simple-auth blanket and area
+    // ownership together - three of the old grant sources.
+    m_permission_registry->setRoleProvider(std::bind_front(&ServerContext::rolesWorn, this));
+    m_permission_registry->setRoleHolds(std::bind_front(&ServerContext::roleHolds, this));
+
+    // The one live fact left as a predicate. It answers about entering
+    // and nothing else, so no other query pays for asking it.
     m_permission_registry->registerGrantSource(
-        QStringLiteral("area_owner"), std::bind_front(&ServerContext::offerAreaOwner, this), QStringLiteral("core"));
-    m_permission_registry->registerGrantSource(
-        QStringLiteral("role_grants"), std::bind_front(&ServerContext::offerRoleGrants, this), QStringLiteral("core"));
-    m_permission_registry->registerGrantSource(
-        QStringLiteral("simple_auth"), &ServerContext::offerSimpleAuth, QStringLiteral("core"));
-    m_permission_registry->registerGrantSource(
-        QStringLiteral("lock_state"), std::bind_front(&ServerContext::offerLockState, this), QStringLiteral("core"));
-    m_permission_registry->registerGrantSource(
-        QStringLiteral("place_offers"), std::bind_front(&ServerContext::offerPlaceGrants, this), QStringLiteral("core"));
+        QStringLiteral("lock_state"), QStringLiteral("the area's lock"),
+        std::bind_front(&ServerContext::offersLockPassage, this), QStringLiteral("core"),
+        {akashi::permission::area_enter});
 
     akashi::commands::registerAreaCommands(*m_command_registry);
     akashi::commands::registerAuthenticationCommands(*m_command_registry);
@@ -1000,80 +912,66 @@ ExitCode ServerContext::startListening()
     return ExitCode::Ok;
 }
 
-// Ownership is the walk-in CM grant: the owner list is live area state,
-// so the offer resolves fresh on every query and vanishes with /uncm.
-QList<akashi::Grant> ServerContext::offerAreaOwner(const akashi::PermissionQuery &f_query)
+// The case-manager keyring: a group in the roles file, worn as a role by
+// whoever owns the area they are standing in.
+static const QString cm_role_id = QStringLiteral("@cm");
+
+// The roles an actor wears where they are standing. Authentication puts
+// one on; owning the area puts the case-manager keyring on beside it, so
+// a CM's powers arrive and leave with the owner list rather than through
+// a bundle of synthesized grants.
+QStringList ServerContext::rolesWorn(const akashi::PermissionQuery &f_query) const
 {
-    // Ownership confers the CM status (area.cm) and the configured CM
-    // powers (the @cm group, or the stock bundle) - both area-scoped and
-    // resolved live, so they vanish the instant /uncm empties the owners.
-    if (f_query.permission != akashi::permission::area_cm && !m_cm_powers.contains(f_query.permission)) {
-        return {};
+    QStringList l_worn;
+    if (f_query.is_authenticated) {
+        // The simple-auth blanket is wearing SUPER - the hatch said out
+        // loud, so /why names a role instead of a special case.
+        l_worn << (f_query.auth_type == QStringLiteral("simple")
+                       ? akashi::ACLRolesHandler::SUPER_ID
+                       : f_query.acl_role_id);
     }
-    akashi::Area *l_area = areaById(f_query.area_id);
+    const akashi::Area *l_area = areaById(f_query.area_id);
     if (l_area && l_area->owners().contains(f_query.client_id)) {
-        return {{f_query.permission, akashi::Audience::person(f_query.ipid), akashi::GrantScope::Area, QStringLiteral("core")}};
+        l_worn << cm_role_id;
     }
-    return {};
+    l_worn.removeAll(QString());
+    return l_worn;
+}
+
+// What a worn role holds. Ordinary roles answer from the roles file,
+// super included - that wildcard has exactly one implementation, in
+// ACLRole::canPerform. The case-manager keyring is a group rather than a
+// role anyone logs into, so it answers from the compiled bundle.
+bool ServerContext::roleHolds(const QString &f_role_id, const QString &f_permission) const
+{
+    if (f_role_id == cm_role_id) {
+        return m_cm_powers.contains(f_permission);
+    }
+    return acl_roles_handler->roleById(f_role_id).canPerform(f_permission);
 }
 
 void ServerContext::refreshCmPowers()
 {
-    // The case-manager power set the area_owner source hands to owners: the
-    // @cm group if the roles file declares one, otherwise the stock bundle.
-    // area.cm (the status) is granted alongside and is never listed here.
-    QStringList l_powers = acl_roles_handler->groupExists(QStringLiteral("@cm"))
-                               ? acl_roles_handler->groupMembers(QStringLiteral("@cm"))
+    // The keyring an area's owners wear: the @cm group if the roles file
+    // declares one, otherwise the stock bundle. The area.cm status rides
+    // along, so being CM and being able to act as one arrive together.
+    QStringList l_powers = acl_roles_handler->groupExists(cm_role_id)
+                               ? acl_roles_handler->groupMembers(cm_role_id)
                                : akashi::permission::defaultCmPowers();
+    l_powers << akashi::permission::area_cm;
     m_cm_powers = QSet<QString>(l_powers.begin(), l_powers.end());
 }
 
-// The roles file: every permission the actor's role holds, worn through
-// authentication. A role holding super matches any query - the one
-// declared wildcard, a member of the union rather than a short-circuit.
-QList<akashi::Grant> ServerContext::offerRoleGrants(const akashi::PermissionQuery &f_query)
+// The lock's live answer: a free or spectatable area lets anyone in, a
+// locked one lets in the people its invite list names. Staff pass
+// through their role instead.
+bool ServerContext::offersLockPassage(const akashi::PermissionQuery &f_query) const
 {
-    if (!f_query.is_authenticated || f_query.acl_role_id.isEmpty()) {
-        return {};
+    const akashi::Area *l_area = areaById(f_query.area_id);
+    if (!l_area) {
+        return false;
     }
-    const akashi::ACLRole l_role = acl_roles_handler->roleById(f_query.acl_role_id);
-    if (l_role.permissions().contains(akashi::permission::super) || l_role.permissions().contains(f_query.permission)) {
-        return {{f_query.permission, akashi::Audience::role(f_query.acl_role_id), akashi::GrantScope::Server, QStringLiteral("roles")}};
-    }
-    return {};
-}
-
-// The simple-auth blanket as a declared grant instead of a hidden hatch:
-// any logged-in client under the password system holds every permission.
-QList<akashi::Grant> ServerContext::offerSimpleAuth(const akashi::PermissionQuery &f_query)
-{
-    if (f_query.is_authenticated && f_query.auth_type == QStringLiteral("simple")) {
-        return {{f_query.permission, akashi::Audience::everyone(), akashi::GrantScope::Server, QStringLiteral("core")}};
-    }
-    return {};
-}
-
-// The moderation and administration hammers that never go on an
-// everyone-shaped offer, whatever the scope - a config typo must not
-// hand a room the mute or the IPID radar.
-static const QSet<QString> &dangerousPermissions()
-{
-    static const QSet<QString> s_dangerous{
-        akashi::permission::super, akashi::permission::kick, akashi::permission::ban,
-        akashi::permission::chat_moderator,
-        akashi::permission::sanction_mute, akashi::permission::sanction_ooc_mute,
-        akashi::permission::sanction_block_dj, akashi::permission::sanction_block_wtce,
-        akashi::permission::sanction_gimp, akashi::permission::sanction_disemvowel,
-        akashi::permission::sanction_shake, akashi::permission::sanction_medieval,
-        akashi::permission::sanction_charcurse,
-        akashi::permission::see_ipids, akashi::permission::see_real_names,
-        akashi::permission::see_staff_presence, akashi::permission::receive_modcalls,
-        akashi::permission::modify_users, akashi::permission::modify_floors,
-        akashi::permission::modify_rules,
-        akashi::permission::area_enter, akashi::permission::force_charselect,
-        akashi::permission::sanction_immune, akashi::permission::area_uncm,
-        akashi::permission::timer_global};
-    return s_dangerous;
+    return l_area->lockState() != akashi::Area::LockState::Locked || l_area->invited().contains(f_query.client_id);
 }
 
 // Turns one declaration into grant entries: the @group reference or
@@ -1081,7 +979,7 @@ static const QSet<QString> &dangerousPermissions()
 // against the catalog - unknowns warn loudly and are skipped, so a typo
 // never loads as policy.
 static QVector<akashi::Grant> compileGrantDeclaration(const akashi::config::GrantDeclaration &f_declaration,
-                                                      akashi::GrantScope f_scope, const QString &f_where,
+                                                      akashi::GrantScope f_scope, int f_place_id, const QString &f_where,
                                                       const akashi::ACLRolesHandler &f_roles,
                                                       const akashi::PermissionRegistry &f_registry)
 {
@@ -1117,20 +1015,15 @@ static QVector<akashi::Grant> compileGrantDeclaration(const akashi::config::Gran
         l_permissions.append(f_declaration.permission.toLower());
     }
 
+    // Parsing ends here; whether an offer may stand is the registry's
+    // question, asked the same way at every door a grant comes through.
     QVector<akashi::Grant> l_grants;
     for (const QString &l_permission : std::as_const(l_permissions)) {
-        if (!f_registry.isRegistered(l_permission)) {
-            qCWarning(akashiConfig) << f_where << "grants unknown permission" << l_permission << "- the grant was skipped.";
-            continue;
+        const std::optional<akashi::Grant> l_admitted = f_registry.admit(
+            {l_permission, l_audience, f_scope, f_place_id, QStringLiteral("config")}, f_where);
+        if (l_admitted) {
+            l_grants.append(*l_admitted);
         }
-        // The guard rail: the hammers never ride an everyone-shaped offer
-        // - a room can be handed the jukebox, never the mute. Checked on
-        // the expanded set, so a group cannot smuggle a member past it.
-        if ((l_audience.kind == akashi::AudienceKind::Everyone || l_audience.kind == akashi::AudienceKind::Participants) && dangerousPermissions().contains(l_permission)) {
-            qCCritical(akashiConfig) << f_where << "tries to offer" << l_permission << "to everyone - moderation and administration powers are role grants. The grant was refused.";
-            continue;
-        }
-        l_grants.append({l_permission, l_audience, f_scope, QStringLiteral("config")});
     }
     return l_grants;
 }
@@ -1138,14 +1031,9 @@ static QVector<akashi::Grant> compileGrantDeclaration(const akashi::config::Gran
 void ServerContext::applyConfigGrants()
 {
     // Config grants are replaced wholesale, like config rules: core and
-    // runtime entries stay untouched.
-    for (akashi::Floor &l_floor : m_world->floors()) {
-        l_floor.grants.removeIf([](const akashi::Grant &g) { return g.owner == QStringLiteral("config"); });
-    }
-    const QVector<akashi::Area *> l_areas = areas();
-    for (akashi::Area *l_area : l_areas) {
-        l_area->grants().removeIf([](const akashi::Grant &g) { return g.owner == QStringLiteral("config"); });
-    }
+    // runtime entries stay untouched. Every scope lives in the registry
+    // now, so clearing them is one call instead of a walk over the world.
+    m_permission_registry->removeGrantsByOwner(QStringLiteral("config"));
 
     const akashi::config::AreaGrantsConfig l_config = akashi::config::loadAreaGrants(QFileInfo(configPath("areas.json")).absoluteFilePath());
 
@@ -1156,8 +1044,12 @@ void ServerContext::applyConfigGrants()
             continue;
         }
         for (const akashi::config::GrantDeclaration &l_declaration : it.value()) {
-            l_floor->grants += compileGrantDeclaration(l_declaration, akashi::GrantScope::Floor,
-                                                       QStringLiteral("floor ") + it.key(), *acl_roles_handler, *m_permission_registry);
+            const QVector<akashi::Grant> l_grants = compileGrantDeclaration(
+                l_declaration, akashi::GrantScope::Floor, l_floor->id,
+                QStringLiteral("floor ") + it.key(), *acl_roles_handler, *m_permission_registry);
+            for (const akashi::Grant &l_grant : l_grants) {
+                m_permission_registry->addGrant(l_grant);
+            }
         }
     }
 
@@ -1168,8 +1060,12 @@ void ServerContext::applyConfigGrants()
             continue;
         }
         for (const akashi::config::GrantDeclaration &l_declaration : it.value()) {
-            l_area->grants() += compileGrantDeclaration(l_declaration, akashi::GrantScope::Area,
-                                                        QStringLiteral("area ") + l_area->name(), *acl_roles_handler, *m_permission_registry);
+            const QVector<akashi::Grant> l_grants = compileGrantDeclaration(
+                l_declaration, akashi::GrantScope::Area, l_area->id(),
+                QStringLiteral("area ") + l_area->name(), *acl_roles_handler, *m_permission_registry);
+            for (const akashi::Grant &l_grant : l_grants) {
+                m_permission_registry->addGrant(l_grant);
+            }
         }
     }
 }
@@ -1180,20 +1076,31 @@ void ServerContext::applyEveryoneBaseline()
     // joined person may do, or the stock default applies when no section
     // exists (a converted 1.9 file keeps stock behavior). Replaced
     // wholesale like config grants; the lifecycle floor stays core-owned
-    // and untouchable from here.
+    // and untouchable from here. addGrant refuses the restricted acts and
+    // the unknown names on the way in.
     m_permission_registry->removeGrantsByOwner(QStringLiteral("baseline"));
     const QStringList l_names = acl_roles_handler->everyoneBaseline().value_or(akashi::permission::defaultBaseline());
     for (const QString &l_name : l_names) {
-        if (dangerousPermissions().contains(l_name)) {
-            qCCritical(akashiConfig) << "permissions: the everyone section tries to offer" << l_name << "- moderation and administration powers are role grants. The grant was refused.";
-            continue;
+        const std::optional<akashi::Grant> l_admitted = m_permission_registry->admit(
+            {l_name, akashi::Audience::everyone(), akashi::GrantScope::Server, -1, QStringLiteral("baseline")},
+            QStringLiteral("the everyone section"));
+        if (l_admitted) {
+            m_permission_registry->addGrant(*l_admitted);
         }
-        if (!m_permission_registry->isRegistered(l_name)) {
-            qCCritical(akashiConfig) << "permissions: the everyone section grants unknown permission" << l_name << "- skipped until the file is fixed.";
-            continue;
-        }
-        m_permission_registry->addGrant({l_name, akashi::Audience::everyone(), akashi::GrantScope::Server, QStringLiteral("baseline")});
     }
+}
+
+void ServerContext::reconcilePermissions()
+{
+    // Everything that can change what the permission system knows runs
+    // exactly this, in this order: the file first, then the keyring it
+    // defines, then the offers compiled against the catalog, then the
+    // quarantine over whatever is left.
+    acl_roles_handler->loadFile(configPath("permissions.json"));
+    refreshCmPowers();
+    applyConfigGrants();
+    applyEveryoneBaseline();
+    validateRoles();
 }
 
 void ServerContext::validateRoles()
@@ -1215,31 +1122,34 @@ void ServerContext::validateRoles()
     }
 }
 
+// The name of the place an offer stands in, so a dump reads "area
+// Courtroom" rather than "area 3". Empty for server-scope offers.
+QString ServerContext::placeName(const akashi::Grant &f_grant) const
+{
+    switch (f_grant.scope) {
+    case akashi::GrantScope::Server:
+        return {};
+    case akashi::GrantScope::Floor:
+        if (const akashi::Floor *l_floor = floorById(f_grant.place_id)) {
+            return l_floor->name;
+        }
+        return {};
+    case akashi::GrantScope::Area:
+        if (const akashi::Area *l_area = areaById(f_grant.place_id)) {
+            return l_area->name();
+        }
+        return {};
+    }
+    return {};
+}
+
 void ServerContext::printCompiledOffers() const
 {
     QTextStream l_out(stdout);
-    const auto l_grant_row = [](const akashi::Grant &f_grant) -> QString {
-        QString l_audience;
-        switch (f_grant.audience.kind) {
-        case akashi::AudienceKind::Everyone:
-            l_audience = QStringLiteral("everyone");
-            break;
-        case akashi::AudienceKind::Participants:
-            l_audience = QStringLiteral("participants");
-            break;
-        case akashi::AudienceKind::Role:
-            l_audience = QStringLiteral("role ") + f_grant.audience.role_id;
-            break;
-        case akashi::AudienceKind::Person:
-            l_audience = QStringLiteral("person ") + f_grant.audience.person_key;
-            break;
-        }
-        return "  " + f_grant.permission + " -> " + l_audience + " [" + f_grant.owner + "]";
-    };
-    const auto l_sorted_rows = [&l_grant_row](const auto &f_grants) {
+    const auto l_sorted_rows = [this](const auto &f_grants) {
         QStringList l_rows;
         for (const akashi::Grant &l_grant : f_grants)
-            l_rows << l_grant_row(l_grant);
+            l_rows << "  " + akashi::describeGrant(l_grant, placeName(l_grant));
         l_rows.sort();
         return l_rows;
     };
@@ -1260,74 +1170,13 @@ void ServerContext::printCompiledOffers() const
         l_members.sort();
         l_out << "  @" << l_group << ": " << l_members.join(QStringLiteral(", ")) << "\n";
     }
-    l_out << "Server grants:\n";
-    const QStringList l_server_rows = l_sorted_rows(m_permission_registry->serverGrants());
-    for (const QString &l_row : l_server_rows)
+    // One store, so the dump groups by what each offer says about itself
+    // rather than by the container it was filed in.
+    l_out << "Grants:\n";
+    const QStringList l_rows = l_sorted_rows(m_permission_registry->grants());
+    for (const QString &l_row : l_rows)
         l_out << l_row << "\n";
-    for (const akashi::Floor &l_floor : m_world->floors()) {
-        if (l_floor.grants.isEmpty())
-            continue;
-        l_out << "Floor " << l_floor.name << ":\n";
-        const QStringList l_rows = l_sorted_rows(l_floor.grants);
-        for (const QString &l_row : l_rows)
-            l_out << l_row << "\n";
-    }
-    const QVector<akashi::Area *> l_areas = areas();
-    for (akashi::Area *l_area : l_areas) {
-        if (l_area->grants().isEmpty())
-            continue;
-        l_out << "Area " << l_area->name() << ":\n";
-        const QStringList l_rows = l_sorted_rows(l_area->grants());
-        for (const QString &l_row : l_rows)
-            l_out << l_row << "\n";
-    }
     l_out.flush();
-}
-
-// The lock's standing offer: entering is the area.enter permission. A
-// free or spectatable area offers it to everyone; a locked one offers it
-// to its invited people - the invite list read live, each invite a
-// person grant. Staff pass through their server-scope role grant.
-QList<akashi::Grant> ServerContext::offerLockState(const akashi::PermissionQuery &f_query)
-{
-    if (f_query.permission != akashi::permission::area_enter) {
-        return {};
-    }
-    akashi::Area *l_area = areaById(f_query.area_id);
-    if (!l_area) {
-        return {};
-    }
-    if (l_area->lockState() != akashi::Area::LockState::Locked) {
-        return {{f_query.permission, akashi::Audience::everyone(), akashi::GrantScope::Area, QStringLiteral("core")}};
-    }
-    if (l_area->invited().contains(f_query.client_id)) {
-        return {{f_query.permission, akashi::Audience::person(f_query.ipid), akashi::GrantScope::Area, QStringLiteral("core")}};
-    }
-    return {};
-}
-
-// The floor and area offer vectors - the "grants" sections the config
-// compile writes, and the runtime home of person-scope area grants.
-QList<akashi::Grant> ServerContext::offerPlaceGrants(const akashi::PermissionQuery &f_query)
-{
-    QList<akashi::Grant> l_offers;
-    akashi::Area *l_area = areaById(f_query.area_id);
-    if (!l_area) {
-        return l_offers;
-    }
-    for (const akashi::Grant &l_grant : l_area->grants()) {
-        if (l_grant.permission == f_query.permission && akashi::PermissionRegistry::audienceCovers(l_grant.audience, f_query)) {
-            l_offers.append(l_grant);
-        }
-    }
-    if (const akashi::Floor *l_floor = floorById(l_area->floorId())) {
-        for (const akashi::Grant &l_grant : l_floor->grants) {
-            if (l_grant.permission == f_query.permission && akashi::PermissionRegistry::audienceCovers(l_grant.audience, f_query)) {
-                l_offers.append(l_grant);
-            }
-        }
-    }
-    return l_offers;
 }
 
 QString ServerContext::formatAreaOwner(int f_owner_id)
@@ -1644,10 +1493,7 @@ void ServerContext::reloadBanLists()
 
 void ServerContext::reloadAclRoles()
 {
-    acl_roles_handler->loadFile(configPath("permissions.json"));
-    refreshCmPowers();
-    validateRoles();
-    applyEveryoneBaseline();
+    reconcilePermissions();
 }
 
 void ServerContext::reloadAuthLimits()

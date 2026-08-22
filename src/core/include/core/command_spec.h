@@ -30,6 +30,97 @@ struct CommandShadow
     QString owner_id;
 };
 
+// A command form's whole gate: any-of over all-of. One permission is a
+// group of one, so the ordinary case still reads as a plain name -
+// {"area.cm","kick"} in one group needs both, two groups of one needs
+// either. An empty gate is an open command.
+struct Gate
+{
+    Gate() = default;
+    Gate(const QString &f_permission) :
+        groups{{f_permission}}
+    {}
+    Gate(std::initializer_list<QString> f_any_of)
+    {
+        for (const QString &l_permission : f_any_of) {
+            groups.append({l_permission});
+        }
+    }
+    Gate(const QStringList &f_any_of)
+    {
+        for (const QString &l_permission : f_any_of) {
+            groups.append({l_permission});
+        }
+    }
+
+    // Every named permission must resolve for this to pass.
+    static Gate allOf(const QStringList &f_permissions)
+    {
+        Gate l_gate;
+        if (!f_permissions.isEmpty()) {
+            l_gate.groups.append(f_permissions);
+        }
+        return l_gate;
+    }
+
+    QList<QStringList> groups;
+
+    bool isEmpty() const { return groups.isEmpty(); }
+
+    // The gate itself, asked the one way. The dispatcher, /commands and
+    // /help all call this, so a listing can never disagree with what
+    // dispatch actually does.
+    bool passes(const std::function<bool(const QString &)> &f_can_perform) const
+    {
+        if (groups.isEmpty()) {
+            return true;
+        }
+        for (const QStringList &l_group : groups) {
+            bool l_all = true;
+            for (const QString &l_permission : l_group) {
+                if (!f_can_perform(l_permission)) {
+                    l_all = false;
+                    break;
+                }
+            }
+            if (l_all) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Every permission the gate can ask about, in declaration order and
+    // without repeats - what /why walks to explain a command.
+    QStringList permissions() const
+    {
+        QStringList l_names;
+        for (const QStringList &l_group : groups) {
+            for (const QString &l_permission : l_group) {
+                if (!l_names.contains(l_permission)) {
+                    l_names.append(l_permission);
+                }
+            }
+        }
+        return l_names;
+    }
+
+    // The words /help and /why print: "a, b+c" reads as a OR (b AND c).
+    QString describe() const
+    {
+        if (groups.isEmpty()) {
+            return QStringLiteral("nothing");
+        }
+        QStringList l_terms;
+        for (const QStringList &l_group : groups) {
+            l_terms << l_group.join(QLatin1Char('+'));
+        }
+        return l_terms.join(QStringLiteral(", "));
+    }
+
+    bool operator==(const Gate &) const = default;
+};
+
 // One gated form of a command. Variants let one command carry different
 // permission requirements per argument shape, resolved at the dispatch gate
 // before the handler runs - no permission check hides inside a handler body,
@@ -38,17 +129,12 @@ struct CommandVariant
 {
     QString id; // names the form for extension overrides ("command.id")
     int min_args = 0;
-    int max_args = -1;       // -1 accepts any count at or above min_args
-    QStringList permissions; // any-of, checked at the dispatch gate
+    int max_args = -1; // -1 accepts any count at or above min_args
+    Gate gate;         // checked at the dispatch gate
     QString usage;
     QString description;
     CommandHandler handler;
     QString owner_id; // set by the registry; plugin unload sweeps by it
-
-    // Any-of over all-of groups: {{"area.cm","kick"}} needs both,
-    // {{"area.cm"},{"music.jukebox"}} needs either. When non-empty this
-    // is the form's whole gate and the flat permissions list is ignored.
-    QList<QStringList> requirement_groups;
 
     bool matches(int f_argc) const
     {
@@ -60,19 +146,16 @@ struct CommandSpec
 {
     QString name;
     QStringList aliases;
-    QStringList permissions;
+    Gate gate;
     int min_args = 0;
     QString usage;
     QString description;
     int sensitive_args_from = -1;
 
     // When non-empty, dispatch picks the first variant whose argument count
-    // matches and gates on ITS permissions; the spec-level permissions,
-    // min_args and registered handler are not consulted.
+    // matches and gates on ITS gate; the spec-level gate, min_args and
+    // registered handler are not consulted.
     QList<CommandVariant> variants;
-
-    // The spec-level AND gate, same shape as the variant field.
-    QList<QStringList> requirement_groups;
 
     // A value-dependent escalation the body triggers but the spec names,
     // so /help shows it and an extension can override it: timer 0 needs

@@ -544,12 +544,10 @@ void ClientSession::dispatchCommand(const akashi::CommandRegistry::Resolved &f_c
         return;
     }
 
-    // Permission check: the matched form's whole gate - any-of, or any
-    // all-of group. The same gate CommandRegistry::canUse answers
-    // /commands with.
-    const QStringList l_permissions = l_variant ? l_variant->permissions : l_spec.permissions;
-    const QList<QStringList> l_groups = l_variant ? l_variant->requirement_groups : l_spec.requirement_groups;
-    if (!akashi::CommandRegistry::passesRequirements(l_permissions, l_groups, [this](const QString &f_permission) { return canPerform(f_permission); })) {
+    // Permission check: the matched form's whole gate. The same gate
+    // CommandRegistry::canUse answers /commands with.
+    const akashi::Gate &l_gate = l_variant ? l_variant->gate : l_spec.gate;
+    if (!l_gate.passes([this](const QString &f_permission) { return canPerform(f_permission); })) {
         sendServerMessage("You do not have permission to use that command.");
         return;
     }
@@ -1810,6 +1808,9 @@ akashi::PermissionQuery ClientSession::buildPermissionQuery(const QString &f_per
     l_query.permission = f_permission;
     l_query.client_id = clientId();
     l_query.area_id = f_area_id;
+    // The floor the area sits on, so a floor-scope offer knows whether it
+    // covers where the actor is standing.
+    l_query.floor_id = m_server->floorIdForArea(f_area_id);
     l_query.is_authenticated = isAuthenticated();
     // The blanket simple-auth grant keys off the ACTIVE system, so a
     // plugin system's logins resolve through their roles, never through

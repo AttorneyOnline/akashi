@@ -273,7 +273,7 @@ void registerAuthenticationCommands(CommandRegistry &f_registry)
     {
         CommandSpec l_setperms;
         l_setperms.name = QStringLiteral("setperms");
-        l_setperms.permissions = {akashi::permission::modify_users};
+        l_setperms.gate = {akashi::permission::modify_users};
         l_setperms.min_args = 2;
         l_setperms.usage = QStringLiteral("/setperms <username> <role>");
         l_setperms.description = QStringLiteral("Sets the role of the given user.");

@@ -358,7 +358,7 @@ void registerRoleplayCommands(CommandRegistry &f_registry)
     {
         CommandSpec l_timer;
         l_timer.name = QStringLiteral("timer");
-        l_timer.permissions = {permission::cm_timer};
+        l_timer.gate = {permission::cm_timer};
         l_timer.usage = QStringLiteral("/timer [id] [time|start|pause|hide]");
         l_timer.description = QStringLiteral("Shows or controls the area's timers.");
         l_timer.escalates_to = permission::timer_global;

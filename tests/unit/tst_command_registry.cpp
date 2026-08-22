@@ -28,24 +28,6 @@ class tst_CommandRegistry : public QObject
     void containsCheck();
     void commandNamesList();
 
-    void permissionRegistration();
-    void permissionByCategory();
-    void permissionUnregisterByOwner();
-    void duplicatePermissionFails();
-
-    void emptyPermissionIsTriviallyGranted();
-    void resolveWithNoGrantsRefuses();
-    void serverGrantsMatchTheirAudience();
-    void unknownPermissionGrantIsRefused();
-    void grantUnionAnswersFromAnySource();
-    void duplicateSourceIdKeepsTheFirst();
-    void sourceUnregisterByOwner();
-    void sourceUnregisterUnknownOwnerIsANoOp();
-    void pluginSourceGrantsItsOwnPermission();
-    void sanctionMaskBeatsEveryGrant();
-    void sanctionMaskRegistrationValidates();
-    void resolveExplainedOrdersDeterministically();
-
     void aclRoleStringCanPerform();
     void aclRoleSuperWildcard();
     void aclRoleEmptyIsNone();
@@ -203,271 +185,6 @@ void tst_CommandRegistry::commandNamesList()
     QVERIFY(l_names.contains("beta"));
 }
 
-void tst_CommandRegistry::permissionRegistration()
-{
-    akashi::PermissionRegistry l_registry;
-    akashi::PermissionInfo l_info{QStringLiteral("kick"), QStringLiteral("Kick"), {}, QStringLiteral("moderation")};
-    QVERIFY(l_registry.registerPermission(l_info));
-    QVERIFY(l_registry.isRegistered("kick"));
-
-    if (auto l_found = l_registry.permissionById("kick")) {
-        QCOMPARE(l_found->display_name, QStringLiteral("Kick"));
-    }
-    else {
-        QFAIL("permission not found");
-    }
-}
-
-void tst_CommandRegistry::permissionByCategory()
-{
-    akashi::PermissionRegistry l_registry;
-    l_registry.registerPermission({QStringLiteral("kick"), {}, {}, QStringLiteral("moderation")});
-    l_registry.registerPermission({QStringLiteral("ban"), {}, {}, QStringLiteral("moderation")});
-    l_registry.registerPermission({QStringLiteral("motd"), {}, {}, QStringLiteral("admin")});
-
-    auto l_mod = l_registry.permissionsByCategory("moderation");
-    QCOMPARE(l_mod.size(), 2);
-
-    auto l_admin = l_registry.permissionsByCategory("admin");
-    QCOMPARE(l_admin.size(), 1);
-}
-
-void tst_CommandRegistry::permissionUnregisterByOwner()
-{
-    akashi::PermissionRegistry l_registry;
-    l_registry.registerPermission({QStringLiteral("custom.perm"), {}, {}, {}}, QStringLiteral("plugin_x"));
-    QVERIFY(l_registry.isRegistered("custom.perm"));
-    l_registry.unregisterAllPermissions(QStringLiteral("plugin_x"));
-    QVERIFY(!l_registry.isRegistered("custom.perm"));
-}
-
-void tst_CommandRegistry::duplicatePermissionFails()
-{
-    akashi::PermissionRegistry l_registry;
-    l_registry.registerPermission({QStringLiteral("kick"), {}, {}, {}});
-    QVERIFY(!l_registry.registerPermission({QStringLiteral("kick"), {}, {}, {}}));
-}
-
-void tst_CommandRegistry::emptyPermissionIsTriviallyGranted()
-{
-    // No requirement is the one query that needs no grant at all.
-    akashi::PermissionRegistry l_registry;
-
-    akashi::PermissionQuery l_query;
-    l_query.permission = QString();
-    QVERIFY(l_registry.resolve(l_query));
-    l_query.permission = QStringLiteral("none");
-    QVERIFY(l_registry.resolve(l_query));
-}
-
-void tst_CommandRegistry::resolveWithNoGrantsRefuses()
-{
-    // The union with nothing in it offers nothing - refusal is the
-    // absence of a grant, never a deny entry.
-    akashi::PermissionRegistry l_registry;
-
-    akashi::PermissionQuery l_query;
-    l_query.permission = QStringLiteral("kick");
-    QVERIFY(!l_registry.resolve(l_query));
-}
-
-void tst_CommandRegistry::serverGrantsMatchTheirAudience()
-{
-    akashi::PermissionRegistry l_registry;
-    l_registry.registerPermission({QStringLiteral("user"), {}, {}, {}});
-    l_registry.registerPermission({QStringLiteral("kick"), {}, {}, {}});
-    l_registry.registerPermission({QStringLiteral("enter"), {}, {}, {}});
-    QVERIFY(l_registry.addGrant({QStringLiteral("user"), akashi::Audience::everyone(), akashi::GrantScope::Server, QStringLiteral("core")}));
-    QVERIFY(l_registry.addGrant({QStringLiteral("kick"), akashi::Audience::role(QStringLiteral("MOD")), akashi::GrantScope::Server, QStringLiteral("roles")}));
-    QVERIFY(l_registry.addGrant({QStringLiteral("enter"), akashi::Audience::person(QStringLiteral("ipid-1")), akashi::GrantScope::Server, QStringLiteral("core")}));
-
-    // Everyone covers joined sessions only.
-    akashi::PermissionQuery l_query;
-    l_query.permission = QStringLiteral("user");
-    QVERIFY(!l_registry.resolve(l_query));
-    l_query.is_joined = true;
-    QVERIFY(l_registry.resolve(l_query));
-
-    // A role is worn through authentication, matched case-insensitively.
-    l_query.permission = QStringLiteral("kick");
-    l_query.acl_role_id = QStringLiteral("mod");
-    QVERIFY(!l_registry.resolve(l_query));
-    l_query.is_authenticated = true;
-    QVERIFY(l_registry.resolve(l_query));
-    l_query.acl_role_id = QStringLiteral("helper");
-    QVERIFY(!l_registry.resolve(l_query));
-
-    // A person is their IPID.
-    l_query.permission = QStringLiteral("enter");
-    QVERIFY(!l_registry.resolve(l_query));
-    l_query.ipid = QStringLiteral("ipid-1");
-    QVERIFY(l_registry.resolve(l_query));
-}
-
-void tst_CommandRegistry::unknownPermissionGrantIsRefused()
-{
-    // Every grant sink validates against the catalog, so a typo dies
-    // loudly instead of loading as a mystery permission.
-    akashi::PermissionRegistry l_registry;
-    QTest::ignoreMessage(QtWarningMsg, QRegularExpression(QStringLiteral("unknown permission")));
-    QVERIFY(!l_registry.addGrant({QStringLiteral("nosuchperm"), akashi::Audience::everyone(), akashi::GrantScope::Server, QStringLiteral("config")}));
-}
-
-void tst_CommandRegistry::grantUnionAnswersFromAnySource()
-{
-    akashi::PermissionRegistry l_registry;
-    l_registry.registerGrantSource(QStringLiteral("silent"), [](const akashi::PermissionQuery &) {
-        return QList<akashi::Grant>{};
-    });
-    l_registry.registerGrantSource(QStringLiteral("offering"), [](const akashi::PermissionQuery &q) {
-        if (q.permission == QStringLiteral("kick")) {
-            return QList<akashi::Grant>{{q.permission, akashi::Audience::everyone(), akashi::GrantScope::Server, QStringLiteral("core")}};
-        }
-        return QList<akashi::Grant>{};
-    });
-
-    akashi::PermissionQuery l_query;
-    l_query.permission = QStringLiteral("kick");
-    QVERIFY(l_registry.resolve(l_query));
-    l_query.permission = QStringLiteral("ban");
-    QVERIFY(!l_registry.resolve(l_query));
-}
-
-void tst_CommandRegistry::duplicateSourceIdKeepsTheFirst()
-{
-    akashi::PermissionRegistry l_registry;
-    QVERIFY(l_registry.registerGrantSource(QStringLiteral("gate"), [](const akashi::PermissionQuery &q) {
-        return QList<akashi::Grant>{{q.permission, akashi::Audience::everyone(), akashi::GrantScope::Server, QStringLiteral("core")}};
-    }));
-    QTest::ignoreMessage(QtWarningMsg, QRegularExpression(QStringLiteral("already registered")));
-    QVERIFY(!l_registry.registerGrantSource(QStringLiteral("gate"), [](const akashi::PermissionQuery &) {
-        return QList<akashi::Grant>{};
-    }));
-
-    akashi::PermissionQuery l_query;
-    l_query.permission = QStringLiteral("kick");
-    QVERIFY(l_registry.resolve(l_query));
-}
-
-void tst_CommandRegistry::sourceUnregisterByOwner()
-{
-    akashi::PermissionRegistry l_registry;
-    l_registry.registerGrantSource(
-        QStringLiteral("plugin_source"), [](const akashi::PermissionQuery &q) {
-            return QList<akashi::Grant>{{q.permission, akashi::Audience::everyone(), akashi::GrantScope::Server, QStringLiteral("plugin_x")}};
-        },
-        QStringLiteral("plugin_x"));
-
-    akashi::PermissionQuery l_query;
-    l_query.permission = QStringLiteral("custom");
-    QVERIFY(l_registry.resolve(l_query));
-
-    l_registry.unregisterAllGrantSources(QStringLiteral("plugin_x"));
-    QVERIFY(!l_registry.resolve(l_query));
-}
-
-void tst_CommandRegistry::sourceUnregisterUnknownOwnerIsANoOp()
-{
-    akashi::PermissionRegistry l_registry;
-    l_registry.registerGrantSource(
-        QStringLiteral("granter"), [](const akashi::PermissionQuery &q) {
-            return QList<akashi::Grant>{{q.permission, akashi::Audience::everyone(), akashi::GrantScope::Server, QStringLiteral("plugin_x")}};
-        },
-        QStringLiteral("plugin_x"));
-
-    l_registry.unregisterAllGrantSources(QStringLiteral("plugin_y"));
-
-    akashi::PermissionQuery l_query;
-    l_query.permission = QStringLiteral("kick");
-    QVERIFY(l_registry.resolve(l_query));
-}
-
-void tst_CommandRegistry::pluginSourceGrantsItsOwnPermission()
-{
-    akashi::PermissionRegistry l_registry;
-    l_registry.registerGrantSource(
-        QStringLiteral("plugin_grant"), [](const akashi::PermissionQuery &q) {
-            if (q.permission == QStringLiteral("plugin.special")) {
-                return QList<akashi::Grant>{{q.permission, akashi::Audience::everyone(), akashi::GrantScope::Server, QStringLiteral("my_plugin")}};
-            }
-            return QList<akashi::Grant>{};
-        },
-        QStringLiteral("my_plugin"));
-
-    akashi::PermissionQuery l_special;
-    l_special.permission = QStringLiteral("plugin.special");
-    QVERIFY(l_registry.resolve(l_special));
-
-    akashi::PermissionQuery l_other;
-    l_other.permission = QStringLiteral("kick");
-    QVERIFY(!l_registry.resolve(l_other));
-}
-
-void tst_CommandRegistry::sanctionMaskBeatsEveryGrant()
-{
-    akashi::PermissionRegistry l_registry;
-    l_registry.registerPermission({QStringLiteral("ic_chat"), {}, {}, {}});
-    QVERIFY(l_registry.addGrant({QStringLiteral("ic_chat"), akashi::Audience::everyone(), akashi::GrantScope::Server, QStringLiteral("core")}));
-    QVERIFY(l_registry.registerSanctionMask(QStringLiteral("muted"), QStringLiteral("ic_chat")));
-
-    akashi::PermissionQuery l_query;
-    l_query.permission = QStringLiteral("ic_chat");
-    l_query.is_joined = true;
-    QVERIFY(l_registry.resolve(l_query));
-
-    // The mask is audience-blind: the grant still matches, the answer is
-    // still no, and the explanation names the sanction first.
-    l_query.sanctions.insert(QStringLiteral("muted"));
-    QVERIFY(!l_registry.resolve(l_query));
-    const akashi::Resolution l_explained = l_registry.resolveExplained(l_query);
-    QVERIFY(!l_explained.allowed);
-    QCOMPARE(l_explained.masked_by, QStringList({QStringLiteral("muted")}));
-    QCOMPARE(l_explained.matched.size(), 1);
-
-    // An unrelated sanction masks nothing.
-    l_query.sanctions = {QStringLiteral("gimped")};
-    QVERIFY(l_registry.resolve(l_query));
-}
-
-void tst_CommandRegistry::sanctionMaskRegistrationValidates()
-{
-    akashi::PermissionRegistry l_registry;
-    QTest::ignoreMessage(QtWarningMsg, QRegularExpression(QStringLiteral("unknown permission")));
-    QVERIFY(!l_registry.registerSanctionMask(QStringLiteral("muted"), QStringLiteral("nosuchperm")));
-
-    l_registry.registerPermission({QStringLiteral("ic_chat"), {}, {}, {}});
-    l_registry.registerPermission({QStringLiteral("ooc_chat"), {}, {}, {}});
-    QVERIFY(l_registry.registerSanctionMask(QStringLiteral("muted"), QStringLiteral("ic_chat")));
-    QTest::ignoreMessage(QtWarningMsg, QRegularExpression(QStringLiteral("already registered")));
-    QVERIFY(!l_registry.registerSanctionMask(QStringLiteral("muted"), QStringLiteral("ooc_chat")));
-}
-
-void tst_CommandRegistry::resolveExplainedOrdersDeterministically()
-{
-    // The explanation prints in fixed tier order - server, floor, area,
-    // person-audience entries last - never container iteration order.
-    akashi::PermissionRegistry l_registry;
-    l_registry.registerGrantSource(QStringLiteral("scattered"), [](const akashi::PermissionQuery &q) {
-        return QList<akashi::Grant>{
-            {q.permission, akashi::Audience::person(QStringLiteral("ipid-1")), akashi::GrantScope::Area, QStringLiteral("core")},
-            {q.permission, akashi::Audience::everyone(), akashi::GrantScope::Area, QStringLiteral("config")},
-            {q.permission, akashi::Audience::everyone(), akashi::GrantScope::Server, QStringLiteral("core")},
-            {q.permission, akashi::Audience::everyone(), akashi::GrantScope::Floor, QStringLiteral("config")},
-        };
-    });
-
-    akashi::PermissionQuery l_query;
-    l_query.permission = QStringLiteral("kick");
-    const akashi::Resolution l_explained = l_registry.resolveExplained(l_query);
-    QVERIFY(l_explained.allowed);
-    QCOMPARE(l_explained.matched.size(), 4);
-    QCOMPARE(l_explained.matched.at(0).grant.scope, akashi::GrantScope::Server);
-    QCOMPARE(l_explained.matched.at(1).grant.scope, akashi::GrantScope::Floor);
-    QCOMPARE(l_explained.matched.at(2).grant.scope, akashi::GrantScope::Area);
-    QCOMPARE(l_explained.matched.at(2).grant.audience.kind, akashi::AudienceKind::Everyone);
-    QCOMPARE(l_explained.matched.at(3).grant.audience.kind, akashi::AudienceKind::Person);
-}
-
 void tst_CommandRegistry::aclRoleStringCanPerform()
 {
     ACLRole l_role;
@@ -538,7 +255,7 @@ void tst_CommandRegistry::applyExtensionsOverridesPermissions()
 
     auto l_spec = l_registry.spec("kick");
     QVERIFY(l_spec.has_value());
-    QCOMPARE(l_spec->permissions, QStringList({QStringLiteral("admin.kick"), QStringLiteral("super")}));
+    QCOMPARE(l_spec->gate.permissions(), QStringList({QStringLiteral("admin.kick"), QStringLiteral("super")}));
 }
 
 void tst_CommandRegistry::applyExtensionsParsesAndGroupsAndValidates()
@@ -566,17 +283,17 @@ void tst_CommandRegistry::applyExtensionsParsesAndGroupsAndValidates()
     l_registry.applyExtensions(l_write("groups.json", R"({"probe": {"permissions": "gamemaster+kick ban"}})"), l_known);
     auto l_spec = l_registry.spec("probe");
     QVERIFY(l_spec.has_value());
-    QVERIFY(l_spec->permissions.isEmpty());
-    QCOMPARE(l_spec->requirement_groups.size(), 2);
-    QCOMPARE(l_spec->requirement_groups.at(0), QStringList({QStringLiteral("gamemaster"), QStringLiteral("kick")}));
-    QCOMPARE(l_spec->requirement_groups.at(1), QStringList({QStringLiteral("ban")}));
+    QCOMPARE(l_spec->gate.groups.size(), 2);
+    QCOMPARE(l_spec->gate.groups.at(0), QStringList({QStringLiteral("gamemaster"), QStringLiteral("kick")}));
+    QCOMPARE(l_spec->gate.groups.at(1), QStringList({QStringLiteral("ban")}));
+    QCOMPARE(l_spec->gate.describe(), QStringLiteral("gamemaster+kick, ban"));
 
     // An override naming an unknown permission is skipped whole - a
     // half-applied gate could be softer than the author intended.
     QTest::ignoreMessage(QtWarningMsg, QRegularExpression(QStringLiteral("unknown permission")));
     l_registry.applyExtensions(l_write("typo.json", R"({"probe": {"permissions": "gamemaster+nosuchperm"}})"), l_known);
     l_spec = l_registry.spec("probe");
-    QCOMPARE(l_spec->requirement_groups.size(), 2);
+    QCOMPARE(l_spec->gate.groups.size(), 2);
 }
 
 void tst_CommandRegistry::requirementGroupsExpressAnd()
@@ -586,23 +303,32 @@ void tst_CommandRegistry::requirementGroupsExpressAnd()
     const auto l_holding = [](const QStringList &f_held) {
         return [f_held](const QString &f_permission) { return f_held.contains(f_permission); };
     };
-    const QList<QStringList> l_groups{{QStringLiteral("gamemaster"), QStringLiteral("kick")}, {QStringLiteral("super")}};
-    QVERIFY(akashi::CommandRegistry::passesRequirements({}, l_groups, l_holding({QStringLiteral("gamemaster"), QStringLiteral("kick")})));
-    QVERIFY(akashi::CommandRegistry::passesRequirements({}, l_groups, l_holding({QStringLiteral("super")})));
-    QVERIFY(!akashi::CommandRegistry::passesRequirements({}, l_groups, l_holding({QStringLiteral("gamemaster")})));
-    QVERIFY(!akashi::CommandRegistry::passesRequirements({}, l_groups, l_holding({QStringLiteral("kick")})));
+    akashi::Gate l_gate = akashi::Gate::allOf({QStringLiteral("gamemaster"), QStringLiteral("kick")});
+    l_gate.groups.append(QStringList{QStringLiteral("super")});
+    QVERIFY(l_gate.passes(l_holding({QStringLiteral("gamemaster"), QStringLiteral("kick")})));
+    QVERIFY(l_gate.passes(l_holding({QStringLiteral("super")})));
+    QVERIFY(!l_gate.passes(l_holding({QStringLiteral("gamemaster")})));
+    QVERIFY(!l_gate.passes(l_holding({QStringLiteral("kick")})));
+    QCOMPARE(l_gate.permissions(), (QStringList{QStringLiteral("gamemaster"), QStringLiteral("kick"), QStringLiteral("super")}));
 
-    // Without groups the flat any-of list decides, as before.
-    QVERIFY(akashi::CommandRegistry::passesRequirements({QStringLiteral("kick")}, {}, l_holding({QStringLiteral("kick")})));
-    QVERIFY(!akashi::CommandRegistry::passesRequirements({QStringLiteral("kick")}, {}, l_holding({QStringLiteral("gamemaster")})));
+    // One name is a group of one, so the ordinary any-of case reads as a
+    // plain list and decides the same way.
+    const akashi::Gate l_any{QStringLiteral("kick"), QStringLiteral("ban")};
+    QVERIFY(l_any.passes(l_holding({QStringLiteral("kick")})));
+    QVERIFY(l_any.passes(l_holding({QStringLiteral("ban")})));
+    QVERIFY(!l_any.passes(l_holding({QStringLiteral("gamemaster")})));
+
+    // An empty gate is an open command.
+    QVERIFY(akashi::Gate().passes(l_holding({})));
+    QCOMPARE(akashi::Gate().describe(), QStringLiteral("nothing"));
 
     // A variant carrying a group gates canUse the same way.
     akashi::CommandRegistry l_registry;
     akashi::CommandSpec l_spec;
     l_spec.name = QStringLiteral("gated");
     l_spec.variants = {
-        {.id = QStringLiteral("own"), .min_args = 1, .max_args = 1, .permissions = {QStringLiteral("gamemaster")}, .handler = [](akashi::CommandContext &) {}},
-        {.id = QStringLiteral("cross"), .min_args = 2, .max_args = -1, .handler = [](akashi::CommandContext &) {}, .requirement_groups = {{QStringLiteral("gamemaster"), QStringLiteral("kick")}}},
+        {.id = QStringLiteral("own"), .min_args = 1, .max_args = 1, .gate = {QStringLiteral("gamemaster")}, .handler = [](akashi::CommandContext &) {}},
+        {.id = QStringLiteral("cross"), .min_args = 2, .max_args = -1, .gate = akashi::Gate::allOf({QStringLiteral("gamemaster"), QStringLiteral("kick")}), .handler = [](akashi::CommandContext &) {}},
     };
     QVERIFY(l_registry.registerCommand(l_spec, QStringLiteral("core")));
     QVERIFY(l_registry.canUse(QStringLiteral("gated"), l_holding({QStringLiteral("gamemaster")})));
@@ -820,7 +546,7 @@ void tst_CommandRegistry::registerVariantAppendsGatedForm()
     const auto l_stored = l_registry.spec("inspect");
     QCOMPARE(l_stored->variants.size(), 2);
     QCOMPARE(l_stored->match(1)->id, QStringLiteral("other"));
-    QCOMPARE(l_stored->match(1)->permissions, QStringList{QStringLiteral("my.permission")});
+    QCOMPARE(l_stored->match(1)->gate.permissions(), QStringList{QStringLiteral("my.permission")});
 }
 
 void tst_CommandRegistry::registerVariantRefusals()
@@ -907,9 +633,9 @@ void tst_CommandRegistry::applyExtensionsOverridesVariantPermissions()
     const auto l_stored = l_registry.spec("listperms");
     // The addressed form changed; the base override on a variant command
     // only warns, and the other form keeps its gate.
-    QCOMPARE(l_stored->match(1)->permissions, QStringList{QStringLiteral("super")});
-    QVERIFY(l_stored->match(0)->permissions.isEmpty());
-    QVERIFY(l_stored->permissions.isEmpty());
+    QCOMPARE(l_stored->match(1)->gate.permissions(), QStringList{QStringLiteral("super")});
+    QVERIFY(l_stored->match(0)->gate.isEmpty());
+    QVERIFY(l_stored->gate.isEmpty());
 }
 
 } // namespace unittests

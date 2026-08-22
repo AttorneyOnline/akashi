@@ -741,7 +741,7 @@ void registerAreaCommands(CommandRegistry &f_registry)
         // tell the truth about it instead of a gate hiding in the body.
         CommandSpec l_cm;
         l_cm.name = QStringLiteral("cm");
-        l_cm.permissions = {akashi::permission::user};
+        l_cm.gate = {akashi::permission::user};
         l_cm.usage = QStringLiteral("/cm [id]");
         l_cm.description = QStringLiteral("Claims CM or adds another client as CM.");
         l_cm.escalates_to = akashi::permission::area_cm;
@@ -766,7 +766,7 @@ void registerAreaCommands(CommandRegistry &f_registry)
     {
         CommandSpec l_uninvite;
         l_uninvite.name = QStringLiteral("uninvite");
-        l_uninvite.permissions = {akashi::permission::cm_uninvite};
+        l_uninvite.gate = {akashi::permission::cm_uninvite};
         l_uninvite.min_args = 1;
         l_uninvite.usage = QStringLiteral("/uninvite <id>");
         l_uninvite.description = QStringLiteral("Removes a client from the area invite list.");
@@ -796,8 +796,8 @@ void registerAreaCommands(CommandRegistry &f_registry)
         l_area_kick.description = QStringLiteral("Kicks a client or all non-CMs from the area.");
         l_area_kick.target_immune_if = akashi::permission::area_cm;
         l_area_kick.variants = {
-            {.id = QStringLiteral("own_area"), .min_args = 1, .max_args = 1, .permissions = {akashi::permission::cm_kick}, .usage = QStringLiteral("/area_kick <id|all>"), .description = QStringLiteral("Kicks to the first area."), .handler = cmdAreaKick},
-            {.id = QStringLiteral("cross_area"), .min_args = 2, .max_args = -1, .usage = QStringLiteral("/area_kick <id|all> <area>"), .description = QStringLiteral("Kicks to a specific area."), .handler = cmdAreaKick, .requirement_groups = {{akashi::permission::area_cm, akashi::permission::kick}}},
+            {.id = QStringLiteral("own_area"), .min_args = 1, .max_args = 1, .gate = {akashi::permission::cm_kick}, .usage = QStringLiteral("/area_kick <id|all>"), .description = QStringLiteral("Kicks to the first area."), .handler = cmdAreaKick},
+            {.id = QStringLiteral("cross_area"), .min_args = 2, .max_args = -1, .gate = akashi::Gate::allOf({akashi::permission::area_cm, akashi::permission::kick}), .usage = QStringLiteral("/area_kick <id|all> <area>"), .description = QStringLiteral("Kicks to a specific area."), .handler = cmdAreaKick},
         };
         f_registry.registerCommand(l_area_kick, QStringLiteral("core"));
     }

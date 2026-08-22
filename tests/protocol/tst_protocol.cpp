@@ -1097,10 +1097,12 @@ void ProtocolTest::whyExplainsResolutionAndDumpGrantsLists()
     QVERIFY(output.contains(QStringLiteral("blocked by the \"muted\" sanction")));
     command(QStringLiteral("/unmute 0"));
 
-    // The operator dump lists stored grants with audiences and owners.
+    // The operator dump lists stored grants with audiences, owners and
+    // the place each one stands in - one store holds every scope, so a
+    // row that did not say where it stood would be ambiguous.
     command(QStringLiteral("/dumpgrants"));
-    QVERIFY(output.contains(QStringLiteral("user -> everyone [core]")));
-    QVERIFY(output.contains(QStringLiteral("send_notice -> everyone [config]")));
+    QVERIFY(output.contains(QStringLiteral("user -> everyone @ server [core]")));
+    QVERIFY(output.contains(QStringLiteral("send_notice -> everyone @ area Courtroom 1 [config]")));
 }
 
 void ProtocolTest::modsListsPresenceWithoutTheRadar()

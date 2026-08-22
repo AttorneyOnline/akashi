@@ -321,10 +321,9 @@ class AKASHI_CORE_EXPORT Area : public QObject
     const QVector<AfterRuleEntry> &afterRules() const { return m_after_rules; }
     const QVector<TransformRuleEntry> &transformRules() const { return m_transform_rules; }
 
-    // --- Standing permission offers in this area ---
-
-    QVector<Grant> &grants() { return m_grants; }
-    const QVector<Grant> &grants() const { return m_grants; }
+    // Standing permission offers live in the permission registry, filed
+    // under the permission they grant and carrying the area id they
+    // stand in - the world does not keep a second copy.
 
   Q_SIGNALS:
     // One signal per area-update type the protocol knows; the broadcaster
@@ -374,7 +373,6 @@ class AKASHI_CORE_EXPORT Area : public QObject
     QVector<BeforeRuleEntry> m_before_rules;
     QVector<AfterRuleEntry> m_after_rules;
     QVector<TransformRuleEntry> m_transform_rules;
-    QVector<Grant> m_grants;
 };
 
 } // namespace akashi

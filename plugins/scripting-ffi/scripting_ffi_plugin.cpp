@@ -144,7 +144,7 @@ static int ffiRegisterCommand(const char *f_name, size_t f_name_length,
     l_spec.min_args = f_min_args;
     const QString l_permission = toString(f_permission, f_permission_length);
     if (!l_permission.isEmpty()) {
-        l_spec.permissions = {l_permission};
+        l_spec.gate = {l_permission};
     }
     if (l_spec.name.isEmpty()) {
         return 0;
@@ -167,14 +167,22 @@ static int ffiRegisterCommand(const char *f_name, size_t f_name_length,
     return l_registered ? 1 : 0;
 }
 
+// The owner tags core and the config compile stamp their own work with.
+// No caller across this boundary may write them or sweep them: a buggy
+// or hostile one must not be able to place an offer core would treat as
+// its own, or take the everyone-baseline away by naming it.
+static const QSet<QString> &reservedOwners()
+{
+    static const QSet<QString> s_reserved{QStringLiteral("core"), QStringLiteral("config"),
+                                          QStringLiteral("roles"), QStringLiteral("command"),
+                                          QStringLiteral("baseline")};
+    return s_reserved;
+}
+
 static void ffiUnregisterOwner(const char *f_owner_id, size_t f_owner_id_length)
 {
     const QString l_owner = toString(f_owner_id, f_owner_id_length);
-    // The sweep target is stamped like every registration: a buggy caller
-    // must not sweep the reserved owners' registrations by typo.
-    static const QSet<QString> s_reserved{QStringLiteral("core"), QStringLiteral("config"),
-                                          QStringLiteral("roles"), QStringLiteral("command")};
-    if (s_reserved.contains(l_owner)) {
+    if (reservedOwners().contains(l_owner)) {
         qCWarning(akashiScripting) << "unregister_owner refused for reserved owner" << l_owner;
         return;
     }
@@ -434,7 +442,16 @@ static bool buildScriptGrant(const char *f_permission, size_t f_permission_lengt
     const QString l_permission = toString(f_permission, f_permission_length).toLower();
     const QString l_audience = toString(f_audience, f_audience_length).toLower();
     const QString l_key = toString(f_key, f_key_length);
+    const QString l_owner = toString(f_owner_id, f_owner_id_length);
     if (l_permission.isEmpty() || l_permission == akashi::permission::super || l_key.isEmpty()) {
+        return false;
+    }
+    // The owner tag is provenance, so it may only ever be the caller's
+    // own. The language hosts stamp it from the plugin record; refusing
+    // the reserved names here keeps a hand-written FFI consumer from
+    // writing an offer that core or the config would later sweep as its
+    // own - or that would survive a sweep it should not.
+    if (l_owner.isEmpty() || reservedOwners().contains(l_owner)) {
         return false;
     }
     if (l_audience == QStringLiteral("person")) {

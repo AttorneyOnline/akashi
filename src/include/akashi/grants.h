@@ -8,9 +8,9 @@
 // whole model is the sanction mask, applied after the union.
 namespace akashi {
 
-// Where a grant stands. Server-scope grants survive everything an
-// in-game actor can do; floor and area grants live and die with their
-// object.
+// Where a grant stands. A server-scope offer covers the whole server; a
+// floor or area offer covers exactly the place it names, through the
+// grant's place_id.
 enum class GrantScope
 {
     Server,
@@ -46,12 +46,18 @@ struct Audience
 // One standing offer of one permission. The owner tag is provenance:
 // stamped by the host from the caller's identity, never caller-supplied,
 // and removal requires authority over the source.
+//
+// Every offer lives in one place - the permission registry - and says
+// where it stands rather than being filed in the container that means
+// it. A floor or area offer names its place; a server offer leaves
+// place_id alone.
 struct Grant
 {
     QString permission; // validated against the permission catalog at every sink
     Audience audience;
     GrantScope scope = GrantScope::Server;
-    QString owner; // "core", "config", "roles", "plugin:<id>", ...
+    int place_id = -1; // the floor or area this offer stands in, when the scope names one
+    QString owner;     // "core", "config", "roles", "plugin:<id>", ...
 
     bool operator==(const Grant &) const = default;
 };

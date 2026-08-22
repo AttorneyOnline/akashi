@@ -68,16 +68,6 @@ class AKASHI_CORE_EXPORT CommandRegistry : public IService
     // together, alias-resolved once.
     std::optional<Resolved> lookup(const QString &f_command_name) const;
 
-    // True when the permission list is empty or any entry resolves - the
-    // exact any-of gate the dispatcher applies to the matched form.
-    static bool passesAnyOf(const QStringList &f_permissions, const std::function<bool(const QString &)> &f_can_perform);
-
-    // The whole gate of one form: with requirement groups declared, any
-    // group whose every member resolves passes; otherwise the flat any-of
-    // list decides. The dispatcher and canUse share this.
-    static bool passesRequirements(const QStringList &f_permissions, const QList<QStringList> &f_groups,
-                                   const std::function<bool(const QString &)> &f_can_perform);
-
     // True when any form of the command is open to a caller whose
     // permissions f_can_perform answers for; false for unknown commands.
     // /commands and /help list through this so they mirror the dispatcher.

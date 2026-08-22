@@ -1,8 +1,11 @@
 #pragma once
 
 #include <QHash>
+#include <QList>
 #include <QString>
 #include <QStringList>
+
+#include <algorithm>
 
 // The permission ids core declares. Commands gate on them, role files
 // grant them, and rule arguments name them. Plugins declare their own ids
@@ -157,29 +160,6 @@ inline const QString cm_subtheme = QStringLiteral("cm.subtheme");
 inline const QString cm_force_noint_pres = QStringLiteral("cm.force_noint_pres");
 inline const QString cm_allow_iniswap = QStringLiteral("cm.allow_iniswap");
 
-// The stock everyone-baseline: what a joined person may do on a server
-// whose permissions.json has no everyone section. Everything here is
-// droppable, the speech-and-play baseline included - a whitelist server
-// closes the lot and grants per role or per area. Only user itself, the
-// login-and-account commands and packet dispatch stay core-granted, so
-// authenticating always works.
-inline QStringList defaultBaseline()
-{
-    return {ic_chat, ooc_chat, change_music, use_wtce,
-            music_play, music_play_ambience, music_currentmusic,
-            messaging_g, messaging_need, messaging_pm, messaging_a, messaging_s,
-            messaging_afk, messaging_firstperson, messaging_toggleglobal,
-            messaging_mutepm, messaging_toggleadverts,
-            roleplay_coinflip, roleplay_roll, roleplay_rolla, roleplay_rollp,
-            roleplay_notecard, roleplay_notecard_clear, roleplay_8ball,
-            casing_doc, casing_cleardoc, casing_testimony,
-            area_background, area_status, area_webfiles,
-            area_area, area_floor, area_floors, area_getarea, area_getareas,
-            characters_switch, characters_randomchar, characters_charselect, characters_pos,
-            info_help, info_commands, info_why, info_motd, info_mods,
-            info_about, info_rules, info_ruleactions};
-}
-
 // The stock case-manager powers, granted at area scope to an area's
 // owners when permissions.json declares no @cm group. music.jukebox rides
 // along so a CM may toggle the area jukebox by default; drop it from @cm
@@ -196,6 +176,146 @@ inline QStringList defaultCmPowers()
             cm_update, cm_pause, cm_add, cm_loadtestimony, cm_forcepos, cm_timer,
             cm_notecard_reveal, cm_subtheme, cm_force_noint_pres, cm_allow_iniswap,
             music_jukebox};
+}
+
+// One permission as core declares it. The catalog below is the single
+// list: registration walks it, the everyone-baseline is the rows that
+// say so, and the everyone-offer guard is the restricted column. A new
+// core permission is one row here and nothing else.
+struct CatalogEntry
+{
+    QString id;
+    QString display_name;
+    QString category;
+    // Restricted acts never ride an everyone-shaped offer, whatever the
+    // scope - a config typo must not hand a room the mute or the IPID
+    // radar. They are role grants, or they are nothing.
+    bool restricted = false;
+    // Part of the stock everyone-baseline: what a joined person may do on
+    // a server whose permissions.json has no everyone section.
+    bool in_baseline = false;
+};
+
+inline const QList<CatalogEntry> &catalog()
+{
+    static const QList<CatalogEntry> s_catalog = [] {
+        QList<CatalogEntry> l_entries{
+            {kick, QStringLiteral("Kick"), QStringLiteral("moderation"), true, false},
+            {ban, QStringLiteral("Ban"), QStringLiteral("moderation"), true, false},
+            {lock_background, QStringLiteral("Lock Background"), QStringLiteral("area"), false, false},
+            {modify_users, QStringLiteral("Modify Users"), QStringLiteral("administration"), true, false},
+            {area_cm, QStringLiteral("Case Manager"), QStringLiteral("area"), false, false},
+            {timer_global, QStringLiteral("Global Timer"), QStringLiteral("area"), true, false},
+            {modify_evidence, QStringLiteral("Modify Evidence"), QStringLiteral("area"), false, false},
+            {motd, QStringLiteral("MOTD"), QStringLiteral("administration"), false, false},
+            {announcer, QStringLiteral("Announcer"), QStringLiteral("moderation"), false, false},
+            {chat_moderator, QStringLiteral("Chat Moderator"), QStringLiteral("moderation"), true, false},
+            {sanction_mute, QStringLiteral("Mute"), QStringLiteral("moderation"), true, false},
+            {sanction_ooc_mute, QStringLiteral("OOC Mute"), QStringLiteral("moderation"), true, false},
+            {sanction_block_dj, QStringLiteral("Block DJ"), QStringLiteral("moderation"), true, false},
+            {sanction_block_wtce, QStringLiteral("Block Judge Controls"), QStringLiteral("moderation"), true, false},
+            {sanction_gimp, QStringLiteral("Gimp"), QStringLiteral("moderation"), true, false},
+            {sanction_disemvowel, QStringLiteral("Disemvowel"), QStringLiteral("moderation"), true, false},
+            {sanction_shake, QStringLiteral("Shake"), QStringLiteral("moderation"), true, false},
+            {sanction_medieval, QStringLiteral("Medieval"), QStringLiteral("moderation"), true, false},
+            {sanction_charcurse, QStringLiteral("Charcurse"), QStringLiteral("moderation"), true, false},
+            {area_uncm, QStringLiteral("Remove CM"), QStringLiteral("moderation"), true, false},
+            {save_testimony, QStringLiteral("Save Testimony"), QStringLiteral("area"), false, false},
+            {force_charselect, QStringLiteral("Force Charselect"), QStringLiteral("moderation"), true, false},
+            {area_enter, QStringLiteral("Enter Locked Areas"), QStringLiteral("moderation"), true, false},
+            {ignore_background_list, QStringLiteral("Ignore BG List"), QStringLiteral("area"), false, false},
+            {send_notice, QStringLiteral("Send Notice"), QStringLiteral("moderation"), false, false},
+            {music_jukebox, QStringLiteral("Jukebox"), QStringLiteral("area"), false, false},
+            {modify_rules, QStringLiteral("Modify Rules"), QStringLiteral("area"), true, false},
+            {modify_floors, QStringLiteral("Modify Floors"), QStringLiteral("administration"), true, false},
+            {super, QStringLiteral("Super"), QStringLiteral("administration"), true, false},
+            {user, QStringLiteral("User"), QStringLiteral("lifecycle"), false, false},
+            {see_ipids, QStringLiteral("See IPIDs"), QStringLiteral("moderation"), true, false},
+            {receive_modcalls, QStringLiteral("Receive Modcalls"), QStringLiteral("moderation"), true, false},
+            {see_staff_presence, QStringLiteral("See Staff Presence"), QStringLiteral("moderation"), true, false},
+            {see_real_names, QStringLiteral("See Real Names"), QStringLiteral("moderation"), true, false},
+            {change_locked_background, QStringLiteral("Change Locked Background"), QStringLiteral("area"), false, false},
+            {ic_chat, QStringLiteral("IC Chat"), QStringLiteral("speech"), false, true},
+            {ooc_chat, QStringLiteral("OOC Chat"), QStringLiteral("speech"), false, true},
+            {change_music, QStringLiteral("Change Music"), QStringLiteral("area"), false, true},
+            {use_wtce, QStringLiteral("Use Judge Controls"), QStringLiteral("area"), false, true},
+            {sanction_immune, QStringLiteral("Sanction Immunity"), QStringLiteral("moderation"), true, false},
+            {music_play, QStringLiteral("Play Music"), QStringLiteral("music"), false, true},
+            {music_play_ambience, QStringLiteral("Play Ambience"), QStringLiteral("music"), false, true},
+            {music_currentmusic, QStringLiteral("Show Current Music"), QStringLiteral("music"), false, true},
+            {messaging_g, QStringLiteral("Global Chat"), QStringLiteral("messaging"), false, true},
+            {messaging_need, QStringLiteral("Send Adverts"), QStringLiteral("messaging"), false, true},
+            {messaging_pm, QStringLiteral("Private Messages"), QStringLiteral("messaging"), false, true},
+            {messaging_a, QStringLiteral("Message Owned Area"), QStringLiteral("messaging"), false, true},
+            {messaging_s, QStringLiteral("Message Owned Areas"), QStringLiteral("messaging"), false, true},
+            {roleplay_coinflip, QStringLiteral("Coin Flip"), QStringLiteral("roleplay"), false, true},
+            {roleplay_roll, QStringLiteral("Roll Dice"), QStringLiteral("roleplay"), false, true},
+            {roleplay_rolla, QStringLiteral("Roll Named Die"), QStringLiteral("roleplay"), false, true},
+            {roleplay_rollp, QStringLiteral("Roll Privately"), QStringLiteral("roleplay"), false, true},
+            {roleplay_notecard, QStringLiteral("Write Notecard"), QStringLiteral("roleplay"), false, true},
+            {roleplay_notecard_clear, QStringLiteral("Clear Notecard"), QStringLiteral("roleplay"), false, true},
+            {roleplay_8ball, QStringLiteral("Magic 8-Ball"), QStringLiteral("roleplay"), false, true},
+            {casing_doc, QStringLiteral("Document"), QStringLiteral("casing"), false, true},
+            {casing_cleardoc, QStringLiteral("Clear Document"), QStringLiteral("casing"), false, true},
+            {casing_testimony, QStringLiteral("View Testimony"), QStringLiteral("casing"), false, true},
+            {area_background, QStringLiteral("Change Background"), QStringLiteral("area"), false, true},
+            {area_status, QStringLiteral("Change Status"), QStringLiteral("area"), false, true},
+            {area_webfiles, QStringLiteral("List Webfiles"), QStringLiteral("area"), false, true},
+            {area_area, QStringLiteral("Move To Area"), QStringLiteral("area"), false, true},
+            {area_floor, QStringLiteral("Move To Floor"), QStringLiteral("area"), false, true},
+            {area_floors, QStringLiteral("List Floors"), QStringLiteral("area"), false, true},
+            {area_getarea, QStringLiteral("List Area Clients"), QStringLiteral("area"), false, true},
+            {area_getareas, QStringLiteral("List All Clients"), QStringLiteral("area"), false, true},
+            {characters_switch, QStringLiteral("Switch Character"), QStringLiteral("characters"), false, true},
+            {characters_randomchar, QStringLiteral("Random Character"), QStringLiteral("characters"), false, true},
+            {characters_charselect, QStringLiteral("Character Select"), QStringLiteral("characters"), false, true},
+            {characters_pos, QStringLiteral("Change Position"), QStringLiteral("characters"), false, true},
+            {messaging_afk, QStringLiteral("AFK"), QStringLiteral("messaging"), false, true},
+            {messaging_firstperson, QStringLiteral("First-Person Mode"), QStringLiteral("messaging"), false, true},
+            {messaging_toggleglobal, QStringLiteral("Toggle Global Chat"), QStringLiteral("messaging"), false, true},
+            {messaging_mutepm, QStringLiteral("Mute PMs"), QStringLiteral("messaging"), false, true},
+            {messaging_toggleadverts, QStringLiteral("Toggle Adverts"), QStringLiteral("messaging"), false, true},
+            {info_help, QStringLiteral("Help"), QStringLiteral("info"), false, true},
+            {info_commands, QStringLiteral("List Commands"), QStringLiteral("info"), false, true},
+            {info_why, QStringLiteral("Explain Permissions"), QStringLiteral("info"), false, true},
+            {info_motd, QStringLiteral("View MOTD"), QStringLiteral("info"), false, true},
+            {info_mods, QStringLiteral("List Moderators"), QStringLiteral("info"), false, true},
+            {info_about, QStringLiteral("About"), QStringLiteral("info"), false, true},
+            {info_rules, QStringLiteral("View Rules"), QStringLiteral("info"), false, true},
+            {info_ruleactions, QStringLiteral("List Rule Actions"), QStringLiteral("info"), false, true},
+        };
+        // The case-manager powers all share one shape, so they are grown
+        // from the bundle instead of typed out again. music.jukebox rides
+        // in that bundle and is already spelled out above, so it is
+        // skipped rather than declared twice.
+        for (const QString &l_power : defaultCmPowers()) {
+            const bool l_already = std::any_of(l_entries.cbegin(), l_entries.cend(),
+                                               [&l_power](const CatalogEntry &f_entry) { return f_entry.id == l_power; });
+            if (!l_already) {
+                l_entries.append({l_power, QStringLiteral("CM: ") + l_power.section(QLatin1Char('.'), 1),
+                                  QStringLiteral("cm"), false, false});
+            }
+        }
+        return l_entries;
+    }();
+    return s_catalog;
+}
+
+// The stock everyone-baseline: what a joined person may do on a server
+// whose permissions.json has no everyone section. Everything here is
+// droppable, the speech-and-play baseline included - a whitelist server
+// closes the lot and grants per role or per area. Only user itself, the
+// login-and-account commands and packet dispatch stay core-granted, so
+// authenticating always works.
+inline QStringList defaultBaseline()
+{
+    QStringList l_names;
+    for (const CatalogEntry &l_entry : catalog()) {
+        if (l_entry.in_baseline) {
+            l_names << l_entry.id;
+        }
+    }
+    return l_names;
 }
 
 // The legacy spellings and what they became - the one table every sink

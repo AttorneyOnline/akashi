@@ -245,7 +245,7 @@ void tst_PluginManager::cleanupRemovesRegistrations()
 
     akashi::CommandSpec l_spec;
     l_spec.name = QStringLiteral("test_cmd");
-    l_spec.permissions = {QStringLiteral("none")};
+    l_spec.gate = {QStringLiteral("none")};
     l_commands->registerCommand(
         l_spec, [](akashi::CommandContext &) {}, QStringLiteral("test.plugin"));
 

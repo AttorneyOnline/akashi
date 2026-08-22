@@ -396,12 +396,21 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
     void applyEveryoneBaseline();
 
     /**
-     * @brief Recomputes the case-manager power set the area_owner grant
-     * source hands to an area's owners: the @cm group if permissions.json
-     * declares one, otherwise permission::defaultCmPowers(). Runs wherever
-     * the roles file is (re)read, before any connection is serviced.
+     * @brief Recomputes the case-manager keyring an area's owners wear:
+     * the @cm group if permissions.json declares one, otherwise
+     * permission::defaultCmPowers(), plus the area.cm status itself. Runs
+     * wherever the roles file is (re)read, before any connection is
+     * serviced.
      */
     void refreshCmPowers();
+
+    /**
+     * @brief The single reload step: re-read the roles file, recompile the
+     * config grants and the everyone baseline, and quarantine roles that
+     * name permissions the catalog lost. Every path that can change what
+     * the permission system knows runs exactly this.
+     */
+    void reconcilePermissions();
 
     /**
      * @brief Prints the compiled offers to stdout for --check-config: every
@@ -409,6 +418,13 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
      * its owner tag - sorted, so two runs diff cleanly.
      */
     void printCompiledOffers() const;
+
+    /**
+     * @brief The name of the place a scoped offer stands in, so an
+     * operator dump reads "area Courtroom" rather than "area 3". Empty
+     * for server-scope offers.
+     */
+    QString placeName(const akashi::Grant &f_grant) const;
 
     /**
      * @brief The quarantine: a role granting a permission the catalog does
@@ -739,12 +755,17 @@ class AKASHI_CORE_EXPORT ServerContext : public QObject
      */
     ExitCode startListening();
 
-    // The built-in grant sources feeding the resolution union.
-    QList<akashi::Grant> offerAreaOwner(const akashi::PermissionQuery &f_query);
-    QList<akashi::Grant> offerRoleGrants(const akashi::PermissionQuery &f_query);
-    static QList<akashi::Grant> offerSimpleAuth(const akashi::PermissionQuery &f_query);
-    QList<akashi::Grant> offerLockState(const akashi::PermissionQuery &f_query);
-    QList<akashi::Grant> offerPlaceGrants(const akashi::PermissionQuery &f_query);
+    // The roles an actor wears here: the one they logged into, plus the
+    // case-manager keyring when they own the area they are standing in.
+    QStringList rolesWorn(const akashi::PermissionQuery &f_query) const;
+
+    // Whether a worn role holds an act. Ordinary roles answer from the
+    // roles file; the @cm keyring answers from the compiled bundle.
+    bool roleHolds(const QString &f_role_id, const QString &f_permission) const;
+
+    // The one live fact core keeps as a predicate: a free area lets
+    // anyone in, a locked one lets its invited people in.
+    bool offersLockPassage(const akashi::PermissionQuery &f_query) const;
 
     // The core text filters.
     std::optional<QString> applyWordFilter(const QString &f_text) const;

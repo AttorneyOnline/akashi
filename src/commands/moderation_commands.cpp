@@ -297,11 +297,8 @@ void cmdHelp(CommandContext &f_context)
             l_text += "\n  " + l_variant.usage;
             if (!l_variant.description.isEmpty())
                 l_text += " - " + l_variant.description;
-            QStringList l_gate = l_variant.permissions;
-            for (const QStringList &l_group : l_variant.requirement_groups)
-                l_gate << l_group.join("+");
-            if (!l_gate.isEmpty())
-                l_text += " [" + l_gate.join(", ") + "]";
+            if (!l_variant.gate.isEmpty())
+                l_text += " [" + l_variant.gate.describe() + "]";
         }
         // The declared value-dependent escalation and target immunity are
         // part of the gate, so the help shows them.
@@ -348,38 +345,55 @@ void cmdHelp(CommandContext &f_context)
     f_context.reply(l_message + l_format_command(l_command_name));
 }
 
-// One grant match phrased for a player. A personal grant is reported as
+// One contribution phrased for a player. A personal grant is reported as
 // existing, never by the identity behind it - /why must not become
 // alt-linkage reconnaissance.
-static QString describeGrantMatch(CommandContext &f_context, const akashi::GrantMatch &f_match)
+static QString describeContribution(CommandContext &f_context, const akashi::Contribution &f_contribution)
 {
-    const akashi::Grant &l_grant = f_match.grant;
-    const auto l_audience_words = [&l_grant]() -> QString {
-        switch (l_grant.audience.kind) {
-        case akashi::AudienceKind::Everyone:
-            return QStringLiteral("everyone");
-        case akashi::AudienceKind::Participants:
-            return QStringLiteral("participants");
-        case akashi::AudienceKind::Role:
-            return QStringLiteral("role \"") + l_grant.audience.role_id + QStringLiteral("\"");
-        case akashi::AudienceKind::Person:
-            return QStringLiteral("a personal grant");
-        }
-        return {};
-    };
-    if (f_match.source_id == QStringLiteral("role_grants")) {
-        const bool l_super = f_context.server()->aclRolesHandler()->roleById(l_grant.audience.role_id).canPerform(akashi::permission::super);
-        return "the role \"" + l_grant.audience.role_id + "\"" + (l_super ? QStringLiteral(" (holds every permission)") : QString()) + " at server scope";
+    switch (f_contribution.kind) {
+    case akashi::Contribution::Kind::Role:
+    {
+        // The keyring an area's owners wear reads as what it is rather
+        // than as a role id nobody logs into.
+        if (f_contribution.id == QStringLiteral("@cm"))
+            return QStringLiteral("being CM in this area");
+        const bool l_super = f_context.server()->aclRolesHandler()->roleById(f_contribution.id).canPerform(akashi::permission::super);
+        return "the role \"" + f_contribution.id + "\"" + (l_super ? QStringLiteral(" (holds every permission)") : QString());
     }
-    if (f_match.source_id == QStringLiteral("simple_auth"))
-        return QStringLiteral("being logged in - simple auth grants everything");
-    if (f_match.source_id == QStringLiteral("area_owner"))
-        return QStringLiteral("being CM in this area");
-    if (f_match.source_id == QStringLiteral("place_offers")) {
-        const QString l_place = l_grant.scope == akashi::GrantScope::Floor ? QStringLiteral("this floor's offer") : QStringLiteral("this area's offer");
-        return l_place + " to " + l_audience_words() + " (" + l_grant.owner + ")";
+    case akashi::Contribution::Kind::Source:
+        return f_contribution.because;
+    case akashi::Contribution::Kind::Grant:
+        break;
     }
-    return "a server-scope grant to " + l_audience_words() + " (" + l_grant.owner + ")";
+    const akashi::Grant &l_grant = *f_contribution.grant;
+    QString l_audience;
+    switch (l_grant.audience.kind) {
+    case akashi::AudienceKind::Everyone:
+        l_audience = QStringLiteral("everyone");
+        break;
+    case akashi::AudienceKind::Participants:
+        l_audience = QStringLiteral("participants");
+        break;
+    case akashi::AudienceKind::Role:
+        l_audience = QStringLiteral("role \"") + l_grant.audience.role_id + QStringLiteral("\"");
+        break;
+    case akashi::AudienceKind::Person:
+        l_audience = QStringLiteral("a personal grant");
+        break;
+    }
+    QString l_place;
+    switch (l_grant.scope) {
+    case akashi::GrantScope::Server:
+        l_place = QStringLiteral("a server-scope grant");
+        break;
+    case akashi::GrantScope::Floor:
+        l_place = QStringLiteral("this floor's offer");
+        break;
+    case akashi::GrantScope::Area:
+        l_place = QStringLiteral("this area's offer");
+        break;
+    }
+    return l_place + " to " + l_audience + " (" + l_grant.owner + ")";
 }
 
 // The verdict line for one permission: the decisive fact first - a mask
@@ -390,8 +404,8 @@ static QString whyLine(CommandContext &f_context, akashi::ClientSession *f_subje
     if (!l_resolution.masked_by.isEmpty()) {
         return "[x] " + f_permission + " - blocked by the \"" + l_resolution.masked_by.join("\", \"") + "\" sanction; a sanction overrides every grant.";
     }
-    if (!l_resolution.matched.isEmpty()) {
-        return "[+] " + f_permission + " - granted by " + describeGrantMatch(f_context, l_resolution.matched.first()) + ".";
+    if (!l_resolution.contributions.isEmpty()) {
+        return "[+] " + f_permission + " - granted by " + describeContribution(f_context, l_resolution.contributions.first()) + ".";
     }
     QString l_line = "[x] " + f_permission + " - no role grant and nothing offers it here.";
     QStringList l_open;
@@ -413,15 +427,6 @@ static QString whyLine(CommandContext &f_context, akashi::ClientSession *f_subje
         l_line += ".";
     }
     return l_line;
-}
-
-// Renders one form's whole gate the way /help does.
-static QString gateWords(const QStringList &f_permissions, const QList<QStringList> &f_groups)
-{
-    QStringList l_gate = f_permissions;
-    for (const QStringList &l_group : f_groups)
-        l_gate << l_group.join("+");
-    return l_gate.isEmpty() ? QStringLiteral("nothing") : l_gate.join(", ");
 }
 
 void cmdWhy(CommandContext &f_context)
@@ -454,23 +459,19 @@ void cmdWhy(CommandContext &f_context)
         // escalation and immunity - the parts outside canPerform.
         const auto l_spec = l_registry->spec(l_query);
         QStringList l_permissions;
-        const auto l_collect = [&l_permissions](const QStringList &f_flat, const QList<QStringList> &f_groups) {
-            for (const QString &l_permission : f_flat)
+        const auto l_collect = [&l_permissions](const Gate &f_gate) {
+            for (const QString &l_permission : f_gate.permissions())
                 if (!l_permissions.contains(l_permission))
                     l_permissions.append(l_permission);
-            for (const QStringList &l_group : f_groups)
-                for (const QString &l_permission : l_group)
-                    if (!l_permissions.contains(l_permission))
-                        l_permissions.append(l_permission);
         };
         if (l_spec->variants.isEmpty()) {
-            l_lines << "/" + l_spec->name + " needs: " + gateWords(l_spec->permissions, l_spec->requirement_groups);
-            l_collect(l_spec->permissions, l_spec->requirement_groups);
+            l_lines << "/" + l_spec->name + " needs: " + l_spec->gate.describe();
+            l_collect(l_spec->gate);
         }
         else {
             for (const CommandVariant &l_variant : l_spec->variants) {
-                l_lines << l_variant.usage + " needs: " + gateWords(l_variant.permissions, l_variant.requirement_groups);
-                l_collect(l_variant.permissions, l_variant.requirement_groups);
+                l_lines << l_variant.usage + " needs: " + l_variant.gate.describe();
+                l_collect(l_variant.gate);
             }
         }
         if (!l_spec->escalates_to.isEmpty()) {
@@ -493,56 +494,17 @@ void cmdWhy(CommandContext &f_context)
     f_context.reply(l_lines.join("\n"));
 }
 
-// One stored grant as an operator row; behind see_ipids, so person keys
-// print in the clear like the rest of the moderation surface.
-static QString grantRow(const akashi::Grant &f_grant)
-{
-    QString l_audience;
-    switch (f_grant.audience.kind) {
-    case akashi::AudienceKind::Everyone:
-        l_audience = QStringLiteral("everyone");
-        break;
-    case akashi::AudienceKind::Participants:
-        l_audience = QStringLiteral("participants");
-        break;
-    case akashi::AudienceKind::Role:
-        l_audience = QStringLiteral("role ") + f_grant.audience.role_id;
-        break;
-    case akashi::AudienceKind::Person:
-        l_audience = QStringLiteral("person ") + f_grant.audience.person_key;
-        break;
-    }
-    return "  " + f_grant.permission + " -> " + l_audience + " [" + f_grant.owner + "]";
-}
-
 void cmdDumpGrants(CommandContext &f_context)
 {
+    // One store, so the dump is one sorted list; each row says which
+    // place it stands in. Behind see_ipids, so person keys print in the
+    // clear like the rest of the moderation surface.
     QStringList l_lines;
     l_lines << "== Stored grants ==";
-    l_lines << "Server:";
-    const QList<akashi::Grant> l_server_grants = f_context.server()->permissionRegistry()->serverGrants();
-    for (const akashi::Grant &l_grant : l_server_grants)
-        l_lines << grantRow(l_grant);
-    QSet<int> l_seen_floors;
-    const int l_area_count = f_context.server()->areaCount();
-    for (int i = 0; i < l_area_count; i++) {
-        akashi::Area *l_area = f_context.server()->areaById(i);
-        const int l_floor_id = l_area->floorId();
-        if (!l_seen_floors.contains(l_floor_id)) {
-            l_seen_floors.insert(l_floor_id);
-            if (const akashi::Floor *l_floor = f_context.server()->floorById(l_floor_id); l_floor && !l_floor->grants.isEmpty()) {
-                l_lines << "Floor " + l_floor->name + ":";
-                for (const akashi::Grant &l_grant : l_floor->grants)
-                    l_lines << grantRow(l_grant);
-            }
-        }
-        if (!l_area->grants().isEmpty()) {
-            l_lines << "Area " + l_area->name() + ":";
-            for (const akashi::Grant &l_grant : l_area->grants())
-                l_lines << grantRow(l_grant);
-        }
-    }
-    l_lines << "Live offers (ownership, lock state, simple auth) resolve per query and are not listed.";
+    const QList<akashi::Grant> l_grants = f_context.server()->permissionRegistry()->grants();
+    for (const akashi::Grant &l_grant : l_grants)
+        l_lines << "  " + akashi::describeGrant(l_grant, f_context.server()->placeName(l_grant));
+    l_lines << "Roles worn here and live offers (ownership, the area's lock) resolve per query and are not listed.";
     f_context.reply(l_lines.join("\n"));
 }
 
@@ -844,7 +806,7 @@ void cmdPermitSaving(CommandContext &f_context)
     // same resolution as any other permission.
     if (auto l_target = f_context.resolveTarget()) {
         f_context.server()->permissionRegistry()->addGrant(
-            {akashi::permission::save_testimony, akashi::Audience::person(l_target->ipid()), akashi::GrantScope::Server, QStringLiteral("command")});
+            {akashi::permission::save_testimony, akashi::Audience::person(l_target->ipid()), akashi::GrantScope::Server, -1, QStringLiteral("command")});
         f_context.reply("Testimony saving has been enabled for client " + QString::number(l_target->clientId()));
     }
 }
@@ -970,8 +932,8 @@ void registerModerationCommands(CommandRegistry &f_registry)
         l_why.usage = QStringLiteral("/why [id] <permission|command>");
         l_why.description = QStringLiteral("Explains why you (or another player) can or cannot do something here.");
         l_why.variants = {
-            {.id = QStringLiteral("self"), .min_args = 1, .max_args = 1, .permissions = {akashi::permission::info_why}, .usage = QStringLiteral("/why <permission|command>"), .description = QStringLiteral("Asks about yourself."), .handler = cmdWhy},
-            {.id = QStringLiteral("target"), .min_args = 2, .max_args = 2, .permissions = {akashi::permission::see_staff_presence}, .usage = QStringLiteral("/why <id> <permission|command>"), .description = QStringLiteral("Asks about another player."), .handler = cmdWhy},
+            {.id = QStringLiteral("self"), .min_args = 1, .max_args = 1, .gate = {akashi::permission::info_why}, .usage = QStringLiteral("/why <permission|command>"), .description = QStringLiteral("Asks about yourself."), .handler = cmdWhy},
+            {.id = QStringLiteral("target"), .min_args = 2, .max_args = 2, .gate = {akashi::permission::see_staff_presence}, .usage = QStringLiteral("/why <id> <permission|command>"), .description = QStringLiteral("Asks about another player."), .handler = cmdWhy},
         };
         f_registry.registerCommand(l_why, QStringLiteral("core"));
     }
