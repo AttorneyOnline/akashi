@@ -92,9 +92,16 @@ void NetworkSocket::handleMessage(QString f_data)
 
 void NetworkSocket::write(AOPacket *f_packet)
 {
-    if (m_client_socket) {
-        m_client_socket->sendTextMessage(f_packet->toString());
-    } else {
-        qWarning() << "NetworkSocket::write(): attempt to write to invalid socket";
+    if (!m_client_socket) {
+        qWarning() << "NetworkSocket::write(): attempt to write to null socket";
+        return;
     }
+
+    if (m_client_socket->state() != QAbstractSocket::ConnectedState) {
+        qWarning() << "NetworkSocket::write(): attempt to write on non-connected socket, state="
+                   << m_client_socket->state();
+        return;
+    }
+
+    m_client_socket->sendTextMessage(f_packet->toString());
 }
