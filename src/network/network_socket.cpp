@@ -102,15 +102,15 @@ bool NetworkSocket::isAlive() const
     if (m_disconnecting) {
         return false;
     }
-    
+
     if (m_client_socket.isNull()) {
         return false;
     }
-    
+
     if (m_client_socket->state() != QAbstractSocket::ConnectedState) {
         return false;
     }
-    
+
     return true;
 }
 

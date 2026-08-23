@@ -56,18 +56,18 @@ void PlayerStateObserver::sendToClientList(const AOPacket &packet)
     // Create a copy of the list to safely iterate without issues from concurrent modifications
     // Also guards against clients that are being destroyed asynchronously
     QList<AOClient *> l_safe_list = m_client_list;
-    
+
     for (AOClient *client : l_safe_list) {
         // Verify client is still in the list (not being unregistered concurrently)
         if (!m_client_list.contains(client)) {
             continue;
         }
-        
+
         // Verify socket is still valid (QPointer becomes null when object is deleted)
         if (!client->m_socket) {
             continue;
         }
-        
+
         client->sendPacket(&const_cast<AOPacket &>(packet));
     }
 }

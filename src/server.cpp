@@ -320,7 +320,7 @@ void Server::broadcast(AOPacket *packet, TARGET_TYPE target)
         if (!l_client || !l_client->m_socket) {
             continue;
         }
-        
+
         switch (target) {
         case TARGET_TYPE::MODCHAT:
             if (l_client->checkPermission(ACLRole::MODCHAT)) {
@@ -346,7 +346,7 @@ void Server::broadcast(AOPacket *packet, AOPacket *other_packet, TARGET_TYPE tar
             if (!l_client || !l_client->m_socket) {
                 continue;
             }
-            
+
             if (l_client->m_global_enabled) {
                 if (l_client->isAuthenticated()) {
                     l_client->sendPacket(other_packet);
