@@ -206,6 +206,7 @@ void Server::clientConnected()
             decreasePlayerCount();
         }
         m_clients.removeAll(client);
+        client->deleteLater();
         l_socket->deleteLater();
     });
     connect(l_socket, &NetworkSocket::handlePacket, client, &AOClient::handlePacket);
