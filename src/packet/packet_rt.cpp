@@ -26,7 +26,7 @@ void PacketRT::handlePacket(AreaData *area, AOClient &client) const
         return;
     }
 
-    if (client.m_is_spectator) {
+    if (!client.m_joined || client.m_is_spectator) {
         client.sendServerMessage("Spectators are blocked from using the judge controls.");
         return;
     }
