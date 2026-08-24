@@ -1,4 +1,5 @@
 #include "packet/packet_mc.h"
+#include "config_manager.h"
 #include "music_manager.h"
 #include "packet/packet_factory.h"
 #include "server.h"
@@ -21,6 +22,11 @@ PacketInfo PacketMC::getPacketInfo() const
 
 void PacketMC::handlePacket(AreaData *area, AOClient &client) const
 {
+    if (!client.getServer()->joinCooldownAllows(client.m_ipid)) {
+        client.sendServerMessage(ConfigManager::joinCooldownMessage());
+        return;
+    }
+
     // Due to historical reasons, this
     // packet has two functions:
     // Change area, and set music.

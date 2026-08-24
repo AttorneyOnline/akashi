@@ -27,6 +27,11 @@ void PacketMS::handlePacket(AreaData *area, AOClient &client) const
         return;
     }
 
+    if (!client.getServer()->joinCooldownAllows(client.m_ipid)) {
+        client.sendServerMessage(ConfigManager::joinCooldownMessage());
+        return;
+    }
+
     if (!area->isMessageAllowed() || !client.getServer()->isMessageAllowed()) {
         return;
     }

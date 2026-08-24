@@ -1,4 +1,5 @@
 #include "packet/packet_rt.h"
+#include "config_manager.h"
 #include "packet/packet_factory.h"
 #include "server.h"
 
@@ -20,6 +21,11 @@ PacketInfo PacketRT::getPacketInfo() const
 
 void PacketRT::handlePacket(AreaData *area, AOClient &client) const
 {
+    if (!client.getServer()->joinCooldownAllows(client.m_ipid)) {
+        client.sendServerMessage(ConfigManager::joinCooldownMessage());
+        return;
+    }
+
     if (client.m_is_spectator) {
         client.sendServerMessage("Spectators are blocked from using the judge controls.");
         return;
