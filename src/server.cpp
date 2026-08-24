@@ -56,6 +56,28 @@ Server::Server(int p_ws_port, QObject *parent) :
     AOPacket::registerPackets();
 }
 
+bool Server::joinCooldownAllows(const QString &f_ipid) const
+{
+    if (!m_join_cooldown_enabled || ConfigManager::joinCooldownSeconds() == 0)
+        return true;
+    return QDateTime::currentSecsSinceEpoch() - m_join_times.value(f_ipid, 0) >= ConfigManager::joinCooldownSeconds();
+}
+
+void Server::recordJoin(const QString &f_ipid)
+{
+    m_join_times.insert(f_ipid, QDateTime::currentSecsSinceEpoch());
+}
+
+void Server::toggleJoinCooldown()
+{
+    m_join_cooldown_enabled = !m_join_cooldown_enabled;
+}
+
+bool Server::joinCooldownEnabled() const
+{
+    return m_join_cooldown_enabled;
+}
+
 void Server::start()
 {
     QString bind_ip = ConfigManager::bindIP();
@@ -157,6 +179,7 @@ void Server::clientConnected()
     int multiclient_count = 1;
     bool is_at_multiclient_limit = false;
     client->calculateIpid();
+    recordJoin(client->getIpid());
     auto ban = db_manager->isIPBanned(client->getIpid());
     bool is_banned = ban.first;
     for (AOClient *joined_client : qAsConst(m_clients)) {

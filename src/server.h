@@ -22,6 +22,7 @@
 #include <QDebug>
 #include <QFile>
 #include <QMap>
+#include <QHash>
 #include <QSettings>
 #include <QStack>
 #include <QString>
@@ -169,6 +170,10 @@ class Server : public QObject
      * @param area The area in which to update the list of characters.
      */
     void updateCharsTaken(AreaData *area);
+    bool joinCooldownAllows(const QString &f_ipid) const;
+    void recordJoin(const QString &f_ipid);
+    void toggleJoinCooldown();
+    bool joinCooldownEnabled() const;
 
     /**
      * @brief Sends a packet to all clients in a given area.
@@ -459,6 +464,8 @@ class Server : public QObject
      * @brief Collection of all clients with their userID as key.
      */
     QHash<int, AOClient *> m_clients_ids;
+    QHash<QString, qint64> m_join_times;
+    bool m_join_cooldown_enabled = true;
     PlayerStateObserver m_player_state_observer;
 
     /**
