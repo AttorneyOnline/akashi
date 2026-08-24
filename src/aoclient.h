@@ -1229,6 +1229,15 @@ class AOClient : public QObject
     void cmdUnBlockWtce(int argc, QStringList argv);
 
     /**
+     * @brief Toggles the join cooldown
+     *
+     * @details No arguments.
+     *
+     * @iscommand
+     */
+    void cmdToggleJoinCooldown(int argc, QStringList argv);
+
+    /**
      * @brief Lists the last five bans made on the server.
      *
      * @details No arguments.
