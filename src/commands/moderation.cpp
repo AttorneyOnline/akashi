@@ -555,6 +555,14 @@ void AOClient::cmdReload(int argc, QStringList argv)
     sendServerMessage("Reloaded configurations");
 }
 
+void AOClient::cmdToggleJoinCooldown(int argc, QStringList argv)
+{
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+    server->toggleJoinCooldown();
+    sendServerMessage(QString("Join cooldown is now %1.").arg(server->joinCooldownEnabled() ? "enabled" : "disabled"));
+}
+
 void AOClient::cmdForceImmediate(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
