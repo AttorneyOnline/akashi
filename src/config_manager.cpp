@@ -369,6 +369,24 @@ int ConfigManager::serverPort()
     return m_settings->value("Options/port", 27016).toInt();
 }
 
+int ConfigManager::joinCooldownSeconds()
+{
+    bool ok;
+    int value = m_settings->value("Options/join_cooldown_seconds", 60).toInt(&ok);
+    if (!ok || value < 0) {
+        qWarning("join_cooldown_seconds is not a non-negative integer!");
+        return 60;
+    }
+    return value;
+}
+
+QString ConfigManager::joinCooldownMessage()
+{
+    return m_settings->value("Options/join_cooldown_message",
+                             "Please take a minute to familiarize yourself with the rules.")
+        .toString();
+}
+
 int ConfigManager::securePort()
 {
     return m_settings->value("Options/secure_port", -1).toInt();
