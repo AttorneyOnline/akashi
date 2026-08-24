@@ -177,6 +177,9 @@ class ConfigManager
      */
     static int multiClientLimit();
 
+    static int joinCooldownSeconds();
+    static QString joinCooldownMessage();
+
     /**
      * @brief Returns the maximum number of characters a message can contain..
      */
