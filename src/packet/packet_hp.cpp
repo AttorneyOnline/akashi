@@ -1,4 +1,5 @@
 #include "packet/packet_hp.h"
+#include "config_manager.h"
 #include "akashiutils.h"
 #include "packet/packet_factory.h"
 #include "server.h"
@@ -21,6 +22,11 @@ PacketInfo PacketHP::getPacketInfo() const
 
 void PacketHP::handlePacket(AreaData *area, AOClient &client) const
 {
+    if (!client.getServer()->joinCooldownAllows(client.m_ipid)) {
+        client.sendServerMessage(ConfigManager::joinCooldownMessage());
+        return;
+    }
+
     if (client.m_is_spectator) {
         client.sendServerMessage("Spectators are blocked from using the judge controls.");
         return;
