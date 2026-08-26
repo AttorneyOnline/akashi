@@ -21,7 +21,7 @@ PacketInfo PacketRT::getPacketInfo() const
 
 void PacketRT::handlePacket(AreaData *area, AOClient &client) const
 {
-    if (!client.getServer()->joinCooldownAllows(client.m_ipid)) {
+    if (!client.getServer()->joinCooldownAllows(client.m_ipid) && !client.checkPermission(ACLRole::BYPASS_LOCKS)) {
         client.sendServerMessage(ConfigManager::joinCooldownMessage());
         return;
     }

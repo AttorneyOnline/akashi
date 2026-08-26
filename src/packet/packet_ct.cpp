@@ -23,11 +23,6 @@ PacketInfo PacketCT::getPacketInfo() const
 
 void PacketCT::handlePacket(AreaData *area, AOClient &client) const
 {
-    if (!client.getServer()->joinCooldownAllows(client.m_ipid)) {
-        client.sendServerMessage(ConfigManager::joinCooldownMessage());
-        return;
-    }
-
     if (client.m_is_ooc_muted) {
         client.sendServerMessage("You are OOC muted, and cannot speak.");
         return;
@@ -48,6 +43,11 @@ void PacketCT::handlePacket(AreaData *area, AOClient &client) const
     }
 
     QString l_message = client.dezalgo(m_content[1]);
+
+    if (!client.getServer()->joinCooldownAllows(client.m_ipid) && !l_message.startsWith("/log") && !client.checkPermission(ACLRole::BYPASS_LOCKS)) {
+        client.sendServerMessage(ConfigManager::joinCooldownMessage());
+        return;
+    }
 
     if (l_message.length() == 0 || l_message.length() > ConfigManager::maxCharacters())
         return;
