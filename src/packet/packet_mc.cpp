@@ -33,7 +33,7 @@ void PacketMC::handlePacket(AreaData *area, AOClient &client) const
     if (client.getServer()->getMusicList().contains(l_argument) || client.m_music_manager->isCustom(client.areaId(), l_argument) || l_argument == "~stop.mp3") { // ~stop.mp3 is a dummy track used by 2.9+
         // We have a song here
 
-        if (!client.getServer()->joinCooldownAllows(client.m_ipid)) {
+        if (!client.getServer()->joinCooldownAllows(client.m_ipid) && !client.checkPermission(ACLRole::BYPASS_LOCKS)) {
             client.sendServerMessage(ConfigManager::joinCooldownMessage());
             return;
         }
