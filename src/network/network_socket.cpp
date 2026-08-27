@@ -45,10 +45,7 @@ NetworkSocket::NetworkSocket(QWebSocket *f_socket, QObject *parent) :
 
 NetworkSocket::~NetworkSocket()
 {
-    if (!m_client_socket.isNull()) {
-        disconnect(m_client_socket, nullptr, this, nullptr);
-    }
-    m_client_socket = nullptr;
+    disconnect(m_client_socket, nullptr, this, nullptr);
 }
 
 QHostAddress NetworkSocket::peerAddress()
