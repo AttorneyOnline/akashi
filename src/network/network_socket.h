@@ -20,6 +20,7 @@
 
 #include <QHostAddress>
 #include <QObject>
+#include <QPointer>
 #include <QWebSocket>
 
 #include "network/aopacket.h"
@@ -64,6 +65,12 @@ class NetworkSocket : public QObject
      */
     void write(AOPacket *f_packet);
 
+    /**
+     * @brief Check if the socket is still alive and valid.
+     * @return true if socket is valid and connected, false otherwise.
+     */
+    bool isAlive() const;
+
   signals:
     /**
      * @brief handlePacket
@@ -85,7 +92,8 @@ class NetworkSocket : public QObject
     void handleMessage(QString f_data);
 
   private:
-    QWebSocket *m_client_socket;
+    QPointer<QWebSocket> m_client_socket;
+    bool m_disconnecting = false;
 
     /**
      * @brief Remote IP of the client.

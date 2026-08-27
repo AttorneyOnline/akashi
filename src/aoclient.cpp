@@ -250,6 +250,10 @@ void AOClient::changeArea(int new_area)
         sendServerMessage("You are already in area " + server->getAreaName(areaId()));
         return;
     }
+    if (!hasJoined()) {
+        sendServerMessage("You must join the server before changing areas.");
+        return;
+    }
     if (server->getAreaById(new_area)->lockStatus() == AreaData::LockStatus::LOCKED && !server->getAreaById(new_area)->invited().contains(clientId()) && !checkPermission(ACLRole::BYPASS_LOCKS)) {
         sendServerMessage("Area " + server->getAreaName(new_area) + " is locked.");
         return;

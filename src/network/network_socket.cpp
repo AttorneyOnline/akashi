@@ -44,7 +44,10 @@ NetworkSocket::NetworkSocket(QWebSocket *f_socket, QObject *parent) :
 
 NetworkSocket::~NetworkSocket()
 {
-    m_client_socket->deleteLater();
+    if (!m_client_socket.isNull()) {
+        disconnect(m_client_socket, nullptr, this, nullptr);
+    }
+    m_client_socket = nullptr;
 }
 
 QHostAddress NetworkSocket::peerAddress()
@@ -54,15 +57,25 @@ QHostAddress NetworkSocket::peerAddress()
 
 void NetworkSocket::close(QWebSocketProtocol::CloseCode f_code)
 {
-    m_client_socket->close(f_code);
+    m_disconnecting = true;
+    if (!m_client_socket.isNull()) {
+        m_client_socket->close(f_code);
+    }
 }
 
 void NetworkSocket::handleMessage(QString f_data)
 {
+    // Ignore messages if we're already disconnecting
+    if (m_disconnecting) {
+        return;
+    }
+
     QString l_data = f_data;
 
     if (l_data.toUtf8().size() > 30720) {
-        m_client_socket->close(QWebSocketProtocol::CloseCodeTooMuchData);
+        if (!m_client_socket.isNull())
+            m_client_socket->close(QWebSocketProtocol::CloseCodeTooMuchData);
+        return;
     }
 
     QStringList l_all_packets = l_data.split("%");
@@ -84,7 +97,28 @@ void NetworkSocket::handleMessage(QString f_data)
     }
 }
 
+bool NetworkSocket::isAlive() const
+{
+    if (m_disconnecting) {
+        return false;
+    }
+
+    if (m_client_socket.isNull()) {
+        return false;
+    }
+
+    if (m_client_socket->state() != QAbstractSocket::ConnectedState) {
+        return false;
+    }
+
+    return true;
+}
+
 void NetworkSocket::write(AOPacket *f_packet)
 {
+    if (!isAlive()) {
+        return;
+    }
+
     m_client_socket->sendTextMessage(f_packet->toString());
 }
