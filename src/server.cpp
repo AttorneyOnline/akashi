@@ -65,7 +65,7 @@ bool Server::joinCooldownAllows(const QString &f_ipid) const
 
 void Server::recordJoin(const QString &f_ipid)
 {
-    m_join_times.insert(f_ipid, QDateTime::currentSecsSinceEpoch());
+    m_join_times.tryInsert(f_ipid, QDateTime::currentSecsSinceEpoch());
 }
 
 void Server::toggleJoinCooldown()
