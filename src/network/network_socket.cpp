@@ -58,9 +58,7 @@ QHostAddress NetworkSocket::peerAddress()
 void NetworkSocket::close(QWebSocketProtocol::CloseCode f_code)
 {
     m_disconnecting = true;
-    if (!m_client_socket.isNull()) {
-        m_client_socket->close(f_code);
-    }
+    m_client_socket->close(f_code);
 }
 
 void NetworkSocket::handleMessage(QString f_data)
@@ -73,8 +71,7 @@ void NetworkSocket::handleMessage(QString f_data)
     QString l_data = f_data;
 
     if (l_data.toUtf8().size() > 30720) {
-        if (!m_client_socket.isNull())
-            m_client_socket->close(QWebSocketProtocol::CloseCodeTooMuchData);
+        m_client_socket->close(QWebSocketProtocol::CloseCodeTooMuchData);
         return;
     }
 
@@ -100,10 +97,6 @@ void NetworkSocket::handleMessage(QString f_data)
 bool NetworkSocket::isAlive() const
 {
     if (m_disconnecting) {
-        return false;
-    }
-
-    if (m_client_socket.isNull()) {
         return false;
     }
 
