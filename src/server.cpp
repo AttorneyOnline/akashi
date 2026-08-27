@@ -138,7 +138,7 @@ QVector<AOClient *> Server::getClients()
 void Server::clientConnected()
 {
     QWebSocket *socket = server->nextPendingConnection();
-    NetworkSocket *l_socket = new NetworkSocket(socket, socket);
+    NetworkSocket *l_socket = new NetworkSocket(socket, this);
 
     // Too many players. Reject connection!
     // This also enforces the maximum playercount.
@@ -151,7 +151,7 @@ void Server::clientConnected()
     }
 
     int user_id = m_available_ids.pop();
-    AOClient *client = new AOClient(this, l_socket, l_socket, user_id, music_manager);
+    AOClient *client = new AOClient(this, l_socket, this, user_id, music_manager);
     m_clients_ids.insert(user_id, client);
 
     int multiclient_count = 1;
@@ -206,6 +206,7 @@ void Server::clientConnected()
             decreasePlayerCount();
         }
         m_clients.removeAll(client);
+        client->deleteLater();
         l_socket->deleteLater();
     });
     connect(l_socket, &NetworkSocket::handlePacket, client, &AOClient::handlePacket);
@@ -297,20 +298,29 @@ void Server::broadcast(AOPacket *packet, int area_index)
 {
     QVector<int> l_client_ids = m_areas.value(area_index)->joinedIDs();
     for (const int l_client_id : qAsConst(l_client_ids)) {
-        getClientByID(l_client_id)->sendPacket(packet);
+        AOClient *l_client = getClientByID(l_client_id);
+        if (l_client && l_client->m_socket) {
+            l_client->sendPacket(packet);
+        }
     }
 }
 
 void Server::broadcast(AOPacket *packet)
 {
     for (AOClient *l_client : qAsConst(m_clients)) {
-        l_client->sendPacket(packet);
+        if (l_client && l_client->m_socket) {
+            l_client->sendPacket(packet);
+        }
     }
 }
 
 void Server::broadcast(AOPacket *packet, TARGET_TYPE target)
 {
     for (AOClient *l_client : qAsConst(m_clients)) {
+        if (!l_client || !l_client->m_socket) {
+            continue;
+        }
+
         switch (target) {
         case TARGET_TYPE::MODCHAT:
             if (l_client->checkPermission(ACLRole::MODCHAT)) {
@@ -333,6 +343,10 @@ void Server::broadcast(AOPacket *packet, AOPacket *other_packet, TARGET_TYPE tar
     switch (target) {
     case TARGET_TYPE::AUTHENTICATED:
         for (AOClient *l_client : qAsConst(m_clients)) {
+            if (!l_client || !l_client->m_socket) {
+                continue;
+            }
+
             if (l_client->m_global_enabled) {
                 if (l_client->isAuthenticated()) {
                     l_client->sendPacket(other_packet);
@@ -351,7 +365,7 @@ void Server::broadcast(AOPacket *packet, AOPacket *other_packet, TARGET_TYPE tar
 void Server::unicast(AOPacket *f_packet, int f_client_id)
 {
     AOClient *l_client = getClientByID(f_client_id);
-    if (l_client != nullptr) { // This should never happen, but safety first.
+    if (l_client != nullptr && l_client->m_socket) { // Verify socket is still valid
         l_client->sendPacket(f_packet);
         return;
     }
