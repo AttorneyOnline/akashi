@@ -138,7 +138,7 @@ QVector<AOClient *> Server::getClients()
 void Server::clientConnected()
 {
     QWebSocket *socket = server->nextPendingConnection();
-    NetworkSocket *l_socket = new NetworkSocket(socket, socket);
+    NetworkSocket *l_socket = new NetworkSocket(socket, this);
 
     // Too many players. Reject connection!
     // This also enforces the maximum playercount.

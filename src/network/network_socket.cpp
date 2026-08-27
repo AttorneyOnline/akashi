@@ -22,6 +22,7 @@ NetworkSocket::NetworkSocket(QWebSocket *f_socket, QObject *parent) :
     QObject(parent)
 {
     m_client_socket = f_socket;
+    m_client_socket->setParent(this);
     connect(m_client_socket, &QWebSocket::textMessageReceived, this, &NetworkSocket::handleMessage);
     connect(m_client_socket, &QWebSocket::disconnected, this, &NetworkSocket::clientDisconnected);
 
