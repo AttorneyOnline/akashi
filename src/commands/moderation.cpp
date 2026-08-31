@@ -560,6 +560,10 @@ void AOClient::cmdToggleJoinCooldown(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
     server->toggleJoinCooldown();
+    const QVector<AOClient *> l_clients = server->getClients();
+    for (AOClient *l_client : l_clients) {
+        server->joinCooldownAllows(l_client->m_ipid);
+    }
     sendServerMessage(QString("Join cooldown is now %1.").arg(server->joinCooldownEnabled() ? "enabled" : "disabled"));
 }
 
