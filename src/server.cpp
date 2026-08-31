@@ -105,6 +105,13 @@ void Server::forceJoinCooldownAllows(const QString &f_ipid) const
     if (file.open(QIODevice::ReadWrite | QIODevice::Text)) {
         QTextStream in(&file);
         QString line;
+        while (!in.atEnd()) {
+            line = in.readLine();
+            if (line.trimmed() == f_ipid) {
+                file.close();
+                return;
+            }
+        }
         file.seek(file.size());
         QTextStream out(&file);
         out << f_ipid << "\n";
