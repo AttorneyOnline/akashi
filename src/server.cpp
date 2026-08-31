@@ -60,7 +60,26 @@ bool Server::joinCooldownAllows(const QString &f_ipid) const
 {
     if (!m_join_cooldown_enabled || ConfigManager::joinCooldownSeconds() == 0)
         return true;
-    return QDateTime::currentSecsSinceEpoch() - m_join_times.value(f_ipid, 0) >= ConfigManager::joinCooldownSeconds();
+
+    QFile l_file("config/joincooldownallows.txt");
+    if (l_file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QTextStream in(&l_file);
+        QString line;
+        while (!in.atEnd()) {
+            line = in.readLine();
+            if (line.trimmed() == f_ipid) {
+                l_file.close();
+                return true;
+            }
+        }
+        l_file.close();
+    }
+
+    if (QDateTime::currentSecsSinceEpoch() - m_join_times.value(f_ipid, 0) >= ConfigManager::joinCooldownSeconds()) {
+        forceJoinCooldownAllows(f_ipid);
+    }
+
+    return false;
 }
 
 void Server::recordJoin(const QString &f_ipid)
@@ -78,6 +97,19 @@ void Server::toggleJoinCooldown()
 bool Server::joinCooldownEnabled() const
 {
     return m_join_cooldown_enabled;
+}
+
+void Server::forceJoinCooldownAllows(const QString &f_ipid) const
+{
+    QFile file("config/joincooldownallows.txt");
+    if (file.open(QIODevice::ReadWrite | QIODevice::Text)) {
+        QTextStream in(&file);
+        QString line;
+        file.seek(file.size());
+        QTextStream out(&file);
+        out << f_ipid << "\n";
+        file.close();
+    }
 }
 
 void Server::start()

@@ -173,6 +173,7 @@ class Server : public QObject
     bool joinCooldownAllows(const QString &f_ipid) const;
     void recordJoin(const QString &f_ipid);
     void toggleJoinCooldown();
+    void forceJoinCooldownAllows(const QString &f_ipid) const;
     bool joinCooldownEnabled() const;
 
     /**
