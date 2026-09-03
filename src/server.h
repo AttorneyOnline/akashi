@@ -175,6 +175,8 @@ class Server : public QObject
     void toggleJoinCooldown();
     void forceJoinCooldownAllows(const QString &f_ipid) const;
     bool joinCooldownEnabled() const;
+    bool modcallCooldownAllows(const QString &f_ipid) const;
+    void recordModcall(const QString &f_ipid);
 
     /**
      * @brief Sends a packet to all clients in a given area.
@@ -467,6 +469,7 @@ class Server : public QObject
     QHash<int, AOClient *> m_clients_ids;
     QHash<QString, qint64> m_join_times;
     bool m_join_cooldown_enabled = true;
+    QHash<QString, qint64> m_modcall_times;
     PlayerStateObserver m_player_state_observer;
 
     /**

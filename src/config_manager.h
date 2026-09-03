@@ -179,6 +179,7 @@ class ConfigManager
 
     static int joinCooldownSeconds();
     static QString joinCooldownMessage();
+    static int modcallCooldownSeconds();
 
     /**
      * @brief Returns the maximum number of characters a message can contain..

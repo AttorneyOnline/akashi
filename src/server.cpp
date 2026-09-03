@@ -119,6 +119,19 @@ void Server::forceJoinCooldownAllows(const QString &f_ipid) const
     }
 }
 
+bool Server::modcallCooldownAllows(const QString &f_ipid) const
+{
+    qint64 last_modcall_time = m_modcall_times.value(f_ipid, 0);
+    qint64 current_time = QDateTime::currentSecsSinceEpoch();
+
+    return (current_time - last_modcall_time) >= ConfigManager::modcallCooldownSeconds();
+}
+
+void Server::recordModcall(const QString &f_ipid)
+{
+    m_modcall_times.insert(f_ipid, QDateTime::currentSecsSinceEpoch());
+}
+
 void Server::start()
 {
     QString bind_ip = ConfigManager::bindIP();

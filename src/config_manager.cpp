@@ -380,6 +380,17 @@ int ConfigManager::joinCooldownSeconds()
     return value;
 }
 
+int ConfigManager::modcallCooldownSeconds()
+{
+    bool ok;
+    int value = m_settings->value("Options/modcall_cooldown_seconds", 1800).toInt(&ok);
+    if (!ok || value < 0) {
+        qWarning("modcall_cooldown_seconds is not a non-negative integer!");
+        return 1800;
+    }
+    return value;
+}
+
 QString ConfigManager::joinCooldownMessage()
 {
     return m_settings->value("Options/join_cooldown_message",

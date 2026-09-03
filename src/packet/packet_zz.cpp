@@ -21,6 +21,11 @@ PacketInfo PacketZZ::getPacketInfo() const
 
 void PacketZZ::handlePacket(AreaData *area, AOClient &client) const
 {
+    if (!client.getServer()->modcallCooldownAllows(client.m_ipid)) {
+        client.sendServerMessage("You have already called a moderator! Please wait for them to arrive or privately message you. "
+                                 "You can send a modcall once every " + QString::number(ConfigManager::modcallCooldownSeconds() / 60) + " minutes.");
+        return;
+    }
     QString l_name = client.name();
     if (client.name().isEmpty())
         l_name = client.character();
@@ -29,7 +34,7 @@ void PacketZZ::handlePacket(AreaData *area, AOClient &client) const
 
     QString l_id = QString::number(client.clientId());
 
-    QString l_modcallNotice = "!!!MODCALL!!!\nArea: " + l_areaName + "\nCaller: " + "[" + l_id + "]" + l_name + "\n";
+    QString l_modcallNotice = "!!!MODCALL!!!\nArea: " + l_areaName + "\nCaller: " + "{" + client.m_ipid + "} " + "[" + l_id + "]" + l_name + "\n";
 
     int target_id = m_content.at(1).toInt();
     if (target_id != -1) {
@@ -64,4 +69,6 @@ void PacketZZ::handlePacket(AreaData *area, AOClient &client) const
 
         emit client.getServer()->modcallWebhookRequest(l_name, l_areaName, l_id, webhook_reason, client.getServer()->getAreaBuffer(l_areaName));
     }
+
+    client.getServer()->recordModcall(client.m_ipid);
 }
