@@ -21,7 +21,6 @@ void PlayerStateObserver::registerClient(AOClient *client)
 
     // Notify all existing clients about the new player joining (including the new client itself now in the list)
     PacketPR packet(client->clientId(), PacketPR::ADD);
-    sendToClientList(packet);
 
     // Send all existing client information to the new client
     QList<AOPacket *> packets;
