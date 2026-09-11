@@ -566,8 +566,15 @@ void AOClient::cmdA(int argc, QStringList argv)
 
     bool ok;
     int l_area_id = argv[0].toInt(&ok);
+    int l_all_areas = server->getAreaCount() - 1;
+
     if (!ok) {
         sendServerMessage("This does not look like a valid AreaID.");
+        return;
+    }
+
+    if (!l_area_id || l_area_id < 0 || l_area_id > l_all_areas) {
+        sendServerMessage("That is not an existing area.");
         return;
     }
 
