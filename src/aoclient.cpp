@@ -548,6 +548,10 @@ QString AOClient::name() const
 void AOClient::setName(const QString &f_name)
 {
     if (f_name != m_ooc_name) {
+        if (f_name.length() > ConfigManager::maxOOCNameLength()) {
+            sendServerMessage("An OOC name must be smaller than " + QString::number(ConfigManager::maxOOCNameLength()) + " characters.");
+            return;
+        }
         m_ooc_name = f_name;
         Q_EMIT nameChanged(m_ooc_name);
     }

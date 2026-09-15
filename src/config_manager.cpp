@@ -398,6 +398,17 @@ QString ConfigManager::joinCooldownMessage()
         .toString();
 }
 
+int ConfigManager::maxOOCNameLength()
+{
+    bool ok;
+    int value = m_settings->value("Options/ooc_name_length", 20).toInt(&ok);
+    if (!ok || value < 0) {
+        qWarning("ooc_name_max is not a non-negative integer!");
+        return 20;
+    }
+    return value;
+}
+
 int ConfigManager::securePort()
 {
     return m_settings->value("Options/secure_port", -1).toInt();
