@@ -23,7 +23,7 @@ void PlayerStateObserver::registerClient(AOClient *client)
     QList<AOPacket *> packets;
     for (AOClient *i_client : qAsConst(m_client_list)) {
         packets.append(new PacketPR(i_client->clientId(), PacketPR::ADD));
-        packets.append(new PacketPU(i_client->clientId(), PacketPU::NAME, i_client->name()));
+        //packets.append(new PacketPU(i_client->clientId(), PacketPU::NAME, i_client->name()));
         packets.append(new PacketPU(i_client->clientId(), PacketPU::CHARACTER, i_client->character()));
         packets.append(new PacketPU(i_client->clientId(), PacketPU::CHARACTER_NAME, i_client->characterName()));
         packets.append(new PacketPU(i_client->clientId(), PacketPU::AREA_ID, i_client->areaId()));
