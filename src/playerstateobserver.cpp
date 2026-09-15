@@ -56,7 +56,7 @@ void PlayerStateObserver::sendToClientList(const AOPacket &packet)
 
 void PlayerStateObserver::notifyNameChanged(const QString &name)
 {
-    sendToClientList(PacketPU(qobject_cast<AOClient *>(sender())->clientId(), PacketPU::NAME, name));
+    //sendToClientList(PacketPU(qobject_cast<AOClient *>(sender())->clientId(), PacketPU::NAME, name));
 }
 
 void PlayerStateObserver::notifyCharacterChanged(const QString &character)
