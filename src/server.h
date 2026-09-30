@@ -122,7 +122,7 @@ class Server : public QObject
      *
      * @return A list of clients whose HWID match. List may be empty.
      */
-    QList<AOClient *> getClientsByHwid(QString f_hwid);
+    QList<AOClient *> getClientsByHwid(QString f_hwid) const;
 
     /**
      * @brief Gets a pointer to a client by user ID.
@@ -176,6 +176,12 @@ class Server : public QObject
     void forceJoinCooldownAllows(const QString &f_ipid) const;
     bool joinCooldownEnabled() const;
     void setJoinCooldownSeconds(int f_cooldown);
+    bool joinLockdownAllows(const QString &f_hwid) const;
+    void recordLockdownBypass(const QString &f_hwid);
+    void forceJoinLockdownAllows(const QString &f_hwid) const;
+    void toggleJoinLockdown();
+    bool joinLockdownEnabled() const;
+    bool joinLockdownDuplicate(const QString &f_hwid, const QString &f_ipid) const;
     bool modcallCooldownAllows(const QString &f_ipid) const;
     void recordModcall(const QString &f_ipid);
 
@@ -471,6 +477,7 @@ class Server : public QObject
     QHash<QString, qint64> m_join_times;
     bool m_join_cooldown_enabled = true;
     int m_join_cooldown_seconds = 120;
+    bool m_join_lockdown_enabled = false;
     QHash<QString, qint64> m_modcall_times;
     PlayerStateObserver m_player_state_observer;
 

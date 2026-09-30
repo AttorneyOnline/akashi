@@ -104,6 +104,7 @@ const QMap<QString, AOClient::CommandInfo> AOClient::COMMANDS{
     {"reload", {{ACLRole::SUPER}, 0, &AOClient::cmdReload}},
     {"toggle_join_cooldown", {{ACLRole::SUPER}, 0, &AOClient::cmdToggleJoinCooldown}},
     {"join_cooldown_time", {{ACLRole::SUPER}, 0, &AOClient::cmdJoinCooldownTime}},
+    {"toggle_join_lockdown", {{ACLRole::SUPER}, 0, &AOClient::cmdToggleJoinLockdown}},
     {"disemvowel", {{ACLRole::MUTE}, 1, &AOClient::cmdDisemvowel}},
     {"undisemvowel", {{ACLRole::MUTE}, 1, &AOClient::cmdUnDisemvowel}},
     {"shake", {{ACLRole::MUTE}, 1, &AOClient::cmdShake}},

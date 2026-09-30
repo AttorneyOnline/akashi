@@ -398,6 +398,20 @@ QString ConfigManager::joinCooldownMessage()
         .toString();
 }
 
+QString ConfigManager::joinLockdownMessage()
+{
+    return m_settings->value("Options/join_lockdown_message",
+                             "The server is currently in lockdown mode. Please wait until the lockdown is removed.")
+        .toString();
+}
+
+QString ConfigManager::joinLockdownConflictMessage()
+{
+    return m_settings->value("Options/join_lockdown_conflict_message",
+                             "A user already exists with this lockdown ID, modcall or wait until lockdown is removed.")
+        .toString();
+}
+
 int ConfigManager::maxOOCNameLength()
 {
     bool ok;

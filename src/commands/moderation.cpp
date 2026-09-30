@@ -580,6 +580,20 @@ void AOClient::cmdJoinCooldownTime(int argc, QStringList argv)
     sendServerMessage(QString("Join cooldown is now %1 seconds.").arg(l_cooldown));
 }
 
+void AOClient::cmdToggleJoinLockdown(int argc, QStringList argv)
+{
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+    server->toggleJoinLockdown();
+    const QVector<AOClient *> l_clients = server->getClients();
+    for (AOClient *l_client : l_clients) {
+        if (!l_client->m_hwid.isEmpty()) {
+            server->forceJoinLockdownAllows(l_client->m_hwid);
+        }
+    }
+    sendServerMessage(QString("Join lockdown is now %1.").arg(server->joinLockdownEnabled() ? "enabled" : "disabled"));
+}
+
 void AOClient::cmdForceImmediate(int argc, QStringList argv)
 {
     Q_UNUSED(argc);

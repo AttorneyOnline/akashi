@@ -1239,6 +1239,8 @@ class AOClient : public QObject
 
     void cmdJoinCooldownTime(int arc, QStringList argv);
 
+    void cmdToggleJoinLockdown(int argc, QStringList argv);
+
     /**
      * @brief Lists the last five bans made on the server.
      *

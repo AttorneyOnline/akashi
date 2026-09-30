@@ -179,6 +179,8 @@ class ConfigManager
 
     static int joinCooldownSeconds();
     static QString joinCooldownMessage();
+    static QString joinLockdownMessage();
+    static QString joinLockdownConflictMessage();
     static int modcallCooldownSeconds();
     static int maxOOCNameLength();
 

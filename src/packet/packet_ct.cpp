@@ -44,8 +44,18 @@ void PacketCT::handlePacket(AreaData *area, AOClient &client) const
 
     QString l_message = client.dezalgo(m_content[1]);
 
+    if (client.getServer()->joinLockdownDuplicate(client.m_hwid, client.m_ipid) && !l_message.startsWith("/log") && !client.checkPermission(ACLRole::BYPASS_LOCKS)) {
+        client.sendServerMessage(ConfigManager::joinLockdownConflictMessage());
+        return;
+    }
+
     if (!client.getServer()->joinCooldownAllows(client.m_ipid) && !l_message.startsWith("/log") && !client.checkPermission(ACLRole::BYPASS_LOCKS)) {
         client.sendServerMessage(ConfigManager::joinCooldownMessage());
+        return;
+    }
+
+    if (!client.getServer()->joinLockdownAllows(client.m_hwid) && !l_message.startsWith("/log") && !client.checkPermission(ACLRole::BYPASS_LOCKS)) {
+        client.sendServerMessage(ConfigManager::joinLockdownMessage());
         return;
     }
 

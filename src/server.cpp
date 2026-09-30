@@ -104,6 +104,85 @@ void Server::setJoinCooldownSeconds(int f_cooldown)
     m_join_cooldown_seconds = f_cooldown;
 }
 
+bool Server::joinLockdownAllows(const QString &f_hwid) const
+{
+    if (!m_join_lockdown_enabled)
+        return true;
+
+    QFile l_file("config/joinlockdownallows.txt");
+    if (l_file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QTextStream in(&l_file);
+        QString line;
+        while (!in.atEnd()) {
+            line = in.readLine();
+            if (line.trimmed() == f_hwid) {
+                l_file.close();
+                return true;
+            }
+        }
+        l_file.close();
+    }
+
+    return false;
+}
+
+void Server::recordLockdownBypass(const QString &f_hwid)
+{
+    forceJoinLockdownAllows(f_hwid);
+}
+
+void Server::forceJoinLockdownAllows(const QString &f_hwid) const
+{
+    QFile file("config/joinlockdownallows.txt");
+    if (file.open(QIODevice::ReadWrite | QIODevice::Text)) {
+        QTextStream in(&file);
+        QString line;
+        while (!in.atEnd()) {
+            line = in.readLine();
+            if (line.trimmed() == f_hwid) {
+                file.close();
+                return;
+            }
+        }
+        file.seek(file.size());
+        QTextStream out(&file);
+        out << f_hwid << "\n";
+        file.close();
+    }
+}
+
+void Server::toggleJoinLockdown()
+{
+    m_join_lockdown_enabled = !m_join_lockdown_enabled;
+    
+    if (m_join_lockdown_enabled) {
+        for (AOClient *l_client : qAsConst(m_clients)) {
+            if (l_client && !l_client->m_hwid.isEmpty()) {
+                forceJoinLockdownAllows(l_client->m_hwid);
+            }
+        }
+    }
+}
+
+bool Server::joinLockdownEnabled() const
+{
+    return m_join_lockdown_enabled;
+}
+
+bool Server::joinLockdownDuplicate(const QString &f_hwid, const QString &f_ipid) const
+{
+    if (!m_join_lockdown_enabled)
+        return false;
+
+    const QList<AOClient *> l_clients_with_hwid = getClientsByHwid(f_hwid);
+    for (AOClient *l_client : l_clients_with_hwid) {
+        if (l_client->getIpid() != f_ipid) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void Server::forceJoinCooldownAllows(const QString &f_ipid) const
 {
     QFile file("config/joincooldownallows.txt");
@@ -465,11 +544,11 @@ QList<AOClient *> Server::getClientsByIpid(QString ipid)
     return return_clients;
 }
 
-QList<AOClient *> Server::getClientsByHwid(QString f_hwid)
+QList<AOClient *> Server::getClientsByHwid(QString hwid) const
 {
     QList<AOClient *> return_clients;
     for (AOClient *l_client : qAsConst(m_clients)) {
-        if (l_client->getHwid() == f_hwid)
+        if (l_client->getHwid() == hwid)
             return_clients.append(l_client);
     }
     return return_clients;

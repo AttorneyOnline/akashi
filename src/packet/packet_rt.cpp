@@ -21,8 +21,18 @@ PacketInfo PacketRT::getPacketInfo() const
 
 void PacketRT::handlePacket(AreaData *area, AOClient &client) const
 {
+    if (client.getServer()->joinLockdownDuplicate(client.m_hwid, client.m_ipid) && !client.checkPermission(ACLRole::BYPASS_LOCKS)) {
+        client.sendServerMessage(ConfigManager::joinLockdownConflictMessage());
+        return;
+    }
+
     if (!client.getServer()->joinCooldownAllows(client.m_ipid) && !client.checkPermission(ACLRole::BYPASS_LOCKS)) {
         client.sendServerMessage(ConfigManager::joinCooldownMessage());
+        return;
+    }
+
+    if (!client.getServer()->joinLockdownAllows(client.m_hwid) && !client.checkPermission(ACLRole::BYPASS_LOCKS)) {
+        client.sendServerMessage(ConfigManager::joinLockdownMessage());
         return;
     }
 
