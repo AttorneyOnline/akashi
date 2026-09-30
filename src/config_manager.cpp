@@ -137,7 +137,7 @@ bool ConfigManager::verifyServerConfig()
     m_commands->filters = (loadConfigFile("filter"));
     m_commands->cdns = (loadConfigFile("cdns"));
     if (m_commands->cdns.isEmpty())
-        m_commands->cdns = QStringList{"cdn.discord.com"};
+        m_commands->cdns = QStringList{"cdn.example.com"};
 
     return true;
 }

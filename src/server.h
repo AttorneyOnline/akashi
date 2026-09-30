@@ -175,6 +175,7 @@ class Server : public QObject
     void toggleJoinCooldown();
     void forceJoinCooldownAllows(const QString &f_ipid) const;
     bool joinCooldownEnabled() const;
+    void setJoinCooldownSeconds(int f_cooldown);
     bool modcallCooldownAllows(const QString &f_ipid) const;
     void recordModcall(const QString &f_ipid);
 
@@ -469,6 +470,7 @@ class Server : public QObject
     QHash<int, AOClient *> m_clients_ids;
     QHash<QString, qint64> m_join_times;
     bool m_join_cooldown_enabled = true;
+    int m_join_cooldown_seconds = 120;
     QHash<QString, qint64> m_modcall_times;
     PlayerStateObserver m_player_state_observer;
 

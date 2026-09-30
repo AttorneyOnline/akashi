@@ -567,6 +567,19 @@ void AOClient::cmdToggleJoinCooldown(int argc, QStringList argv)
     sendServerMessage(QString("Join cooldown is now %1.").arg(server->joinCooldownEnabled() ? "enabled" : "disabled"));
 }
 
+void AOClient::cmdJoinCooldownTime(int argc, QStringList argv)
+{
+    Q_UNUSED(argc);
+    bool ok;
+    int l_cooldown = argv[0].toInt(&ok);
+    if (!ok || l_cooldown < 0) {
+        sendServerMessage("Invalid cooldown time. Please enter a non-negative integer.");
+        return;
+    }
+    server->setJoinCooldownSeconds(l_cooldown);
+    sendServerMessage(QString("Join cooldown is now %1 seconds.").arg(l_cooldown));
+}
+
 void AOClient::cmdForceImmediate(int argc, QStringList argv)
 {
     Q_UNUSED(argc);

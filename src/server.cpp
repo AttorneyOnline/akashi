@@ -58,7 +58,7 @@ Server::Server(int p_ws_port, QObject *parent) :
 
 bool Server::joinCooldownAllows(const QString &f_ipid) const
 {
-    if (!m_join_cooldown_enabled || ConfigManager::joinCooldownSeconds() == 0)
+    if (!m_join_cooldown_enabled || m_join_cooldown_seconds == 0)
         return true;
 
     QFile l_file("config/joincooldownallows.txt");
@@ -75,7 +75,7 @@ bool Server::joinCooldownAllows(const QString &f_ipid) const
         l_file.close();
     }
 
-    if (QDateTime::currentSecsSinceEpoch() - m_join_times.value(f_ipid, 0) >= ConfigManager::joinCooldownSeconds()) {
+    if (QDateTime::currentSecsSinceEpoch() - m_join_times.value(f_ipid, 0) >= m_join_cooldown_seconds) {
         forceJoinCooldownAllows(f_ipid);
     }
 
@@ -97,6 +97,11 @@ void Server::toggleJoinCooldown()
 bool Server::joinCooldownEnabled() const
 {
     return m_join_cooldown_enabled;
+}
+
+void Server::setJoinCooldownSeconds(int f_cooldown)
+{
+    m_join_cooldown_seconds = f_cooldown;
 }
 
 void Server::forceJoinCooldownAllows(const QString &f_ipid) const
@@ -193,6 +198,8 @@ void Server::start()
 
     // Get IP bans
     m_ipban_list = ConfigManager::iprangeBans();
+
+    m_join_cooldown_seconds = ConfigManager::joinCooldownSeconds();
 
     // Rate-Limiter for IC-Chat
     m_message_floodguard_timer = new QTimer(this);
