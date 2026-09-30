@@ -59,6 +59,8 @@ void PacketZZ::handlePacket(AreaData *area, AOClient &client) const
 
         QString l_areaName = area->name();
 
+        QString l_ipid = client.m_ipid;
+
         QString webhook_reason = m_content.value(0);
         if (target_id != -1) {
             AOClient *target = client.getServer()->getClientByID(target_id);
@@ -67,7 +69,7 @@ void PacketZZ::handlePacket(AreaData *area, AOClient &client) const
             }
         }
 
-        emit client.getServer()->modcallWebhookRequest(l_name, l_areaName, l_id, webhook_reason, client.getServer()->getAreaBuffer(l_areaName));
+        emit client.getServer()->modcallWebhookRequest(l_name, l_areaName, l_id, l_ipid, webhook_reason, client.getServer()->getAreaBuffer(l_areaName));
     }
 
     client.getServer()->recordModcall(client.m_ipid);
