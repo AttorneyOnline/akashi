@@ -162,7 +162,7 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
             if (!client.getServer()->getCharacters().contains(l_character_split.at(0), Qt::CaseInsensitive) || l_character_split.contains(".."))
                 return l_invalid;
         }
-        qDebug() << "INI swap detected from " << client.getIpid();
+        // qDebug() << "INI swap detected from " << client.getIpid();
     }
     client.m_current_iniswap = l_incoming_args[2].toString();
     l_args.append(l_incoming_args[2].toString());
