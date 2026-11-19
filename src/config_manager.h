@@ -312,6 +312,11 @@ class ConfigManager
     static int afkTimeout();
 
     /**
+     * @brief Returns whether clients should be automatically marked as AFK.
+     */
+    static bool announceAfk();
+
+    /**
      * @brief Returns a list of dice faces..
      */
     static QStringList diceFaces(const QString f_name);

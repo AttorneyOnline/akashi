@@ -233,7 +233,9 @@ void AOClient::handlePacket(AOPacket *packet)
         if (characterName().endsWith(" [AFK]")) {
             setCharacterName(characterName().remove(" [AFK]"));
         }
-        m_afk_timer->start(ConfigManager::afkTimeout() * 1000);
+        if (ConfigManager::announceAfk()) {
+            m_afk_timer->start(ConfigManager::afkTimeout() * 1000);
+        }
     }
 
     if (packet->getContent().length() < packet->getPacketInfo().min_args) {
@@ -610,6 +612,10 @@ bool AOClient::isSpectator() const
 
 void AOClient::onAfkTimeout()
 {
+    if (!ConfigManager::announceAfk()) {
+        return;
+    }
+
     if (!m_is_afk) {
         sendServerMessage("You are now AFK.");
         setCharacterName(characterName() + " [AFK]");

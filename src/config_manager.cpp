@@ -702,6 +702,11 @@ int ConfigManager::afkTimeout()
     return l_afk;
 }
 
+bool ConfigManager::announceAfk()
+{
+    return m_settings->value("Options/announce_afk", true).toBool();
+}
+
 void ConfigManager::setAuthType(const DataTypes::AuthType f_auth)
 {
     m_settings->setValue("Options/auth", fromDataType<DataTypes::AuthType>(f_auth).toLower());
