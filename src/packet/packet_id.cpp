@@ -26,13 +26,13 @@ void PacketID::handlePacket(AreaData *area, AOClient &client) const
     if (client.m_version.release == 2) {
         // No double sending of the ID packet!
         client.sendPacket("BD", {"A protocol error has been encountered. Packet : ID"});
-        client.m_socket->close();
+        client.m_socket->close("duplicate_id_packet");
         return;
     }
 
     if (!ConfigManager::webaoEnabled() && m_content[0] == "webAO") {
         client.sendPacket("BD", {"WebAO is disabled on this server."});
-        client.m_socket->close();
+        client.m_socket->close("webao_disabled");
         return;
     }
 
@@ -46,7 +46,7 @@ void PacketID::handlePacket(AreaData *area, AOClient &client) const
 
     if (client.m_version.release != 2) {
         client.sendPacket("BD", {"A protocol error has been encountered. Packet : ID\nRelease version not recognised."});
-        client.m_socket->close();
+        client.m_socket->close("unsupported_version");
         return;
     }
 

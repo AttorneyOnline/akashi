@@ -22,7 +22,7 @@ void PacketRD::handlePacket(AreaData *area, AOClient &client) const
 {
     if (client.m_hwid == "") {
         // No early connecting!
-        client.m_socket->close();
+        client.m_socket->close("rd_before_hi");
         return;
     }
 
@@ -31,6 +31,7 @@ void PacketRD::handlePacket(AreaData *area, AOClient &client) const
     }
 
     client.m_joined = true;
+    client.m_socket->setJoined();
     client.getServer()->updateCharsTaken(area);
     client.sendEvidenceList(area);
     client.sendPacket("HP", {"1", QString::number(area->defHP())});

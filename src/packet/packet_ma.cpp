@@ -63,7 +63,7 @@ void PacketMA::handlePacket(AreaData *area, AOClient &client) const
     if (is_kick) {
         for (AOClient *subclient : clients) {
             subclient->sendPacket("KK", {reason});
-            subclient->m_socket->close();
+            subclient->m_socket->close("mod_kick");
         }
 
         Q_EMIT client.logKick(moderator_name, target->m_ipid, reason);
@@ -95,7 +95,7 @@ void PacketMA::handlePacket(AreaData *area, AOClient &client) const
             client.getServer()->getDatabaseManager()->addBan(ban);
 
             subclient->sendPacket("KB", {reason});
-            subclient->m_socket->close();
+            subclient->m_socket->close("mod_ban");
         }
 
         Q_EMIT client.logBan(moderator_name, target->m_ipid, timestamp, reason);

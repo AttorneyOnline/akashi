@@ -148,6 +148,11 @@ class ConfigManager
     static bool webaoEnabled();
 
     /**
+     * @brief Returns whether connection diagnostic logging is enabled.
+     */
+    static bool debugEnabled();
+
+    /**
      * @brief Returns the server's authorization type..
      */
     static DataTypes::AuthType authType();

@@ -36,7 +36,7 @@ void PacketCC::handlePacket(AreaData *area, AOClient &client) const
 
     if (l_selected_char_id < -1 || l_selected_char_id > client.getServer()->getCharacters().size() - 1) {
         client.sendPacket("KK", {"A protocol error has been encountered.Packet : CC\nCharacter ID out of range."});
-        client.m_socket->close();
+        client.m_socket->close("invalid_character_id");
     }
 
     if (client.changeCharacter(l_selected_char_id))

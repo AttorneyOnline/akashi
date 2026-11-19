@@ -28,7 +28,7 @@ void PacketHI::handlePacket(AreaData *area, AOClient &client) const
     if (incoming_hwid.isEmpty() || !client.m_hwid.isEmpty()) {
         // No double sending or empty HWIDs!
         client.sendPacket("BD", {"A protocol error has been encountered. Packet : HI"});
-        client.m_socket->close();
+        client.m_socket->close("invalid_hi");
         return;
     }
 
@@ -44,7 +44,7 @@ void PacketHI::handlePacket(AreaData *area, AOClient &client) const
             ban_duration = "Permanently.";
         }
         client.sendPacket("BD", {"Reason: " + ban.second.reason + "\nBan ID: " + QString::number(ban.second.id) + "\nUntil: " + ban_duration});
-        client.m_socket->close();
+        client.m_socket->close("hdid_ban");
         return;
     }
 

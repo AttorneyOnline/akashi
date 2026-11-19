@@ -305,9 +305,9 @@ void Server::clientConnected()
     // Too many players. Reject connection!
     // This also enforces the maximum playercount.
     if (m_available_ids.empty()) {
-        AOPacket *disconnect_reason = PacketFactory::createPacket("BD", {"Maximum playercount has been reached."});
+        AOPacket *disconnect_reason = PacketFactory::createPacket("BD", {"Maximum playercount has been reached. Try again later."});
         l_socket->write(disconnect_reason);
-        l_socket->close();
+        l_socket->close("server_full");
         l_socket->deleteLater();
         return;
     }
@@ -319,6 +319,7 @@ void Server::clientConnected()
     int multiclient_count = 1;
     bool is_at_multiclient_limit = false;
     client->calculateIpid();
+    l_socket->setClientInfo(user_id, client->getIpid());
     recordJoin(client->getIpid());
     auto ban = db_manager->isIPBanned(client->getIpid());
     bool is_banned = ban.first;
@@ -343,7 +344,7 @@ void Server::clientConnected()
     }
     if (is_banned || is_at_multiclient_limit) {
         client->deleteLater();
-        l_socket->close(QWebSocketProtocol::CloseCodeNormal);
+        l_socket->close(is_banned ? "ipid_ban" : "multiclient_limit");
         markIDFree(user_id);
         return;
     }
@@ -358,7 +359,7 @@ void Server::clientConnected()
         AOPacket *l_ban_reason = PacketFactory::createPacket("BD", {l_reason});
         l_socket->write(l_ban_reason);
         client->deleteLater();
-        l_socket->close(QWebSocketProtocol::CloseCodeNormal);
+        l_socket->close("ip_range_ban");
         markIDFree(user_id);
         return;
     }
@@ -739,6 +740,7 @@ bool Server::isIPBanned(QHostAddress f_remote_IP)
 Server::~Server()
 {
     for (AOClient *l_client : qAsConst(m_clients)) {
+        l_client->m_socket->logServerShutdown();
         l_client->deleteLater();
     }
     server->deleteLater();

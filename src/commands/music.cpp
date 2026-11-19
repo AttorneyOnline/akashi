@@ -34,10 +34,6 @@ void AOClient::cmdPlay(int argc, QStringList argv)
         sendServerMessage("You are blocked from changing the music.");
         return;
     }
-    if (l_song == "sin.mp3") {
-        m_socket->close();
-        return;
-    }
     if ((l_song.startsWith("http://", Qt::CaseInsensitive) || l_song.startsWith("https://", Qt::CaseInsensitive)) && !m_music_manager->validateSong(l_song, ConfigManager::cdnList())) {
         sendServerMessage("The song you tried to play is not from an approved CDN.");
         return;

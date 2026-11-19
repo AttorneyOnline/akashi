@@ -81,7 +81,7 @@ void AOClient::cmdBan(int argc, QStringList argv)
         }
         int l_ban_id = server->getDatabaseManager()->getBanID(l_ban.ip);
         l_client->sendPacket("KB", {l_ban.reason + "\nID: " + QString::number(l_ban_id) + "\nUntil: " + l_ban_duration});
-        l_client->m_socket->close();
+        l_client->m_socket->close("mod_ban");
         l_kick_counter++;
 
         emit logBan(l_ban.moderator, l_ban.ipid, l_ban_duration, l_ban.reason);
@@ -114,7 +114,7 @@ void AOClient::cmdKick(int argc, QStringList argv)
     const QList<AOClient *> l_targets = server->getClientsByIpid(l_target_ipid);
     for (AOClient *l_client : l_targets) {
         l_client->sendPacket("KK", {l_reason});
-        l_client->m_socket->close();
+        l_client->m_socket->close("mod_kick");
         l_kick_counter++;
     }
 
@@ -652,7 +652,7 @@ void AOClient::cmdKickUid(int argc, QStringList argv)
         return;
     }
     l_target->sendPacket("KK", {l_reason});
-    l_target->m_socket->close();
+    l_target->m_socket->close("mod_kick_uid");
     sendServerMessage("Kicked client with UID " + argv[0] + " for reason: " + l_reason);
 }
 
@@ -730,7 +730,7 @@ void AOClient::cmdKickOther(int argc, QStringList argv)
     // The list is unique, we can only have on instance of the current client.
     l_target_clients.removeOne(this);
     for (AOClient *l_target_client : qAsConst(l_target_clients)) {
-        l_target_client->m_socket->close();
+        l_target_client->m_socket->close("kick_other");
         l_kick_counter++;
     }
     sendServerMessage("Kicked " + QString::number(l_kick_counter) + " multiclients from the server.");

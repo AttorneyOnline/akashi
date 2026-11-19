@@ -129,6 +129,11 @@ bool ConfigManager::verifyServerConfig()
         qWarning("packet_rate_limit_hard is 0 or less, rate limiting is disabled!");
     }
 
+    QString l_debug = m_settings->value("debug", "false").toString().trimmed();
+    if (l_debug.compare("true", Qt::CaseInsensitive) != 0 && l_debug.compare("false", Qt::CaseInsensitive) != 0) {
+        qWarning("debug must be true or false; connection diagnostics are disabled!");
+    }
+
     m_settings->endGroup();
     m_commands->magic_8ball = (loadConfigFile("8ball"));
     m_commands->praises = (loadConfigFile("praise"));
@@ -452,6 +457,11 @@ QString ConfigManager::motd()
 bool ConfigManager::webaoEnabled()
 {
     return m_settings->value("Options/webao_enable", false).toBool();
+}
+
+bool ConfigManager::debugEnabled()
+{
+    return m_settings->value("Options/debug", "false").toString().trimmed().compare("true", Qt::CaseInsensitive) == 0;
 }
 
 DataTypes::AuthType ConfigManager::authType()

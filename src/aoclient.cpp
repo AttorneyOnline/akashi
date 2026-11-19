@@ -208,7 +208,7 @@ void AOClient::handlePacket(AOPacket *packet)
 
     if (hard_limit > 0 && packet_count >= hard_limit) {
         sendPacket("BD", {"You have been disconnected for sending messages too quickly."});
-        m_socket->close();
+        m_socket->close("packet_rate_limit");
         return;
     }
     else if (soft_limit > 0 && packet_count >= soft_limit) {

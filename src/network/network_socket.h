@@ -18,6 +18,7 @@
 #ifndef NETWORK_SOCKET_H
 #define NETWORK_SOCKET_H
 
+#include <QElapsedTimer>
 #include <QHostAddress>
 #include <QObject>
 #include <QPointer>
@@ -56,7 +57,11 @@ class NetworkSocket : public QObject
      *
      * @param The close code to the send to the client.
      */
-    void close(QWebSocketProtocol::CloseCode f_code = QWebSocketProtocol::CloseCodeNormal);
+    void close(const char *f_reason, QWebSocketProtocol::CloseCode f_code = QWebSocketProtocol::CloseCodeNormal);
+
+    void setClientInfo(int f_client_id, const QString &f_ipid);
+    void setJoined();
+    void logServerShutdown();
 
     /**
      * @brief Writes data to the network socket.
@@ -92,8 +97,21 @@ class NetworkSocket : public QObject
     void handleMessage(QString f_data);
 
   private:
+    void logDisconnect(bool f_disconnected);
+
     QPointer<QWebSocket> m_client_socket;
     bool m_disconnecting = false;
+    const bool m_debug_enabled;
+    QElapsedTimer m_connection_duration;
+    QString m_connection_id;
+    int m_client_id = -1;
+    QString m_ipid;
+    bool m_joined = false;
+    QString m_server_close_reason;
+    bool m_has_socket_error = false;
+    QAbstractSocket::SocketError m_socket_error = QAbstractSocket::UnknownSocketError;
+    QString m_socket_error_string;
+    bool m_disconnect_logged = false;
 
     /**
      * @brief Remote IP of the client.
