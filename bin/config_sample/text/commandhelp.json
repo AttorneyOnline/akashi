@@ -546,7 +546,7 @@
          "update"
       ],
       "usage":"/update",
-      "text":"Updates the currently displayed testimony message with the next message said in IC chat. This command takes no arguments."
+      "text":"Updates the currently displayed testimony message with the next message said in IC chat. Requires a recorded testimony with at least one statement. This command takes no arguments."
    },
    {
       "names": [

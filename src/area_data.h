@@ -1223,7 +1223,7 @@ class AreaData : public QObject
     /**
      * @brief The state of the testimony recording / playback in the area.
      */
-    TestimonyRecording m_testimonyRecording;
+    TestimonyRecording m_testimonyRecording = TestimonyRecording::STOPPED;
 
     QVector<QStringList> m_testimony; //!< Vector of all statements saved. Index 0 is always the title of the testimony.
     int m_statement;                  //!< Keeps track of the currently played statement.

@@ -65,7 +65,7 @@ QStringList AOClient::updateStatement(QStringList packet)
     AreaData *area = server->getAreaById(areaId());
     int c_statement = area->statement();
     area->setTestimonyRecording(AreaData::TestimonyRecording::PLAYBACK);
-    if (c_statement <= 0 || area->testimony()[c_statement].empty())
+    if (c_statement <= 0 || c_statement >= area->testimony().size() || area->testimony()[c_statement].empty())
         sendServerMessage("Unable to update an empty statement. Please use /addtestimony.");
     else {
         packet[14] = "1";

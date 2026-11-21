@@ -185,7 +185,13 @@ void AOClient::cmdUpdateStatement(int argc, QStringList argv)
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
-    server->getAreaById(areaId())->setTestimonyRecording(AreaData::TestimonyRecording::UPDATE);
+    AreaData *l_area = server->getAreaById(areaId());
+    if (l_area->testimony().size() <= 1) {
+        sendServerMessage("Unable to update a statement without a recorded testimony.");
+        return;
+    }
+
+    l_area->setTestimonyRecording(AreaData::TestimonyRecording::UPDATE);
     sendServerMessage("The next IC-Message will replace the currently selected testimony line.");
 }
 

@@ -470,6 +470,13 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
     else if (area->testimonyRecording() == AreaData::TestimonyRecording::PLAYBACK) {
         AreaData::TestimonyProgress l_progress;
 
+        if (area->testimony().size() <= 1 &&
+            (l_args[4] == ">" || l_args[4] == "<" || l_args[4] == "=" ||
+             isTestimonyJumpCommand(client.decodeMessage(l_args[4])).hasMatch())) {
+            client.sendServerMessage("Unable to navigate an empty testimony.");
+            return l_invalid;
+        }
+
         if (l_args[4] == ">") {
             auto l_statement = area->jumpToStatement(area->statement() + 1);
             l_args = l_statement.first;
@@ -505,7 +512,12 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
 
         QRegularExpressionMatch match = isTestimonyJumpCommand(client.decodeMessage(l_args[4])); // Get rid of that pesky encoding, then do the fun part
         if (match.hasMatch()) {
-            int jump_idx = match.captured("int").toInt();
+            bool ok = false;
+            int jump_idx = match.captured("int").toInt(&ok);
+            if (!ok || jump_idx < 1 || jump_idx >= area->testimony().size()) {
+                client.sendServerMessage("That testimony statement does not exist.");
+                return l_invalid;
+            }
             auto l_statement = area->jumpToStatement(jump_idx);
             l_args = l_statement.first;
             l_progress = l_statement.second;
