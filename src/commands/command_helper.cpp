@@ -113,9 +113,10 @@ QString AOClient::getAreaTimer(int area_idx, int timer_idx)
         return "Invalid timer ID.";
 
     if (l_timer->isActive()) {
-        QTime l_current_time = QTime(0, 0).addMSecs(l_timer->remainingTime());
-
-        return l_timer_name + " is at " + l_current_time.toString("hh:mm:ss.zzz");
+        const int l_remaining = l_timer->remainingTime();
+        const QTime l_current_time = QTime(0, 0).addMSecs(l_remaining % 3600000);
+        const QString l_hours = QString::number(l_remaining / 3600000).rightJustified(2, '0');
+        return l_timer_name + " is at " + l_hours + ":" + l_current_time.toString("mm:ss.zzz");
     }
     else {
         return l_timer_name + " is inactive.";

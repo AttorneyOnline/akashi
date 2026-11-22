@@ -289,7 +289,7 @@ void AOClient::changeArea(int new_area)
         int l_timer_id = server->getAreaById(areaId())->timers().indexOf(l_timer) + 1;
         if (l_timer->isActive()) {
             sendPacket("TI", {QString::number(l_timer_id), "2"});
-            sendPacket("TI", {QString::number(l_timer_id), "0", QString::number(QTime(0, 0).msecsTo(QTime(0, 0).addMSecs(l_timer->remainingTime())))});
+            sendPacket("TI", {QString::number(l_timer_id), "0", QString::number(l_timer->remainingTime())});
         }
         else {
             sendPacket("TI", {QString::number(l_timer_id), "3"});

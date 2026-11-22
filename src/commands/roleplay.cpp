@@ -22,6 +22,8 @@
 #include "packet/packet_factory.h"
 #include "server.h"
 
+#include <limits>
+
 // This file is for commands under the roleplay category in aoclient.h
 // Be sure to register the command in the header before adding it here!
 
@@ -233,14 +235,41 @@ void AOClient::cmdTimer(int argc, QStringList argv)
     AOPacket *l_hide_timer = PacketFactory::createPacket("TI", {QString::number(l_timer_id), "3"});
     bool l_is_global = l_timer_id == 0;
 
-    // Set the timer's time remaining if the second
-    // argument is a valid time
     QTime l_requested_time = QTime::fromString(argv[1], "hh:mm:ss");
+    int l_requested_ms = -1;
     if (l_requested_time.isValid()) {
-        l_requested_timer->setInterval(QTime(0, 0).msecsTo(l_requested_time));
+        l_requested_ms = QTime(0, 0).msecsTo(l_requested_time);
+    }
+    else {
+        static const QRegularExpression l_duration_regex("\\A(?:(\\d+)h)?(?:(\\d+)m)?(?:(\\d+)s)?\\z");
+        const QRegularExpressionMatch l_match = l_duration_regex.match(argv[1]);
+        if (l_match.hasMatch() && !argv[1].isEmpty()) {
+            const qint64 l_max_seconds = std::numeric_limits<int>::max() / 1000;
+            const qint64 l_multipliers[] = {3600, 60, 1};
+            qint64 l_seconds = 0;
+            bool l_valid = true;
+            for (int i = 1; i <= 3; ++i) {
+                if (l_match.captured(i).isEmpty()) {
+                    continue;
+                }
+                bool l_ok;
+                const qint64 l_value = l_match.captured(i).toLongLong(&l_ok);
+                if (!l_ok || l_value > (l_max_seconds - l_seconds) / l_multipliers[i - 1]) {
+                    l_valid = false;
+                    break;
+                }
+                l_seconds += l_value * l_multipliers[i - 1];
+            }
+            if (l_valid) {
+                l_requested_ms = static_cast<int>(l_seconds * 1000);
+            }
+        }
+    }
+    if (l_requested_ms >= 0) {
+        l_requested_timer->setInterval(l_requested_ms);
         l_requested_timer->start();
         sendServerMessage("Set timer " + QString::number(l_timer_id) + " to " + argv[1] + ".");
-        AOPacket *l_update_timer = PacketFactory::createPacket("TI", {QString::number(l_timer_id), "0", QString::number(QTime(0, 0).msecsTo(l_requested_time))});
+        AOPacket *l_update_timer = PacketFactory::createPacket("TI", {QString::number(l_timer_id), "0", QString::number(l_requested_ms)});
         l_is_global ? server->broadcast(l_show_timer) : server->broadcast(l_show_timer, areaId()); // Show the timer
         l_is_global ? server->broadcast(l_update_timer) : server->broadcast(l_update_timer, areaId());
         return;
@@ -250,7 +279,7 @@ void AOClient::cmdTimer(int argc, QStringList argv)
         if (argv[1] == "start") {
             l_requested_timer->start();
             sendServerMessage("Started timer " + QString::number(l_timer_id) + ".");
-            AOPacket *l_update_timer = PacketFactory::createPacket("TI", {QString::number(l_timer_id), "0", QString::number(QTime(0, 0).msecsTo(QTime(0, 0).addMSecs(l_requested_timer->remainingTime())))});
+            AOPacket *l_update_timer = PacketFactory::createPacket("TI", {QString::number(l_timer_id), "0", QString::number(l_requested_timer->remainingTime())});
             l_is_global ? server->broadcast(l_show_timer) : server->broadcast(l_show_timer, areaId());
             l_is_global ? server->broadcast(l_update_timer) : server->broadcast(l_update_timer, areaId());
         }
@@ -258,7 +287,7 @@ void AOClient::cmdTimer(int argc, QStringList argv)
             l_requested_timer->setInterval(l_requested_timer->remainingTime());
             l_requested_timer->stop();
             sendServerMessage("Stopped timer " + QString::number(l_timer_id) + ".");
-            AOPacket *l_update_timer = PacketFactory::createPacket("TI", {QString::number(l_timer_id), "1", QString::number(QTime(0, 0).msecsTo(QTime(0, 0).addMSecs(l_requested_timer->interval())))});
+            AOPacket *l_update_timer = PacketFactory::createPacket("TI", {QString::number(l_timer_id), "1", QString::number(l_requested_timer->interval())});
             l_is_global ? server->broadcast(l_update_timer) : server->broadcast(l_update_timer, areaId());
         }
         else if (argv[1] == "hide" || argv[1] == "unset") {
@@ -267,6 +296,9 @@ void AOClient::cmdTimer(int argc, QStringList argv)
             sendServerMessage("Hid timer " + QString::number(l_timer_id) + ".");
             // Hide the timer
             l_is_global ? server->broadcast(l_hide_timer) : server->broadcast(l_hide_timer, areaId());
+        }
+        else {
+            sendServerMessage("Invalid timer duration or action.");
         }
     }
 }

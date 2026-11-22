@@ -1431,6 +1431,7 @@ class AOClient : public QObject
      * If called with **two arguments**, and the second argument is
      * * in the format of `hh:mm:ss`, then it starts the given timer,
      *   with `hh` hours, `mm` minutes, and `ss` seconds on it, making it appear if needed.
+     *   works with duration notation such as `2h`, `15m`, `120s`, or `1h30m`.
      * * `start`, it (re)starts the given timer, making it appear if needed.
      * * `pause` or `stop`, it pauses the given timer.
      * * `hide` or `unset`, it stops the timer and hides it.

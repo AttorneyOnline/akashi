@@ -250,12 +250,12 @@ void AOClient::cmdHelp(int argc, QStringList argv)
         return;
     }
 
-    if (!l_check_for_permission(l_command_name)) {
-        sendServerMessage(l_message + "You are not allowed to use the command " + l_command_name + ".");
-        return;
+    const QVector<ACLRole::Permission> l_permissions = l_extension_collection->getExtension(l_command_name).getPermissions(COMMANDS.value(l_command_name).acl_permissions);
+    QStringList l_permission_names;
+    for (const ACLRole::Permission i_permission : l_permissions) {
+        l_permission_names.append(ACLRole::PERMISSION_CAPTIONS.value(i_permission));
     }
-
-    sendServerMessage(l_message + l_format_command(l_command_name));
+    sendServerMessage(l_message + l_format_command(l_command_name) + "\nRequired permissions: " + l_permission_names.join(" or "));
 }
 
 void AOClient::cmdMOTD(int argc, QStringList argv)

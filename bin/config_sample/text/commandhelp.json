@@ -262,7 +262,7 @@
          "timer"
       ],
       "usage":"/timer 'Timer' 'Duration'",
-      "text":"Gets or sets the global or one of the area-specific timers. If called without arguments, sends an out-of-character message listing the statuses of both the global timer and the area-specific timers. If called with one argument, and that argument is between `0` and `4` (inclusive on both ends), sends an out-of-character message about the status of the given timer, where `0` is the global timer, and the remaining numbers are the first, second, third and fourth timers in the current area."
+      "text":"Gets or sets the global or one of the area-specific timers. Without arguments, lists all timer statuses. With an argument from 0 to 4, shows that timer's status; 0 is the global timer. With a timer ID and a duration, starts the timer: use hh:mm:ss or notation such as 15m, 2h, 120s, or 1h30m. Use start to resume, pause or stop to pause, and hide or unset to stop and hide."
    },
    {
       "names": [
@@ -801,7 +801,7 @@
          "help"
       ],
       "usage":"/help <Command>",
-      "text":"Shows you information about a command, if available. The only argument is the command names. About Syntax : <Argument> are mandatory arguments. 'Argument' are optional arguments. [Argument|OtherArgument] is that two argument types are valid, but only one can be used."
+      "text":"Shows information and required permissions for any named command. Use /help all to list commands available to you. About Syntax : <Argument> are mandatory arguments. 'Argument' are optional arguments. [Argument|OtherArgument] is that two argument types are valid, but only one can be used."
    },
    {
       "names": [

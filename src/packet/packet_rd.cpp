@@ -46,7 +46,7 @@ void PacketRD::handlePacket(AreaData *area, AOClient &client) const
     client.fullArup(); // Give client all the area data
     if (client.getServer()->timer->isActive()) {
         client.sendPacket("TI", {"0", "2"});
-        client.sendPacket("TI", {"0", "0", QString::number(QTime(0, 0).msecsTo(QTime(0, 0).addMSecs(client.getServer()->timer->remainingTime())))});
+        client.sendPacket("TI", {"0", "0", QString::number(client.getServer()->timer->remainingTime())});
     }
     else {
         client.sendPacket("TI", {"0", "3"});
@@ -56,7 +56,7 @@ void PacketRD::handlePacket(AreaData *area, AOClient &client) const
         int l_timer_id = area->timers().indexOf(l_timer) + 1;
         if (l_timer->isActive()) {
             client.sendPacket("TI", {QString::number(l_timer_id), "2"});
-            client.sendPacket("TI", {QString::number(l_timer_id), "0", QString::number(QTime(0, 0).msecsTo(QTime(0, 0).addMSecs(l_timer->remainingTime())))});
+            client.sendPacket("TI", {QString::number(l_timer_id), "0", QString::number(l_timer->remainingTime())});
         }
         else {
             client.sendPacket("TI", {QString::number(l_timer_id), "3"});

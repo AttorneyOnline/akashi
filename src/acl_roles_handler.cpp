@@ -35,7 +35,7 @@ const QHash<ACLRole::Permission, QString> ACLRole::PERMISSION_CAPTIONS{
     },
     {
         ACLRole::Permission::CM,
-        "gamemaster",
+        "CaseManager/CM",
     },
     {
         ACLRole::Permission::GLOBAL_TIMER,
