@@ -48,16 +48,20 @@ void PacketHP::handlePacket(AreaData *area, AOClient &client) const
     }
 
     if (client.m_is_wtce_blocked) {
-        client.sendServerMessage("You are blocked from using the judge controls.");
+        client.sendServerMessage("You have been blocked from using the judge controls.");
         return;
     }
     int l_newValue = m_content.at(1).toInt();
 
     if (m_content[0] == "1") {
         area->changeHP(AreaData::Side::DEFENCE, l_newValue);
+        emit client.logJudge(area->name(), client.m_ipid, client.name(), QString::number(client.clientId()),
+                             client.character() + " " + client.characterName(), QString("defHP set to %1").arg(area->defHP()));
     }
     else if (m_content[0] == "2") {
         area->changeHP(AreaData::Side::PROSECUTOR, l_newValue);
+        emit client.logJudge(area->name(), client.m_ipid, client.name(), QString::number(client.clientId()),
+                             client.character() + " " + client.characterName(), QString("proHP set to %1").arg(area->proHP()));
     }
 
     client.getServer()->broadcast(PacketFactory::createPacket("HP", {"1", QString::number(area->defHP())}), area->index());

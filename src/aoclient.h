@@ -2174,6 +2174,11 @@ class AOClient : public QObject
     void logOOC(const QString &f_areaName, const QString &f_ipid, const QString &f_oocName, const QString &f_id, const QString &f_charName, const QString &f_message);
 
     /**
+     * @brief Signal connected to universal logger. Sends judge control usage to the logger.
+     */
+    void logJudge(const QString &f_areaName, const QString &f_ipid, const QString &f_oocName, const QString &f_id, const QString &f_charName, const QString &f_action);
+
+    /**
      * @brief Signal connected to universal logger. Sends login attempt to the logger.
      */
     void logLogin(const QString &f_charName, const QString &f_oocName, const QString &f_moderatorName,

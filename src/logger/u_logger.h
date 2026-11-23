@@ -70,6 +70,11 @@ class ULogger : public QObject
     void logOOC(const QString &f_area_name, const QString &f_ipid, const QString &f_ooc_name, const QString &f_id, const QString &f_char_name, const QString &f_message);
 
     /**
+     * @brief Writes judge control usage when full logging is enabled.
+     */
+    void logJudge(const QString &f_area_name, const QString &f_ipid, const QString &f_ooc_name, const QString &f_id, const QString &f_char_name, const QString &f_action);
+
+    /**
      * @brief Adds an login attempt to the area buffer and writes it to the respective log format.
      */
     void logLogin(const QString &f_char_name, const QString &f_ooc_name, const QString &f_moderator_name,
@@ -141,6 +146,7 @@ class ULogger : public QObject
         {"ic", "[%1][%5][IC][%2(%3)][%4]%6"},
         {"music", "[%1][%5][MUSIC][%2(%3)][%4]%6"},
         {"ooc", "[%1][%5][OOC][%2(%3)][%4]%6"},
+        {"judge", "[%1][%2][JUDGE]{%3}[%4]%5(%6): %7"},
         {"login", "[%1][LOGIN][%2][%3][%4(%5)]"},
         {"cmdlogin", "[%1][%2][LOGIN][%5][%3(%4)]"},
         {"cmdrootpass", "[%1][%2][ROOTPASS][%5][%3(%4)]"},

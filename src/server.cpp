@@ -705,6 +705,7 @@ void Server::hookupAOClient(AOClient *client)
     connect(client, &AOClient::logIC, logger, &ULogger::logIC);
     connect(client, &AOClient::logMusic, logger, &ULogger::logMusic);
     connect(client, &AOClient::logOOC, logger, &ULogger::logOOC);
+    connect(client, &AOClient::logJudge, logger, &ULogger::logJudge);
     connect(client, &AOClient::logLogin, logger, &ULogger::logLogin);
     connect(client, &AOClient::logCMD, logger, &ULogger::logCMD);
     connect(client, &AOClient::logBan, logger, &ULogger::logBan);

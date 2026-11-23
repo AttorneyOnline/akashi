@@ -61,4 +61,11 @@ void PacketRT::handlePacket(AreaData *area, AOClient &client) const
     client.m_last_wtce_time = QDateTime::currentDateTime().toSecsSinceEpoch();
     client.getServer()->broadcast(PacketFactory::createPacket("RT", m_content), client.areaId());
     client.updateJudgeLog(area, &client, "WT/CE");
+    QString animation = m_content[0];
+    if (animation == "testimony1")
+        animation = "Witness Testimony";
+    else if (animation == "testimony2")
+        animation = "Cross-examination";
+    emit client.logJudge(area->name(), client.m_ipid, client.name(), QString::number(client.clientId()),
+                         client.character() + " " + client.characterName(), QString("WT/CE: %1").arg(animation));
 }

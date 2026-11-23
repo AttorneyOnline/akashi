@@ -70,6 +70,18 @@ void ULogger::logOOC(const QString &f_area_name, const QString &f_ipid, const QS
     updateAreaBuffer(f_area_name, l_logEntry);
 }
 
+void ULogger::logJudge(const QString &f_area_name, const QString &f_ipid, const QString &f_ooc_name,
+                       const QString &f_id, const QString &f_char_name, const QString &f_action)
+{
+    if (ConfigManager::loggingType() == DataTypes::LogType::MODCALL)
+        return;
+
+    QString l_time = QDateTime::currentDateTime().toString("ddd MMMM d yyyy | hh:mm:ss");
+    QString l_logEntry = QString(m_logtext.value("judge") + "\n")
+                             .arg(l_time, f_area_name, f_ipid, f_id, f_char_name, f_ooc_name, f_action);
+    updateAreaBuffer(f_area_name, l_logEntry);
+}
+
 void ULogger::logLogin(const QString &f_char_name, const QString &f_ooc_name, const QString &f_moderator_name,
                        const QString &f_ipid, const QString &f_area_name, const bool &f_success)
 {
