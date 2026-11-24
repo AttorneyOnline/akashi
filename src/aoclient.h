@@ -837,9 +837,9 @@ class AOClient : public QObject
     void cmdCM(int argc, QStringList argv);
 
     /**
-     * @brief Removes the CM status from the caller.
+     * @brief Removes CM status from the caller or another user.
      *
-     * @details No arguments.
+     * @details Users with UNCM permission may remove another user or all other CMs in their current area.
      *
      * @iscommand
      */

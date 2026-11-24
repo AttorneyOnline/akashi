@@ -83,7 +83,29 @@ void AOClient::cmdCM(int argc, QStringList argv)
 
 void AOClient::cmdUnCM(int argc, QStringList argv)
 {
-    AreaData *l_area = server->getAreaById(areaId());
+    const bool canKick = checkPermission(ACLRole::KICK);
+    if (argc > 2) {
+        sendServerMessage("Use /uncm [user ID] [area ID].");
+        return;
+    }
+    int targetAreaId = areaId();
+    if (argc == 2) {
+        if (!canKick) {
+            sendServerMessage("You do not have permission to specify an area.");
+            return;
+        }
+        bool ok = false;
+        targetAreaId = argv[1].toInt(&ok);
+        if (!ok || targetAreaId < 0 || targetAreaId >= server->getAreaCount()) {
+            sendServerMessage("That does not look like a valid area ID.");
+            return;
+        }
+        if (argv[0] == "all") {
+            sendServerMessage("Specify a user ID when selecting an area.");
+            return;
+        }
+    }
+    AreaData *l_area = server->getAreaById(targetAreaId);
     int l_uid;
 
     if (l_area->owners().isEmpty()) {
@@ -92,12 +114,20 @@ void AOClient::cmdUnCM(int argc, QStringList argv)
     }
     else if (argc == 0) {
         l_uid = clientId();
+        if (!l_area->owners().contains(l_uid)) {
+            sendServerMessage("You are not a CM in this area.");
+            return;
+        }
         sendServerMessage("You are no longer CM in this area.");
     }
-    else if (checkPermission(ACLRole::UNCM) && argc >= 1) {
+    else if (checkPermission(ACLRole::UNCM) || canKick) {
 
         // Remove all owners except yourself
         if (argv[0] == "all") {
+            if (!checkPermission(ACLRole::UNCM)) {
+                sendServerMessage("You do not have permission to unCM all clients.");
+                return;
+            }
             QList<int> owners = l_area->owners();
             for (int uid : owners) {
                 if (uid != clientId()) {
@@ -129,8 +159,14 @@ void AOClient::cmdUnCM(int argc, QStringList argv)
             sendServerMessage("No client with that ID found.");
             return;
         }
-        sendServerMessage(l_target->name() + " was successfully unCMed.");
-        l_target->sendServerMessage("You have been unCMed by a moderator.");
+        if (targetAreaId == areaId()) {
+            sendServerMessage(l_target->name() + " was successfully unCMed.");
+            l_target->sendServerMessage("You have been unCMed by a moderator.");
+        }
+        else {
+            sendServerMessage(l_target->name() + " was successfully unCMed in " + l_area->displayName() + ".");
+            l_target->sendServerMessage("You have been unCMed in " + l_area->displayName() + " by a moderator.");
+        }
     }
     else {
         sendServerMessage("You do not have permission to unCM others. Only yourself.");
