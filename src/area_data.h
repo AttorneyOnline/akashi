@@ -265,10 +265,11 @@ class AreaData : public QObject
      * @details Also automatically adds them to the list of invited people.
      *
      * @param f_clientId The client ID of the client who should be added as an owner.
+     * @param f_ipid The client IPID of the client who should be added as an owner.
      *
      * @see #m_owners
      */
-    void addOwner(int f_clientId);
+    void addOwner(int f_clientId, const QString &f_ipid);
 
     /**
      * @brief Removes the target client from the list of owners.
@@ -514,29 +515,29 @@ class AreaData : public QObject
     /**
      * @brief Returns a copy of the list of invited clients.
      *
-     * @return A list of client IDs.
+     * @return A list of client IDs and IPIDs.
      */
-    QList<int> invited() const;
+    QStringList invited() const;
 
     /**
      * @brief Invites a client to the area.
      *
-     * @param f_clientId The client ID of the client to invite.
+     * @param f_ipid The IPID to invite.
      *
      * @return True if the client was successfully invited. False if they were already in the list of invited people.
      *
      * @see LOCKED and SPECTATABLE for more details about being invited.
      */
-    bool invite(int f_clientId);
+    bool invite(const QString &f_ipid);
 
     /**
      * @brief Removes a client from the list of people invited to the area.
      *
-     * @param f_clientId The client ID of the client to uninvite.
+     * @param f_ipid The IPID to uninvite.
      *
      * @return True if the client was successfully uninvited. False if they were never in the list of invited people.
      */
-    bool uninvite(int f_clientId);
+    bool uninvite(const QString &f_ipid);
 
     /**
      * @brief Returns the name of the background for the area.
@@ -1106,7 +1107,7 @@ class AreaData : public QObject
      *
      * @see LOCKED and SPECTATABLE for the benefits of being invited.
      */
-    QList<int> m_invited;
+    QStringList m_invited;
 
     /**
      * @brief The status of the area's accessibility to clients.

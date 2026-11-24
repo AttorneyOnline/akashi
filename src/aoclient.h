@@ -865,6 +865,8 @@ class AOClient : public QObject
      * @see AreaData::LOCKED and AreaData::SPECTATABLE for the benefits of being invited.
      */
     void cmdUnInvite(int argc, QStringList argv);
+    /** @brief Privately lists invited IPIDs and their connected clients. */
+    void cmdInviteList(int argc, QStringList argv);
 
     /**
      * @brief Locks the area.

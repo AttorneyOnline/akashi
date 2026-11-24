@@ -195,8 +195,8 @@
       "names": [
          "cm"
       ],
-      "usage":"/cm 'ID'",
-      "text":"Promotes a client to CM status. If called with a user ID as an argument, and the caller is a CM, promotes the target client to CM status."
+      "usage":"/cm <ID>",
+      "text":"Promotes a client to CM. A CM may promote another client by ID."
    },
    {
       "names": [
@@ -217,7 +217,14 @@
          "uninvite"
       ],
       "usage":"/uninvite <ID>",
-      "text":"Uninvites a client from. the area."
+      "text":"Uninvites a client from the area. A CM cannot be uninvited."
+   },
+   {
+      "names": [
+         "invitelist"
+      ],
+      "usage":"/invitelist",
+      "text":"Shows invited clients in the current area."
    },
    {
       "names": [
@@ -248,14 +255,7 @@
          "area_unlock"
       ],
       "usage":"/unlock",
-      "text":"Unlocks the area. This command takes no arguments."
-   },
-   {
-      "names": [
-         "area_unlock"
-      ],
-      "usage":"/area_unlock",
-      "text":"Unlocks the area. This command takes no arguments."
+      "text":"Unlocks the area and clears its invite list. This command takes no arguments."
    },
    {
       "names": [
@@ -364,27 +364,44 @@
       "text":"Sends out a decorated global message, for announcements."
    },
    {
-      "names": ["gpoll", "poll"],
+      "names": [
+         "gpoll", 
+         "poll"
+      ],
       "usage":"/gpoll|poll \"<question>\" OR /gpoll|poll \"<question>\" MCQ <choice>, <choice>, ...",
       "text":"Creates a global poll or a local area poll (CM). Quote the question when specifying MCQ. Creating a poll replaces the previous poll. Polls are kept until cleared or replaced."
    },
    {
-      "names": ["gvote", "vote", "gpollvote", "pollvote"],
+      "names": [
+       "gvote",
+       "vote", 
+       "gpollvote", 
+       "pollvote"
+      ],
       "usage":"/gvote|gpollvote  OR /vote|/pollvote <answer or choice number>",
       "text":"Votes in the global or current area's poll. MCQ answers may be a choice number or its text. Free answers are grouped without regard to capital letters or spaces."
    },
    {
-      "names": ["gpollreveal", "pollreveal"],
+      "names": [
+       "gpollreveal",
+       "pollreveal"
+      ],
       "usage":"/gpollreveal|pollreveal",
       "text":"Broadcasts the results of the global or current area's poll. Does not clear it."
    },
    {
-      "names": ["gpollpreveal", "pollpreveal"],
+      "names": [
+         "gpollpreveal", 
+         "pollpreveal"
+      ],
       "usage":"/gpollpreveal|pollpreveal",
       "text":"Privately shows the results of the global or current area's poll. Does not clear it."
    },
    {
-      "names": ["gpollclear", "pollclear"],
+      "names": [
+       "gpollclear",
+       "pollclear"
+      ],
       "usage":"/gpollclear|pollclear",
       "text":"Clears the global or current area's poll and its votes."
    },

@@ -42,7 +42,7 @@ void PacketHP::handlePacket(AreaData *area, AOClient &client) const
         return;
     }
 
-    if (area->lockStatus() == AreaData::LockStatus::SPECTATABLE && !area->invited().contains(client.clientId()) && !client.checkPermission(ACLRole::BYPASS_LOCKS)) {
+    if (area->lockStatus() == AreaData::LockStatus::SPECTATABLE && !area->invited().contains(client.getIpid()) && !client.checkPermission(ACLRole::BYPASS_LOCKS)) {
         client.sendServerMessage("Spectators are blocked from using the judge controls.");
         return;
     }

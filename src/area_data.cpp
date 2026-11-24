@@ -127,19 +127,16 @@ QList<int> AreaData::owners() const
     return m_owners;
 }
 
-void AreaData::addOwner(int f_clientId)
+void AreaData::addOwner(int f_clientId, const QString &f_ipid)
 {
     m_owners.append(f_clientId);
-    m_invited.append(f_clientId);
+    invite(f_ipid);
 }
 
 bool AreaData::removeOwner(int f_clientId)
 {
-    m_owners.removeAll(f_clientId);
-    m_invited.removeAll(f_clientId);
-
-    if (m_owners.isEmpty() && m_locked != AreaData::FREE) {
-        m_locked = AreaData::FREE;
+    if (m_owners.removeAll(f_clientId) > 0 && m_owners.isEmpty() && m_locked != AreaData::FREE) {
+        unlock();
         return true;
     }
 
@@ -189,6 +186,7 @@ void AreaData::lock()
 void AreaData::unlock()
 {
     m_locked = LockStatus::FREE;
+    m_invited.clear();
 }
 
 void AreaData::spectatable()
@@ -196,23 +194,23 @@ void AreaData::spectatable()
     m_locked = LockStatus::SPECTATABLE;
 }
 
-bool AreaData::invite(int f_clientId)
+bool AreaData::invite(const QString &f_ipid)
 {
-    if (m_invited.contains(f_clientId)) {
+    if (f_ipid.isEmpty() || m_invited.contains(f_ipid)) {
         return false;
     }
 
-    m_invited.append(f_clientId);
+    m_invited.append(f_ipid);
     return true;
 }
 
-bool AreaData::uninvite(int f_clientId)
+bool AreaData::uninvite(const QString &f_ipid)
 {
-    if (!m_invited.contains(f_clientId)) {
+    if (!m_invited.contains(f_ipid)) {
         return false;
     }
 
-    m_invited.removeAll(f_clientId);
+    m_invited.removeAll(f_ipid);
     return true;
 }
 
@@ -332,7 +330,7 @@ bool AreaData::changeStatus(const QString &f_newStatus_r)
     return false;
 }
 
-QList<int> AreaData::invited() const
+QStringList AreaData::invited() const
 {
     return m_invited;
 }

@@ -55,6 +55,7 @@ const QMap<QString, AOClient::CommandInfo> AOClient::COMMANDS{
     {"uncm", {{ACLRole::CM}, 0, &AOClient::cmdUnCM}},
     {"invite", {{ACLRole::CM}, 1, &AOClient::cmdInvite}},
     {"uninvite", {{ACLRole::CM}, 1, &AOClient::cmdUnInvite}},
+    {"invitelist", {{ACLRole::KICK}, 0, &AOClient::cmdInviteList}},
     {"area_lock", {{ACLRole::CM}, 0, &AOClient::cmdLock}},
     {"area_spectate", {{ACLRole::CM}, 0, &AOClient::cmdSpectatable}},
     {"area_unlock", {{ACLRole::CM}, 0, &AOClient::cmdUnLock}},
@@ -186,11 +187,8 @@ void AOClient::clientDisconnected()
 
     const QVector<AreaData *> l_areas = server->getAreas();
     for (AreaData *l_area : l_areas) {
-        if (l_area->invited().contains(m_id)) {
-            l_area->uninvite(m_id);
-        }
-
-        l_updateLocks = l_updateLocks || l_area->removeOwner(clientId());
+        if (l_area->removeOwner(clientId()))
+            l_updateLocks = true;
     }
 
     if (l_updateLocks) {
@@ -268,7 +266,7 @@ void AOClient::changeArea(int new_area)
         sendServerMessage("You must join the server before changing areas.");
         return;
     }
-    if (server->getAreaById(new_area)->lockStatus() == AreaData::LockStatus::LOCKED && !server->getAreaById(new_area)->invited().contains(clientId()) && !checkPermission(ACLRole::BYPASS_LOCKS)) {
+    if (server->getAreaById(new_area)->lockStatus() == AreaData::LockStatus::LOCKED && !server->getAreaById(new_area)->invited().contains(m_ipid) && !checkPermission(ACLRole::BYPASS_LOCKS)) {
         sendServerMessage("Area " + server->getAreaName(new_area) + " is locked.");
         return;
     }
