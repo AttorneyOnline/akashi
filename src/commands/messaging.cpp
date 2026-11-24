@@ -170,6 +170,127 @@ void AOClient::cmdAnnounce(int argc, QStringList argv)
     sendServerBroadcast("=== Announcement ===\r\n" + argv.join(" ") + "\r\n=============");
 }
 
+void AOClient::cmdGPoll(int argc, QStringList argv)
+{
+    Q_UNUSED(argc);
+    createPoll(true, argv);
+}
+
+void AOClient::cmdGPollVote(int argc, QStringList argv)
+{
+    Q_UNUSED(argc);
+    voteInPoll(true, argv);
+}
+
+void AOClient::cmdGPollReveal(int argc, QStringList argv)
+{
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+    revealPoll(true, false);
+}
+
+void AOClient::cmdGPollPrivateReveal(int argc, QStringList argv)
+{
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+    revealPoll(true, true);
+}
+
+void AOClient::cmdGPollClear(int argc, QStringList argv)
+{
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+    clearPoll(true);
+}
+
+void AOClient::cmdPoll(int argc, QStringList argv)
+{
+    Q_UNUSED(argc);
+    createPoll(false, argv);
+}
+
+void AOClient::cmdPollVote(int argc, QStringList argv)
+{
+    Q_UNUSED(argc);
+    voteInPoll(false, argv);
+}
+
+void AOClient::cmdPollReveal(int argc, QStringList argv)
+{
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+    revealPoll(false, false);
+}
+
+void AOClient::cmdPollPrivateReveal(int argc, QStringList argv)
+{
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+    revealPoll(false, true);
+}
+
+void AOClient::cmdPollClear(int argc, QStringList argv)
+{
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
+    clearPoll(false);
+}
+
+void AOClient::createPoll(bool global, const QStringList &argv)
+{
+    Poll &poll = global ? server->globalPoll() : server->getAreaById(areaId())->poll();
+    const QString error = poll.create(argv.join(" "));
+    if (!error.isEmpty()) {
+        sendServerMessage(error);
+        return;
+    }
+    if (global)
+        sendServerBroadcast(poll.display(false, true));
+    else
+        sendServerMessageArea(poll.display(false, false));
+}
+
+void AOClient::voteInPoll(bool global, const QStringList &argv)
+{
+    Poll &poll = global ? server->globalPoll() : server->getAreaById(areaId())->poll();
+    const QString error = poll.vote(m_ipid, argv.join(" "));
+    if (!error.isEmpty()) {
+        sendServerMessage(error);
+        return;
+    }
+    sendServerMessage("Your vote has been recorded.");
+}
+
+void AOClient::revealPoll(bool global, bool privately)
+{
+    Poll &poll = global ? server->globalPoll() : server->getAreaById(areaId())->poll();
+    if (!poll.isActive()) {
+        sendServerMessage("There is no active poll.");
+        return;
+    }
+    const QString results = poll.display(true, global);
+    if (privately)
+        sendServerMessage(results);
+    else if (global)
+        sendServerBroadcast(results);
+    else
+        sendServerMessageArea(results);
+}
+
+void AOClient::clearPoll(bool global)
+{
+    Poll &poll = global ? server->globalPoll() : server->getAreaById(areaId())->poll();
+    if (!poll.isActive()) {
+        sendServerMessage("There is no active poll.");
+        return;
+    }
+    poll.clear();
+    if (global)
+        sendServerBroadcast("The global poll has been cleared.");
+    else
+        sendServerMessageArea("The area poll has been cleared.");
+}
+
 void AOClient::cmdM(int argc, QStringList argv)
 {
     Q_UNUSED(argc);

@@ -103,6 +103,8 @@ qt_add_executable(akashi
   src/music_manager.h
   src/packets.cpp
   src/playerstateobserver.cpp
+  src/poll.cpp
+  src/poll.h
   src/playerstateobserver.h
   src/server.cpp
   src/server.h

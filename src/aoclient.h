@@ -1587,6 +1587,22 @@ class AOClient : public QObject
      */
     void cmdAnnounce(int argc, QStringList argv);
 
+    /** @brief Creates a global poll. */
+    void cmdGPoll(int argc, QStringList argv);
+    void cmdGPollVote(int argc, QStringList argv);
+    void cmdGPollReveal(int argc, QStringList argv);
+    void cmdGPollPrivateReveal(int argc, QStringList argv);
+    void cmdGPollClear(int argc, QStringList argv);
+    void cmdPoll(int argc, QStringList argv);
+    void cmdPollVote(int argc, QStringList argv);
+    void cmdPollReveal(int argc, QStringList argv);
+    void cmdPollPrivateReveal(int argc, QStringList argv);
+    void cmdPollClear(int argc, QStringList argv);
+    void createPoll(bool global, const QStringList &argv);
+    void voteInPoll(bool global, const QStringList &argv);
+    void revealPoll(bool global, bool privately);
+    void clearPoll(bool global);
+
     /**
      * @brief Sends a message in the server-wide, moderator only chat.
      *

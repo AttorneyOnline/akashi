@@ -33,6 +33,7 @@
 #include "medieval_parser.h"
 #include "network/aopacket.h"
 #include "playerstateobserver.h"
+#include "poll.h"
 
 class ACLRolesHandler;
 class ServerPublisher;
@@ -76,6 +77,7 @@ class Server : public QObject
      * Advertising is not done here -- see Advertiser::contactMasterServer() for that.
      */
     void start();
+    Poll &globalPoll() { return m_global_poll; }
 
     /**
      * @brief Enum to specifc different targets to send altered packets to a specific usergroup.
@@ -480,6 +482,7 @@ class Server : public QObject
     bool m_join_lockdown_enabled = false;
     QHash<QString, qint64> m_modcall_times;
     PlayerStateObserver m_player_state_observer;
+    Poll m_global_poll;
 
     /**
      * @brief Stack of all available IDs for clients. When this is empty the server

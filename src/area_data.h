@@ -27,6 +27,7 @@
 #include <QTimer>
 
 #include "network/aopacket.h"
+#include "poll.h"
 
 class ConfigManager;
 class Logger;
@@ -49,6 +50,7 @@ class AreaData : public QObject
      * @param p_index The index of the area in the area list.
      */
     AreaData(QString p_name, int p_index, MusicManager *p_music_manager);
+    Poll &poll() { return m_poll; }
 
     /**
      * @brief The data for evidence in the area.
@@ -1042,6 +1044,7 @@ class AreaData : public QObject
     void userJoinedArea(int f_area_index, int f_user_id);
 
   private:
+    Poll m_poll;
     /**
      * @brief The list of timers available in the area.
      */
