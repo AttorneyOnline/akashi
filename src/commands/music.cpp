@@ -39,9 +39,8 @@ void AOClient::cmdPlay(int argc, QStringList argv)
         return;
     }
     AreaData *l_area = server->getAreaById(areaId());
-    const ACLRole l_role = server->getACLRolesHandler()->getRoleById(m_acl_role_id);
-    if (!l_area->owners().contains(clientId()) && !l_area->isPlayEnabled() && !l_role.checkPermission(ACLRole::CM)) { // Make sure we have permission to play music
-        sendServerMessage("Free music play is disabled in this area.");
+    if (!canUseAreaControl(l_area->playStreamingAllowed())) {
+        sendServerMessage("You do not have permission to use /play in this area.");
         return;
     }
     if (characterName().isEmpty()) {
@@ -63,8 +62,8 @@ void AOClient::cmdPlayAmbience(int argc, QStringList argv)
         return;
     }
     AreaData *l_area = server->getAreaById(areaId());
-    if (!l_area->owners().contains(clientId()) && !l_area->isPlayEnabled()) { // Make sure we have permission to play music
-        sendServerMessage("Free ambience play is disabled in this area.");
+    if (!canUseAreaControl(l_area->playStreamingAllowed())) {
+        sendServerMessage("You do not have permission to use /play_ambience in this area.");
         return;
     }
     QString l_song = argv.join(" ");

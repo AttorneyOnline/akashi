@@ -36,6 +36,7 @@ class MusicManager;
 class Server;
 class NetworkSocket;
 class AOPacket;
+enum class AreaControlAccess;
 
 /**
  * @brief Represents a client connected to the server running Attorney Online 2 or one of its derivatives.
@@ -865,7 +866,7 @@ class AOClient : public QObject
      * @see AreaData::LOCKED and AreaData::SPECTATABLE for the benefits of being invited.
      */
     void cmdUnInvite(int argc, QStringList argv);
-    /** @brief Privately lists invited IPIDs and their connected clients. */
+    /** @brief Lists invited clients. */
     void cmdInviteList(int argc, QStringList argv);
 
     /**
@@ -878,6 +879,9 @@ class AOClient : public QObject
      * @see AreaData::LOCKED
      */
     void cmdLock(int argc, QStringList argv);
+    void cmdToggleLocking(int argc, QStringList argv);
+    void cmdToggleStreaming(int argc, QStringList argv);
+    bool canUseAreaControl(AreaControlAccess access) const;
 
     /**
      * @brief Sets the area to spectatable.

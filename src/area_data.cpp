@@ -65,7 +65,13 @@ AreaData::AreaData(QString p_name, int p_index, MusicManager *p_music_manager = 
     m_shownameAllowed = areas_ini->value("shownames_allowed", "true").toBool();
     m_ignoreBgList = areas_ini->value("ignore_bglist", "false").toBool();
     m_jukebox = areas_ini->value("jukebox_enabled", "false").toBool();
-    m_playcmd = areas_ini->value("playcmd_enabled", "false").toBool();
+    const QString locking = areas_ini->value("lockingAllowed", "CM").toString();
+    if (!setLockingAllowed(locking))
+        qWarning() << "Invalid lockingAllowed for area" << p_name << ":" << locking << "- using CM";
+    const QString defaultStreaming = areas_ini->value("playcmd_enabled", false).toBool() ? "FFA" : "CM";
+    const QString streaming = areas_ini->value("playStreamingAllowed", defaultStreaming).toString();
+    if (!setPlayStreamingAllowed(streaming))
+        qWarning() << "Invalid playStreamingAllowed for area" << p_name << ":" << streaming << "- using CM";
     m_can_send_wtce = areas_ini->value("wtce_enabled", "true").toBool();
     m_can_use_shouts = areas_ini->value("shouts_enabled", "true").toBool();
     areas_ini->endGroup();
@@ -173,9 +179,44 @@ int AreaData::getJukeboxQueueSize() const
     return m_jukebox_queue.size();
 }
 
-bool AreaData::isPlayEnabled() const
+AreaData::ControlAccess AreaData::lockingAllowed() const
 {
-    return m_playcmd;
+    return m_lockingAllowed;
+}
+
+AreaData::ControlAccess AreaData::playStreamingAllowed() const
+{
+    return m_playStreamingAllowed;
+}
+
+bool AreaData::setLockingAllowed(const QString &value)
+{
+    const QString setting = value.trimmed().toUpper();
+    if (setting == "SUPER")
+        m_lockingAllowed = ControlAccess::SUPER;
+    else if (setting == "MOD")
+        m_lockingAllowed = ControlAccess::MOD;
+    else if (setting == "CM")
+        m_lockingAllowed = ControlAccess::CM;
+    else
+        return false;
+    return true;
+}
+
+bool AreaData::setPlayStreamingAllowed(const QString &value)
+{
+    const QString setting = value.trimmed().toUpper();
+    if (setting == "SUPER")
+        m_playStreamingAllowed = ControlAccess::SUPER;
+    else if (setting == "MOD")
+        m_playStreamingAllowed = ControlAccess::MOD;
+    else if (setting == "CM")
+        m_playStreamingAllowed = ControlAccess::CM;
+    else if (setting == "FFA")
+        m_playStreamingAllowed = ControlAccess::FFA;
+    else
+        return false;
+    return true;
 }
 
 void AreaData::lock()

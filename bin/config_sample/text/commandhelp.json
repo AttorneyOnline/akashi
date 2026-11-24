@@ -214,6 +214,20 @@
    },
    {
       "names": [
+         "togglelocking"
+      ],
+      "usage": "/togglelocking <Super|Mod|CM>",
+      "text": "Sets who may lock the current area or make it spectatable."
+   },
+   {
+      "names": [
+         "togglestreaming"
+      ],
+      "usage": "/togglestreaming <Super|Mod|CM|FFA>",
+      "text": "Sets who may use /play and /play_ambience for local tracks and streams."
+   },
+   {
+      "names": [
          "uninvite"
       ],
       "usage":"/uninvite <ID>",

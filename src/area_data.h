@@ -34,6 +34,14 @@ class Logger;
 class MusicManager;
 class AOPacket;
 
+enum class AreaControlAccess
+{
+    SUPER,
+    MOD,
+    CM,
+    FFA
+};
+
 /**
  * @brief Represents an area on the server, a distinct "room" for people to chat in.
  */
@@ -42,6 +50,8 @@ class AreaData : public QObject
     Q_OBJECT
 
   public:
+    using ControlAccess = AreaControlAccess;
+
     /**
      * @brief Constructor for the AreaData class.
      *
@@ -335,14 +345,10 @@ class AreaData : public QObject
      */
     int getJukeboxQueueSize() const;
 
-    /**
-     * @brief Returns whether /play is allowed without CM in this area
-     *
-     * @return See short description.
-     *
-     * @see #m_playcmd
-     */
-    bool isPlayEnabled() const;
+    ControlAccess lockingAllowed() const;
+    ControlAccess playStreamingAllowed() const;
+    bool setLockingAllowed(const QString &value);
+    bool setPlayStreamingAllowed(const QString &value);
 
     /**
      * @brief Locks the area, setting it to LOCKED.
@@ -1291,10 +1297,8 @@ class AreaData : public QObject
      */
     bool m_jukebox;
 
-    /**
-     * @brief Whether or not /play can be used without CM.
-     */
-    bool m_playcmd;
+    ControlAccess m_lockingAllowed = ControlAccess::CM;
+    ControlAccess m_playStreamingAllowed = ControlAccess::CM;
 
     /**
      * @brief Timer until the next IC message can be sent.

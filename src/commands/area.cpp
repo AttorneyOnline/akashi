@@ -233,6 +233,10 @@ void AOClient::cmdLock(int argc, QStringList argv)
     Q_UNUSED(argv);
 
     AreaData *area = server->getAreaById(areaId());
+    if (!canUseAreaControl(area->lockingAllowed())) {
+        sendServerMessage("You do not have permission to lock this area.");
+        return;
+    }
     if (area->lockStatus() == AreaData::LockStatus::LOCKED) {
         sendServerMessage("This area is already locked.");
         return;
@@ -254,6 +258,10 @@ void AOClient::cmdSpectatable(int argc, QStringList argv)
     Q_UNUSED(argv);
 
     AreaData *l_area = server->getAreaById(areaId());
+    if (!canUseAreaControl(l_area->lockingAllowed())) {
+        sendServerMessage("You do not have permission to lock this area.");
+        return;
+    }
     if (l_area->lockStatus() == AreaData::LockStatus::SPECTATABLE) {
         sendServerMessage("This area is already in spectate mode.");
         return;
@@ -267,6 +275,32 @@ void AOClient::cmdSpectatable(int argc, QStringList argv)
         }
     }
     arup(ARUPType::LOCKED, true);
+}
+
+void AOClient::cmdToggleLocking(int argc, QStringList argv)
+{
+    if (!checkPermission(ACLRole::SUPER)) {
+        sendServerMessage("You do not have permission to use that command.");
+        return;
+    }
+    if (argc != 1 || !server->getAreaById(areaId())->setLockingAllowed(argv[0])) {
+        sendServerMessage("Use /togglelocking <SUPER|Mod|CM>.");
+        return;
+    }
+    sendServerMessage("Area locking access set to " + argv[0].toUpper() + ".");
+}
+
+void AOClient::cmdToggleStreaming(int argc, QStringList argv)
+{
+    if (!checkPermission(ACLRole::SUPER)) {
+        sendServerMessage("You do not have permission to use that command.");
+        return;
+    }
+    if (argc != 1 || !server->getAreaById(areaId())->setPlayStreamingAllowed(argv[0])) {
+        sendServerMessage("Use /togglestreaming <SUPER|Mod|CM|FFA>.");
+        return;
+    }
+    sendServerMessage("Area play command access set to " + argv[0].toUpper() + ".");
 }
 
 void AOClient::cmdUnLock(int argc, QStringList argv)

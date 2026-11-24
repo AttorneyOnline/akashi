@@ -25,6 +25,21 @@
 // This file is for functions used by various commands, defined in the command helper function category in aoclient.h
 // Be sure to register the command in the header before adding it here!
 
+bool AOClient::canUseAreaControl(AreaControlAccess access) const
+{
+    switch (access) {
+    case AreaData::ControlAccess::SUPER:
+        return checkPermission(ACLRole::SUPER);
+    case AreaData::ControlAccess::MOD:
+        return checkPermission(ACLRole::BAN);
+    case AreaData::ControlAccess::CM:
+        return checkPermission(ACLRole::CM);
+    case AreaData::ControlAccess::FFA:
+        return true;
+    }
+    return false;
+}
+
 void AOClient::cmdDefault(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
