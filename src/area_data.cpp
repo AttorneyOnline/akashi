@@ -65,13 +65,13 @@ AreaData::AreaData(QString p_name, int p_index, MusicManager *p_music_manager = 
     m_shownameAllowed = areas_ini->value("shownames_allowed", "true").toBool();
     m_ignoreBgList = areas_ini->value("ignore_bglist", "false").toBool();
     m_jukebox = areas_ini->value("jukebox_enabled", "false").toBool();
-    const QString locking = areas_ini->value("lockingAllowed", "CM").toString();
+    const QString locking = areas_ini->value("lockingallowed", "CM").toString();
     if (!setLockingAllowed(locking))
-        qWarning() << "Invalid lockingAllowed for area" << p_name << ":" << locking << "- using CM";
+        qWarning() << "Invalid lockingallowed for area" << p_name << ":" << locking << "- using CM";
     const QString defaultStreaming = areas_ini->value("playcmd_enabled", false).toBool() ? "FFA" : "CM";
-    const QString streaming = areas_ini->value("playStreamingAllowed", defaultStreaming).toString();
+    const QString streaming = areas_ini->value("playstreamingallowed", defaultStreaming).toString();
     if (!setPlayStreamingAllowed(streaming))
-        qWarning() << "Invalid playStreamingAllowed for area" << p_name << ":" << streaming << "- using CM";
+        qWarning() << "Invalid playstreamingallowed for area" << p_name << ":" << streaming << "- using CM";
     m_can_send_wtce = areas_ini->value("wtce_enabled", "true").toBool();
     m_can_use_shouts = areas_ini->value("shouts_enabled", "true").toBool();
     areas_ini->endGroup();
