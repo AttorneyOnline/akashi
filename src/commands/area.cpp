@@ -558,11 +558,15 @@ void AOClient::cmdStatus(int argc, QStringList argv)
     Q_UNUSED(argc);
 
     AreaData *l_area = server->getAreaById(areaId());
+    if (!canUseAreaControl(l_area->statusAllowed())) {
+        sendServerMessage("You do not have permission to use /status in this area.");
+        return;
+    }
     QString l_arg = argv[0].toLower();
 
-    if (l_area->changeStatus(l_arg)) {
+    if (l_area->changeStatus(l_arg, argv.mid(1).join(" "))) {
         arup(ARUPType::STATUS, true);
-        server->broadcast(PacketFactory::createPacket("CT", {ConfigManager::serverNickname(), character() + " changed status to " + l_arg.toUpper(), "1"}), areaId());
+        server->broadcast(PacketFactory::createPacket("CT", {ConfigManager::serverNickname(), character() + " changed status to " + l_area->statusText(), "1"}), areaId());
     }
     else {
         const QStringList keys = AreaData::map_statuses.keys();

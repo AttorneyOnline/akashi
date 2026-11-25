@@ -325,8 +325,8 @@
       "names": [
          "status"
       ],
-      "usage":"/status <Status>",
-      "text":"Changes the status of the current area."
+      "usage":"/status <Status> <Extra>",
+      "text":"Changes the status of the current area, optionally adding extra info to the displayed status. Clients will use the color of whatever the main status is."
    },
    {
       "names": [
