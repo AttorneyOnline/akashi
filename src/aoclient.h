@@ -1242,6 +1242,7 @@ class AOClient : public QObject
      * @iscommand
      */
     void cmdToggleJoinCooldown(int argc, QStringList argv);
+    void cmdAutoMod(int argc, QStringList argv);
 
     void cmdJoinCooldownTime(int arc, QStringList argv);
 

@@ -33,6 +33,10 @@
 Server::Server(int p_ws_port, QObject *parent) :
     QObject(parent),
     m_port(p_ws_port),
+    m_auto_mod_enabled(ConfigManager::autoModEnabled()),
+    m_auto_mod_time(ConfigManager::autoModTime()),
+    m_auto_mod_guard_time(ConfigManager::autoModGuardTime()),
+    m_auto_mod_threshold(ConfigManager::autoModThreshold()),
     m_player_count(0)
 {
     timer = new QTimer(this);
@@ -54,6 +58,96 @@ Server::Server(int p_ws_port, QObject *parent) :
     connect(this, &Server::logConnectionAttempt, logger, &ULogger::logConnectionAttempt);
 
     AOPacket::registerPackets();
+}
+
+bool Server::autoModEnabled() const
+{
+    return m_auto_mod_enabled;
+}
+
+void Server::setAutoModEnabled(bool f_enabled)
+{
+    if (m_auto_mod_enabled != f_enabled)
+        m_auto_moderator.clear();
+    m_auto_mod_enabled = f_enabled;
+}
+
+bool Server::moderateMessage(AOClient &f_client, const QString &f_message)
+{
+    if (!m_auto_mod_enabled || f_client.isAuthenticated())
+        return true;
+
+    bool l_filter_match = false;
+    for (const QString &l_filter : ConfigManager::filterList()) {
+        const QRegularExpression l_regex(l_filter, QRegularExpression::CaseInsensitiveOption);
+        if (l_regex.match(f_message).hasMatch()) {
+            l_filter_match = true;
+            break;
+        }
+    }
+
+    DBManager::AutoModStrikes l_strikes;
+    if (!db_manager->getAutoModStrikes(f_client.getIpid(), l_strikes)) {
+        f_client.sendServerMessage("Automatic moderation is unavailable due to a database error.");
+        return false;
+    }
+    const qint64 l_now = QDateTime::currentSecsSinceEpoch();
+    if (l_strikes.count > 0 && l_now - l_strikes.lastStrike >= 86400)
+        l_strikes = {};
+    const bool l_guarded = l_strikes.count > 0 && l_now - l_strikes.lastStrike < m_auto_mod_guard_time;
+    const AutoModerator::Trigger l_trigger = m_auto_moderator.observe(
+        f_client.getIpid(), f_message, l_filter_match, l_now, m_auto_mod_time, m_auto_mod_threshold, l_guarded);
+    if (l_trigger == AutoModerator::Trigger::None)
+        return true;
+
+    ++l_strikes.count;
+    l_strikes.lastStrike = l_now;
+    if (!db_manager->setAutoModStrikes(f_client.getIpid(), l_strikes)) {
+        f_client.sendServerMessage("Automatic moderation could not record a strike due to a database error.");
+        return false;
+    }
+
+    const bool l_is_filter = l_trigger == AutoModerator::Trigger::Filter;
+    const QString l_reason = l_is_filter ? "Triggering the chat filter" : "Spamming";
+    if (l_strikes.count == 1) {
+        const QString l_warning = l_is_filter ? "triggered the filter too many times" : "been spamming";
+        f_client.sendServerMessage(QString("Warning: You've %1! Any further triggers within %2 seconds will cause actions!")
+                                       .arg(l_warning).arg(m_auto_mod_guard_time));
+        return true;
+    }
+
+    const QList<AOClient *> l_targets = getClientsByIpid(f_client.getIpid());
+    if (l_strikes.count == 2) {
+        for (AOClient *l_target : l_targets) {
+            l_target->sendPacket("KK", {l_reason});
+            l_target->m_socket->close("automod_kick");
+        }
+        emit f_client.logKick("AutoMod", f_client.getIpid(), l_reason);
+        return false;
+    }
+
+    DBManager::BanInfo l_ban{};
+    l_ban.ipid = f_client.getIpid();
+    l_ban.ip = f_client.m_remote_ip;
+    l_ban.hdid = f_client.m_hwid;
+    l_ban.moderator = "AutoMod";
+    l_ban.reason = l_reason;
+    l_ban.time = static_cast<unsigned long>(l_now);
+    l_ban.duration = 15 * 60;
+    if (!db_manager->addBan(l_ban)) {
+        f_client.sendServerMessage("Automatic moderation could not save the ban due to a database error.");
+        return false;
+    }
+    const int l_ban_id = db_manager->getBanID(l_ban.ip);
+    const QString l_until = QDateTime::fromSecsSinceEpoch(l_now).addSecs(l_ban.duration).toString("MM/dd/yyyy, hh:mm");
+    for (AOClient *l_target : l_targets) {
+        l_target->sendPacket("KB", {l_reason + "\nID: " + QString::number(l_ban_id) + "\nUntil: " + l_until});
+        l_target->m_socket->close("automod_ban");
+    }
+    emit f_client.logBan("AutoMod", l_ban.ipid, l_until, l_reason);
+    if (ConfigManager::discordBanWebhookEnabled())
+        emit banWebhookRequest(l_ban.ipid, l_ban.moderator, l_until, l_reason, l_ban_id);
+    return false;
 }
 
 bool Server::joinCooldownAllows(const QString &f_ipid) const

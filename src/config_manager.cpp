@@ -16,6 +16,7 @@
 //    along with this program.  If not, see <https://www.gnu.org/licenses/>.        //
 //////////////////////////////////////////////////////////////////////////////////////
 #include "config_manager.h"
+#include <QRegularExpression>
 #include <QSqlDatabase>
 #include <QSqlQuery>
 
@@ -134,6 +135,20 @@ bool ConfigManager::verifyServerConfig()
         qWarning("debug must be true or false; connection diagnostics are disabled!");
     }
 
+    const QString l_auto_mod = m_settings->value("Auto_Mod", "on").toString().trimmed().toLower();
+    if (l_auto_mod != "on" && l_auto_mod != "off") {
+        qCritical("Auto_Mod must be on or off!");
+        return false;
+    }
+    for (const QString &l_key : {QString("Auto_Mod_Time"), QString("Auto_Mod_Guard_Time"), QString("Auto_Mod_Threshold")}) {
+        const int l_default = l_key == "Auto_Mod_Time" ? 10 : (l_key == "Auto_Mod_Guard_Time" ? 300 : 5);
+        const int l_value = m_settings->value(l_key, l_default).toInt(&ok);
+        if (!ok || l_value < 1) {
+            qCritical().noquote() << l_key << "must be a positive integer!";
+            return false;
+        }
+    }
+
     m_settings->endGroup();
     m_commands->magic_8ball = (loadConfigFile("8ball"));
     m_commands->praises = (loadConfigFile("praise"));
@@ -150,6 +165,26 @@ bool ConfigManager::verifyServerConfig()
 QString ConfigManager::bindIP()
 {
     return m_settings->value("Options/bind_ip", "all").toString();
+}
+
+bool ConfigManager::autoModEnabled()
+{
+    return m_settings->value("Options/Auto_Mod", "on").toString().trimmed().compare("on", Qt::CaseInsensitive) == 0;
+}
+
+int ConfigManager::autoModTime()
+{
+    return m_settings->value("Options/Auto_Mod_Time", 10).toInt();
+}
+
+int ConfigManager::autoModGuardTime()
+{
+    return m_settings->value("Options/Auto_Mod_Guard_Time", 300).toInt();
+}
+
+int ConfigManager::autoModThreshold()
+{
+    return m_settings->value("Options/Auto_Mod_Threshold", 5).toInt();
 }
 
 QStringList ConfigManager::charlist()
@@ -750,6 +785,14 @@ QStringList ConfigManager::gimpList()
 QStringList ConfigManager::filterList()
 {
     return m_commands->filters;
+}
+
+QString ConfigManager::filterText(QString f_text)
+{
+    for (const QString &l_filter : filterList()) {
+        f_text.replace(QRegularExpression(l_filter, QRegularExpression::CaseInsensitiveOption), "❌");
+    }
+    return f_text;
 }
 
 QStringList ConfigManager::cdnList()

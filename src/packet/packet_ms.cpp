@@ -42,6 +42,20 @@ void PacketMS::handlePacket(AreaData *area, AOClient &client) const
         return;
     }
 
+    if (client.m_joined && !client.isSpectator() && !client.character().isEmpty()
+        && (area->lockStatus() != AreaData::LockStatus::SPECTATABLE
+            || area->invited().contains(client.getIpid()) || client.checkPermission(ACLRole::BYPASS_LOCKS))
+        && m_content[4].size() <= ConfigManager::maxCharacters()) {
+        const QString l_message = client.dezalgo(m_content[4].trimmed());
+        const QString l_decoded = client.decodeMessage(l_message);
+        const QRegularExpressionMatch l_jump = isTestimonyJumpCommand(l_decoded);
+        const bool l_testimony_command = area->testimonyRecording() == AreaData::TestimonyRecording::PLAYBACK
+            && (l_message == ">" || l_message == "<" || l_message == "="
+                || (l_jump.hasMatch() && l_jump.capturedLength() == l_decoded.size()));
+        if (!l_message.isEmpty() && !l_testimony_command && !client.getServer()->moderateMessage(client, l_message))
+            return;
+    }
+
     if (!area->isMessageAllowed() || !client.getServer()->isMessageAllowed()) {
         return;
     }
@@ -193,12 +207,7 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
 
     client.m_last_message = l_incoming_msg;
 
-    if (!ConfigManager::filterList().isEmpty()) {
-        foreach (const QString &regex, ConfigManager::filterList()) {
-            QRegularExpression re(regex, QRegularExpression::CaseInsensitiveOption);
-            l_incoming_msg.replace(re, "❌");
-        }
-    }
+    l_incoming_msg = ConfigManager::filterText(l_incoming_msg);
 
     if (client.m_is_gimped) {
         QString l_gimp_message = ConfigManager::gimpList().at((client.genRand(1, ConfigManager::gimpList().size() - 1)));
@@ -331,6 +340,7 @@ AOPacket *PacketMS::validateIcPacket(AOClient &client) const
         // if the raw input is not empty but the trimmed input is, use a single space
         if (l_incoming_showname.isEmpty() && !l_incoming_args[15].toString().isEmpty())
             l_incoming_showname = " ";
+        l_incoming_showname = ConfigManager::filterText(l_incoming_showname);
         l_args.append(l_incoming_showname);
         client.setCharacterName(l_incoming_showname);
 

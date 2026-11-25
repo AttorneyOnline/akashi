@@ -188,6 +188,10 @@ class ConfigManager
     static QString joinLockdownConflictMessage();
     static int modcallCooldownSeconds();
     static int maxOOCNameLength();
+    static bool autoModEnabled();
+    static int autoModTime();
+    static int autoModGuardTime();
+    static int autoModThreshold();
 
     /**
      * @brief Returns the maximum number of characters a message can contain..
@@ -350,6 +354,11 @@ class ConfigManager
      * @brief Returns the server regex filter list.
      */
     static QStringList filterList();
+
+    /**
+     * @brief Replaces matches from the server filter list.
+     */
+    static QString filterText(QString f_text);
 
     /**
      * @brief Returns the server approved domain list..

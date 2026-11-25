@@ -567,6 +567,22 @@ void AOClient::cmdToggleJoinCooldown(int argc, QStringList argv)
     sendServerMessage(QString("Join cooldown is now %1.").arg(server->joinCooldownEnabled() ? "enabled" : "disabled"));
 }
 
+void AOClient::cmdAutoMod(int argc, QStringList argv)
+{
+    if (!checkPermission(ACLRole::SUPER)) {
+        sendServerMessage("You do not have permission to change automatic moderation.");
+        return;
+    }
+    if (argc > 1 || (argc == 1 && argv[0].compare("on", Qt::CaseInsensitive) != 0
+                     && argv[0].compare("off", Qt::CaseInsensitive) != 0)) {
+        sendServerMessage("Usage: /automod [on|off]");
+        return;
+    }
+    if (argc == 1)
+        server->setAutoModEnabled(argv[0].compare("on", Qt::CaseInsensitive) == 0);
+    sendServerMessage(QString("Automatic moderation is %1.").arg(server->autoModEnabled() ? "on" : "off"));
+}
+
 void AOClient::cmdJoinCooldownTime(int argc, QStringList argv)
 {
     Q_UNUSED(argc);

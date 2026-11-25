@@ -854,6 +854,13 @@
    },
    {
       "names": [
+         "automod"
+      ],
+      "usage":"/automod [on|off]",
+      "text":"Shows (no arg) or changes automod state."
+   },
+   {
+      "names": [
          "help"
       ],
       "usage":"/help <Command>",

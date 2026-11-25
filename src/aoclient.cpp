@@ -115,6 +115,7 @@ const QMap<QString, AOClient::CommandInfo> AOClient::COMMANDS{
     {"update", {{ACLRole::CM}, 0, &AOClient::cmdUpdateStatement}},
     {"add", {{ACLRole::CM}, 0, &AOClient::cmdAddStatement}},
     {"reload", {{ACLRole::SUPER}, 0, &AOClient::cmdReload}},
+    {"automod", {{ACLRole::SUPER}, 0, &AOClient::cmdAutoMod}},
     {"toggle_join_cooldown", {{ACLRole::SUPER}, 0, &AOClient::cmdToggleJoinCooldown}},
     {"join_cooldown_time", {{ACLRole::SUPER}, 0, &AOClient::cmdJoinCooldownTime}},
     {"toggle_join_lockdown", {{ACLRole::SUPER}, 0, &AOClient::cmdToggleJoinLockdown}},

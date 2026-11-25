@@ -31,6 +31,7 @@
 #include <QWebSocketServer>
 
 #include "medieval_parser.h"
+#include "auto_moderator.h"
 #include "network/aopacket.h"
 #include "playerstateobserver.h"
 #include "poll.h"
@@ -186,6 +187,9 @@ class Server : public QObject
     bool joinLockdownDuplicate(const QString &f_hwid, const QString &f_ipid) const;
     bool modcallCooldownAllows(const QString &f_ipid) const;
     void recordModcall(const QString &f_ipid);
+    bool autoModEnabled() const;
+    void setAutoModEnabled(bool f_enabled);
+    bool moderateMessage(AOClient &f_client, const QString &f_message);
 
     /**
      * @brief Sends a packet to all clients in a given area.
@@ -483,6 +487,11 @@ class Server : public QObject
     QHash<QString, qint64> m_modcall_times;
     PlayerStateObserver m_player_state_observer;
     Poll m_global_poll;
+    AutoModerator m_auto_moderator;
+    bool m_auto_mod_enabled;
+    int m_auto_mod_time;
+    int m_auto_mod_guard_time;
+    int m_auto_mod_threshold;
 
     /**
      * @brief Stack of all available IDs for clients. When this is empty the server

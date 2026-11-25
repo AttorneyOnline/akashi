@@ -81,6 +81,8 @@ qt_add_executable(akashi
   src/packet/packet_zz.h
   src/acl_roles_handler.cpp
   src/acl_roles_handler.h
+  src/auto_moderator.cpp
+  src/auto_moderator.h
   src/akashiutils.h
   src/aoclient.cpp
   src/aoclient.h

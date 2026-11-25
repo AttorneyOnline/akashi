@@ -123,7 +123,15 @@ class DBManager : public QObject
      *
      * @param ban The details of the ban.
      */
-    void addBan(BanInfo ban);
+    bool addBan(BanInfo ban);
+
+    struct AutoModStrikes
+    {
+        int count = 0;
+        qint64 lastStrike = 0;
+    };
+    bool getAutoModStrikes(const QString &f_ipid, AutoModStrikes &f_strikes);
+    bool setAutoModStrikes(const QString &f_ipid, const AutoModStrikes &f_strikes);
 
     /**
      * @brief Sets the duration of a given ban to 0, effectively removing the ban the associated user.

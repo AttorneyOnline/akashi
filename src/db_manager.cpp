@@ -40,6 +40,9 @@ DBManager::DBManager() :
     create_ban_table.exec();
     QSqlQuery create_user_table("CREATE TABLE IF NOT EXISTS users ('ID' INTEGER, 'USERNAME' TEXT, 'SALT' TEXT, 'PASSWORD' TEXT, 'ACL' TEXT, PRIMARY KEY('ID' AUTOINCREMENT))");
     create_user_table.exec();
+    QSqlQuery l_auto_mod_table;
+    if (!l_auto_mod_table.exec("CREATE TABLE IF NOT EXISTS automod_strikes (IPID TEXT PRIMARY KEY, STRIKES INTEGER NOT NULL, LAST_STRIKE INTEGER NOT NULL)"))
+        qCritical() << "Database Error: Could not create automod strikes table:" << l_auto_mod_table.lastError().text();
     if (db_version != DB_VERSION)
         updateDB(db_version);
 }
@@ -151,7 +154,7 @@ QList<DBManager::BanInfo> DBManager::getRecentBans()
     return return_list;
 }
 
-void DBManager::addBan(BanInfo ban)
+bool DBManager::addBan(BanInfo ban)
 {
     QSqlQuery query;
     query.prepare("INSERT INTO BANS(IPID, HDID, IP, TIME, REASON, DURATION, MODERATOR) VALUES(?, ?, ?, ?, ?, ?, ?)");
@@ -162,8 +165,42 @@ void DBManager::addBan(BanInfo ban)
     query.addBindValue(ban.reason);
     query.addBindValue(ban.duration);
     query.addBindValue(ban.moderator);
-    if (!query.exec())
+    if (!query.exec()) {
         qWarning() << "SQL Error:" << query.lastError().text();
+        return false;
+    }
+    return true;
+}
+
+bool DBManager::getAutoModStrikes(const QString &f_ipid, AutoModStrikes &f_strikes)
+{
+    QSqlQuery l_query;
+    l_query.prepare("SELECT STRIKES, LAST_STRIKE FROM automod_strikes WHERE IPID = ?");
+    l_query.addBindValue(f_ipid);
+    if (!l_query.exec()) {
+        qWarning() << "SQL Error reading automod strikes:" << l_query.lastError().text();
+        return false;
+    }
+    f_strikes = {};
+    if (l_query.next()) {
+        f_strikes.count = l_query.value(0).toInt();
+        f_strikes.lastStrike = l_query.value(1).toLongLong();
+    }
+    return true;
+}
+
+bool DBManager::setAutoModStrikes(const QString &f_ipid, const AutoModStrikes &f_strikes)
+{
+    QSqlQuery l_query;
+    l_query.prepare("INSERT OR REPLACE INTO automod_strikes (IPID, STRIKES, LAST_STRIKE) VALUES (?, ?, ?)");
+    l_query.addBindValue(f_ipid);
+    l_query.addBindValue(f_strikes.count);
+    l_query.addBindValue(f_strikes.lastStrike);
+    if (!l_query.exec()) {
+        qWarning() << "SQL Error saving automod strikes:" << l_query.lastError().text();
+        return false;
+    }
+    return true;
 }
 
 bool DBManager::invalidateBan(int id)

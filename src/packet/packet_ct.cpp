@@ -28,7 +28,13 @@ void PacketCT::handlePacket(AreaData *area, AOClient &client) const
         return;
     }
 
-    client.setName(client.dezalgo(m_content[0]).replace(QRegularExpression("\\[|\\]|\\{|\\}|\\#|\\$|\\%|\\&"), "")); // no fucky wucky shit here
+    const QString l_name = client.dezalgo(m_content[0]).replace(QRegularExpression("\\[|\\]|\\{|\\}|\\#|\\$|\\%|\\&"), "");
+    if (l_name == ConfigManager::serverNickname())
+        return;
+    if (l_name.length() > ConfigManager::maxOOCNameLength())
+        client.setName(l_name);
+    else
+        client.setName(ConfigManager::filterText(l_name));
     if (client.name().trimmed().replace("​", "").isEmpty() || client.name() == ConfigManager::serverNickname())    // impersonation & empty name protection
         return;
 
@@ -62,12 +68,10 @@ void PacketCT::handlePacket(AreaData *area, AOClient &client) const
     if (l_message.length() == 0 || l_message.length() > ConfigManager::maxCharacters())
         return;
 
-    if (!ConfigManager::filterList().isEmpty()) {
-        foreach (const QString &regex, ConfigManager::filterList()) {
-            QRegularExpression re(regex, QRegularExpression::CaseInsensitiveOption);
-            l_message.replace(re, "❌");
-        }
-    }
+    if (!l_message.startsWith('/') && !client.getServer()->moderateMessage(client, l_message))
+        return;
+
+    l_message = ConfigManager::filterText(l_message);
 
     if (l_message.at(0) == '/') {
         QStringList l_cmd_argv = l_message.split(" ", Qt::SkipEmptyParts);
