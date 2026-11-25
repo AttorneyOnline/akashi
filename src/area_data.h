@@ -347,6 +347,7 @@ class AreaData : public QObject
 
     ControlAccess lockingAllowed() const;
     ControlAccess playStreamingAllowed() const;
+    ControlAccess statusAllowed() const;
     bool setLockingAllowed(const QString &value);
     bool setPlayStreamingAllowed(const QString &value);
 
@@ -507,16 +508,19 @@ class AreaData : public QObject
      */
     Status status() const;
 
+    QString statusText() const;
+
     /**
      * @brief Changes the area of the status to a new one.
      *
      * @param f_newStatus_r A string that a client would enter as an argument for the `/status` command.
+     * @param extra Optional text displayed after the status.
      *
      * @return True if the entered status was valid, and the status changed, false otherwise.
      *
      * @see #map_statuses
      */
-    bool changeStatus(const QString &f_newStatus_r);
+    bool changeStatus(const QString &f_newStatus_r, const QString &extra = QString());
 
     /**
      * @brief Returns a copy of the list of invited clients.
@@ -1102,6 +1106,7 @@ class AreaData : public QObject
      * @see Status
      */
     Status m_status;
+    QString m_status_extra;
 
     /**
      * @brief The IDs of all the owners (or Case Makers / CMs) of the area.
@@ -1299,6 +1304,7 @@ class AreaData : public QObject
 
     ControlAccess m_lockingAllowed = ControlAccess::CM;
     ControlAccess m_playStreamingAllowed = ControlAccess::CM;
+    ControlAccess m_statusAllowed = ControlAccess::FFA;
 
     /**
      * @brief Timer until the next IC message can be sent.

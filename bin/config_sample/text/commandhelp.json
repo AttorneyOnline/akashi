@@ -69,16 +69,9 @@
          "background",
          "bg"
       ],
-      "usage":"/background <Background>",
-      "text":"Changes the background of the current area."
-   },
-   {
-      "names": [
-         "bg"
-      ],
-      "usage":"/bg <Background>",
-      "text":"Changes the background of the current area."
-   },
+      "usage":"/background | /bg <Background>",
+      "text":"Without arguments, displays the current background. With a background name, changes the background of the current area."
+   },  
    {
       "names": [
          "bglock"
@@ -332,8 +325,8 @@
       "names": [
          "status"
       ],
-      "usage":"/status <Status>",
-      "text":"Changes the status of the current area."
+      "usage":"/status <Status> <Extra>",
+      "text":"Changes the status of the current area, optionally adding extra info to the displayed status. Clients will use the color of whatever the main status is."
    },
    {
       "names": [
@@ -382,8 +375,8 @@
          "gpoll", 
          "poll"
       ],
-      "usage":"/gpoll|poll \"<question>\" OR /gpoll|poll \"<question>\" MCQ <choice>, <choice>, ...",
-      "text":"Creates a global poll or a local area poll (CM). Quote the question when specifying MCQ. Creating a poll replaces the previous poll. Polls are kept until cleared or replaced."
+      "usage":"/gpoll|poll <question> OR /gpoll|poll \"<question>\" MCQ <choice>, <choice>, ...",
+      "text":"Without arguments, displays the current global or area poll. With a question, creates a global poll or a local area poll (CM). Quote the question when specifying MCQ. Creating a poll replaces the previous poll. Polls are kept until cleared or replaced."
    },
    {
       "names": [

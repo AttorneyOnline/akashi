@@ -944,7 +944,8 @@ class AOClient : public QObject
     /**
      * @brief Changes the background of the current area.
      *
-     * @details Takes the **background's internal name** (generally the background's directory's name for the clients) as the only argument.
+     * @details Takes the **background's internal name** (generally the background's directory's name for the clients).
+     * Without arguments, displays the current background name.
      *
      * @iscommand
      */

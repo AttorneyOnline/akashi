@@ -472,10 +472,12 @@ void AOClient::cmdAreaKick(int argc, QStringList argv)
 
 void AOClient::cmdSetBackground(int argc, QStringList argv)
 {
-    Q_UNUSED(argc);
-
-    QString f_background = argv.join(" ");
     AreaData *area = server->getAreaById(areaId());
+    if (argc == 0) {
+        sendServerMessage("The current background is " + area->background() + ".");
+        return;
+    }
+    QString f_background = argv.join(" ");
     if (m_authenticated || !area->bgLocked()) {
         if (area->lockStatus() == AreaData::LockStatus::SPECTATABLE && !area->invited().contains(m_ipid) && !checkPermission(ACLRole::BYPASS_LOCKS)) {
             sendServerMessage("Spectators are blocked from changing the background.");
@@ -556,11 +558,15 @@ void AOClient::cmdStatus(int argc, QStringList argv)
     Q_UNUSED(argc);
 
     AreaData *l_area = server->getAreaById(areaId());
+    if (!canUseAreaControl(l_area->statusAllowed())) {
+        sendServerMessage("You do not have permission to use /status in this area.");
+        return;
+    }
     QString l_arg = argv[0].toLower();
 
-    if (l_area->changeStatus(l_arg)) {
+    if (l_area->changeStatus(l_arg, argv.mid(1).join(" "))) {
         arup(ARUPType::STATUS, true);
-        server->broadcast(PacketFactory::createPacket("CT", {ConfigManager::serverNickname(), character() + " changed status to " + l_arg.toUpper(), "1"}), areaId());
+        server->broadcast(PacketFactory::createPacket("CT", {ConfigManager::serverNickname(), character() + " changed status to " + l_area->statusText(), "1"}), areaId());
     }
     else {
         const QStringList keys = AreaData::map_statuses.keys();

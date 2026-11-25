@@ -31,7 +31,7 @@ const QMap<QString, AOClient::CommandInfo> AOClient::COMMANDS{
     {"kick", {{ACLRole::KICK}, 2, &AOClient::cmdKick}},
     {"changeauth", {{ACLRole::SUPER}, 0, &AOClient::cmdChangeAuth}},
     {"rootpass", {{ACLRole::SUPER}, 1, &AOClient::cmdSetRootPass}},
-    {"background", {{ACLRole::NONE}, 1, &AOClient::cmdSetBackground}},
+    {"background", {{ACLRole::NONE}, 0, &AOClient::cmdSetBackground}},
     {"side", {{ACLRole::CM}, 0, &AOClient::cmdSetSide}},
     {"lock_background", {{ACLRole::CM}, 0, &AOClient::cmdBgLock}},
     {"unlock_background", {{ACLRole::CM}, 0, &AOClient::cmdBgUnlock}},
@@ -78,12 +78,12 @@ const QMap<QString, AOClient::CommandInfo> AOClient::COMMANDS{
     {"motd", {{ACLRole::NONE}, 0, &AOClient::cmdMOTD}},
     {"set_motd", {{ACLRole::MOTD}, 1, &AOClient::cmdSetMOTD}},
     {"announce", {{ACLRole::ANNOUNCE}, 1, &AOClient::cmdAnnounce}},
-    {"gpoll", {{ACLRole::ANNOUNCE}, 1, &AOClient::cmdGPoll}},
+    {"gpoll", {{ACLRole::ANNOUNCE}, 0, &AOClient::cmdGPoll}},
     {"gpollvote", {{ACLRole::NONE}, 1, &AOClient::cmdGPollVote}},
     {"gpollreveal", {{ACLRole::ANNOUNCE}, 0, &AOClient::cmdGPollReveal}},
     {"gpollpreveal", {{ACLRole::ANNOUNCE}, 0, &AOClient::cmdGPollPrivateReveal}},
     {"gpollclear", {{ACLRole::ANNOUNCE}, 0, &AOClient::cmdGPollClear}},
-    {"poll", {{ACLRole::CM}, 1, &AOClient::cmdPoll}},
+    {"poll", {{ACLRole::CM}, 0, &AOClient::cmdPoll}},
     {"pollvote", {{ACLRole::NONE}, 1, &AOClient::cmdPollVote}},
     {"pollreveal", {{ACLRole::CM}, 0, &AOClient::cmdPollReveal}},
     {"pollpreveal", {{ACLRole::CM}, 0, &AOClient::cmdPollPrivateReveal}},
@@ -410,8 +410,7 @@ void AOClient::arup(ARUPType type, bool broadcast)
         }
         case ARUPType::STATUS:
         {
-            QString l_area_status = QVariant::fromValue(l_area->status()).toString().replace("_", "-"); // LOOKING_FOR_PLAYERS to LOOKING-FOR-PLAYERS
-            l_arup_data.append(l_area_status);
+            l_arup_data.append(l_area->statusText());
             break;
         }
         case ARUPType::CM:

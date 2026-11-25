@@ -24,6 +24,25 @@
 #include "packet/packet_factory.h"
 
 #include <QRegularExpression>
+#include <QVariant>
+
+namespace {
+bool parseControlAccess(const QString &value, AreaData::ControlAccess &access)
+{
+    const QString setting = value.trimmed().toUpper();
+    if (setting == "SUPER")
+        access = AreaData::ControlAccess::SUPER;
+    else if (setting == "MOD")
+        access = AreaData::ControlAccess::MOD;
+    else if (setting == "CM")
+        access = AreaData::ControlAccess::CM;
+    else if (setting == "FFA")
+        access = AreaData::ControlAccess::FFA;
+    else
+        return false;
+    return true;
+}
+}
 
 AreaData::AreaData(QString p_name, int p_index, MusicManager *p_music_manager = nullptr) :
     m_index(p_index),
@@ -72,6 +91,9 @@ AreaData::AreaData(QString p_name, int p_index, MusicManager *p_music_manager = 
     const QString streaming = areas_ini->value("playstreamingallowed", defaultStreaming).toString();
     if (!setPlayStreamingAllowed(streaming))
         qWarning() << "Invalid playstreamingallowed for area" << p_name << ":" << streaming << "- using CM";
+    const QString statusAccess = areas_ini->value("statusallowed", "FFA").toString();
+    if (!parseControlAccess(statusAccess, m_statusAllowed))
+        qWarning() << "Invalid statusallowed for area" << p_name << ":" << statusAccess << "- using FFA";
     m_can_send_wtce = areas_ini->value("wtce_enabled", "true").toBool();
     m_can_use_shouts = areas_ini->value("shouts_enabled", "true").toBool();
     areas_ini->endGroup();
@@ -189,6 +211,11 @@ AreaData::ControlAccess AreaData::playStreamingAllowed() const
     return m_playStreamingAllowed;
 }
 
+AreaData::ControlAccess AreaData::statusAllowed() const
+{
+    return m_statusAllowed;
+}
+
 bool AreaData::setLockingAllowed(const QString &value)
 {
     const QString setting = value.trimmed().toUpper();
@@ -205,18 +232,7 @@ bool AreaData::setLockingAllowed(const QString &value)
 
 bool AreaData::setPlayStreamingAllowed(const QString &value)
 {
-    const QString setting = value.trimmed().toUpper();
-    if (setting == "SUPER")
-        m_playStreamingAllowed = ControlAccess::SUPER;
-    else if (setting == "MOD")
-        m_playStreamingAllowed = ControlAccess::MOD;
-    else if (setting == "CM")
-        m_playStreamingAllowed = ControlAccess::CM;
-    else if (setting == "FFA")
-        m_playStreamingAllowed = ControlAccess::FFA;
-    else
-        return false;
-    return true;
+    return parseControlAccess(value, m_playStreamingAllowed);
 }
 
 void AreaData::lock()
@@ -361,10 +377,20 @@ AreaData::Status AreaData::status() const
     return m_status;
 }
 
-bool AreaData::changeStatus(const QString &f_newStatus_r)
+QString AreaData::statusText() const
+{
+    QString text = QVariant::fromValue(m_status).toString().replace("_", "-"); // For Looking_for_players
+    if (!m_status_extra.isEmpty()) {
+        text += " - " + m_status_extra;
+    }
+    return text;
+}
+
+bool AreaData::changeStatus(const QString &f_newStatus_r, const QString &extra)
 {
     if (AreaData::map_statuses.contains(f_newStatus_r)) {
         m_status = AreaData::map_statuses[f_newStatus_r];
+        m_status_extra = extra.toUpper();
         return true;
     }
 

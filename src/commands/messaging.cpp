@@ -88,9 +88,11 @@ void AOClient::cmdNeed(int argc, QStringList argv)
 {
     Q_UNUSED(argc);
 
+    QString l_sender_character = character();
+    QString l_sender_showname = m_showname;
     QString l_sender_area = server->getAreaName(areaId());
     QString l_sender_message = argv.join(" ");
-    server->broadcast(PacketFactory::createPacket("CT", {ConfigManager::serverNickname(), "=== Advert ===\n[" + l_sender_area + "] needs " + l_sender_message}), Server::TARGET_TYPE::ADVERT);
+    server->broadcast(PacketFactory::createPacket("CT", {ConfigManager::serverNickname(), "=== Advert ===\n" + l_sender_character + "(" + l_sender_showname + ")" + " in [" + l_sender_area + "] needs " + l_sender_message + "\n======= ======="}), Server::TARGET_TYPE::ADVERT);
 }
 
 void AOClient::cmdSwitch(int argc, QStringList argv)
@@ -172,7 +174,15 @@ void AOClient::cmdAnnounce(int argc, QStringList argv)
 
 void AOClient::cmdGPoll(int argc, QStringList argv)
 {
-    Q_UNUSED(argc);
+    if (argc == 0) {
+        const Poll &poll = server->globalPoll();
+        if (!poll.isActive()) {
+            sendServerMessage("There is no active global poll.");
+            return;
+        }
+        sendServerMessage(poll.display(false, true));
+        return;
+    }
     createPoll(true, argv);
 }
 
@@ -205,7 +215,15 @@ void AOClient::cmdGPollClear(int argc, QStringList argv)
 
 void AOClient::cmdPoll(int argc, QStringList argv)
 {
-    Q_UNUSED(argc);
+    if (argc == 0) {
+        const Poll &poll = server->getAreaById(areaId())->poll();
+        if (!poll.isActive()) {
+            sendServerMessage("There is no active poll in this area.");
+            return;
+        }
+        sendServerMessage(poll.display(false, false));
+        return;
+    }
     createPoll(false, argv);
 }
 
