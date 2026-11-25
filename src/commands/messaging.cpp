@@ -172,7 +172,15 @@ void AOClient::cmdAnnounce(int argc, QStringList argv)
 
 void AOClient::cmdGPoll(int argc, QStringList argv)
 {
-    Q_UNUSED(argc);
+    if (argc == 0) {
+        const Poll &poll = server->globalPoll();
+        if (!poll.isActive()) {
+            sendServerMessage("There is no active global poll.");
+            return;
+        }
+        sendServerMessage(poll.display(false, true));
+        return;
+    }
     createPoll(true, argv);
 }
 
@@ -205,7 +213,15 @@ void AOClient::cmdGPollClear(int argc, QStringList argv)
 
 void AOClient::cmdPoll(int argc, QStringList argv)
 {
-    Q_UNUSED(argc);
+    if (argc == 0) {
+        const Poll &poll = server->getAreaById(areaId())->poll();
+        if (!poll.isActive()) {
+            sendServerMessage("There is no active poll in this area.");
+            return;
+        }
+        sendServerMessage(poll.display(false, false));
+        return;
+    }
     createPoll(false, argv);
 }
 

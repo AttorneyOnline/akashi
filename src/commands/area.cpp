@@ -472,10 +472,12 @@ void AOClient::cmdAreaKick(int argc, QStringList argv)
 
 void AOClient::cmdSetBackground(int argc, QStringList argv)
 {
-    Q_UNUSED(argc);
-
-    QString f_background = argv.join(" ");
     AreaData *area = server->getAreaById(areaId());
+    if (argc == 0) {
+        sendServerMessage("The current background is " + area->background() + ".");
+        return;
+    }
+    QString f_background = argv.join(" ");
     if (m_authenticated || !area->bgLocked()) {
         if (area->lockStatus() == AreaData::LockStatus::SPECTATABLE && !area->invited().contains(m_ipid) && !checkPermission(ACLRole::BYPASS_LOCKS)) {
             sendServerMessage("Spectators are blocked from changing the background.");
